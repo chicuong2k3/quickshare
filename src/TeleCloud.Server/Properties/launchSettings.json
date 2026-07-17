@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "TeleCloud.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59154;http://localhost:59155"
+    }
+  }
+}

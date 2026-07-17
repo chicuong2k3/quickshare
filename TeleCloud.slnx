@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TeleCloud.Querying/TeleCloud.Querying.csproj" />
+    <Project Path="src/TeleCloud.Querying.Generators/TeleCloud.Querying.Generators.csproj" />
+    <Project Path="src/TeleCloud.Server/TeleCloud.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TeleCloud.Server.Tests/TeleCloud.Server.Tests.csproj" />
+  </Folder>
+</Solution>

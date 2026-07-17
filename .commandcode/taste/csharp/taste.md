@@ -1,0 +1,14 @@
+# csharp
+- NotFoundError should include entity name and ID for detailed messages (e.g., "File 'abc123' was not found"), not a generic static message. Confidence: 0.65
+- When using ExecuteSqlRawAsync with PostgreSQL, escape `{` and `}` in SQL strings (e.g., `DEFAULT '{{}}'`) or use ExecuteSqlRaw with parameters, because EF Core interprets `{}` as format string placeholders. Confidence: 0.70
+- Use Options pattern (IOptions<T>) with ValidateDataAnnotations() and ValidateOnStart() instead of scattered IConfiguration["key"] for configuration sections. Confidence: 0.60
+- Write all documentation, code comments, and conventions files in English, not Vietnamese. Confidence: 0.70
+- Use primary constructors for classes with dependency injection instead of explicit constructor + private readonly fields. Confidence: 0.70
+- Use LightResults (https://github.com/jscarle/LightResults) for the result pattern. Confidence: 0.65
+- Check GlobalUsings.cs before adding using directives — do not add redundant usings already covered by global imports. Confidence: 0.70
+- Use Riok.Mapperly (https://github.com/riok/mapperly) for object mapping — a source generator mapper instead of runtime reflection-based mappers. Confidence: 0.65
+- When a file uses both `LightResults` and `TL` namespaces, fully qualify `Error` as `LightResults.Error` to avoid CS0104 ambiguity with `TL.Error`. Confidence: 0.75
+- Prefer source generators and AOT-friendly approaches over runtime reflection (e.g., for dynamic sorting, use source-generated expression trees instead of `Type.GetProperty` / `GetMethods`). Confidence: 0.60
+- When using FastEndpoints, remove `Microsoft.AspNetCore.Mvc` from GlobalUsings to avoid CS0104 ambiguity between FastEndpoints HTTP attributes (HttpGet, HttpPost, HttpDelete) and MVC attributes of the same name. Confidence: 0.70
+- [FastEndpoints.FromQuery] and similar ASP.NET binding attributes are only valid on properties/indexers — they cannot be applied to primary constructor parameters of record types. For FastEndpoints GET endpoints, record properties auto-bind from query string without any attributes needed. Confidence: 0.70
+- Do not put WTelegram verification code in appsettings.json config — the user cannot know the code beforehand. Use interactive console prompt (Console.ReadLine) or similar interactive flow to ask the user for the code at runtime. Confidence: 0.65

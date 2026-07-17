@@ -1,0 +1,13 @@
+global using TeleCloud.Server.Data;
+global using TeleCloud.Server.Infrastructure;
+global using TeleCloud.Server.Services;
+global using TeleCloud.Server.Features.Files.Shared;
+global using TeleCloud.Server.Features.Folders.Shared;
+global using WTelegram;
+global using Wolverine;
+global using Wolverine.EntityFrameworkCore;
+global using Wolverine.Postgresql;
+global using Microsoft.EntityFrameworkCore;
+global using FastEndpoints;
+global using TeleCloud.Querying;
+global using TeleCloud.Server.Extensions;
