@@ -6,6 +6,7 @@ public class TeleCloudDbContext : DbContext
 
     public DbSet<FileMetadata> Files => Set<FileMetadata>();
     public DbSet<Folder> Folders => Set<Folder>();
+    public DbSet<TempShare> TempShares => Set<TempShare>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,20 @@ public class TeleCloudDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.FolderId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TempShare>(entity =>
+        {
+            entity.ToTable("temp_shares");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileId).IsRequired();
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasOne(e => e.File!)
+                .WithMany()
+                .HasForeignKey(e => e.FileId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

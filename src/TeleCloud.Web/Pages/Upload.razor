@@ -1,0 +1,202 @@
+@page "/"
+@inject IConfiguration Config
+@* Upload page — Static SSR initial render, Alpine.js + upload.js drive all client-side state.
+   Constraint: no InteractiveServer / WebAssembly. Upload goes browser -> API directly (XHR). *@
+@{
+    var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+}
+
+<PageTitle>QuickShareCloud — share a file in seconds</PageTitle>
+
+<div class="min-h-screen flex flex-col" x-data="uploadPage()" x-cloak>
+    @* Embed the API base URL so upload.js knows where to POST (CORS-enabled server-side). *@
+    <script>
+        window.QUICKSHARE_CONFIG = { apiBaseUrl: "@apiBase" };
+    </script>
+
+    <header class="flex items-center justify-between px-6 py-5">
+        <a href="/" class="flex items-center gap-2 text-foreground">
+            <span class="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">Q</span>
+            <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
+        </a>
+        @* RizzyUI dark-mode toggle could go here if available; keep minimal chrome. *@
+    </header>
+
+    <main class="flex flex-1 items-center justify-center px-4 pb-16">
+        <div class="w-full max-w-xl">
+
+            @* Hidden file input backing the "Browse" affordance (accessible). *@
+            <input id="file-input" type="file" class="sr-only" x-on:change="onFileInput($event)" aria-label="Choose a file to upload" />
+
+            @* ===== IDLE / DRAGGING =====
+                 Conditional rendering: the dropzone is shown in both idle and dragging states,
+                 with Alpine toggling the highlight classes on dragover. *@
+            <section x-show="isIdle || isDragging"
+                     class="rounded-2xl border-2 border-dashed p-8 text-center transition-colors sm:p-12"
+                     x-bind:class="draggingActive ? 'border-primary bg-primary/5' : 'border-border bg-card'"
+                     x-on:dragover.prevent="onDragOver($event)"
+                     x-on:dragenter.prevent="onDragOver($event)"
+                     x-on:dragleave.prevent="onDragLeave($event)"
+                     x-on:drop.prevent="onDrop($event)">
+
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                </div>
+
+                <h1 class="mt-5 text-xl font-semibold tracking-tight text-foreground">
+                    <span x-show="isIdle">Drag &amp; drop a file here</span>
+                    <span x-show="isDragging">Drop to upload</span>
+                </h1>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    <span x-show="isIdle">or press <kbd class="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Ctrl</kbd>+<kbd class="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">V</kbd> to paste an image</span>
+                    <span x-show="isDragging">Release the file to start the upload</span>
+                </p>
+
+                <button type="button"
+                        class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                        x-on:click="triggerFileInput()">
+                    Browse files
+                </button>
+
+                @* Expiry selector (rendered BEFORE upload per ux-flow.md). 24h default / 7d. *@
+                <div class="mt-8 flex items-center justify-center gap-3 text-sm" role="radiogroup" aria-label="Expiry duration">
+                    <span class="text-muted-foreground">Expires in:</span>
+                    <div class="inline-flex rounded-md border border-border p-0.5 bg-muted/40">
+                        <button type="button" role="radio" aria-checked="true"
+                                x-bind:aria-checked="(expiry === '24h').toString()"
+                                x-bind:class="expiry === '24h' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                                x-on:click="selectExpiry('24h')">24 hours</button>
+                        <button type="button" role="radio"
+                                x-bind:aria-checked="(expiry === '7d').toString()"
+                                x-bind:class="expiry === '7d' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                                x-on:click="selectExpiry('7d')">7 days</button>
+                    </div>
+                </div>
+
+                <p class="mt-4 text-xs text-muted-foreground">Max 2 GB · anonymous · no login required</p>
+
+                @* Paste tooltip (non-image clipboard). *@
+                <div x-show="pasteTip" x-transition
+                     class="mt-4 inline-block rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
+                    No image in clipboard.
+                </div>
+            </section>
+
+            @* ===== UPLOADING ===== *@
+            <section x-show="isUploading" class="rounded-2xl border border-border bg-card p-8 sm:p-10">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploading</p>
+                        <h1 class="mt-1 truncate text-lg font-semibold text-foreground" x-text="filename"></h1>
+                    </div>
+                    <button type="button"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            title="Cancel upload"
+                            aria-label="Cancel upload"
+                            x-on:click="cancelUpload()">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mt-6">
+                    <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div class="h-full rounded-full bg-primary transition-[width] duration-150 ease-out"
+                             x-bind:style="progressWidth"></div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                        <span x-text="progress + '%'"></span>
+                        <span x-show="progress < 100">Sending to storage…</span>
+                        <span x-show="progress >= 100">Finalizing…</span>
+                    </div>
+                </div>
+            </section>
+
+            @* ===== SUCCESS ===== *@
+            <section x-show="isSuccess" class="rounded-2xl border border-border bg-card p-8 sm:p-10">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold tracking-tight text-foreground">Upload ready</h1>
+                        <p class="text-sm text-muted-foreground" x-text="filename"></p>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label for="share-link" class="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                        <span>Share link</span>
+                        <span x-show="copied" class="inline-flex items-center gap-1 text-primary">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            Copied to clipboard
+                        </span>
+                    </label>
+                    <div class="mt-1.5 flex flex-col gap-2 sm:flex-row">
+                        <input id="share-link" type="text" readonly
+                               x-model="link"
+                               class="w-full flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                               aria-label="Share link" />
+                        <button type="button"
+                                class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
+                                x-on:click="copyLink()">
+                            Copy link
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground" x-text="expiryLabel"></p>
+                </div>
+
+                <div class="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                    <div id="qrcode" class="rounded-lg border border-border bg-white p-3"
+                         aria-label="QR code for the share link"
+                         role="img"></div>
+                    <div class="flex-1">
+                        <p class="text-sm text-muted-foreground">
+                            Scan the QR with a phone camera, or share the link directly. The file will be removed automatically after expiry.
+                        </p>
+                        <button type="button"
+                                class="mt-4 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                                x-on:click="reset()">
+                            Share another file
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            @* ===== ERROR ===== *@
+            <section x-show="isError" class="rounded-2xl border border-border bg-card p-8 text-center sm:p-10">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <h1 class="mt-4 text-lg font-semibold tracking-tight text-foreground">Upload failed</h1>
+                <p class="mt-2 text-sm text-muted-foreground" x-text="error || 'An unknown error occurred.'"></p>
+                <button type="button"
+                        class="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
+                        x-on:click="reset()">
+                    Try again
+                </button>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="px-6 py-4 text-center text-xs text-muted-foreground">
+        Anonymous temporary file sharing — files auto-expire.
+    </footer>
+</div>

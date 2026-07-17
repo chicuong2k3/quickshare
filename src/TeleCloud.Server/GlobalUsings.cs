@@ -3,6 +3,7 @@ global using TeleCloud.Server.Infrastructure;
 global using TeleCloud.Server.Services;
 global using TeleCloud.Server.Features.Files.Shared;
 global using TeleCloud.Server.Features.Folders.Shared;
+global using TeleCloud.Server.Features.TempShares.Shared;
 global using WTelegram;
 global using Wolverine;
 global using Wolverine.EntityFrameworkCore;

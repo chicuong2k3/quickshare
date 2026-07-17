@@ -1,0 +1,11 @@
+/* QuickShareCloud Tailwind 4 + RizzyUI ArcticTheme entry CSS.
+   Per RizzyUI README + Themes doc (https://rizzyui.jalex.io/themes.html):
+   - import Tailwind v4
+   - import the RizzyUI plugin CSS (provides @theme tokens, reset, animations)
+   The @jalexsocial/rizzyui package `exports` field does not expose the CSS path,
+   so we resolve it via a relative path into node_modules. */
+@import "tailwindcss";
+@import "../node_modules/@jalexsocial/rizzyui/dist/css/rizzyui-plugin.css";
+
+/* Hide elements until Alpine has initialized (prevents x-data flash). */
+[x-cloak] { display: none !important; }

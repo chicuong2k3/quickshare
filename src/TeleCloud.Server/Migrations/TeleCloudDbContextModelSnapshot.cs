@@ -98,6 +98,30 @@ namespace TeleCloud.Server.Migrations
                     b.ToTable("folders", (string)null);
                 });
 
+            modelBuilder.Entity("TeleCloud.Server.Data.TempShare", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("FileId");
+
+                    b.ToTable("temp_shares", (string)null);
+                });
+
             modelBuilder.Entity("TeleCloud.Server.Data.FileMetadata", b =>
                 {
                     b.HasOne("TeleCloud.Server.Data.Folder", "Folder")
@@ -107,6 +131,17 @@ namespace TeleCloud.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Folder");
+                });
+
+            modelBuilder.Entity("TeleCloud.Server.Data.TempShare", b =>
+                {
+                    b.HasOne("TeleCloud.Server.Data.FileMetadata", "File")
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("File");
                 });
 #pragma warning restore 612, 618
         }

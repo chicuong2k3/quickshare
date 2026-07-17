@@ -11,6 +11,10 @@ builder.Services.AddDbContext<TeleCloudDbContext>(opts =>
 builder.Services.Configure<TeleCloudOptions>(
     builder.Configuration.GetSection(TeleCloudOptions.Section));
 
+var quickShareConfig = builder.Configuration.GetSection(QuickShareOptions.Section);
+builder.Services.Configure<QuickShareOptions>(quickShareConfig);
+var quickShareOptions = quickShareConfig.Get<QuickShareOptions>() ?? new QuickShareOptions();
+
 builder.Services.AddSingleton<Client>(sp =>
 {
     var options = sp.GetRequiredService<IOptions<TeleCloudOptions>>().Value;
@@ -35,6 +39,20 @@ builder.Services.AddSingleton<Client>(sp =>
 });
 
 builder.Services.AddSingleton<TelegramService>();
+builder.Services.AddScoped<ITempShareMessageDeleter, TelegramMessageDeleter>();
+builder.Services.AddHostedService<TempShareCleanupService>();
+
+var allowedOrigins = (quickShareOptions.AllowedCorsOrigins ?? []).Where(o => !string.IsNullOrWhiteSpace(o)).ToArray();
+builder.Services.AddCors(o =>
+{
+    o.AddDefaultPolicy(p =>
+    {
+        if (allowedOrigins.Length > 0)
+            p.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader();
+        else
+            p.SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader();
+    });
+});
 
 builder.Host.UseWolverine(opts =>
 {
@@ -59,6 +77,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
+app.UseCors();
 
 app.UseFastEndpoints()
    .UseSwaggerGen();
