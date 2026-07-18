@@ -4,8 +4,8 @@
 @using System.Net
 @using System.Text.Json
 @using System.Text.Json.Serialization
-@* Static SSR download page. The server calls the API at render time (no client interactivity required).
-   Constraint: no InteractiveServer / WebAssembly. *@
+@using RizzyUI
+@* Static SSR download page using RizzyUI components. *@
 @{
     var apiBase = Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155";
     var downloadUrl = $"{apiBase.TrimEnd('/')}/api/temp/{ShareId}/download";
@@ -14,95 +14,99 @@
 <PageTitle>Download — QuickShareCloud</PageTitle>
 
 <div class="min-h-screen flex items-center justify-center px-4 py-10">
-    <div class="w-full max-w-lg rounded-2xl border border-border bg-card shadow-sm">
-        @switch (RenderState)
-        {
-            case DownloadRenderState.Loading:
-                <div class="p-8 text-center">
-                    <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                    <p class="mt-3 text-sm text-muted-foreground">Checking link…</p>
-                </div>
-                break;
+    <RzCard class="w-full max-w-lg">
+        <CardContent class="p-8">
+            @switch (RenderState)
+            {
+                case DownloadRenderState.Loading:
+                    <div class="text-center">
+                        <RzSpinner Size="Size.Medium" />
+                        <p class="mt-3 text-sm text-muted-foreground">Checking link…</p>
+                    </div>
+                    break;
 
-            case DownloadRenderState.Ready:
-                <div class="p-8">
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            @FileIcon(Info?.ContentType)
+                case DownloadRenderState.Ready:
+                    <div>
+                        <div class="flex items-start gap-4">
+                            <RzAvatar Size="Size.Large" class="bg-primary/10 text-primary">
+                                <div class="flex h-12 w-12 items-center justify-center">
+                                    @FileIcon(Info?.ContentType)
+                                </div>
+                            </RzAvatar>
+                            <div class="min-w-0 flex-1">
+                                <RzHeading Level="HeadingLevel.H1" class="truncate text-lg font-semibold tracking-tight" title="@Info?.Filename">@Info?.Filename</RzHeading>
+                                <RzParagraph class="mt-1 text-sm text-muted-foreground">@FormatBytes(Info?.Size ?? 0) · @ExpiryCountdown(Info?.ExpiresAt ?? DateTime.UtcNow)</RzParagraph>
+                            </div>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h1 class="truncate text-lg font-semibold tracking-tight" title="@Info?.Filename">@Info?.Filename</h1>
-                            <p class="mt-1 text-sm text-muted-foreground">@FormatBytes(Info?.Size ?? 0) · @ExpiryCountdown(Info?.ExpiresAt ?? DateTime.UtcNow)</p>
+
+                        <div class="mt-6">
+                            <RzLink Href="@downloadUrl" Underline="false"
+                                    class="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Download
+                            </RzLink>
+                            <p class="mt-3 text-center text-xs text-muted-foreground">
+                                Your download starts in a new request. No login required.
+                            </p>
                         </div>
                     </div>
+                    break;
 
-                    <div class="mt-6">
-                        <a href="@downloadUrl"
-                           class="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
+                case DownloadRenderState.Expired:
+                    <div class="text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                            <svg class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
                             </svg>
-                            Download
-                        </a>
-                        <p class="mt-3 text-center text-xs text-muted-foreground">
-                            Your download starts in a new request. No login required.
-                        </p>
+                        </div>
+                        <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">This file has expired</RzHeading>
+                        @if (!string.IsNullOrEmpty(Info?.Filename))
+                        {
+                            <p class="mt-2 text-sm text-muted-foreground">
+                                <span class="font-medium text-foreground">@Info.Filename</span>
+                                @if (Info.ExpiresAt != default)
+                                {
+                                    <text> · expired @Info.ExpiresAt.ToString("d MMM yyyy, HH:mm") UTC</text>
+                                }
+                            </p>
+                        }
+                        <p class="mt-1 text-xs text-muted-foreground">Temp shares are removed automatically after expiry.</p>
                     </div>
-                </div>
-                break;
+                    break;
 
-            case DownloadRenderState.Expired:
-                <div class="p-8 text-center">
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <svg class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
+                case DownloadRenderState.NotFound:
+                    <div class="text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                            <svg class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">File not found</RzHeading>
+                        <RzParagraph class="mt-2 text-sm text-muted-foreground">This link doesn't match any share.</RzParagraph>
+                        <RzLink Href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted" Underline="false">
+                            Share a new file
+                        </RzLink>
                     </div>
-                    <h1 class="mt-4 text-lg font-semibold tracking-tight">This file has expired</h1>
-                    @if (!string.IsNullOrEmpty(Info?.Filename))
-                    {
-                        <p class="mt-2 text-sm text-muted-foreground">
-                            <span class="font-medium text-foreground">@Info.Filename</span>
-                            @if (Info.ExpiresAt != default)
-                            {
-                                <text> · expired @Info.ExpiresAt.ToString("d MMM yyyy, HH:mm") UTC</text>
-                            }
-                        </p>
-                    }
-                    <p class="mt-1 text-xs text-muted-foreground">Temp shares are removed automatically after expiry.</p>
-                </div>
-                break;
+                    break;
 
-            case DownloadRenderState.NotFound:
-                <div class="p-8 text-center">
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <svg class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                        </svg>
+                case DownloadRenderState.Error:
+                    <div class="text-center">
+                        <RzHeading Level="HeadingLevel.H1" class="text-lg font-semibold tracking-tight">Something went wrong</RzHeading>
+                        <RzParagraph class="mt-2 text-sm text-muted-foreground">We couldn't reach the share service. Please try again in a moment.</RzParagraph>
+                        <RzLink Href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted" Underline="false">
+                            Back to upload
+                        </RzLink>
                     </div>
-                    <h1 class="mt-4 text-lg font-semibold tracking-tight">File not found</h1>
-                    <p class="mt-2 text-sm text-muted-foreground">This link doesn't match any share.</p>
-                    <a href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted">
-                        Share a new file
-                    </a>
-                </div>
-                break;
-
-            case DownloadRenderState.Error:
-                <div class="p-8 text-center">
-                    <h1 class="text-lg font-semibold tracking-tight">Something went wrong</h1>
-                    <p class="mt-2 text-sm text-muted-foreground">We couldn't reach the share service. Please try again in a moment.</p>
-                    <a href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted">
-                        Back to upload
-                    </a>
-                </div>
-                break;
-        }
-    </div>
+                    break;
+            }
+        </CardContent>
+    </RzCard>
 </div>
 
 @code {
@@ -116,8 +120,6 @@
     {
         try
         {
-            // Default permissive back-end call. The endpoint returns 200 with an `expired` flag
-            // when the row exists but past expiry (per Design Notes), 404 when the row truly doesn't exist.
             var response = await Http.GetAsync($"api/temp/{ShareId}");
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -143,7 +145,6 @@
         }
         catch (Exception)
         {
-            // Network failure reaching the API — render a generic error state (SSR, no client retry round-trip).
             RenderState = DownloadRenderState.Error;
         }
     }

@@ -25,8 +25,13 @@
 
                 init: function () {
                     var self = this;
-                    // Global paste listener — Ctrl+V anywhere on the page.
                     document.addEventListener('paste', function (e) { self.handlePaste(e); });
+                    document.addEventListener('change', function (e) {
+                        var input = e.target;
+                        if (input && input.type === 'file' && input.files && input.files.length) {
+                            self.onFileInput(e);
+                        }
+                    });
                 },
 
                 selectExpiry: function (value) {
@@ -65,7 +70,7 @@
                 },
 
                 triggerFileInput: function () {
-                    var input = document.getElementById('file-input');
+                    var input = document.querySelector('input[type="file"]');
                     if (input) input.click();
                 },
 

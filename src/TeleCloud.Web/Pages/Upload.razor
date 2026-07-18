@@ -1,7 +1,7 @@
 @page "/"
 @inject IConfiguration Config
-@* Upload page — Static SSR initial render, Alpine.js + upload.js drive all client-side state.
-   Constraint: no InteractiveServer / WebAssembly. Upload goes browser -> API directly (XHR). *@
+@using RizzyUI
+@* Upload page — Blazor Static SSR + RizzyUI components. Alpine.js + upload.js drive client-side state. *@
 @{
     var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
 }
@@ -9,28 +9,27 @@
 <PageTitle>QuickShareCloud — share a file in seconds</PageTitle>
 
 <div class="min-h-screen flex flex-col" x-data="uploadPage()" x-cloak>
-    @* Embed the API base URL so upload.js knows where to POST (CORS-enabled server-side). *@
     <script>
         window.QUICKSHARE_CONFIG = { apiBaseUrl: "@apiBase" };
     </script>
 
     <header class="flex items-center justify-between px-6 py-5">
-        <a href="/" class="flex items-center gap-2 text-foreground">
+        <RzLink Href="/" Underline="false" class="flex items-center gap-2 text-foreground">
             <span class="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">Q</span>
             <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
-        </a>
-        @* RizzyUI dark-mode toggle could go here if available; keep minimal chrome. *@
+        </RzLink>
+        <nav class="flex items-center gap-4 text-sm">
+            <RzLink Href="/">Upload</RzLink>
+            <RzLink Href="/pricing">Pricing</RzLink>
+        </nav>
     </header>
 
     <main class="flex flex-1 items-center justify-center px-4 pb-16">
         <div class="w-full max-w-xl">
 
-            @* Hidden file input backing the "Browse" affordance (accessible). *@
-            <input id="file-input" type="file" class="sr-only" x-on:change="onFileInput($event)" aria-label="Choose a file to upload" />
+            <RzFileInput Name="file" Variant="FileInputVariant.Button" class="sr-only" AriaLabel="Choose a file to upload" />
 
-            @* ===== IDLE / DRAGGING =====
-                 Conditional rendering: the dropzone is shown in both idle and dragging states,
-                 with Alpine toggling the highlight classes on dragover. *@
+            @* ===== IDLE / DRAGGING ===== *@
             <section x-show="isIdle || isDragging"
                      class="rounded-2xl border-2 border-dashed p-8 text-center transition-colors sm:p-12"
                      x-bind:class="draggingActive ? 'border-primary bg-primary/5' : 'border-border bg-card'"
@@ -47,41 +46,40 @@
                     </svg>
                 </div>
 
-                <h1 class="mt-5 text-xl font-semibold tracking-tight text-foreground">
+                <RzHeading Level="HeadingLevel.H1" class="mt-5 text-xl font-semibold tracking-tight">
                     <span x-show="isIdle">Drag &amp; drop a file here</span>
                     <span x-show="isDragging">Drop to upload</span>
-                </h1>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    <span x-show="isIdle">or press <kbd class="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Ctrl</kbd>+<kbd class="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">V</kbd> to paste an image</span>
+                </RzHeading>
+                <RzParagraph class="mt-1 text-sm text-muted-foreground">
+                    <span x-show="isIdle">or press <RzKbd>Ctrl</RzKbd>+<RzKbd>V</RzKbd> to paste an image</span>
                     <span x-show="isDragging">Release the file to start the upload</span>
-                </p>
+                </RzParagraph>
 
-                <button type="button"
-                        class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                        x-on:click="triggerFileInput()">
+                <RzButton Variant="ThemeVariant.Default" class="mt-6" x-on:click="triggerFileInput()">
                     Browse files
-                </button>
+                </RzButton>
 
-                @* Expiry selector (rendered BEFORE upload per ux-flow.md). 24h default / 7d. *@
+                @* Expiry selector (24h default / 7d) *@
                 <div class="mt-8 flex items-center justify-center gap-3 text-sm" role="radiogroup" aria-label="Expiry duration">
                     <span class="text-muted-foreground">Expires in:</span>
                     <div class="inline-flex rounded-md border border-border p-0.5 bg-muted/40">
-                        <button type="button" role="radio" aria-checked="true"
-                                x-bind:aria-checked="(expiry === '24h').toString()"
-                                x-bind:class="expiry === '24h' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                                class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                x-on:click="selectExpiry('24h')">24 hours</button>
-                        <button type="button" role="radio"
-                                x-bind:aria-checked="(expiry === '7d').toString()"
-                                x-bind:class="expiry === '7d' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                                class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                x-on:click="selectExpiry('7d')">7 days</button>
+                        <RzButton Variant="ThemeVariant.Default"
+                                  role="radio" aria-checked="true"
+                                  x-bind:aria-checked="(expiry === '24h').toString()"
+                                  x-bind:class="expiry === '24h' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                  class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                                  x-on:click="selectExpiry('24h')">24 hours</RzButton>
+                        <RzButton Variant="ThemeVariant.Default"
+                                  role="radio"
+                                  x-bind:aria-checked="(expiry === '7d').toString()"
+                                  x-bind:class="expiry === '7d' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                  class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                                  x-on:click="selectExpiry('7d')">7 days</RzButton>
                     </div>
                 </div>
 
                 <p class="mt-4 text-xs text-muted-foreground">Max 2 GB · anonymous · no login required</p>
 
-                @* Paste tooltip (non-image clipboard). *@
                 <div x-show="pasteTip" x-transition
                      class="mt-4 inline-block rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
                     No image in clipboard.
@@ -93,18 +91,16 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploading</p>
-                        <h1 class="mt-1 truncate text-lg font-semibold text-foreground" x-text="filename"></h1>
+                        <RzHeading Level="HeadingLevel.H1" class="mt-1 truncate text-lg font-semibold" x-text="filename" />
                     </div>
-                    <button type="button"
-                            class="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                            title="Cancel upload"
-                            aria-label="Cancel upload"
-                            x-on:click="cancelUpload()">
+                    <RzButton Variant="ThemeVariant.Default"
+                              class="h-9 w-9" title="Cancel upload" aria-label="Cancel upload"
+                              x-on:click="cancelUpload()">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
-                    </button>
+                    </RzButton>
                 </div>
 
                 <div class="mt-6">
@@ -129,7 +125,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-lg font-semibold tracking-tight text-foreground">Upload ready</h1>
+                        <RzHeading Level="HeadingLevel.H1" class="text-lg font-semibold tracking-tight">Upload ready</RzHeading>
                         <p class="text-sm text-muted-foreground" x-text="filename"></p>
                     </div>
                 </div>
@@ -149,11 +145,9 @@
                                x-model="link"
                                class="w-full flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                aria-label="Share link" />
-                        <button type="button"
-                                class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
-                                x-on:click="copyLink()">
+                        <RzButton Variant="ThemeVariant.Primary" x-on:click="copyLink()">
                             Copy link
-                        </button>
+                        </RzButton>
                     </div>
                     <p class="mt-2 text-xs text-muted-foreground" x-text="expiryLabel"></p>
                 </div>
@@ -163,14 +157,12 @@
                          aria-label="QR code for the share link"
                          role="img"></div>
                     <div class="flex-1">
-                        <p class="text-sm text-muted-foreground">
+                        <RzParagraph class="text-sm text-muted-foreground">
                             Scan the QR with a phone camera, or share the link directly. The file will be removed automatically after expiry.
-                        </p>
-                        <button type="button"
-                                class="mt-4 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                                x-on:click="reset()">
+                        </RzParagraph>
+                        <RzButton Variant="ThemeVariant.Ghost" class="mt-4" x-on:click="reset()">
                             Share another file
-                        </button>
+                        </RzButton>
                     </div>
                 </div>
             </section>
@@ -184,13 +176,11 @@
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                 </div>
-                <h1 class="mt-4 text-lg font-semibold tracking-tight text-foreground">Upload failed</h1>
-                <p class="mt-2 text-sm text-muted-foreground" x-text="error || 'An unknown error occurred.'"></p>
-                <button type="button"
-                        class="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
-                        x-on:click="reset()">
+                <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">Upload failed</RzHeading>
+                <RzParagraph class="mt-2 text-sm text-muted-foreground" x-text="error || 'An unknown error occurred.'" />
+                <RzButton Variant="ThemeVariant.Primary" class="mt-6" x-on:click="reset()">
                     Try again
-                </button>
+                </RzButton>
             </section>
 
         </div>
