@@ -34,7 +34,7 @@ TeleCloud currently operates as an anonymous, free file-sharing service with no 
 ## Constraints
 
 - Must use RizzyUI Razor components exclusively for UI elements: RzButton (instead of raw `<button>`/`<a>`), RzBadge (for status indicators), RzCard (card containers), RzTable (comparison table), RzSeparator, RzSpinner, etc. from [rizzyui.jalex.io](https://rizzyui.jalex.io). Plain `<div>`, `<span>`, `<p>`, `<header>`, `<footer>`, `<main>`, `<nav>` wrappers and `<svg>` icons are allowed for layout/structure only. Tailwind CSS v4 remains for spacing, alignment, and overrides. Alpine.js for client interactivity (billing toggle, FAQ accordion).
-- Telegram's 2 GB per-file upload limit is a hard ceiling across ALL tiers. No plan offers unlimited file size. Tier differentiation is via monthly volume cap, transfer count, expiry duration, and branding/team features.
+- File size limits vary by tier: Free = 200 MB, Starter = 750 MB, Ultimate = 1.5 GB. Telegram's 2 GB ceiling means the Ultimate 1.5 GB limit keeps headroom. All tiers require authentication to upload — anonymous upload is disabled.
 - Tier definitions, prices, and feature matrices are defined in `pricing-tiers.md` companion as the single source of truth. The page reads from this canonical data — no hardcoding prices or features in Razor components.
 
 ## Non-goals

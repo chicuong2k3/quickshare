@@ -9,6 +9,7 @@ public class TeleCloudDbContext : DbContext
     public DbSet<TempShare> TempShares => Set<TempShare>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserLogin> UserLogins => Set<UserLogin>();
+    public DbSet<UserUsage> UserUsages => Set<UserUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,10 +47,15 @@ public class TeleCloudDbContext : DbContext
             entity.Property(e => e.ExpiresAt).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.HasIndex(e => e.ExpiresAt);
+            entity.HasIndex(e => e.OwnerId);
             entity.HasOne(e => e.File!)
                 .WithMany()
                 .HasForeignKey(e => e.FileId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.OwnerId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -66,6 +72,20 @@ public class TeleCloudDbContext : DbContext
             entity.HasIndex(e => new { e.Provider, e.ProviderKey }).IsUnique();
             entity.Property(e => e.Provider).IsRequired();
             entity.Property(e => e.ProviderKey).IsRequired();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserUsage>(entity =>
+        {
+            entity.ToTable("user_usage");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.PeriodStart }).IsUnique();
+            entity.Property(e => e.PeriodStart).IsRequired();
+            entity.Property(e => e.TotalBytesUploaded).IsRequired();
+            entity.Property(e => e.TransferCount).IsRequired();
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

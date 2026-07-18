@@ -52,6 +52,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddLocalization();
+
 // RizzyUI services + LinearTheme (custom dark theme). Per RizzyUI README:
 // https://github.com/JalexSocial/RizzyUI  ->  AddRizzyUI + RzThemeProvider.
 // NOTE: 0.9.2-alpha does NOT ship app.UseRizzy() or a RzHeadOutlet component
@@ -89,6 +91,7 @@ app.UseStaticFiles();
 // Auth middleware must come before Antiforgery and MapRazorComponents.
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TeleCloud.Web.Infrastructure.AuthPageRedirectMiddleware>();
 
 // Antiforgery middleware for the Static SSR pipeline.
 app.UseAntiforgery();

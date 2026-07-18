@@ -68,7 +68,7 @@ builder.Host.UseWolverine(opts =>
     opts.PersistMessagesWithPostgresql(connectionString, "telecloud");
     opts.UseEntityFrameworkCoreTransactions();
     opts.Policies.AutoApplyTransactions();
-});
+}, ExtensionDiscovery.ManualOnly);
 
 builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();

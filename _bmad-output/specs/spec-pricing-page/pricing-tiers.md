@@ -14,11 +14,11 @@
 
 | Tier | Monthly Price | Yearly Price | Audience | File Size Limit | Monthly Volume | Transfers/Month | Transfer Expiry | Members |
 |------|--------------|-------------|----------|----------------|----------------|-----------------|-----------------|---------|
-| **Free** | $0 | $0 | Occasional users, first-time explorers | 2 GB | 3 GB | 10 | Up to 3 days | 1 |
-| **Starter** | $8 | $77 ($6.42/mo) | Frequent individual users | 2 GB | 300 GB | 10 | Up to 3 days | 1 |
-| **Ultimate** | $23 | $221 ($18.42/mo) | Power users sending big files daily | 2 GB | Unlimited | Unlimited | Unlimited | 1 |
-| **Teams** | $19/user/mo (min 2) | $182/user/yr (min 2) | Small teams needing shared file solution | 2 GB | Unlimited | Unlimited | Unlimited | 2–50 |
-| **Enterprise** | Custom | Custom | 50+ member orgs, custom requirements | 2 GB | Unlimited | Unlimited | Unlimited | 51+ unlimited |
+| **Free** | $0 | $0 | Occasional users, first-time explorers | 200 MB | 3 GB | 10 | Up to 3 days | 1 |
+| **Starter** | $8 | $77 ($6.42/mo) | Frequent individual users | 750 MB | 300 GB | 10 | Up to 3 days | 1 |
+| **Ultimate** | $23 | $221 ($18.42/mo) | Power users sending big files daily | 1.5 GB | Unlimited | Unlimited | Unlimited | 1 |
+| **Teams** | $19/user/mo (min 2) | $182/user/yr (min 2) | Small teams needing shared file solution | 1.5 GB | Unlimited | Unlimited | Unlimited | 2–50 |
+| **Enterprise** | Custom | Custom | 50+ member orgs, custom requirements | 1.5 GB | Unlimited | Unlimited | Unlimited | 51+ unlimited |
 
 ## Feature Matrix
 
@@ -138,6 +138,9 @@ On Free and Starter plans, transfers will be blocked once the monthly limit is r
 
 **What can I do with a Free plan?**
 Share and receive up to 3 GB/month across 10 transfers. Files expire after up to 3 days. Includes data encryption and basic sharing.
+
+**What file size limits apply?**
+Free: 200 MB per file. Starter: 750 MB per file. Ultimate: 1.5 GB per file.
 
 **How do I cancel?**
 Cancel anytime from your account settings. Your paid features remain active until the end of the current billing period. No refunds for partial months.

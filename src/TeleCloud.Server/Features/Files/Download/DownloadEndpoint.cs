@@ -5,7 +5,6 @@ public sealed class DownloadFileEndpoint : Endpoint<DownloadFileQuery>
     public override void Configure()
     {
         Get("/api/files/{id}/download");
-        AllowAnonymous();
         Description(b => b.WithTags("Files"));
         Summary(s =>
         {

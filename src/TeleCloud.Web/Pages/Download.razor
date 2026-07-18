@@ -5,7 +5,6 @@
 @using System.Text.Json
 @using System.Text.Json.Serialization
 
-@* Static SSR download page using RizzyUI components. *@
 @{
     var apiBase = Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155";
     var downloadUrl = $"{apiBase.TrimEnd('/')}/api/temp/{ShareId}/download";
@@ -13,58 +12,59 @@
 
 <PageTitle>Download — QuickShareCloud</PageTitle>
 
-<div class="min-h-screen flex items-center justify-center px-4 py-10">
-    <RzCard class="w-full max-w-lg">
-        <CardContent class="p-8">
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground px-6 py-24">
+    <RzCard class="w-full max-w-md shadow-sm">
+        <CardContent class="p-10">
             @switch (RenderState)
             {
                 case DownloadRenderState.Loading:
-                    <div class="text-center">
-                        <RzSpinner Size="Size.Medium" />
-                        <RzParagraph class="mt-3 text-sm text-muted-foreground">Checking link…</RzParagraph>
+                    <div class="text-center py-10">
+                        <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" />
+                        <RzParagraph class="mt-5 text-sm text-muted-foreground">Checking link&hellip;</RzParagraph>
                     </div>
                     break;
 
                 case DownloadRenderState.Ready:
                     <div>
-                        <div class="flex items-start gap-4">
-                            <RzAvatar Size="Size.Large" class="bg-primary/10 text-primary">
-                                <div class="flex h-12 w-12 items-center justify-center">
-                                    @FileIcon(Info?.ContentType)
-                                </div>
-                            </RzAvatar>
+                        <div class="flex items-start gap-5">
+                            <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                                @{
+                                    var iconMarkup = FileIcon(Info?.ContentType);
+                                }
+                                @iconMarkup
+                            </div>
                             <div class="min-w-0 flex-1">
-                                <RzHeading Level="HeadingLevel.H1" class="truncate text-lg font-semibold tracking-tight" title="@Info?.Filename">@Info?.Filename</RzHeading>
-                                <RzParagraph class="mt-1 text-sm text-muted-foreground">@FormatBytes(Info?.Size ?? 0) · @ExpiryCountdown(Info?.ExpiresAt ?? DateTime.UtcNow)</RzParagraph>
+                                <RzHeading Level="HeadingLevel.H1" class="truncate text-xl font-semibold" title="@Info?.Filename">@Info?.Filename</RzHeading>
+                                <RzParagraph class="mt-1.5 text-sm text-muted-foreground">@FormatBytes(Info?.Size ?? 0) &middot; @ExpiryCountdown(Info?.ExpiresAt ?? DateTime.UtcNow)</RzParagraph>
                             </div>
                         </div>
 
-                        <div class="mt-6">
-                            <RzLink Href="@downloadUrl" Underline="false"
-                                    class="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <div class="mt-10">
+                            <a href="@downloadUrl"
+                               class="flex w-full items-center justify-center gap-3 rounded-2xl bg-foreground px-6 py-4 text-sm font-semibold text-background shadow-sm transition hover:bg-foreground/90">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7 10 12 15 17 10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
                                 Download
-                            </RzLink>
-                            <RzParagraph class="mt-3 text-center text-xs text-muted-foreground">
-                                Your download starts in a new request. No login required.
+                            </a>
+                            <RzParagraph class="mt-4 text-center text-xs text-muted-foreground">
+                                Your download starts immediately.
                             </RzParagraph>
                         </div>
                     </div>
                     break;
 
                 case DownloadRenderState.Expired:
-                    <div class="text-center">
-                        <RzAvatar Size="Size.Large" class="mx-auto bg-muted text-muted-foreground">
-                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <div class="text-center py-10">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
-                        </RzAvatar>
-                        <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">This file has expired</RzHeading>
+                        </div>
+                        <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">This file has expired</RzHeading>
                         @if (!string.IsNullOrEmpty(Info?.Filename))
                         {
                             <RzParagraph class="mt-2 text-sm text-muted-foreground">
@@ -75,31 +75,31 @@
                                 }
                             </RzParagraph>
                         }
-                        <RzParagraph class="mt-1 text-xs text-muted-foreground">Temp shares are removed automatically after expiry.</RzParagraph>
+                        <RzParagraph class="mt-2 text-xs text-muted-foreground">Temp shares are removed automatically after expiry.</RzParagraph>
                     </div>
                     break;
 
                 case DownloadRenderState.NotFound:
-                    <div class="text-center">
-                        <RzAvatar Size="Size.Large" class="mx-auto bg-muted text-muted-foreground">
-                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <div class="text-center py-10">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
-                        </RzAvatar>
-                        <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">File not found</RzHeading>
-                        <RzParagraph class="mt-2 text-sm text-muted-foreground">This link doesn't match any share.</RzParagraph>
-                        <RzLink Href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted" Underline="false">
-                            Share a new file
+                        </div>
+                        <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">File not found</RzHeading>
+                        <RzParagraph class="mt-2 text-sm text-muted-foreground">This link doesn&rsquo;t match any share.</RzParagraph>
+                        <RzLink Href="/" Underline="false" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
+                            Send a file
                         </RzLink>
                     </div>
                     break;
 
                 case DownloadRenderState.Error:
-                    <div class="text-center">
-                        <RzHeading Level="HeadingLevel.H1" class="text-lg font-semibold tracking-tight">Something went wrong</RzHeading>
-                        <RzParagraph class="mt-2 text-sm text-muted-foreground">We couldn't reach the share service. Please try again in a moment.</RzParagraph>
-                        <RzLink Href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted" Underline="false">
+                    <div class="text-center py-10">
+                        <RzHeading Level="HeadingLevel.H1" class="text-xl font-semibold">Something went wrong</RzHeading>
+                        <RzParagraph class="mt-2 text-sm text-muted-foreground">We couldn&rsquo;t reach the share service. Please try again in a moment.</RzParagraph>
+                        <RzLink Href="/" Underline="false" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
                             Back to upload
                         </RzLink>
                     </div>
@@ -193,7 +193,7 @@
     }
 
     private static string IconPath(string d) =>
-        $"<svg class=\"h-6 w-6\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"{d}\"/></svg>";
+        $"<svg class=\"h-7 w-7\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"{d}\"/></svg>";
 
     private enum DownloadRenderState { Loading, Ready, Expired, NotFound, Error }
 

@@ -123,11 +123,16 @@ namespace TeleCloud.Server.Migrations
                     b.Property<Guid>("FileId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresAt");
 
                     b.HasIndex("FileId");
+
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("temp_shares", (string)null);
                 });
@@ -150,6 +155,10 @@ namespace TeleCloud.Server.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Plan")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -185,6 +194,32 @@ namespace TeleCloud.Server.Migrations
                     b.ToTable("user_logins", (string)null);
                 });
 
+            modelBuilder.Entity("TeleCloud.Server.Data.UserUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("TotalBytesUploaded")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("TransferCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "PeriodStart")
+                        .IsUnique();
+
+                    b.ToTable("user_usage", (string)null);
+                });
+
             modelBuilder.Entity("TeleCloud.Server.Data.FileMetadata", b =>
                 {
                     b.HasOne("TeleCloud.Server.Data.Folder", "Folder")
@@ -204,10 +239,28 @@ namespace TeleCloud.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TeleCloud.Server.Data.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("File");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("TeleCloud.Server.Data.UserLogin", b =>
+                {
+                    b.HasOne("TeleCloud.Server.Data.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeleCloud.Server.Data.UserUsage", b =>
                 {
                     b.HasOne("TeleCloud.Server.Data.User", "User")
                         .WithMany()

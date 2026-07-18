@@ -21,3 +21,6 @@ See [csharp/taste.md](csharp/taste.md)
 
 # code-scope
 - Do not reference or implement Telegram (WTelegram) functionality — the user does not want Telegram integration in this project. Confidence: 0.85
+
+# workflow
+- After editing Razor files with Tailwind classes, run the Tailwind CLI to regenerate the CSS output before claiming the build succeeded or the UI is ready. Confidence: 0.60

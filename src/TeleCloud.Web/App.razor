@@ -1,10 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="QuickShareCloud — anonymous temporary file sharing with auto-expiry." />
+    <meta name="description" content="QuickShareCloud — secure temporary file sharing with auto-expiry." />
     <title>QuickShareCloud</title>
+
+    <meta name="color-scheme" content="light" />
+
+    @* Sora — artistic geometric sans, variable weight 100–800 *@
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@100..800&display=swap" rel="stylesheet" />
+    @* Light-only theme: persist 'light' BEFORE RizzyUI's theme controller initializes
+       (it reads localStorage 'darkMode' at init; explicit 'light' disables OS dark auto-detection),
+       and strip any pre-existing dark class to prevent a dark first paint. *@
+    <script>
+        try { window.localStorage.setItem('darkMode', 'light'); } catch (e) { }
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
+    </script>
 
     @* Compiled Tailwind 4 + RizzyUI ArcticTheme CSS (built via npm run build:css). *@
     <link rel="stylesheet" href="/css/app.css" />
@@ -18,10 +33,10 @@
 </head>
 <body class="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
     <Routes />
-    @* Vendored client-side libraries (no external/CDN call at runtime).
-       Alpine.js CSP build auto-bootstraps; upload.js registers its Alpine component
-       via window.addEventListener('alpine:init', ...). *@
-    <script src="/lib/alpine/alpine.min.js" defer></script>
+    @* RizzyUI runtime: Alpine.js CSP + Collapse plugin + all component bundles (rzTabs, rzAccordion, etc.).
+       Loaded as ES module so it can import lazy chunks from /js/chunks/.
+       upload.js registers its Alpine component via window.addEventListener('alpine:init', ...). *@
+    <script type="module" src="/js/rizzyui.js"></script>
     <script src="/lib/qrcode/qrcode.min.js"></script>
     <script src="/js/upload.js"></script>
 </body>

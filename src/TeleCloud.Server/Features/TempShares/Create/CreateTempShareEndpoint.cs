@@ -13,7 +13,6 @@ public sealed class CreateTempShareEndpoint : Endpoint<CreateTempShareRequest, T
     public override void Configure()
     {
         Post("/api/temp");
-        AllowAnonymous();
         AllowFileUploads();
         Description(b => b.WithTags("TempShares"));
         Summary(s =>
@@ -65,6 +64,14 @@ public sealed class CreateTempShareEndpoint : Endpoint<CreateTempShareRequest, T
         if (result.IsSuccess(out var value))
             await HttpContext.Response.SendAsync(value, 201, cancellation: ct);
         else if (result.IsFailure(out var error))
+        {
+            if (error is ForbiddenError)
+            {
+                await HttpContext.Response.SendAsync(
+                    new { error = "forbidden", message = error.Message }, 403, cancellation: ct);
+                return;
+            }
             ThrowError(error.Message);
+        }
     }
 }
