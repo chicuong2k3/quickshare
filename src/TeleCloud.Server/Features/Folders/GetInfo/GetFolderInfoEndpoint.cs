@@ -5,7 +5,6 @@ public sealed class GetFolderInfoEndpoint : Endpoint<GetFolderInfoQuery, FolderI
     public override void Configure()
     {
         Get("/api/folders/{id}");
-        AllowAnonymous();
         Description(b => b.WithTags("Folders"));
         Summary(s =>
         {

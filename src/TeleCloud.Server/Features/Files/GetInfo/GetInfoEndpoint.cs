@@ -5,7 +5,6 @@ public sealed class GetFileInfoEndpoint : Endpoint<GetFileInfoQuery, FileInfoRes
     public override void Configure()
     {
         Get("/api/files/{id}");
-        AllowAnonymous();
         Description(b => b.WithTags("Files"));
         Summary(s =>
         {

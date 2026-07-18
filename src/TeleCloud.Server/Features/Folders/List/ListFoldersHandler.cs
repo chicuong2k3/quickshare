@@ -10,13 +10,18 @@ public record ListFoldersQuery(
 
 public sealed class ListFoldersHandler
 {
-    public async Task<Result<PagedResult<FolderInfoResponse>>> Handle(ListFoldersQuery query, TeleCloudDbContext db, CancellationToken ct)
+    public async Task<Result<PagedResult<FolderInfoResponse>>> Handle(ListFoldersQuery query, TeleCloudDbContext db, CurrentUserService currentUser, CancellationToken ct)
     {
+        var userId = await currentUser.GetUserIdAsync(ct);
+
         var sorts = SortDescriptor.Parse(query.Sort).ToList();
         if (!FolderSortExtensions.TryValidateSorts(sorts, out var error))
             return Result.Failure<PagedResult<FolderInfoResponse>>(new BadRequestError(error));
 
-        var foldersQuery = db.Folders.AsNoTracking().OrderBy(sorts);
+        var foldersQuery = db.Folders
+            .AsNoTracking()
+            .Where(f => f.OwnerId == userId)
+            .OrderBy(sorts);
 
         var result = await foldersQuery.ToPagedResultAsync(
             query.Page, query.PageSize,

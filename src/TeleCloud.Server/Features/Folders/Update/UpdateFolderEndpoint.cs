@@ -5,7 +5,6 @@ public sealed class UpdateFolderEndpoint : Endpoint<UpdateFolderCommand, FolderI
     public override void Configure()
     {
         Put("/api/folders/{id}");
-        AllowAnonymous();
         Description(b => b.WithTags("Folders"));
         Summary(s =>
         {

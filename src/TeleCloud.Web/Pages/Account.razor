@@ -1,0 +1,88 @@
+@page "/account"
+@using RizzyUI
+@using System.Security.Claims
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var user = HttpContextAccessor.HttpContext?.User;
+    var name = user?.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
+    var email = user?.FindFirstValue(ClaimTypes.Email) ?? "No email";
+    var provider = user?.FindFirstValue("provider") ?? "unknown";
+    var avatar = user?.FindFirstValue("avatar_url") ?? "";
+}
+
+<PageTitle>Account — QuickShareCloud</PageTitle>
+
+<div class="min-h-screen flex flex-col">
+    <header class="flex items-center justify-between gap-2 px-4 sm:px-6 py-5 flex-wrap">
+        <RzLink Href="/" Underline="false" class="flex items-center gap-2 text-foreground">
+            <span class="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">Q</span>
+            <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
+        </RzLink>
+        <RzNavigationMenu Label="Main">
+            <NavigationMenuList class="gap-1">
+                <NavigationMenuItem>
+                    <NavigationMenuLink Href="/">Upload</NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                    <NavigationMenuLink Href="/pricing">Pricing</NavigationMenuLink>
+                </NavigationMenuItem>
+            </NavigationMenuList>
+        </RzNavigationMenu>
+    </header>
+
+    <main class="flex flex-1 items-center justify-center px-4 pb-16">
+        <RzCard class="w-full max-w-md">
+            <CardContent class="p-6 sm:p-8">
+                <div class="flex flex-col items-center text-center">
+                    @if (!string.IsNullOrEmpty(avatar))
+                    {
+                        <RzAvatar Size="Size.Large" class="border-2 border-border">
+                            <img src="@avatar" alt="@name" class="h-14 w-14 rounded-full object-cover" />
+                        </RzAvatar>
+                    }
+                    else
+                    {
+                        <RzAvatar Size="Size.Large" class="bg-primary/10 text-primary text-xl font-bold">
+                            @name[..1].ToUpper()
+                        </RzAvatar>
+                    }
+                    <RzHeading Level="HeadingLevel.H2" class="mt-4 text-xl font-semibold tracking-tight">@name</RzHeading>
+                    <RzParagraph class="mt-1 text-sm text-muted-foreground">@email</RzParagraph>
+                    <RzBadge Variant="ThemeVariant.Default" Soft="true" class="mt-2">@provider</RzBadge>
+                </div>
+
+                <div class="mt-6 space-y-3">
+                    <RzItem Variant="ItemVariant.Outline">
+                        <ItemContent>
+                            <ItemTitle>Account created</ItemTitle>
+                        </ItemContent>
+                        <ItemActions>
+                            <span class="text-sm font-medium">Just now</span>
+                        </ItemActions>
+                    </RzItem>
+                    <RzItem Variant="ItemVariant.Outline">
+                        <ItemContent>
+                            <ItemTitle>Plan</ItemTitle>
+                        </ItemContent>
+                        <ItemActions>
+                            <span class="text-sm font-medium">Free</span>
+                        </ItemActions>
+                    </RzItem>
+                </div>
+
+                <div class="mt-8">
+                    <RzLink Href="/logout"
+                            Underline="false"
+                            class="flex w-full items-center justify-center rounded-md border border-destructive/30 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
+                        Sign out
+                    </RzLink>
+                </div>
+            </CardContent>
+        </RzCard>
+    </main>
+
+    <footer class="px-6 py-4 text-center text-xs text-muted-foreground">
+        QuickShareCloud — secure file sharing.
+    </footer>
+</div>

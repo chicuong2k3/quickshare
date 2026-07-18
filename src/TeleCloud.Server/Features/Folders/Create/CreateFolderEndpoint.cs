@@ -5,7 +5,6 @@ public sealed class CreateFolderEndpoint : Endpoint<CreateFolderCommand, FolderI
     public override void Configure()
     {
         Post("/api/folders");
-        AllowAnonymous();
         Description(b => b.WithTags("Folders"));
         Summary(s =>
         {

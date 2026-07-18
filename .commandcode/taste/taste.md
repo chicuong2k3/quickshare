@@ -18,3 +18,6 @@
 See [architecture/taste.md](architecture/taste.md)
 # csharp
 See [csharp/taste.md](csharp/taste.md)
+
+# code-scope
+- Do not reference or implement Telegram (WTelegram) functionality — the user does not want Telegram integration in this project. Confidence: 0.85

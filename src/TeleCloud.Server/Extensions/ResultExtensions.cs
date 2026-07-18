@@ -17,6 +17,7 @@ public static class ResultExtensions
                 BadRequestError bad => Results.BadRequest(new { error = bad.Message }),
                 ValidationError val => Results.UnprocessableEntity(new { error = val.Message }),
                 ConflictError conflict => Results.Conflict(new { error = conflict.Message }),
+                ForbiddenError forbidden => Results.Forbid(),
                 _ => Results.InternalServerError()
             };
         }
@@ -37,6 +38,7 @@ public static class ResultExtensions
                 BadRequestError bad => Results.BadRequest(new { error = bad.Message }),
                 ValidationError val => Results.UnprocessableEntity(new { error = val.Message }),
                 ConflictError conflict => Results.Conflict(new { error = conflict.Message }),
+                ForbiddenError forbidden => Results.Forbid(),
                 _ => Results.InternalServerError()
             };
         }

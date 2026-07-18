@@ -14,6 +14,7 @@ public record FileMetadata
     public long DocumentId { get; init; }
     public Guid FolderId { get; init; }
     public Folder? Folder { get; init; }
+    public Guid? OwnerId { get; init; }
     public string[] Tags { get; init; } = [];
     public DateTime CreatedAt { get; init; }
 }

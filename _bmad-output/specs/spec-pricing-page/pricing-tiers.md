@@ -143,4 +143,4 @@ Share and receive up to 3 GB/month across 10 transfers. Files expire after up to
 Cancel anytime from your account settings. Your paid features remain active until the end of the current billing period. No refunds for partial months.
 
 **Can I trust TeleCloud? How safe is it?**
-Files are transferred over encrypted connections and stored on Telegram's infrastructure. Password protection and two-factor authentication are available on paid plans.
+Files are transferred over encrypted connections. Password protection and two-factor authentication are available on paid plans.

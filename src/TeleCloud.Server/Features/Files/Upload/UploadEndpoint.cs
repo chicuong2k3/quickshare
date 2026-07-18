@@ -5,7 +5,6 @@ public sealed class UploadFileEndpoint : Endpoint<UploadFileRequest, FileInfoRes
     public override void Configure()
     {
         Post("/api/files");
-        AllowAnonymous();
         AllowFileUploads();
         Description(b => b.WithTags("Files"));
         Summary(s =>

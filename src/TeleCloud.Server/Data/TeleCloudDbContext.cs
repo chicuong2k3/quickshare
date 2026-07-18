@@ -7,6 +7,8 @@ public class TeleCloudDbContext : DbContext
     public DbSet<FileMetadata> Files => Set<FileMetadata>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<TempShare> TempShares => Set<TempShare>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<UserLogin> UserLogins => Set<UserLogin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -15,6 +17,7 @@ public class TeleCloudDbContext : DbContext
             entity.ToTable("folders");
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Path).IsUnique();
+            entity.HasIndex(e => e.OwnerId);
             entity.Property(e => e.Path).IsRequired();
         });
 
@@ -28,6 +31,7 @@ public class TeleCloudDbContext : DbContext
             entity.HasIndex(e => e.FolderId);
             entity.HasIndex(e => e.Filename);
             entity.HasIndex(e => e.CreatedAt).IsDescending();
+            entity.HasIndex(e => e.OwnerId);
             entity.HasOne(e => e.Folder)
                 .WithMany()
                 .HasForeignKey(e => e.FolderId)
@@ -45,6 +49,26 @@ public class TeleCloudDbContext : DbContext
             entity.HasOne(e => e.File!)
                 .WithMany()
                 .HasForeignKey(e => e.FileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("users");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired();
+        });
+
+        modelBuilder.Entity<UserLogin>(entity =>
+        {
+            entity.ToTable("user_logins");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.Provider, e.ProviderKey }).IsUnique();
+            entity.Property(e => e.Provider).IsRequired();
+            entity.Property(e => e.ProviderKey).IsRequired();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

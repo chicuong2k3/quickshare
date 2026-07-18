@@ -58,6 +58,9 @@ namespace TeleCloud.Server.Migrations
                     b.Property<int>("MessageId")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
 
@@ -74,6 +77,8 @@ namespace TeleCloud.Server.Migrations
 
                     b.HasIndex("FolderId");
 
+                    b.HasIndex("OwnerId");
+
                     b.ToTable("files", (string)null);
                 });
 
@@ -86,11 +91,16 @@ namespace TeleCloud.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("Path")
                         .IsUnique();
@@ -122,6 +132,59 @@ namespace TeleCloud.Server.Migrations
                     b.ToTable("temp_shares", (string)null);
                 });
 
+            modelBuilder.Entity("TeleCloud.Server.Data.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AvatarUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("TeleCloud.Server.Data.UserLogin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Provider", "ProviderKey")
+                        .IsUnique();
+
+                    b.ToTable("user_logins", (string)null);
+                });
+
             modelBuilder.Entity("TeleCloud.Server.Data.FileMetadata", b =>
                 {
                     b.HasOne("TeleCloud.Server.Data.Folder", "Folder")
@@ -142,6 +205,17 @@ namespace TeleCloud.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("File");
+                });
+
+            modelBuilder.Entity("TeleCloud.Server.Data.UserLogin", b =>
+                {
+                    b.HasOne("TeleCloud.Server.Data.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

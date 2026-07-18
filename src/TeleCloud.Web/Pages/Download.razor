@@ -4,7 +4,7 @@
 @using System.Net
 @using System.Text.Json
 @using System.Text.Json.Serialization
-@using RizzyUI
+
 @* Static SSR download page using RizzyUI components. *@
 @{
     var apiBase = Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155";
@@ -21,7 +21,7 @@
                 case DownloadRenderState.Loading:
                     <div class="text-center">
                         <RzSpinner Size="Size.Medium" />
-                        <p class="mt-3 text-sm text-muted-foreground">Checking link…</p>
+                        <RzParagraph class="mt-3 text-sm text-muted-foreground">Checking link…</RzParagraph>
                     </div>
                     break;
 
@@ -49,44 +49,44 @@
                                 </svg>
                                 Download
                             </RzLink>
-                            <p class="mt-3 text-center text-xs text-muted-foreground">
+                            <RzParagraph class="mt-3 text-center text-xs text-muted-foreground">
                                 Your download starts in a new request. No login required.
-                            </p>
+                            </RzParagraph>
                         </div>
                     </div>
                     break;
 
                 case DownloadRenderState.Expired:
                     <div class="text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                            <svg class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <RzAvatar Size="Size.Large" class="mx-auto bg-muted text-muted-foreground">
+                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
-                        </div>
+                        </RzAvatar>
                         <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">This file has expired</RzHeading>
                         @if (!string.IsNullOrEmpty(Info?.Filename))
                         {
-                            <p class="mt-2 text-sm text-muted-foreground">
+                            <RzParagraph class="mt-2 text-sm text-muted-foreground">
                                 <span class="font-medium text-foreground">@Info.Filename</span>
                                 @if (Info.ExpiresAt != default)
                                 {
-                                    <text> · expired @Info.ExpiresAt.ToString("d MMM yyyy, HH:mm") UTC</text>
+                                    <text> &middot; expired @Info.ExpiresAt.ToString("d MMM yyyy, HH:mm") UTC</text>
                                 }
-                            </p>
+                            </RzParagraph>
                         }
-                        <p class="mt-1 text-xs text-muted-foreground">Temp shares are removed automatically after expiry.</p>
+                        <RzParagraph class="mt-1 text-xs text-muted-foreground">Temp shares are removed automatically after expiry.</RzParagraph>
                     </div>
                     break;
 
                 case DownloadRenderState.NotFound:
                     <div class="text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                            <svg class="h-6 w-6 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <RzAvatar Size="Size.Large" class="mx-auto bg-muted text-muted-foreground">
+                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
-                        </div>
+                        </RzAvatar>
                         <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">File not found</RzHeading>
                         <RzParagraph class="mt-2 text-sm text-muted-foreground">This link doesn't match any share.</RzParagraph>
                         <RzLink Href="/" class="mt-6 inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted" Underline="false">

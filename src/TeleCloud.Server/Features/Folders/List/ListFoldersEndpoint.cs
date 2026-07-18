@@ -5,7 +5,6 @@ public sealed class ListFoldersEndpoint : Endpoint<ListFoldersQuery, PagedResult
     public override void Configure()
     {
         Get("/api/folders");
-        AllowAnonymous();
         Description(b => b.WithTags("Folders"));
         Summary(s =>
         {

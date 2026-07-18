@@ -5,7 +5,6 @@ public sealed class DeleteFolderEndpoint : Endpoint<DeleteFolderCommand>
     public override void Configure()
     {
         Delete("/api/folders/{id}");
-        AllowAnonymous();
         Description(b => b.WithTags("Folders"));
         Summary(s =>
         {
@@ -24,6 +23,13 @@ public sealed class DeleteFolderEndpoint : Endpoint<DeleteFolderCommand>
         if (result.IsSuccess())
             await Send.NoContentAsync(ct);
         else if (result.IsFailure(out var error))
-            ThrowError(error.Message);
+        {
+            if (error is NotFoundError)
+                await Send.NotFoundAsync(ct);
+            else if (error is ForbiddenError)
+                await Send.ForbiddenAsync(ct);
+            else
+                ThrowError(error.Message);
+        }
     }
 }

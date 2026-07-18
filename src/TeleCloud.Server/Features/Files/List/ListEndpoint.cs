@@ -5,7 +5,6 @@ public sealed class ListFilesEndpoint : Endpoint<ListFilesQuery, PagedResult<Fil
     public override void Configure()
     {
         Get("/api/files");
-        AllowAnonymous();
         Description(b => b.WithTags("Files"));
         Summary(s =>
         {

@@ -12,13 +12,18 @@ public record ListFilesQuery(
 
 public sealed class ListFilesHandler
 {
-    public async Task<Result<PagedResult<FileInfoResponse>>> Handle(ListFilesQuery query, TeleCloudDbContext db, CancellationToken ct)
+    public async Task<Result<PagedResult<FileInfoResponse>>> Handle(ListFilesQuery query, TeleCloudDbContext db, CurrentUserService currentUser, CancellationToken ct)
     {
+        var userId = await currentUser.GetUserIdAsync(ct);
+
         var sorts = SortDescriptor.Parse(query.Sort).ToList();
         if (!FileMetadataSortExtensions.TryValidateSorts(sorts, out var error))
             return Result.Failure<PagedResult<FileInfoResponse>>(new BadRequestError(error));
 
-        IQueryable<FileMetadata> filesQuery = db.Files.Include(f => f.Folder).AsNoTracking();
+        IQueryable<FileMetadata> filesQuery = db.Files
+            .Include(f => f.Folder)
+            .AsNoTracking()
+            .Where(f => f.OwnerId == userId);
 
         if (query.FolderId.HasValue)
             filesQuery = filesQuery.Where(f => f.FolderId == query.FolderId.Value);

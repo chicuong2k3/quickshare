@@ -26,4 +26,4 @@
 
 9. **Use primary constructors** — `UploadFileHandler(Client client, StorageChannel channel)` over explicit constructor + `private readonly` fields.
 
-10. **Check GlobalUsings.cs before adding using directives** — Do not add redundant usings already covered by global imports (`TeleCloud.Server.Data`, `TeleCloud.Server.Services`, `Wolverine`, `Wolverine.Http`, `Microsoft.EntityFrameworkCore`, `WTelegram`).
+10. **Check GlobalUsings.cs before adding using directives** — Do not add redundant usings already covered by global imports (`TeleCloud.Server.Data`, `TeleCloud.Server.Services`, `Wolverine`, `Wolverine.Http`, `Microsoft.EntityFrameworkCore`).

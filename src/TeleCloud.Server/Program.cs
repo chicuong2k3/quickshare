@@ -1,9 +1,18 @@
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.DataProtection;
 using FastEndpoints.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection missing");
+
+// Shared DataProtection keyring with Web (both use same ApplicationName + KeyPath).
+var dpPath = builder.Configuration["DataProtection:KeyPath"]
+    ?? Path.Combine(Path.GetTempPath(), "TeleCloud", "keys");
+Directory.CreateDirectory(dpPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dpPath))
+    .SetApplicationName("TeleCloud");
 
 builder.Services.AddDbContext<TeleCloudDbContext>(opts =>
     opts.UseNpgsql(connectionString));
@@ -64,6 +73,8 @@ builder.Host.UseWolverine(opts =>
 builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddApiCookieAuth();
+builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -74,10 +85,19 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<TeleCloudDbContext>();
     if (db.Database.GetPendingMigrations().Any())
         await db.Database.MigrateAsync();
+
+    if (!await db.Folders.AnyAsync(f => f.Path == "/"))
+    {
+        db.Folders.Add(new Folder { Id = Guid.CreateVersion7(), Path = "/", CreatedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+    }
 }
 
 app.UseExceptionHandler();
 app.UseCors();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseFastEndpoints()
    .UseSwaggerGen();

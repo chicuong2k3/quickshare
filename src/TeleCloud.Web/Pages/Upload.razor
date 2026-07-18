@@ -1,9 +1,13 @@
 @page "/"
 @inject IConfiguration Config
-@using RizzyUI
+@inject IHttpContextAccessor HttpContextAccessor
+
+@using System.Security.Claims
 @* Upload page — Blazor Static SSR + RizzyUI components. Alpine.js + upload.js drive client-side state. *@
 @{
     var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
 }
 
 <PageTitle>QuickShareCloud — share a file in seconds</PageTitle>
@@ -13,18 +17,41 @@
         window.QUICKSHARE_CONFIG = { apiBaseUrl: "@apiBase" };
     </script>
 
-    <header class="flex items-center justify-between px-6 py-5">
-        <RzLink Href="/" Underline="false" class="flex items-center gap-2 text-foreground">
-            <span class="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">Q</span>
-            <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
-        </RzLink>
-        <nav class="flex items-center gap-4 text-sm">
-            <RzLink Href="/">Upload</RzLink>
-            <RzLink Href="/pricing">Pricing</RzLink>
-        </nav>
+    <header class="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 py-3.5 flex-wrap">
+            <RzLink Href="/" Underline="false" class="flex items-center gap-2.5 text-foreground">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">Q</span>
+                <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
+            </RzLink>
+            <RzNavigationMenu Label="Main" class="justify-end">
+                <NavigationMenuList class="gap-1">
+                    <NavigationMenuItem>
+                        <NavigationMenuLink Href="/">Upload</NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuLink Href="/pricing">Pricing</NavigationMenuLink>
+                    </NavigationMenuItem>
+                    @if (isAuthenticated)
+                    {
+                        <NavigationMenuItem>
+                            <NavigationMenuLink Href="/account">@userName</NavigationMenuLink>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink Href="/logout">Logout</NavigationMenuLink>
+                        </NavigationMenuItem>
+                    }
+                    else
+                    {
+                        <NavigationMenuItem>
+                            <NavigationMenuLink Href="/login">Login</NavigationMenuLink>
+                        </NavigationMenuItem>
+                    }
+                </NavigationMenuList>
+            </RzNavigationMenu>
+        </div>
     </header>
 
-    <main class="flex flex-1 items-center justify-center px-4 pb-16">
+    <main class="flex flex-1 items-center justify-center px-4 pb-8">
         <div class="w-full max-w-xl">
 
             <RzFileInput Name="file" Variant="FileInputVariant.Button" class="sr-only" AriaLabel="Choose a file to upload" />
@@ -38,16 +65,18 @@
                      x-on:dragleave.prevent="onDragLeave($event)"
                      x-on:drop.prevent="onDrop($event)">
 
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <RzAvatar Size="Size.Large" class="mx-auto bg-primary/10 text-primary">
                     <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                </div>
+                </RzAvatar>
 
                 <RzHeading Level="HeadingLevel.H1" class="mt-5 text-xl font-semibold tracking-tight">
-                    <span x-show="isIdle">Drag &amp; drop a file here</span>
+                    <span x-show="isIdle">
+                        <RzAuroraText Decorative="true" Speed="0.8">Drag &amp; drop</RzAuroraText> a file here
+                    </span>
                     <span x-show="isDragging">Drop to upload</span>
                 </RzHeading>
                 <RzParagraph class="mt-1 text-sm text-muted-foreground">
@@ -63,34 +92,33 @@
                 <div class="mt-8 flex items-center justify-center gap-3 text-sm" role="radiogroup" aria-label="Expiry duration">
                     <span class="text-muted-foreground">Expires in:</span>
                     <div class="inline-flex rounded-md border border-border p-0.5 bg-muted/40">
-                        <RzButton Variant="ThemeVariant.Default"
-                                  role="radio" aria-checked="true"
-                                  x-bind:aria-checked="(expiry === '24h').toString()"
-                                  x-bind:class="expiry === '24h' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                                  class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                  x-on:click="selectExpiry('24h')">24 hours</RzButton>
-                        <RzButton Variant="ThemeVariant.Default"
-                                  role="radio"
-                                  x-bind:aria-checked="(expiry === '7d').toString()"
-                                  x-bind:class="expiry === '7d' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                                  class="rounded px-3 py-1 text-xs font-medium transition-colors"
-                                  x-on:click="selectExpiry('7d')">7 days</RzButton>
+                        <button type="button"
+                                role="radio" aria-checked="true"
+                                x-bind:aria-checked="(expiry === '24h').toString()"
+                                x-bind:class="expiry === '24h' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                                x-on:click="selectExpiry('24h')">24 hours</button>
+                        <button type="button"
+                                role="radio"
+                                x-bind:aria-checked="(expiry === '7d').toString()"
+                                x-bind:class="expiry === '7d' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                                class="rounded px-3 py-1 text-xs font-medium transition-colors"
+                                x-on:click="selectExpiry('7d')">7 days</button>
                     </div>
                 </div>
 
-                <p class="mt-4 text-xs text-muted-foreground">Max 2 GB · anonymous · no login required</p>
+                <RzParagraph class="mt-4 text-xs text-muted-foreground">Max 2 GB &middot; anonymous &middot; no login required</RzParagraph>
 
-                <div x-show="pasteTip" x-transition
-                     class="mt-4 inline-block rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
-                    No image in clipboard.
-                </div>
+                <RzAlert Variant="ThemeVariant.Information" x-show="pasteTip" x-transition class="mt-4">
+                    <AlertDescription>No image in clipboard.</AlertDescription>
+                </RzAlert>
             </section>
 
             @* ===== UPLOADING ===== *@
             <section x-show="isUploading" class="rounded-2xl border border-border bg-card p-8 sm:p-10">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploading</p>
+                        <RzParagraph class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploading</RzParagraph>
                         <RzHeading Level="HeadingLevel.H1" class="mt-1 truncate text-lg font-semibold" x-text="filename" />
                     </div>
                     <RzButton Variant="ThemeVariant.Default"
@@ -117,13 +145,15 @@
             </section>
 
             @* ===== SUCCESS ===== *@
-            <section x-show="isSuccess" class="rounded-2xl border border-border bg-card p-8 sm:p-10">
+            <section x-show="isSuccess" class="relative overflow-hidden rounded-2xl border border-border bg-card p-8 sm:p-10">
+                <RzShineBorder BorderWidth="1" Duration="10" ShineColors='@(new[] { "#5E6AD2", "#8B93F8" })' />
+
                 <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <RzAvatar Size="Size.Medium" class="bg-primary/10 text-primary">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <polyline points="20 6 9 17 4 12" />
                         </svg>
-                    </div>
+                    </RzAvatar>
                     <div>
                         <RzHeading Level="HeadingLevel.H1" class="text-lg font-semibold tracking-tight">Upload ready</RzHeading>
                         <p class="text-sm text-muted-foreground" x-text="filename"></p>
@@ -133,21 +163,19 @@
                 <div class="mt-6">
                     <label for="share-link" class="flex items-center justify-between text-xs font-medium text-muted-foreground">
                         <span>Share link</span>
-                        <span x-show="copied" class="inline-flex items-center gap-1 text-primary">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            Copied to clipboard
-                        </span>
                     </label>
                     <div class="mt-1.5 flex flex-col gap-2 sm:flex-row">
+                        <!-- exception: native input required for Alpine x-model binding, no RzInput equivalent -->
                         <input id="share-link" type="text" readonly
                                x-model="link"
                                class="w-full flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                aria-label="Share link" />
-                        <RzButton Variant="ThemeVariant.Primary" x-on:click="copyLink()">
-                            Copy link
-                        </RzButton>
+                        <RzClipboard TargetSelector="#share-link" AriaLabel="Copy share link" AsChild>
+                            <RzButton Variant="ThemeVariant.Primary">
+                                <ClipboardTrigger>Copy link</ClipboardTrigger>
+                                <ClipboardFeedback>Copied!</ClipboardFeedback>
+                            </RzButton>
+                        </RzClipboard>
                     </div>
                     <p class="mt-2 text-xs text-muted-foreground" x-text="expiryLabel"></p>
                 </div>
@@ -169,13 +197,13 @@
 
             @* ===== ERROR ===== *@
             <section x-show="isError" class="rounded-2xl border border-border bg-card p-8 text-center sm:p-10">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <RzAvatar Size="Size.Large" class="mx-auto bg-destructive/10 text-destructive">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
-                </div>
+                </RzAvatar>
                 <RzHeading Level="HeadingLevel.H1" class="mt-4 text-lg font-semibold tracking-tight">Upload failed</RzHeading>
                 <RzParagraph class="mt-2 text-sm text-muted-foreground" x-text="error || 'An unknown error occurred.'" />
                 <RzButton Variant="ThemeVariant.Primary" class="mt-6" x-on:click="reset()">
@@ -186,7 +214,4 @@
         </div>
     </main>
 
-    <footer class="px-6 py-4 text-center text-xs text-muted-foreground">
-        Anonymous temporary file sharing — files auto-expire.
-    </footer>
 </div>

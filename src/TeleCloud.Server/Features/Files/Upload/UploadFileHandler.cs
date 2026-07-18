@@ -13,8 +13,10 @@ public record UploadFileCommand(
 
 public sealed class UploadFileHandler(TelegramService telegram)
 {
-    public async Task<Result<FileInfoResponse>> Handle(UploadFileCommand command, TeleCloudDbContext db, CancellationToken ct)
+    public async Task<Result<FileInfoResponse>> Handle(UploadFileCommand command, TeleCloudDbContext db, CurrentUserService currentUser, CancellationToken ct)
     {
+        var userId = await currentUser.GetUserIdAsync(ct);
+
         var folder = await db.Folders.AsNoTracking().FirstOrDefaultAsync(f => f.Id == command.FolderId, ct);
         if (folder is null)
             return Result.Failure<FileInfoResponse>(new NotFoundError("Folder", command.FolderId));
@@ -43,6 +45,7 @@ public sealed class UploadFileHandler(TelegramService telegram)
             FileReference = doc.file_reference ?? [],
             DocumentId = doc.ID,
             FolderId = command.FolderId,
+            OwnerId = userId,
             Tags = [],
             CreatedAt = DateTime.UtcNow
         };

@@ -24,3 +24,8 @@ public sealed class ConflictError : Error
 {
     public ConflictError(string message) : base(message) { }
 }
+
+public sealed class ForbiddenError : Error
+{
+    public ForbiddenError(string message) : base(message) { }
+}

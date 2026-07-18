@@ -5,7 +5,6 @@ public sealed class DeleteFileEndpoint : Endpoint<DeleteFileCommand>
     public override void Configure()
     {
         Delete("/api/files/{id}");
-        AllowAnonymous();
         Description(b => b.WithTags("Files"));
         Summary(s =>
         {
@@ -23,6 +22,13 @@ public sealed class DeleteFileEndpoint : Endpoint<DeleteFileCommand>
         if (result.IsSuccess())
             await Send.NoContentAsync(ct);
         else if (result.IsFailure(out var error))
-            await Send.NotFoundAsync(ct);
+        {
+            if (error is NotFoundError)
+                await Send.NotFoundAsync(ct);
+            else if (error is ForbiddenError)
+                await Send.ForbiddenAsync(ct);
+            else
+                ThrowError(error.Message);
+        }
     }
 }
