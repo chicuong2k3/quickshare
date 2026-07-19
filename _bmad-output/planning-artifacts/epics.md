@@ -1,370 +1,698 @@
 ---
-stepsCompleted: [1, 2, 3]
+stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
-  - _bmad-output/specs/spec-enforce-login/SPEC.md
-  - _bmad-output/architecture/architecture-TeleCloud-2026-07-18/ARCHITECTURE-SPINE.md
+  - "_bmad-output/planning-artifacts/prds/prd-TeleCloud-2026-07-19/prd.md"
+  - "_bmad-output/architecture/architecture-TeleCloud-owned-storage-2026-07-19/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/planning-artifacts/ux-designs/ux-TeleCloud-2026-07-19/DESIGN.md"
+  - "_bmad-output/planning-artifacts/ux-designs/ux-TeleCloud-2026-07-19/EXPERIENCE.md"
 ---
 
-# TeleCloud — Epic Breakdown
+# ZapDrop - Epic Breakdown
 
 ## Overview
 
-This document provides the complete epic and story breakdown for TeleCloud, decomposing the requirements from the Spec (SPEC-enforce-login) and Architecture Spine into implementable stories. The work is organized into three epics: (1) Auth Gate — enforce login on protected pages and endpoints, (2) Upload Attribution — link each temp share to its owner, and (3) Rate Limits — per-user plan-based upload quotas.
+This document provides the complete epic and story breakdown for ZapDrop (formerly TeleCloud), decomposing the requirements from the PRD, UX design contract, and Architecture spine into implementable stories.
 
 ## Requirements Inventory
 
 ### Functional Requirements
 
-| ID | Description | Source |
-|---|---|---|
-| FR-1 | Unauthenticated visitors to protected pages redirect to `/login?returnUrl=...` | CAP-1 |
-| FR-2 | Upload page and create-temp-share API require authentication | CAP-2 |
-| FR-3 | Download links (`/t/{ShareId}`) and their API endpoints remain public | CAP-3 |
-| FR-4 | Each temp share record stores the uploading user's ID (`OwnerId`) | CAP-4 |
-| FR-5 | FastEndpoints API enforces auth via `RequireAuthorization()` / `[Authorize]`, not UI hiding alone | CAP-5 |
-| FR-6 | Monthly upload volume (GB) and transfer count tracked per user, enforced at upload time against plan tier | CAP-6 |
-| FR-7 | Marketing pages (`/pricing`, etc.) remain accessible without authentication | CAP-7 |
+FR-1: Split-and-store any-size file — chunk large files into ordered chunks, store on owned disk storage with SHA-256 verification
+FR-2: Parallel upload with chunk-level resume — concurrent chunk upload, survive connection loss without restart
+FR-3: Download reassembly with integrity — per-chunk + whole-file SHA-256 verification, corrupt chunk re-fetch
+FR-4: Encrypt-before-upload with key in fragment — AES-256-GCM, key in URL fragment (#), never transmitted to server
+FR-5: Independent per-chunk AEAD — unique nonce per chunk, AAD binds manifest_id + chunk_index, anti-swap/reorder
+FR-6: Verifiable zero-knowledge — user can verify ciphertext-only network traffic via browser DevTools inspection
+FR-7: Recipient-never-authenticates — download without account, login, or app install
+FR-8: Sender accounts with plans — Google OAuth sign-in, Free/Pro/Studio plan tiers
+FR-9: Server-enforced quota — per-plan limits (file size, monthly volume, expiry, concurrency) enforced server-side
+FR-10: Link expiry — sender sets expiration, expired deliveries return 410, storage reclaimed on expiry
+FR-11: Download-count cap — max downloads per link, Plan-bound (Free: 5, Pro: 50, Studio: configurable)
+FR-12: Paid delivery via Ko-fi — sender sets price, recipient pays via Ko-fi before download unlocks
+FR-13: Egress passthrough (Studio tier, post-MVP) — overage billed per-GB beyond monthly allowance
+FR-14: Password protection — server-side access gate, withholds Manifest until password verified
+FR-15: Branded delivery page — sender logo, message, background on recipient page (Pro/Studio only)
+FR-16: Download tracking — count + last-download timestamp visible to sender on dashboard
+FR-17: File management — list/search/sort/paginate deliveries, flat folder hierarchy, delete with cascade
+FR-18: Rate & volume guardrails — server-enforced rate limits, per-plan monthly volume ceilings
+FR-19: Report → takedown — anyone can report a delivery link, immediate server-side chunk+manifest deletion
+FR-20: Plan-scoped ad placement — interstitial ads only on Free-sender recipient pages; Pro/Studio always clean
+FR-21: Clean trial allowance — 3-5 ad-free deliveries for new accounts before ad gate activates
+FR-22: Anti-adblock recovery — soft-wall (ask + retry), never hard-block file downloads
 
-### Non-Functional Requirements
+### NonFunctional Requirements
 
-| ID | Description |
-|---|---|
-| NFR-1 | Reuse existing `.AspNetCore.TeleCloud` cookie auth + Google OAuth middleware — do not replace the auth stack |
-| NFR-2 | Download links must remain public — recipients never need accounts |
-| NFR-3 | Reuse existing PostgreSQL `Users` / `UserLogins` tables — no new data stores or infrastructure |
-| NFR-4 | Rate limit tiers: Free = 3 GB/month, 10 transfers; Starter = 300 GB/month, 10 transfers; Ultimate = unlimited |
-| NFR-5 | Update copy on Upload.razor (remove "anonymous · no login required") and Download.razor (remove "No login required") |
-| NFR-6 | Legacy temp shares with `OwnerId = null` are left as-is — rate limits don't apply retroactively |
+NFR-1: Vietnamese network throughput — chunk-size × concurrency defaults benchmarked against VN ISP conditions
+NFR-2: Tier matrix configurability — all plan limits (sizes, caps, expiry ceilings) in configuration, not hardcoded
+NFR-3: Ad-content standards — curated network allowlist + category blocks, gambling-OK but not egregious
+NFR-4: Storage cost control — expiry + download-cap ensure storage/egress cost stays below revenue
+NFR-5: Desktop-first responsive — 3 breakpoints (mobile < 640px, tablet 640-1024px, desktop > 1024px)
+NFR-6: Accessibility — keyboard navigation, focus indicators, aria-live regions, prefers-reduced-motion respect
+NFR-7: Light mode only — no dark mode support required; color tokens single-theme
 
-### Additional Requirements
+### Additional Requirements (from Architecture)
 
-| ID | Description | Source |
-|---|---|---|
-| AR-1 | Add auth middleware to TeleCloud.Web `Program.cs` with public allowlist: `/login`, `/pricing`, `/t/{id}`, `/antiforgery`, `/logout`, static assets | AD-2 |
-| AR-2 | Remove `AllowAnonymous()` from `CreateTempShareEndpoint` and `DownloadFileEndpoint` | AD-1 |
-| AR-3 | Add `Guid? OwnerId` to `TempShare` entity + EF migration | AD-3 |
-| AR-4 | Inject `CurrentUserService` in `CreateTempShareHandler` and populate `OwnerId` | AD-3 |
-| AR-5 | Add `string Plan` (default `"free"`) to `User` entity + EF migration | AD-5 |
-| AR-6 | Create `UserUsage` entity (`UserId`, `PeriodStart`, `TotalBytesUploaded`, `TransferCount`) + EF migration + `DbSet` | AD-4 |
-| AR-7 | Create static `PlanTierLimits` class with `GetLimits(plan)` returning `(long? maxBytes, int? maxTransfers)` — null = unlimited | AD-4 |
-| AR-8 | Wire rate limit check in `CreateTempShareHandler`: lookup/upsert `UserUsage`, check limits against file size + transfer count, return 403/429 if exceeded, atomically increment on success | AD-4 |
+AR-1: IStorageProvider interface — LocalDisk primary, BackblazeB2 cold overflow; DI-registered singleton, config-switched
+AR-2: Three-phase chunked upload — POST /api/uploads/start → chunk uploads (parallel, idempotent) → POST commit (atomic)
+AR-3: UploadSession entity — 24h TTL, background daily cleanup job (Hangfire or HostedService)
+AR-4: Idempotent chunk operations — skip-if-exists by uploadId + chunkIndex, safe client retry
+AR-5: Wolverine transaction model — individual transactions per chunk, atomic commit for Delivery + Manifest + chunk linking
+AR-6: Entity model — Delivery → Manifest → Chunks cascade; UploadSession → Chunks (in-progress); DownloadTracking (IP-based)
+AR-7: Manifest as encrypted bytea in PostgreSQL — co-located with Delivery metadata, ACID queries
+AR-8: Clean-break migration — new Delivery/Manifest/Chunk entities via EF Core; legacy File/TempShare deprecated
+AR-9: API endpoints — /api/uploads/* (chunked ops), /api/deliveries/* (CRUD), /d/{shareId} (public, no-auth)
+AR-10: IP-based download tracking + rate limiting — no recipient auth, IP logs for abuse detection
+AR-11: Ko-fi webhook payment verification — signature-validated, atomic Delivery unlock on confirmed payment
+AR-12: LightResults Result<T> error handling — structured errors, validation failures return 400/403/413, system errors 500
+AR-13: Configuration-driven storage provider — TeleCloudOptions.StorageProvider, restart to switch
+AR-14: Background cleanup job — daily sweep of expired UploadSessions + orphaned chunks, batch-transactional
+AR-15: Client-side encryption (WASM/JS WebCrypto) — AES-256-GCM, per-chunk AEAD, key never leaves browser
+AR-16: Atomic download counter — increment per successful download, cap enforcement at API level, 410 when reached
+AR-17: Egress byte tracking — Delivery.EgressBytes + User.EgressAllowance, allowance check before chunk serving
+AR-18: Ad injection at page template level — User.PlanId lookup via Delivery.SenderId, invariant at template not handler
+AR-19: Access control — public /d/{shareId} no-auth, password as independent server-side gate, two-factor access
+AR-20: Zero-knowledge verification — in-app network inspector + DevTools guide, inspectable WASM/JS crypto
+AR-21: Anti-adblock soft-wall — "please allow ads" message + retry, never hard-block, ad-recovery via subdomain optional
 
 ### UX Design Requirements
 
-None — this feature does not introduce new UI surfaces. The only UX change is copy edits on existing pages (FR-5 / NFR-5).
+UX-DR1: Upload Drop Zone — drag-drop + click-to-browse, hover/active visual states, dashed border → solid accent on drag
+UX-DR2: Upload Progress — animated bar + speed/ETA/percentage text, "Encrypting..." label, completion → link card transition
+UX-DR3: Share Link Card — file icon + name + size, read-only monospace link field + copy button, expiry label
+UX-DR4: Delivery Grid Card (Dashboard) — thumbnail area + file name + status badge + download count + days remaining + action icons (copy/extend/delete)
+UX-DR5: Download Page (recipient) — branded sender area (Pro/Studio), file card, download button, encryption badge, report link
+UX-DR6: Bottom Tab Bar (Mobile) — Upload / Deliveries / Account tabs, 56px height, fixed bottom, accent active indicator
+UX-DR7: Status Badges — pill shape (radius-full), green (active) / amber (<24h) / gray (expired), xs text
+UX-DR8: Notification Toast — success/error/info variants, slide-in animation, auto-dismiss (4s success, persistent error), max 3 queue
+UX-DR9: Design token system — Inter + JetBrains Mono fonts, brand colors (navy #1A1A2E + accent #4F6CF7), semantic palette, spacing scale (4px–64px), shadows (sm→xl), border radius (sm→xl)
+UX-DR10: Empty states — dashboard "No deliveries yet" + upload CTA illustration, download expired "Request re-send" page
+UX-DR11: Loading states — skeleton cards (shimmer) for dashboard, spinner for download page, animated bar for upload
+UX-DR12: Error states — upload failed (retry), network lost (auto-retry 30s → pause), expired link (410 page), invalid code (404), server error (500 toast), download interrupted (resume from last chunk)
+UX-DR13: Ad interstitial (Free tier) — 3-5s countdown overlay with ad, ad panel below file card post-countdown, same-link revisit skips countdown
+UX-DR14: Payment UI (VietQR) — QR code display, "Waiting for payment..." with timer, auto-advance on webhook, retry on timeout
+UX-DR15: Report form — "Report this delivery" link → reason dropdown + optional message → submit confirmation → immediate takedown
+UX-DR16: Password gate — single password field before file card, server-side validation, wrong → 401 re-entry
+UX-DR17: Responsive layout — desktop (1200px max), tablet, mobile breakpoints; desktop grid/tablet 2-col/mobile 1-col dashboard
+UX-DR18: Accessibility — keyboard-navigable (Tab/Enter/Escape), focus rings (--border-focus), aria-labels on icon buttons, aria-live for toasts, prefers-reduced-motion disables animations
+UX-DR19: Microcopy — human/direct/honest tone, Vietnamese + English, no AI hype words, brief actionable text
+UX-DR20: Branded delivery customization — sender logo upload (max 180px), personal message field, accent color picker (Pro/Studio)
+UX-DR21: Download-count display — "X of Y downloads remaining" below download button, cap-reached → disabled button + "Download limit reached" message
+UX-DR22: Trust verification — progressive disclosure 🔒 badge → expandable panel with plain-language explanation + content hash + DevTools snippet
 
 ### FR Coverage Map
 
-| Story | FR-1 | FR-2 | FR-3 | FR-4 | FR-5 | FR-6 | FR-7 |
-|---|---|---|---|---|---|---|---|
-| 1.1 — Auth Web Middleware | ✓ | ✓ | ✓ | | | | ✓ |
-| 1.2 — Endpoint Hardening | | ✓ | | | ✓ | | |
-| 1.3 — Copy Updates | | ✓ | | | | | |
-| 2.1 — TempShare.OwnerId | | | | ✓ | | | |
-| 2.2 — Wire Attribution | | | | ✓ | | | |
-| 3.1 — User.Plan Field | | | | | | ✓ | |
-| 3.2 — UserUsage Entity | | | | | | ✓ | |
-| 3.3 — PlanTierLimits | | | | | | ✓ | |
-| 3.4 — Enforce Rate Limits | | | | | | ✓ | |
+FR-1: Epic 1 — Chunked file upload to owned storage
+FR-2: Epic 1 — Parallel upload with chunk-level resume
+FR-3: Epic 1 — Download reassembly with SHA-256 integrity
+FR-4: Epic 1 — AES-256-GCM encrypt-before-upload, key in fragment
+FR-5: Epic 1 — Independent per-chunk AEAD with AAD binding
+FR-6: Epic 2 — Verifiable zero-knowledge (trust panel + DevTools)
+FR-7: Epic 1 — Recipient-never-authenticates download endpoint
+FR-8: Epic 1 — Google OAuth sender accounts with plans
+FR-9: Epic 1 — Server-enforced quota per plan
+FR-10: Epic 1 — Link expiry with 410 response + storage reclaim
+FR-11: Epic 1 — Download-count cap per link, Plan-bound
+FR-12: Epic 2 — Paid delivery via Ko-fi webhook
+FR-13: Post-MVP — Egress passthrough (excluded)
+FR-14: Epic 2 — Password protection (server-side gate)
+FR-15: Epic 2 — Branded delivery page (logo, message, color)
+FR-16: Epic 2 — Download tracking (count + timestamp)
+FR-17: Epic 1 — File management CRUD (list/search/folders/delete)
+FR-18: Epic 3 — Rate & volume guardrails
+FR-19: Epic 3 — Report → takedown
+FR-20: Epic 3 — Plan-scoped ad placement (Free-sender only)
+FR-21: Epic 3 — Clean trial allowance (3-5 ad-free deliveries)
+FR-22: Epic 3 — Anti-adblock soft-wall (never hard-block)
 
 ## Epic List
 
-| Epic | Title | Stories |
-|---|---|---|
-| 1 | Auth Gate — Enforce Login on Protected Pages | 3 |
-| 2 | Upload Attribution — Link Temp Shares to Their Owner | 2 |
-| 3 | Plan Tiers & Rate Limits | 4 |
+### Epic 1: Core Delivery Pipeline
+Sender uploads any-size file (chunked + E2E encrypted), gets a share link, recipient downloads with integrity verification. The fundamental "send → store → share → download" engine, with accounts and quota enforced. File management included so senders can organize their deliveries from day one.
+
+**FRs covered:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-7, FR-8, FR-9, FR-10, FR-11, FR-17
+
+### Epic 2: Professional Delivery Experience
+Sender brands the delivery page, protects with password, charges via Ko-fi, sees download tracking. Recipients can verify encryption (trust panel). The professional handoff layer — what makes ZapDrop a studio tool, not just a file pipe.
+
+**FRs covered:** FR-6, FR-12, FR-14, FR-15, FR-16
+
+### Epic 3: Platform Sustainability & Safety
+Free tier is ad-funded without poisoning paid users' experience. Abuse is reportable and auto-takedown. Rate guardrails and anti-adblock keep the platform solvent and safe. The operational layer — what keeps the lights on.
+
+**FRs covered:** FR-18, FR-19, FR-20, FR-21, FR-22
 
 ---
 
-## Epic 1: Auth Gate — Enforce Login on Protected Pages
+## Epic 1: Core Delivery Pipeline
 
-**Goal:** Any page or route that is not explicitly public redirects unauthenticated visitors to `/login`. Upload and API endpoints require authentication. Download links remain public. Copy no longer advertises "no login required."
+### Story 1.1: Storage Backend Foundation
 
-This epic binds CAP-1, CAP-2, CAP-5, CAP-7 via AD-1, AD-2, AD-6, AD-7.
-
-### Story 1.1: Add Auth Middleware to TeleCloud.Web
-
-As a **visitor**,
-I want **to be redirected to `/login` when I visit a page that requires authentication**,
-So that **I cannot access protected features without logging in**.
+As a developer,
+I want the storage provider abstraction and core entity model in place,
+So that all upload/download operations have a consistent backend.
 
 **Acceptance Criteria:**
 
-**Given** I am not authenticated
-**When** I visit `/` (Upload page)
-**Then** I am redirected to `/login?returnUrl=/`
+**Given** the app is configured with `StorageProvider: "LocalDisk"`
+**When** DI resolves `IStorageProvider`
+**Then** `LocalDiskStorageProvider` singleton returned with configured path
 
-**Given** I am not authenticated
-**When** I visit `/account`
-**Then** I receive a 302 redirect to `/login?returnUrl=/account`
+**Given** EF Core migration applied
+**When** querying schema
+**Then** tables: `Deliveries`, `Manifests` (bytea), `Chunks`, `UploadSessions`, `DownloadTracking`; Delivery 1→1 Manifest, 1→N Chunks cascade
 
-**Given** I am not authenticated
-**When** I visit `/pricing`
-**Then** the page renders normally — I am not redirected
+**Given** legacy `Files`/`TempShares` exist
+**When** migration runs
+**Then** new tables for new entities; legacy tables preserved but deprecated
 
-**Given** I am not authenticated
-**When** I visit `/t/{someShareId}`
-**Then** the page renders normally — I am not redirected
+**Given** `StoreChunkAsync` called
+**When** valid chunk provided
+**Then** chunk persists to disk, returns storage reference
 
-**Given** I am not authenticated
-**When** I visit `/login`
-**Then** the page renders normally
+**Given** `DeleteChunksAsync` called
+**When** array of chunk IDs provided
+**Then** all specified chunks removed from disk
 
-**Technical Notes:**
-- Add middleware in `TeleCloud.Web/Program.cs` before `UseAntiforgery` / `MapRazorComponents`
-- Allowlist: `/login`, `/pricing`, `/t/`, `/antiforgery`, `/logout`, `/css/`, `/js/`, `/lib/`
-- Use path-based matching (prefix match for `/t/`, `/css/`, etc.)
-- Redirect to `/login?returnUrl={originalPath}`
-- Existing cookie auth config (`LoginPath = "/login"`) is already correct — no changes needed per AD-7
+### Story 1.2: Chunked Upload API
 
-### Story 1.2: Harden FastEndpoints Endpoints
-
-As an **API consumer**,
-I want **endpoints that create shares or download files to reject unauthenticated requests**,
-So that **anonymous users cannot upload or access protected resources**.
+As a sender,
+I want to upload large files as chunks with resume,
+So that files of any size can be sent reliably over unstable connections.
 
 **Acceptance Criteria:**
 
-**Given** I send a POST to `/api/temp` without a valid auth cookie
-**When** the request reaches the server
-**Then** I receive a 401 response
+**Given** authenticated sender
+**When** `POST /api/uploads/start` with `{ fileName, fileSize, mimeType }`
+**Then** `UploadSession` created with unique `uploadId`, status InProgress, 24h TTL; returns `{ uploadId, chunkSize }`
 
-**Given** I send a GET to `/api/files/{id}/download` without a valid auth cookie
-**When** the request reaches the server
-**Then** I receive a 401 response
+**Given** active session
+**When** `POST /api/uploads/{id}/chunks/{index}` with chunk bytes
+**Then** chunk stored via `IStorageProvider`; returns `{ chunkIndex, stored: true }`
 
-**Given** I send a GET to `/api/temp/{id}` (metadata) without a valid auth cookie
-**When** the request reaches the server
-**Then** I receive a 200 response with share metadata (public)
+**Given** same chunk retried
+**When** endpoint called again
+**Then** returns `{ alreadyExists: true }` without duplicate storage
 
-**Given** I send a GET to `/api/temp/{id}/download` (file download) without a valid auth cookie
-**When** the request reaches the server
-**Then** I receive a 200 response with the file (public)
+**Given** partial upload after disconnect
+**When** `GET /api/uploads/{id}/status`
+**Then** returns `{ uploadedChunks: [0,1,3], missingChunks: [2,4..9] }`
 
-**Technical Notes:**
-- Remove `AllowAnonymous()` from `CreateTempShareEndpoint.cs`
-- Remove `AllowAnonymous()` from `DownloadFileEndpoint.cs`
-- Keep `AllowAnonymous()` on `GetTempShareEndpoint.cs` and `DownloadTempShareEndpoint.cs`
-- Confirm API cookie auth config already returns 401 (not HTML redirect) per AD-7 — verify `ApiCookieAuthExtensions.cs` is unchanged
+**Given** all chunks uploaded
+**When** `POST /api/uploads/{id}/commit`
+**Then** atomic Wolverine transaction: creates Delivery + Manifest, links chunks; returns `{ shareId, shareLink }`
 
-### Story 1.3: Update Copy on Upload and Download Pages
+**Given** commit with missing chunks
+**When** called
+**Then** 400 `{ error: "incomplete_upload", missingChunks: [...] }`
 
-As a **visitor**,
-I want **the upload and download pages to reflect that login is now required**,
-So that **I'm not misled by outdated messaging about anonymous usage**.
+**Given** expired session (24h)
+**When** any endpoint called
+**Then** 410 `{ error: "session_expired" }`
 
-**Acceptance Criteria:**
+**Given** Free plan file exceeds limit
+**When** start called
+**Then** 413 `{ maxSize: "5GB", currentPlan: "Free" }`
 
-**Given** I view the Upload page while authenticated
-**Then** the page does not display "anonymous · no login required"
+### Story 1.3: Recipient Download
 
-**Given** I view the Download page
-**Then** the page does not display "No login required"
-
-**Technical Notes:**
-- Edit `Upload.razor`: remove or replace the "anonymous · no login required" text
-- Edit `Download.razor`: remove or replace the "No login required" text
-- Simple copy changes only — no structural changes to the pages
-
----
-
-## Epic 2: Upload Attribution — Link Temp Shares to Their Owner
-
-**Goal:** Each temp share record stores the authenticated user's ID at creation time, enabling accountability and per-user rate limiting.
-
-This epic binds CAP-4 via AD-3.
-
-### Story 2.1: Add OwnerId to TempShare Entity
-
-As a **developer**,
-I want **the TempShare entity to have an `OwnerId` column**,
-So that **each share can be attributed to the user who uploaded it**.
+As a recipient,
+I want to open a link and download without creating an account,
+So that receiving files is frictionless.
 
 **Acceptance Criteria:**
 
-**Given** the TempShare entity has been updated
-**When** inspecting the `TempShare` class
-**Then** it has a `Guid? OwnerId` property
+**Given** valid `shareId`
+**When** `GET /d/{shareId}` accessed
+**Then** download page: file name, size, download button; no auth required
 
-**Given** EF migration has been applied
-**When** inspecting the database
-**Then** the `temp_shares` table has a nullable `owner_id` column with a foreign key to `users`
+**Given** download with fragment key
+**When** recipient clicks Download
+**Then** chunks stream, SHA-256 verified per-chunk + whole-file, browser receives complete original
 
-**Technical Notes:**
-- Add `public Guid? OwnerId { get; set; }` to `TempShare.cs`
-- Add `public User? Owner { get; set; }` navigation property
-- Add EF migration via `dotnet ef migrations add AddTempShareOwnerId`
-- Foreign key to `users` table
-- Nullable — existing rows retain null (AD-8)
+**Given** chunk fails SHA-256
+**When** hash mismatch
+**Then** chunk re-fetched (not whole file); 3 failures → clear error
 
-### Story 2.2: Wire CurrentUserService in CreateTempShareHandler
+**Given** expired delivery
+**When** accessed
+**Then** 410 page: "This delivery has expired" + clock icon + "Request re-send"
 
-As a **developer**,
-I want **the create-temp-share handler to set `OwnerId` from the current user**,
-So that **new shares are attributed correctly**.
+**Given** invalid shareId
+**When** accessed
+**Then** 404: "This link doesn't exist"
 
-**Acceptance Criteria:**
+**Given** download-cap reached
+**When** accessed
+**Then** button disabled: "Download limit reached. Ask the sender to re-send."
 
-**Given** an authenticated user uploads a file
-**When** the `CreateTempShareHandler` executes
-**Then** the created `TempShare` record has `OwnerId` set to the user's GUID
+**Given** successful download
+**When** completes
+**Then** counter atomically incremented; IP + timestamp logged; EgressBytes updated
 
-**Given** the handler injects `CurrentUserService`
-**When** `GetUserIdAsync()` is called
-**Then** it returns a non-null GUID (handler fails with 401 if null — though the endpoint auth gate should prevent this)
+### Story 1.4: E2E Encryption
 
-**Technical Notes:**
-- Inject `CurrentUserService` into `CreateTempShareHandler`
-- Call `await _currentUserService.GetUserIdAsync()` — this already exists and resolves the user
-- Set `ownerId = userId` on the new TempShare before persisting
-
----
-
-## Epic 3: Plan Tiers & Rate Limits
-
-**Goal:** Monthly upload volume and transfer count are tracked per user and enforced at upload time against their plan tier's limits before a share is created.
-
-This epic binds CAP-6 via AD-4, AD-5.
-
-### Story 3.1: Add Plan Field to User Entity
-
-As a **developer**,
-I want **the User entity to have a `Plan` field defaulting to `"free"`**,
-So that **each user is assigned a plan tier that determines their usage limits**.
+As a sender,
+I want files encrypted on my device before upload,
+So that no one — not ZapDrop, not the storage — can read them.
 
 **Acceptance Criteria:**
 
-**Given** the User entity has been updated
-**When** inspecting the `User` class
-**Then** it has a `string Plan` property with default `"free"`
+**Given** file selected in browser
+**When** upload starts
+**Then** WebCrypto generates AES-256-GCM key; file encrypted before chunking; per-chunk unique 96-bit nonce, AAD = `manifest_id ‖ chunk_index`; only ciphertext uploaded
 
-**Given** a new user is created via `CurrentUserService.GetOrCreateUserAsync()`
-**When** the user row is inserted
-**Then** the `plan` column is set to `"free"`
+**Given** encryption complete
+**When** manifest generated
+**Then** manifest encrypted with same key (name, MIME, size, whole-file + per-chunk SHA-256, chunk refs, crypto params); uploaded as ciphertext
 
-**Technical Notes:**
-- Add `public string Plan { get; set; } = PlanTierLimits.Free;` to `User.cs` (use the constant from Story 3.3, not a magic string)
-- Add EF migration via `dotnet ef migrations add AddUserPlan` — set default value to `"free"` for existing rows
-- No enum — string column (`"free"`, `"starter"`, `"ultimate"`) for future flexibility
-- The PlanTierLimits class (Story 3.3) defines `public const string` constants that are the single source of truth for valid values
+**Given** commit succeeds
+**When** link generated
+**Then** format: `.../d/{shareId}#{base64url-key}`; key in URL fragment only, never in any request
 
-### Story 3.2: Create UserUsage Entity
+**Given** recipient opens link with key
+**When** download starts
+**Then** browser extracts key from `window.location.hash`, decrypts manifest, decrypts each chunk with AEAD; failed auth → reject + re-fetch
 
-As a **developer**,
-I want **a `UserUsage` entity that tracks monthly usage per user**,
-So that **the system can record and query upload volume and transfer counts**.
+**Given** link without fragment (key stripped)
+**When** browser attempts decrypt
+**Then** fails; "Invalid or incomplete link — ask sender for full link"
 
-**Acceptance Criteria:**
+**Given** DevTools network inspection
+**When** reviewing request bodies
+**Then** all bodies contain only high-entropy ciphertext; key never appears
 
-**Given** the UserUsage entity has been created
-**When** inspecting the class
-**Then** it has properties: `Id`, `UserId`, `PeriodStart`, `TotalBytesUploaded`, `TransferCount`
+### Story 1.5: Upload UI
 
-**Given** EF migration has been applied
-**When** inspecting the database
-**Then** a `user_usage` table exists with columns `id`, `user_id`, `period_start`, `total_bytes_uploaded`, `transfer_count` and a foreign key to `users`
-
-**Given** `TeleCloudDbContext` has been updated
-**When** inspecting the context
-**Then** a `DbSet<UserUsage> UserUsages { get; set; }` is present
-
-**Technical Notes:**
-- Entity properties:
-  - `Guid Id`
-  - `Guid UserId`
-  - `DateTime PeriodStart` — start of the current billing period (calendar month)
-  - `long TotalBytesUploaded`
-  - `int TransferCount`
-- Navigation property: `User User`
-- `TeleCloudDbContext`: add `public DbSet<UserUsage> UserUsages => Set<UserUsage>();`
-- Configure in `OnModelCreating`: unique index on `(UserId, PeriodStart)`, foreign key to `users`
-- Migration via `dotnet ef migrations add AddUserUsage`
-
-### Story 3.3: Create PlanTierLimits Static Lookup
-
-As a **developer**,
-I want **a single static class that defines plan tier limits**,
-So that **rate limit enforcement has a single source of truth for quota values**.
+As a sender,
+I want a clean upload interface with real-time progress,
+So that I know when my file is ready and can share immediately.
 
 **Acceptance Criteria:**
 
-**Given** I call `PlanTierLimits.GetLimits("free")`
-**When** inspecting the result
-**Then** it returns `(maxBytes: 3 * 1024^3, maxTransfers: 10)` — 3 GB, 10 transfers
+**Given** sender on `/`
+**When** page loads
+**Then** centered drop zone: dashed border, upload icon, "Drag files here or click to browse"
 
-**Given** I call `PlanTierLimits.GetLimits("starter")`
-**When** inspecting the result
-**Then** it returns `(maxBytes: 300 * 1024^3, maxTransfers: 10)` — 300 GB, 10 transfers
+**Given** file dragged over zone
+**When** drag enters
+**Then** border → solid accent, background → `--accent-subtle`, scale 1.01; drag leave reverts
 
-**Given** I call `PlanTierLimits.GetLimits("ultimate")`
-**When** inspecting the result
-**Then** it returns `(maxBytes: null, maxTransfers: null)` — unlimited
+**Given** file selected
+**When** accepted
+**Then** file preview (icon + name + size) appears; upload begins immediately
 
-**Given** I call `PlanTierLimits.GetLimits("unknown-plan")`
-**When** inspecting the result
-**Then** it returns the free-tier limits (safe default)
+**Given** upload in progress
+**When** chunks uploading
+**Then** animated bar (4px, accent) + "Uploading — 45% · 12.4/27.5 MB · 2.1 MB/s · ~6s"
 
-**Technical Notes:**
-- Create `PlanTierLimits` static class in `Features/TempShares/Shared/` or `Data/`
-- Define plan name constants: `public const string Free = "free"`, `public const string Starter = "starter"`, `public const string Ultimate = "ultimate"`
-- Return type: `(long? MaxBytesPerMonth, int? MaxTransfersPerMonth)` — null = unlimited
-- Values: Free = 3 GB (3,221,225,472 bytes) / 10 transfers; Starter = 300 GB / 10 transfers; Ultimate = unlimited
-- Case-insensitive lookup (use `string.Equals(plan, StringComparison.OrdinalIgnoreCase)`)
-- Invalid plan names fall back to free-tier limits
-- `User.cs` should reference `PlanTierLimits.Free` as the default, not the raw string `"free"`
+**Given** encryption stage
+**When** encrypting
+**Then** text: "Encrypting..."
 
-### Story 3.4: Enforce Rate Limits in CreateTempShareHandler
+**Given** upload complete
+**When** commit returns link
+**Then** bar fills 100%; Share Link Card: file icon+name+size, monospace link field + copy button, "Link copied" toast
 
-As a **free-tier user**,
-I want **my upload to be rejected if I've exceeded my monthly quota**,
-So that **I cannot circumvent plan limits**.
+**Given** mobile (< 640px)
+**When** page loads
+**Then** drop zone → full-width "Select files" button (56px, accent)
+
+**Given** upload fails mid-way
+**When** chunk error
+**Then** red toast: "Upload failed. Check your connection." + Retry; only missing chunks re-upload
+
+**Given** Free plan exceeds limit
+**When** file selected
+**Then** inline message: "Files over 5 GB require Pro. This file is X GB." + Upgrade/Cancel; no modal
+
+### Story 1.6: Accounts & Plans
+
+As a sender,
+I want to sign in with Google and have plan limits enforced,
+So that my deliveries are tied to my account and I can upgrade for more capacity.
 
 **Acceptance Criteria:**
 
-**Given** a free-tier user has uploaded 3 GB this month
-**When** they try to upload another file
-**Then** they receive a 403 response with message "Monthly upload limit reached. Upgrade your plan to upload more."
+**Given** unauthenticated user on `/`
+**When** page accessed
+**Then** redirected to Google OAuth; on sign-in, User created/matched with Free plan
 
-**Given** a free-tier user has made 10 transfers this month
-**When** they try to upload another file
-**Then** they receive a 403 response with message "Monthly transfer limit reached. Upgrade your plan to upload more."
+**Given** authenticated sender
+**When** accessing sender pages
+**Then** cookie validated server-side; nav shows name + plan
 
-**Given** an ultimate-tier user has uploaded 500 GB this month
-**When** they try to upload another file
-**Then** the upload succeeds (unlimited plan)
+**Given** Free plan sender
+**When** uploading
+**Then** limits server-enforced: 5 GB/file, 3-day expiry, 5 download-cap, 1-2 concurrency
 
-**Given** a starter-tier user has uploaded 200 GB (under 300 GB limit) this month
-**When** they try to upload a file
-**Then** the upload succeeds (under limit)
+**Given** Pro plan sender
+**When** uploading
+**Then** 50 GB/file, 30-day expiry, 50 download-cap, 3-4 concurrency, branded page enabled
 
-**Given** a user has no existing `UserUsage` row for the current period
-**When** they upload a file
-**Then** a new `UserUsage` row is created with their file size and transfer count = 1, and the upload succeeds
+**Given** Studio plan sender
+**When** uploading
+**Then** unlimited (chunked), 30-day expiry, configurable download-cap, 6+ concurrency, branded + paid enabled
 
-**Technical Notes:**
-- In `CreateTempShareHandler`, before creating the share:
-  1. Resolve user's plan from `dbContext.Users` (or `CurrentUserService`)
-  2. Get plan limits from `PlanTierLimits.GetLimits(plan)`
-  3. Lookup or upsert `UserUsage` row for the current calendar month
-  4. If `TotalBytesUploaded + fileSize > MaxBytes` → return 403 with error message
-  5. If `TransferCount + 1 > MaxTransfers` → return 403 with error message
-  6. If both OK, increment usage row atomically within the same EF transaction as share creation
-- **Race condition — concurrent first-upload-of-period**: Two uploads hitting at the same time for a user with no existing `UserUsage` row will both attempt to INSERT, and one gets a unique constraint violation on `(UserId, PeriodStart)`. Use PostgreSQL `INSERT ... ON CONFLICT DO UPDATE` via EF Core's `dbContext.UserUsages.Upsert(...)` (requires flexiding/FlexLabs.Upsert or raw SQL) to atomically create-or-increment without a retry loop.
-  - If the upsert library isn't available, use a raw SQL approach:
-    ```sql
-    INSERT INTO user_usage (id, user_id, period_start, total_bytes_uploaded, transfer_count)
-    VALUES (@id, @userId, @periodStart, @bytes, 1)
-    ON CONFLICT (user_id, period_start) DO UPDATE
-    SET total_bytes_uploaded = user_usage.total_bytes_uploaded + @bytes,
-        transfer_count = user_usage.transfer_count + 1;
-    ```
-- Return `Results.Failure<CreateTempShareResult>(...)` with typed error response
-- Error response body: `{ "error": "quota_exceeded", "message": "...", "limit_type": "bytes" | "transfers" }`
-- Period start: find existing row where `PeriodStart <= now && PeriodStart + 1 month > now`. If none exists, create new row with `PeriodStart = first day of current month`.
+**Given** sender exceeds limit
+**When** action attempted
+**Then** 403/413/429 with clear message + upgrade nudge; client bypass impossible
 
-### Deferred — Mid-Tier Upgrade Usage Carryover
+### Story 1.7: Delivery Controls
 
-**Context:** If a Free user upgrades to Ultimate mid-month, uploads 100 GB, then downgrades back to Starter next month, their accumulated `UserUsage` row still carries the 100 GB from the Ultimate period — which may exceed Starter's 300 GB limit even though only post-downgrade uploads should count.
+As a sender,
+I want to control link expiry and download limits,
+So that I can protect files and manage costs.
 
-**Resolution:** Deferred. Payment integration doesn't exist yet, so this edge case has no trigger. When billing lands, revisit the period logic to either (a) reset the usage row on plan change, or (b) tie the billing period to the subscription cycle rather than the calendar month. No changes needed now.
+**Acceptance Criteria:**
+
+**Given** upload complete
+**When** link card displayed
+**Then** shows "Expires in X days"; Free shows plan-limited max
+
+**Given** Pro/Studio before upload
+**When** on upload page
+**Then** can set custom expiry (up to plan max) and custom download-cap
+
+**Given** active delivery
+**When** extend called
+**Then** expiry +24h; toast: "Extended by 24h"
+
+**Given** expired delivery
+**When** daily cleanup job runs
+**Then** chunks deleted, manifest + delivery cascade-deleted, storage reclaimed
+
+**Given** download-cap reached
+**When** download attempted
+**Then** 410 disabled; "Download limit reached. Ask sender to re-send."
+
+**Given** dashboard card
+**When** rendered
+**Then** shows "3 of 5 downloads", expiry badge (green/amber/gray), extend icon
+
+### Story 1.8: File Management
+
+As a sender,
+I want to view, search, organize, and delete deliveries,
+So that I can manage shared files efficiently.
+
+**Acceptance Criteria:**
+
+**Given** sender with deliveries on `/deliveries`
+**When** page loads
+**Then** grid of Delivery Cards: thumbnail (icon + gradient), name (truncated), status badge, download count, days remaining; hover lifts +2px
+
+**Given** search field used
+**When** typing
+**Then** 300ms debounced filter by name + folder path; empty → "No deliveries match"
+
+**Given** card clicked
+**When** navigating
+**Then** `/deliveries/{id}`: full details, metadata, expiry/download status, copy/extend/delete buttons
+
+**Given** delete clicked
+**When** confirm dialog accepted
+**Then** chunks + manifest + delivery cascade-deleted; redirect with success toast
+
+**Given** copy link icon
+**When** clicked on any card
+**Then** link copied; "Copied!" toast
+
+**Given** many deliveries
+**When** paginating
+**Then** paginated; sort: newest, oldest, name A-Z, size; invalid sort → 400
+
+**Given** folders used
+**When** organizing
+**Then** flat hierarchy (root only); unique paths per user; move between folders; rename updates paths; duplicate → 409
+
+## Epic 2: Professional Delivery Experience
+
+### Story 2.1: Password Protection
+
+As a Pro/Studio sender,
+I want to set a password on my delivery,
+So that only the intended recipient can access it.
+
+**Acceptance Criteria:**
+
+**Given** Pro/Studio sender on upload page
+**When** "Password protect" is toggled
+**Then** a password field appears: "Set a password for this delivery"
+
+**Given** password set and delivery created
+**When** recipient opens the share link
+**Then** password field shown before file card: "This delivery is password-protected."
+
+**Given** correct password entered
+**When** submitted
+**Then** server verifies, releases Manifest → file card + download render; incorrect → 401 "Wrong password."
+
+**Given** server-side gate (not key derivation)
+**When** recipient has fragment key but not password
+**Then** key alone useless — server withholds Manifest until password verified
+
+### Story 2.2: Branded Delivery Page
+
+As a Pro/Studio sender,
+I want my logo and message on the recipient's download page,
+So that my delivery looks professional.
+
+**Acceptance Criteria:**
+
+**Given** Pro/Studio sender on upload page
+**When** branding section expanded
+**Then** fields: logo upload (max 180px), personal message textarea, accent color picker
+
+**Given** branding configured and delivery created
+**When** recipient opens link
+**Then** page shows: sender logo (centered), italic message (`--text-lg`, `--fg-muted`), download button in sender's accent color
+
+**Given** Free plan sender
+**When** uploading
+**Then** no branding options; download page shows generic ZapDrop branding
+
+**Given** Studio sender
+**When** branding configured
+**Then** background can be solid color or subtle gradient; Free/Pro senders never see ads on their own recipient page
+
+### Story 2.3: Download Tracking
+
+As a sender,
+I want to see when and how many times my delivery was downloaded,
+So that I know the client received it.
+
+**Acceptance Criteria:**
+
+**Given** sender viewing a delivery card
+**When** card renders
+**Then** shows download count: "12 downloads" or "3 of 5 downloads" (if cap set)
+
+**Given** sender on `/deliveries/{id}`
+**When** page loads
+**Then** shows total downloads, last download timestamp ("Downloaded 2h ago" / "Never downloaded"), cap status
+
+**Given** download completes
+**When** recipient finishes
+**Then** `DownloadTracking` created (IP + timestamp); `Delivery.DownloadCount` atomically incremented; visible to sender immediately
+
+**Given** no downloads yet
+**When** sender views delivery
+**Then** "Not yet downloaded" with gray clock icon
+
+### Story 2.4: Paid Delivery via Ko-fi
+
+As a Studio sender,
+I want to charge for my delivery via Ko-fi,
+So that I can sell deliverables directly.
+
+**Acceptance Criteria:**
+
+**Given** Studio sender on upload page
+**When** "Require payment" toggled
+**Then** price field appears: "Set price (VND)"
+
+**Given** price set and delivery created
+**When** recipient opens link
+**Then** payment prompt: "This delivery requires payment — X VND" with Ko-fi payment button; file card hidden
+
+**Given** recipient completes Ko-fi payment
+**When** webhook `POST /api/payments/ko-fi/webhook` fires with valid signature
+**Then** `Delivery.PaymentStatus` → Paid; delivery unlocked atomically; page auto-refreshes → file card + download
+
+**Given** invalid webhook signature
+**When** endpoint called
+**Then** 403; payment not processed; delivery stays locked
+
+**Given** payment not received (timeout)
+**When** recipient returns
+**Then** prompt still shows; "Payment not received. The delivery is still available." + retry; no penalty
+
+### Story 2.5: Trust Verification
+
+As a technical user,
+I want to verify files are truly encrypted end-to-end,
+So that I trust ZapDrop's zero-knowledge claim.
+
+**Acceptance Criteria:**
+
+**Given** any recipient on download page
+**When** page renders
+**Then** 🔒 "End-to-end encrypted" badge visible below download button (`--text-sm`, `--fg-muted`)
+
+**Given** recipient clicks badge or "Verify encryption"
+**When** activated
+**Then** expandable panel: "Your files were encrypted with AES-256-GCM before upload. ZapDrop cannot read them — only you hold the decryption key (embedded in your link)." + content hash
+
+**Given** technical user wants deeper check
+**When** expanding advanced section
+**Then** shows DevTools guide: "Open DevTools (F12) → Network tab. All request bodies are ciphertext. The key (after # in your link) is never sent to any server." + copyable snippet
+
+**Given** non-technical recipient
+**When** viewing page
+**Then** badge visible but non-intrusive; clicking optional; default experience is clean download
+
+## Epic 3: Platform Sustainability & Safety
+
+### Story 3.1: Rate & Volume Guardrails
+
+As an operator,
+I want server-enforced rate limits and volume caps,
+So that the platform stays solvent and abuse is contained.
+
+**Acceptance Criteria:**
+
+**Given** any sender uploading
+**When** requests exceed per-Plan rate limits
+**Then** server returns 429 with retry-after header; consecutive abuse → temporary throttle
+
+**Given** any sender
+**When** monthly upload volume exceeds Plan ceiling
+**Then** further uploads refused with 403: "Monthly upload limit reached. Upgrade to [next tier] for more."
+
+**Given** IP-based recipient rate limiting
+**When** excessive downloads from single IP
+**Then** download throttled with 429; abuse logged to DownloadTracking
+
+**Given** rate limits per Plan
+**When** limits are in configuration
+**Then** Free: most restrictive, Pro: moderate, Studio: generous; all values config-driven, not hardcoded
+
+**Given** metadata-only logging
+**When** any request is logged
+**Then** logs contain: who (user/IP), when (timestamp), what (shareId/endpoint), size (bytes); never content or plaintext metadata
+
+### Story 3.2: Report → Takedown
+
+As a recipient,
+I want to report a suspicious delivery,
+So that abusive content is removed quickly.
+
+**Acceptance Criteria:**
+
+**Given** any recipient on a download page
+**When** scrolling to bottom
+**Then** "Report this delivery" link visible (`--text-xs`, `--fg-muted`)
+
+**Given** report link clicked
+**When** activated
+**Then** simple form: reason dropdown (Spam, Malware, Illegal content, Other) + optional message textarea + Submit button
+
+**Given** report submitted
+**When** form posted
+**Then** confirmation: "Thank you. This delivery has been reported and will be reviewed."; delivery immediately locked (server-side): chunks deleted from storage, manifest + delivery cascade-deleted, link returns 410
+
+**Given** report submitted
+**When** delivery is takedown
+**Then** sender receives notification (email or in-app) that their delivery was reported and removed
+
+**Given** report submitted without auth
+**When** any recipient (even unauthenticated) reports
+**Then** report is accepted; no account required to report
+
+**Given** duplicate reports on same delivery
+**When** already-takedown delivery reported again
+**Then** 410 returned; "This delivery is no longer available"
+
+### Story 3.3: Ad Placement on Free Tier
+
+As an operator,
+I want ads on Free-tier recipient pages only,
+So that the free tier contributes revenue without touching paid users.
+
+**Acceptance Criteria:**
+
+**Given** Free plan sender's delivery
+**When** recipient opens the share link
+**Then** interstitial ad countdown appears (3-5s): "Your download will start in 3s..." with ad panel alongside; after countdown, ad panel remains below file card; download begins
+
+**Given** same Free-tier link re-opened
+**When** recipient returns
+**Then** no countdown; ad panel remains below file card
+
+**Given** Pro or Studio sender's delivery
+**When** recipient opens the share link
+**Then** NO ads, NO countdown — clean page. Ad-free handoff is a sold feature.
+
+**Given** ad rendering decision
+**When** page template loads
+**Then** `User.PlanId` is looked up via `Delivery.SenderId`; Free → ads injected; Pro/Studio → clean. Invariant at template level, not per-handler.
+
+**Given** ad content standards
+**When** ads are served
+**Then** network uses curated allowlist + category blocks; gambling permitted but not egregious/malicious content
+
+### Story 3.4: Clean Trial Allowance
+
+As a new sender,
+I want my first few deliveries to be ad-free,
+So that I can experience the professional handoff before deciding to upgrade.
+
+**Acceptance Criteria:**
+
+**Given** newly created Free account
+**When** sender creates their first delivery
+**Then** recipient sees a clean (ad-free) download page; `User.CleanDeliveriesRemaining` decremented from 5
+
+**Given** sender has clean deliveries remaining
+**When** creating deliveries
+**Then** each delivery consumes one clean credit until 0 remain
+
+**Given** sender exhausts clean trial (0 remaining)
+**When** creating a new delivery
+**Then** recipient sees the ad interstitial + ad panel (Story 3.3 behavior)
+
+**Given** sender upgrades to Pro/Studio
+**When** plan changes
+**Then** ads never shown regardless of clean trial status; Pro/Studio = always clean
+
+**Given** clean trial count
+**When** configurable
+**Then** default 5, tunable via configuration without code change
+
+### Story 3.5: Anti-Adblock Soft-Wall
+
+As an operator,
+I want to recover ad revenue from adblock users,
+So that the free tier remains sustainable — without blocking downloads.
+
+**Acceptance Criteria:**
+
+**Given** Free-tier recipient with adblocker detected
+**When** download page loads
+**Then** interstitial shows: "Free delivery is supported by ads. Please allow ads to keep ZapDrop free." + "Continue with ads" / "Retry" buttons
+
+**Given** adblock soft-wall shown
+**When** user clicks "Continue with ads"
+**Then** ad loads (if possible) or page proceeds to download; downloads are NEVER hard-blocked
+
+**Given** legitimate privacy user (Brave, Firefox privacy mode, DNS filtering)
+**When** adblock detected
+**Then** soft-wall still shows but Retry always available; user can always reach the download
+
+**Given** optional Ad-Shield subdomain serving
+**When** configured
+**Then** ads served via own subdomain to evade filter lists; but never at the cost of hard-blocking access
+
+**Given** Pro/Studio sender's delivery
+**When** recipient opens link
+**Then** no adblock detection runs; page is always clean regardless of recipient's adblocker

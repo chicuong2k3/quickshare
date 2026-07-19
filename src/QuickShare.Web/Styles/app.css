@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "../node_modules/@jalexsocial/rizzyui/dist/css/rizzyui-plugin.css";
+
+@source "../**/*.{razor,html,cs}";
+@source "!../**/bin/**";
+@source "!../**/obj/**";
+
+[x-cloak] { display: none !important; }

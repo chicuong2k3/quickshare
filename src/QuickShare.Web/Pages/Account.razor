@@ -1,0 +1,187 @@
+@page "/account"
+@using System.Net.Http.Json
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Antiforgery
+@using QuickShare.Web.Models
+@inject IHttpClientFactory ClientFactory
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>Account — QuickShareCloud</PageTitle>
+
+<div class="min-h-screen flex flex-col bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground">
+    <header class="absolute inset-x-0 top-0 z-50">
+        <div class="flex items-center justify-between px-8 py-6">
+            <RzLink Href="/" Underline="false" class="flex items-center gap-3 text-foreground/80 hover:text-foreground transition-colors">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
+                <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
+            </RzLink>
+            <nav class="flex items-center gap-2">
+                <RzLink Href="/" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Send</RzLink>
+                <RzLink Href="/pricing" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Pricing</RzLink>
+                <RzLink Href="/files" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Files</RzLink>
+                <RzLink Href="/logout" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign out</RzLink>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex flex-1 items-center justify-center px-6 pb-20 pt-32">
+        <RzCard class="w-full max-w-md shadow-sm">
+            <CardContent class="p-10">
+                <div class="flex flex-col items-center text-center">
+                    <div class="relative">
+                        @if (!string.IsNullOrEmpty(avatar))
+                        {
+                            <img id="avatarPreview" src="@avatar" alt="@name"
+                                 class="h-20 w-20 rounded-full ring-2 ring-border object-cover" />
+                        }
+                        else
+                        {
+                            <div id="avatarInitial"
+                                 class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/8 text-primary text-2xl font-bold ring-2 ring-border">
+                                @name[..1].ToUpper()
+                            </div>
+                            <img id="avatarPreview" src="" alt="@name"
+                                 class="hidden h-20 w-20 rounded-full ring-2 ring-border object-cover" />
+                        }
+                    </div>
+                    <RzHeading Level="HeadingLevel.H2" class="mt-5 text-2xl font-semibold">@name</RzHeading>
+                    <RzParagraph class="mt-1.5 text-base text-muted-foreground">@email</RzParagraph>
+                    <RzBadge Variant="ThemeVariant.Default" Soft="true" class="mt-3">@provider · @plan</RzBadge>
+                </div>
+
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <RzAlert Variant="ThemeVariant.Destructive" class="mt-6">
+                        <AlertDescription>@formError</AlertDescription>
+                    </RzAlert>
+                }
+
+                <div x-data class="mt-10 space-y-5">
+
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-foreground/80 mb-1.5">Display name</label>
+                        <input id="name" name="name" type="text" required
+                               value="@name"
+                               class="w-full rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-foreground/80 mb-1.5">Avatar image</label>
+
+                        <label for="avatarFile"
+                               class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-background px-5 py-8 text-sm text-muted-foreground/80 hover:border-primary/40 hover:bg-primary/5 cursor-pointer transition-colors">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <span>Click to choose an image</span>
+                            <span class="text-xs text-muted-foreground/60">PNG, JPG or GIF — max 5 MB</span>
+                        </label>
+                        <input id="avatarFile" name="avatar" type="file" accept="image/*"
+                               class="sr-only" onchange="previewAvatar(event)" />
+                    </div>
+
+                    <button type="button" @click="submitAccountForm(); $event.preventDefault()"
+                            class="w-full rounded-2xl bg-foreground px-6 py-3.5 text-sm font-semibold text-background hover:opacity-90 cursor-pointer transition-opacity">
+                        Save changes
+                    </button>
+                </div>
+
+                <div class="mt-6">
+                    <RzLink Href="/logout" Underline="false"
+                            class="flex w-full items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 px-6 py-3.5 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer transition-colors">
+                        Sign out
+                    </RzLink>
+                </div>
+            </CardContent>
+        </RzCard>
+    </main>
+
+    <footer class="px-8 py-6 text-center text-xs text-muted-foreground/80">
+        QuickShareCloud &mdash; secure file sharing.
+    </footer>
+</div>
+
+<script>
+    var antiforgeryToken = '@antiforgeryToken';
+
+    function previewAvatar(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB.'); e.target.value = ''; return; }
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+            var img = document.getElementById('avatarPreview');
+            var initial = document.getElementById('avatarInitial');
+            if (img) { img.src = ev.target.result; img.classList.remove('hidden'); }
+            if (initial) initial.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function submitAccountForm() {
+        var fd = new FormData();
+        fd.append('__RequestVerificationToken', antiforgeryToken);
+        fd.append('name', document.getElementById('name').value);
+        var fileInput = document.getElementById('avatarFile');
+        if (fileInput.files && fileInput.files[0]) {
+            fd.append('avatar', fileInput.files[0]);
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/account/update');
+        xhr.onload = function () {
+            try {
+                var resp = JSON.parse(xhr.responseText);
+                if (resp.redirect) {
+                    window.location.href = resp.redirect;
+                } else if (resp.error) {
+                    window.location.href = '/account?error=' + encodeURIComponent(resp.error);
+                } else {
+                    window.location.href = '/account';
+                }
+            } catch (_) {
+                window.location.href = '/account';
+            }
+        };
+        xhr.onerror = function () {
+            window.location.href = '/account?error=Network+error';
+        };
+        xhr.send(fd);
+    }
+</script>
+
+@code {
+    private string name = "Unknown";
+    private string email = "";
+    private string avatar = "";
+    private string plan = "free";
+    private string provider = "unknown";
+    private string? formError;
+    private string? antiforgeryToken;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient(ApiClient.Name);
+
+        try
+        {
+            var profile = await client.GetFromJsonAsync<ProfileResponse>("/api/users/me/profile");
+            if (profile is not null)
+            {
+                name = profile.Name;
+                email = profile.Email;
+                avatar = profile.AvatarUrl;
+                plan = profile.Plan;
+            }
+        }
+        catch { /* render with defaults */ }
+
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            provider = httpContext.User?.FindFirstValue("provider") ?? "unknown";
+            formError = httpContext.Request.Query["error"].FirstOrDefault();
+
+            var antiforgery = httpContext.RequestServices.GetRequiredService<IAntiforgery>();
+            antiforgeryToken = antiforgery.GetAndStoreTokens(httpContext).RequestToken;
+        }
+    }
+}

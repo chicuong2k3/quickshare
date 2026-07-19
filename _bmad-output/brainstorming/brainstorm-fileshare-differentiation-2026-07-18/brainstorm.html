@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeleCloud · Brainstorm — Telegram, không trần 2GB</title>
+<style>
+  :root{
+    --bg:#0a0e14; --bg2:#0f1620; --ink:#e6edf3; --dim:#8b98a9; --line:#1f2a37;
+    --acc:#00e5a0; --hot:#ff5c5c; --warm:#ffb454; --cool:#5cc8ff; --pipe:#7c5cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:radial-gradient(1200px 600px at 80% -10%, rgba(124,92,255,.12), transparent 60%),radial-gradient(900px 500px at -10% 20%, rgba(0,229,160,.08), transparent 55%),var(--bg);
+    color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;padding:0 0 80px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  header.hero{padding:90px 0 50px;text-align:center}
+  .badge{display:inline-block;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);border:1px solid rgba(0,229,160,.35);padding:6px 14px;border-radius:999px;margin-bottom:26px}
+  h1{font-size:clamp(32px,5.8vw,66px);line-height:1.05;font-weight:800;letter-spacing:-.02em}
+  h1 .grad{background:linear-gradient(100deg,var(--acc),var(--cool) 60%,var(--pipe));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--dim);max-width:700px;margin:22px auto 0;font-size:18px}
+  .arch{margin:30px auto 0;max-width:720px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .arch span{border:1px solid var(--line);background:var(--bg2);padding:8px 14px;border-radius:10px;font-size:13px;color:var(--dim)}
+  .arch span b{color:var(--ink)}
+  .ceiling{margin:38px auto 0;max-width:680px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);padding:22px 24px;text-align:left}
+  .ceiling .row{display:flex;align-items:center;gap:14px;margin:8px 0;font-size:14.5px}
+  .bar{flex:1;height:18px;border-radius:6px;background:#11181f;overflow:hidden;position:relative}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .bar small{position:absolute;right:8px;top:-2px;font-size:11px;color:var(--dim)}
+  .tg{color:var(--hot)} .tc{color:var(--acc)}
+  .hero-promise{margin-top:34px;font-size:clamp(17px,2.4vw,22px);font-weight:600}
+  .hero-promise em{color:var(--acc);font-style:normal}
+  .meta{margin-top:28px;color:var(--dim);font-size:13px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+  .meta b{color:var(--ink)}
+  section{padding:60px 0;border-top:1px solid var(--line)}
+  .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--cool);margin-bottom:10px}
+  h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.01em;margin-bottom:14px}
+  h2 .hl{color:var(--hot)}
+  .lede{color:var(--dim);max-width:760px;font-size:17px}
+  .grid{display:grid;gap:16px;margin-top:30px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card .ico{font-size:24px;margin-bottom:10px}
+  .card h3{font-size:16px;margin-bottom:6px}
+  .card p{color:var(--dim);font-size:14.5px}
+  .card.win{border-color:rgba(0,229,160,.35)} .card.win h3{color:var(--acc)}
+  .card.risk{border-color:rgba(255,92,92,.35)} .card.risk h3{color:var(--hot)}
+  table.mx{width:100%;border-collapse:collapse;margin-top:28px;font-size:14.5px}
+  table.mx th,table.mx td{border:1px solid var(--line);padding:13px 14px;text-align:center}
+  table.mx th{background:var(--bg2);color:var(--dim);font-weight:600;font-size:12.5px}
+  table.mx td:first-child,table.mx th:first-child{text-align:left;font-weight:600}
+  .yes{color:var(--acc);font-weight:700} .no{color:var(--hot)} .meh{color:var(--warm)}
+  tr.you{background:rgba(0,229,160,.06)} tr.you td:first-child{color:var(--acc)}
+  tr.hi td{background:rgba(0,229,160,.04)}
+  .wedge{margin-top:26px;padding:22px 24px;border:1px solid rgba(0,229,160,.4);border-radius:16px;background:linear-gradient(100deg,rgba(0,229,160,.10),rgba(92,200,255,.06))}
+  .wedge .k{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+  .wedge p{font-size:18px;font-weight:600}
+  .found{counter-reset:f;margin-top:30px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .found .b{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:24px;position:relative}
+  .found .b::before{counter-increment:f;content:counter(f);position:absolute;top:14px;right:22px;font-size:42px;font-weight:800;color:rgba(124,92,255,.25)}
+  .found .b h3{color:var(--pipe);font-size:16px;margin-bottom:8px}
+  .found .b p{color:var(--dim);font-size:14.5px}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+  .tab{cursor:pointer;border:1px solid var(--line);background:var(--bg2);color:var(--dim);padding:9px 16px;border-radius:999px;font-size:13.5px;transition:.15s}
+  .tab:hover{color:var(--ink)}
+  .tab.active{background:var(--acc);color:#04140d;border-color:var(--acc);font-weight:700}
+  .panel{display:none;margin-top:20px} .panel.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .flist{list-style:none;display:grid;gap:10px}
+  .flist li{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;font-size:14.5px}
+  .flist li .d{color:var(--acc);font-weight:700;flex-shrink:0}
+  .flist li b{color:var(--ink)} .flist li span.d2{color:var(--dim)}
+  .climax{padding:70px 0;text-align:center;border-top:1px solid var(--line);background:radial-gradient(800px 400px at 50% 0%,rgba(124,92,255,.10),transparent 70%)}
+  .climax .one{font-size:clamp(23px,4vw,38px);font-weight:800;max-width:840px;margin:0 auto;line-height:1.25}
+  .climax .one em{font-style:normal;color:var(--acc)}
+  .pillars{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:34px}
+  .pillars span{border:1px solid var(--line);padding:8px 16px;border-radius:999px;font-size:13.5px;color:var(--dim)}
+  .pillars span b{color:var(--ink)}
+  footer{padding:40px 0 0;color:var(--dim);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+  code{background:var(--bg2);padding:2px 6px;border-radius:5px;font-size:12.5px}
+  @media(max-width:600px){table.mx{font-size:12.5px} table.mx th,table.mx td{padding:9px 7px}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">TeleCloud · Positioning refresh · 2026-07-18</span>
+    <h1>Telegram,<br><span class="grad">không trần 2GB.</span></h1>
+    <p class="sub">TeleCloud = gửi file <b style="color:var(--ink)">bao lớn cũng qua Telegram được</b> — auto-chunk, 1 chạm, nhận bình thường. Một wedge thật, rõ ràng: <b style="color:var(--ink)">Telegram chặn 2GB/file, TeleCloud không.</b></p>
+    <div class="arch">
+      <span>Backend: <b>MTProto (gateway giữ session)</b></span>
+      <span>&gt;2GB: <b>auto-chunk 512MB</b></span>
+      <span>E2E: <b>khiên sống</b> (không headline)</span>
+    </div>
+
+    <div class="ceiling">
+      <div class="row"><span class="tg" style="width:120px">Telegram</span><div class="bar"><i style="width:10%;background:var(--hot)"></i><small>cap 2GB/file</small></div></div>
+      <div class="row"><span class="tc" style="width:120px">TeleCloud</span><div class="bar"><i style="width:100%;background:linear-gradient(90deg,var(--acc),var(--cool))"></i><small>∞ (chunked)</small></div></div>
+    </div>
+
+    <p class="hero-promise">Hero promise: <em>"Gửi file 20GB qua Telegram? Telegram chặn. TeleCloud 1 chạm."</em></p>
+    <div class="meta"><span>👤 <b>Cuong</b></span><span>🗓 2026-07-18</span><span>🧠 positioning locked</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Chẩn đoán · 2 việc phải thắng</div>
+    <h2>Wedge rõ — và <span class="hl">1 rủi ro tồn tại</span></h2>
+    <p class="lede">TeleCloud dùng MTProto làm kho gần-vô-hạn, free. Để thắng, chỉ cần 2 việc đúng; để sống, phải đối diện 1 rủi ro thật.</p>
+    <div class="grid">
+      <div class="card win"><div class="ico">📦</div><h3>Chunking phải rock-solid</h3><p>Đây là wedge. File >2GB → chunk 512MB → upload song song → ghép + verify hash. Làm tốt cái này = "hơn Telegram" thấy được.</p></div>
+      <div class="card risk"><div class="ico">⚠️</div><h3>MTProto userbot = risk ban</h3><p>ToS Telegram cấm dùng API làm dịch vụ lưu file cho bên thứ 3. Thiết kế ephemeral + obey FLOOD_WAIT + identity-gate + encrypt (blind pipe). Revenue → owned storage.</p></div>
+      <div class="card"><div class="ico">🛡️</div><h3>E2E = khiên, không headline</h3><p>Encrypt-before-chunk giữ nguyên — nhưng vì blob mã hóa Telegram <b>không content-flag được</b> (giảm ban), chứ không phải vì user cần privacy. Key giấu trong link, UX vô hình.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Bản đồ đối thủ · trục >2GB là cột sáng</div>
+    <h2>Telegram thắng nhiều thứ — <span style="color:var(--acc)">thua đúng 1 trục</span></h2>
+    <table class="mx">
+      <thead><tr><th>Tiêu chí</th><th>Telegram (trực tiếp)</th><th>WeTransfer</th><th>Google Drive</th><th>TeleCloud</th></tr></thead>
+      <tbody>
+        <tr class="hi"><td>File đơn &gt; 2GB</td><td class="no">✗ cap 2GB</td><td class="no">✗ 2GB</td><td class="meh">~ cần đủ quota</td><td class="you yes">✓ auto-chunk ∞</td></tr>
+        <tr><td>Miễn phí, không quota tổng</td><td class="yes">✓</td><td class="meh">~</td><td class="no">✗ 15GB</td><td class="you yes">✓</td></tr>
+        <tr><td>Không cần tài khoản người nhận</td><td class="no">✗ cần TG</td><td class="yes">✓ link</td><td class="yes">✓ link</td><td class="you yes">✓ link</td></tr>
+        <tr><td>Lossless</td><td class="meh">~ (nén media)</td><td class="yes">✓</td><td class="yes">✓</td><td class="you yes">✓</td></tr>
+        <tr><td>Localize VN</td><td class="meh">~</td><td class="no">✗</td><td class="meh">~</td><td class="you yes">✓ VI-first</td></tr>
+      </tbody>
+    </table>
+    <div class="wedge">
+      <div class="k">⌁ The wedge</div>
+      <p>"File đơn >2GB, free, qua Telegram mà không cần tự split." <span style="color:var(--dim);font-weight:400;font-size:15px">— Telegram cấu trúc không làm được.</span></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Nền móng</div>
+    <h2>4 việc không thương lượng</h2>
+    <div class="found">
+      <div class="b"><h3>📦 Chunking core</h3><p>512MB/chunk ≤2GB, AES-256-GCM độc lập/AAD anti-swap, manifest encrypt, SHA-256 từng chunk + toàn file, parallel + resume mức chunk, commit-khi-đủ.</p></div>
+      <div class="b"><h3>🛣️ MTProto gateway</h3><p>Gateway Python (Telethon/Pyrogram) là nơi duy nhất giữ session. Forum supergroup 1 topic/file → takedown = xóa topic. Obey FLOOD_WAIT, ephemeral mặc định.</p></div>
+      <div class="b"><h3>🛡️ Encrypt-before-chunk</h3><p>Defensive blind-pipe: ciphertext không bị content-flag → giảm ban. Key trong URL fragment, vô hình với user. Không marketing "private".</p></div>
+      <div class="b"><h3>🚪 Sender gating + freemium</h3><p>Receiver không login. Sender Guest/Verified/Paid. Guest thử 1 file >2GB free (khoảnh khắc convert). Paid = volume/speed → fund owned storage.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Feature ladder</div>
+    <h2>Thang tính năng</h2>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-t="size">📦 &gt;2GB / chunking</div>
+      <div class="tab" data-t="speed">🚀 Tốc độ</div>
+      <div class="tab" data-t="gate">🚪 Gating / freemium</div>
+      <div class="tab" data-t="defense">🛡️ Defensive privacy</div>
+      <div class="tab" data-t="brand">🌐 Brand / VN</div>
+    </div>
+
+    <div class="panel active" data-p="size"><ul class="flist">
+      <li><span class="d">⇨</span><div><b>Auto-chunk vượt 2GB</b> — <span class="d2">file 20GB/200GB, 1 chạm, không tự split.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Manifest + SHA-256 integrity</b> — <span class="d2">verify từng chunk + toàn file khi ghép.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Resume mức chunk</b> — <span class="d2">đứt mạng nối lại chỉ gửi chunk thiếu.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Gửi folder giữ cấu trúc</b> — <span class="d2">không chỉ file lẻ.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Guest demo 1 file &gt;2GB free</b> — <span class="d2">khoảnh khắc "wow, qua Telegram được" → convert.</span></div></li>
+    </ul></div>
+
+    <div class="panel" data-p="speed"><ul class="flist">
+      <li><span class="d">⇨</span><div><b>Upload/download song song</b> — <span class="d2">concurrency theo tier (Guest 1–2, Verified 3–4, Paid 6+).</span></div></li>
+      <li><span class="d">⇨</span><div><b>Stream-as-you-go</b> — <span class="d2">receiver tải chunk đầu khi chunk sau còn gửi.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Live speed gauge</b> — <span class="d2">minh bạch = tin tưởng.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Tuning chunk-size/concurrency</b> — <span class="d2">benchmark trên mạng VN.</span></div></li>
+    </ul></div>
+
+    <div class="panel" data-p="gate"><ul class="flist">
+      <li><span class="d">⇨</span><div><b>Receiver không bao giờ login</b> — <span class="d2">wedge UX.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Sender: Guest(ẩn danh+rate-limit) → Verified(Google 1-tap) → Paid</b></span></div></li>
+      <li><span class="d">⇨</span><div><b>Quota hero = single-file</b> — <span class="d2">Verified ~50GB+, volume/ngày cap để sống.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Report → takedown theo manifest_id</b> — <span class="d2">không cần decrypt.</span></div></li>
+    </ul></div>
+
+    <div class="panel" data-p="defense"><ul class="flist">
+      <li><span class="d">⇨</span><div><b>Encrypt-before-chunk (khiên)</b> — <span class="d2">blind pipe, giảm content-flag ban.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Ephemeral mặc định</b> — <span class="d2">giảm dấu vết lưu trữ.</span></div></li>
+      <li><span class="d">⇨</span><div><b>(Niche) view-once / expiry</b> — <span class="d2">doc nhạy cảm — feature phụ, không headline.</span></div></li>
+    </ul></div>
+
+    <div class="panel" data-p="brand"><ul class="flist">
+      <li><span class="d">⇨</span><div><b>Localize VI-first</b> — <span class="d2">đúng thị trường.</span></div></li>
+      <li><span class="d">⇨</span><div><b>Anti-MLM stance</b> — <span class="d2">không referral kim tự tháp; tín hiệu tin cậy.</span></div></li>
+      <li><span class="d">⇨</span><div><b>"Ổn định, không bị khóa"</b> thay vì "private" — <span class="d2">framing thật của E2E.</span></div></li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="climax">
+  <div class="wrap">
+    <div class="eyebrow">Synthesis</div>
+    <p class="one">"File <em>&gt;2GB</em> qua Telegram? Telegram <em>chặn</em>. TeleCloud <em>1 chạm</em>."</p>
+    <div class="pillars">
+      <span>📦 <b>Vượt trần 2GB</b> — auto-chunk</span>
+      <span>🚀 <b>Song song</b> — resume mức chunk</span>
+      <span>🛡️ <b>Blind pipe</b> — encrypt giảm ban</span>
+      <span>🚪 <b>Freemium</b> — Guest thử, Paid fund owned-storage</span>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <p>TeleCloud · BMad brainstorm · positioning locked: <b>Telegram without the 2GB ceiling.</b><br>
+  Docs: <code>.memlog.md</code> · <code>brainstorm-intent.md</code> · <code>sender-gating-spec.md</code> · <code>chunking-spec.md</code> · <code>mtproto-backend-spec.md</code> · <code>prd.md</code></p>
+</div></footer>
+
+<script>
+  var tabs=document.querySelectorAll('.tab'),panels=document.querySelectorAll('.panel');
+  tabs.forEach(function(t){t.addEventListener('click',function(){
+    tabs.forEach(function(x){x.classList.remove('active')});
+    panels.forEach(function(p){p.classList.remove('active')});
+    t.classList.add('active');
+    document.querySelector('.panel[data-p="'+t.dataset.t+'"]').classList.add('active');
+  });});
+</script>
+</body>
+</html>
