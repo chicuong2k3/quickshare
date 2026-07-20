@@ -1,0 +1,505 @@
+@page "/p2p/send"
+@inject IConfiguration Config
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Security.Claims
+@{
+    var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+}
+
+<PageTitle>QuickShareCloud — P2P file transfer</PageTitle>
+
+<div class="min-h-screen flex flex-col bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground" x-data="p2pSendPage()" x-cloak>
+    <script>
+        window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };
+    </script>
+
+    @* Header — same as Upload.razor *@
+    <header class="absolute inset-x-0 top-0 z-50">
+        <div class="flex items-center justify-between px-8 py-6">
+            <RzLink Href="/" Underline="false" class="flex items-center gap-3 text-foreground/80 hover:text-foreground transition-colors">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
+                <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
+            </RzLink>
+            <nav class="flex items-center gap-2">
+                <RzLink Href="/pricing" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Pricing</RzLink>
+                @if (isAuthenticated)
+                {
+                    <RzLink Href="/files" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Files</RzLink>
+                    <RzLink Href="/account" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">@userName</RzLink>
+                    <RzLink Href="/logout" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign out</RzLink>
+                }
+                else
+                {
+                    <RzLink Href="/login" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign in</RzLink>
+                }
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex flex-1 items-center justify-center px-6 pb-20 pt-32">
+        <div class="w-full max-w-2xl">
+
+            <input type="file" name="file" class="sr-only" aria-label="Choose a file" x-ref="fileInput" x-on:change="onFileSelect($event)" />
+
+            @* ===== IDLE / DRAGGING ===== *@
+            <section x-show="isIdle || isDragging" class="text-center">
+                <RzHeading Level="HeadingLevel.H1" class="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+                    <span x-show="isIdle">Send <RzAuroraText Decorative="true" Speed="0.6">direct</RzAuroraText></span>
+                    <span x-show="isDragging">Drop your file</span>
+                </RzHeading>
+                <RzParagraph class="mt-4 text-lg text-muted-foreground max-w-lg mx-auto">
+                    <span x-show="isIdle">Peer-to-peer &middot; no server storage &middot; encrypted</span>
+                    <span x-show="isDragging">Release to start P2P transfer</span>
+                </RzParagraph>
+
+                <div class="mt-16">
+                    <div x-on:dragover.prevent="onDragOver($event)"
+                         x-on:dragenter.prevent="onDragOver($event)"
+                         x-on:dragleave.prevent="onDragLeave($event)"
+                         x-on:drop.prevent="onDrop($event)"
+                         x-bind:class="draggingActive ? 'border-primary bg-primary/[0.08] scale-[1.01]' : 'border-muted-foreground/25 bg-card hover:border-primary/50 hover:bg-muted/20'"
+                         class="mx-auto flex cursor-pointer flex-col items-center gap-6 rounded-[2rem] border-2 border-dashed px-16 py-20 transition-all duration-300 shadow-sm"
+                         x-on:click="$refs.fileInput.click()">
+                        <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                            <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-lg font-semibold text-foreground/90">
+                                <span x-show="isIdle">Drag &amp; drop a file to share directly</span>
+                                <span x-show="isDragging">Drop it here</span>
+                            </p>
+                            <p class="mt-2 text-sm text-muted-foreground">
+                                <span x-show="isIdle">or click to browse &middot; no size limit</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex items-center justify-center gap-3">
+                    <input type="checkbox" id="enable-pin" x-model="enablePin" class="h-4 w-4 rounded border-border/60 text-primary focus:ring-primary" />
+                    <label for="enable-pin" class="text-sm text-muted-foreground">Protect with PIN</label>
+                    <input type="text" x-show="enablePin" x-model="pin" placeholder="Enter a PIN"
+                           class="ml-2 rounded-xl border border-border/60 bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm w-40"
+                           x-bind:required="enablePin" />
+                </div>
+            </section>
+
+            @* ===== CREATING LINK ===== *@
+            <section x-show="isCreatingLink" class="text-center">
+                <RzSpinner Size="Size.ExtraLarge" Color="SemanticColor.Primary" class="mx-auto" />
+                <RzHeading Level="HeadingLevel.H1" class="mt-8 text-2xl font-semibold">Creating share link&hellip;</RzHeading>
+            </section>
+
+            @* ===== WAITING FOR PEER ===== *@
+            <section x-show="isWaitingForPeer" class="text-center">
+                <RzSpinner Size="Size.ExtraLarge" Color="SemanticColor.Primary" class="mx-auto" />
+                <RzHeading Level="HeadingLevel.H1" class="mt-8 text-2xl font-semibold">Waiting for receiver</RzHeading>
+                <RzParagraph class="mt-3 text-base text-muted-foreground">Share this link with the recipient:</RzParagraph>
+                <div class="mt-6 max-w-md mx-auto">
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <input id="p2p-share-link" type="text" readonly
+                               x-model="shareLink"
+                               class="w-full flex-1 rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
+                               aria-label="Share link" />
+                        <RzClipboard TargetSelector="#p2p-share-link" AriaLabel="Copy share link" AsChild>
+                            <RzButton Variant="ThemeVariant.Primary" class="rounded-2xl px-6 py-3.5 text-sm font-semibold">
+                                <ClipboardTrigger>Copy link</ClipboardTrigger>
+                                <ClipboardFeedback>Copied!</ClipboardFeedback>
+                            </RzButton>
+                        </RzClipboard>
+                    </div>
+                </div>
+                <p class="mt-4 text-xs text-muted-foreground">Link expires in 7 days. File transfers directly between peers.</p>
+                <RzButton Variant="ThemeVariant.Ghost" class="mt-8 text-sm font-medium" x-on:click="cancel()">
+                    Cancel
+                </RzButton>
+            </section>
+
+            @* ===== CONNECTING (WebRTC handshake) ===== *@
+            <section x-show="isConnecting" class="text-center">
+                <RzSpinner Size="Size.ExtraLarge" Color="SemanticColor.Primary" class="mx-auto" />
+                <RzHeading Level="HeadingLevel.H1" class="mt-8 text-2xl font-semibold">Establishing secure connection&hellip;</RzHeading>
+                <RzParagraph class="mt-3 text-base text-muted-foreground">Peer joined! Setting up encrypted channel.</RzParagraph>
+            </section>
+
+            @* ===== TRANSFERRING ===== *@
+            <section x-show="isTransferring" class="text-center">
+                <RzSpinner Size="Size.ExtraLarge" Color="SemanticColor.Primary" class="mx-auto" />
+                <RzHeading Level="HeadingLevel.H1" class="mt-8 text-2xl font-semibold" x-text="filename"></RzHeading>
+                <RzParagraph class="mt-3 text-base text-muted-foreground" x-text="progressLabel"></RzParagraph>
+                <div class="mt-8 max-w-md mx-auto">
+                    <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
+                        <div class="h-full rounded-full bg-primary transition-all duration-300" x-bind:style="'width: ' + progress + '%'"></div>
+                    </div>
+                </div>
+                <RzButton Variant="ThemeVariant.Default" class="mt-10 rounded-full px-8 py-3 text-sm" x-on:click="cancelTransfer()">
+                    Cancel
+                </RzButton>
+            </section>
+
+            @* ===== SUCCESS ===== *@
+            <section x-show="isSuccess" class="text-center">
+                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-2xl font-semibold">File sent!</RzHeading>
+                <RzParagraph class="mt-2 text-base text-muted-foreground" x-text="filename"></RzParagraph>
+
+                <RzButton Variant="ThemeVariant.Ghost" class="mt-8 text-sm font-medium" x-on:click="reset()">
+                    Send another file
+                </RzButton>
+            </section>
+
+            @* ===== FAILED ===== *@
+            <section x-show="isFailed" class="text-center">
+                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-destructive/8 text-destructive">
+                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-2xl font-semibold">Transfer failed</RzHeading>
+                <RzParagraph class="mt-2 text-base text-muted-foreground" x-text="error || 'The P2P connection could not be established.'"></RzParagraph>
+                <RzButton Variant="ThemeVariant.Primary" class="mt-10 rounded-full px-8 py-3 text-sm font-semibold" x-on:click="reset()">
+                    Try again
+                </RzButton>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="px-8 py-6 text-center text-xs text-muted-foreground/80">
+        QuickShareCloud &mdash; direct, encrypted peer-to-peer transfers.
+    </footer>
+</div>
+
+<script src="/js/p2p/signaling.js"></script>
+<script src="/js/p2p/peerConnection.js"></script>
+<script src="/js/p2p/fileTransfer.js"></script>
+<script src="/js/p2p/encryption.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    function apiBase() {
+        if (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl) {
+            return String(window.ZAPDROP_CONFIG.apiBaseUrl).replace(/\/+$/, '');
+        }
+        return '';
+    }
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+        return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+
+    function register(Alpine) {
+        Alpine.data('p2pSendPage', function () {
+            return {
+                state: 'idle', // idle | dragging | creating-link | waiting-peer | connecting | transferring | success | failed
+                progress: 0,
+                filename: '',
+                fileSize: 0,
+                shareLink: '',
+                shareCode: '',
+                error: '',
+                enablePin: false,
+                pin: '',
+                draggingActive: false,
+
+                // Internal
+                _signaling: null,
+                _peerConnection: null,
+                _dataChannel: null,
+                _sender: null,
+                _file: null,
+                _encKey: null,
+                _pinSalt: null,
+                _startTime: 0,
+
+                init: function () {
+                },
+
+                onDragOver: function (e) {
+                    e.preventDefault();
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+                    this.draggingActive = true;
+                    if (this.state === 'idle') this.state = 'dragging';
+                },
+
+                onDragLeave: function (e) {
+                    e.preventDefault();
+                    this.draggingActive = false;
+                    if (this.state === 'dragging') this.state = 'idle';
+                },
+
+                onDrop: function (e) {
+                    e.preventDefault();
+                    this.draggingActive = false;
+                    var files = e.dataTransfer && e.dataTransfer.files;
+                    if (files && files.length) {
+                        this.startP2P(files[0]);
+                    } else {
+                        this.state = 'idle';
+                    }
+                },
+
+                onFileSelect: function (e) {
+                    var files = e.target && e.target.files;
+                    if (files && files.length) {
+                        this.startP2P(files[0]);
+                    }
+                },
+
+                startP2P: async function (file) {
+                    if (!file) return;
+
+                    this._file = file;
+                    this.filename = file.name;
+                    this.fileSize = file.size;
+                    this.error = '';
+                    this.state = 'creating-link';
+
+                    try {
+                        // 1. Create share metadata
+                        var api = apiBase();
+                        var resp = await fetch(api + '/api/shares/p2p', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                fileName: file.name,
+                                fileSize: file.size,
+                                mimeType: file.type || 'application/octet-stream',
+                                hasPin: this.enablePin && this.pin.length > 0
+                            })
+                        });
+
+                        if (!resp.ok) {
+                            this.state = 'failed';
+                            this.error = 'Failed to create share link';
+                            return;
+                        }
+
+                        var data = await resp.json();
+                        this.shareCode = data.shareCode;
+                        this.shareLink = data.shareLink;
+                        this.state = 'waiting-peer';
+
+                        // 2. Derive encryption key if PIN is set
+                        if (this.enablePin && this.pin.length > 0) {
+                            var salt = window.P2P.encryption.generateSalt();
+                            this._pinSalt = salt;
+                            this._encKey = await window.P2P.encryption.deriveKey(this.pin, salt);
+                        }
+
+                        // 3. Connect signaling
+                        this._connectSignaling();
+                    } catch (e) {
+                        this.state = 'failed';
+                        this.error = 'Network error: ' + e.message;
+                    }
+                },
+
+                _connectSignaling: function () {
+                    var self = this;
+                    var api = apiBase();
+
+                    if (window.P2P.SignalingClient) {
+                        this._signaling = new window.P2P.SignalingClient(api, this.shareCode);
+
+                        this._signaling.onRegistered = function () {
+                            // Sender registered, waiting for peer
+                        };
+
+                        this._signaling.onPeerJoined = function () {
+                            self._onPeerJoined();
+                        };
+
+                        this._signaling.onError = function (msg) {
+                            self.state = 'failed';
+                            self.error = msg;
+                        };
+
+                        this._signaling.connect('sender', {
+                            name: this._file.name,
+                            size: this._file.size,
+                            mime: this._file.type || 'application/octet-stream'
+                        });
+                    } else {
+                        this.state = 'failed';
+                        this.error = 'Signaling client not loaded';
+                    }
+                },
+
+                _onPeerJoined: async function () {
+                    this.state = 'connecting';
+                    var self = this;
+
+                    if (window.P2P.PeerConnection) {
+                        this._peerConnection = new window.P2P.PeerConnection();
+
+                        // Create data channel
+                        this._dataChannel = this._peerConnection.createDataChannel('filetransfer');
+
+                        this._dataChannel.onopen = function () {
+                            self._startSending();
+                        };
+
+                        this._dataChannel.onerror = function (e) {
+                            self.state = 'failed';
+                            self.error = 'Data channel error';
+                        };
+
+                        // Handle ICE candidates
+                        this._peerConnection.onIceCandidate = function (candidate) {
+                            if (self._signaling) {
+                                self._signaling.send('ice', candidate);
+                            }
+                        };
+
+                        // Handle connection state
+                        this._peerConnection.onConnectionState = function (state) {
+                            if (state === 'failed' || state === 'disconnected') {
+                                if (self.state === 'transferring' || self.state === 'connecting') {
+                                    self.state = 'failed';
+                                    self.error = 'Connection ' + state;
+                                }
+                            }
+                        };
+
+                        // Handle relayed messages from signaling
+                        this._signaling.onRelay = function (type, data) {
+                            if (type === 'ice' && data) {
+                                self._peerConnection.addIceCandidate(data);
+                            }
+                        };
+
+                        // Create offer
+                        try {
+                            var offerSdp = await this._peerConnection.createOffer();
+                            this._signaling.send('offer', { sdp: offerSdp });
+                        } catch (e) {
+                            this.state = 'failed';
+                            this.error = 'Failed to create WebRTC offer';
+                        }
+                    }
+                },
+
+                _startSending: function () {
+                    this.state = 'transferring';
+                    this._startTime = Date.now();
+                    var self = this;
+
+                    var enc = null;
+                    if (this._encKey) {
+                        enc = {
+                            key: this._encKey,
+                            encrypt: window.P2P.encryption.encryptChunk
+                        };
+                    }
+
+                    this._sender = new window.P2P.FileSender(this._file, this._dataChannel, enc);
+
+                    this._sender.onProgress = function (sent, total) {
+                        self.progress = Math.round((sent / total) * 100);
+                        self._updateProgressLabel(sent, total);
+                    };
+
+                    this._sender.onComplete = function () {
+                        self.progress = 100;
+                        self.state = 'success';
+                    };
+
+                    this._sender.onError = function (msg) {
+                        self.state = 'failed';
+                        self.error = msg;
+                    };
+
+                    this._sender.start();
+                },
+
+                _updateProgressLabel: function (sent, total) {
+                    var elapsed = (Date.now() - this._startTime) / 1000;
+                    if (elapsed > 0) {
+                        this._lastSent = sent;
+                        this._lastTotal = total;
+                        this._lastElapsed = elapsed;
+                    }
+                },
+
+                cancelTransfer: function () {
+                    if (this._sender) this._sender.cancel();
+                    this._cleanup();
+                    this.state = 'idle';
+                },
+
+                cancel: function () {
+                    this._cleanup();
+                    this.state = 'idle';
+                },
+
+                reset: function () {
+                    this._cleanup();
+                    this.state = 'idle';
+                    this.progress = 0;
+                    this.filename = '';
+                    this.shareLink = '';
+                    this.shareCode = '';
+                    this.error = '';
+                    this._file = null;
+                },
+
+                _cleanup: function () {
+                    if (this._signaling) { this._signaling.close(); this._signaling = null; }
+                    if (this._peerConnection) { this._peerConnection.close(); this._peerConnection = null; }
+                    if (this._sender) { this._sender.cancel(); this._sender = null; }
+                    this._dataChannel = null;
+                },
+
+                get progressLabel() {
+                    if (this.progress === 0) return 'Starting...';
+                    var label = this.progress + '%';
+                    if (this._lastSent && this._lastTotal)
+                        label += ' · ' + formatBytes(this._lastSent) + ' / ' + formatBytes(this._lastTotal);
+                    if (this._lastElapsed && this._lastElapsed > 0) {
+                        var bps = this._lastSent / this._lastElapsed;
+                        label += ' · ' + formatBytes(bps) + '/s';
+                        var remaining = (this._lastTotal - this._lastSent) / bps;
+                        if (remaining < 60) label += ' · ~' + Math.round(remaining) + 's';
+                        else label += ' · ~' + Math.round(remaining / 60) + 'm';
+                    }
+                    return label;
+                },
+
+                get isIdle() { return this.state === 'idle'; },
+                get isDragging() { return this.state === 'dragging'; },
+                get isCreatingLink() { return this.state === 'creating-link'; },
+                get isWaitingForPeer() { return this.state === 'waiting-peer'; },
+                get isConnecting() { return this.state === 'connecting'; },
+                get isTransferring() { return this.state === 'transferring'; },
+                get isSuccess() { return this.state === 'success'; },
+                get isFailed() { return this.state === 'failed'; }
+            };
+        });
+    }
+
+    if (window.Alpine) {
+        register(window.Alpine);
+    } else {
+        window.addEventListener('alpine:init', function () {
+            if (window.Alpine) register(window.Alpine);
+        });
+    }
+})();
+</script>

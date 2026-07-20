@@ -1,0 +1,131 @@
+// P2P WebSocket signaling client for QuickShare.
+// Establishes and manages WebSocket connection to the P2P signaling server.
+(function () {
+    'use strict';
+
+    var MAX_RECONNECT_ATTEMPTS = 3;
+    var RECONNECT_BACKOFF_MS = 1000;
+
+    function SignalingClient(apiBaseUrl, shareCode) {
+        this.apiBaseUrl = apiBaseUrl.replace(/\/+$/, '');
+        this.shareCode = shareCode;
+        this.ws = null;
+        this.role = null;
+        this.reconnectAttempts = 0;
+        this._intentionalClose = false;
+
+        // Event callbacks
+        this.onPeerJoined = null;
+        this.onFileMeta = null;
+        this.onRelay = null;
+        this.onPeerLeft = null;
+        this.onError = null;
+        this.onRegistered = null;
+        this.onWaiting = null;
+    }
+
+    SignalingClient.prototype.connect = function (role, fileMeta) {
+        this.role = role;
+        this._intentionalClose = false;
+
+        var wsBaseUrl = this.apiBaseUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+        var url = wsBaseUrl + '/ws/connect/' + this.shareCode;
+        var self = this;
+
+        try {
+            this.ws = new WebSocket(url);
+        } catch (e) {
+            if (self.onError) self.onError('WebSocket creation failed: ' + e.message);
+            return;
+        }
+
+        this.ws.onopen = function () {
+            self.reconnectAttempts = 0;
+            var msg = { type: 'register', role: role };
+            if (role === 'sender' && fileMeta) {
+                msg.fileMeta = { name: fileMeta.name, size: fileMeta.size, mime: fileMeta.mime };
+            }
+            self._sendMessage(msg);
+        };
+
+        this.ws.onmessage = function (event) {
+            try {
+                var data = JSON.parse(event.data);
+                self._handleMessage(data);
+            } catch (e) {
+                if (self.onError) self.onError('Invalid message: ' + e.message);
+            }
+        };
+
+        this.ws.onclose = function () {
+            if (!self._intentionalClose && self.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                self.reconnectAttempts++;
+                var delay = RECONNECT_BACKOFF_MS * Math.pow(2, self.reconnectAttempts - 1);
+                setTimeout(function () { self.connect(role, fileMeta); }, delay);
+            } else if (!self._intentionalClose && self.onError) {
+                self.onError('Connection lost');
+            }
+        };
+
+        this.ws.onerror = function () {
+            // onclose will fire after this
+        };
+    };
+
+    SignalingClient.prototype.send = function (type, payload) {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            if (this.onError) this.onError('WebSocket not connected');
+            return;
+        }
+        this._sendMessage({ type: type, data: payload });
+    };
+
+    SignalingClient.prototype.close = function () {
+        this._intentionalClose = true;
+        if (this.ws) {
+            this.ws.close(1000, 'Client closing');
+            this.ws = null;
+        }
+    };
+
+    SignalingClient.prototype._sendMessage = function (msg) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(msg));
+        }
+    };
+
+    SignalingClient.prototype._handleMessage = function (data) {
+        switch (data.type) {
+            case 'registered':
+                if (this.onRegistered) this.onRegistered(data.role);
+                break;
+            case 'peer-joined':
+                if (this.onPeerJoined) this.onPeerJoined();
+                break;
+            case 'file-meta':
+                if (this.onFileMeta) this.onFileMeta({
+                    fileName: data.fileName,
+                    fileSize: data.fileSize,
+                    mimeType: data.mimeType
+                });
+                break;
+            case 'waiting':
+                if (this.onWaiting) this.onWaiting(data.message);
+                break;
+            case 'peer-left':
+                if (this.onPeerLeft) this.onPeerLeft(data.message);
+                break;
+            case 'error':
+                if (this.onError) this.onError(data.message || 'Server error');
+                break;
+            case 'offer':
+            case 'answer':
+            case 'ice':
+                if (this.onRelay) this.onRelay(data.type, data.data);
+                break;
+        }
+    };
+
+    window.P2P = window.P2P || {};
+    window.P2P.SignalingClient = SignalingClient;
+})();

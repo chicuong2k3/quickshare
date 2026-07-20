@@ -1,0 +1,412 @@
+@page "/p2p/d/{ShareCode}"
+@inject IConfiguration Config
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+    var shareCode = HttpContextAccessor.HttpContext?.GetRouteValue("ShareCode") as string ?? "";
+}
+
+<PageTitle>QuickShareCloud — P2P download</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground px-6 py-24"
+     x-data="p2pDownloadPage()" x-init="initP2P('@shareCode')" x-cloak>
+    <script>
+        window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };
+    </script>
+
+    <RzCard class="w-full max-w-md shadow-sm">
+        <CardContent class="p-10">
+
+            @* ===== CHECKING ===== *@
+            <section x-show="isChecking" class="text-center py-10">
+                <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" />
+                <RzParagraph class="mt-5 text-sm text-muted-foreground">Connecting to sender&hellip;</RzParagraph>
+            </section>
+
+            @* ===== PIN REQUIRED ===== *@
+            <section x-show="isPinRequired" class="text-center py-10">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                    <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                </div>
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">PIN required</RzHeading>
+                <RzParagraph class="mt-2 text-sm text-muted-foreground">This file is protected. Enter the PIN to decrypt.</RzParagraph>
+                <div class="mt-6">
+                    <input type="text" x-model="pin"
+                           class="w-full max-w-xs rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
+                           placeholder="Enter PIN" x-bind:disabled="isConnecting" />
+                </div>
+                <RzButton Variant="ThemeVariant.Primary" class="mt-6 rounded-full px-8 py-3 text-sm font-semibold"
+                          x-on:click="submitPin()" x-bind:disabled="!pin || isConnecting">
+                    <span x-show="!isConnecting">Start download</span>
+                    <span x-show="isConnecting">Connecting&hellip;</span>
+                </RzButton>
+            </section>
+
+            @* ===== READY (file info + download button) ===== *@
+            <section x-show="isReady" class="text-center">
+                <div class="flex items-start gap-5 text-left">
+                    <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <RzHeading Level="HeadingLevel.H1" class="truncate text-xl font-semibold" x-text="fileName" title=""></RzHeading>
+                        <RzParagraph class="mt-1.5 text-sm text-muted-foreground" x-text="fileSizeLabel"></RzParagraph>
+                    </div>
+                </div>
+
+                <div class="mt-10">
+                    <RzButton Variant="ThemeVariant.Primary" class="w-full rounded-2xl px-6 py-4 text-sm font-semibold"
+                              x-on:click="startDownload()" x-bind:disabled="isConnecting || isTransferring">
+                        <span x-show="!isConnecting && !isTransferring">Download directly</span>
+                        <span x-show="isConnecting">Connecting&hellip;</span>
+                        <span x-show="isTransferring">Downloading&hellip;</span>
+                    </RzButton>
+                </div>
+
+                <p class="mt-4 text-xs text-muted-foreground">
+                    Direct peer-to-peer transfer &middot; encrypted &middot; no server copy
+                </p>
+            </section>
+
+            @* ===== TRANSFERRING ===== *@
+            <section x-show="isTransferring" class="text-center py-6">
+                <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" class="mx-auto" />
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold" x-text="fileName"></RzHeading>
+                <RzParagraph class="mt-3 text-sm text-muted-foreground" x-text="progressLabel"></RzParagraph>
+                <div class="mt-6">
+                    <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
+                        <div class="h-full rounded-full bg-primary transition-all duration-300" x-bind:style="'width: ' + progress + '%'"></div>
+                    </div>
+                </div>
+                <RzButton Variant="ThemeVariant.Default" class="mt-8 rounded-full px-6 py-2 text-sm" x-on:click="cancelDownload()">
+                    Cancel
+                </RzButton>
+            </section>
+
+            @* ===== COMPLETE ===== *@
+            <section x-show="isComplete" class="text-center py-10">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                    <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">Download complete</RzHeading>
+                <RzParagraph class="mt-2 text-sm text-muted-foreground" x-text="fileName"></RzParagraph>
+                <RzLink Href="/" Underline="false" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
+                    Send a file
+                </RzLink>
+            </section>
+
+            @* ===== WAITING FOR SENDER ===== *@
+            <section x-show="isWaitingForSender" class="text-center py-10">
+                <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" class="mx-auto" />
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">Waiting for sender</RzHeading>
+                <RzParagraph class="mt-2 text-sm text-muted-foreground">
+                    The sender is not online. Your download will start automatically when they connect.
+                </RzParagraph>
+            </section>
+
+            @* ===== ERROR / FALLBACK ===== *@
+            <section x-show="isError" class="text-center py-10">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/8 text-destructive">
+                    <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">Connection unavailable</RzHeading>
+                <RzParagraph class="mt-2 text-sm text-muted-foreground" x-text="error"></RzParagraph>
+                <a x-bind:href="fallbackUrl"
+                   class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition"
+                   x-show="fallbackUrl">
+                    Download from server instead
+                </a>
+            </section>
+
+        </CardContent>
+    </RzCard>
+</div>
+
+<script src="/js/p2p/signaling.js"></script>
+<script src="/js/p2p/peerConnection.js"></script>
+<script src="/js/p2p/fileReceiver.js"></script>
+<script src="/js/p2p/encryption.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    function apiBase() {
+        if (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl) {
+            return String(window.ZAPDROP_CONFIG.apiBaseUrl).replace(/\/+$/, '');
+        }
+        return '';
+    }
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+        return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+
+    function register(Alpine) {
+        Alpine.data('p2pDownloadPage', function () {
+            return {
+                // State machine: checking | pin-required | ready | waiting-sender | connecting | transferring | complete | error
+                state: 'checking',
+                progress: 0,
+                fileName: '',
+                fileSize: 0,
+                mimeType: '',
+                shareCode: '',
+                pin: '',
+                error: '',
+                fallbackUrl: '',
+                hasPin: false,
+                _salt: '',
+                _receivedBytes: 0,
+                _startTime: 0,
+
+                // Internal
+                _signaling: null,
+                _peerConnection: null,
+                _dataChannel: null,
+                _receiver: null,
+                _encKey: null,
+                _intentionalStop: false,
+
+                initP2P: function (shareCode) {
+                    this.shareCode = shareCode;
+                    this.fallbackUrl = '/d/' + shareCode;
+                    this._connectAsReceiver();
+                },
+
+                _connectAsReceiver: function () {
+                    var self = this;
+                    var api = apiBase();
+
+                    if (!window.P2P.SignalingClient) {
+                        this.state = 'error';
+                        this.error = 'Signaling client not loaded';
+                        return;
+                    }
+
+                    this._signaling = new window.P2P.SignalingClient(api, this.shareCode);
+
+                    this._signaling.onRegistered = function () {
+                        // Registered as receiver
+                    };
+
+                    this._signaling.onFileMeta = function (meta) {
+                        self.fileName = meta.fileName;
+                        self.fileSize = meta.fileSize;
+                        self.mimeType = meta.mimeType;
+                        // Check if PIN is needed (sent by server via file-meta extension)
+                        if (self.hasPin) {
+                            self.state = 'pin-required';
+                        } else {
+                            self.state = 'ready';
+                        }
+                    };
+
+                    this._signaling.onPeerJoined = function () {
+                        if (self.state === 'waiting-sender' || self.state === 'checking') {
+                            self.state = 'ready';
+                        }
+                    };
+
+                    this._signaling.onWaiting = function () {
+                        self.state = 'waiting-sender';
+                    };
+
+                    this._signaling.onError = function (msg) {
+                        self.state = 'error';
+                        self.error = msg || 'Connection failed';
+                    };
+
+                    this._signaling.connect('receiver');
+                },
+
+                submitPin: async function () {
+                    if (!this.pin || this.pin.length === 0) return;
+
+                    this.state = 'connecting';
+
+                    try {
+                        // Derive key — salt could come from server in file-meta
+                        // For now, use the pin directly for key derivation
+                        var salt = this.pin + this.shareCode;
+                        this._encKey = await window.P2P.encryption.deriveKey(this.pin, salt);
+                        this.state = 'ready';
+                    } catch (e) {
+                        this.state = 'error';
+                        this.error = 'Failed to derive encryption key';
+                    }
+                },
+
+                startDownload: async function () {
+                    var self = this;
+                    this.state = 'connecting';
+
+                    if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) {
+                        this.state = 'error';
+                        this.error = 'P2P modules not loaded';
+                        return;
+                    }
+
+                    this._peerConnection = new window.P2P.PeerConnection();
+
+                    // Listen for data channel (sender initiates it)
+                    this._peerConnection.onDataChannel = function (channel) {
+                        self._onDataChannel(channel);
+                    };
+
+                    this._peerConnection.onIceCandidate = function (candidate) {
+                        if (self._signaling) {
+                            self._signaling.send('ice', candidate);
+                        }
+                    };
+
+                    this._peerConnection.onConnectionState = function (state) {
+                        if (state === 'failed' || state === 'disconnected') {
+                            if (self.state === 'transferring' || self.state === 'connecting') {
+                                self.state = 'error';
+                                self.error = 'Connection ' + state;
+                            }
+                        }
+                    };
+
+                    // Handle relayed messages
+                    this._signaling.onRelay = function (type, data) {
+                        if (type === 'offer') {
+                            self._handleOffer(data);
+                        } else if (type === 'ice' && data) {
+                            self._peerConnection.addIceCandidate(data);
+                        }
+                    };
+
+                    // Check if we already got an offer via relay
+                    // The relay callback will handle it
+                },
+
+                _handleOffer: async function (data) {
+                    var self = this;
+                    try {
+                        var sdp = data.sdp || data;
+                        var answerSdp = await this._peerConnection.createAnswer(sdp);
+                        this._signaling.send('answer', { sdp: answerSdp });
+                    } catch (e) {
+                        this.state = 'error';
+                        this.error = 'Failed to handle WebRTC offer';
+                    }
+                },
+
+                _onDataChannel: function (channel) {
+                    var self = this;
+                    this._dataChannel = channel;
+
+                    var enc = null;
+                    if (this._encKey) {
+                        enc = {
+                            key: this._encKey,
+                            decrypt: window.P2P.encryption.decryptChunk
+                        };
+                    }
+
+                    this._receiver = new window.P2P.FileReceiver(channel, enc);
+                    this._startTime = Date.now();
+
+                    this._receiver.onFileInfo = function (info) {
+                        self.fileName = info.name;
+                        self.fileSize = info.size;
+                        self.mimeType = info.mime;
+                    };
+
+                    this._receiver.onProgress = function (received, total) {
+                        self.progress = Math.round((received / total) * 100);
+                        self._receivedBytes = received;
+                        self._updateProgressLabel(received, total);
+                    };
+
+                    this._receiver.onComplete = function () {
+                        self.progress = 100;
+                        self.state = 'complete';
+                    };
+
+                    this._receiver.onError = function (msg) {
+                        self.state = 'error';
+                        self.error = msg;
+                    };
+
+                    this.state = 'transferring';
+                    this._receiver.start();
+                },
+
+                _updateProgressLabel: function (received, total) {
+                    // Computed by getter
+                },
+
+                cancelDownload: function () {
+                    this._intentionalStop = true;
+                    if (this._receiver) this._receiver.cancel();
+                    this._cleanup();
+                    this.state = 'checking';
+                    this._intentionalStop = false;
+                },
+
+                _cleanup: function () {
+                    if (this._signaling) { this._signaling.close(); this._signaling = null; }
+                    if (this._peerConnection) { this._peerConnection.close(); this._peerConnection = null; }
+                    if (this._receiver) { this._receiver.cancel(); this._receiver = null; }
+                    this._dataChannel = null;
+                },
+
+                get progressLabel() {
+                    if (this.progress === 0) return 'Starting...';
+                    var label = this.progress + '%';
+                    if (this._receivedBytes && this.fileSize)
+                        label += ' · ' + formatBytes(this._receivedBytes) + ' / ' + formatBytes(this.fileSize);
+                    var elapsed = (Date.now() - this._startTime) / 1000;
+                    if (elapsed > 0 && this._receivedBytes > 0) {
+                        var bps = this._receivedBytes / elapsed;
+                        label += ' · ' + formatBytes(bps) + '/s';
+                        var remaining = (this.fileSize - this._receivedBytes) / bps;
+                        if (remaining < 60) label += ' · ~' + Math.round(remaining) + 's';
+                        else label += ' · ~' + Math.round(remaining / 60) + 'm';
+                    }
+                    return label;
+                },
+
+                get fileSizeLabel() {
+                    return formatBytes(this.fileSize);
+                },
+
+                get isChecking() { return this.state === 'checking'; },
+                get isPinRequired() { return this.state === 'pin-required'; },
+                get isReady() { return this.state === 'ready'; },
+                get isConnecting() { return this.state === 'connecting'; },
+                get isTransferring() { return this.state === 'transferring'; },
+                get isComplete() { return this.state === 'complete'; },
+                get isWaitingForSender() { return this.state === 'waiting-sender'; },
+                get isError() { return this.state === 'error'; }
+            };
+        });
+    }
+
+    if (window.Alpine) {
+        register(window.Alpine);
+    } else {
+        window.addEventListener('alpine:init', function () {
+            if (window.Alpine) register(window.Alpine);
+        });
+    }
+})();
+</script>

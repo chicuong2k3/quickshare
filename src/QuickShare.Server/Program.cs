@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using FastEndpoints.Swagger;
 using System.Security.Claims;
+using QuickShare.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -62,6 +63,9 @@ builder.Services.AddApiCookieAuth();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// P2P WebRTC signaling
+builder.Services.AddSingleton<P2PConnectionManager>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -109,8 +113,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<P2PSignalingMiddleware>();
 
 app.UseFastEndpoints()
    .UseSwaggerGen();
