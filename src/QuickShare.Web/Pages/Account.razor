@@ -8,26 +8,27 @@
 
 <PageTitle>Account — QuickShareCloud</PageTitle>
 
-<div class="min-h-screen flex flex-col bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground">
-    <header class="absolute inset-x-0 top-0 z-50">
-        <div class="flex items-center justify-between px-8 py-6">
-            <RzLink Href="/" Underline="false" class="flex items-center gap-3 text-foreground/80 hover:text-foreground transition-colors">
+<div id="account-app">
+    <header class="db-page-header">
+        <div class="db-container flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 db-link">
                 <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
-                <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
-            </RzLink>
+                <span class="db-h5">QuickShareCloud</span>
+            </a>
             <nav class="flex items-center gap-2">
-                <RzLink Href="/" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Send</RzLink>
-                <RzLink Href="/pricing" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Pricing</RzLink>
-                <RzLink Href="/files" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Files</RzLink>
-                <RzLink Href="/logout" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign out</RzLink>
+                <a href="/" class="db-btn db-btn--ghost">Send</a>
+                <a href="/pricing" class="db-btn db-btn--ghost">Pricing</a>
+                <a href="/files" class="db-btn db-btn--ghost">Files</a>
+                <a href="/logout" class="db-btn db-btn--ghost">Sign out</a>
             </nav>
         </div>
     </header>
 
-    <main class="flex flex-1 items-center justify-center px-6 pb-20 pt-32">
-        <RzCard class="w-full max-w-md shadow-sm">
-            <CardContent class="p-10">
-                <div class="flex flex-col items-center text-center">
+    <main class="flex flex-wrap items-start justify-center gap-8 px-6 pb-20 pt-32">
+        @* ── Profile Card ── *@
+        <div class="db-card w-full max-w-md">
+            <div class="db-card__body p-10">
+                <div class="flex flex-col items-center db-text-center">
                     <div class="relative">
                         @if (!string.IsNullOrEmpty(avatar))
                         {
@@ -44,32 +45,30 @@
                                  class="hidden h-20 w-20 rounded-full ring-2 ring-border object-cover" />
                         }
                     </div>
-                    <RzHeading Level="HeadingLevel.H2" class="mt-5 text-2xl font-semibold">@name</RzHeading>
-                    <RzParagraph class="mt-1.5 text-base text-muted-foreground">@email</RzParagraph>
-                    <RzBadge Variant="ThemeVariant.Default" Soft="true" class="mt-3">@provider · @plan</RzBadge>
+                    <h2 class="db-h2 mt-5">@name</h2>
+                    <p class="db-p db-text-muted mt-1">@email</p>
+                    <span class="db-badge db-badge--updated mt-3">@provider · @plan</span>
                 </div>
 
                 @if (!string.IsNullOrEmpty(formError))
                 {
-                    <RzAlert Variant="ThemeVariant.Destructive" class="mt-6">
-                        <AlertDescription>@formError</AlertDescription>
-                    </RzAlert>
+                    <div class="db-alert db-alert--error mt-6" role="alert">
+                        @formError
+                    </div>
                 }
 
-                <div x-data class="mt-10 space-y-5">
-
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-foreground/80 mb-1.5">Display name</label>
+                <div class="mt-10 space-y-5">
+                    <label class="db-field">
+                        <span class="db-label">Display name</span>
                         <input id="name" name="name" type="text" required
                                value="@name"
-                               class="w-full rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm" />
-                    </div>
+                               class="db-input" />
+                    </label>
 
                     <div>
-                        <label class="block text-sm font-medium text-foreground/80 mb-1.5">Avatar image</label>
-
+                        <label class="db-label db-block mb-2">Avatar image</label>
                         <label for="avatarFile"
-                               class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-background px-5 py-8 text-sm text-muted-foreground/80 hover:border-primary/40 hover:bg-primary/5 cursor-pointer transition-colors">
+                               class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-background px-5 py-8 text-sm text-muted-foreground/80 hover:border-primary/40 hover:bg-primary/5 transition-colors">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             <span>Click to choose an image</span>
                             <span class="text-xs text-muted-foreground/60">PNG, JPG or GIF — max 5 MB</span>
@@ -78,23 +77,54 @@
                                class="sr-only" onchange="previewAvatar(event)" />
                     </div>
 
-                    <button type="button" @click="submitAccountForm(); $event.preventDefault()"
-                            class="w-full rounded-2xl bg-foreground px-6 py-3.5 text-sm font-semibold text-background hover:opacity-90 cursor-pointer transition-opacity">
+                    <button type="button" onclick="submitAccountForm()"
+                            class="db-btn db-btn--primary w-full">
                         Save changes
                     </button>
                 </div>
 
                 <div class="mt-6">
-                    <RzLink Href="/logout" Underline="false"
-                            class="flex w-full items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 px-6 py-3.5 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer transition-colors">
+                    <a href="/logout" class="db-btn db-btn--ghost w-full flex items-center justify-center">
                         Sign out
-                    </RzLink>
+                    </a>
                 </div>
-            </CardContent>
-        </RzCard>
+            </div>
+        </div>
+
+        @* ── Branding Card ── *@
+        <div class="db-card w-full max-w-md" id="branding-card">
+            <div class="db-card__body p-10">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="db-h3">Delivery Branding</h3>
+                        <p class="db-p db-text-muted">Customise how recipients see your deliveries.</p>
+                    </div>
+                </div>
+
+                @* Loading state *@
+                <div id="branding-loading" class="db-text-center py-10">
+                    <div class="db-spinner db-spinner--lg"></div>
+                    <p class="db-p db-text-muted mt-3">Loading deliveries&hellip;</p>
+                </div>
+
+                @* Empty state *@
+                <div id="branding-empty" class="db-text-center py-8 db-text-muted" style="display:none;">
+                    No deliveries yet. Send a file first to brand it.
+                </div>
+
+                @* Delivery list *@
+                <div id="branding-list" style="display:none;"></div>
+            </div>
+        </div>
     </main>
 
-    <footer class="px-8 py-6 text-center text-xs text-muted-foreground/80">
+    <footer class="db-page-footer db-text-center">
         QuickShareCloud &mdash; secure file sharing.
     </footer>
 </div>
@@ -105,13 +135,38 @@
     function previewAvatar(e) {
         var file = e.target.files[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB.'); e.target.value = ''; return; }
+
+        // Validate file size (5 MB max)
+        var MAX_FILE_SIZE = 5 * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE) {
+            alert('Image must be under 5 MB.');
+            e.target.value = '';
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            e.target.value = '';
+            return;
+        }
+
         var reader = new FileReader();
         reader.onload = function (ev) {
             var img = document.getElementById('avatarPreview');
             var initial = document.getElementById('avatarInitial');
-            if (img) { img.src = ev.target.result; img.classList.remove('hidden'); }
-            if (initial) initial.classList.add('hidden');
+
+            if (img) {
+                img.src = ev.target.result;
+                img.classList.remove('hidden');
+            }
+            if (initial) {
+                initial.classList.add('hidden');
+            }
+        };
+        reader.onerror = function () {
+            alert('Failed to read image file.');
+            e.target.value = '';
         };
         reader.readAsDataURL(file);
     }
@@ -146,6 +201,204 @@
         };
         xhr.send(fd);
     }
+
+    // ===== Branding Manager (vanilla JS) =====
+    document.addEventListener('DOMContentLoaded', function () {
+        var state = {
+            loading: true,
+            deliveries: [],
+            editIndex: null
+        };
+
+        var loadingEl = document.getElementById('branding-loading');
+        var emptyEl = document.getElementById('branding-empty');
+        var listEl = document.getElementById('branding-list');
+
+        function render() {
+            loadingEl.style.display = state.loading ? '' : 'none';
+            emptyEl.style.display = (!state.loading && state.deliveries.length === 0) ? '' : 'none';
+            listEl.style.display = (!state.loading && state.deliveries.length > 0) ? '' : 'none';
+
+            if (!state.loading && state.deliveries.length > 0) {
+                listEl.innerHTML = '';
+                state.deliveries.forEach(function (d, i) {
+                    var item = document.createElement('div');
+                    item.className = 'rounded-2xl border border-border/40 bg-background p-4 transition hover:border-border/80';
+                    item.innerHTML = renderDeliveryItem(d, i);
+                    listEl.appendChild(item);
+                });
+            }
+        }
+
+        function renderDeliveryItem(d, i) {
+            var isEditing = state.editIndex === i;
+            var editBtnClass = isEditing ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground hover:bg-muted/80';
+            var editBtnText = isEditing ? 'Close' : (d.hasBranding ? 'Edit' : 'Brand');
+
+            var editForm = isEditing ? '\
+                <div class="mt-4 space-y-3 border-t border-border/20 pt-4">\
+                    <label class="db-field">\
+                        <span class="db-label text-xs">Logo URL</span>\
+                        <input type="url" id="logo-' + i + '" value="' + escHtml(d.editLogo) + '"\
+                               class="db-input text-xs" />\
+                    </label>\
+                    <label class="db-field">\
+                        <span class="db-label text-xs">Brand message</span>\
+                        <input type="text" id="msg-' + i + '" value="' + escHtml(d.editMessage) + '"\
+                               class="db-input text-xs" />\
+                    </label>\
+                    <div>\
+                        <label class="db-label text-xs db-block mb-2">Accent colour</label>\
+                        <div class="flex items-center gap-3">\
+                            <input type="color" id="accent-' + i + '" value="' + (d.editAccent || \'#6366f1\') + '"\
+                                   class="h-9 w-12 rounded-lg border border-border/60 cursor-pointer"\
+                                   onchange="document.getElementById(\'accentText-' + i + '\').value=this.value" />\
+                            <input type="text" id="accentText-' + i + '" value="' + (d.editAccent || \'#6366f1\') + '"\
+                                   class="db-input text-xs font-mono flex-1"\
+                                   oninput="document.getElementById(\'accent-' + i + '\').value=this.value" />\
+                        </div>\
+                    </div>\
+                    <div class="mt-4 flex items-center gap-3">\
+                        <button type="button" onclick="saveBranding(' + i + ')"\
+                                class="db-btn db-btn--primary flex-1 text-xs"\
+                                id="save-btn-' + i + '">Save branding</button>\
+                        <button type="button" onclick="closeEdit()"\
+                                class="db-btn db-btn--ghost text-xs">Cancel</button>\
+                    </div>\
+                    <div id="save-error-' + i + '" class="db-alert db-alert--error text-xs mt-2" style="display:none" role="alert"></div>\
+                    <div id="save-success-' + i + '" class="db-alert db-alert--success text-xs mt-2" style="display:none" role="status">Saved! The download page will show your branding.</div>\
+                </div>' : '';
+
+            return '\
+                <div class="flex items-center justify-between">\
+                    <div class="min-w-0 flex-1">\
+                        <p class="text-sm font-medium truncate">' + escHtml(d.fileName) + '</p>\
+                        <p class="text-xs text-muted-foreground mt-0.5">' + escHtml(d.shareCode) + '</p>\
+                    </div>\
+                    <button type="button" onclick="toggleEdit(' + i + ')"\
+                            class="shrink-0 ml-3 rounded-xl px-3 py-1.5 text-xs font-medium transition ' + editBtnClass + '">\
+                        ' + editBtnText + '\
+                    </button>\
+                </div>\
+                ' + editForm;
+        }
+
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        async function loadDeliveries() {
+            state.loading = true;
+            render();
+            try {
+                var apiBase = window.ZAPDROP_CONFIG ? window.ZAPDROP_CONFIG.apiBaseUrl : '';
+                var r = await fetch(apiBase + '/api/deliveries');
+                if (r.ok) {
+                    var items = await r.json();
+                    state.deliveries = items.map(function (d) {
+                        return {
+                            id: d.id,
+                            fileName: d.fileName,
+                            shareCode: d.shareCode,
+                            hasBranding: d.hasBranding,
+                            editLogo: '',
+                            editMessage: '',
+                            editAccent: '#6366f1',
+                            saveError: '',
+                            saveSuccess: false
+                        };
+                    });
+                }
+            } catch (_) {}
+            finally { state.loading = false; render(); }
+        }
+
+        window.toggleEdit = function (i) {
+            if (state.editIndex === i) {
+                state.editIndex = null;
+            } else {
+                state.editIndex = i;
+                var d = state.deliveries[i];
+                d.editLogo = '';
+                d.editMessage = '';
+                d.editAccent = '#6366f1';
+                d.saveError = '';
+                d.saveSuccess = false;
+                fetchBranding(i);
+            }
+            render();
+        };
+
+        window.closeEdit = function () {
+            state.editIndex = null;
+            render();
+        };
+
+        async function fetchBranding(i) {
+            var d = state.deliveries[i];
+            try {
+                var apiBase = window.ZAPDROP_CONFIG ? window.ZAPDROP_CONFIG.apiBaseUrl : '';
+                var r = await fetch(apiBase + '/api/deliveries/' + d.shareCode + '/brand');
+                if (r.ok) {
+                    var data = await r.json();
+                    d.editLogo = data.logo || '';
+                    d.editMessage = data.message || '';
+                    d.editAccent = data.accent || '#6366f1';
+                    render();
+                }
+            } catch (_) {}
+        }
+
+        window.saveBranding = async function (i) {
+            var d = state.deliveries[i];
+            var btn = document.getElementById('save-btn-' + i);
+            var errEl = document.getElementById('save-error-' + i);
+            var okEl = document.getElementById('save-success-' + i);
+            if (btn) btn.disabled = true;
+            if (btn) btn.textContent = 'Saving…';
+            if (errEl) errEl.style.display = 'none';
+            if (okEl) okEl.style.display = 'none';
+
+            d.editLogo = document.getElementById('logo-' + i)?.value || '';
+            d.editMessage = document.getElementById('msg-' + i)?.value || '';
+            var accentInput = document.getElementById('accent-' + i);
+            d.editAccent = accentInput?.value || '#6366f1';
+
+            try {
+                var apiBase = window.ZAPDROP_CONFIG ? window.ZAPDROP_CONFIG.apiBaseUrl : '';
+                var r = await fetch(apiBase + '/api/deliveries/' + d.id + '/brand', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        logo: d.editLogo || null,
+                        message: d.editMessage || null,
+                        accent: d.editAccent || null
+                    })
+                });
+                if (r.ok) {
+                    d.hasBranding = true;
+                    if (okEl) okEl.style.display = '';
+                    setTimeout(function () { if (okEl) okEl.style.display = 'none'; }, 3000);
+                } else {
+                    var err = await r.json().catch(function () { return {}; });
+                    if (errEl) {
+                        errEl.textContent = err.message || err.errors?.[0]?.message || 'Failed to save.';
+                        errEl.style.display = '';
+                    }
+                }
+            } catch (e) {
+                if (errEl) {
+                    errEl.textContent = 'Network error.';
+                    errEl.style.display = '';
+                }
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Save branding'; }
+            }
+        };
+
+        loadDeliveries();
+    });
 </script>
 
 @code {
