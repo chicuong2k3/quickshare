@@ -23,7 +23,7 @@
                 @if (isAuthenticated)
                 {
                     <a href="/account" class="db-btn db-btn--ghost">@userName</a>
-                    <a href="/logout" class="db-btn db-btn--ghost">Sign out</a>
+                    <a href="/logout" hx-boost="false" class="db-btn db-btn--ghost">Sign out</a>
                 }
                 else
                 {

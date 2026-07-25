@@ -1,0 +1,192 @@
+.page {
+    padding-block: 4rem 6rem;
+    padding-inline: 1.5rem;
+}
+.hero {
+    text-align: center;
+    padding-block: 3rem 4rem;
+    max-width: 48rem;
+    margin-inline: auto;
+}
+.hero ::deep .db-h1 {
+    margin-top: 0.75rem;
+}
+.tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-accent, #6366f1);
+    color: var(--color-accent, #6366f1);
+    background: color-mix(in srgb, var(--color-accent, #6366f1) 5%, transparent);
+}
+.hero p {
+    margin-top: 1rem;
+    max-width: 36rem;
+    margin-inline: auto;
+}
+
+/* Billing Toggle */
+.toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3rem;
+}
+.toggle-group {
+    display: inline-flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border, #333);
+    background: var(--color-background, #111);
+}
+
+/* Pricing Cards */
+.cards {
+    display: grid;
+    gap: 2rem;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-bottom: 4rem;
+}
+@@media (min-width: 1024px) {
+    .cards {
+        grid-template-columns: repeat(3, 1fr);
+        align-items: stretch;
+    }
+}
+.card {
+    border: 1px solid var(--color-border, #333);
+    border-radius: 1rem;
+    background: var(--color-card, #1a1a1a);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s;
+}
+.card:hover {
+    border-color: color-mix(in srgb, var(--color-foreground, #fff) 30%, transparent);
+}
+.card--popular {
+    border: 2px solid var(--color-accent, #6366f1);
+    box-shadow: 0 4px 24px color-mix(in srgb, var(--color-accent, #6366f1) 15%, transparent);
+    position: relative;
+}
+.card__badge {
+    position: absolute;
+    top: -0.75rem;
+    left: 50%;
+    translate: -50% 0;
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 1rem;
+    border-radius: 999px;
+    background: var(--color-accent, #6366f1);
+    color: var(--color-accent-foreground, #fff);
+    white-space: nowrap;
+}
+.card__head {
+    margin-bottom: 2rem;
+}
+.card__price {
+    margin-bottom: 2rem;
+}
+.card__price .price-amount {
+    font-size: 3rem;
+    font-weight: 700;
+}
+.card__price .price-period {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+}
+.card ::deep .db-btn {
+    width: 100%;
+}
+.features {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border, #333);
+    flex: 1;
+}
+.feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+.feature__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--color-accent, #6366f1);
+}
+
+/* FAQ */
+.faq {
+    max-width: 48rem;
+    margin-inline: auto;
+    margin-top: 6rem;
+}
+.faq__head {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+.faq details {
+    border: 1px solid var(--color-border, #333);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+}
+.faq details:hover {
+    border-color: color-mix(in srgb, var(--color-foreground, #fff) 20%, transparent);
+}
+.faq summary {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem;
+    font-weight: 600;
+}
+.faq summary .faq-chevron {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: transform 0.2s;
+}
+.faq details[open] summary .faq-chevron {
+    rotate: 180deg;
+}
+.faq .faq-answer {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--color-border, #333);
+    font-size: 0.875rem;
+}
+
+/* CTA */
+.cta {
+    max-width: 48rem;
+    margin-inline: auto;
+    margin-top: 6rem;
+    text-align: center;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-accent, #6366f1) 20%, transparent);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent, #6366f1) 10%, transparent), color-mix(in srgb, var(--color-accent, #6366f1) 5%, transparent));
+    padding: 3rem;
+}
+.cta__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.cta p {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+}
+.cta ::deep .db-btn {
+    margin-top: 1.5rem;
+}

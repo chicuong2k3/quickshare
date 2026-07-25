@@ -79,8 +79,7 @@ public sealed class CommitUploadHandler(IHttpContextAccessor httpContextAccessor
         {
             Id = Guid.CreateVersion7(),
             DeliveryId = deliveryId,
-            EncryptedData = ManifestEncryption.Encrypt(manifestData, shareCode),
-            CreatedAt = DateTime.UtcNow
+            EncryptedData = ManifestEncryption.Encrypt(manifestData, shareCode)
         };
 
         await db.Chunks

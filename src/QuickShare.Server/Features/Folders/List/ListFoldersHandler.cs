@@ -10,14 +10,14 @@ public record ListFoldersQuery(
 
 public sealed class ListFoldersHandler
 {
-    public async Task<Result<PagedResult<FolderInfoResponse>>> Handle(ListFoldersQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async Task<Result<PagedResult<FolderItemResponse>>> Handle(ListFoldersQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
         var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
         var userId = user.Id;
 
         var sorts = SortDescriptor.Parse(query.Sort).ToList();
         if (!FolderSortExtensions.TryValidateSorts(sorts, out var error))
-            return Result.Failure<PagedResult<FolderInfoResponse>>(new BadRequestError(error));
+            return Result.Failure<PagedResult<FolderItemResponse>>(new BadRequestError(error));
 
         var foldersQuery = db.Folders
             .AsNoTracking()
@@ -29,7 +29,7 @@ public sealed class ListFoldersHandler
         var items = await foldersQuery
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(f => new FolderInfoResponse(
+            .Select(f => new FolderItemResponse(
                 f.Id,
                 f.Name,
                 f.CreatedAt,
@@ -39,7 +39,7 @@ public sealed class ListFoldersHandler
             ))
             .ToListAsync(ct);
 
-        var result = new PagedResult<FolderInfoResponse>(items, total, query.Page, query.PageSize);
+        var result = new PagedResult<FolderItemResponse>(items, total, query.Page, query.PageSize);
         return Result.Success(result);
     }
 }

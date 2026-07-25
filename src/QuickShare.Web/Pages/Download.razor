@@ -6,673 +6,231 @@
 @using System.Text.Json
 @using System.Text.Json.Serialization
 
+@{
+    var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+}
+
 <PageTitle>Download — QuickShareCloud</PageTitle>
 
-<div id="download-app" class="flex-1">
-    <main class="flex flex-1 items-center justify-center px-6 pb-24 pt-32">
-        <div class="db-card w-full max-w-md">
-            <div class="db-card__body p-10">
-                @switch (RenderState)
-                {
-                    case DownloadRenderState.Loading:
-                        <div class="db-text-center py-10">
+<script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+
+<div id="download-app" class="page">
+    <div class="card db-card">
+        <div class="db-card__body">
+            @switch (RenderState)
+            {
+                case DownloadRenderState.Loading:
+                    <div class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="db-spinner"></div>
+                        <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">Checking link&hellip;</p>
+                    </div>
+                    break;
+
+                case DownloadRenderState.Ready:
+                    <script id="download-info-data" type="application/json">@RawJson(Info)</script>
+
+                    @* Password Gate *@
+                    <div id="download-phase-password" class="db-text-center hidden">
+                        <div class="icon-box --lock">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </div>
+                        <h2 class="db-h2" style="font-size: 1.125rem">This file is password-protected</h2>
+                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">Enter the sender&rsquo;s password to access the file.</p>
+                        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem">
+                            <div>
+                                <input type="password" id="dl-password-input" class="input" placeholder="Enter password" onkeydown="if(event.key==='Enter')downloadApp.verifyPassword()" />
+                                <p id="dl-password-error" class="error hidden"></p>
+                            </div>
+                            <button id="dl-password-btn" type="button" class="btn" onclick="downloadApp.verifyPassword()" data-ai-action="download.password.unlock">
+                                <span id="dl-password-btn-text">Unlock</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    @* Payment Gate *@
+                    <div id="download-phase-payment" class="db-text-center hidden">
+                        <div class="icon-box --warn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                            </svg>
+                        </div>
+                        <h2 class="db-h2" style="font-size: 1.125rem">Payment required</h2>
+                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">This delivery requires a payment of <strong id="dl-payment-amount"></strong> VND before downloading.</p>
+                        <div id="dl-payment-qr" class="hidden" style="margin-top: 1.5rem">
+                            <img id="qr-img" class="qr" alt="VietQR payment code" />
+                            <p style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--color-muted-foreground)">Scan with your banking app to pay</p>
+                            <div style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-muted-foreground); display: flex; align-items: center; justify-content: center; gap: 0.375rem">
+                                <span style="font-weight: 500; color: var(--color-foreground)">Bank:</span>
+                                <span id="dl-bank-info"></span>
+                                <span>&middot;</span>
+                                <span style="font-weight: 500; color: var(--color-foreground)">Account:</span>
+                                <span id="dl-bank-account"></span>
+                            </div>
+                        </div>
+                        <div id="dl-payment-loading" class="hidden" style="margin-top: 1.5rem">
                             <div class="db-spinner"></div>
-                            <p class="db-p mt-5 text-sm text-muted-foreground">Checking link&hellip;</p>
+                            <p class="db-p" style="margin-top: 0.5rem; font-size: 0.75rem">Generating payment code&hellip;</p>
                         </div>
-                        break;
+                        <p id="dl-payment-error" class="hidden " style="margin-top: 1rem; text-align: center"></p>
+                        <button id="dl-payment-btn" type="button" class="btn hidden" style="margin-top: 1rem" onclick="downloadApp.checkPaymentStatus()" data-ai-action="download.payment.check">
+                            <span id="dl-payment-btn-text">I&rsquo;ve paid &mdash; check status</span>
+                        </button>
+                    </div>
 
-                    case DownloadRenderState.Ready:
-                        @* Data bridge: passes server-side info to JS *@
-                        <script id="download-info-data" type="application/json">@RawJson(Info)</script>
+                    @* Ad Interstitial *@
+                    <div id="download-phase-ad" class="db-text-center hidden" style="padding: 1.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M7 4v16 M17 4v16 M2 12h20 M2 8h20" />
+                            </svg>
+                        </div>
+                        <h3 class="db-h3" style="font-size: 1rem">QuickShareCloud</h3>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Send large files securely with end-to-end encryption. <a href="/pricing" class="link">Upgrade for more</a></p>
+                        <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-muted-foreground)">
+                            <svg class="badge--sovereign" style="width: 0.875rem; height: 0.875rem" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                            <span id="dl-ad-countdown">Continue in 5s</span>
+                        </div>
+                        <button type="button" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">Skip ad</button>
+                    </div>
 
-                        @* ── Password Gate ── *@
-                        <div id="download-phase-password" class="db-text-center" style="display:none">
-                            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8 text-primary mb-4">
-                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                </svg>
-                            </div>
-                            <h2 class="db-h2 text-lg font-semibold">This file is password-protected</h2>
-                            <p class="db-p mt-1.5 text-sm text-muted-foreground">Enter the sender&rsquo;s password to access the file.</p>
-                            <div class="mt-6 space-y-4">
+                    @* File Card *@
+                    <div id="download-phase-file" class="hidden">
+                        <div id="" class="branding hidden">
+                            <div class="branding-inner">
+                                <img id="" class="brand-logo hidden" alt="Sender" />
                                 <div>
-                                    <input type="password" id="dl-password-input"
-                                           placeholder="Enter password"
-                                           onkeydown="if(event.key==='Enter')downloadApp.verifyPassword()"
-                                           class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm transition" />
-                                    <p id="dl-password-error" class="mt-1.5 text-xs text-destructive" style="display:none"></p>
+                                    <p style="font-size: 0.75rem; font-weight: 500; color: color-mix(in srgb, var(--color-muted-foreground) 60%, transparent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.125rem">Sender</p>
+                                    <p id="brand-message" style="font-size: 0.875rem">Sent a file for you</p>
                                 </div>
-                                <button type="button"
-                                        id="dl-password-btn"
-                                        onclick="downloadApp.verifyPassword()"
-                                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <span id="dl-password-btn-text">Unlock</span>
-                                </button>
                             </div>
                         </div>
 
-                        @* ── Payment Gate (VietQR) ── *@
-                        <div id="download-phase-payment" class="db-text-center" style="display:none">
-                            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-warning/10 text-warning mb-4">
-                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <line x1="12" y1="1" x2="12" y2="23" />
-                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        <div class="file-row">
+                            <div class="file-icon">@FileIcon(Info?.ContentType)</div>
+                            <div style="min-width: 0; flex: 1">
+                                <h1 class="db-h1" style="font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" title="@Info?.FileName">@Info?.FileName</h1>
+                                <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@FormatBytes(Info?.FileSize ?? 0) &middot; @ExpiryLabel</p>
+                            </div>
+                        </div>
+
+                        <div class="badges">
+                            <div id="badge-encrypted" class="badge --encrypted hidden">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                                 </svg>
+                                End-to-end encrypted
                             </div>
-                            <h2 class="db-h2 text-lg font-semibold">Payment required</h2>
-                            <p class="db-p mt-1.5 text-sm text-muted-foreground">
-                                This delivery requires a payment of <strong id="dl-payment-amount"></strong> VND before downloading.
-                            </p>
-                            <div id="dl-payment-qr" class="mt-6 flex flex-col items-center" style="display:none">
-                                <img id="dl-qr-img" alt="VietQR payment code" class="w-56 h-56 rounded-2xl border border-border/50 shadow-sm" />
-                                <p class="mt-2 text-xs text-muted-foreground">Scan with your banking app to pay</p>
-                                <div class="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span class="font-medium text-foreground">Bank:</span>
-                                    <span id="dl-bank-info"></span>
-                                    <span class="mx-1">&middot;</span>
-                                    <span class="font-medium text-foreground">Account:</span>
-                                    <span id="dl-bank-account"></span>
-                                </div>
-                            </div>
-                            <div id="dl-payment-loading" class="mt-6" style="display:none">
-                                <div class="db-spinner"></div>
-                                <p class="db-p mt-2 text-xs text-muted-foreground">Generating payment code&hellip;</p>
-                            </div>
-                            <p id="dl-payment-error" class="text-xs text-destructive db-text-center mt-4" style="display:none"></p>
-                            <button type="button"
-                                    id="dl-payment-btn"
-                                    onclick="downloadApp.checkPaymentStatus()"
-                                    style="display:none"
-                                    class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50">
-                                <span id="dl-payment-btn-text">I&rsquo;ve paid &mdash; check status</span>
+                            <button type="button" id="dl-zk-btn" class="badge --sovereign" onclick="downloadApp.toggleZK()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                                </svg>
+                                Sovereign
                             </button>
                         </div>
 
-                        @* ── Ad Interstitial ── *@
-                        <div id="download-phase-ad" class="db-text-center py-6" style="display:none">
-                            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">
-                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                                    <path d="M7 4v16 M17 4v16 M2 12h20 M2 8h20" />
+                        <div id="" class="zk-panel hidden">
+                            <div class="zk-row">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <div><p style="font-weight: 500; color: var(--color-foreground)">Attestation verified</p><p style="color: var(--color-muted-foreground); margin-top: 0.125rem">File integrity confirmed via sovereign attestation channel.</p></div>
+                            </div>
+                            <div class="zk-row">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <div><p style="font-weight: 500; color: var(--color-foreground)">No sovereign override detected</p><p style="color: var(--color-muted-foreground); margin-top: 0.125rem">Delivery chain has not been tampered with.</p></div>
+                            </div>
+                            <div class="zk-row">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <div><p style="font-weight: 500; color: var(--color-foreground)">Hash integrity check passed</p><p style="color: var(--color-muted-foreground); margin-top: 0.125rem">SHA-256 hash matches the original upload manifest.</p></div>
+                            </div>
+                            <div class="zk-stats">
+                                <span><span id="dl-download-count" style="font-weight: 500; color: var(--color-foreground)">0</span> downloads</span>
+                                <span>&middot;</span>
+                                <span><span id="dl-max-downloads" style="font-weight: 500; color: var(--color-foreground)">0</span> max</span>
+                                <span>&middot;</span>
+                                <span id="dl-expires-label"></span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem">
+                            <button id="dl-download-btn" type="button" class="btn" onclick="downloadApp.handleDownload()" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
+                                <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
-                            </div>
-                            <h3 class="db-h3 text-base font-semibold">QuickShareCloud</h3>
-                            <p class="db-p mt-2 text-sm text-muted-foreground">Send large files securely with end-to-end encryption. <a href="/pricing" class="text-primary underline underline-offset-2">Upgrade for more</a></p>
-                            <div class="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                                <svg class="h-3.5 w-3.5 animate-pulse text-primary" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                                <span id="dl-ad-countdown">Continue in 5s</span>
-                            </div>
-                            <button type="button"
-                                    onclick="downloadApp.skipAd()"
-                                    class="mt-4 text-xs font-medium text-primary underline underline-offset-2 hover:text-primary/80 transition">
-                                Skip ad
+                                <span id="dl-download-text">Download</span>
                             </button>
                         </div>
 
-                        @* ── File Card ── *@
-                        <div id="download-phase-file" style="display:none">
-                            @* Sender branding *@
-                            <div id="dl-branding" class="mb-6 rounded-2xl px-5 py-4 border" style="display:none">
-                                <div class="flex items-center gap-4">
-                                    <img id="dl-brand-logo" class="h-12 w-12 rounded-xl object-cover border border-border/30" alt="Sender" style="display:none" />
-                                    <div>
-                                        <p class="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-0.5">Sender</p>
-                                        <p id="dl-brand-message" class="text-sm">Sent a file for you</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            @* File info *@
-                            <div class="flex items-start gap-5">
-                                <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/8 text-primary">
-                                    @FileIcon(Info?.ContentType)
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <h1 class="db-h1 truncate text-xl font-semibold" title="@Info?.FileName">@Info?.FileName</h1>
-                                    <p class="db-p mt-1.5 text-sm text-muted-foreground">@FormatBytes(Info?.FileSize ?? 0) &middot; @ExpiryLabel</p>
-                                </div>
-                            </div>
-
-                            @* Badges *@
-                            <div class="mt-4 flex flex-wrap items-center gap-2">
-                                <div id="dl-badge-encrypted" class="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-4 py-1.5 text-xs font-medium text-primary" style="display:none">
-                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                        <circle cx="12" cy="16" r="1" />
-                                    </svg>
-                                    End-to-end encrypted
-                                </div>
-                                <button type="button" id="dl-zk-btn"
-                                        onclick="downloadApp.toggleZK()"
-                                        class="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-4 py-1.5 text-xs font-medium text-warning-foreground hover:bg-warning/20 transition cursor-pointer">
-                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <path d="M12 6v6l4 2" />
-                                    </svg>
-                                    🔒 Sovereign
-                                </button>
-                            </div>
-
-                            @* ZK panel *@
-                            <div id="dl-zk-panel" class="mt-4 rounded-2xl bg-muted/30 border border-border/30 p-5 space-y-3 text-xs" style="display:none">
-                                <div class="flex items-start gap-3">
-                                    <svg class="mt-0.5 h-4 w-4 shrink-0 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                    <div><p class="font-medium text-foreground">Attestation verified</p><p class="text-muted-foreground mt-0.5">File integrity confirmed via sovereign attestation channel.</p></div>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <svg class="mt-0.5 h-4 w-4 shrink-0 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                    <div><p class="font-medium text-foreground">No sovereign override detected</p><p class="text-muted-foreground mt-0.5">Delivery chain has not been tampered with.</p></div>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <svg class="mt-0.5 h-4 w-4 shrink-0 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                    <div><p class="font-medium text-foreground">Hash integrity check passed</p><p class="text-muted-foreground mt-0.5">SHA-256 hash matches the original upload manifest.</p></div>
-                                </div>
-                                <div class="pt-2 flex gap-4 text-muted-foreground">
-                                    <span><span id="dl-download-count" class="font-medium text-foreground">0</span> downloads</span>
-                                    <span>&middot;</span>
-                                    <span><span id="dl-max-downloads" class="font-medium text-foreground">0</span> max</span>
-                                    <span>&middot;</span>
-                                    <span id="dl-expires-label"></span>
-                                </div>
-                            </div>
-
-                            @* Download button *@
-                            <div class="mt-8">
-                                <button type="button"
-                                        id="dl-download-btn"
-                                        onclick="downloadApp.handleDownload()"
-                                        class="flex w-full items-center justify-center gap-3 rounded-2xl bg-foreground px-6 py-4 text-sm font-semibold text-background shadow-sm transition hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <svg id="dl-download-icon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    <span id="dl-download-text">Download</span>
-                                </button>
-                            </div>
-
-                            @* Report abuse *@
-                            <div class="mt-6 db-text-center">
-                                <button type="button"
-                                        id="dl-report-toggle"
-                                        onclick="downloadApp.toggleReport()"
-                                        class="text-xs text-muted-foreground/60 hover:text-muted-foreground transition underline underline-offset-2">
-                                    Report abuse
-                                </button>
-                                <div id="dl-report-form" class="mt-4 rounded-2xl bg-muted/30 border border-border/30 p-5 text-left" style="display:none">
-                                    <p class="text-xs font-medium text-foreground mb-3">Report this delivery</p>
-                                    <div class="space-y-3">
-                                        <select id="dl-report-reason"
-                                                class="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs">
-                                            <option value="">Select a reason</option>
-                                            <option value="spam">Spam or unsolicited</option>
-                                            <option value="malware">Malware or harmful</option>
-                                            <option value="abuse">Abusive content</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                        <textarea id="dl-report-message" rows="2"
-                                                  placeholder="Optional details&hellip;"
-                                                  class="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs resize-none"></textarea>
-                                        <button type="button"
-                                                id="dl-report-submit"
-                                                onclick="downloadApp.submitReport()"
-                                                class="w-full rounded-xl bg-destructive px-4 py-2.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 transition disabled:opacity-50">
-                                            Submit report
-                                        </button>
-                                        <p id="dl-report-done" class="text-xs text-success db-text-center" style="display:none">Report submitted. Thank you.</p>
-                                    </div>
+                        <div style="margin-top: 1.5rem; text-align: center">
+                            <button id="" type="button" class="report-toggle" onclick="downloadApp.toggleReport()">Report abuse</button>
+                            <div id="" class="report-form hidden">
+                                <p style="font-size: 0.75rem; font-weight: 500; color: var(--color-foreground); margin-bottom: 0.75rem">Report this delivery</p>
+                                <div class="report-fields">
+                                    <select id="dl-report-reason" class="select">
+                                        <option value="">Select a reason</option>
+                                        <option value="spam">Spam or unsolicited</option>
+                                        <option value="malware">Malware or harmful</option>
+                                        <option value="abuse">Abusive content</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <textarea id="dl-report-message" class="textarea" rows="2" placeholder="Optional details&hellip;"></textarea>
+                                    <button id="dl-report-submit" type="button" class="submit-btn" onclick="downloadApp.submitReport()" data-ai-action="download.report.submit">Submit report</button>
+                                    <p id="report-done" class="report-done hidden">Report submitted. Thank you.</p>
                                 </div>
                             </div>
                         </div>
-                        break;
+                    </div>
+                    break;
 
-                    case DownloadRenderState.Expired:
-                        <div class="db-text-center py-10">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-                                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="12 6 12 12 16 14" />
-                                </svg>
-                            </div>
-                            <h1 class="db-h1 mt-6 text-xl font-semibold">This delivery has expired</h1>
-                            <p class="db-p mt-2 text-sm text-muted-foreground">Deliveries are removed automatically after expiry. Ask the sender to re-send.</p>
-                            <a href="/" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">Send a file</a>
+                case DownloadRenderState.Expired:
+                    <div class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
                         </div>
-                        break;
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This delivery has expired</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Deliveries are removed automatically after expiry. Ask the sender to re-send.</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                    </div>
+                    break;
 
-                    case DownloadRenderState.NotFound:
-                        <div class="db-text-center py-10">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-                                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                                </svg>
-                            </div>
-                            <h1 class="db-h1 mt-6 text-xl font-semibold">This link doesn&rsquo;t exist</h1>
-                            <p class="db-p mt-2 text-sm text-muted-foreground">The delivery may have been removed or the link is incorrect.</p>
-                            <a href="/" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">Send a file</a>
+                case DownloadRenderState.NotFound:
+                    <div class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
                         </div>
-                        break;
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This link doesn&rsquo;t exist</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">The delivery may have been removed or the link is incorrect.</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                    </div>
+                    break;
 
-                    case DownloadRenderState.LimitReached:
-                        <div class="db-text-center py-10">
-                            <h1 class="db-h1 text-xl font-semibold">Download limit reached</h1>
-                            <p class="db-p mt-2 text-sm text-muted-foreground">This delivery has reached its download cap. Ask the sender to re-send.</p>
-                            <a href="/" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">Send a file</a>
-                        </div>
-                        break;
+                case DownloadRenderState.LimitReached:
+                    <div class="db-text-center" style="padding: 2.5rem 0">
+                        <h1 class="db-h1" style="font-size: 1.25rem">Download limit reached</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">This delivery has reached its download cap. Ask the sender to re-send.</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                    </div>
+                    break;
 
-                    case DownloadRenderState.Error:
-                        <div class="db-text-center py-10">
-                            <h1 class="db-h1 text-xl font-semibold">Something went wrong</h1>
-                            <p class="db-p mt-2 text-sm text-muted-foreground">We couldn&rsquo;t reach the download service. Please try again.</p>
-                        </div>
-                        break;
-                }
-            </div>
+                case DownloadRenderState.Error:
+                    <div class="db-text-center" style="padding: 2.5rem 0">
+                        <h1 class="db-h1" style="font-size: 1.25rem">Something went wrong</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">We couldn&rsquo;t reach the download service. Please try again.</p>
+                    </div>
+                    break;
+            }
         </div>
-    </main>
+    </div>
 
-    <script>
-        window.downloadApp = (function () {
-            'use strict';
-
-            var state = {
-                phase: 'checking',
-                downloading: false,
-                isEncrypted: false,
-                zkOpen: false,
-                reportOpen: false,
-                passwordInput: '',
-                passwordError: '',
-                passwordVerifying: false,
-                paymentAmount: 0,
-                paymentError: '',
-                paymentChecking: false,
-                qrDataUrl: '',
-                bankInfo: '',
-                bankAccount: '',
-                adCountdown: 5,
-                adTimer: null,
-                brandLogo: '',
-                brandMessage: '',
-                brandAccent: '',
-                reportReason: '',
-                reportMessage: '',
-                reportSending: false,
-                reportDone: false,
-                downloadCount: 0,
-                maxDownloads: 0,
-                expiresLabel: ''
-            };
-
-            function apiBase() {
-                return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, '');
-            }
-
-            function shareCode() {
-                var m = window.location.pathname.match(/\/d\/(.+)/);
-                return m ? m[1] : '';
-            }
-
-            function show(id) { var el = document.getElementById(id); if (el) el.style.display = ''; }
-            function hide(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
-            function text(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
-            function attr(id, name, val) { var el = document.getElementById(id); if (el) el.setAttribute(name, val); }
-            function removeAttr(id, name) { var el = document.getElementById(id); if (el) el.removeAttribute(name); }
-
-            function render() {
-                hide('download-phase-password');
-                hide('download-phase-payment');
-                hide('download-phase-ad');
-                hide('download-phase-file');
-
-                if (state.phase === 'password') show('download-phase-password');
-                else if (state.phase === 'payment') {
-                    show('download-phase-payment');
-                    if (state.qrDataUrl) {
-                        show('dl-payment-qr');
-                        hide('dl-payment-loading');
-                        show('dl-payment-btn');
-                    } else if (state.paymentError) {
-                        hide('dl-payment-qr');
-                        hide('dl-payment-loading');
-                        hide('dl-payment-btn');
-                    } else {
-                        hide('dl-payment-qr');
-                        show('dl-payment-loading');
-                        hide('dl-payment-btn');
-                    }
-                    if (state.paymentError) { show('dl-payment-error'); text('dl-payment-error', state.paymentError); }
-                    else { hide('dl-payment-error'); }
-                }
-                else if (state.phase === 'ad') show('download-phase-ad');
-                else if (state.phase === 'file') {
-                    show('download-phase-file');
-
-                    // Branding
-                    if (state.brandLogo || state.brandMessage) {
-                        show('dl-branding');
-                        if (state.brandLogo) { show('dl-brand-logo'); attr('dl-brand-logo', 'src', state.brandLogo); }
-                        else { hide('dl-brand-logo'); }
-                        text('dl-brand-message', state.brandMessage || 'Sent a file for you');
-                    } else {
-                        hide('dl-branding');
-                    }
-
-                    if (state.isEncrypted) show('dl-badge-encrypted');
-                    else hide('dl-badge-encrypted');
-
-                    // ZK panel
-                    if (state.zkOpen) show('dl-zk-panel');
-                    else hide('dl-zk-panel');
-                    text('dl-download-count', String(state.downloadCount));
-                    text('dl-max-downloads', String(state.maxDownloads));
-                    text('dl-expires-label', state.expiresLabel);
-
-                    // Report
-                    if (state.reportOpen) show('dl-report-form');
-                    else hide('dl-report-form');
-
-                    // Download button
-                    if (state.downloading) {
-                        attr('dl-download-btn', 'disabled', 'disabled');
-                        text('dl-download-text', 'Decrypting&hellip;');
-                        document.getElementById('dl-download-icon').outerHTML = '<svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
-                    } else {
-                        removeAttr('dl-download-btn', 'disabled');
-                        text('dl-download-text', 'Download');
-                        document.getElementById('dl-download-btn').querySelector('svg').outerHTML = '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-                    }
-                }
-            }
-
-            function init() {
-                var hash = window.location.hash;
-                if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
-
-                var infoEl = document.getElementById('download-info-data');
-                var info = {};
-                try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
-                state.downloadCount = info.downloadCount || 0;
-                state.maxDownloads = info.maxDownloads || 0;
-                state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
-
-                if (info.hasPassword) {
-                    state.phase = 'password';
-                } else if (info.hasPayment) {
-                    state.paymentAmount = info.price || 0;
-                    state.phase = 'payment';
-                    initPayment();
-                } else if (info.senderPlan === 'free') {
-                    state.phase = 'ad';
-                    startAdTimer();
-                } else {
-                    state.phase = 'file';
-                }
-                render();
-
-                // Fetch branding
-                fetchBranding();
-            }
-
-            function expiryLabel(expiresAt) {
-                var remaining = new Date(expiresAt) - new Date();
-                if (remaining <= 0) return 'expired';
-                var mins = Math.floor(remaining / 60000);
-                if (mins < 60) return 'expires in ' + mins + ' min';
-                var hours = Math.floor(mins / 60);
-                if (hours < 24) return 'expires in ' + hours + ' h';
-                var days = Math.floor(hours / 24);
-                return 'expires in ' + days + ' day' + (days === 1 ? '' : 's');
-            }
-
-            // ── Password ──
-            function verifyPassword() {
-                var input = document.getElementById('dl-password-input');
-                var pw = input ? input.value.trim() : '';
-                if (!pw) { show('dl-password-error'); text('dl-password-error', 'Please enter a password.'); return; }
-                hide('dl-password-error');
-                state.passwordVerifying = true;
-                text('dl-password-btn-text', 'Verifying&hellip;');
-                attr('dl-password-btn', 'disabled', 'disabled');
-
-                var code = shareCode();
-                fetch(apiBase() + '/api/deliveries/' + code + '/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: pw })
-                }).then(function (r) {
-                    if (r.ok) {
-                        var infoEl = document.getElementById('download-info-data');
-                        var info = {};
-                        try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
-                        state.paymentAmount = info.price || 0;
-                        if (info.hasPayment) { state.phase = 'payment'; initPayment(); }
-                        else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
-                        else { state.phase = 'file'; }
-                    } else if (r.status === 429) {
-                        show('dl-password-error'); text('dl-password-error', 'Too many attempts. Please try again later.');
-                    } else {
-                        r.json().then(function (body) {
-                            show('dl-password-error');
-                            text('dl-password-error', body.message || (body.errors && body.errors[0] && body.errors[0].message) || 'Incorrect password.');
-                        }).catch(function () {
-                            show('dl-password-error'); text('dl-password-error', 'Incorrect password.');
-                        });
-                    }
-                }).catch(function () {
-                    show('dl-password-error'); text('dl-password-error', 'Verification failed. Please try again.');
-                }).finally(function () {
-                    state.passwordVerifying = false;
-                    text('dl-password-btn-text', 'Unlock');
-                    removeAttr('dl-password-btn', 'disabled');
-                    render();
-                });
-            }
-
-            // ── Payment ──
-            function initPayment() {
-                text('dl-payment-amount', String(state.paymentAmount));
-                render();
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/payment/vietqr', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                }).then(function (r) {
-                    if (r.ok) return r.json();
-                    else { state.paymentError = 'Failed to generate payment code.'; return null; }
-                }).then(function (data) {
-                    if (data) {
-                        state.qrDataUrl = data.qrDataUrl || '';
-                        state.bankInfo = data.bankInfo || '';
-                        state.bankAccount = data.bankAccount || '';
-                        if (state.qrDataUrl) attr('dl-qr-img', 'src', state.qrDataUrl);
-                        text('dl-bank-info', state.bankInfo);
-                        text('dl-bank-account', state.bankAccount);
-                    }
-                }).catch(function () {
-                    state.paymentError = 'Payment service unavailable.';
-                }).finally(function () {
-                    render();
-                });
-            }
-
-            function checkPaymentStatus() {
-                state.paymentChecking = true;
-                text('dl-payment-btn-text', 'Checking&hellip;');
-                attr('dl-payment-btn', 'disabled', 'disabled');
-                hide('dl-payment-error');
-
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/payment')
-                    .then(function (r) {
-                        if (r.ok) return r.json();
-                        else { state.paymentError = 'Could not check payment status.'; return null; }
-                    })
-                    .then(function (data) {
-                        if (data && data.paymentStatus === 'Paid') {
-                            state.phase = 'file';
-                        } else if (data) {
-                            state.paymentError = 'Payment not yet received. Please try again after completing the transfer.';
-                        }
-                    })
-                    .catch(function () {
-                        state.paymentError = 'Payment check failed.';
-                    })
-                    .finally(function () {
-                        state.paymentChecking = false;
-                        text('dl-payment-btn-text', 'I&rsquo;ve paid &mdash; check status');
-                        removeAttr('dl-payment-btn', 'disabled');
-                        render();
-                    });
-            }
-
-            // ── Ad ──
-            function startAdTimer() {
-                state.adCountdown = 5;
-                text('dl-ad-countdown', 'Continue in 5s');
-                render();
-                state.adTimer = setInterval(function () {
-                    state.adCountdown--;
-                    text('dl-ad-countdown', 'Continue in ' + state.adCountdown + 's');
-                    if (state.adCountdown <= 0) {
-                        clearInterval(state.adTimer);
-                        state.adTimer = null;
-                        state.phase = 'file';
-                        render();
-                    }
-                }, 1000);
-            }
-
-            function skipAd() {
-                if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; }
-                state.phase = 'file';
-                render();
-            }
-
-            // ── Branding ──
-            function fetchBranding() {
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/brand')
-                    .then(function (r) { if (r.ok) return r.json(); })
-                    .then(function (data) {
-                        if (data) {
-                            if (data.logo) state.brandLogo = data.logo;
-                            if (data.message) state.brandMessage = data.message;
-                            if (data.accent) state.brandAccent = data.accent;
-                            render();
-                        }
-                    })
-                    .catch(function () {});
-            }
-
-            // ── ZK ──
-            function toggleZK() {
-                state.zkOpen = !state.zkOpen;
-                render();
-            }
-
-            // ── Report ──
-            function toggleReport() {
-                state.reportOpen = !state.reportOpen;
-                render();
-            }
-
-            function submitReport() {
-                var reason = document.getElementById('dl-report-reason');
-                var msg = document.getElementById('dl-report-message');
-                if (!reason || !reason.value) return;
-                state.reportSending = true;
-                attr('dl-report-submit', 'disabled', 'disabled');
-                text('dl-report-submit', 'Sending&hellip;');
-
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason: reason.value, message: msg ? msg.value : '' })
-                }).then(function () {
-                    show('dl-report-done');
-                    setTimeout(function () { state.reportOpen = false; hide('dl-report-done'); render(); }, 3000);
-                }).catch(function () {
-                    alert('Failed to submit report.');
-                }).finally(function () {
-                    state.reportSending = false;
-                    removeAttr('dl-report-submit', 'disabled');
-                    text('dl-report-submit', 'Submit report');
-                });
-            }
-
-            // ── Download ──
-            function handleDownload() {
-                state.downloading = true;
-                render();
-                var code = shareCode();
-                var url = apiBase() + '/api/downloads/' + code;
-                if (state.isEncrypted) {
-                    decryptAndSave(url)['catch'](function (e) {
-                        alert('Download failed: ' + e.message);
-                    })['finally'](function () {
-                        state.downloading = false;
-                        render();
-                    });
-                } else {
-                    state.downloading = false;
-                    window.location.href = url;
-                }
-            }
-
-            async function decryptAndSave(url) {
-                var hash = window.location.hash;
-                var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/);
-                if (!keyMatch) throw new Error('Encryption key not found in URL');
-                var keyB64 = keyMatch[1];
-                var base64 = keyB64.replace(/-/g, '+').replace(/_/g, '/');
-                while (base64.length % 4) base64 += '=';
-                var binary = atob(base64);
-                var keyBytes = new Uint8Array(binary.length);
-                for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i);
-                var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']);
-                var response = await fetch(url);
-                if (!response.ok) throw new Error('Download failed: ' + response.statusText);
-                var encryptedData = await response.arrayBuffer();
-                var nonce = encryptedData.slice(0, 12);
-                var ciphertext = encryptedData.slice(12);
-                var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext);
-                var blob = new Blob([decrypted]);
-                var dlUrl = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = dlUrl;
-                a.download = code;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(dlUrl);
-            }
-
-            // Init on DOMContentLoaded
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
-
-            return {
-                verifyPassword: verifyPassword,
-                checkPaymentStatus: checkPaymentStatus,
-                skipAd: skipAd,
-                toggleZK: toggleZK,
-                toggleReport: toggleReport,
-                submitReport: submitReport,
-                handleDownload: handleDownload
-            };
-        })();
-    </script>
+    <script src="/_content/QuickShare.Web/Pages/Download.razor.js"></script>
 </div>
 
 @code {
-    [Parameter]
-    public string ShareCode { get; set; } = "";
-
+    [Parameter] public string ShareCode { get; set; } = "";
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
     private string ExpiryLabel = "";
@@ -685,17 +243,12 @@
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound) { RenderState = DownloadRenderState.NotFound; return; }
             if (response.StatusCode == System.Net.HttpStatusCode.Gone) { RenderState = DownloadRenderState.Expired; return; }
             if (!response.IsSuccessStatusCode) { RenderState = DownloadRenderState.Error; return; }
-
             await using var stream = await response.Content.ReadAsStreamAsync();
             Info = await JsonSerializer.DeserializeAsync<DownloadInfoDto>(stream, JsonOptions);
             if (Info is null) { RenderState = DownloadRenderState.Error; return; }
-
             if (Info.DownloadCount >= Info.MaxDownloads) { RenderState = DownloadRenderState.LimitReached; return; }
             if (Info.ExpiresAt.HasValue && Info.ExpiresAt < DateTime.UtcNow) { RenderState = DownloadRenderState.Expired; return; }
-
-            ExpiryLabel = Info.ExpiresAt.HasValue
-                ? $"expires {ExpiryCountdown(Info.ExpiresAt.Value)}"
-                : "no expiry";
+            ExpiryLabel = Info.ExpiresAt.HasValue ? $"expires {ExpiryCountdown(Info.ExpiresAt.Value)}" : "no expiry";
             RenderState = DownloadRenderState.Ready;
         }
         catch { RenderState = DownloadRenderState.Error; }
@@ -712,7 +265,6 @@
         var size = bytes / Math.Pow(1024, magnitude);
         return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
     }
-
     private static string ExpiryCountdown(DateTime expiresAt)
     {
         var remaining = expiresAt - DateTime.UtcNow;
@@ -721,41 +273,27 @@
         if (remaining.TotalHours < 24) return $"in {(int)remaining.TotalHours} h";
         return $"in {(int)remaining.TotalDays} day{((int)remaining.TotalDays == 1 ? "" : "s")}";
     }
-
     private static MarkupString FileIcon(string? contentType)
     {
         var key = (contentType ?? "").ToLowerInvariant();
-        var svg = key switch
+        var d = key switch
         {
-            var s when s.StartsWith("image/") => IconPath("M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6"),
-            var s when s.StartsWith("video/") => IconPath("m22 8-6 4 6 4V8Z M14 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z"),
-            var s when s.StartsWith("audio/") => IconPath("M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"),
-            "application/pdf" => IconPath("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h6"),
-            var s when s.Contains("zip") || s.Contains("compressed") || s.Contains("tar") => IconPath("M21 8v13H3V8 M1 3h22v5H1z M10 12h4"),
-            _ => IconPath("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6"),
+            var s when s.StartsWith("image/") => "M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6",
+            var s when s.StartsWith("video/") => "m22 8-6 4 6 4V8Z M14 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z",
+            var s when s.StartsWith("audio/") => "M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+            "application/pdf" => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h6",
+            var s when s.Contains("zip") || s.Contains("compressed") || s.Contains("tar") => "M21 8v13H3V8 M1 3h22v5H1z M10 12h4",
+            _ => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6",
         };
-        return new MarkupString(svg);
+        return new MarkupString($"<svg class=\"\" style=\"width:1.75rem;height:1.75rem\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"{d}\"/></svg>");
     }
-
-    private static string IconPath(string d) =>
-        $"<svg class=\"h-7 w-7\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"{d}\"/></svg>";
-
-    private static string RawJson(DownloadInfoDto? info) =>
-        info is null ? "{}" : JsonSerializer.Serialize(info, JsonOptions);
+    private static string RawJson(DownloadInfoDto? info) => info is null ? "{}" : JsonSerializer.Serialize(info, JsonOptions);
 
     private enum DownloadRenderState { Loading, Ready, Expired, NotFound, LimitReached, Error }
-
     private sealed class DownloadInfoDto
     {
-        public string FileName { get; set; } = "";
-        public string ContentType { get; set; } = "";
-        public long FileSize { get; set; }
-        public DateTime? ExpiresAt { get; set; }
-        public int DownloadCount { get; set; }
-        public int MaxDownloads { get; set; }
-        public bool HasPassword { get; set; }
-        public bool HasPayment { get; set; }
-        public string SenderPlan { get; set; } = "";
-        public decimal? Price { get; set; }
+        public string FileName { get; set; } = ""; public string ContentType { get; set; } = ""; public long FileSize { get; set; }
+        public DateTime? ExpiresAt { get; set; } public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
+        public bool HasPassword { get; set; } public bool HasPayment { get; set; } public string SenderPlan { get; set; } = ""; public decimal? Price { get; set; }
     }
 }

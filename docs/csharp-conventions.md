@@ -1,4 +1,4 @@
-# C# Conventions — TeleCloud
+# C# Conventions — QuickShare
 
 > Living style guide. Append new rules as patterns emerge during development.
 
@@ -15,6 +15,10 @@
 5. **Wolverine inbox/outbox** — `PersistMessagesWithPostgresql()` + `AutoApplyTransactions()` ensures messages are durably stored before execution with automatic retry on transient failures.
 
 6. **Result pattern with LightResults** — Handlers return `Result` or `Result<T>` instead of null/bool/exception. Endpoints map `result.IsSuccess(out var value)` to HTTP responses (Ok/NotFound). Custom errors extend `Error`.
+
+7. **Audit fields are managed by interceptor** — Never set `CreatedAt` or `UpdatedAt` manually. The `AuditableEntityInterceptor` (`SaveChangesInterceptor`) auto-sets them on `EntityState.Added`/`EntityState.Modified` for any entity that has those properties (including `Manifest` which doesn't extend `BaseAuditEntity`).
+
+8. **Entity→DTO mapping via Mapperly** — Use `[Mapper]` with `static partial class` + `partial` methods. Place mappers in `Features/<Feature>/Shared/<Entity>Mapper.cs`. Exception: LINQ `.Select()` projections with server-side subqueries or computed fields — construct DTO inline (EF Core cannot translate Mapperly methods). Exception: simple value-object responses that don't map from a single entity.
 
 ## Project Structure
 

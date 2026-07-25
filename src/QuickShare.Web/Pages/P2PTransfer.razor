@@ -9,146 +9,121 @@
 
 <PageTitle>QuickShareCloud — P2P file transfer</PageTitle>
 
-<div class="flex-1" x-data="p2pSendPage()" x-cloak>
-    <script>
-        window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };
-    </script>
+<div class="page-wrapper">
+    <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+    <main class="page">
+        <div class="container">
+            <input type="file" name="file" id="p2ps-file-input" class="sr-only" aria-label="Choose a file" onchange="p2pSend.onFileSelect(event)" />
 
-    <main class="flex flex-1 items-center justify-center px-6 pb-20 pt-32">
-        <div class="w-full max-w-2xl">
-
-            <input type="file" name="file" class="sr-only" aria-label="Choose a file" x-ref="fileInput" x-on:change="onFileSelect($event)" />
-
-            @* ===== IDLE / DRAGGING ===== *@
-            <section x-show="isIdle || isDragging" class="text-center">
-                <h1 class="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-                    <span x-show="isIdle">Send <span class="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">direct</span></span>
-                    <span x-show="isDragging">Drop your file</span>
+            @* IDLE / DRAGGING *@
+            <section id="p2ps-idle" class="section">
+                <h1 class="h1">
+                    <span id="idle-h1">Send <span class="gradient">direct</span></span>
+                    <span id="drag-h1" class="hidden">Drop your file</span>
                 </h1>
-                <p class="mt-4 text-lg text-muted-foreground max-w-lg mx-auto">
-                    <span x-show="isIdle">Peer-to-peer &middot; no server storage &middot; encrypted</span>
-                    <span x-show="isDragging">Release to start P2P transfer</span>
+                <p class="sub">
+                    <span id="idle-sub">Peer-to-peer &middot; no server storage &middot; encrypted</span>
+                    <span id="drag-sub" class="hidden">Release to start P2P transfer</span>
                 </p>
 
-                <div class="mt-16">
-                    <div x-on:dragover.prevent="onDragOver($event)"
-                         x-on:dragenter.prevent="onDragOver($event)"
-                         x-on:dragleave.prevent="onDragLeave($event)"
-                         x-on:drop.prevent="onDrop($event)"
-                         x-bind:class="draggingActive ? 'border-primary bg-primary/[0.08] scale-[1.01]' : 'border-muted-foreground/25 bg-card hover:border-primary/50 hover:bg-muted/20'"
-                         class="mx-auto flex cursor-pointer flex-col items-center gap-6 rounded-[2rem] border-2 border-dashed px-16 py-20 transition-all duration-300 shadow-sm"
-                         x-on:click="$refs.fileInput.click()">
-                        <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                            <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div>
+                    <div id=""
+                         ondragover="p2pSend.onDragOver(event)"
+                         ondragenter="p2pSend.onDragOver(event)"
+                         ondragleave="p2pSend.onDragLeave(event)"
+                         ondrop="p2pSend.onDrop(event)"
+                         class="dropzone"
+                         onclick="document.getElementById('p2ps-file-input').click()">
+                        <div class="dropzone-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
+                                <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
                             </svg>
                         </div>
                         <div>
-                            <p class="text-lg font-semibold text-foreground/90">
-                                <span x-show="isIdle">Drag &amp; drop a file to share directly</span>
-                                <span x-show="isDragging">Drop it here</span>
+                            <p class="dropzone-title">
+                                <span id="dropzone-idle">Drag &amp; drop a file to share directly</span>
+                                <span id="dropzone-drag" class="hidden">Drop it here</span>
                             </p>
-                            <p class="mt-2 text-sm text-muted-foreground">
-                                <span x-show="isIdle">or click to browse &middot; no size limit</span>
-                            </p>
+                            <p class="dropzone-sub">or click to browse &middot; no size limit</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-8 flex items-center justify-center gap-3">
-                    <input type="checkbox" id="enable-pin" x-model="enablePin" class="h-4 w-4 rounded border-border/60 text-primary focus:ring-primary" />
-                    <label for="enable-pin" class="text-sm text-muted-foreground">Protect with PIN</label>
-                    <input type="text" x-show="enablePin" x-model="pin" placeholder="Enter a PIN"
-                           class="ml-2 rounded-xl border border-border/60 bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm w-40"
-                           x-bind:required="enablePin" />
+                <div class="pin-row">
+                    <input type="checkbox" id="p2ps-enable-pin" class="pin-checkbox" onchange="p2pSend.togglePin()" />
+                    <label for="p2ps-enable-pin" class="pin-label">Protect with PIN</label>
+                    <input type="text" id="" class="pin-input hidden" placeholder="Enter a PIN" oninput="p2pSend.pin = this.value" />
                 </div>
             </section>
 
-            @* ===== CREATING LINK ===== *@
-            <section x-show="isCreatingLink" class="text-center">
-                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width: 48px; height: 48px"></div>
-                <h1 class="mt-8 text-2xl font-semibold">Creating share link&hellip;</h1>
+            @* CREATING LINK *@
+            <section id="p2ps-creating" class="section hidden">
+                <div class="db-spinner db-spinner--lg" style="margin: 0 auto"></div>
+                <h1 class="status-h1">Creating share link&hellip;</h1>
             </section>
 
-            @* ===== WAITING FOR PEER ===== *@
-            <section x-show="isWaitingForPeer" class="text-center">
-                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width: 48px; height: 48px"></div>
-                <h1 class="mt-8 text-2xl font-semibold">Waiting for receiver</h1>
-                <p class="mt-3 text-base text-muted-foreground">Share this link with the recipient:</p>
-                <div class="mt-6 max-w-md mx-auto">
-                    <div class="flex flex-col gap-3 sm:flex-row">
-                        <input id="p2p-share-link" type="text" readonly
-                               x-model="shareLink"
-                               class="w-full flex-1 rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
-                               aria-label="Share link" />
-                        <button class="rounded-2xl px-6 py-3.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                                x-on:click="copyLink()" aria-label="Copy share link">
-                            <span x-show="!copied">Copy link</span>
-                            <span x-show="copied">Copied!</span>
+            @* WAITING FOR PEER *@
+            <section id="p2ps-waiting" class="section hidden">
+                <div class="db-spinner db-spinner--lg" style="margin: 0 auto"></div>
+                <h1 class="status-h1">Waiting for receiver</h1>
+                <p class="status-p">Share this link with the recipient:</p>
+                <div class="share-box">
+                    <div class="share-row">
+                        <input id="p2ps-share-link" type="text" readonly class="share-input" aria-label="Share link" />
+                        <button class="db-btn db-btn--primary" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="Copy share link">
+                            <span id="p2ps-copy-text">Copy link</span>
+                            <span id="p2ps-copy-done" class="hidden">Copied!</span>
                         </button>
                     </div>
                 </div>
-                <p class="mt-4 text-xs text-muted-foreground">Link expires in 7 days. File transfers directly between peers.</p>
-                <button class="mt-8 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors" x-on:click="cancel()">
-                    Cancel
-                </button>
+                <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--color-muted-foreground)">Link expires in 7 days. File transfers directly between peers.</p>
+                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pSend.cancel()">Cancel</button>
             </section>
 
-            @* ===== CONNECTING (WebRTC handshake) ===== *@
-            <section x-show="isConnecting" class="text-center">
-                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width: 48px; height: 48px"></div>
-                <h1 class="mt-8 text-2xl font-semibold">Establishing secure connection&hellip;</h1>
-                <p class="mt-3 text-base text-muted-foreground">Peer joined! Setting up encrypted channel.</p>
+            @* CONNECTING *@
+            <section id="p2ps-connecting" class="section hidden">
+                <div class="db-spinner db-spinner--lg" style="margin: 0 auto"></div>
+                <h1 class="status-h1">Establishing secure connection&hellip;</h1>
+                <p class="status-p">Peer joined! Setting up encrypted channel.</p>
             </section>
 
-            @* ===== TRANSFERRING ===== *@
-            <section x-show="isTransferring" class="text-center">
-                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width: 48px; height: 48px"></div>
-                <h1 class="mt-8 text-2xl font-semibold" x-text="filename"></h1>
-                <p class="mt-3 text-base text-muted-foreground" x-text="progressLabel"></p>
-                <div class="mt-8 max-w-md mx-auto">
-                    <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div class="h-full rounded-full bg-primary transition-all duration-300" x-bind:style="'width: ' + progress + '%'"></div>
+            @* TRANSFERRING *@
+            <section id="p2ps-transferring" class="section hidden">
+                <div class="db-spinner db-spinner--lg" style="margin: 0 auto"></div>
+                <h1 class="status-h1" id="p2ps-transfer-name"></h1>
+                <p class="status-p" id="p2ps-progress-label"></p>
+                <div class="progress-wrap">
+                    <div class="progress-track">
+                        <div id="p2ps-progress-bar" class="progress-fill" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
-                <button class="mt-10 rounded-full px-8 py-3 text-sm bg-muted text-foreground hover:bg-muted/80 transition-colors" x-on:click="cancelTransfer()">
-                    Cancel
-                </button>
+                <button class="db-btn db-btn--ghost" style="margin-top: 2.5rem" onclick="p2pSend.cancelTransfer()">Cancel</button>
             </section>
 
-            @* ===== SUCCESS ===== *@
-            <section x-show="isSuccess" class="text-center">
-                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/8 text-primary">
-                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            @* SUCCESS *@
+            <section id="p2ps-success" class="section hidden">
+                <div class="icon-success">
+                    <svg class="icon-svg-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <polyline points="20 6 9 17 4 12" />
                     </svg>
                 </div>
-                <h1 class="mt-6 text-2xl font-semibold">File sent!</h1>
-                <p class="mt-2 text-base text-muted-foreground" x-text="filename"></p>
-
-                <button class="mt-8 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors" x-on:click="reset()">
-                    Send another file
-                </button>
+                <h1 class="status-h1" style="margin-top: 1.5rem">File sent!</h1>
+                <p class="status-p" id="p2ps-success-name"></p>
+                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pSend.reset()">Send another file</button>
             </section>
 
-            @* ===== FAILED ===== *@
-            <section x-show="isFailed" class="text-center">
-                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-destructive/8 text-destructive">
-                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
+            @* FAILED *@
+            <section id="p2ps-failed" class="section hidden">
+                <div class="icon-error">
+                    <svg class="icon-svg-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                 </div>
-                <h1 class="mt-6 text-2xl font-semibold">Transfer failed</h1>
-                <p class="mt-2 text-base text-muted-foreground" x-text="error || 'The P2P connection could not be established.'"></p>
-                <button class="mt-10 rounded-full px-8 py-3 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" x-on:click="reset()">
-                    Try again
-                </button>
+                <h1 class="status-h1">Transfer failed</h1>
+                <p class="status-p" id="p2ps-error-msg">The P2P connection could not be established.</p>
+                <button class="db-btn db-btn--primary" style="margin-top: 2.5rem" onclick="p2pSend.reset()">Try again</button>
             </section>
-
         </div>
     </main>
 </div>
@@ -157,329 +132,4 @@
 <script src="/js/p2p/peerConnection.js"></script>
 <script src="/js/p2p/fileTransfer.js"></script>
 <script src="/js/p2p/encryption.js"></script>
-<script>
-(function () {
-    'use strict';
-
-    function apiBase() {
-        if (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl) {
-            return String(window.ZAPDROP_CONFIG.apiBaseUrl).replace(/\/+$/, '');
-        }
-        return '';
-    }
-
-    function formatBytes(bytes) {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-        if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
-        return (bytes / 1073741824).toFixed(1) + ' GB';
-    }
-
-    function register(Alpine) {
-        Alpine.data('p2pSendPage', function () {
-            return {
-                state: 'idle', // idle | dragging | creating-link | waiting-peer | connecting | transferring | success | failed
-                progress: 0,
-                filename: '',
-                fileSize: 0,
-                shareLink: '',
-                shareCode: '',
-                error: '',
-                enablePin: false,
-                pin: '',
-                draggingActive: false,
-                copied: false,
-
-                // Internal
-                _signaling: null,
-                _peerConnection: null,
-                _dataChannel: null,
-                _sender: null,
-                _file: null,
-                _encKey: null,
-                _pinSalt: null,
-                _startTime: 0,
-
-                init: function () {
-                },
-
-                copyLink: function () {
-                    var self = this;
-                    navigator.clipboard.writeText(this.shareLink).then(function () {
-                        self.copied = true;
-                        setTimeout(function () { self.copied = false; }, 2000);
-                    });
-                },
-
-                onDragOver: function (e) {
-                    e.preventDefault();
-                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-                    this.draggingActive = true;
-                    if (this.state === 'idle') this.state = 'dragging';
-                },
-
-                onDragLeave: function (e) {
-                    e.preventDefault();
-                    this.draggingActive = false;
-                    if (this.state === 'dragging') this.state = 'idle';
-                },
-
-                onDrop: function (e) {
-                    e.preventDefault();
-                    this.draggingActive = false;
-                    var files = e.dataTransfer && e.dataTransfer.files;
-                    if (files && files.length) {
-                        this.startP2P(files[0]);
-                    } else {
-                        this.state = 'idle';
-                    }
-                },
-
-                onFileSelect: function (e) {
-                    var files = e.target && e.target.files;
-                    if (files && files.length) {
-                        this.startP2P(files[0]);
-                    }
-                },
-
-                startP2P: async function (file) {
-                    if (!file) return;
-
-                    this._file = file;
-                    this.filename = file.name;
-                    this.fileSize = file.size;
-                    this.error = '';
-                    this.state = 'creating-link';
-
-                    try {
-                        // 1. Create share metadata
-                        var api = apiBase();
-                        var resp = await fetch(api + '/api/shares/p2p', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                fileName: file.name,
-                                fileSize: file.size,
-                                mimeType: file.type || 'application/octet-stream',
-                                hasPin: this.enablePin && this.pin.length > 0
-                            })
-                        });
-
-                        if (!resp.ok) {
-                            this.state = 'failed';
-                            this.error = 'Failed to create share link';
-                            return;
-                        }
-
-                        var data = await resp.json();
-                        this.shareCode = data.shareCode;
-                        this.shareLink = data.shareLink;
-                        this.state = 'waiting-peer';
-
-                        // 2. Derive encryption key if PIN is set
-                        if (this.enablePin && this.pin.length > 0) {
-                            var salt = window.P2P.encryption.generateSalt();
-                            this._pinSalt = salt;
-                            this._encKey = await window.P2P.encryption.deriveKey(this.pin, salt);
-                        }
-
-                        // 3. Connect signaling
-                        this._connectSignaling();
-                    } catch (e) {
-                        this.state = 'failed';
-                        this.error = 'Network error: ' + e.message;
-                    }
-                },
-
-                _connectSignaling: function () {
-                    var self = this;
-                    var api = apiBase();
-
-                    if (window.P2P.SignalingClient) {
-                        this._signaling = new window.P2P.SignalingClient(api, this.shareCode);
-
-                        this._signaling.onRegistered = function () {
-                            // Sender registered, waiting for peer
-                        };
-
-                        this._signaling.onPeerJoined = function () {
-                            self._onPeerJoined();
-                        };
-
-                        this._signaling.onError = function (msg) {
-                            self.state = 'failed';
-                            self.error = msg;
-                        };
-
-                        this._signaling.connect('sender', {
-                            name: this._file.name,
-                            size: this._file.size,
-                            mime: this._file.type || 'application/octet-stream'
-                        });
-                    } else {
-                        this.state = 'failed';
-                        this.error = 'Signaling client not loaded';
-                    }
-                },
-
-                _onPeerJoined: async function () {
-                    this.state = 'connecting';
-                    var self = this;
-
-                    if (window.P2P.PeerConnection) {
-                        this._peerConnection = new window.P2P.PeerConnection();
-
-                        // Create data channel
-                        this._dataChannel = this._peerConnection.createDataChannel('filetransfer');
-
-                        this._dataChannel.onopen = function () {
-                            self._startSending();
-                        };
-
-                        this._dataChannel.onerror = function (e) {
-                            self.state = 'failed';
-                            self.error = 'Data channel error';
-                        };
-
-                        // Handle ICE candidates
-                        this._peerConnection.onIceCandidate = function (candidate) {
-                            if (self._signaling) {
-                                self._signaling.send('ice', candidate);
-                            }
-                        };
-
-                        // Handle connection state
-                        this._peerConnection.onConnectionState = function (state) {
-                            if (state === 'failed' || state === 'disconnected') {
-                                if (self.state === 'transferring' || self.state === 'connecting') {
-                                    self.state = 'failed';
-                                    self.error = 'Connection ' + state;
-                                }
-                            }
-                        };
-
-                        // Handle relayed messages from signaling
-                        this._signaling.onRelay = function (type, data) {
-                            if (type === 'ice' && data) {
-                                self._peerConnection.addIceCandidate(data);
-                            }
-                        };
-
-                        // Create offer
-                        try {
-                            var offerSdp = await this._peerConnection.createOffer();
-                            this._signaling.send('offer', { sdp: offerSdp });
-                        } catch (e) {
-                            this.state = 'failed';
-                            this.error = 'Failed to create WebRTC offer';
-                        }
-                    }
-                },
-
-                _startSending: function () {
-                    this.state = 'transferring';
-                    this._startTime = Date.now();
-                    var self = this;
-
-                    var enc = null;
-                    if (this._encKey) {
-                        enc = {
-                            key: this._encKey,
-                            encrypt: window.P2P.encryption.encryptChunk
-                        };
-                    }
-
-                    this._sender = new window.P2P.FileSender(this._file, this._dataChannel, enc);
-
-                    this._sender.onProgress = function (sent, total) {
-                        self.progress = Math.round((sent / total) * 100);
-                        self._updateProgressLabel(sent, total);
-                    };
-
-                    this._sender.onComplete = function () {
-                        self.progress = 100;
-                        self.state = 'success';
-                    };
-
-                    this._sender.onError = function (msg) {
-                        self.state = 'failed';
-                        self.error = msg;
-                    };
-
-                    this._sender.start();
-                },
-
-                _updateProgressLabel: function (sent, total) {
-                    var elapsed = (Date.now() - this._startTime) / 1000;
-                    if (elapsed > 0) {
-                        this._lastSent = sent;
-                        this._lastTotal = total;
-                        this._lastElapsed = elapsed;
-                    }
-                },
-
-                cancelTransfer: function () {
-                    if (this._sender) this._sender.cancel();
-                    this._cleanup();
-                    this.state = 'idle';
-                },
-
-                cancel: function () {
-                    this._cleanup();
-                    this.state = 'idle';
-                },
-
-                reset: function () {
-                    this._cleanup();
-                    this.state = 'idle';
-                    this.progress = 0;
-                    this.filename = '';
-                    this.shareLink = '';
-                    this.shareCode = '';
-                    this.error = '';
-                    this._file = null;
-                },
-
-                _cleanup: function () {
-                    if (this._signaling) { this._signaling.close(); this._signaling = null; }
-                    if (this._peerConnection) { this._peerConnection.close(); this._peerConnection = null; }
-                    if (this._sender) { this._sender.cancel(); this._sender = null; }
-                    this._dataChannel = null;
-                },
-
-                get progressLabel() {
-                    if (this.progress === 0) return 'Starting...';
-                    var label = this.progress + '%';
-                    if (this._lastSent && this._lastTotal)
-                        label += ' · ' + formatBytes(this._lastSent) + ' / ' + formatBytes(this._lastTotal);
-                    if (this._lastElapsed && this._lastElapsed > 0) {
-                        var bps = this._lastSent / this._lastElapsed;
-                        label += ' · ' + formatBytes(bps) + '/s';
-                        var remaining = (this._lastTotal - this._lastSent) / bps;
-                        if (remaining < 60) label += ' · ~' + Math.round(remaining) + 's';
-                        else label += ' · ~' + Math.round(remaining / 60) + 'm';
-                    }
-                    return label;
-                },
-
-                get isIdle() { return this.state === 'idle'; },
-                get isDragging() { return this.state === 'dragging'; },
-                get isCreatingLink() { return this.state === 'creating-link'; },
-                get isWaitingForPeer() { return this.state === 'waiting-peer'; },
-                get isConnecting() { return this.state === 'connecting'; },
-                get isTransferring() { return this.state === 'transferring'; },
-                get isSuccess() { return this.state === 'success'; },
-                get isFailed() { return this.state === 'failed'; }
-            };
-        });
-    }
-
-    if (window.Alpine) {
-        register(window.Alpine);
-    } else {
-        window.addEventListener('alpine:init', function () {
-            if (window.Alpine) register(window.Alpine);
-        });
-    }
-})();
-</script>
+<script src="/_content/QuickShare.Web/Pages/P2PTransfer.razor.js"></script>

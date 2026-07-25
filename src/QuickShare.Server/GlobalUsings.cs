@@ -13,3 +13,4 @@ global using QuickShare.Querying;
 global using QuickShare.Server.Extensions;
 global using QuickShare.Shared.Models;
 global using QuickShare.Shared.Constants;
+global using QuickShare.Shared;

@@ -1,19 +1,15 @@
+using Riok.Mapperly.Abstractions;
+
 namespace QuickShare.Server.Features.Files.Shared;
 
-public static class FileMapper
+[Mapper]
+public static partial class FileMapper
 {
-    public static FileInfoResponse ToFileInfoResponse(this FileMetadata source)
+    [MapPropertyFromSource(nameof(FileItemResponse.FolderName), Use = nameof(MapFolderName))]
+    public static partial FileItemResponse ToFileItemResponse(this FileMetadata source);
+
+    private static string MapFolderName(FileMetadata source)
     {
-        return new FileInfoResponse(
-            source.Id,
-            source.Filename,
-            source.ContentType,
-            source.Size,
-            source.FolderId,
-            source.Folder?.Name ?? "/",
-            source.Tags,
-            source.CreatedAt,
-            source.UpdatedAt
-        );
+        return source.Folder?.Name ?? "/";
     }
 }

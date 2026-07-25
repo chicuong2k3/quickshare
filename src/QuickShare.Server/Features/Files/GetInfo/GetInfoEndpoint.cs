@@ -1,6 +1,6 @@
 namespace QuickShare.Server.Features.Files.GetInfo;
 
-public sealed class GetFileInfoEndpoint : Endpoint<GetFileInfoQuery, FileInfoResponse>
+public sealed class GetFileInfoEndpoint : Endpoint<GetFileInfoQuery, FileItemResponse>
 {
     public override void Configure()
     {
@@ -18,7 +18,7 @@ public sealed class GetFileInfoEndpoint : Endpoint<GetFileInfoQuery, FileInfoRes
 
     public override async Task HandleAsync(GetFileInfoQuery req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FileInfoResponse>>(req, ct);
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FileItemResponse>>(req, ct);
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);
         else if (result.IsFailure(out var error))

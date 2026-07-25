@@ -1,0 +1,28 @@
+.page {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 1.5rem 5rem;
+}
+.card {
+    width: 100%;
+    max-width: 24rem;
+}
+.stack {
+    margin-top: 3rem;
+}
+.subtitle {
+    margin-top: 1rem;
+}
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+}
+.btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}

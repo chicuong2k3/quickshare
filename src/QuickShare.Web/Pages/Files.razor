@@ -1,10 +1,9 @@
 @layout MainLayout
 @page "/files"
-@using System.Net.Http.Json
-@using System.Text.Json
-@using System.Text.Json.Serialization
+@attribute [Authorize]
 @using QuickShare.Shared.Models
-@inject IHttpClientFactory ClientFactory
+@using QuickShare.Web.Api
+@inject IQuickShareApi Api
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 
@@ -14,97 +13,77 @@
 
 <PageTitle>Files — QuickShareCloud</PageTitle>
 
-<div class="flex-1" x-data="filesPage()" x-cloak>
-    <main class="flex-1 px-6 pb-24 pt-32 sm:px-8">
-        <div class="mx-auto max-w-5xl">
-            @* ===== PAGE HEADING ===== *@
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+<script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+
+<div class="page" id="files-app">
+    <main class="main">
+        <div class="container">
+
+            @* PAGE HEADING + SEARCH *@
+            <div class="head-row">
                 <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                    <h1 style="font-weight: 800; letter-spacing: -0.025em; color: var(--color-foreground)">
                         @(SelectedFolder is not null ? SelectedFolder.Name : "All files")
                     </h1>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        @(SelectedFolder is not null
-                            ? $"Files in {SelectedFolder.Name}"
-                            : "Browse all your uploaded files")
+                    <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--color-muted-foreground)">
+                        @(SelectedFolder is not null ? $"Files in {SelectedFolder.Name}" : "Browse all your uploaded files")
                     </p>
                 </div>
-
-                @* ===== SEARCH ===== *@
-                <div class="w-full sm:w-72">
-                    <form method="get" action="/files"
-                          hx-trigger="input changed delay:500ms"
-                          hx-target="#files-list"
-                          hx-swap="outerHTML"
-                          hx-push-url="true"
-                          class="relative">
+                <div class="search-wrap">
+                    <form method="get" action="/files" hx-trigger="input changed delay:500ms" hx-target="#files-list" hx-swap="outerHTML" hx-push-url="true" class="search-inner">
                         @if (!string.IsNullOrEmpty(FolderId))
                         {
                             <input type="hidden" name="folderId" value="@FolderId" />
                         }
-                        <svg class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.35-4.35" />
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                         </svg>
-                        <input type="text"
-                               name="search"
-                               placeholder="Search files&hellip;"
-                               value="@SearchTerm"
-                               class="w-full rounded-2xl border border-border/60 bg-background pl-11 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
-                               aria-label="Search files" />
+                        <input type="text" name="search" class="search-input" placeholder="Search files&hellip;" value="@SearchTerm" aria-label="Search files" />
                         @if (!string.IsNullOrEmpty(SearchTerm))
                         {
-                            <button type="button"
-                                    onclick="window.location.href='/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))'"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground/50 hover:text-foreground transition-colors"
-                                    aria-label="Clear search">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
+                            <button type="button" class="search-clear" aria-label="Clear search"
+                                    onclick="window.location.href='/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             </button>
                         }
                     </form>
                 </div>
             </div>
 
-            @* ===== USAGE STATISTICS DASHBOARD (Story 1.9) ===== *@
-            <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
-                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Files</p>
-                    <p class="mt-2 text-2xl font-bold text-foreground">@(Stats?.TotalFiles ?? 0)</p>
+            @* STATS *@
+            <div class="stats">
+                <div class="stat-card">
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Files</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@(Stats?.TotalFiles ?? 0)</p>
                 </div>
-                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
-                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Storage used</p>
-                    <p class="mt-2 text-2xl font-bold text-foreground">@FormatBytes(Stats?.TotalSize ?? 0)</p>
+                <div class="stat-card">
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Storage used</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@FormatBytes(Stats?.TotalSize ?? 0)</p>
                 </div>
-                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
-                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan</p>
-                    <p class="mt-2 text-2xl font-bold text-foreground">@(Stats?.Plan ?? "Free")</p>
+                <div class="stat-card">
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Plan</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@(Stats?.Plan ?? "Free")</p>
                 </div>
-                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
-                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Folders</p>
-                    <p class="mt-2 text-2xl font-bold text-foreground">@(Folders?.Count ?? 0)</p>
+                <div class="stat-card">
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Folders</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@(Folders?.Count ?? 0)</p>
                 </div>
             </div>
 
-            @* ===== FOLDERS STRIP ===== *@
-            <div class="mt-10">
+            @* FOLDERS *@
+            <div class="folders">
                 @if (Folders is not null && Folders.Count == 0)
                 {
-                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-border/40 bg-background/50 px-6 py-5 text-sm text-muted-foreground">
-                        <div class="flex items-center gap-3">
-                            <svg class="h-5 w-5 shrink-0 text-muted-foreground/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <div class="folder-empty">
+                        <div style="display:flex;align-items:center;gap:0.75rem">
+                            <svg style="width:1.25rem;height:1.25rem;flex-shrink:0;color:color-mix(in srgb, var(--color-muted-foreground) 60%, transparent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
                             </svg>
                             <span>No folders yet. Create one to organize your files.</span>
                         </div>
-                        <button type="button"
-                                x-on:click="openCreateFolder()"
-                                class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background shadow-sm hover:opacity-90 transition-opacity">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
+                        <button type="button" class="new-pill" onclick="filesPage.openCreateFolder()">
+                            <svg style="width:0.875rem;height:0.875rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                             </svg>
                             New Folder
                         </button>
@@ -112,234 +91,130 @@
                 }
                 else if (Folders is not null)
                 {
-                    <div class="flex flex-wrap items-center gap-2" role="list" aria-label="Folders">
-                        @* "All Files" pill *@
-                        <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? "" : "?search=" + Uri.EscapeDataString(SearchTerm))"
-                           role="listitem"
-                           class="@GetFolderPillClass(null)">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="3" y="3" width="22" height="18" rx="2" ry="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <polyline points="21 15 16 10 5 21" />
-                            </svg>
+                    <div class="folder-list" role="list" aria-label="Folders">
+                        <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? "" : "?search=" + Uri.EscapeDataString(SearchTerm))" role="listitem" class="folder-pill @(string.IsNullOrEmpty(FolderId) ? "--active" : "--inactive")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="22" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                             All Files
                         </a>
-
                         @foreach (var folder in Folders)
                         {
-                            <div class="relative group/pill" role="listitem"
-                                 x-on:dragover.prevent="onDragOver($event, '@folder.Id')"
-                                 x-on:dragenter="onDragEnter('@folder.Id')"
-                                 x-on:dragleave="onDragLeave('@folder.Id')"
-                                 x-on:drop.prevent="onDrop($event, '@folder.Id')"
-                                 x-bind:class="{
-                                     'ring-2 ring-primary/40 bg-primary/5 border-primary/40 rounded-full': dragOverFolderId === '@folder.Id'
-                                 }">
-                                <a href="@GetFolderUrl(folder.Id)"
-                                   class="@GetFolderPillClass(folder.Id)">
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
-                                    </svg>
+                            <div class="folder-pill-wrap" role="listitem"
+                                 ondragover="filesPage.onDragOver(event,'@folder.Id')"
+                                 ondragenter="filesPage.onDragEnter('@folder.Id')"
+                                 ondragleave="filesPage.onDragLeave('@folder.Id')"
+                                 ondrop="filesPage.onDrop(event,'@folder.Id')">
+                                <a href="@GetFolderUrl(folder.Id)" class="folder-pill @(string.Equals(FolderId, folder.Id.ToString(), StringComparison.OrdinalIgnoreCase) ? "--active" : "--inactive")">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
                                     <span>@folder.Name</span>
                                     @if (folder.FileCount > 0)
                                     {
-                                        <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 rounded-full bg-foreground/10 px-1.5 text-[10px] font-semibold text-foreground/70" title="@folder.FileCount file@(folder.FileCount != 1 ? "s" : "")">@folder.FileCount</span>
+                                        <span class="folder-count">@folder.FileCount</span>
                                     }
                                 </a>
-                                @* Action buttons (visible on hover) *@
                                 @if (folder.Name != "/")
                                 {
-                                    <div class="absolute -right-1 -top-1 flex gap-0.5">
-                                        @* Rename *@
-                                        <button type="button"
-                                                x-on:click="openRenameFolder('@folder.Id', '@folder.Name.Replace("'", "\\'")')"
-                                                class="flex h-5 w-5 items-center justify-center rounded-l-full bg-background border border-border/60 opacity-0 shadow-sm transition-all group-hover/pill:opacity-100 hover:bg-muted hover:border-border"
-                                                aria-label="Rename @folder.Name"
-                                                title="Rename folder">
-                                            <svg class="h-3 w-3 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                            </svg>
+                                    <div class="action-btns">
+                                        <button type="button" class="action-btn" aria-label="Rename @folder.Name" title="Rename folder" onclick="filesPage.openRenameFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                         </button>
-                                        @* Delete *@
-                                        <button type="button"
-                                                x-on:click="openDeleteFolder('@folder.Id', '@folder.Name.Replace("'", "\\'")')"
-                                                class="flex h-5 w-5 items-center justify-center rounded-r-full bg-background border border-l-0 border-border/60 opacity-0 shadow-sm transition-all group-hover/pill:opacity-100 hover:bg-destructive/10 hover:border-destructive/30"
-                                                aria-label="Delete @folder.Name"
-                                                title="Delete folder">
-                                            <svg class="h-3 w-3 text-muted-foreground group-hover/pill:text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <path d="M3 6h18" />
-                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                                <line x1="10" y1="11" x2="10" y2="17" />
-                                                <line x1="14" y1="11" x2="14" y2="17" />
-                                            </svg>
+                                        <button type="button" class="action-btn files-action-btn--danger" aria-label="Delete @folder.Name" title="Delete folder" onclick="filesPage.openDeleteFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                                         </button>
                                     </div>
                                 }
                             </div>
                         }
-
-                        @* New Folder Pill *@
-                        <button type="button"
-                                x-on:click="openCreateFolder()"
-                                class="inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-border/40 px-4 py-2.5 text-sm font-medium text-muted-foreground/70 hover:text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all"
-                                aria-label="Create new folder">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                            New
+                        <button type="button" class="new-pill" onclick="filesPage.openCreateFolder()">
+                            <svg style="width:0.875rem;height:0.875rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New
                         </button>
                     </div>
                 }
             </div>
 
-            @* ===== FILES SECTION ===== *@
+            @* FILES LIST (htmx partial) *@
             <HtmxFragment>
-            <div id="files-list" class="mt-8">
+            <div id="files-list" class="section">
                 @if (RenderState == FilesRenderState.Loading)
                 {
-                    <div class="space-y-4">
+                    <div class="skeleton">
                         @for (var i = 0; i < 4; i++)
                         {
-                            <div class="flex animate-pulse items-center gap-4 rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
-                                <div class="h-12 w-12 shrink-0 rounded-xl bg-muted"></div>
-                                <div class="flex-1 space-y-2">
-                                    <div class="h-4 w-3/5 rounded-md bg-muted"></div>
-                                    <div class="h-3 w-1/4 rounded-md bg-muted"></div>
+                            <div class="skel-row">
+                                <div class="skel-icon"></div>
+                                <div class="skel-text">
+                                    <div class="skel-line1"></div><div class="skel-line2"></div>
                                 </div>
-                                <div class="h-3 w-20 rounded-md bg-muted"></div>
+                                <div class="skel-last"></div>
                             </div>
                         }
                     </div>
                 }
                 else if (RenderState == FilesRenderState.Error)
                 {
-                    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
-                        <div class="p-12 text-center">
-                            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/8 text-destructive">
-                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="12" y1="8" x2="12" y2="12" />
-                                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                                </svg>
+                    <div class="error-card">
+                        <div style="padding: 3rem; text-align: center">
+                            <div style="margin: 0 auto; display: flex; width: 3.5rem; height: 3.5rem; align-items: center; justify-content: center; border-radius: 1rem; background: color-mix(in srgb, var(--color-destructive) 8%, transparent); color: var(--color-destructive)">
+                                <svg style="width: 1.75rem; height: 1.75rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                             </div>
-                            <h3 class="mt-5 text-lg font-semibold">Couldn&rsquo;t load files</h3>
-                            <p class="mt-2 text-sm text-muted-foreground">There was a problem fetching your files. Please try again.</p>
-                            <a href="/files"
-                                    class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
-                                Retry
-                            </a>
+                            <h3 style="margin-top: 1.25rem; font-size: 1.125rem; font-weight: 600">Couldn&rsquo;t load files</h3>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-muted-foreground)">There was a problem fetching your files. Please try again.</p>
+                            <a href="/files" class="db-btn db-btn--primary" style="margin-top: 2rem">Retry</a>
                         </div>
                     </div>
                 }
                 else if (FileItems is null || FileItems.Count == 0)
                 {
-                    @* ===== EMPTY STATE ===== *@
-                    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
-                        <div class="p-16 text-center">
-                            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/8 text-primary">
-                                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                    <polyline points="14 2 14 8 20 8" />
-                                    <line x1="9" y1="13" x2="15" y2="13" />
-                                    <line x1="12" y1="10" x2="12" y2="16" />
-                                </svg>
+                    <div class="empty-card">
+                        <div style="padding: 4rem; text-align: center">
+                            <div style="margin: 0 auto; display: flex; width: 5rem; height: 5rem; align-items: center; justify-content: center; border-radius: 1rem; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary)">
+                                <svg style="width: 2.5rem; height: 2.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="12" y1="10" x2="12" y2="16"/></svg>
                             </div>
-                            <h2 class="mt-6 text-xl font-semibold">
-                                @(SelectedFolder is not null ? $"No files in {SelectedFolder.Name}" : "No files yet")
-                            </h2>
-                            <p class="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                                @(SelectedFolder is not null
-                                    ? "This folder is empty. Upload a file and place it here to get started."
-                                    : "Upload your first file and it will appear here. Drag & drop or click to browse.")
-                            </p>
+                            <h2 style="margin-top: 1.5rem; font-size: 1.25rem; font-weight: 600">@(SelectedFolder is not null ? $"No files in {SelectedFolder.Name}" : "No files yet")</h2>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-muted-foreground); max-width: 24rem; margin-inline: auto">@(SelectedFolder is not null ? "This folder is empty." : "Upload your first file.")</p>
                             @if (!string.IsNullOrEmpty(SearchTerm))
                             {
-                                <p class="mt-4 text-sm text-muted-foreground">
-                                    No files matching &ldquo;@SearchTerm&rdquo;.
-                                    <a href="/files" class="text-primary hover:text-primary/80">Clear search</a>
+                                <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--color-muted-foreground)">
+                                    No files matching &ldquo;@SearchTerm&rdquo;. <a href="/files" style="color: var(--color-primary)">Clear search</a>
                                 </p>
                             }
-                            <a href="/"
-                                    class="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-6 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                Upload a file
-                            </a>
+                            <a href="/" class="db-btn db-btn--primary" style="margin-top: 2rem">Upload a file</a>
                         </div>
                     </div>
                 }
                 else
                 {
-                    @* ===== FILE LIST ===== *@
-                    <div class="space-y-2" role="list" aria-label="Files">
+                    <div class="file-list" role="list" aria-label="Files">
                         @foreach (var file in FileItems)
                         {
-                            <div role="listitem"
-                                 draggable="true"
-                                 x-on:dragstart="onDragStart($event, '@file.Id')"
-                                 x-on:dragend="onDragEnd()"
-                                 x-bind:class="{ 'opacity-40 border-dashed border-primary/40': draggedFileId === '@file.Id' }"
-                                 class="group flex items-center gap-4 rounded-2xl border border-border/30 bg-card p-4 shadow-sm transition-all hover:border-border/60 hover:shadow-md sm:gap-5 sm:p-5 cursor-grab active:cursor-grabbing">
-                                @* File icon *@
-                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/6 text-primary/70">
-                                    @FileIcon(file.ContentType)
-                                </div>
-
-                                @* File info *@
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-medium text-foreground/90" title="@file.Filename">@file.Filename</p>
-                                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <div role="listitem" class="file-row" draggable="true"
+                                 ondragstart="filesPage.onDragStart(event,'@file.Id')"
+                                 ondragend="filesPage.onDragEnd()">
+                                <div class="file-icon">@FileIcon(file.ContentType)</div>
+                                <div class="file-info">
+                                    <p class="file-name" title="@file.Filename">@file.Filename</p>
+                                    <div class="file-meta">
                                         <span>@FormatBytes(file.Size)</span>
-                                        <span class="hidden sm:inline">&middot;</span>
-                                        <span class="hidden sm:inline">@file.ContentType</span>
+                                        <span class="meta-sep">&middot;</span>
+                                        <span class="meta-type">@file.ContentType</span>
                                         <span>&middot;</span>
                                         <span>@FormatDate(file.CreatedAt)</span>
-                                        @if (file.Tags.Length > 0)
-                                        {
-                                            <span>&middot;</span>
-                                            <span class="truncate max-w-[120px]" title="@string.Join(", ", file.Tags)">@string.Join(", ", file.Tags)</span>
-                                        }
                                     </div>
                                 </div>
-
-                                @* Folder badge *@
                                 @if (SelectedFolder is null && !string.IsNullOrEmpty(file.FolderName))
                                 {
-                                    <span class="hidden shrink-0 rounded-full bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground sm:inline-flex items-center gap-1.5">
-                                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
-                                        </svg>
-                                        @file.FolderName
+                                    <span class="folder-badge">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>@file.FolderName
                                     </span>
                                 }
-
-                                @* Download action *@
-                                <a href="@GetFileDownloadUrl(file.Id)"
-                                   class="flex shrink-0 items-center justify-center rounded-xl p-2.5 text-muted-foreground/50 hover:bg-primary/8 hover:text-primary transition-all"
-                                   aria-label="Download @file.Filename"
-                                   title="Download file">
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
+                                <a href="@GetFileDownloadUrl(file.Id)" class="dl-btn" aria-label="Download @file.Filename" title="Download file">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 </a>
                             </div>
                         }
                     </div>
-
-                    @* ===== FILE COUNT FOOTER ===== *@
-                    <p class="mt-6 text-center text-xs text-muted-foreground/70">
+                    <p class="file-footer">
                         Showing @FileItems.Count file@(FileItems.Count != 1 ? "s" : "")
-                        @if (TotalCount > FileItems.Count)
-                        {
-                            <text> of @TotalCount</text>
-                        }
+                        @if (TotalCount > FileItems.Count) { <text> of @TotalCount</text> }
                     </p>
                 }
             </div>
@@ -348,75 +223,27 @@
         </div>
     </main>
 
-    @* ===== CREATE FOLDER MODAL (inside x-data scope) ===== *@
-    <div x-show="createOpen"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm px-6"
-         x-on:click.self="createOpen = false"
-         style="display: none;"
-         aria-modal="true"
-         role="dialog"
-         aria-label="Create new folder">
-        <div class="w-full max-w-sm"
-             x-on:click.stop
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95">
-            <div class="rounded-xl border bg-card text-card-foreground shadow-xl">
-                <div class="p-8">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">New folder</h3>
-                        <button type="button"
-                                x-on:click="createOpen = false"
-                                class="rounded-full p-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors"
-                                aria-label="Close">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
+    @* CREATE FOLDER MODAL *@
+    <div id="modal-create" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-card">
+                <div class="modal-body">
+                    <div class="modal-header">
+                        <h3 style="font-size:1.125rem;font-weight:600">New folder</h3>
+                        <button type="button" class="modal-close" aria-label="Close" onclick="filesPage.closeModals()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
-
-                    <div class="mt-6">
-                        <label for="create-folder-name" class="block text-sm font-medium text-foreground/80 mb-1.5">Folder name</label>
-                        <input id="create-folder-name"
-                               type="text"
-                               x-model="createName"
-                               x-ref="createNameInput"
-                               placeholder="e.g. Projects, Photos, Documents"
-                               maxlength="255"
-                               class="w-full rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
-                               x-on:keydown.enter.prevent="submitCreateFolder()" />
+                    <div class="modal-field">
+                        <label for="create-folder-name" class="modal-label">Folder name</label>
+                        <input id="create-folder-name" type="text" class="modal-input" placeholder="e.g. Projects, Photos" maxlength="255" onkeydown="if(event.key==='Enter')filesPage.submitCreateFolder()" />
                     </div>
-
-                    <div x-show="createError" class="mt-3 text-sm text-destructive" x-text="createError"></div>
-
-                    <div class="mt-6 flex items-center gap-3">
-                        <button type="button"
-                                x-on:click="createOpen = false"
-                                class="flex-1 rounded-2xl border border-border/60 px-5 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-all">
-                            Cancel
-                        </button>
-                        <button type="button"
-                                x-on:click="submitCreateFolder()"
-                                x-bind:disabled="!createName.trim()"
-                                x-bind:class="createName.trim() ? 'bg-foreground text-background hover:opacity-90 cursor-pointer' : 'bg-muted text-muted-foreground/50 cursor-not-allowed'"
-                                class="flex-1 rounded-2xl px-5 py-3 text-sm font-semibold shadow-sm transition-all">
-                            <span x-show="!createLoading">Create folder</span>
-                            <span x-show="createLoading" class="inline-flex items-center gap-2">
-                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                </svg>
-                                Creating&hellip;
-                            </span>
+                    <div id="create-error" class="modal-error hidden"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
+                        <button type="button" id="create-submit-btn" class="db-btn" style="flex:1;background:var(--color-foreground);color:var(--color-background);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitCreateFolder()" data-ai-action="folders.create.submit">
+                            <span id="create-btn-text">Create folder</span>
+                            <span id="create-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Creating&hellip;</span>
                         </button>
                     </div>
                 </div>
@@ -424,74 +251,27 @@
         </div>
     </div>
 
-    @* ===== RENAME FOLDER MODAL (inside x-data scope) ===== *@
-    <div x-show="renameOpen"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm px-6"
-         x-on:click.self="renameOpen = false"
-         style="display: none;"
-         aria-modal="true"
-         role="dialog"
-         aria-label="Rename folder">
-        <div class="w-full max-w-sm"
-             x-on:click.stop
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95">
-            <div class="rounded-xl border bg-card text-card-foreground shadow-xl">
-                <div class="p-8">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">Rename folder</h3>
-                        <button type="button"
-                                x-on:click="renameOpen = false"
-                                class="rounded-full p-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors"
-                                aria-label="Close">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
+    @* RENAME FOLDER MODAL *@
+    <div id="modal-rename" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-card">
+                <div class="modal-body">
+                    <div class="modal-header">
+                        <h3 style="font-size:1.125rem;font-weight:600">Rename folder</h3>
+                        <button type="button" class="modal-close" aria-label="Close" onclick="filesPage.closeModals()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
-
-                    <div class="mt-6">
-                        <label for="rename-folder-name" class="block text-sm font-medium text-foreground/80 mb-1.5">Folder name</label>
-                        <input id="rename-folder-name"
-                               type="text"
-                               x-model="renameName"
-                               x-ref="renameNameInput"
-                               maxlength="255"
-                               class="w-full rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
-                               x-on:keydown.enter.prevent="submitRenameFolder()" />
+                    <div class="modal-field">
+                        <label for="rename-folder-name" class="modal-label">Folder name</label>
+                        <input id="rename-folder-name" type="text" class="modal-input" maxlength="255" onkeydown="if(event.key==='Enter')filesPage.submitRenameFolder()" />
                     </div>
-
-                    <div x-show="renameError" class="mt-3 text-sm text-destructive" x-text="renameError"></div>
-
-                    <div class="mt-6 flex items-center gap-3">
-                        <button type="button"
-                                x-on:click="renameOpen = false"
-                                class="flex-1 rounded-2xl border border-border/60 px-5 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-all">
-                            Cancel
-                        </button>
-                        <button type="button"
-                                x-on:click="submitRenameFolder()"
-                                x-bind:disabled="!renameName.trim()"
-                                x-bind:class="renameName.trim() ? 'bg-foreground text-background hover:opacity-90 cursor-pointer' : 'bg-muted text-muted-foreground/50 cursor-not-allowed'"
-                                class="flex-1 rounded-2xl px-5 py-3 text-sm font-semibold shadow-sm transition-all">
-                            <span x-show="!renameLoading">Rename</span>
-                            <span x-show="renameLoading" class="inline-flex items-center gap-2">
-                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                </svg>
-                                Renaming&hellip;
-                            </span>
+                    <div id="rename-error" class="modal-error hidden"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
+                        <button type="button" id="rename-submit-btn" class="db-btn" style="flex:1;background:var(--color-foreground);color:var(--color-background);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitRenameFolder()" data-ai-action="folders.rename.submit">
+                            <span id="rename-btn-text">Rename</span>
+                            <span id="rename-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Renaming&hellip;</span>
                         </button>
                     </div>
                 </div>
@@ -499,446 +279,86 @@
         </div>
     </div>
 
-    @* ===== DELETE FOLDER CONFIRMATION MODAL (inside x-data scope) ===== *@
-    <div x-show="deleteOpen"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm px-6"
-         x-on:click.self="deleteOpen = false"
-         style="display: none;"
-         aria-modal="true"
-         role="alertdialog"
-         aria-label="Delete folder">
-        <div class="w-full max-w-sm"
-             x-on:click.stop
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95">
-            <div class="rounded-xl border bg-card text-card-foreground shadow-xl border-destructive/20">
-                <div class="p-8">
-                    <div class="flex items-center gap-4">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                            </svg>
+    @* DELETE FOLDER MODAL *@
+    <div id="modal-delete" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-card files-modal-card--danger">
+                <div class="modal-body">
+                    <div style="display:flex;align-items:center;gap:1rem">
+                        <div class="modal-delete-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold">Delete folder?</h3>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                Are you sure you want to delete <strong x-text="deleteName"></strong>?
-                            </p>
+                            <h3 style="font-size:1.125rem;font-weight:600">Delete folder?</h3>
+                            <p style="margin-top:0.25rem;font-size:0.875rem;color:var(--color-muted-foreground)">Are you sure you want to delete <strong id="delete-name"></strong>?</p>
                         </div>
                     </div>
-
-                    <div role="alert" class="mt-6 rounded-lg border border-warning/50 bg-warning/10 p-4 text-sm text-warning-foreground">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
-                        <span>This action cannot be undone. Files in this folder must be moved or deleted first.</span>
+                    <div class="warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>This action cannot be undone.</span>
                     </div>
-
-                    <div x-show="deleteError" class="mt-3 text-sm text-destructive" x-text="deleteError"></div>
-
-                    <div class="mt-6 flex items-center gap-3">
-                        <button type="button"
-                                x-on:click="deleteOpen = false"
-                                class="flex-1 rounded-2xl border border-border/60 px-5 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-all">
-                            Cancel
-                        </button>
-                        <button type="button"
-                                x-on:click="submitDeleteFolder()"
-                                x-bind:disabled="deleteLoading"
-                                x-bind:class="!deleteLoading ? 'bg-destructive text-destructive-foreground hover:opacity-90 cursor-pointer' : 'bg-muted text-muted-foreground/50 cursor-not-allowed'"
-                                class="flex-1 rounded-2xl px-5 py-3 text-sm font-semibold shadow-sm transition-all">
-                            <span x-show="!deleteLoading">Delete folder</span>
-                            <span x-show="deleteLoading" class="inline-flex items-center gap-2">
-                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                </svg>
-                                Deleting&hellip;
-                            </span>
+                    <div id="delete-error" class="modal-error hidden"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
+                        <button type="button" id="delete-submit-btn" style="flex:1;background:var(--color-destructive);color:var(--color-destructive-foreground);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitDeleteFolder()" data-ai-action="folders.delete.confirm">
+                            <span id="delete-btn-text">Delete folder</span>
+                            <span id="delete-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Deleting&hellip;</span>
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    @* ===== TOAST CONTAINER (inside x-data scope) ===== *@
-    <div x-show="toast.show"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 translate-y-4"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 translate-y-4"
-         class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110]"
-         style="display: none;">
-        <div x-bind:class="toast.type === 'error' ? 'bg-destructive text-destructive-foreground' : 'bg-foreground text-background'"
-             class="flex items-center gap-3 rounded-2xl px-6 py-3.5 shadow-lg text-sm font-medium">
-            <span x-text="toast.message"></span>
-            <button type="button"
-                    x-on:click="toast.show = false"
-                    class="rounded-full p-0.5 opacity-60 hover:opacity-100 transition-opacity">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-            </button>
         </div>
     </div>
 </div>
 
-@* Alpine.js data initialization (registered globally via alpine:init) *@
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('filesPage', () => ({
-            // Create folder
-            createOpen: false,
-            createName: '',
-            createLoading: false,
-            createError: '',
-
-            // Drag-and-drop
-            draggedFileId: null,
-            dragOverFolderId: null,
-
-            // Rename folder
-            renameOpen: false,
-            renameId: '',
-            renameName: '',
-            renameLoading: false,
-            renameError: '',
-
-            // Delete folder
-            deleteOpen: false,
-            deleteId: '',
-            deleteName: '',
-            deleteLoading: false,
-            deleteError: '',
-
-            // Toast
-            toast: { show: false, message: '', type: 'success' },
-
-            // --- DRAG AND DROP ---
-            onDragStart(event, fileId) {
-                this.draggedFileId = fileId;
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', fileId);
-            },
-
-            onDragEnd() {
-                this.draggedFileId = null;
-                this.dragOverFolderId = null;
-            },
-
-            onDragOver(event, folderId) {
-                event.dataTransfer.dropEffect = 'move';
-            },
-
-            onDragEnter(folderId) {
-                this.dragOverFolderId = folderId;
-            },
-
-            onDragLeave(folderId) {
-                if (this.dragOverFolderId === folderId) {
-                    this.dragOverFolderId = null;
-                }
-            },
-
-            async onDrop(event, folderId) {
-                this.dragOverFolderId = null;
-                const fileId = this.draggedFileId || event.dataTransfer.getData('text/plain');
-                this.draggedFileId = null;
-
-                if (!fileId || !folderId) return;
-
-                try {
-                    const response = await fetch('@apiBase/api/files/' + fileId + '/folder', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ fileId: fileId, targetFolderId: folderId })
-                    });
-
-                    if (response.ok) {
-                        this.showToast('Moved to folder', 'success');
-                        setTimeout(() => {
-                            window.location.href = '/files' + (window.location.search || '');
-                        }, 600);
-                    } else {
-                        const text = await response.text();
-                        let msg = 'Failed to move file';
-                        try {
-                            const err = JSON.parse(text);
-                            msg = err.message || err.title || msg;
-                        } catch (_) { }
-                        this.showToast(msg, 'error');
-                    }
-                } catch (_) {
-                    this.showToast('Network error. Please try again.', 'error');
-                }
-            },
-
-            showToast(message, type = 'success') {
-                this.toast = { show: true, message, type };
-                if (type === 'success') {
-                    setTimeout(() => { this.toast.show = false; }, 4000);
-                }
-            },
-
-            // --- CREATE FOLDER ---
-            openCreateFolder() {
-                this.createName = '';
-                this.createError = '';
-                this.createLoading = false;
-                this.createOpen = true;
-                this.$nextTick(() => {
-                    if (this.$refs.createNameInput) {
-                        this.$refs.createNameInput.focus();
-                    }
-                });
-            },
-
-            async submitCreateFolder() {
-                const name = this.createName.trim();
-                if (!name) return;
-
-                this.createLoading = true;
-                this.createError = '';
-
-                try {
-                    const response = await fetch('@apiBase/api/folders', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ name })
-                    });
-
-                    if (response.ok) {
-                        window.location.href = '/files';
-                    } else {
-                        const text = await response.text();
-                        let msg = 'Failed to create folder';
-                        try {
-                            const err = JSON.parse(text);
-                            msg = err.message || err.title || msg;
-                        } catch (_) { }
-                        this.createError = msg;
-                        this.createLoading = false;
-                    }
-                } catch (_) {
-                    this.createError = 'Network error. Please try again.';
-                    this.createLoading = false;
-                }
-            },
-
-            // --- DELETE FOLDER ---
-            openDeleteFolder(id, name) {
-                this.deleteId = id;
-                this.deleteName = name;
-                this.deleteError = '';
-                this.deleteLoading = false;
-                this.deleteOpen = true;
-            },
-
-            async submitDeleteFolder() {
-                if (!this.deleteId) return;
-
-                this.deleteLoading = true;
-                this.deleteError = '';
-
-                try {
-                    const response = await fetch('@apiBase/api/folders/' + this.deleteId, {
-                        method: 'DELETE',
-                        credentials: 'include'
-                    });
-
-                    if (response.ok) {
-                        // If we're viewing the deleted folder, go back to all files
-                        const currentFolder = new URLSearchParams(window.location.search).get('folderId');
-                        if (currentFolder === this.deleteId) {
-                            window.location.href = '/files';
-                        } else {
-                            window.location.href = '/files' + (window.location.search || '');
-                        }
-                    } else {
-                        const text = await response.text();
-                        let msg = 'Failed to delete folder';
-                        try {
-                            const err = JSON.parse(text);
-                            msg = err.message || err.title || msg;
-                        } catch (_) { }
-                        this.deleteError = msg;
-                        this.deleteLoading = false;
-                    }
-                } catch (_) {
-                    this.deleteError = 'Network error. Please try again.';
-                    this.deleteLoading = false;
-                }
-            },
-
-            // --- RENAME FOLDER ---
-            openRenameFolder(id, name) {
-                this.renameId = id;
-                this.renameName = name;
-                this.renameError = '';
-                this.renameLoading = false;
-                this.renameOpen = true;
-                this.$nextTick(() => {
-                    if (this.$refs.renameNameInput) {
-                        this.$refs.renameNameInput.focus();
-                        this.$refs.renameNameInput.select();
-                    }
-                });
-            },
-
-            async submitRenameFolder() {
-                const name = this.renameName.trim();
-                if (!name || !this.renameId) return;
-
-                this.renameLoading = true;
-                this.renameError = '';
-
-                try {
-                    const response = await fetch('@apiBase/api/folders/' + this.renameId, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ id: this.renameId, name })
-                    });
-
-                    if (response.ok) {
-                        window.location.href = '/files' + (window.location.search || '');
-                    } else {
-                        const text = await response.text();
-                        let msg = 'Failed to rename folder';
-                        try {
-                            const err = JSON.parse(text);
-                            msg = err.message || err.title || msg;
-                        } catch (_) { }
-                        this.renameError = msg;
-                        this.renameLoading = false;
-                    }
-                } catch (_) {
-                    this.renameError = 'Network error. Please try again.';
-                    this.renameLoading = false;
-                }
-            }
-        }));
-    });
-</script>
+<script src="/_content/QuickShare.Web/Pages/Files.razor.js"></script>
 
 @code {
     private const int PageSize = 50;
 
-    [SupplyParameterFromQuery]
-    public string? FolderId { get; set; }
-
-    [SupplyParameterFromQuery]
-    public string? Search { get; set; }
+    [SupplyParameterFromQuery] public string? FolderId { get; set; }
+    [SupplyParameterFromQuery] public string? Search { get; set; }
 
     private string SearchTerm => Search ?? "";
-    private List<FolderDto>? Folders { get; set; }
-    private List<FileDto>? FileItems { get; set; }
-    private FolderDto? SelectedFolder { get; set; }
+    private List<FolderItemResponse>? Folders { get; set; }
+    private List<FileItemResponse>? FileItems { get; set; }
+    private FolderItemResponse? SelectedFolder { get; set; }
     private int TotalCount { get; set; }
     private UsageStats? Stats { get; set; }
     private FilesRenderState RenderState { get; set; } = FilesRenderState.Loading;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
     protected override async Task OnInitializedAsync()
     {
-        var client = ClientFactory.CreateClient(ApiClient.Name);
-
         try
         {
-            // Fetch folders
-            var foldersResponse = await client.GetAsync("/api/folders?pageSize=100");
-            if (foldersResponse.IsSuccessStatusCode)
+            var foldersResult = await Api.GetFoldersAsync(100);
+            Folders = foldersResult?.Items ?? [];
+
+            Guid? folderGuid = null;
+            if (!string.IsNullOrEmpty(FolderId) && Guid.TryParse(FolderId, out var parsedId))
             {
-                await using var foldersStream = await foldersResponse.Content.ReadAsStreamAsync();
-                var foldersResult = await JsonSerializer.DeserializeAsync<PagedResultDto<FolderDto>>(foldersStream, JsonOptions);
-                Folders = foldersResult?.Items ?? [];
-            }
-            else
-            {
-                Folders = [];
+                folderGuid = parsedId;
+                SelectedFolder = await Api.GetFolderAsync(parsedId);
             }
 
-            // Fetch selected folder info if folderId is specified
-            if (!string.IsNullOrEmpty(FolderId) && Guid.TryParse(FolderId, out var folderGuid))
-            {
-                var folderInfoResponse = await client.GetAsync($"/api/folders/{folderGuid}");
-                if (folderInfoResponse.IsSuccessStatusCode)
-                {
-                    await using var folderStream = await folderInfoResponse.Content.ReadAsStreamAsync();
-                    SelectedFolder = await JsonSerializer.DeserializeAsync<FolderDto>(folderStream, JsonOptions);
-                }
-            }
+            var searchQuery = string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm;
+            var filesResult = await Api.GetFilesAsync(PageSize, folderId: folderGuid, search: searchQuery);
+            FileItems = filesResult?.Items ?? [];
+            TotalCount = filesResult?.TotalCount ?? FileItems.Count;
 
-            // Fetch files
-            var fileUrl = BuildFilesUrl();
-            var filesResponse = await client.GetAsync(fileUrl);
-            if (filesResponse.IsSuccessStatusCode)
-            {
-                await using var filesStream = await filesResponse.Content.ReadAsStreamAsync();
-                var filesResult = await JsonSerializer.DeserializeAsync<PagedResultDto<FileDto>>(filesStream, JsonOptions);
-                FileItems = filesResult?.Items ?? [];
-                TotalCount = filesResult?.TotalCount ?? FileItems.Count;
-            }
-            else
-            {
-                FileItems = [];
-                TotalCount = 0;
-            }
-
-            // Fetch profile for plan name
             try
             {
-                var profileResponse = await client.GetAsync("/api/account/profile");
-                if (profileResponse.IsSuccessStatusCode)
+                var profile = await Api.GetAccountProfileAsync();
+                if (profile is not null)
                 {
-                    await using var profileStream = await profileResponse.Content.ReadAsStreamAsync();
-                    var profile = await JsonSerializer.DeserializeAsync<ProfileResponse>(profileStream, JsonOptions);
-                    if (profile is not null)
-                    {
-                        Stats = new UsageStats(
-                            TotalFiles: TotalCount,
-                            TotalSize: FileItems?.Sum(f => f.Size) ?? 0,
-                            Plan: profile.Plan ?? "Free"
-                        );
-                    }
+                    Stats = new UsageStats(TotalCount, FileItems?.Sum(f => f.Size) ?? 0, profile.Plan ?? "Free");
                 }
             }
-            catch
-            {
-                // Profile fetch is optional; stats just won't show plan
-            }
+            catch { }
 
             if (Stats is null)
             {
-                Stats = new UsageStats(
-                    TotalFiles: TotalCount,
-                    TotalSize: FileItems?.Sum(f => f.Size) ?? 0,
-                    Plan: "Free"
-                );
+                Stats = new UsageStats(TotalCount, FileItems?.Sum(f => f.Size) ?? 0, "Free");
             }
 
             RenderState = FilesRenderState.Loaded;
@@ -949,97 +369,26 @@
         }
     }
 
-    private string BuildFilesUrl()
-    {
-        var parts = new List<string> { $"/api/files?pageSize={PageSize}" };
+    private string GetFolderUrl(Guid folderId) { var url = $"/files?folderId={folderId}"; if (!string.IsNullOrWhiteSpace(SearchTerm)) url += $"&search={Uri.EscapeDataString(SearchTerm)}"; return url; }
+    private string GetFileDownloadUrl(Guid fileId) { var ab = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/'); return $"{ab}/api/files/{fileId}/download"; }
 
-        if (!string.IsNullOrEmpty(FolderId) && Guid.TryParse(FolderId, out _))
-            parts.Add($"folderId={Uri.EscapeDataString(FolderId)}");
-
-        if (!string.IsNullOrWhiteSpace(SearchTerm))
-            parts.Add($"search={Uri.EscapeDataString(SearchTerm)}");
-
-        return string.Join("&", parts);
-    }
-
-    private string GetFolderUrl(Guid folderId)
-    {
-        var url = $"/files?folderId={folderId}";
-        if (!string.IsNullOrWhiteSpace(SearchTerm))
-            url += $"&search={Uri.EscapeDataString(SearchTerm)}";
-        return url;
-    }
-
-    private string GetFolderPillClass(Guid? folderId)
-    {
-        var isActive = folderId switch
-        {
-            null => string.IsNullOrEmpty(FolderId),
-            _ => string.Equals(FolderId, folderId.ToString(), StringComparison.OrdinalIgnoreCase)
+    private static MarkupString FileIcon(string ct) {
+        var key = (ct ?? "").ToLowerInvariant();
+        var d = key switch {
+            var s when s.StartsWith("image/") => "M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6",
+            var s when s.StartsWith("video/") => "m22 8-6 4 6 4V8Z M14 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z",
+            var s when s.StartsWith("audio/") => "M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+            "application/pdf" => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h6",
+            var s when s.Contains("zip") || s.Contains("rar") || s.Contains("7z") || s.Contains("compressed") || s.Contains("tar") => "M21 8v13H3V8 M1 3h22v5H1z M10 12h4",
+            var s when s.Contains("text/") || s.Contains("json") || s.Contains("xml") || s.Contains("javascript") || s.Contains("typescript") => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
+            _ => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6",
         };
-
-        var baseClass = "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ";
-
-        return isActive
-            ? baseClass + "bg-foreground text-background shadow-sm"
-            : baseClass + "bg-card text-muted-foreground border border-border/40 hover:border-border/80 hover:text-foreground shadow-sm";
+        return new MarkupString($"<svg style=\"width:1.5rem;height:1.5rem\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"{d}\"/></svg>");
     }
 
-    private string GetFileDownloadUrl(Guid fileId)
-    {
-        var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
-        return $"{apiBase}/api/files/{fileId}/download";
-    }
-
-    private static MarkupString FileIcon(string contentType)
-    {
-        var key = (contentType ?? "").ToLowerInvariant();
-        var svg = key switch
-        {
-            var s when s.StartsWith("image/") => IconSvg("M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6"),
-            var s when s.StartsWith("video/") => IconSvg("m22 8-6 4 6 4V8Z M14 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z"),
-            var s when s.StartsWith("audio/") => IconSvg("M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"),
-            "application/pdf" => IconSvg("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h6"),
-            var s when s.Contains("zip") || s.Contains("compressed") || s.Contains("tar") || s.Contains("rar") || s.Contains("7z") => IconSvg("M21 8v13H3V8 M1 3h22v5H1z M10 12h4"),
-            var s when s.Contains("text/") || s.Contains("application/json") || s.Contains("application/xml") || s.Contains("application/javascript") || s.Contains("application/typescript") => IconSvg("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8"),
-            _ => IconSvg("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6"),
-        };
-        return new MarkupString(svg);
-    }
-
-    private static string IconSvg(string d) =>
-        $"<svg class=\"h-6 w-6\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"{d}\"/></svg>";
-
-    private static string FormatBytes(long bytes)
-    {
-        if (bytes <= 0) return "0 B";
-        string[] units = { "B", "KB", "MB", "GB", "TB" };
-        var magnitude = (int)Math.Floor(Math.Log(bytes, 1024));
-        if (magnitude >= units.Length) magnitude = units.Length - 1;
-        var size = bytes / Math.Pow(1024, magnitude);
-        return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
-    }
-
-    private static string FormatDate(DateTime date) => date.ToLocalTime().ToString("MMM d, yyyy");
+    private static string FormatBytes(long b) { if (b <= 0) return "0 B"; string[] u = {"B","KB","MB","GB","TB"}; var m = (int)Math.Floor(Math.Log(b,1024)); if (m >= u.Length) m = u.Length-1; var s = b / Math.Pow(1024,m); return m == 0 ? $"{b} B" : $"{s:F1} {u[m]}"; }
+    private static string FormatDate(DateTime d) => d.ToLocalTime().ToString("MMM d, yyyy");
 
     private enum FilesRenderState { Loading, Loaded, Error }
-
-    // --- DTOs ---
-
     private sealed record UsageStats(int TotalFiles, long TotalSize, string Plan);
-
-    private sealed record FolderDto(Guid Id, string Name, DateTime CreatedAt, int FileCount = 0);
-
-    private sealed record FileDto(
-        Guid Id,
-        string Filename,
-        string ContentType,
-        long Size,
-        Guid FolderId,
-        string FolderName,
-        string[] Tags,
-        DateTime CreatedAt
-    );
-
-    private sealed record PagedResultDto<T>(List<T> Items, int TotalCount, int Page, int PageSize);
 }

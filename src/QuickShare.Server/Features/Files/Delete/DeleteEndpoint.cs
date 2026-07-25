@@ -9,7 +9,7 @@ public sealed class DeleteFileEndpoint : Endpoint<DeleteFileCommand>
         Summary(s =>
         {
             s.Summary = "Delete a file";
-            s.Description = "Deletes the file's message from the Telegram storage channel and removes its metadata record.";
+            s.Description = "Deletes the file from storage and removes its metadata record.";
             s.Params["id"] = "Unique identifier of the file.";
             s.Responses[204] = "File was deleted successfully.";
             s.Responses[404] = "No file with the given id exists.";

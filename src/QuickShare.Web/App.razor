@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="grunge-dark">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,14 +17,25 @@
     <script>
         (function() {
             try {
-                var theme = window.localStorage.getItem('db-theme') || 'dark';
+                var family = window.localStorage.getItem('db-family') || 'grunge';
                 var scheme = window.localStorage.getItem('db-scheme') || 'dark';
-                document.documentElement.setAttribute('data-theme', scheme === 'dark' ? 'dark' : theme);
+                // Map family+scheme to theme variant
+                var familyMap = {
+                    grunge: { dark: 'grunge-dark', light: 'grunge-light' },
+                    default: { dark: 'dark', light: 'light' },
+                    solarized: { dark: 'solarized-dark', light: 'solarized' },
+                    ink: { dark: 'ink', light: 'ink-light' },
+                    ember: { dark: 'ember', light: 'ember-light' },
+                    bone: { dark: 'bone-dark', light: 'bone' }
+                };
+                var theme = (familyMap[family] && familyMap[family][scheme]) || 'grunge-dark';
+                document.documentElement.setAttribute('data-theme', theme);
             } catch (e) {}
         })();
     </script>
 
-    @* DAUB CSS *@
+    <link rel="stylesheet" href="/css/QuickShare.Web.styles.css" />
+    <link rel="stylesheet" href="/css/app.css" />
     <link rel="stylesheet" href="https://daub.dev/daub.css" />
 
     @* HTMX head outlet for enhanced navigation *@
@@ -35,7 +46,17 @@
     <Routes />
 
     <script src="https://daub.dev/daub.js"></script>
+    <script>
+        // Set grunge theme family (defaults to dark scheme)
+        (function() {
+            if (window.DAUB) {
+                var family = window.localStorage.getItem('db-family') || 'grunge';
+                var scheme = window.localStorage.getItem('db-scheme') || 'dark';
+                window.DAUB.setFamily(family);
+                window.DAUB.setScheme(scheme);
+            }
+        })();
+    </script>
     <script src="/lib/qrcode/qrcode.min.js"></script>
-    <script src="/js/upload.js"></script>
 </body>
 </html>

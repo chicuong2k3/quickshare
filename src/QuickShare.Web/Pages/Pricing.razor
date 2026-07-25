@@ -3,284 +3,218 @@
 
 <PageTitle>Pricing — QuickShareCloud</PageTitle>
 
-<div id="pricing-app" class="flex-1">
-    <main class="flex-1 px-6 pb-32 pt-32 sm:px-8">
-        <section class="max-w-4xl mx-auto pt-12 pb-16 db-text-center">
-            <h1 class="db-h1">
-                Simple pricing,<br class="sm:hidden" /> unlimited sending
-            </h1>
-            <p class="db-p mt-5 text-lg text-muted-foreground mx-auto max-w-xl">
-                Pick the plan that fits your workflow. All plans include end-to-end encryption.
-            </p>
+<div class="page">
 
-            <div class="mt-12 flex items-center justify-center">
-                <div class="inline-flex items-center rounded-full border border-border/60 bg-background p-1 shadow-sm" role="radiogroup" aria-label="Billing period">
-                    <button type="button"
-                            role="radio"
-                            aria-checked="true"
-                            id="billing-monthly"
-                            class="db-btn db-btn--primary rounded-full px-6 py-2.5 text-sm font-medium transition-all"
-                            data-billing="monthly">
-                        Monthly
-                    </button>
-                    <button type="button"
-                            role="radio"
-                            aria-checked="false"
-                            id="billing-yearly"
-                            class="rounded-full px-6 py-2.5 text-sm font-medium transition-all text-muted-foreground"
-                            data-billing="yearly">
-                        Yearly <span class="ml-1.5 text-xs text-accent-foreground">Save 20%</span>
-                    </button>
-                </div>
+    @* ── HERO ── *@
+    <section class="hero">
+        <span class="tag">Transparent pricing</span>
+        <h1 class="db-h1">Simple, transparent pricing</h1>
+        <p class="db-p db-text-muted">Choose the plan that fits your needs. No hidden fees. Cancel anytime.</p>
+    </section>
+
+    @* ── BILLING TOGGLE + TIER CARDS (htmx partial) ── *@
+    <HtmxFragment>
+    <section id="pricing-body">
+        <div class="toggle-wrap">
+            <div class="toggle-group">
+                <a role="button"
+                   href="/pricing"
+                   hx-get="/pricing" aria-pressed="@(IsYearly ? "false" : "true")"
+                   hx-target="#pricing-body"
+                   hx-swap="outerHTML swap:0.2s"
+                   class="db-btn @(IsYearly ? "db-btn--ghost" : "db-btn--primary")">
+                    Monthly
+                </a>
+                <a role="button"
+                   href="/pricing?billing=yearly"
+                   hx-get="/pricing?billing=yearly" aria-pressed="@(IsYearly ? "true" : "false")"
+                   hx-target="#pricing-body"
+                   hx-swap="outerHTML swap:0.2s"
+                   class="db-btn @(IsYearly ? "db-btn--primary" : "db-btn--ghost")">
+                    Yearly
+                    <span class="tag">Save 20%</span>
+                </a>
             </div>
-        </section>
+        </div>
 
-        @* TIER CARDS *@
-        <section class="max-w-5xl mx-auto grid gap-8 lg:grid-cols-3 lg:items-stretch">
-            @* Free *@
-            <div class="db-card flex flex-col">
-                <div class="db-card__body p-10 flex flex-col flex-1">
+        <div class="cards">
+
+            @* Free Plan *@
+            <div class="card">
+                <div class="card__head">
                     <h3 class="db-h3">Free</h3>
-                    <p class="db-p mt-2 text-sm text-muted-foreground">Perfect for occasional sharing.</p>
-                    <div class="mt-8"><span class="text-5xl font-bold">$0</span></div>
-                    <p class="db-p mt-2 text-sm text-muted-foreground">Free forever</p>
-                    <div class="mt-10 space-y-4 text-sm flex-1">
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Up to <strong>200 MB</strong> per file</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span><strong>3 GB</strong> / month</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span><strong>10</strong> transfers per month</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Files expire after <strong>3 days</strong></span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>End-to-end encryption</span>
-                        </div>
+                    <p class="db-text-muted" style="margin-top: 0.5rem">Great for getting started</p>
+                </div>
+                <div class="card__price">
+                    <div class="price-amount">$0</div>
+                    <div class="price-period db-text-muted">Forever free</div>
+                </div>
+                <button class="db-btn db-btn--secondary">Get Started</button>
+                <div class="features">
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>100 MB</strong> per file</span>
                     </div>
-                    <div class="mt-10">
-                        <a href="/" class="db-btn db-btn--secondary w-full rounded-2xl py-3.5 text-sm font-semibold shadow-sm inline-flex items-center justify-center">Get started</a>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>2 GB</strong> / month</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>5</strong> transfers/month</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span>Files expire after <strong>7 days</strong></span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span>End-to-end <strong>encryption</strong></span>
                     </div>
                 </div>
             </div>
 
-            @* Pro *@
-            <div class="db-card flex flex-col">
-                <div class="db-card__body p-10 flex flex-col flex-1">
+            @* Pro Plan *@
+            <div class="card">
+                <div class="card__head">
                     <h3 class="db-h3">Pro</h3>
-                    <p class="db-p mt-2 text-sm text-muted-foreground">For creators and freelancers.</p>
-                    <div class="mt-8">
-                        <span id="pro-monthly-price" class="text-5xl font-bold">$8</span>
-                        <span id="pro-yearly-price" class="text-5xl font-bold" style="display:none">$77</span>
-                        <span class="text-sm text-muted-foreground">/month</span>
+                    <p class="db-text-muted" style="margin-top: 0.5rem">For creators &amp; professionals</p>
+                </div>
+                <div class="card__price">
+                    @if (IsYearly)
+                    {
+                        <div class="price-amount">$77</div>
+                        <div class="price-period db-text-muted">Billed yearly</div>
+                    }
+                    else
+                    {
+                        <div class="price-amount">$9</div>
+                        <div class="price-period db-text-muted">Billed monthly</div>
+                    }
+                </div>
+                <button class="db-btn db-btn--primary">Start Free Trial</button>
+                <div class="features">
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>1 GB</strong> per file</span>
                     </div>
-                    <p id="pro-monthly-label" class="db-p mt-2 text-sm text-muted-foreground">Billed monthly</p>
-                    <p id="pro-yearly-label" class="db-p mt-2 text-sm text-muted-foreground" style="display:none">$6.42/mo billed annually</p>
-                    <div class="mt-10 space-y-4 text-sm flex-1">
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Up to <strong>750 MB</strong> per file</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span><strong>300 GB</strong> / month</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span><strong>50</strong> transfers per month</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Files expire after <strong>7 days</strong></span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Password protection</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Custom backgrounds</span>
-                        </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>500 GB</strong> / month</span>
                     </div>
-                    <div class="mt-10">
-                        <a href="/checkout?tier=pro" class="db-btn db-btn--primary w-full rounded-2xl py-3.5 text-sm font-semibold shadow-md inline-flex items-center justify-center">Subscribe</a>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>100</strong> transfers/month</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span>Files expire after <strong>30 days</strong></span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>Password</strong> protection</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>Priority</strong> support</span>
                     </div>
                 </div>
             </div>
 
-            @* Studio *@
-            <div class="db-card flex flex-col shadow-md ring-1 ring-foreground/10 relative overflow-hidden">
-                <span class="db-badge db-badge--primary absolute -top-3 left-1/2 -translate-x-1/2 z-10 rounded-full px-4 py-1 text-xs font-medium">Most Popular</span>
-                <div class="db-card__body p-10 flex flex-col flex-1">
+            @* Studio Plan (Most Popular) *@
+            <div class="card card--popular">
+                <span class="card__badge">Most Popular</span>
+                <div class="card__head">
                     <h3 class="db-h3">Studio</h3>
-                    <p class="db-p mt-2 text-sm text-muted-foreground">For power users who send big files daily.</p>
-                    <div class="mt-8">
-                        <span id="studio-monthly-price" class="text-5xl font-bold">$23</span>
-                        <span id="studio-yearly-price" class="text-5xl font-bold" style="display:none">$221</span>
-                        <span class="text-sm text-muted-foreground">/month</span>
+                    <p class="db-text-muted" style="margin-top: 0.5rem">For teams &amp; enterprises</p>
+                </div>
+                <div class="card__price">
+                    @if (IsYearly)
+                    {
+                        <div class="price-amount">$239</div>
+                        <div class="price-period db-text-muted">Billed yearly</div>
+                    }
+                    else
+                    {
+                        <div class="price-amount">$29</div>
+                        <div class="price-period db-text-muted">Billed monthly</div>
+                    }
+                </div>
+                <button class="db-btn db-btn--primary">Start Free Trial</button>
+                <div class="features">
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>20 GB</strong> per file</span>
                     </div>
-                    <p id="studio-monthly-label" class="db-p mt-2 text-sm text-muted-foreground">Billed monthly</p>
-                    <p id="studio-yearly-label" class="db-p mt-2 text-sm text-muted-foreground" style="display:none">$18.42/mo billed annually</p>
-                    <div class="mt-10 space-y-4 text-sm flex-1">
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Up to <strong>1.5 GB</strong> per file</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span><strong>Unlimited</strong> volume &amp; transfers</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span><strong>Unlimited</strong> expiry</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Custom branding</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>Malware scanning</span>
-                        </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>Unlimited</strong> storage</span>
                     </div>
-                    <div class="mt-10">
-                        <a href="/checkout?tier=studio" class="db-btn db-btn--primary w-full rounded-2xl py-3.5 text-sm font-semibold shadow-md inline-flex items-center justify-center">Subscribe</a>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>Unlimited</strong> transfers</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>Custom</strong> branding</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>API</strong> access</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>Dedicated</strong> support</span>
                     </div>
                 </div>
             </div>
-        </section>
 
-        @* FAQ *@
-        <section class="max-w-3xl mx-auto mt-32">
-            <div class="db-text-center">
-                <h2 class="db-h2">Frequently asked questions</h2>
-                <p class="db-p mt-4 text-lg text-muted-foreground">Everything you need to know about QuickShareCloud</p>
-            </div>
-            <div class="mt-12 space-y-4">
-                @foreach (var (q, a) in faqs)
-                {
-                    <details class="db-card">
-                        <summary class="db-card__body flex cursor-pointer items-center justify-between p-5 text-sm font-medium list-none">
-                            <span>@q</span>
-                            <svg class="h-4 w-4 shrink-0 text-muted-foreground transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                        </summary>
-                        <div class="px-5 pb-5">
-                            <p class="db-p text-muted-foreground">@a</p>
-                        </div>
-                    </details>
-                }
-            </div>
-        </section>
-    </main>
+        </div>
+    </section>
+    </HtmxFragment>
+
+    @* ── FAQ ── *@
+    <section class="faq">
+        <div class="faq__head">
+            <h2 class="db-h2">Frequently Asked Questions</h2>
+            <p class="db-text-muted" style="margin-top: 0.75rem">Get answers to common questions about our plans</p>
+        </div>
+        @foreach (var (q, a) in faqs)
+        {
+            <details>
+                <summary>
+                    <span>@q</span>
+                    <svg class="faq-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                </summary>
+                <div class="faq-answer db-text-muted">@a</div>
+            </details>
+        }
+    </section>
+
+    @* ── CTA ── *@
+    <section class="cta">
+        <h3 class="cta__title">Ready to get started?</h3>
+        <p class="db-text-muted">All plans include a 14-day free trial. No credit card required.</p>
+        <button class="db-btn db-btn--primary">Start Your Free Trial</button>
+    </section>
+
 </div>
 
-<script>
-    (function () {
-        // Billing toggle state
-        let billingState = { current: 'monthly' };
-
-        // Pricing data
-        const priceData = {
-            pro: { monthly: 8, yearly: 77, label: { monthly: 'Billed monthly', yearly: '$6.42/mo billed annually' } },
-            studio: { monthly: 23, yearly: 221, label: { monthly: 'Billed monthly', yearly: '$18.42/mo billed annually' } }
-        };
-
-        function toggleDisplay(id, show) {
-            const el = document.getElementById(id);
-            if (el) el.style.display = show ? '' : 'none';
-        }
-
-        function updateBillingUI() {
-            const isYearly = billingState.current === 'yearly';
-            const monthlyBtn = document.getElementById('billing-monthly');
-            const yearlyBtn = document.getElementById('billing-yearly');
-
-            // Update button states
-            if (monthlyBtn) {
-                monthlyBtn.setAttribute('aria-checked', String(!isYearly));
-                if (!isYearly) {
-                    monthlyBtn.classList.add('db-btn--primary');
-                    monthlyBtn.classList.remove('text-muted-foreground');
-                } else {
-                    monthlyBtn.classList.remove('db-btn--primary');
-                    monthlyBtn.classList.add('text-muted-foreground');
-                }
-            }
-            if (yearlyBtn) {
-                yearlyBtn.setAttribute('aria-checked', String(isYearly));
-                if (isYearly) {
-                    yearlyBtn.classList.add('db-btn--primary', 'bg-foreground', 'text-background', 'shadow-sm');
-                    yearlyBtn.classList.remove('text-muted-foreground');
-                } else {
-                    yearlyBtn.classList.remove('db-btn--primary', 'bg-foreground', 'text-background', 'shadow-sm');
-                    yearlyBtn.classList.add('text-muted-foreground');
-                }
-            }
-
-            // Update Pro prices
-            toggleDisplay('pro-monthly-price', !isYearly);
-            toggleDisplay('pro-yearly-price', isYearly);
-            toggleDisplay('pro-monthly-label', !isYearly);
-            toggleDisplay('pro-yearly-label', isYearly);
-
-            // Update Studio prices
-            toggleDisplay('studio-monthly-price', !isYearly);
-            toggleDisplay('studio-yearly-price', isYearly);
-            toggleDisplay('studio-monthly-label', !isYearly);
-            toggleDisplay('studio-yearly-label', isYearly);
-        }
-
-        // Initialize billing toggle handlers
-        function initBillingToggle() {
-            const monthlyBtn = document.getElementById('billing-monthly');
-            const yearlyBtn = document.getElementById('billing-yearly');
-
-            if (monthlyBtn) {
-                monthlyBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    billingState.current = 'monthly';
-                    updateBillingUI();
-                });
-            }
-            if (yearlyBtn) {
-                yearlyBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    billingState.current = 'yearly';
-                    updateBillingUI();
-                });
-            }
-        }
-
-        // Initialize on DOM ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initBillingToggle);
-        } else {
-            initBillingToggle();
-        }
-
-        // Expose for HTMX or global access if needed
-        window.pricingApp = { billingState, updateBillingUI };
-    })();
-</script>
-
 @code {
+    [SupplyParameterFromQuery]
+    public string? Billing { get; set; }
+
+    private bool IsYearly => string.Equals(Billing, "yearly", StringComparison.OrdinalIgnoreCase);
+
     private static readonly (string Question, string Answer)[] faqs = new[]
     {
-        ("What file size limits apply?", "Free: 200 MB per file. Pro: 750 MB per file. Studio: 1.5 GB per file."),
-        ("Do my recipients need to sign up?", "No. Recipients download files without creating an account. Just share the link."),
-        ("What payment methods can I use?", "Credit/debit cards and PayPal are accepted."),
-        ("What happens if I go over my limit?", "On Free and Pro plans, transfers are blocked until the next billing cycle. Studio has no limits."),
-        ("How do I cancel?", "Cancel anytime from your account settings. Paid features remain until the billing period ends."),
-        ("Is QuickShareCloud secure?", "Files are transferred over encrypted connections. We never access your file contents."),
+        ("What's included in all plans?", "All plans include end-to-end encryption, password protection, and 24/7 customer support. Differences are file sizes, monthly storage limits, and transfer counts."),
+        ("Can I upgrade or downgrade anytime?", "Yes! Change your plan anytime. Upgrades take effect immediately, and downgrades apply at the end of your billing cycle."),
+        ("Is there a free trial?", "Absolutely. All paid plans include a 14-day free trial with full access. No credit card required to start."),
+        ("What happens to my files if I cancel?", "Your files remain accessible for 7 days after cancellation. Download them anytime during this period."),
+        ("Do you offer refunds?", "We offer a full refund within 30 days of purchase if you're not satisfied. After that, you can cancel anytime with no penalties."),
+        ("Can I get a custom plan?", "Yes! Contact our sales team for enterprise pricing, team features, and dedicated support options."),
     };
 }

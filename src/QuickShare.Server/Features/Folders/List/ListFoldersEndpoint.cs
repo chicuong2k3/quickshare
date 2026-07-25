@@ -1,6 +1,6 @@
 namespace QuickShare.Server.Features.Folders.List;
 
-public sealed class ListFoldersEndpoint : Endpoint<ListFoldersQuery, PagedResult<FolderInfoResponse>>
+public sealed class ListFoldersEndpoint : Endpoint<ListFoldersQuery, PagedResult<FolderItemResponse>>
 {
     public override void Configure()
     {
@@ -19,7 +19,7 @@ public sealed class ListFoldersEndpoint : Endpoint<ListFoldersQuery, PagedResult
 
     public override async Task HandleAsync(ListFoldersQuery req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<PagedResult<FolderInfoResponse>>>(req, ct);
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<PagedResult<FolderItemResponse>>>(req, ct);
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);
         else if (result.IsFailure(out var error))

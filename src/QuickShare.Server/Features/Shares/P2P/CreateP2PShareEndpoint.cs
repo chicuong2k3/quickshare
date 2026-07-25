@@ -47,7 +47,6 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
             shareCode = GenerateShareCode();
         }
 
-        var now = DateTime.UtcNow;
         var delivery = new Delivery
         {
             ShareCode = shareCode,
@@ -55,12 +54,10 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
             ContentType = req.MimeType,
             FileSize = req.FileSize,
             TotalBytes = req.FileSize,
-            MaxDownloads = 0, // P2P: no download cap
+            MaxDownloads = 0,
             DownloadCount = 0,
             EgressBytes = 0,
-            ExpiresAt = now.AddDays(7),
-            CreatedAt = now,
-            UpdatedAt = now
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
 
         db.Deliveries.Add(delivery);

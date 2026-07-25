@@ -14,8 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Htmxor" Version="1.0.0-beta.1.24" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.10" />
+  <PackageReference Include="Htmxor" Version="1.0.0-beta.1.24" />
+  <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.10" />
+  <PackageReference Include="Refit" Version="8.0.0" />
+  <PackageReference Include="Refit.HttpClientFactory" Version="8.0.0" />
   </ItemGroup>
+
+  <Target Name="CopyScopedCss" AfterTargets="Build">
+    <Copy SourceFiles="$(IntermediateOutputPath)scopedcss\bundle\QuickShare.Web.styles.css"
+          DestinationFolder="$(ProjectDir)wwwroot\css" />
+  </Target>
 
   </Project>

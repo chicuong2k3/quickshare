@@ -1,6 +1,6 @@
 namespace QuickShare.Server.Features.Folders.Update;
 
-public sealed class UpdateFolderEndpoint : Endpoint<UpdateFolderCommand, FolderInfoResponse>
+public sealed class UpdateFolderEndpoint : Endpoint<UpdateFolderCommand, FolderItemResponse>
 {
     public override void Configure()
     {
@@ -19,7 +19,7 @@ public sealed class UpdateFolderEndpoint : Endpoint<UpdateFolderCommand, FolderI
 
     public override async Task HandleAsync(UpdateFolderCommand req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FolderInfoResponse>>(req, ct);
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FolderItemResponse>>(req, ct);
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);
         else if (result.IsFailure(out var error))

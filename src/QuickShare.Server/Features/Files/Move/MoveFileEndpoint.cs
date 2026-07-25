@@ -1,6 +1,6 @@
 namespace QuickShare.Server.Features.Files.Move;
 
-public sealed class MoveFileEndpoint : Endpoint<MoveFileCommand, FileInfoResponse>
+public sealed class MoveFileEndpoint : Endpoint<MoveFileCommand, FileItemResponse>
 {
     public override void Configure()
     {
@@ -19,7 +19,7 @@ public sealed class MoveFileEndpoint : Endpoint<MoveFileCommand, FileInfoRespons
 
     public override async Task HandleAsync(MoveFileCommand req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FileInfoResponse>>(req, ct);
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FileItemResponse>>(req, ct);
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);
         else if (result.IsFailure(out var error))

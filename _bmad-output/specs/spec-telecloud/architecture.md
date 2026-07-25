@@ -12,7 +12,7 @@
 | Message Persistence | WolverineFx.Postgresql (schema: `telecloud`) | 5.x |
 | Telegram Client | WTelegramClient | 4.x |
 | Result Pattern | LightResults | 10.0.4 |
-| Object Mapping | Riok.Mapperly (Folder), Manual (File) | 4.3.1 |
+| Object Mapping | Riok.Mapperly (all entity→DTO) | 4.3.1 |
 | API Docs | Swagger UI (Swashbuckle + FastEndpoints.Swagger) | — |
 | Source Gen | TeleCloud.Querying.Generators (Roslyn incremental) | internal |
 
@@ -40,6 +40,36 @@ Endpoint maps Result → HTTP response
   Success → Ok/NoContent
   Failure → ThrowError (mapped by error type to status code)
 ```
+
+## Audit Fields
+
+**`CreatedAt` and `UpdatedAt` are managed exclusively by `AuditableEntityInterceptor`** — never set manually in code.
+
+- **Interceptor:** `QuickShare.Server.Data.AuditableEntityInterceptor` (EF Core `SaveChangesInterceptor`)
+- **Registration:** `AddDbContext<AppDbContext>(...) → AddInterceptors(new AuditableEntityInterceptor())`
+- **Behavior:**
+  - `EntityState.Added` → sets `CreatedAt = DateTime.UtcNow` and `UpdatedAt = DateTime.UtcNow`
+  - `EntityState.Modified` → sets `UpdatedAt = DateTime.UtcNow`
+- **Compatibility:** Works with any entity that has a `CreatedAt` or `UpdatedAt` property (via `entry.Metadata.FindProperty`). No base-class requirement — handles `BaseAuditEntity` descendants and standalone entities like `Manifest` equally.
+- **Base:** `BaseAuditEntity` (`QuickShare.Shared.Models`) provides `Id`, `CreatedAt` (with `= DateTime.UtcNow` default), and `UpdatedAt?`.
+
+## Object Mapping (Mapperly)
+
+**All entity→DTO mappings use Riok.Mapperly.** Mappers live in `Features/<Feature>/Shared/<Entity>Mapper.cs`.
+
+```csharp
+[Mapper]
+public static partial class UserMapper
+{
+    [MapperIgnoreSource(nameof(User.UpdatedAt))]
+    public static partial ProfileResponse ToUserProfileResponse(this User source);
+}
+```
+
+- **Pattern:** `static partial class` with `[Mapper]` attribute, `partial` method returning the response DTO.
+- **Exceptions:**
+  - **LINQ `.Select()` projections** with server-side subqueries (e.g., `db.Files.Count(...)`) or computed expression fields — construct DTO inline. EF Core cannot translate Mapperly-generated methods to SQL.
+  - **Simple value-object responses** (`new SomeResponse(sessionId, chunkSize)`) that don't map from a single entity.
 
 ## Service Layer
 
@@ -87,8 +117,7 @@ Bound from `TeleCloud` config section via `IOptions<T>` pattern.
 Features/
 ├── Files/
 │   ├── Shared/
-│   │   ├── FileInfoResponse.cs       # response DTO
-│   │   ├── FileMapper.cs             # manual mapper (Folder?.Path)
+│   │   ├── FileMapper.cs             # Mapperly source-gen mapper
 │   │   └── Errors.cs                 # NotFoundError, BadRequestError, etc.
 │   ├── Upload/
 │   │   ├── UploadEndpoint.cs         # POST /api/files (multipart)
@@ -99,7 +128,7 @@ Features/
 │   │   └── ListFilesHandler.cs       # ListFilesQuery + handler → Result<PagedResult>
 │   ├── GetInfo/
 │   │   ├── GetInfoEndpoint.cs        # GET /api/files/{id}
-│   │   └── GetFileInfoHandler.cs     # GetFileInfoQuery + handler → Result<FileInfoResponse>
+│   │   └── GetFileInfoHandler.cs     # GetFileInfoQuery + handler → Result<FileItemResponse>
 │   ├── Download/
 │   │   ├── DownloadEndpoint.cs       # GET /api/files/{id}/download
 │   │   └── DownloadFileHandler.cs    # DownloadFileQuery + handler (streams via IHttpContextAccessor)
@@ -108,7 +137,6 @@ Features/
 │       └── DeleteFileHandler.cs      # DeleteFileCommand + handler → Result
 └── Folders/
     ├── Shared/
-    │   ├── FolderInfoResponse.cs     # response DTO
     │   └── FolderMapper.cs           # Riok.Mapperly source-gen mapper
     ├── Create/
     │   ├── CreateFolderEndpoint.cs   # POST /api/folders
@@ -118,7 +146,7 @@ Features/
     │   └── ListFoldersHandler.cs     # ListFoldersQuery + handler → Result<PagedResult>
     ├── GetInfo/
     │   ├── GetFolderInfoEndpoint.cs  # GET /api/folders/{id}
-    │   └── GetFolderInfoHandler.cs   # GetFolderInfoQuery + handler → Result<FolderInfoResponse>
+    │   └── GetFolderInfoHandler.cs   # GetFolderInfoQuery + handler → Result<FolderItemResponse>
     ├── Update/
     │   ├── UpdateFolderEndpoint.cs   # PUT /api/folders/{id}
     │   └── UpdateFolderHandler.cs    # UpdateFolderCommand + handler (ExecuteUpdateAsync)
@@ -131,15 +159,15 @@ Features/
 
 | Method | Route | Handler | Input | Returns |
 |---|---|---|---|---|
-| GET | `/api/files` | `ListFilesHandler` | `ListFilesQuery` | `Result<PagedResult<FileInfoResponse>>` |
-| GET | `/api/files/{id}` | `GetFileInfoHandler` | `GetFileInfoQuery` | `Result<FileInfoResponse>` |
+| GET | `/api/files` | `ListFilesHandler` | `ListFilesQuery` | `Result<PagedResult<FileItemResponse>>` |
+| GET | `/api/files/{id}` | `GetFileInfoHandler` | `GetFileInfoQuery` | `Result<FileItemResponse>` |
 | GET | `/api/files/{id}/download` | `DownloadFileHandler` | `DownloadFileQuery` | Stream (200/206) |
-| POST | `/api/files` | `UploadFileHandler` | `UploadFileCommand` | `Result<FileInfoResponse>` |
+| POST | `/api/files` | `UploadFileHandler` | `UploadFileCommand` | `Result<FileItemResponse>` |
 | DELETE | `/api/files/{id}` | `DeleteFileHandler` | `DeleteFileCommand` | `Result` (204/404) |
-| GET | `/api/folders` | `ListFoldersHandler` | `ListFoldersQuery` | `Result<PagedResult<FolderInfoResponse>>` |
-| GET | `/api/folders/{id}` | `GetFolderInfoHandler` | `GetFolderInfoQuery` | `Result<FolderInfoResponse>` |
-| POST | `/api/folders` | `CreateFolderHandler` | `CreateFolderCommand` | `Result<FolderInfoResponse>` |
-| PUT | `/api/folders/{id}` | `UpdateFolderHandler` | `UpdateFolderCommand` | `Result<FolderInfoResponse>` |
+| GET | `/api/folders` | `ListFoldersHandler` | `ListFoldersQuery` | `Result<PagedResult<FolderItemResponse>>` |
+| GET | `/api/folders/{id}` | `GetFolderInfoHandler` | `GetFolderInfoQuery` | `Result<FolderItemResponse>` |
+| POST | `/api/folders` | `CreateFolderHandler` | `CreateFolderCommand` | `Result<FolderItemResponse>` |
+| PUT | `/api/folders/{id}` | `UpdateFolderHandler` | `UpdateFolderCommand` | `Result<FolderItemResponse>` |
 | DELETE | `/api/folders/{id}` | `DeleteFolderHandler` | `DeleteFolderCommand` | `Result` (204/404/409) |
 
 ### List query params (shared across list endpoints)

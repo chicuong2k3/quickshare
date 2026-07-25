@@ -1,6 +1,6 @@
 namespace QuickShare.Server.Features.Folders.GetInfo;
 
-public sealed class GetFolderInfoEndpoint : Endpoint<GetFolderInfoQuery, FolderInfoResponse>
+public sealed class GetFolderInfoEndpoint : Endpoint<GetFolderInfoQuery, FolderItemResponse>
 {
     public override void Configure()
     {
@@ -18,7 +18,7 @@ public sealed class GetFolderInfoEndpoint : Endpoint<GetFolderInfoQuery, FolderI
 
     public override async Task HandleAsync(GetFolderInfoQuery req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FolderInfoResponse>>(req, ct);
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FolderItemResponse>>(req, ct);
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);
         else if (result.IsFailure(out var error))

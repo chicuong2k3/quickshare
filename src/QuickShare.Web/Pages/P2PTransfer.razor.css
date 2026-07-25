@@ -1,0 +1,89 @@
+.wrapper { flex: 1; }
+.page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 1.5rem 5rem;
+}
+.container { width: 100%; max-width: 42rem; }
+.section { text-align: center; }
+.h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--color-foreground);
+}
+@@media (min-width: 640px) { .h1 { font-size: 3rem; } }
+.h1 span.gradient {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent), var(--color-primary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.sub {
+    margin-top: 1rem;
+    font-size: 1.125rem;
+    color: var(--color-muted-foreground);
+    max-width: 32rem;
+    margin-inline: auto;
+}
+.dropzone {
+    margin-top: 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    border: 2px dashed color-mix(in srgb, var(--color-muted-foreground) 25%, transparent);
+    border-radius: 2rem;
+    background: var(--color-card);
+    padding: 5rem 4rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.dropzone:hover { border-color: color-mix(in srgb, var(--color-primary) 50%, transparent); background: color-mix(in srgb, var(--color-muted) 20%, transparent); }
+.dropzone.active { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent); transform: scale(1.01); }
+.dropzone-icon {
+    display: flex; width: 5rem; height: 5rem; align-items: center; justify-content: center;
+    border-radius: 1rem; background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary);
+}
+.dropzone-icon svg { width: 2.5rem; height: 2.5rem; }
+.dropzone-title { font-size: 1.125rem; font-weight: 600; color: color-mix(in srgb, var(--color-foreground) 90%, transparent); }
+.dropzone-sub { margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-muted-foreground); }
+
+.pin-row { margin-top: 2rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+.pin-checkbox { width: 1rem; height: 1rem; border-radius: 0.25rem; accent-color: var(--color-primary); }
+.pin-label { font-size: 0.875rem; color: var(--color-muted-foreground); }
+.pin-input {
+    margin-left: 0.5rem; border-radius: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+    background: var(--color-background); padding: 0.5rem 1rem; font-size: 0.875rem; width: 10rem;
+}
+.pin-input:focus { outline: none; border-color: var(--color-ring); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ring) 20%, transparent); }
+
+.status-h1 { margin-top: 2rem; font-size: 1.5rem; font-weight: 600; }
+.status-p { margin-top: 0.75rem; font-size: 1rem; color: var(--color-muted-foreground); }
+
+.share-box { margin-top: 1.5rem; max-width: 28rem; margin-inline: auto; }
+.share-row { display: flex; flex-direction: column; gap: 0.75rem; }
+@@media (min-width: 640px) { .share-row { flex-direction: row; } }
+.share-input {
+    width: 100%; flex: 1; border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+    background: var(--color-background); padding: 0.875rem 1.25rem; font-size: 0.875rem;
+}
+
+.progress-wrap { margin-top: 2rem; max-width: 28rem; margin-inline: auto; }
+.progress-track { height: 0.5rem; width: 100%; border-radius: 999px; background: var(--color-muted); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; background: var(--color-primary); transition: width 0.3s; }
+
+.icon-success {
+    display: flex; width: 5rem; height: 5rem; align-items: center; justify-content: center;
+    border-radius: 1rem; margin: 0 auto;
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary);
+}
+.icon-error {
+    display: flex; width: 5rem; height: 5rem; align-items: center; justify-content: center;
+    border-radius: 1rem; margin: 0 auto;
+    background: color-mix(in srgb, var(--color-destructive) 8%, transparent); color: var(--color-destructive);
+}
+.icon-svg-lg { width: 2.5rem; height: 2.5rem; }

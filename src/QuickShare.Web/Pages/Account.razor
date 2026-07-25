@@ -1,372 +1,110 @@
 @layout MainLayout
 @page "/account"
-@using System.Net.Http.Json
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authentication.Cookies
-@using QuickShare.Shared.Models
-@inject IHttpClientFactory ClientFactory
+@attribute [Authorize]
+@inject IQuickShareApi Api
 @inject IHttpContextAccessor HttpContextAccessor
-@inject IWebHostEnvironment Env
+@inject IConfiguration Config
+
+@{
+    var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+}
 
 <PageTitle>Account — QuickShareCloud</PageTitle>
 
-<div id="account-app" class="flex-1">
-    <main class="flex flex-wrap items-start justify-center gap-8 px-6 pb-20 pt-32">
-        @* ── Profile Card ── *@
-        <HtmxFragment>
-        <div id="profile-card" class="db-card w-full max-w-md" onpost="@HandleUpdateProfile">
-            <div class="db-card__body p-10">
-                <div class="flex flex-col items-center db-text-center">
-                    <div class="relative">
-                        @if (!string.IsNullOrEmpty(avatar))
-                        {
-                            <img id="avatarPreview" src="@avatar" alt="@name"
-                                 class="h-20 w-20 rounded-full ring-2 ring-border object-cover" />
-                        }
-                        else
-                        {
-                            <div id="avatarInitial"
-                                 class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/8 text-primary text-2xl font-bold ring-2 ring-border">
-                                @name[..1].ToUpper()
-                            </div>
-                            <img id="avatarPreview" src="" alt="@name"
-                                 class="hidden h-20 w-20 rounded-full ring-2 ring-border object-cover" />
-                        }
-                    </div>
-                    <h2 class="db-h2 mt-5">@name</h2>
-                    <p class="db-p db-text-muted mt-1">@email</p>
-                    <span class="db-badge db-badge--updated mt-3">@provider · @plan</span>
-                </div>
+<script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
-                @if (!string.IsNullOrEmpty(formError))
-                {
-                    <div class="db-alert db-alert--error mt-6" role="alert">
-                        @formError
-                    </div>
-                }
-                @if (formSuccess)
-                {
-                    <div class="db-alert db-alert--success mt-6" role="status">
-                        Profile updated.
-                    </div>
-                }
+<div id="account-app" class="page">
 
-                <form hx-post="/account"
-                      hx-target="#profile-card"
-                      hx-swap="outerHTML"
-                      hx-encoding="multipart/form-data">
-                    <div class="mt-10 space-y-5">
-                        <label class="db-field">
-                            <span class="db-label">Display name</span>
-                            <input id="name" name="name" type="text" required
-                                   value="@name"
-                                   class="db-input" />
-                        </label>
-
-                        <div>
-                            <label class="db-label db-block mb-2">Avatar image</label>
-                            <label for="avatarFile"
-                                   class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-background px-5 py-8 text-sm text-muted-foreground/80 hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                <span>Click to choose an image</span>
-                                <span class="text-xs text-muted-foreground/60">PNG, JPG or GIF &mdash; max 5 MB</span>
-                            </label>
-                            <input id="avatarFile" name="avatar" type="file" accept="image/*"
-                                   class="sr-only" onchange="previewAvatar(event)" />
-                        </div>
-
-                        <button type="submit"
-                                class="db-btn db-btn--primary w-full">
-                            Save changes
-                        </button>
-                    </div>
-                </form>
-
-                <div class="mt-6">
-                    <a href="/logout" class="db-btn db-btn--ghost w-full flex items-center justify-center">
-                        Sign out
-                    </a>
-                </div>
-            </div>
-        </div>
-        </HtmxFragment>
-
-        @* ── Branding Card ── *@
-        <div class="db-card w-full max-w-md" id="branding-card">
-            <div class="db-card__body p-10">
-                <div class="flex items-center gap-4 mb-8">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/8 text-primary">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="db-h3">Delivery Branding</h3>
-                        <p class="db-p db-text-muted">Customise how recipients see your deliveries.</p>
-                    </div>
-                </div>
-
-                @* Loading state *@
-                <div id="branding-loading" class="db-text-center py-10">
-                    <div class="db-spinner db-spinner--lg"></div>
-                    <p class="db-p db-text-muted mt-3">Loading deliveries&hellip;</p>
-                </div>
-
-                @* Empty state *@
-                <div id="branding-empty" class="db-text-center py-8 db-text-muted" style="display:none;">
-                    No deliveries yet. Send a file first to brand it.
-                </div>
-
-                @* Delivery list *@
-                <div id="branding-list" style="display:none;"></div>
-            </div>
-        </div>
-    </main></div>
-
-<script>
-    function previewAvatar(e) {
-        var file = e.target.files[0];
-        if (!file) return;
-
-        // Validate file size (5 MB max)
-        var MAX_FILE_SIZE = 5 * 1024 * 1024;
-        if (file.size > MAX_FILE_SIZE) {
-            alert('Image must be under 5 MB.');
-            e.target.value = '';
-            return;
-        }
-
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('Please select an image file.');
-            e.target.value = '';
-            return;
-        }
-
-        var reader = new FileReader();
-        reader.onload = function (ev) {
-            var img = document.getElementById('avatarPreview');
-            var initial = document.getElementById('avatarInitial');
-
-            if (img) {
-                img.src = ev.target.result;
-                img.classList.remove('hidden');
-            }
-            if (initial) {
-                initial.classList.add('hidden');
-            }
-        };
-        reader.onerror = function () {
-            alert('Failed to read image file.');
-            e.target.value = '';
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // ===== Branding Manager (vanilla JS) =====
-    document.addEventListener('DOMContentLoaded', function () {
-        var state = {
-            loading: true,
-            deliveries: [],
-            editIndex: null
-        };
-
-        var loadingEl = document.getElementById('branding-loading');
-        var emptyEl = document.getElementById('branding-empty');
-        var listEl = document.getElementById('branding-list');
-
-        function render() {
-            loadingEl.style.display = state.loading ? '' : 'none';
-            emptyEl.style.display = (!state.loading && state.deliveries.length === 0) ? '' : 'none';
-            listEl.style.display = (!state.loading && state.deliveries.length > 0) ? '' : 'none';
-
-            if (!state.loading && state.deliveries.length > 0) {
-                listEl.innerHTML = '';
-                state.deliveries.forEach(function (d, i) {
-                    var item = document.createElement('div');
-                    item.className = 'rounded-2xl border border-border/40 bg-background p-4 transition hover:border-border/80';
-                    item.innerHTML = renderDeliveryItem(d, i);
-                    listEl.appendChild(item);
-                });
-            }
-        }
-
-        function renderDeliveryItem(d, i) {
-            var isEditing = state.editIndex === i;
-            var editBtnClass = isEditing ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground hover:bg-muted/80';
-            var editBtnText = isEditing ? 'Close' : (d.hasBranding ? 'Edit' : 'Brand');
-
-            var editForm = isEditing ? '\
-                <div class="mt-4 space-y-3 border-t border-border/20 pt-4">\
-                    <label class="db-field">\
-                        <span class="db-label text-xs">Logo URL</span>\
-                        <input type="url" id="logo-' + i + '" value="' + escHtml(d.editLogo) + '"\
-                               class="db-input text-xs" />\
-                    </label>\
-                    <label class="db-field">\
-                        <span class="db-label text-xs">Brand message</span>\
-                        <input type="text" id="msg-' + i + '" value="' + escHtml(d.editMessage) + '"\
-                               class="db-input text-xs" />\
-                    </label>\
-                    <div>\
-                        <label class="db-label text-xs db-block mb-2">Accent colour</label>\
-                        <div class="flex items-center gap-3">\
-                            <input type="color" id="accent-' + i + '" value="' + (d.editAccent || \'#6366f1\') + '"\
-                                   class="h-9 w-12 rounded-lg border border-border/60 cursor-pointer"\
-                                   onchange="document.getElementById(\'accentText-' + i + '\').value=this.value" />\
-                            <input type="text" id="accentText-' + i + '" value="' + (d.editAccent || \'#6366f1\') + '"\
-                                   class="db-input text-xs font-mono flex-1"\
-                                   oninput="document.getElementById(\'accent-' + i + '\').value=this.value" />\
-                        </div>\
-                    </div>\
-                    <div class="mt-4 flex items-center gap-3">\
-                        <button type="button" onclick="saveBranding(' + i + ')"\
-                                class="db-btn db-btn--primary flex-1 text-xs"\
-                                id="save-btn-' + i + '">Save branding</button>\
-                        <button type="button" onclick="closeEdit()"\
-                                class="db-btn db-btn--ghost text-xs">Cancel</button>\
-                    </div>\
-                    <div id="save-error-' + i + '" class="db-alert db-alert--error text-xs mt-2" style="display:none" role="alert"></div>\
-                    <div id="save-success-' + i + '" class="db-alert db-alert--success text-xs mt-2" style="display:none" role="status">Saved! The download page will show your branding.</div>\
-                </div>' : '';
-
-            return '\
-                <div class="flex items-center justify-between">\
-                    <div class="min-w-0 flex-1">\
-                        <p class="text-sm font-medium truncate">' + escHtml(d.fileName) + '</p>\
-                        <p class="text-xs text-muted-foreground mt-0.5">' + escHtml(d.shareCode) + '</p>\
-                    </div>\
-                    <button type="button" onclick="toggleEdit(' + i + ')"\
-                            class="shrink-0 ml-3 rounded-xl px-3 py-1.5 text-xs font-medium transition ' + editBtnClass + '">\
-                        ' + editBtnText + '\
-                    </button>\
-                </div>\
-                ' + editForm;
-        }
-
-        function escHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
-        async function loadDeliveries() {
-            state.loading = true;
-            render();
-            try {
-                var apiBase = window.ZAPDROP_CONFIG ? window.ZAPDROP_CONFIG.apiBaseUrl : '';
-                var r = await fetch(apiBase + '/api/deliveries');
-                if (r.ok) {
-                    var items = await r.json();
-                    state.deliveries = items.map(function (d) {
-                        return {
-                            id: d.id,
-                            fileName: d.fileName,
-                            shareCode: d.shareCode,
-                            hasBranding: d.hasBranding,
-                            editLogo: '',
-                            editMessage: '',
-                            editAccent: '#6366f1',
-                            saveError: '',
-                            saveSuccess: false
-                        };
-                    });
-                }
-            } catch (_) {}
-            finally { state.loading = false; render(); }
-        }
-
-        window.toggleEdit = function (i) {
-            if (state.editIndex === i) {
-                state.editIndex = null;
-            } else {
-                state.editIndex = i;
-                var d = state.deliveries[i];
-                d.editLogo = '';
-                d.editMessage = '';
-                d.editAccent = '#6366f1';
-                d.saveError = '';
-                d.saveSuccess = false;
-                fetchBranding(i);
-            }
-            render();
-        };
-
-        window.closeEdit = function () {
-            state.editIndex = null;
-            render();
-        };
-
-        async function fetchBranding(i) {
-            var d = state.deliveries[i];
-            try {
-                var apiBase = window.ZAPDROP_CONFIG ? window.ZAPDROP_CONFIG.apiBaseUrl : '';
-                var r = await fetch(apiBase + '/api/deliveries/' + d.shareCode + '/brand');
-                if (r.ok) {
-                    var data = await r.json();
-                    d.editLogo = data.logo || '';
-                    d.editMessage = data.message || '';
-                    d.editAccent = data.accent || '#6366f1';
-                    render();
-                }
-            } catch (_) {}
-        }
-
-        window.saveBranding = async function (i) {
-            var d = state.deliveries[i];
-            var btn = document.getElementById('save-btn-' + i);
-            var errEl = document.getElementById('save-error-' + i);
-            var okEl = document.getElementById('save-success-' + i);
-            if (btn) btn.disabled = true;
-            if (btn) btn.textContent = 'Saving…';
-            if (errEl) errEl.style.display = 'none';
-            if (okEl) okEl.style.display = 'none';
-
-            d.editLogo = document.getElementById('logo-' + i)?.value || '';
-            d.editMessage = document.getElementById('msg-' + i)?.value || '';
-            var accentInput = document.getElementById('accent-' + i);
-            d.editAccent = accentInput?.value || '#6366f1';
-
-            try {
-                var apiBase = window.ZAPDROP_CONFIG ? window.ZAPDROP_CONFIG.apiBaseUrl : '';
-                var r = await fetch(apiBase + '/api/deliveries/' + d.id + '/brand', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        logo: d.editLogo || null,
-                        message: d.editMessage || null,
-                        accent: d.editAccent || null
-                    })
-                });
-                if (r.ok) {
-                    d.hasBranding = true;
-                    if (okEl) okEl.style.display = '';
-                    setTimeout(function () { if (okEl) okEl.style.display = 'none'; }, 3000);
-                } else {
-                    var err = await r.json().catch(function () { return {}; });
-                    if (errEl) {
-                        errEl.textContent = err.message || err.errors?.[0]?.message || 'Failed to save.';
-                        errEl.style.display = '';
+    @* ── Profile Card ── *@
+    <HtmxFragment>
+    <div id="profile-card" class="db-card">
+        <div class="db-card__body">
+            <div class="profile">
+                <div class="avatar-wrap">
+                    @if (!string.IsNullOrEmpty(avatar))
+                    {
+                        <img id="avatarPreview" class="avatar-img" src="@avatar" alt="@name" />
                     }
-                }
-            } catch (e) {
-                if (errEl) {
-                    errEl.textContent = 'Network error.';
-                    errEl.style.display = '';
-                }
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = 'Save branding'; }
-            }
-        };
+                    else
+                    {
+                        <div id="avatarInitial" class="avatar-initial">@name[..1].ToUpper()</div>
+                        <img id="avatarPreview" class="hidden avatar-img" src="" alt="@name" />
+                    }
+                </div>
+                <h2 class="db-h2" style="margin-top: 1.25rem">@name</h2>
+                <p class="db-p db-text-muted" style="margin-top: 0.25rem">@email</p>
+                <span class="db-badge db-badge--updated" style="margin-top: 0.75rem">@provider &middot; @plan</span>
+            </div>
 
-        loadDeliveries();
-    });
-</script>
+            @if (!string.IsNullOrEmpty(formError))
+            {
+                <div class="db-alert db-alert--error" style="margin-top: 1.5rem" role="alert">@formError</div>
+            }
+            @if (formSuccess)
+            {
+                <div class="db-alert db-alert--success" style="margin-top: 1.5rem" role="status">Profile updated.</div>
+            }
+
+            <form class="form" hx-post="/account" hx-target="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" onpost="@HandleUpdateProfile">
+                <div class="form-inner">
+                    <label class="db-field">
+                        <span class="db-label">Display name</span>
+                        <input id="name" name="name" type="text" required value="@name" class="db-field__input db-input" />
+                    </label>
+
+                    <div>
+                        <label class="db-label db-block" style="margin-bottom: 0.5rem">Avatar image</label>
+                        <label for="avatarFile" class="upload-zone">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <span>Click to choose an image</span>
+                            <span style="font-size: 0.75rem; opacity: 0.6">PNG, JPG or GIF &mdash; max 5 MB</span>
+                        </label>
+                        <input id="avatarFile" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
+                    </div>
+
+                    <button type="submit" class="db-btn db-btn--primary" style="width: 100%" data-ai-action="profile.save.submit">Save changes</button>
+                </div>
+            </form>
+
+            <div class="logout-row">
+                <a href="/logout" hx-boost="false" class="db-btn db-btn--ghost" style="width: 100%; display: flex; align-items: center; justify-content: center">Sign out</a>
+            </div>
+        </div>
+    </div>
+    </HtmxFragment>
+
+    @* ── Branding Card ── *@
+    <div class="db-card" id="branding-card">
+        <div class="db-card__body">
+            <div class="section-head">
+                <div class="section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="db-h3">Delivery Branding</h3>
+                    <p class="db-p db-text-muted">Customise how recipients see your deliveries.</p>
+                </div>
+            </div>
+
+            <div id="branding-loading" class="db-text-center" style="padding: 2.5rem 0">
+                <div class="db-spinner db-spinner--lg"></div>
+                <p class="db-p db-text-muted" style="margin-top: 0.75rem">Loading deliveries&hellip;</p>
+            </div>
+            <div id="branding-empty" class="branding-empty" style="display:none">No deliveries yet. Send a file first to brand it.</div>
+            <div id="branding-list" style="display:none"></div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/account.js"></script>
 
 @code {
     private string name = "Unknown";
-    private string email = "";
-    private string avatar = "";
+    private string email = string.Empty;
+    private string avatar = string.Empty;
     private string plan = "free";
     private string provider = "unknown";
     private string? formError;
@@ -380,11 +118,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var client = ClientFactory.CreateClient(ApiClient.Name);
-
         try
         {
-            var profile = await client.GetFromJsonAsync<ProfileResponse>("/api/users/me/profile");
+            var profile = await Api.GetMyProfileAsync();
             if (profile is not null)
             {
                 name = profile.Name;
@@ -393,13 +129,12 @@
                 plan = profile.Plan;
             }
         }
-        catch { /* render with defaults */ }
-
+        catch { }
         var httpContext = HttpContextAccessor.HttpContext;
-        if (httpContext is not null)
-        {
-            provider = httpContext.User?.FindFirstValue("provider") ?? "unknown";
-            formError = httpContext.Request.Query["error"].FirstOrDefault();
+        if (httpContext is not null) 
+        { 
+            provider = httpContext.User?.FindFirstValue(AuthConstants.ProviderClaimType) ?? "unknown"; 
+            formError = httpContext.Request.Query["error"].FirstOrDefault(); 
         }
     }
 
@@ -407,63 +142,46 @@
     {
         formError = null;
         formSuccess = false;
-
         var newName = FormName?.Trim();
-        if (string.IsNullOrWhiteSpace(newName))
-        {
-            formError = "Name is required";
-            return;
+        if (string.IsNullOrWhiteSpace(newName)) 
+        { 
+            formError = "Name is required"; 
+            return; 
         }
-
-        string? avatarUrl = null;
+        string? avatarBase64 = null;
         if (FormAvatar is { Length: > 0 })
         {
-            if (FormAvatar.Length > 5 * 1024 * 1024)
-            {
-                formError = "Image must be under 5 MB";
-                return;
+            if (FormAvatar.Length > 5 * 1024 * 1024) 
+            { 
+                formError = "Image must be under 5 MB"; 
+                return; 
             }
-
-            var ext = Path.GetExtension(FormAvatar.FileName);
-            if (string.IsNullOrEmpty(ext)) ext = ".jpg";
-            var fileName = $"{Guid.NewGuid()}{ext}";
-            var avatarsDir = Path.Combine(Env.WebRootPath, "avatars");
-            Directory.CreateDirectory(avatarsDir);
-
-            await using var stream = new FileStream(Path.Combine(avatarsDir, fileName), FileMode.Create);
-            await FormAvatar.CopyToAsync(stream);
-
-            avatarUrl = $"/avatars/{fileName}";
+            using var ms = new MemoryStream();
+            await FormAvatar.CopyToAsync(ms);
+            avatarBase64 = $"data:{FormAvatar.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
         }
-
-        var client = ClientFactory.CreateClient(ApiClient.Name);
-        var response = await client.PutAsJsonAsync("/api/users/me/profile",
-            new { Name = newName, AvatarUrl = avatarUrl });
-
-        if (!response.IsSuccessStatusCode)
+        ProfileResponse? profile;
+        try
+        {
+            profile = await Api.UpdateMyProfileAsync(new UpdateProfileRequest(newName, avatarBase64));
+        }
+        catch
         {
             formError = "Failed to update profile";
             return;
         }
-
         var httpContext = HttpContextAccessor.HttpContext;
         if (httpContext is not null)
         {
             var identity = httpContext.User.Identities.First();
-            var claims = identity.Claims
-                .Where(c => c.Type is not ClaimTypes.Name and not "avatar_url")
-                .ToList();
+            var claims = identity.Claims.Where(c => c.Type is not ClaimTypes.Name and not AuthConstants.AvatarUrlClaimType).ToList();
             claims.Add(new Claim(ClaimTypes.Name, newName));
-            if (avatarUrl is not null)
-                claims.Add(new Claim("avatar_url", avatarUrl));
-
+            if (profile?.AvatarUrl is not null) claims.Add(new Claim(AuthConstants.AvatarUrlClaimType, profile.AvatarUrl));
             var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
         }
-
         name = newName;
-        if (avatarUrl is not null)
-            avatar = avatarUrl;
+        avatar = profile?.AvatarUrl ?? string.Empty;
         formSuccess = true;
     }
 }

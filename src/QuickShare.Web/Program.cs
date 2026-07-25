@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using System.Net.Http.Json;
 using System.Security.Claims;
 using QuickShare.Web;
-using QuickShare.Web.Infrastructure;
+using QuickShare.Web.Api;
+using QuickShare.Shared.Models;
+using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,11 +44,28 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.ClientId = builder.Configuration["Auth:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Auth:Google:ClientSecret"]!;
-        options.ClaimActions.MapJsonKey("avatar_url", "picture");
-        options.Events.OnCreatingTicket = ctx =>
+        options.ClaimActions.MapJsonKey(AuthConstants.AvatarUrlClaimType, "picture");
+        options.Events.OnCreatingTicket = async ctx =>
         {
-            ctx.Identity?.AddClaim(new Claim("provider", "google"));
-            return Task.CompletedTask;
+            ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, AuthConstants.GoogleProvider));
+
+            var api = ctx.HttpContext.RequestServices.GetRequiredService<IQuickShareApi>();
+
+            var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
+            var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
+            var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var avatar = ctx.Principal?.FindFirst(AuthConstants.AvatarUrlClaimType)?.Value;
+
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(subject))
+            {
+                await api.RegisterAsync(new RegisterRequest(
+                    AuthConstants.GoogleProvider,
+                    subject,
+                    name ?? email,
+                    email,
+                    avatar
+                ));
+            }
         };
     });
 
@@ -55,7 +73,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddLocalization();
 
-// HttpClient used by the SSR pages + CookieForwardingHandler.
+// Refit client used by SSR pages + CookieForwardingHandler.
 // The browser-side upload JS also reads ApiBaseUrl from a page-emitted constant
 // so the XHR goes directly to the API (CORS-enabled server-side).
 builder.Services.AddTransient<CookieForwardingHandler>();
@@ -65,14 +83,14 @@ if (string.IsNullOrWhiteSpace(apiBaseUrl))
 {
     apiBaseUrl = "http://localhost:59155";
 }
-builder.Services.AddHttpClient(ApiClient.Name, c =>
-{
-    c.BaseAddress = new Uri(apiBaseUrl);
-    c.Timeout = TimeSpan.FromSeconds(30);
-})
-.AddHttpMessageHandler<CookieForwardingHandler>();
-builder.Services.AddScoped(sp =>
-    sp.GetRequiredService<IHttpClientFactory>().CreateClient(ApiClient.Name));
+builder.Services
+    .AddRefitClient<IQuickShareApi>()
+    .ConfigureHttpClient(c =>
+    {
+        c.BaseAddress = new Uri(apiBaseUrl);
+        c.Timeout = TimeSpan.FromSeconds(30);
+    })
+    .AddHttpMessageHandler<CookieForwardingHandler>();
 
 var app = builder.Build();
 
@@ -82,13 +100,12 @@ app.UseStaticFiles();
 // Auth middleware must come before Antiforgery and MapRazorComponents.
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseMiddleware<QuickShare.Web.Infrastructure.AuthPageRedirectMiddleware>();
 
-// Antiforgery middleware for Blazor SSR endpoints.
 app.UseAntiforgery();
 app.UseHtmxAntiforgery();
 
-// Map the root Blazor component (Static SSR — no rendermode helper).
+app.MapStaticAssets();
+
 var razorBuilder = app.MapRazorComponents<App>();
 
 // OAuth challenge endpoint.
@@ -121,9 +138,6 @@ app.MapGet("/antiforgery", (IAntiforgery antiforgery, HttpContext context) =>
 // NOTE: Htmxor has a bug when no HTMX components are discovered (null ref at line 28).
 // If you add HTMX components later, uncomment this line.
 // razorBuilder.AddHtmxorComponentEndpoints(app);
-
-// Optimized static asset manifest (no-op if manifest absent).
-app.MapStaticAssets();
 
 app.Run();
 

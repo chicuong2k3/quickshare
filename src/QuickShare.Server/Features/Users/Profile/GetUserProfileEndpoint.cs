@@ -1,6 +1,8 @@
+using QuickShare.Server.Features.Users.Shared;
+
 namespace QuickShare.Server.Features.Users.Profile;
 
-public sealed class GetUserProfileEndpoint : Endpoint<EmptyRequest, UserProfileResponse>
+public sealed class GetUserProfileEndpoint : Endpoint<EmptyRequest, ProfileResponse>
 {
     public override void Configure()
     {
@@ -27,13 +29,6 @@ public sealed class GetUserProfileEndpoint : Endpoint<EmptyRequest, UserProfileR
         var db = Resolve<AppDbContext>();
         var user = await principal.GetOrCreateUserAsync(db, ct);
 
-        await Send.OkAsync(new UserProfileResponse(
-            user.Id,
-            user.Name,
-            user.Email,
-            user.AvatarUrl,
-            user.Plan,
-            user.CreatedAt
-        ), ct);
+        await Send.OkAsync(user.ToProfileResponse(), ct);
     }
 }

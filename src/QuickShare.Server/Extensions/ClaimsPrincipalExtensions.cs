@@ -13,10 +13,10 @@ public static class ClaimsPrincipalExtensions
     public static async Task<User> GetOrCreateUserAsync(this ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
     {
         var providerKey = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-        var provider = principal.FindFirstValue("provider");
+        var provider = principal.FindFirstValue(AuthConstants.ProviderClaimType);
         var name = principal.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
         var email = principal.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-        var avatar = principal.FindFirstValue("avatar_url") ?? string.Empty;
+        var avatar = principal.FindFirstValue(AuthConstants.AvatarUrlClaimType) ?? string.Empty;
 
         if (string.IsNullOrEmpty(providerKey) || string.IsNullOrEmpty(provider))
             throw new InvalidOperationException("Missing auth claims");

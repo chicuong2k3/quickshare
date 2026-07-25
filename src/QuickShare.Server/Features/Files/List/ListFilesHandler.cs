@@ -12,14 +12,14 @@ public record ListFilesQuery(
 
 public sealed class ListFilesHandler
 {
-    public async Task<Result<PagedResult<FileInfoResponse>>> Handle(ListFilesQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async Task<Result<PagedResult<FileItemResponse>>> Handle(ListFilesQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
         var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
         var userId = user.Id;
 
         var sorts = SortDescriptor.Parse(query.Sort).ToList();
         if (!FileMetadataSortExtensions.TryValidateSorts(sorts, out var error))
-            return Result.Failure<PagedResult<FileInfoResponse>>(new BadRequestError(error));
+            return Result.Failure<PagedResult<FileItemResponse>>(new BadRequestError(error));
 
         IQueryable<FileMetadata> filesQuery = db.Files
             .Include(f => f.Folder)
@@ -34,7 +34,7 @@ public sealed class ListFilesHandler
 
         filesQuery = filesQuery.OrderBy(sorts);
 
-        var result = await filesQuery.ToPagedResultAsync(query.Page, query.PageSize, f => f.ToFileInfoResponse(), ct);
+        var result = await filesQuery.ToPagedResultAsync(query.Page, query.PageSize, f => f.ToFileItemResponse(), ct);
         return Result.Success(result);
     }
 }

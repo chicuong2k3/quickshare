@@ -1,0 +1,37 @@
+.page {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+.card { width: 100%; max-width: 28rem; }
+.card ::deep .db-card__body { padding: 2.5rem; }
+
+.section { text-align: center; padding: 2.5rem 0; }
+.section--compact { padding: 1.5rem 0; }
+
+.icon {
+    display: flex; width: 4rem; height: 4rem; align-items: center; justify-content: center;
+    border-radius: 1rem; margin: 0 auto 1.5rem;
+}
+.icon--primary { background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary); }
+.icon--danger { background: color-mix(in srgb, var(--color-destructive) 8%, transparent); color: var(--color-destructive); }
+.icon svg { width: 2rem; height: 2rem; }
+
+.input {
+    width: 100%; max-width: 20rem; border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+    background: var(--color-background); padding: 0.875rem 1.25rem; font-size: 0.875rem; text-align: center;
+}
+.input:focus { outline: none; border-color: var(--color-ring); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ring) 20%, transparent); }
+
+.file-row { display: flex; align-items: flex-start; gap: 1.25rem; text-align: left; }
+.file-icon {
+    display: flex; width: 4rem; height: 4rem; flex-shrink: 0; align-items: center; justify-content: center;
+    border-radius: 1rem; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary);
+}
+.file-icon svg { width: 1.75rem; height: 1.75rem; }
+
+.progress { margin-top: 1.5rem; height: 0.5rem; width: 100%; border-radius: 999px; background: var(--color-muted); overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 999px; background: var(--color-primary); transition: width 0.3s; width: 0; }

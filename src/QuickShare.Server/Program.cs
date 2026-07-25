@@ -1,14 +1,13 @@
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using FastEndpoints.Swagger;
 using System.Security.Claims;
 using QuickShare.Server.BackgroundJobs;
-using QuickShare.Server.Data;
 using QuickShare.Server.Features.Deliveries;
 using QuickShare.Server.Infrastructure.Quota;
 using QuickShare.Server.Infrastructure.Storage;
+using QuickShare.Server.Data;
 using QuickShare.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,25 +23,34 @@ builder.Services.AddDataProtection()
     .SetApplicationName("QuickShare");
 
 builder.Services.AddDbContext<AppDbContext>(opts =>
-    opts.UseNpgsql(connectionString));
+    opts.UseNpgsql(connectionString)
+        .AddInterceptors(new AuditableEntityInterceptor()));
 
 builder.Services.Configure<StorageOptions>(
     builder.Configuration.GetSection(StorageOptions.Section));
 
-builder.Services.Configure<R2Options>(
-    builder.Configuration.GetSection(R2Options.Section));
+var r2Section = builder.Configuration.GetSection(R2Options.Section);
+builder.Services.Configure<R2Options>(r2Section);
 
-builder.Services.AddSingleton<R2StorageProvider>(sp =>
+var r2Options = r2Section.Get<R2Options>() ?? new();
+var hasR2 = !string.IsNullOrEmpty(r2Options.AccountId) &&
+            !string.IsNullOrEmpty(r2Options.AccessKeyId) &&
+            !string.IsNullOrEmpty(r2Options.AccessKeySecret);
+
+if (hasR2)
 {
-    var options = sp.GetRequiredService<IOptions<R2Options>>();
-    var logger = sp.GetRequiredService<ILogger<R2StorageProvider>>();
-    return new R2StorageProvider(options, logger);
-});
-
-// IStorageProvider resolves to R2 by default.
-// Consumers that specifically need local-disk should inject LocalDiskStorageProvider directly.
-builder.Services.AddSingleton<IStorageProvider>(sp =>
-    sp.GetRequiredService<R2StorageProvider>());
+    builder.Services.AddSingleton<R2StorageProvider>();
+    // IStorageProvider resolves to R2 by default.
+    // Consumers that specifically need local-disk should inject LocalDiskStorageProvider directly.
+    builder.Services.AddSingleton<IStorageProvider>(sp =>
+        sp.GetRequiredService<R2StorageProvider>());
+}
+else
+{
+    // R2 not configured — fall back to local disk so the app can still start.
+    // Upload/download features that require R2 will throw NotSupportedException.
+    builder.Services.AddSingleton<IStorageProvider, LocalDiskStorageProvider>();
+}
 
 var quickShareConfig = builder.Configuration.GetSection(QuickShareOptions.Section);
 builder.Services.Configure<QuickShareOptions>(quickShareConfig);
@@ -78,90 +86,6 @@ builder.Services.SwaggerDocument();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddApiCookieAuth();
 
-// Google OAuth — chained on top of cookie auth.
-var googleSection = builder.Configuration.GetSection("Authentication:Google");
-var googleClientId = googleSection["ClientId"] ?? "";
-var googleClientSecret = googleSection["ClientSecret"] ?? "";
-if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
-{
-    builder.Services.AddAuthentication()
-        .AddGoogle(options =>
-        {
-            options.ClientId = googleClientId;
-            options.ClientSecret = googleClientSecret;
-            options.CallbackPath = "/auth/google/callback";
-            options.Events.OnCreatingTicket = async ctx =>
-            {
-                var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
-                var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
-                var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(subject))
-                    return;
-
-                await using var scope = ctx.HttpContext.RequestServices.CreateAsyncScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                var login = await db.UserLogins
-                    .Include(l => l.User)
-                    .FirstOrDefaultAsync(l => l.Provider == "google" && l.ProviderKey == subject);
-
-                User user;
-                if (login?.User is not null)
-                {
-                    user = login.User;
-                    if (user.Name != name && !string.IsNullOrEmpty(name))
-                    {
-                        user.Name = name;
-                        user.UpdatedAt = DateTime.UtcNow;
-                    }
-                    if (user.Email != email && !string.IsNullOrEmpty(email))
-                    {
-                        user.Email = email;
-                        user.UpdatedAt = DateTime.UtcNow;
-                    }
-                }
-                else
-                {
-                    user = new User
-                    {
-                        Id = Guid.CreateVersion7(),
-                        Name = name ?? email ?? "unknown",
-                        Email = email ?? "",
-                        AvatarUrl = "",
-                        Plan = PlanTierLimits.Free
-                    };
-                    db.Users.Add(user);
-
-                    db.UserLogins.Add(new UserLogin
-                    {
-                        Id = Guid.CreateVersion7(),
-                        UserId = user.Id,
-                        Provider = "google",
-                        ProviderKey = subject
-                    });
-
-                    // Seed initial usage record for the current month.
-                    var now = DateTime.UtcNow;
-                    var periodStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-                    db.UserUsages.Add(new UserUsage
-                    {
-                        Id = Guid.CreateVersion7(),
-                        UserId = user.Id,
-                        PeriodStart = periodStart,
-                        TotalBytesUploaded = 0,
-                        TransferCount = 0
-                    });
-                }
-
-                await db.SaveChangesAsync();
-
-                var identity = ctx.Principal!.Identities.First();
-                identity.AddClaim(new Claim("local_user_id", user.Id.ToString()));
-                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
-            };
-        });
-}
-
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -184,21 +108,28 @@ using (var scope = app.Services.CreateScope())
         await db.SaveChangesAsync();
     }
 
-    var r2 = scope.ServiceProvider.GetRequiredService<R2StorageProvider>();
-    await r2.EnsureBucketExistsAsync();
+    if (hasR2)
+    {
+        var r2 = scope.ServiceProvider.GetRequiredService<R2StorageProvider>();
+        await r2.EnsureBucketExistsAsync();
+    }
+    else
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning("R2 not configured — using LocalDiskStorageProvider. Upload/download via R2 will throw.");
+    }
 }
 
 app.UseExceptionHandler();
 app.UseCors();
-app.UseStaticFiles();
 
-// Dev-mode: log full request/response for debugging.
-if (app.Environment.IsDevelopment())
-    app.UseMiddleware<RequestLoggingMiddleware>();
 
-// Dev-mode: auto sign-in a local user so you can test APIs without Google OAuth.
 if (app.Environment.IsDevelopment())
 {
+    // Dev-mode: log full request/response for debugging.
+    app.UseMiddleware<RequestLoggingMiddleware>();
+
+    // Dev-mode: auto sign-in a local user so you can test APIs without Google OAuth.
     app.Use(async (ctx, next) =>
     {
         if (ctx.User.Identity?.IsAuthenticated != true)
@@ -206,7 +137,7 @@ if (app.Environment.IsDevelopment())
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, "dev-user"),
-                new Claim("provider", "dev"),
+                new Claim(AuthConstants.ProviderClaimType, AuthConstants.DevProvider),
                 new Claim(ClaimTypes.Name, "Dev User"),
                 new Claim(ClaimTypes.Email, "dev@localhost")
             };
