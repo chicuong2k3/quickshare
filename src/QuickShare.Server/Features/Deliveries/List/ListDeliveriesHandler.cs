@@ -15,7 +15,7 @@ public sealed class ListDeliveriesHandler
 {
     public async Task<Result<DeliveryItem[]>> Handle(ListDeliveriesQuery _, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
         var items = await db.Deliveries
             .Where(d => d.SenderId == userId)

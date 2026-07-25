@@ -8,7 +8,7 @@ public sealed class CreateFolderHandler
 {
     public async Task<Result<FolderItemResponse>> Handle(CreateFolderCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
 
         var exists = await db.Folders.AsNoTracking().AnyAsync(f => f.Name == command.Name, ct);

@@ -8,7 +8,7 @@ public sealed class MoveFileHandler
 {
     public async Task<Result<FileItemResponse>> Handle(MoveFileCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
 
         // Find the file

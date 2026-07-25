@@ -20,7 +20,7 @@ public sealed class GetUserProfileEndpoint : Endpoint<EmptyRequest, ProfileRespo
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
         var db = Resolve<AppDbContext>();
-        var user = await HttpContext.User.GetOrCreateUserAsync(db, ct);
+        var user = await HttpContext.User.GetUserAsync(db, ct);
 
         await Send.OkAsync(user.ToProfileResponse(), ct);
     }

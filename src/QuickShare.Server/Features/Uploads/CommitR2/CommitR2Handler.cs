@@ -28,7 +28,7 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             return Result.Failure<CommitR2Response>(new LightResults.Error(
                 completionResult.ErrorMessage ?? "R2 commit returned failure"));
 
-        var user = await httpContextAccessor.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
 
         var randomBytes = new byte[8];
         RandomNumberGenerator.Fill(randomBytes);

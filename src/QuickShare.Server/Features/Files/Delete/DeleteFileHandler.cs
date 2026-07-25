@@ -8,7 +8,7 @@ public sealed class DeleteFileHandler
 {
     public async Task<Result> Handle(DeleteFileCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
         var meta = await db.Files.FirstOrDefaultAsync(f => f.Id == command.Id, ct);
         if (meta is null)

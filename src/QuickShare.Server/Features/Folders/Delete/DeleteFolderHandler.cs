@@ -8,7 +8,7 @@ public sealed class DeleteFolderHandler
 {
     public async Task<Result> Handle(DeleteFolderCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
 
         var folder = await db.Folders.FirstOrDefaultAsync(f => f.Id == command.Id, ct);

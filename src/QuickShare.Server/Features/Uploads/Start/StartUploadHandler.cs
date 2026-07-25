@@ -10,7 +10,7 @@ public sealed class StartUploadHandler
 {
     public async Task<Result<StartUploadResponse>> Handle(StartUploadCommand cmd, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
 
         if (cmd.FileSize <= 0)

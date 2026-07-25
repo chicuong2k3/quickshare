@@ -14,7 +14,7 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
         if (cmd.FileSize <= 0)
             return Result.Failure<StartR2Response>(new LightResults.Error("File size must be positive"));
 
-        var user = await httpContextAccessor.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
 
         var maxFileSize = PlanTierLimits.GetMaxFileSize(user.Plan);
         if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)

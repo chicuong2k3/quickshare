@@ -44,7 +44,7 @@
                 <div class="db-alert db-alert--error" style="margin-top: 1.5rem" role="alert">@formError</div>
             }
 
-            <form class="form" hx-post="/account" hx-target="#profile-card" hx-select="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" onpost="@HandleUpdateProfile">
+            <form class="form" hx-post="/account" hx-target="#profile-card" hx-select="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" hx-indicator="#profile-save-spinner" hx-disabled-elt="#name, #avatarFile, button[type=submit]" onpost="@HandleUpdateProfile">
                 <div class="form-inner">
                     <label class="db-field">
                         <span class="db-label">Display name</span>
@@ -55,7 +55,10 @@
                         <input id="avatarFile" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
                     </div>
 
-                    <button type="submit" class="db-btn db-btn--primary" style="width: 100%" data-ai-action="profile.save.submit">Save changes</button>
+                    <button type="submit" class="db-btn db-btn--primary profile-save-btn" style="width: 100%" data-ai-action="profile.save.submit">
+                        <span class="btn-text">Save changes</span>
+                        <span id="profile-save-spinner" class="htmx-indicator btn-spinner"></span>
+                    </button>
                 </div>
             </form>
 

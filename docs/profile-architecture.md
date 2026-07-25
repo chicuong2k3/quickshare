@@ -2,7 +2,7 @@
 
 ## Overview
 
-The profile system displays and updates user identity (name, avatar) fetched from the Server API. The Server lazily creates users in the DB on first API access via `GetOrCreateUserAsync()`.
+The profile system displays and updates user identity (name, avatar) fetched from the Server API. Users are registered in DB at Google OAuth login time via `POST /api/users/register`. Authenticated API endpoints resolve the DB user via `GetUserAsync()`.
 
 ---
 
@@ -19,7 +19,7 @@ The profile system displays and updates user identity (name, avatar) fetched fro
 | Server Profile Endpoint | `QuickShare.Server` | `Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
 | Server Update Endpoint | `QuickShare.Server` | `Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
 | Server User Mapper | `QuickShare.Server` | `Features/Users/Shared/UserMapper.cs` | Mapperly source-gen: `User` → `ProfileResponse` |
-| Server User DB Helper | `QuickShare.Server` | `Extensions/ClaimsPrincipalExtensions.cs` | `GetOrCreateUserAsync()` — lazy user creation |
+| Server User DB Helper | `QuickShare.Server` | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — user lookup |
 | Shared Models | `QuickShare.Shared` | `Models/ProfileResponse.cs` | `ProfileResponse` DTO |
 
 ---
@@ -42,8 +42,8 @@ Browser                  Web (9000)                  Server (59155)             
    │                         │                           │── Decrypt cookie ──────▶│
    │                         │                           │◀── ClaimsPrincipal ─────│
    │                         │                           │                          │
-   │                         │                           │── GetOrCreateUserAsync()─▶│
-   │                         │                           │   (lazy DB sync)        │
+│                         │                           │── GetUserAsync()──▶│
+│                         │                           │   (DB lookup)          │
    │                         │                           │◀── User row ────────────│
    │                         │                           │                          │
    │                         │◀── ProfileResponse ───────│                          │
@@ -54,40 +54,39 @@ Browser                  Web (9000)                  Server (59155)             
    │   + profile data        │                           │                          │
 ```
 
-### GetOrCreateUserAsync() — Lazy User Sync
+### User Registration Flow
 
-Since the Web's Google OAuth does NOT create users in DB at login time, the Server lazily creates users on first API access:
+Users are registered in DB at **Google OAuth login time** by the Web's `OnCreatingTicket` callback, which calls `POST /api/users/register` (idempotent). Authenticated Server endpoints resolve the DB user via `GetUserAsync()`.
+
+**Registration — at login (Web → Server):**
+
+```
+Web OnCreatingTicket                    Server POST /api/users/register
+     │                                         │
+     ├─ api.RegisterAsync(provider,            │
+     │   providerKey, name, email,             │
+     │   avatar) ─────────────────────────────▶│
+     │                                         ├─ Lookup by provider + providerKey
+     │                                         ├─ If found: update name/email, return user
+     │                                         ├─ If not: create User + UserLogin + UserUsage
+     │                                         └─ Return ProfileResponse
+```
+
+**User resolution — on every API call (`GetUserAsync`):**
 
 ```csharp
 // ClaimsPrincipalExtensions.cs
-public static async Task<User> GetOrCreateUserAsync(this ClaimsPrincipal principal, AppDbContext db)
+public static async Task<User> GetUserAsync(this ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
 {
-    var nameId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    var email = principal.FindFirst(ClaimTypes.Email)?.Value;
-    var name = principal.FindFirst(ClaimTypes.Name)?.Value;
-    var provider = principal.FindFirst("provider")?.Value ?? "unknown";
-
-    var existing = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
-    if (existing != null) return existing;
-
-    var user = new User
-    {
-        Id = Guid.CreateVersion7(),
-        Name = name ?? email ?? "unknown",
-        Email = email ?? "",
-        AvatarUrl = principal.FindFirst("avatar_url")?.Value ?? "",
-        Plan = PlanTierLimits.Free
-    };
-    db.Users.Add(user);
-    await db.SaveChangesAsync();
-    return user;
+    // Looks up by provider + providerKey in UserLogins table
+    // Throws InvalidOperationException if user not found (must be registered first)
 }
 ```
 
 This means:
-- First visit to `/account` or `/files` triggers user creation with Plan=Free
-- The `local_user_id` claim is NOT in the auth cookie at this point (cookies are immutable after sign-in)
-- Server uses `email` to find existing user across sessions
+- User must be registered at OAuth login time before any API call
+- `GetUserAsync` is a pure lookup — it throws if the user is not found
+- Server uses `provider + providerKey` (via `UserLogins` table) to find existing user, not just `email`
 
 ---
 
@@ -205,7 +204,7 @@ After profile update (re-sign):
 | `ClaimTypes.Name` | User-entered name |
 | `avatar_url` | `/avatars/{guid}.{ext}` (or null) |
 
-Note: `local_user_id` is NOT in the auth cookie. Server APIs derive the DB user ID via `GetOrCreateUserAsync()` which matches by email.
+Note: `local_user_id` is NOT in the auth cookie. Server APIs derive the DB user ID via `GetUserAsync()` which matches by `provider + providerKey` in the `UserLogins` table.
 
 ---
 
@@ -247,7 +246,7 @@ Mapped via `UserMapper.ToProfileResponse()` (Mapperly source-gen, in `QuickShare
 | `src/QuickShare.Server/Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
 | `src/QuickShare.Server/Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
 | `src/QuickShare.Server/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
-| `src/QuickShare.Server/Extensions/ClaimsPrincipalExtensions.cs` | `GetOrCreateUserAsync()` |
+| `src/QuickShare.Server/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` |
 | `src/QuickShare.Shared/Models/User.cs` | User entity |
 | `src/QuickShare.Server/Features/Deliveries/Brand/GetBrandEndpoint.cs` | `GET /api/deliveries/{code}/brand` |
 | `src/QuickShare.Server/Features/Deliveries/Brand/SetBrandEndpoint.cs` | `PUT /api/deliveries/{id}/brand` |

@@ -21,7 +21,7 @@ public sealed class UpdateUserProfileEndpoint : Endpoint<UpdateUserProfileReques
     public override async Task HandleAsync(UpdateUserProfileRequest req, CancellationToken ct)
     {
         var db = Resolve<AppDbContext>();
-        var user = await HttpContext.User.GetOrCreateUserAsync(db, ct);
+        var user = await HttpContext.User.GetUserAsync(db, ct);
         var userId = user.Id;
 
         var avatarUrl = string.IsNullOrEmpty(req.AvatarBase64)

@@ -14,7 +14,7 @@ public sealed class ListFilesHandler
 {
     public async Task<Result<PagedResult<FileItemResponse>>> Handle(ListFilesQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
-        var user = await http.HttpContext!.User.GetOrCreateUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
 
         var sorts = SortDescriptor.Parse(query.Sort).ToList();

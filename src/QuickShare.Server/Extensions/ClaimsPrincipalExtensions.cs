@@ -10,57 +10,20 @@ public static class ClaimsPrincipalExtensions
         return id is not null ? Guid.Parse(id) : throw new InvalidOperationException("Not authenticated");
     }
 
-    public static async Task<User> GetOrCreateUserAsync(this ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
+    public static async Task<User> GetUserAsync(this ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
     {
         var providerKey = principal.FindFirstValue(ClaimTypes.NameIdentifier);
         var provider = principal.FindFirstValue(AuthConstants.ProviderClaimType);
-        var name = principal.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
-        var email = principal.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-        var avatar = principal.FindFirstValue(AuthConstants.AvatarUrlClaimType) ?? string.Empty;
 
         if (string.IsNullOrEmpty(providerKey) || string.IsNullOrEmpty(provider))
             throw new InvalidOperationException("Missing auth claims");
 
-        var existing = await db.UserLogins
+        var login = await db.UserLogins
             .Include(ul => ul.User)
             .FirstOrDefaultAsync(ul => ul.Provider == provider && ul.ProviderKey == providerKey, ct);
 
-        if (existing?.User is not null)
-            return existing.User;
-
-        var user = new User
-        {
-            Id = Guid.CreateVersion7(),
-            Name = name,
-            Email = email,
-            AvatarUrl = avatar
-        };
-
-        var login = new UserLogin
-        {
-            Id = Guid.CreateVersion7(),
-            UserId = user.Id,
-            Provider = provider,
-            ProviderKey = providerKey
-        };
-
-        db.Users.Add(user);
-        db.UserLogins.Add(login);
-
-        try
-        {
-            await db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException)
-        {
-            db.ChangeTracker.Clear();
-            var winner = await db.UserLogins
-                .Include(ul => ul.User)
-                .AsNoTracking()
-                .FirstAsync(ul => ul.Provider == provider && ul.ProviderKey == providerKey, ct);
-            return winner.User!;
-        }
-
-        return user;
+        return login?.User ?? throw new InvalidOperationException(
+            $"User not found for provider '{provider}' with key '{providerKey}'. " +
+            "The user must be registered via POST /api/users/register before accessing this endpoint.");
     }
 }
