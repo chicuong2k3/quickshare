@@ -22,6 +22,22 @@
 }
 .avatar-wrap[b-tzvw35q74b] {
     position: relative;
+    cursor: pointer;
+}
+.avatar-overlay[b-tzvw35q74b] {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.avatar-wrap:hover .avatar-overlay[b-tzvw35q74b] {
+    opacity: 1;
 }
 .avatar-img[b-tzvw35q74b] {
     width: 5rem;
@@ -50,24 +66,6 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-}
-.upload-zone[b-tzvw35q74b] {
-    display: flex;
-    cursor: pointer;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    border: 2px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
-    border-radius: 1rem;
-    background: var(--color-background);
-    padding: 2rem 1.25rem;
-    font-size: 0.875rem;
-    color: color-mix(in srgb, var(--color-muted-foreground) 80%, transparent);
-    transition: border-color 0.15s, background 0.15s;
-}
-.upload-zone:hover[b-tzvw35q74b] {
-    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
-    background: color-mix(in srgb, var(--color-primary) 5%, transparent);
 }
 .logout-row[b-tzvw35q74b] {
     margin-top: 1.5rem;

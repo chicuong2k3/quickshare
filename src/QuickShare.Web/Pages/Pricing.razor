@@ -21,6 +21,7 @@
                    href="/pricing"
                    hx-get="/pricing" aria-pressed="@(IsYearly ? "false" : "true")"
                    hx-target="#pricing-body"
+                   hx-select="#pricing-body"
                    hx-swap="outerHTML swap:0.2s"
                    class="db-btn @(IsYearly ? "db-btn--ghost" : "db-btn--primary")">
                     Monthly
@@ -29,6 +30,7 @@
                    href="/pricing?billing=yearly"
                    hx-get="/pricing?billing=yearly" aria-pressed="@(IsYearly ? "true" : "false")"
                    hx-target="#pricing-body"
+                   hx-select="#pricing-body"
                    hx-swap="outerHTML swap:0.2s"
                    class="db-btn @(IsYearly ? "db-btn--primary" : "db-btn--ghost")">
                     Yearly

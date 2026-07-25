@@ -21,6 +21,22 @@
 }
 .avatar-wrap {
     position: relative;
+    cursor: pointer;
+}
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.avatar-wrap:hover .avatar-overlay {
+    opacity: 1;
 }
 .avatar-img {
     width: 5rem;
@@ -49,24 +65,6 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-}
-.upload-zone {
-    display: flex;
-    cursor: pointer;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    border: 2px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
-    border-radius: 1rem;
-    background: var(--color-background);
-    padding: 2rem 1.25rem;
-    font-size: 0.875rem;
-    color: color-mix(in srgb, var(--color-muted-foreground) 80%, transparent);
-    transition: border-color 0.15s, background 0.15s;
-}
-.upload-zone:hover {
-    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
-    background: color-mix(in srgb, var(--color-primary) 5%, transparent);
 }
 .logout-row {
     margin-top: 1.5rem;

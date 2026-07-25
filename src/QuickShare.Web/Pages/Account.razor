@@ -20,7 +20,7 @@
     <div id="profile-card" class="db-card">
         <div class="db-card__body">
             <div class="profile">
-                <div class="avatar-wrap">
+                <div class="avatar-wrap" onclick="document.getElementById('avatarFile').click()">
                     @if (!string.IsNullOrEmpty(avatar))
                     {
                         <img id="avatarPreview" class="avatar-img" src="@avatar" alt="@name" />
@@ -30,6 +30,9 @@
                         <div id="avatarInitial" class="avatar-initial">@name[..1].ToUpper()</div>
                         <img id="avatarPreview" class="hidden avatar-img" src="" alt="@name" />
                     }
+                    <div class="avatar-overlay">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
                 </div>
                 <h2 class="db-h2" style="margin-top: 1.25rem">@name</h2>
                 <p class="db-p db-text-muted" style="margin-top: 0.25rem">@email</p>
@@ -40,12 +43,8 @@
             {
                 <div class="db-alert db-alert--error" style="margin-top: 1.5rem" role="alert">@formError</div>
             }
-            @if (formSuccess)
-            {
-                <div class="db-alert db-alert--success" style="margin-top: 1.5rem" role="status">Profile updated.</div>
-            }
 
-            <form class="form" hx-post="/account" hx-target="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" onpost="@HandleUpdateProfile">
+            <form class="form" hx-post="/account" hx-target="#profile-card" hx-select="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" onpost="@HandleUpdateProfile">
                 <div class="form-inner">
                     <label class="db-field">
                         <span class="db-label">Display name</span>
@@ -53,12 +52,6 @@
                     </label>
 
                     <div>
-                        <label class="db-label db-block" style="margin-bottom: 0.5rem">Avatar image</label>
-                        <label for="avatarFile" class="upload-zone">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            <span>Click to choose an image</span>
-                            <span style="font-size: 0.75rem; opacity: 0.6">PNG, JPG or GIF &mdash; max 5 MB</span>
-                        </label>
                         <input id="avatarFile" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
                     </div>
 
@@ -108,7 +101,6 @@
     private string plan = "free";
     private string provider = "unknown";
     private string? formError;
-    private bool formSuccess;
 
     [SupplyParameterFromForm(Name = "name")]
     private string? FormName { get; set; }
@@ -141,7 +133,6 @@
     private async Task HandleUpdateProfile()
     {
         formError = null;
-        formSuccess = false;
         var newName = FormName?.Trim();
         if (string.IsNullOrWhiteSpace(newName)) 
         { 
@@ -170,6 +161,9 @@
             formError = "Failed to update profile";
             return;
         }
+        name = newName;
+        avatar = profile?.AvatarUrl ?? string.Empty;
+
         var httpContext = HttpContextAccessor.HttpContext;
         if (httpContext is not null)
         {
@@ -179,9 +173,8 @@
             if (profile?.AvatarUrl is not null) claims.Add(new Claim(AuthConstants.AvatarUrlClaimType, profile.AvatarUrl));
             var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
+
+            httpContext.Response.Headers["HX-Trigger"] = "profileUpdated";
         }
-        name = newName;
-        avatar = profile?.AvatarUrl ?? string.Empty;
-        formSuccess = true;
     }
 }

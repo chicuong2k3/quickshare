@@ -4,7 +4,7 @@
 
 - **One statement per line** — do not chain multiple statements on a single line. Each statement must be on its own line.
 - **No magic strings** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed).
-- **Isolation CSS/JS** — always use scoped CSS (`.razor.css`) and JS isolation (`.razor.js`) per component instead of dumping into global `wwwroot/`.
+- **Isolation CSS** — always use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`).
 
 ## Architecture Rules
 

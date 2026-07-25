@@ -30,7 +30,7 @@
                     </p>
                 </div>
                 <div class="search-wrap">
-                    <form method="get" action="/files" hx-trigger="input changed delay:500ms" hx-target="#files-list" hx-swap="outerHTML" hx-push-url="true" class="search-inner">
+                    <form method="get" action="/files" hx-trigger="input changed delay:500ms" hx-target="#files-list" hx-select="#files-list" hx-swap="outerHTML" hx-push-url="true" class="search-inner">
                         @if (!string.IsNullOrEmpty(FolderId))
                         {
                             <input type="hidden" name="folderId" value="@FolderId" />
