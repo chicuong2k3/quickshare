@@ -13,4 +13,9 @@
     <ProjectReference Include="..\QuickShare.Querying.Generators\QuickShare.Querying.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.4" />
+  </ItemGroup>
+
 </Project>

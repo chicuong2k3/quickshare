@@ -19,15 +19,8 @@ public sealed class GetUserProfileEndpoint : Endpoint<EmptyRequest, ProfileRespo
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        var principal = HttpContext.User;
-        if (principal.Identity?.IsAuthenticated != true)
-        {
-            HttpContext.Response.StatusCode = 401;
-            return;
-        }
-
         var db = Resolve<AppDbContext>();
-        var user = await principal.GetOrCreateUserAsync(db, ct);
+        var user = await HttpContext.User.GetOrCreateUserAsync(db, ct);
 
         await Send.OkAsync(user.ToProfileResponse(), ct);
     }

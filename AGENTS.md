@@ -15,6 +15,15 @@
   - `UpdatedAt = DateTime.UtcNow` for all added or modified entities that have an `UpdatedAt` property.
 - Entities inheriting from `BaseAuditEntity` get both. Custom entities like `Manifest` with only `CreatedAt` get partial support automatically via metadata discovery.
 
+### FastEndpoints Authorization
+
+- **Never check `HttpContext.User.Identity?.IsAuthenticated` manually.** FastEndpoints enforces auth by default — an endpoint without `AllowAnonymous()` already requires authentication.
+- Always declare auth intent explicitly in `Configure()`:
+  - `AllowAnonymous()` — for public endpoints (delivery download, webhook, payment callback, brand info).
+  - **Nothing needed for authenticated-only endpoints** — FastEndpoints is secure by default. Just don't call `AllowAnonymous()`.
+- **Exception:** Middleware that needs to distinguish anonymous vs. authenticated users (e.g. rate limiting) may read `IsAuthenticated` — but never use it as an auth gate.
+- **Exception:** Dev auto-signin middleware in `Program.cs` may check `IsAuthenticated` to skip already-authenticated requests.
+
 ### Entity → DTO Mapping
 
 - **Use Mapperly (`Riok.Mapperly`) for all entity-to-DTO mappings.** Place mappers in `Features/<Feature>/Shared/<Entity>Mapper.cs`.
