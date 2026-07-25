@@ -171,9 +171,8 @@
         if (httpContext is not null)
         {
             var identity = httpContext.User.Identities.First();
-            var claims = identity.Claims.Where(c => c.Type is not ClaimTypes.Name and not AuthConstants.AvatarUrlClaimType).ToList();
+            var claims = identity.Claims.Where(c => c.Type != ClaimTypes.Name).ToList();
             claims.Add(new Claim(ClaimTypes.Name, newName));
-            if (profile?.AvatarUrl is not null) claims.Add(new Claim(AuthConstants.AvatarUrlClaimType, profile.AvatarUrl));
             var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
 

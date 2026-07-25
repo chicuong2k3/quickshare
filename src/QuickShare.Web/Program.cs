@@ -48,7 +48,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.ClientId = builder.Configuration["Auth:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Auth:Google:ClientSecret"]!;
-        options.ClaimActions.MapJsonKey(AuthConstants.AvatarUrlClaimType, "picture");
         options.Events.OnCreatingTicket = async ctx =>
         {
             ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, AuthConstants.GoogleProvider));
@@ -58,7 +57,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
             var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
             var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var avatar = ctx.Principal?.FindFirst(AuthConstants.AvatarUrlClaimType)?.Value;
+            var avatar = ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null;
 
             if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(subject))
             {
