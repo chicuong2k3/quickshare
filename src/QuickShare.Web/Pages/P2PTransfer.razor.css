@@ -101,6 +101,8 @@
     background: var(--color-background); padding: 0.875rem 1.25rem; font-size: 0.875rem;
 }
 
+#p2ps-qrcode svg { border-radius: 0.75rem; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08); }
+
 .progress-wrap { margin-top: 2rem; max-width: 28rem; margin-inline: auto; }
 .progress-track { height: 0.5rem; width: 100%; border-radius: 999px; background: var(--color-muted); overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 999px; background: var(--color-primary); transition: width 0.3s; }

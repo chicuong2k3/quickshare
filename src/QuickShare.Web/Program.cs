@@ -87,7 +87,7 @@ if (string.IsNullOrWhiteSpace(apiBaseUrl))
     apiBaseUrl = "http://localhost:59155";
 }
 builder.Services
-    .AddRefitClient<IQuickShareApi>()
+    .AddRefitGeneratedClient<IQuickShareApi>()
     .ConfigureHttpClient(c =>
     {
         c.BaseAddress = new Uri(apiBaseUrl);

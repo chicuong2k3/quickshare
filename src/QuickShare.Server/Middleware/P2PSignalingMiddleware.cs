@@ -38,7 +38,7 @@ public sealed class P2PSignalingMiddleware
 
         var shareCode = path[WsPathPrefix.Length..];
 
-        if (!_manager.CanAcceptConnection())
+        if (!_manager.TryAcceptConnection())
         {
             context.Response.StatusCode = 503;
             await context.Response.WriteAsync("Server at capacity");
@@ -46,10 +46,16 @@ public sealed class P2PSignalingMiddleware
         }
 
         using var ws = await context.WebSockets.AcceptWebSocketAsync();
-        _manager.GenerateConnectionToken(shareCode);
         _logger.LogInformation("WebSocket connected for share {ShareCode}", shareCode);
 
-        await HandleConnectionAsync(ws, shareCode, context.RequestAborted);
+        try
+        {
+            await HandleConnectionAsync(ws, shareCode, context.RequestAborted);
+        }
+        finally
+        {
+            _manager.ReleaseConnection();
+        }
 
         _logger.LogInformation("WebSocket disconnected for share {ShareCode}", shareCode);
         var room = _manager.GetRoom(shareCode);
@@ -263,7 +269,8 @@ public sealed class P2PSignalingMiddleware
 
         if (target?.State == WebSocketState.Open)
         {
-            await _manager.SendToSocketAsync(target, new { type, data = root }, ct);
+            var innerData = root.TryGetProperty("data", out var d) ? d : root;
+            await _manager.SendToSocketAsync(target, new { type, data = innerData }, ct);
         }
     }
 

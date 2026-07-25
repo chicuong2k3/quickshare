@@ -1,11 +1,8 @@
-using FastEndpoints;
-using Microsoft.EntityFrameworkCore;
-using QuickShare.Server.Data;
 using System.Security.Cryptography;
 
 namespace QuickShare.Server.Features.Shares.P2P;
 
-public sealed record CreateP2PShareRequest(string FileName, long FileSize, string MimeType, bool? HasPin);
+public sealed record CreateP2PShareRequest(string FileName, long FileSize, string MimeType, bool? HasPin, string BaseUrl);
 
 public sealed record CreateP2PShareResponse(string ShareCode, string ShareLink);
 
@@ -38,6 +35,12 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(req.BaseUrl))
+        {
+            ThrowError("BaseUrl is required");
+            return;
+        }
+
         var shareCode = GenerateShareCode();
 
         // Ensure uniqueness
@@ -49,6 +52,7 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
 
         var delivery = new Delivery
         {
+            Id = Guid.CreateVersion7(),
             ShareCode = shareCode,
             FileName = req.FileName,
             ContentType = req.MimeType,
@@ -63,11 +67,10 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);
 
-        var baseUrl = Resolve<IConfiguration>()["QuickShare:P2PBaseUrl"]
-                       ?? $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
-        var shareLink = $"{baseUrl.TrimEnd('/')}/p2p/d/{shareCode}";
+        var shareLink = $"{req.BaseUrl.TrimEnd('/')}/p2p/d/{shareCode}";
 
-        await Send.CreatedAtAsync($"/p2p/d/{shareCode}", new CreateP2PShareResponse(shareCode, shareLink), cancellation: ct);
+        HttpContext.Response.Headers.Location = $"/p2p/d/{shareCode}";
+        await Send.OkAsync(new CreateP2PShareResponse(shareCode, shareLink), ct);
     }
 
     private static string GenerateShareCode()

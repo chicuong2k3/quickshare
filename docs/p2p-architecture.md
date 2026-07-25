@@ -12,12 +12,14 @@ QuickShareCloud supports **direct peer-to-peer file transfers** via WebRTC, bypa
 
 | Layer | Project | File | Role |
 |-------|---------|------|------|
-| Share Link Creation | `QuickShare.Server` | `Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — creates share code + Delivery record |
+| Share Link Creation | `QuickShare.Server` | `Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — creates share code + Delivery record. Base URL received via client callback. |
 | Connection Manager | `QuickShare.Server` | `Middleware/P2PConnectionManager.cs` | Room lifecycle, sender/receiver WebSocket tracking, connection limits |
 | Signaling Middleware | `QuickShare.Server` | `Middleware/P2PSignalingMiddleware.cs` | WebSocket endpoint `/ws/connect/{shareCode}` — register, relay offer/answer/ICE |
 | Server WebSocket Config | `QuickShare.Server` | `Program.cs` | `UseWebSockets` + `P2PSignalingMiddleware` + `P2PConnectionManager` singleton |
+| Sender Page UI | `QuickShare.Web` | `Pages/P2PTransfer.razor` | Sender page at `/p2p/send` — drag & drop, PIN toggle, share link generation |
+| Sender Page JS | `QuickShare.Web` | `wwwroot/js/p2p/send.js` | Coordinates file selection, share creation, SignalingClient + PeerConnection + FileSender |
 | Download Page UI | `QuickShare.Web` | `Pages/P2PDownload.razor` | Receiver page at `/p2p/d/{ShareCode}` |
-| Download Page Orchestrator | `QuickShare.Web` | `Pages/P2PDownload.razor.js` | Coordinates SignalingClient + PeerConnection + FileReceiver |
+| Download Page JS | `QuickShare.Web` | `wwwroot/js/p2p/download.js` | Coordinates SignalingClient + PeerConnection + FileReceiver |
 | Signaling Client | `QuickShare.Web` | `wwwroot/js/p2p/signaling.js` | WebSocket connection, auto-reconnect, message relay callbacks |
 | Peer Connection | `QuickShare.Web` | `wwwroot/js/p2p/peerConnection.js` | RTCPeerConnection wrapper — offer, answer, ICE candidates, data channels |
 | File Sender | `QuickShare.Web` | `wwwroot/js/p2p/fileTransfer.js` | Chunked file send over WebRTC data channel with backpressure |
@@ -169,20 +171,23 @@ End-to-end encryption using Web Crypto API.
 
 ### 4.1 Share Link Creation (Sender)
 
+The Web client sends `window.location.origin` as `BaseUrl` in the request body. The server uses it directly to build the share link — no config or hostname guessing needed.
+
 ```
 Sender                          Server
   │                                │
   │  POST /api/shares/p2p          │
   │  { fileName, fileSize,         │
-  │    mimeType, hasPin }          │
+  │    mimeType, hasPin,           │
+  │    baseUrl }                   │
   │───────────────────────────────▶│
   │                                │── Generate shareCode (16 hex chars)
   │                                │── Create Delivery record (ExpiresAt = +7 days)
+  │                                │── Build shareLink from baseUrl + /p2p/d/{code}
   │                                │
   │◀───────────────────────────────│
   │  201 Created                   │
   │  { shareCode, shareLink }      │
-  │  shareLink = /p2p/d/{code}     │
   │                                │
   │  Sender copies link and        │
   │  sends to receiver             │
@@ -336,8 +341,9 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 | Config Key | Purpose | Default |
 |------------|---------|---------|
-| `QuickShare:P2PBaseUrl` | Base URL for generated share links (optional) | Scheme + Host from request |
 | `QuickShare:MaxP2PConnections` | Maximum concurrent WebSocket connections | Configured in `QuickShareOptions` |
+
+> **Base URL resolution**: The share link base URL is passed by the Web client (`window.location.origin`) in the `POST /api/shares/p2p` request body as `BaseUrl`. No server-side config needed — the client always knows its own origin.
 
 ---
 
@@ -359,12 +365,14 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 | File | Role |
 |------|------|
-| `src/QuickShare.Server/Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — share code generation |
+| `src/QuickShare.Server/Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — share code generation (BaseUrl via client callback) |
 | `src/QuickShare.Server/Middleware/P2PConnectionManager.cs` | Room lifecycle, WebSocket tracking, cleanup |
 | `src/QuickShare.Server/Middleware/P2PSignalingMiddleware.cs` | WebSocket signaling relay (register, offer, answer, ICE) |
 | `src/QuickShare.Server/Program.cs` | WebSocket + middleware wiring |
-| `src/QuickShare.Web/Pages/P2PDownload.razor` | Receiver download page UI |
-| `src/QuickShare.Web/Pages/P2PDownload.razor.js` | Download page state machine / orchestrator |
+| `src/QuickShare.Web/Pages/P2PTransfer.razor` | Sender send page UI at `/p2p/send` |
+| `src/QuickShare.Web/Pages/P2PDownload.razor` | Receiver download page UI at `/p2p/d/{ShareCode}` |
+| `src/QuickShare.Web/wwwroot/js/p2p/send.js` | Sender page orchestrator — file select → share creation → WebRTC → FileSender |
+| `src/QuickShare.Web/wwwroot/js/p2p/download.js` | Download page orchestrator — SignalingClient + PeerConnection + FileReceiver |
 | `src/QuickShare.Web/wwwroot/js/p2p/signaling.js` | WebSocket signaling client |
 | `src/QuickShare.Web/wwwroot/js/p2p/peerConnection.js` | WebRTC RTCPeerConnection wrapper |
 | `src/QuickShare.Web/wwwroot/js/p2p/fileTransfer.js` | Chunked file sender with backpressure |

@@ -11,7 +11,8 @@
                 phase: 'checking', progress: 0, fileName: '', fileSize: 0, mimeType: '',
                 shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), pin: '', error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), hasPin: false,
                 _salt: '', _receivedBytes: 0, _startTime: 0,
-                _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _encKey: null, _intentionalStop: false
+                _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _encKey: null, _intentionalStop: false,
+                _pendingOffer: null, _pendingIceCandidates: []
             };
 
             function render() {
@@ -71,6 +72,13 @@
                 state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; state.phase = state.hasPin ? 'pin-required' : 'ready'; render(); };
                 state._signaling.onPeerJoined = function () { if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
                 state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
+                state._signaling.onRelay = function (type, data) {
+                    if (type === 'offer') {
+                        state._pendingOffer = data;
+                    } else if (type === 'ice' && data) {
+                        state._pendingIceCandidates.push(data);
+                    }
+                };
                 state._signaling.onError = function (msg) { state.phase = 'error'; state.error = msg || 'Connection failed'; render(); };
                 state._signaling.connect('receiver');
             }
@@ -90,7 +98,15 @@
                 state._peerConnection.onDataChannel = function (channel) { onDataChannel(channel); };
                 state._peerConnection.onIceCandidate = function (c) { if (state._signaling) state._signaling.send('ice', c); };
                 state._peerConnection.onConnectionState = function (s) { if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) { state.phase = 'error'; state.error = 'Connection ' + s; render(); } };
-                state._signaling.onRelay = function (type, data) { if (type === 'offer') handleOffer(data); else if (type === 'ice' && data) state._peerConnection.addIceCandidate(data); };
+                // Process any offer/ICE that arrived before user clicked download
+                if (state._pendingOffer) {
+                    handleOffer(state._pendingOffer);
+                    state._pendingOffer = null;
+                }
+                for (var i = 0; i < state._pendingIceCandidates.length; i++) {
+                    state._peerConnection.addIceCandidate(state._pendingIceCandidates[i]);
+                }
+                state._pendingIceCandidates = [];
             }
 
             function handleOffer(data) {

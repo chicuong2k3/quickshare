@@ -3,7 +3,7 @@ namespace QuickShare.Shared.Models;
 [DynamicSort]
 public record Delivery : BaseAuditEntity
 {
-    public Guid SenderId { get; init; }
+    public Guid? SenderId { get; init; }
     public string FileName { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }

@@ -3,7 +3,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using QuickShare.Server.Infrastructure;
 
 namespace QuickShare.Server.Middleware;
 
@@ -25,7 +24,7 @@ public sealed class P2PRoom
 public sealed class P2PConnectionManager : IDisposable
 {
     private readonly ConcurrentDictionary<string, P2PRoom> _rooms = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, byte> _connectionTokens = new(StringComparer.Ordinal);
+    private int _activeConnections;
     private readonly int _maxConnections;
     private readonly Timer _cleanupTimer;
     private readonly ILogger<P2PConnectionManager> _logger;
@@ -39,9 +38,19 @@ public sealed class P2PConnectionManager : IDisposable
         _cleanupTimer = new Timer(_ => CleanupStaleRooms(), null, CleanupInterval, CleanupInterval);
     }
 
-    public bool CanAcceptConnection()
+    public bool TryAcceptConnection()
     {
-        return _connectionTokens.Count < _maxConnections;
+        var current = Interlocked.Increment(ref _activeConnections);
+        if (current <= _maxConnections)
+            return true;
+
+        Interlocked.Decrement(ref _activeConnections);
+        return false;
+    }
+
+    public void ReleaseConnection()
+    {
+        Interlocked.Decrement(ref _activeConnections);
     }
 
     public P2PRoom? GetRoom(string shareCode)
@@ -60,16 +69,9 @@ public sealed class P2PConnectionManager : IDisposable
         });
     }
 
-    public string GenerateConnectionToken(string shareCode)
-    {
-        var token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
-        _connectionTokens.TryAdd(token, default);
-        return token;
-    }
-
     public bool TryRegisterSender(string shareCode, WebSocket ws)
     {
-        if (!CanAcceptConnection()) return false;
+        if (_activeConnections <= 0) return false;
 
         var room = GetOrCreateRoom(shareCode);
         lock (room)
@@ -86,7 +88,7 @@ public sealed class P2PConnectionManager : IDisposable
 
     public bool TryRegisterReceiver(string shareCode, WebSocket ws)
     {
-        if (!CanAcceptConnection()) return false;
+        if (_activeConnections <= 0) return false;
 
         var room = GetOrCreateRoom(shareCode);
         lock (room)
@@ -140,7 +142,7 @@ public sealed class P2PConnectionManager : IDisposable
         await Task.CompletedTask;
     }
 
-    public int GetActiveConnectionCount() => _connectionTokens.Count;
+    public int GetActiveConnectionCount() => Interlocked.Add(ref _activeConnections, 0);
 
     private void CleanupStaleRooms()
     {

@@ -700,6 +700,8 @@
     background: var(--color-background); padding: 0.875rem 1.25rem; font-size: 0.875rem;
 }
 
+#p2ps-qrcode svg[b-w4uct09ojv] { border-radius: 0.75rem; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08); }
+
 .progress-wrap[b-w4uct09ojv] { margin-top: 2rem; max-width: 28rem; margin-inline: auto; }
 .progress-track[b-w4uct09ojv] { height: 0.5rem; width: 100%; border-radius: 999px; background: var(--color-muted); overflow: hidden; }
 .progress-fill[b-w4uct09ojv] { height: 100%; border-radius: 999px; background: var(--color-primary); transition: width 0.3s; }
