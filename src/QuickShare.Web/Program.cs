@@ -88,6 +88,9 @@ app.UseMiddleware<QuickShare.Web.Infrastructure.AuthPageRedirectMiddleware>();
 app.UseAntiforgery();
 app.UseHtmxAntiforgery();
 
+// Map the root Blazor component (Static SSR — no rendermode helper).
+var razorBuilder = app.MapRazorComponents<App>();
+
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>
 {
@@ -107,15 +110,17 @@ app.MapGet("/logout", async (HttpContext context) =>
     context.Response.Redirect("/");
 });
 
-// Map the root Blazor component (Static SSR — no rendermode helper).
-app.MapRazorComponents<App>();
-
 // Dedicated antiforgery token endpoint (good practice for SSR apps that POST).
 app.MapGet("/antiforgery", (IAntiforgery antiforgery, HttpContext context) =>
 {
     var tokens = antiforgery.GetAndStoreTokens(context);
     return Results.Ok(new { requestToken = tokens.RequestToken });
 });
+
+// Configure Htmxor component endpoints before MapStaticAssets.
+// NOTE: Htmxor has a bug when no HTMX components are discovered (null ref at line 28).
+// If you add HTMX components later, uncomment this line.
+// razorBuilder.AddHtmxorComponentEndpoints(app);
 
 // Optimized static asset manifest (no-op if manifest absent).
 app.MapStaticAssets();
