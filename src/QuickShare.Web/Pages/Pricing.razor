@@ -1,227 +1,285 @@
+@layout MainLayout
 @page "/pricing"
-@inject IHttpContextAccessor HttpContextAccessor
-
-@using System.Security.Claims
-@{
-    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
-    var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
-}
 
 <PageTitle>Pricing — QuickShareCloud</PageTitle>
 
-<div class="min-h-screen flex flex-col bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground" x-data="{ billing: 'monthly' }" x-cloak>
-    <header class="absolute inset-x-0 top-0 z-50">
-        <div class="flex items-center justify-between px-8 py-6">
-            <RzLink Href="/" Underline="false" class="flex items-center gap-3 text-foreground/80 hover:text-foreground transition-colors">
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
-                <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
-            </RzLink>
-            <nav class="flex items-center gap-2">
-                <RzLink Href="/" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Send</RzLink>
-                <RzLink Href="/pricing" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium bg-foreground/10 text-foreground transition-all">Pricing</RzLink>
-                @if (isAuthenticated)
-                {
-                    <RzLink Href="/files" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Files</RzLink>
-                    <RzLink Href="/account" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">@userName</RzLink>
-                    <RzLink Href="/logout" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign out</RzLink>
-                }
-                else
-                {
-                    <RzLink Href="/login" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign in</RzLink>
-                }
-            </nav>
-        </div>
-    </header>
-
+<div id="pricing-app" class="flex-1">
     <main class="flex-1 px-6 pb-32 pt-32 sm:px-8">
-        <section class="max-w-4xl mx-auto pt-12 pb-16 text-center">
-            <RzHeading Level="HeadingLevel.H1" class="text-4xl font-extrabold tracking-tight sm:text-5xl">
+        <section class="max-w-4xl mx-auto pt-12 pb-16 db-text-center">
+            <h1 class="db-h1">
                 Simple pricing,<br class="sm:hidden" /> unlimited sending
-            </RzHeading>
-            <RzParagraph class="mt-5 text-lg text-muted-foreground mx-auto max-w-xl">
+            </h1>
+            <p class="db-p mt-5 text-lg text-muted-foreground mx-auto max-w-xl">
                 Pick the plan that fits your workflow. All plans include end-to-end encryption.
-            </RzParagraph>
+            </p>
 
-            <div class="mt-12 flex items-center justify-center"
-                 x-on:rz:tabs-change="billing = $event.detail.value">
-                <RzTabs DefaultValue="monthly">
-                    <TabsList class="inline-flex items-center rounded-full border border-border/60 bg-background p-1 shadow-sm">
-                        <TabsTrigger Value="monthly"
-                                    class="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground">
-                            Monthly
-                        </TabsTrigger>
-                        <TabsTrigger Value="yearly"
-                                    class="rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground">
-                            Yearly <span class="ml-1.5 text-xs text-accent-foreground">Save 20%</span>
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent Value="monthly" />
-                    <TabsContent Value="yearly" />
-                </RzTabs>
+            <div class="mt-12 flex items-center justify-center">
+                <div class="inline-flex items-center rounded-full border border-border/60 bg-background p-1 shadow-sm" role="radiogroup" aria-label="Billing period">
+                    <button type="button"
+                            role="radio"
+                            aria-checked="true"
+                            id="billing-monthly"
+                            class="db-btn db-btn--primary rounded-full px-6 py-2.5 text-sm font-medium transition-all"
+                            data-billing="monthly">
+                        Monthly
+                    </button>
+                    <button type="button"
+                            role="radio"
+                            aria-checked="false"
+                            id="billing-yearly"
+                            class="rounded-full px-6 py-2.5 text-sm font-medium transition-all text-muted-foreground"
+                            data-billing="yearly">
+                        Yearly <span class="ml-1.5 text-xs text-accent-foreground">Save 20%</span>
+                    </button>
+                </div>
             </div>
         </section>
 
         @* TIER CARDS *@
         <section class="max-w-5xl mx-auto grid gap-8 lg:grid-cols-3 lg:items-stretch">
             @* Free *@
-            <RzCard class="flex flex-col shadow-sm">
-                <CardContent class="p-10 flex flex-col flex-1">
-                    <RzHeading Level="HeadingLevel.H3" class="text-xl font-semibold">Free</RzHeading>
-                    <RzParagraph class="mt-2 text-sm text-muted-foreground">Perfect for occasional sharing.</RzParagraph>
+            <div class="db-card flex flex-col">
+                <div class="db-card__body p-10 flex flex-col flex-1">
+                    <h3 class="db-h3">Free</h3>
+                    <p class="db-p mt-2 text-sm text-muted-foreground">Perfect for occasional sharing.</p>
                     <div class="mt-8"><span class="text-5xl font-bold">$0</span></div>
-                    <RzParagraph class="mt-2 text-sm text-muted-foreground">Free forever</RzParagraph>
+                    <p class="db-p mt-2 text-sm text-muted-foreground">Free forever</p>
                     <div class="mt-10 space-y-4 text-sm flex-1">
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Up to <strong>200 MB</strong> per file</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent><strong>3 GB</strong> / month</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent><strong>10</strong> transfers per month</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Files expire after <strong>3 days</strong></ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>End-to-end encryption</ItemContent>
-                        </RzItem>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Up to <strong>200 MB</strong> per file</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span><strong>3 GB</strong> / month</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span><strong>10</strong> transfers per month</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Files expire after <strong>3 days</strong></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>End-to-end encryption</span>
+                        </div>
                     </div>
                     <div class="mt-10">
-                        <RzButton Variant="ThemeVariant.Default" class="w-full rounded-2xl py-3.5 text-sm font-semibold shadow-sm" x-on:click="window.location.href='/'">Get started</RzButton>
+                        <a href="/" class="db-btn db-btn--secondary w-full rounded-2xl py-3.5 text-sm font-semibold shadow-sm inline-flex items-center justify-center">Get started</a>
                     </div>
-                </CardContent>
-            </RzCard>
+                </div>
+            </div>
 
-            @* Starter *@
-            <RzCard class="flex flex-col shadow-sm">
-                <CardContent class="p-10 flex flex-col flex-1">
-                    <RzHeading Level="HeadingLevel.H3" class="text-xl font-semibold">Starter</RzHeading>
-                    <RzParagraph class="mt-2 text-sm text-muted-foreground">For creators and freelancers.</RzParagraph>
+            @* Pro *@
+            <div class="db-card flex flex-col">
+                <div class="db-card__body p-10 flex flex-col flex-1">
+                    <h3 class="db-h3">Pro</h3>
+                    <p class="db-p mt-2 text-sm text-muted-foreground">For creators and freelancers.</p>
                     <div class="mt-8">
-                        <span x-show="billing === 'monthly'" class="text-5xl font-bold">$8</span>
-                        <span x-show="billing === 'yearly'" class="text-5xl font-bold">$77</span>
+                        <span id="pro-monthly-price" class="text-5xl font-bold">$8</span>
+                        <span id="pro-yearly-price" class="text-5xl font-bold" style="display:none">$77</span>
                         <span class="text-sm text-muted-foreground">/month</span>
                     </div>
-                    <RzParagraph x-show="billing === 'monthly'" class="mt-2 text-sm text-muted-foreground">Billed monthly</RzParagraph>
-                    <RzParagraph x-show="billing === 'yearly'" class="mt-2 text-sm text-muted-foreground">$6.42/mo billed annually</RzParagraph>
+                    <p id="pro-monthly-label" class="db-p mt-2 text-sm text-muted-foreground">Billed monthly</p>
+                    <p id="pro-yearly-label" class="db-p mt-2 text-sm text-muted-foreground" style="display:none">$6.42/mo billed annually</p>
                     <div class="mt-10 space-y-4 text-sm flex-1">
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Up to <strong>750 MB</strong> per file</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent><strong>300 GB</strong> / month</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent><strong>50</strong> transfers per month</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Files expire after <strong>7 days</strong></ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Password protection</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Custom backgrounds</ItemContent>
-                        </RzItem>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Up to <strong>750 MB</strong> per file</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span><strong>300 GB</strong> / month</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span><strong>50</strong> transfers per month</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Files expire after <strong>7 days</strong></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Password protection</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Custom backgrounds</span>
+                        </div>
                     </div>
                     <div class="mt-10">
-                        <RzButton Variant="ThemeVariant.Primary" class="w-full rounded-2xl py-3.5 text-sm font-semibold shadow-sm" x-on:click="window.location.href='/checkout?tier=starter'">Subscribe</RzButton>
+                        <a href="/checkout?tier=pro" class="db-btn db-btn--primary w-full rounded-2xl py-3.5 text-sm font-semibold shadow-md inline-flex items-center justify-center">Subscribe</a>
                     </div>
-                </CardContent>
-            </RzCard>
+                </div>
+            </div>
 
-            @* Ultimate *@
-            <RzCard class="flex flex-col shadow-md ring-1 ring-foreground/10 relative overflow-hidden">
-                <RzBadge Variant="ThemeVariant.Primary" class="absolute -top-3 left-1/2 -translate-x-1/2 z-10 rounded-full px-4 py-1 text-xs font-medium">Most Popular</RzBadge>
-                <CardContent class="p-10 flex flex-col flex-1">
-                    <RzHeading Level="HeadingLevel.H3" class="text-xl font-semibold">Ultimate</RzHeading>
-                    <RzParagraph class="mt-2 text-sm text-muted-foreground">For power users who send big files daily.</RzParagraph>
+            @* Studio *@
+            <div class="db-card flex flex-col shadow-md ring-1 ring-foreground/10 relative overflow-hidden">
+                <span class="db-badge db-badge--primary absolute -top-3 left-1/2 -translate-x-1/2 z-10 rounded-full px-4 py-1 text-xs font-medium">Most Popular</span>
+                <div class="db-card__body p-10 flex flex-col flex-1">
+                    <h3 class="db-h3">Studio</h3>
+                    <p class="db-p mt-2 text-sm text-muted-foreground">For power users who send big files daily.</p>
                     <div class="mt-8">
-                        <span x-show="billing === 'monthly'" class="text-5xl font-bold">$23</span>
-                        <span x-show="billing === 'yearly'" class="text-5xl font-bold">$221</span>
+                        <span id="studio-monthly-price" class="text-5xl font-bold">$23</span>
+                        <span id="studio-yearly-price" class="text-5xl font-bold" style="display:none">$221</span>
                         <span class="text-sm text-muted-foreground">/month</span>
                     </div>
-                    <RzParagraph x-show="billing === 'monthly'" class="mt-2 text-sm text-muted-foreground">Billed monthly</RzParagraph>
-                    <RzParagraph x-show="billing === 'yearly'" class="mt-2 text-sm text-muted-foreground">$18.42/mo billed annually</RzParagraph>
+                    <p id="studio-monthly-label" class="db-p mt-2 text-sm text-muted-foreground">Billed monthly</p>
+                    <p id="studio-yearly-label" class="db-p mt-2 text-sm text-muted-foreground" style="display:none">$18.42/mo billed annually</p>
                     <div class="mt-10 space-y-4 text-sm flex-1">
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Up to <strong>1.5 GB</strong> per file</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent><strong>Unlimited</strong> volume &amp; transfers</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent><strong>Unlimited</strong> expiry</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Custom branding</ItemContent>
-                        </RzItem>
-                        <RzItem Size="Size.Small">
-                            <ItemMedia><svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></ItemMedia>
-                            <ItemContent>Malware scanning</ItemContent>
-                        </RzItem>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Up to <strong>1.5 GB</strong> per file</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span><strong>Unlimited</strong> volume &amp; transfers</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span><strong>Unlimited</strong> expiry</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Custom branding</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <svg class="shrink-0 h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Malware scanning</span>
+                        </div>
                     </div>
                     <div class="mt-10">
-                        <RzButton Variant="ThemeVariant.Primary" class="w-full rounded-2xl py-3.5 text-sm font-semibold shadow-md" x-on:click="window.location.href='/checkout?tier=ultimate'">Subscribe</RzButton>
+                        <a href="/checkout?tier=studio" class="db-btn db-btn--primary w-full rounded-2xl py-3.5 text-sm font-semibold shadow-md inline-flex items-center justify-center">Subscribe</a>
                     </div>
-                </CardContent>
-            </RzCard>
+                </div>
+            </div>
         </section>
 
         @* FAQ *@
         <section class="max-w-3xl mx-auto mt-32">
-            <div class="text-center">
-                <RzHeading Level="HeadingLevel.H2" class="text-3xl font-bold tracking-tight">Frequently asked questions</RzHeading>
-                <RzParagraph class="mt-4 text-lg text-muted-foreground">Everything you need to know about QuickShareCloud</RzParagraph>
+            <div class="db-text-center">
+                <h2 class="db-h2">Frequently asked questions</h2>
+                <p class="db-p mt-4 text-lg text-muted-foreground">Everything you need to know about QuickShareCloud</p>
             </div>
-            <div class="mt-12">
-                <RzAccordion Type="AccordionType.Single">
-                    @foreach (var (q, a) in faqs)
-                    {
-                        <AccordionItem>
-                            <AccordionTrigger>@q</AccordionTrigger>
-                            <AccordionContent>
-                                <RzParagraph class="pb-4 text-muted-foreground">@a</RzParagraph>
-                            </AccordionContent>
-                        </AccordionItem>
-                    }
-                </RzAccordion>
+            <div class="mt-12 space-y-4">
+                @foreach (var (q, a) in faqs)
+                {
+                    <details class="db-card">
+                        <summary class="db-card__body flex cursor-pointer items-center justify-between p-5 text-sm font-medium list-none">
+                            <span>@q</span>
+                            <svg class="h-4 w-4 shrink-0 text-muted-foreground transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </summary>
+                        <div class="px-5 pb-5">
+                            <p class="db-p text-muted-foreground">@a</p>
+                        </div>
+                    </details>
+                }
             </div>
         </section>
     </main>
-
-    <footer class="px-8 py-8 text-center text-xs text-muted-foreground/80">
-        <p>QuickShareCloud &mdash; send files, not friction.</p>
-        <nav class="flex items-center justify-center gap-6 mt-3">
-            <RzLink Href="/" Underline="false" class="text-muted-foreground/80 hover:text-foreground transition-colors">Send</RzLink>
-            <RzLink Href="/login" Underline="false" class="text-muted-foreground/80 hover:text-foreground transition-colors">Sign in</RzLink>
-        </nav>
-    </footer>
 </div>
+
+<script>
+    (function () {
+        // Billing toggle state
+        let billingState = { current: 'monthly' };
+
+        // Pricing data
+        const priceData = {
+            pro: { monthly: 8, yearly: 77, label: { monthly: 'Billed monthly', yearly: '$6.42/mo billed annually' } },
+            studio: { monthly: 23, yearly: 221, label: { monthly: 'Billed monthly', yearly: '$18.42/mo billed annually' } }
+        };
+
+        function toggleDisplay(id, show) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show ? '' : 'none';
+        }
+
+        function updateBillingUI() {
+            const isYearly = billingState.current === 'yearly';
+            const monthlyBtn = document.getElementById('billing-monthly');
+            const yearlyBtn = document.getElementById('billing-yearly');
+
+            // Update button states
+            if (monthlyBtn) {
+                monthlyBtn.setAttribute('aria-checked', String(!isYearly));
+                if (!isYearly) {
+                    monthlyBtn.classList.add('db-btn--primary');
+                    monthlyBtn.classList.remove('text-muted-foreground');
+                } else {
+                    monthlyBtn.classList.remove('db-btn--primary');
+                    monthlyBtn.classList.add('text-muted-foreground');
+                }
+            }
+            if (yearlyBtn) {
+                yearlyBtn.setAttribute('aria-checked', String(isYearly));
+                if (isYearly) {
+                    yearlyBtn.classList.add('db-btn--primary', 'bg-foreground', 'text-background', 'shadow-sm');
+                    yearlyBtn.classList.remove('text-muted-foreground');
+                } else {
+                    yearlyBtn.classList.remove('db-btn--primary', 'bg-foreground', 'text-background', 'shadow-sm');
+                    yearlyBtn.classList.add('text-muted-foreground');
+                }
+            }
+
+            // Update Pro prices
+            toggleDisplay('pro-monthly-price', !isYearly);
+            toggleDisplay('pro-yearly-price', isYearly);
+            toggleDisplay('pro-monthly-label', !isYearly);
+            toggleDisplay('pro-yearly-label', isYearly);
+
+            // Update Studio prices
+            toggleDisplay('studio-monthly-price', !isYearly);
+            toggleDisplay('studio-yearly-price', isYearly);
+            toggleDisplay('studio-monthly-label', !isYearly);
+            toggleDisplay('studio-yearly-label', isYearly);
+        }
+
+        // Initialize billing toggle handlers
+        function initBillingToggle() {
+            const monthlyBtn = document.getElementById('billing-monthly');
+            const yearlyBtn = document.getElementById('billing-yearly');
+
+            if (monthlyBtn) {
+                monthlyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    billingState.current = 'monthly';
+                    updateBillingUI();
+                });
+            }
+            if (yearlyBtn) {
+                yearlyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    billingState.current = 'yearly';
+                    updateBillingUI();
+                });
+            }
+        }
+
+        // Initialize on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initBillingToggle);
+        } else {
+            initBillingToggle();
+        }
+
+        // Expose for HTMX or global access if needed
+        window.pricingApp = { billingState, updateBillingUI };
+    })();
+</script>
 
 @code {
     private static readonly (string Question, string Answer)[] faqs = new[]
     {
-        ("What file size limits apply?", "Free: 200 MB per file. Starter: 750 MB per file. Ultimate: 1.5 GB per file."),
+        ("What file size limits apply?", "Free: 200 MB per file. Pro: 750 MB per file. Studio: 1.5 GB per file."),
         ("Do my recipients need to sign up?", "No. Recipients download files without creating an account. Just share the link."),
         ("What payment methods can I use?", "Credit/debit cards and PayPal are accepted."),
-        ("What happens if I go over my limit?", "On Free and Starter plans, transfers are blocked until the next billing cycle. Ultimate has no limits."),
+        ("What happens if I go over my limit?", "On Free and Pro plans, transfers are blocked until the next billing cycle. Studio has no limits."),
         ("How do I cancel?", "Cancel anytime from your account settings. Paid features remain until the billing period ends."),
         ("Is QuickShareCloud secure?", "Files are transferred over encrypted connections. We never access your file contents."),
     };

@@ -1,0 +1,44 @@
+using QuickShare.Server.Abstractions;
+
+namespace QuickShare.Server.Features.Uploads.CommitR2;
+
+public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Response>
+{
+    public override void Configure()
+    {
+        Post("/api/uploads/commit-r2");
+        Description(b => b.WithTags("Uploads"));
+        Summary(s =>
+        {
+            s.Summary = "Complete an R2 multipart upload";
+            s.Description = "Completes the R2 multipart upload with provided part ETags and creates a Delivery record. Returns the share link.";
+            s.Responses[201] = "Delivery created. Returns share code and link.";
+            s.Responses[400] = "Validation error.";
+            s.Responses[502] = "R2 upstream failure.";
+        });
+    }
+
+    public override async Task HandleAsync(CommitR2Request req, CancellationToken ct)
+    {
+        var cmd = new CommitR2Command(
+            req.DeliveryId, req.UploadId, req.ObjectKey,
+            req.FileName, req.ContentType, req.FileSize, req.Parts);
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<CommitR2Response>>(cmd, ct);
+
+        if (result.IsSuccess(out var value))
+            await Send.CreatedAtAsync($"/api/downloads/{value.ShareCode}", value, cancellation: ct);
+        else if (result.IsFailure(out var error))
+            ThrowError(error.Message, error.Message.Contains("R2") ? 502 : 400);
+    }
+}
+
+public class CommitR2Request
+{
+    public Guid DeliveryId { get; set; }
+    public string UploadId { get; set; } = "";
+    public string ObjectKey { get; set; } = "";
+    public string FileName { get; set; } = "";
+    public string ContentType { get; set; } = "";
+    public long FileSize { get; set; }
+    public IReadOnlyList<R2PartEtag> Parts { get; set; } = [];
+}

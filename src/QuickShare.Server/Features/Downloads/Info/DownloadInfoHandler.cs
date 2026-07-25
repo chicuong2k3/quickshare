@@ -10,7 +10,11 @@ public record DownloadInfoResponse(
     long FileSize,
     DateTime? ExpiresAt,
     int DownloadCount,
-    int MaxDownloads
+    int MaxDownloads,
+    bool HasPassword,
+    bool HasPayment,
+    string SenderPlan,
+    decimal? Price
 );
 
 public sealed class DownloadInfoHandler
@@ -19,6 +23,7 @@ public sealed class DownloadInfoHandler
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
+            .Include(d => d.Sender)
             .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
 
         if (delivery is null)
@@ -30,13 +35,19 @@ public sealed class DownloadInfoHandler
         if (delivery.DownloadCount >= delivery.MaxDownloads)
             return Result.Failure<DownloadInfoResponse>(new LightResults.Error("download_limit_reached"));
 
+        var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? "anonymous" : delivery.Sender.Plan;
+
         return Result.Success(new DownloadInfoResponse(
             delivery.FileName,
             delivery.ContentType,
             delivery.FileSize,
             delivery.ExpiresAt,
             delivery.DownloadCount,
-            delivery.MaxDownloads
+            delivery.MaxDownloads,
+            HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
+            HasPayment: delivery.Price.HasValue && delivery.Price > 0,
+            SenderPlan: senderPlan,
+            Price: delivery.Price
         ));
     }
 }

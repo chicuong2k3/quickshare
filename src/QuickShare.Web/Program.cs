@@ -6,7 +6,6 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using QuickShare.Web;
 using QuickShare.Web.Infrastructure;
-using RizzyUI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +20,8 @@ builder.Services.AddDataProtection()
 // Blazor Static SSR.
 // In .NET 10, Static Server rendering is the default for AddRazorComponents();
 // the .AddStaticServerRendering() extension from .NET 8/9 has been removed.
-builder.Services.AddRazorComponents();
+builder.Services.AddRazorComponents()
+    .AddHtmx();
 
 // Antiforgery is required by Static SSR for form/POST scenarios.
 builder.Services.AddAntiforgery();
@@ -55,16 +55,6 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddLocalization();
 
-// RizzyUI services + LinearTheme (custom dark theme). Per RizzyUI README:
-// https://github.com/JalexSocial/RizzyUI  ->  AddRizzyUI + RzThemeProvider.
-// NOTE: 0.9.2-alpha does NOT ship app.UseRizzy() or a RzHeadOutlet component
-// (the README is ahead of the release), so those are intentionally omitted;
-// Alpine.js is vendored locally under wwwroot/lib/alpine/ instead.
-builder.Services.AddRizzyUI(config =>
-{
-    config.DefaultTheme = new QuickShare.Web.Infrastructure.LinearTheme();
-});
-
 // HttpClient used by the SSR pages + CookieForwardingHandler.
 // The browser-side upload JS also reads ApiBaseUrl from a page-emitted constant
 // so the XHR goes directly to the API (CORS-enabled server-side).
@@ -94,8 +84,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<QuickShare.Web.Infrastructure.AuthPageRedirectMiddleware>();
 
-// Antiforgery middleware for Blazor SSR endpoints (required by RizzyUI).
+// Antiforgery middleware for Blazor SSR endpoints.
 app.UseAntiforgery();
+app.UseHtmxAntiforgery();
 
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>
@@ -116,29 +107,32 @@ app.MapGet("/logout", async (HttpContext context) =>
     context.Response.Redirect("/");
 });
 
-app.MapPost("/account/update", async (HttpContext httpContext, IHttpClientFactory clientFactory, IWebHostEnvironment env, IAntiforgery antiforgery) =>
+app.MapPost("/account/update", async (HttpContext httpContext, IHttpClientFactory clientFactory, IWebHostEnvironment env) =>
 {
     if (httpContext.User.Identity?.IsAuthenticated != true)
-        return Results.Json(new { error = "Not authenticated" }) as IResult;
-
-    try { await antiforgery.ValidateRequestAsync(httpContext); }
-    catch (AntiforgeryValidationException)
     {
-        return Results.Json(new { error = "Session expired. Please refresh the page." });
+        httpContext.Response.Headers.Append("HX-Redirect", "/login");
+        return Results.Ok();
     }
 
     var form = await httpContext.Request.ReadFormAsync();
     var name = form["name"].FirstOrDefault()?.Trim();
 
     if (string.IsNullOrWhiteSpace(name))
-        return Results.Json(new { error = "Name is required" });
+    {
+        httpContext.Response.Headers.Append("HX-Redirect", "/account?error=" + Uri.EscapeDataString("Name is required"));
+        return Results.Ok();
+    }
 
     string? avatarUrl = null;
     var avatarFile = form.Files.GetFile("avatar");
     if (avatarFile is not null && avatarFile.Length > 0)
     {
         if (avatarFile.Length > 5 * 1024 * 1024)
-            return Results.Json(new { error = "Image must be under 5 MB" });
+        {
+            httpContext.Response.Headers.Append("HX-Redirect", "/account?error=" + Uri.EscapeDataString("Image must be under 5 MB"));
+            return Results.Ok();
+        }
 
         var ext = Path.GetExtension(avatarFile.FileName);
         if (string.IsNullOrEmpty(ext)) ext = ".jpg";
@@ -158,7 +152,10 @@ app.MapPost("/account/update", async (HttpContext httpContext, IHttpClientFactor
         new { Name = name, AvatarUrl = avatarUrl });
 
     if (!response.IsSuccessStatusCode)
-        return Results.Json(new { error = "Failed to update profile" });
+    {
+        httpContext.Response.Headers.Append("HX-Redirect", "/account?error=" + Uri.EscapeDataString("Failed to update profile"));
+        return Results.Ok();
+    }
 
     var identity = httpContext.User.Identities.First();
     var claims = identity.Claims
@@ -171,11 +168,13 @@ app.MapPost("/account/update", async (HttpContext httpContext, IHttpClientFactor
     var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
     await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
 
-    return Results.Json(new { redirect = "/account" });
+    httpContext.Response.Headers.Append("HX-Redirect", "/account");
+    return Results.Ok();
 }).WithMetadata(SkipAntiforgeryValidation.Instance);
 
 // Map the root Blazor component (Static SSR — no rendermode helper).
-app.MapRazorComponents<App>();
+app.MapRazorComponents<App>()
+   .AddHtmxorComponentEndpoints(app);
 
 // Dedicated antiforgery token endpoint (good practice for SSR apps that POST).
 app.MapGet("/antiforgery", (IAntiforgery antiforgery, HttpContext context) =>

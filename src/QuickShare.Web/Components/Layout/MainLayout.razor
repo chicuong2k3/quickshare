@@ -1,0 +1,46 @@
+@inherits HtmxLayoutComponentBase
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Security.Claims
+
+@{
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+    var path = HttpContextAccessor.HttpContext?.Request.Path.Value ?? "";
+}
+
+<div class="min-h-screen flex flex-col bg-background text-foreground">
+    <header class="shrink-0 db-page-header">
+        <div class="db-container flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 db-link">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
+                <span class="db-h5">QuickShareCloud</span>
+            </a>
+            <nav class="flex items-center gap-2">
+                <a href="/" class="db-btn db-btn--ghost @NavActive(path == "/")">Send</a>
+                <a href="/p2p/send" class="db-btn db-btn--ghost @NavActive(path.StartsWith("/p2p"))">P2P</a>
+                <a href="/pricing" class="db-btn db-btn--ghost @NavActive(path == "/pricing")">Pricing</a>
+                <a href="/files" class="db-btn db-btn--ghost @NavActive(path == "/files")">Files</a>
+                @if (isAuthenticated)
+                {
+                    <a href="/account" class="db-btn db-btn--ghost">@userName</a>
+                    <a href="/logout" class="db-btn db-btn--ghost">Sign out</a>
+                }
+                else
+                {
+                    <a href="/login" class="db-btn db-btn--ghost">Sign in</a>
+                }
+            </nav>
+        </div>
+    </header>
+
+    @Body
+
+    <footer class="db-page-footer db-text-center">
+        QuickShareCloud &mdash; send files, not friction.
+    </footer>
+</div>
+
+@code {
+    private static string NavActive(bool isActive) =>
+        isActive ? "bg-foreground/10 text-foreground" : "";
+}

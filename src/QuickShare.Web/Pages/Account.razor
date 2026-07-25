@@ -1,32 +1,20 @@
+@layout MainLayout
 @page "/account"
 @using System.Net.Http.Json
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Antiforgery
-@using QuickShare.Web.Models
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using QuickShare.Shared.Models
 @inject IHttpClientFactory ClientFactory
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IWebHostEnvironment Env
 
 <PageTitle>Account — QuickShareCloud</PageTitle>
 
-<div id="account-app">
-    <header class="db-page-header">
-        <div class="db-container flex items-center justify-between">
-            <a href="/" class="flex items-center gap-3 db-link">
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
-                <span class="db-h5">QuickShareCloud</span>
-            </a>
-            <nav class="flex items-center gap-2">
-                <a href="/" class="db-btn db-btn--ghost">Send</a>
-                <a href="/pricing" class="db-btn db-btn--ghost">Pricing</a>
-                <a href="/files" class="db-btn db-btn--ghost">Files</a>
-                <a href="/logout" class="db-btn db-btn--ghost">Sign out</a>
-            </nav>
-        </div>
-    </header>
-
+<div id="account-app" class="flex-1">
     <main class="flex flex-wrap items-start justify-center gap-8 px-6 pb-20 pt-32">
         @* ── Profile Card ── *@
-        <div class="db-card w-full max-w-md">
+        <HtmxFragment>
+        <div id="profile-card" class="db-card w-full max-w-md" onpost="@HandleUpdateProfile">
             <div class="db-card__body p-10">
                 <div class="flex flex-col items-center db-text-center">
                     <div class="relative">
@@ -56,32 +44,43 @@
                         @formError
                     </div>
                 }
-
-                <div class="mt-10 space-y-5">
-                    <label class="db-field">
-                        <span class="db-label">Display name</span>
-                        <input id="name" name="name" type="text" required
-                               value="@name"
-                               class="db-input" />
-                    </label>
-
-                    <div>
-                        <label class="db-label db-block mb-2">Avatar image</label>
-                        <label for="avatarFile"
-                               class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-background px-5 py-8 text-sm text-muted-foreground/80 hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            <span>Click to choose an image</span>
-                            <span class="text-xs text-muted-foreground/60">PNG, JPG or GIF — max 5 MB</span>
-                        </label>
-                        <input id="avatarFile" name="avatar" type="file" accept="image/*"
-                               class="sr-only" onchange="previewAvatar(event)" />
+                @if (formSuccess)
+                {
+                    <div class="db-alert db-alert--success mt-6" role="status">
+                        Profile updated.
                     </div>
+                }
 
-                    <button type="button" onclick="submitAccountForm()"
-                            class="db-btn db-btn--primary w-full">
-                        Save changes
-                    </button>
-                </div>
+                <form hx-post="/account"
+                      hx-target="#profile-card"
+                      hx-swap="outerHTML"
+                      hx-encoding="multipart/form-data">
+                    <div class="mt-10 space-y-5">
+                        <label class="db-field">
+                            <span class="db-label">Display name</span>
+                            <input id="name" name="name" type="text" required
+                                   value="@name"
+                                   class="db-input" />
+                        </label>
+
+                        <div>
+                            <label class="db-label db-block mb-2">Avatar image</label>
+                            <label for="avatarFile"
+                                   class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-background px-5 py-8 text-sm text-muted-foreground/80 hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <span>Click to choose an image</span>
+                                <span class="text-xs text-muted-foreground/60">PNG, JPG or GIF &mdash; max 5 MB</span>
+                            </label>
+                            <input id="avatarFile" name="avatar" type="file" accept="image/*"
+                                   class="sr-only" onchange="previewAvatar(event)" />
+                        </div>
+
+                        <button type="submit"
+                                class="db-btn db-btn--primary w-full">
+                            Save changes
+                        </button>
+                    </div>
+                </form>
 
                 <div class="mt-6">
                     <a href="/logout" class="db-btn db-btn--ghost w-full flex items-center justify-center">
@@ -90,6 +89,7 @@
                 </div>
             </div>
         </div>
+        </HtmxFragment>
 
         @* ── Branding Card ── *@
         <div class="db-card w-full max-w-md" id="branding-card">
@@ -122,16 +122,9 @@
                 <div id="branding-list" style="display:none;"></div>
             </div>
         </div>
-    </main>
-
-    <footer class="db-page-footer db-text-center">
-        QuickShareCloud &mdash; secure file sharing.
-    </footer>
-</div>
+    </main></div>
 
 <script>
-    var antiforgeryToken = '@antiforgeryToken';
-
     function previewAvatar(e) {
         var file = e.target.files[0];
         if (!file) return;
@@ -169,37 +162,6 @@
             e.target.value = '';
         };
         reader.readAsDataURL(file);
-    }
-
-    function submitAccountForm() {
-        var fd = new FormData();
-        fd.append('__RequestVerificationToken', antiforgeryToken);
-        fd.append('name', document.getElementById('name').value);
-        var fileInput = document.getElementById('avatarFile');
-        if (fileInput.files && fileInput.files[0]) {
-            fd.append('avatar', fileInput.files[0]);
-        }
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/account/update');
-        xhr.onload = function () {
-            try {
-                var resp = JSON.parse(xhr.responseText);
-                if (resp.redirect) {
-                    window.location.href = resp.redirect;
-                } else if (resp.error) {
-                    window.location.href = '/account?error=' + encodeURIComponent(resp.error);
-                } else {
-                    window.location.href = '/account';
-                }
-            } catch (_) {
-                window.location.href = '/account';
-            }
-        };
-        xhr.onerror = function () {
-            window.location.href = '/account?error=Network+error';
-        };
-        xhr.send(fd);
     }
 
     // ===== Branding Manager (vanilla JS) =====
@@ -408,7 +370,13 @@
     private string plan = "free";
     private string provider = "unknown";
     private string? formError;
-    private string? antiforgeryToken;
+    private bool formSuccess;
+
+    [SupplyParameterFromForm(Name = "name")]
+    private string? FormName { get; set; }
+
+    [SupplyParameterFromForm(Name = "avatar")]
+    private IFormFile? FormAvatar { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -432,9 +400,70 @@
         {
             provider = httpContext.User?.FindFirstValue("provider") ?? "unknown";
             formError = httpContext.Request.Query["error"].FirstOrDefault();
-
-            var antiforgery = httpContext.RequestServices.GetRequiredService<IAntiforgery>();
-            antiforgeryToken = antiforgery.GetAndStoreTokens(httpContext).RequestToken;
         }
+    }
+
+    private async Task HandleUpdateProfile()
+    {
+        formError = null;
+        formSuccess = false;
+
+        var newName = FormName?.Trim();
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            formError = "Name is required";
+            return;
+        }
+
+        string? avatarUrl = null;
+        if (FormAvatar is { Length: > 0 })
+        {
+            if (FormAvatar.Length > 5 * 1024 * 1024)
+            {
+                formError = "Image must be under 5 MB";
+                return;
+            }
+
+            var ext = Path.GetExtension(FormAvatar.FileName);
+            if (string.IsNullOrEmpty(ext)) ext = ".jpg";
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var avatarsDir = Path.Combine(Env.WebRootPath, "avatars");
+            Directory.CreateDirectory(avatarsDir);
+
+            await using var stream = new FileStream(Path.Combine(avatarsDir, fileName), FileMode.Create);
+            await FormAvatar.CopyToAsync(stream);
+
+            avatarUrl = $"/avatars/{fileName}";
+        }
+
+        var client = ClientFactory.CreateClient(ApiClient.Name);
+        var response = await client.PutAsJsonAsync("/api/users/me/profile",
+            new { Name = newName, AvatarUrl = avatarUrl });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            formError = "Failed to update profile";
+            return;
+        }
+
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            var identity = httpContext.User.Identities.First();
+            var claims = identity.Claims
+                .Where(c => c.Type is not ClaimTypes.Name and not "avatar_url")
+                .ToList();
+            claims.Add(new Claim(ClaimTypes.Name, newName));
+            if (avatarUrl is not null)
+                claims.Add(new Claim("avatar_url", avatarUrl));
+
+            var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
+            await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
+        }
+
+        name = newName;
+        if (avatarUrl is not null)
+            avatar = avatarUrl;
+        formSuccess = true;
     }
 }

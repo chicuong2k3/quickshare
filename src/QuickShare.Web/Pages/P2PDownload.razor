@@ -1,3 +1,4 @@
+@layout MainLayout
 @page "/p2p/d/{ShareCode}"
 @inject IConfiguration Config
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
@@ -9,19 +10,18 @@
 
 <PageTitle>QuickShareCloud — P2P download</PageTitle>
 
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground px-6 py-24"
+<div class="flex-1 flex items-center justify-center px-6 py-24"
      x-data="p2pDownloadPage()" x-init="initP2P('@shareCode')" x-cloak>
     <script>
         window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };
     </script>
 
-    <RzCard class="w-full max-w-md shadow-sm">
-        <CardContent class="p-10">
+    <div class="w-full max-w-md shadow-sm rounded-2xl bg-background p-10">
 
             @* ===== CHECKING ===== *@
             <section x-show="isChecking" class="text-center py-10">
-                <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" />
-                <RzParagraph class="mt-5 text-sm text-muted-foreground">Connecting to sender&hellip;</RzParagraph>
+                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width:32px;height:32px"></div>
+                <p class="mt-5 text-sm text-muted-foreground">Connecting to sender&hellip;</p>
             </section>
 
             @* ===== PIN REQUIRED ===== *@
@@ -32,18 +32,18 @@
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                 </div>
-                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">PIN required</RzHeading>
-                <RzParagraph class="mt-2 text-sm text-muted-foreground">This file is protected. Enter the PIN to decrypt.</RzParagraph>
+                <h1 class="mt-6 text-xl font-semibold">PIN required</h1>
+                <p class="mt-2 text-sm text-muted-foreground">This file is protected. Enter the PIN to decrypt.</p>
                 <div class="mt-6">
                     <input type="text" x-model="pin"
                            class="w-full max-w-xs rounded-2xl border border-border/60 bg-background px-5 py-3.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring shadow-sm"
                            placeholder="Enter PIN" x-bind:disabled="isConnecting" />
                 </div>
-                <RzButton Variant="ThemeVariant.Primary" class="mt-6 rounded-full px-8 py-3 text-sm font-semibold"
+                <button class="mt-6 rounded-full px-8 py-3 text-sm font-semibold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition"
                           x-on:click="submitPin()" x-bind:disabled="!pin || isConnecting">
                     <span x-show="!isConnecting">Start download</span>
                     <span x-show="isConnecting">Connecting&hellip;</span>
-                </RzButton>
+                </button>
             </section>
 
             @* ===== READY (file info + download button) ===== *@
@@ -56,18 +56,18 @@
                         </svg>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <RzHeading Level="HeadingLevel.H1" class="truncate text-xl font-semibold" x-text="fileName" title=""></RzHeading>
-                        <RzParagraph class="mt-1.5 text-sm text-muted-foreground" x-text="fileSizeLabel"></RzParagraph>
+                        <h1 class="truncate text-xl font-semibold" x-text="fileName" title=""></h1>
+                        <p class="mt-1.5 text-sm text-muted-foreground" x-text="fileSizeLabel"></p>
                     </div>
                 </div>
 
                 <div class="mt-10">
-                    <RzButton Variant="ThemeVariant.Primary" class="w-full rounded-2xl px-6 py-4 text-sm font-semibold"
+                    <button type="button" class="w-full rounded-2xl px-6 py-4 text-sm font-semibold bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition"
                               x-on:click="startDownload()" x-bind:disabled="isConnecting || isTransferring">
                         <span x-show="!isConnecting && !isTransferring">Download directly</span>
                         <span x-show="isConnecting">Connecting&hellip;</span>
                         <span x-show="isTransferring">Downloading&hellip;</span>
-                    </RzButton>
+</button>
                 </div>
 
                 <p class="mt-4 text-xs text-muted-foreground">
@@ -77,17 +77,17 @@
 
             @* ===== TRANSFERRING ===== *@
             <section x-show="isTransferring" class="text-center py-6">
-                <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" class="mx-auto" />
-                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold" x-text="fileName"></RzHeading>
-                <RzParagraph class="mt-3 text-sm text-muted-foreground" x-text="progressLabel"></RzParagraph>
+                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width:32px;height:32px"></div>
+                <h1 class="mt-6 text-xl font-semibold" x-text="fileName"></h1>
+                <p class="mt-3 text-sm text-muted-foreground" x-text="progressLabel"></p>
                 <div class="mt-6">
                     <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
                         <div class="h-full rounded-full bg-primary transition-all duration-300" x-bind:style="'width: ' + progress + '%'"></div>
                     </div>
                 </div>
-                <RzButton Variant="ThemeVariant.Default" class="mt-8 rounded-full px-6 py-2 text-sm" x-on:click="cancelDownload()">
+                <button type="button" class="mt-8 rounded-full px-6 py-2 text-sm hover:bg-foreground/5 text-foreground/70 transition" x-on:click="cancelDownload()">
                     Cancel
-                </RzButton>
+                </button>
             </section>
 
             @* ===== COMPLETE ===== *@
@@ -97,20 +97,20 @@
                         <polyline points="20 6 9 17 4 12" />
                     </svg>
                 </div>
-                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">Download complete</RzHeading>
-                <RzParagraph class="mt-2 text-sm text-muted-foreground" x-text="fileName"></RzParagraph>
-                <RzLink Href="/" Underline="false" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
+                <h1 class="mt-6 text-xl font-semibold">Download complete</h1>
+                <p class="mt-2 text-sm text-muted-foreground" x-text="fileName"></p>
+                <a href="/" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
                     Send a file
-                </RzLink>
+                </a>
             </section>
 
             @* ===== WAITING FOR SENDER ===== *@
             <section x-show="isWaitingForSender" class="text-center py-10">
-                <RzSpinner Size="Size.Large" Color="SemanticColor.Primary" class="mx-auto" />
-                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">Waiting for sender</RzHeading>
-                <RzParagraph class="mt-2 text-sm text-muted-foreground">
+                <div class="animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" style="width:32px;height:32px"></div>
+                <h1 class="mt-6 text-xl font-semibold">Waiting for sender</h1>
+                <p class="mt-2 text-sm text-muted-foreground">
                     The sender is not online. Your download will start automatically when they connect.
-                </RzParagraph>
+                </p>
             </section>
 
             @* ===== ERROR / FALLBACK ===== *@
@@ -122,8 +122,8 @@
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                 </div>
-                <RzHeading Level="HeadingLevel.H1" class="mt-6 text-xl font-semibold">Connection unavailable</RzHeading>
-                <RzParagraph class="mt-2 text-sm text-muted-foreground" x-text="error"></RzParagraph>
+                <h1 class="mt-6 text-xl font-semibold">Connection unavailable</h1>
+                <p class="mt-2 text-sm text-muted-foreground" x-text="error"></p>
                 <a x-bind:href="fallbackUrl"
                    class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-8 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition"
                    x-show="fallbackUrl">
@@ -131,8 +131,7 @@
                 </a>
             </section>
 
-        </CardContent>
-    </RzCard>
+        </div>
 </div>
 
 <script src="/js/p2p/signaling.js"></script>

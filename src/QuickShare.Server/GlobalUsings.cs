@@ -11,3 +11,5 @@ global using Microsoft.EntityFrameworkCore;
 global using FastEndpoints;
 global using QuickShare.Querying;
 global using QuickShare.Server.Extensions;
+global using QuickShare.Shared.Models;
+global using QuickShare.Shared.Constants;

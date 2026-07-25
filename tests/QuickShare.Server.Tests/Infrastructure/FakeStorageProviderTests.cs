@@ -31,6 +31,26 @@ public sealed class FakeStorageProvider(string rootPath) : IStorageProvider
             _store.Remove(refId);
         return Task.CompletedTask;
     }
+
+    // ── R2 stubs ─────────────────────────────────────────────────────────
+
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+        => Task.FromResult(new R2InitResult("fake-upload-id", $"fake-key/{deliveryId:N}/{fileName}"));
+
+    public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<R2PartUrl>>(partNumbers.Select(p => new R2PartUrl(p, new Uri($"https://fake.r2.dev/{objectKey}?partNumber={p}"))).ToList());
+
+    public Task<CompletionResult> CompleteR2MultipartUploadAsync(string uploadId, string objectKey, IReadOnlyList<R2PartEtag> parts, CancellationToken ct = default)
+        => Task.FromResult(new CompletionResult(true, null));
+
+    public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
+        => Task.FromResult(new Uri($"https://fake.r2.dev/{objectKey}?expires={expiry.TotalSeconds}"));
+
+    public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
+        => Task.CompletedTask;
 }
 
 public class FakeStorageProviderTests

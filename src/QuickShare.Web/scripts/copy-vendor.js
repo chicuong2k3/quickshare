@@ -3,8 +3,6 @@
 //
 //  1) qrcode-generator  -> wwwroot/lib/qrcode/qrcode.min.js     (client-side QR rendering)
 //  2) @alpinejs/csp     -> wwwroot/lib/alpine/alpine.min.js      (Alpine.js, CSP-compliant)
-//                          RizzyUI's README injects Alpine via RzHeadOutlet/UseRizzy, but
-//                          those do not exist in 0.9.2-alpha, so we vendor Alpine locally.
 const fs = require("fs");
 const path = require("path");
 

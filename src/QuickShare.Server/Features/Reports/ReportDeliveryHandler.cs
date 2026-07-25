@@ -14,10 +14,13 @@ public sealed class ReportDeliveryHandler(IStorageProvider storage)
         if (delivery is null)
             return Result.Failure<string>(new LightResults.Error("not_found"));
 
-        // Takedown: delete storage chunks, then cascade-delete delivery
-        var chunkRefs = await db.Chunks.Where(c => c.DeliveryId == delivery.Id).Select(c => c.StorageRef).ToArrayAsync(ct);
-        await storage.DeleteChunksAsync(chunkRefs, ct);
-        db.Deliveries.Remove(delivery);
+        // Takedown: mark delivery as taken down and delete from R2
+        if (delivery.StoragePath is not null)
+        {
+            await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+        }
+
+        delivery.Status = "Takedown";
         await db.SaveChangesAsync(ct);
 
         return Result.Success("Thank you. This delivery has been reported and will be reviewed.");

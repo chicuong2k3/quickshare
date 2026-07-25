@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "slnmap": {
+      "command": "slnmap",
+      "args": ["serve", "--db", "C:/Users/nguye/Desktop/codes/TeleCloud/slnmap.db"]
+    }
+  }
+}

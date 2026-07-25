@@ -1,64 +1,43 @@
+@layout MainLayout
 @page "/files"
 @using System.Net.Http.Json
 @using System.Text.Json
 @using System.Text.Json.Serialization
-@using System.Security.Claims
+@using QuickShare.Shared.Models
 @inject IHttpClientFactory ClientFactory
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
-    var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
     var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
 }
 
 <PageTitle>Files — QuickShareCloud</PageTitle>
 
-<div class="min-h-screen flex flex-col bg-gradient-to-b from-[#fcfbf8] to-[#f6f4ed] text-foreground" x-data="filesPage()" x-cloak>
-    @* ===== HEADER ===== *@
-    <header class="absolute inset-x-0 top-0 z-50">
-        <div class="flex items-center justify-between px-8 py-6">
-            <RzLink Href="/" Underline="false" class="flex items-center gap-3 text-foreground/80 hover:text-foreground transition-colors">
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
-                <span class="text-sm font-semibold tracking-tight">QuickShareCloud</span>
-            </RzLink>
-            <nav class="flex items-center gap-2">
-                <RzLink Href="/" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Send</RzLink>
-                <RzLink Href="/pricing" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Pricing</RzLink>
-                <RzLink Href="/files" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium bg-foreground/10 text-foreground transition-all">Files</RzLink>
-                @if (isAuthenticated)
-                {
-                    <RzLink Href="/account" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">@userName</RzLink>
-                    <RzLink Href="/logout" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign out</RzLink>
-                }
-                else
-                {
-                    <RzLink Href="/login" Underline="false" class="rounded-full px-5 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all">Sign in</RzLink>
-                }
-            </nav>
-        </div>
-    </header>
-
+<div class="flex-1" x-data="filesPage()" x-cloak>
     <main class="flex-1 px-6 pb-24 pt-32 sm:px-8">
         <div class="mx-auto max-w-5xl">
-
             @* ===== PAGE HEADING ===== *@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <RzHeading Level="HeadingLevel.H1" class="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                    <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">
                         @(SelectedFolder is not null ? SelectedFolder.Name : "All files")
-                    </RzHeading>
-                    <RzParagraph class="mt-1 text-sm text-muted-foreground">
+                    </h1>
+                    <p class="mt-1 text-sm text-muted-foreground">
                         @(SelectedFolder is not null
                             ? $"Files in {SelectedFolder.Name}"
                             : "Browse all your uploaded files")
-                    </RzParagraph>
+                    </p>
                 </div>
 
                 @* ===== SEARCH ===== *@
                 <div class="w-full sm:w-72">
-                    <form method="get" action="/files" class="relative">
+                    <form method="get" action="/files"
+                          hx-trigger="input changed delay:500ms"
+                          hx-target="#files-list"
+                          hx-swap="outerHTML"
+                          hx-push-url="true"
+                          class="relative">
                         @if (!string.IsNullOrEmpty(FolderId))
                         {
                             <input type="hidden" name="folderId" value="@FolderId" />
@@ -86,6 +65,26 @@
                             </button>
                         }
                     </form>
+                </div>
+            </div>
+
+            @* ===== USAGE STATISTICS DASHBOARD (Story 1.9) ===== *@
+            <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
+                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Files</p>
+                    <p class="mt-2 text-2xl font-bold text-foreground">@(Stats?.TotalFiles ?? 0)</p>
+                </div>
+                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
+                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Storage used</p>
+                    <p class="mt-2 text-2xl font-bold text-foreground">@FormatBytes(Stats?.TotalSize ?? 0)</p>
+                </div>
+                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
+                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan</p>
+                    <p class="mt-2 text-2xl font-bold text-foreground">@(Stats?.Plan ?? "Free")</p>
+                </div>
+                <div class="rounded-2xl border border-border/30 bg-card p-5 shadow-sm">
+                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Folders</p>
+                    <p class="mt-2 text-2xl font-bold text-foreground">@(Folders?.Count ?? 0)</p>
                 </div>
             </div>
 
@@ -196,7 +195,8 @@
             </div>
 
             @* ===== FILES SECTION ===== *@
-            <div class="mt-8">
+            <HtmxFragment>
+            <div id="files-list" class="mt-8">
                 @if (RenderState == FilesRenderState.Loading)
                 {
                     <div class="space-y-4">
@@ -215,8 +215,8 @@
                 }
                 else if (RenderState == FilesRenderState.Error)
                 {
-                    <RzCard class="shadow-sm">
-                        <CardContent class="p-12 text-center">
+                    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="p-12 text-center">
                             <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/8 text-destructive">
                                 <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="10" />
@@ -224,20 +224,20 @@
                                     <line x1="12" y1="16" x2="12.01" y2="16" />
                                 </svg>
                             </div>
-                            <RzHeading Level="HeadingLevel.H3" class="mt-5 text-lg font-semibold">Couldn&rsquo;t load files</RzHeading>
-                            <RzParagraph class="mt-2 text-sm text-muted-foreground">There was a problem fetching your files. Please try again.</RzParagraph>
-                            <RzLink Href="/files" Underline="false"
+                            <h3 class="mt-5 text-lg font-semibold">Couldn&rsquo;t load files</h3>
+                            <p class="mt-2 text-sm text-muted-foreground">There was a problem fetching your files. Please try again.</p>
+                            <a href="/files"
                                     class="mt-8 inline-flex items-center justify-center rounded-2xl bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
                                 Retry
-                            </RzLink>
-                        </CardContent>
-                    </RzCard>
+                            </a>
+                        </div>
+                    </div>
                 }
                 else if (FileItems is null || FileItems.Count == 0)
                 {
                     @* ===== EMPTY STATE ===== *@
-                    <RzCard class="shadow-sm">
-                        <CardContent class="p-16 text-center">
+                    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="p-16 text-center">
                             <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/8 text-primary">
                                 <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -246,22 +246,22 @@
                                     <line x1="12" y1="10" x2="12" y2="16" />
                                 </svg>
                             </div>
-                            <RzHeading Level="HeadingLevel.H2" class="mt-6 text-xl font-semibold">
+                            <h2 class="mt-6 text-xl font-semibold">
                                 @(SelectedFolder is not null ? $"No files in {SelectedFolder.Name}" : "No files yet")
-                            </RzHeading>
-                            <RzParagraph class="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+                            </h2>
+                            <p class="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
                                 @(SelectedFolder is not null
                                     ? "This folder is empty. Upload a file and place it here to get started."
                                     : "Upload your first file and it will appear here. Drag & drop or click to browse.")
-                            </RzParagraph>
+                            </p>
                             @if (!string.IsNullOrEmpty(SearchTerm))
                             {
-                                <RzParagraph class="mt-4 text-sm text-muted-foreground">
+                                <p class="mt-4 text-sm text-muted-foreground">
                                     No files matching &ldquo;@SearchTerm&rdquo;.
-                                    <RzLink Href="/files" Underline="false" class="text-primary hover:text-primary/80">Clear search</RzLink>
-                                </RzParagraph>
+                                    <a href="/files" class="text-primary hover:text-primary/80">Clear search</a>
+                                </p>
                             }
-                            <RzLink Href="/" Underline="false"
+                            <a href="/"
                                     class="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground px-6 py-3.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/90 transition">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -269,9 +269,9 @@
                                     <line x1="12" y1="3" x2="12" y2="15" />
                                 </svg>
                                 Upload a file
-                            </RzLink>
-                        </CardContent>
-                    </RzCard>
+                            </a>
+                        </div>
+                    </div>
                 }
                 else
                 {
@@ -334,15 +334,16 @@
                     </div>
 
                     @* ===== FILE COUNT FOOTER ===== *@
-                    <RzParagraph class="mt-6 text-center text-xs text-muted-foreground/70">
+                    <p class="mt-6 text-center text-xs text-muted-foreground/70">
                         Showing @FileItems.Count file@(FileItems.Count != 1 ? "s" : "")
                         @if (TotalCount > FileItems.Count)
                         {
                             <text> of @TotalCount</text>
                         }
-                    </RzParagraph>
+                    </p>
                 }
             </div>
+            </HtmxFragment>
 
         </div>
     </main>
@@ -369,10 +370,10 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95">
-            <RzCard class="shadow-xl">
-                <CardContent class="p-8">
+            <div class="rounded-xl border bg-card text-card-foreground shadow-xl">
+                <div class="p-8">
                     <div class="flex items-center justify-between">
-                        <RzHeading Level="HeadingLevel.H3" class="text-lg font-semibold">New folder</RzHeading>
+                        <h3 class="text-lg font-semibold">New folder</h3>
                         <button type="button"
                                 x-on:click="createOpen = false"
                                 class="rounded-full p-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -418,8 +419,8 @@
                             </span>
                         </button>
                     </div>
-                </CardContent>
-            </RzCard>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -445,10 +446,10 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95">
-            <RzCard class="shadow-xl">
-                <CardContent class="p-8">
+            <div class="rounded-xl border bg-card text-card-foreground shadow-xl">
+                <div class="p-8">
                     <div class="flex items-center justify-between">
-                        <RzHeading Level="HeadingLevel.H3" class="text-lg font-semibold">Rename folder</RzHeading>
+                        <h3 class="text-lg font-semibold">Rename folder</h3>
                         <button type="button"
                                 x-on:click="renameOpen = false"
                                 class="rounded-full p-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -493,8 +494,8 @@
                             </span>
                         </button>
                     </div>
-                </CardContent>
-            </RzCard>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -520,8 +521,8 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95">
-            <RzCard class="shadow-xl border-destructive/20">
-                <CardContent class="p-8">
+            <div class="rounded-xl border bg-card text-card-foreground shadow-xl border-destructive/20">
+                <div class="p-8">
                     <div class="flex items-center gap-4">
                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
                             <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -531,21 +532,21 @@
                             </svg>
                         </div>
                         <div>
-                            <RzHeading Level="HeadingLevel.H3" class="text-lg font-semibold">Delete folder?</RzHeading>
-                            <RzParagraph class="mt-1 text-sm text-muted-foreground">
+                            <h3 class="text-lg font-semibold">Delete folder?</h3>
+                            <p class="mt-1 text-sm text-muted-foreground">
                                 Are you sure you want to delete <strong x-text="deleteName"></strong>?
-                            </RzParagraph>
+                            </p>
                         </div>
                     </div>
 
-                    <RzAlert Variant="ThemeVariant.Warning" class="mt-6">
+                    <div role="alert" class="mt-6 rounded-lg border border-warning/50 bg-warning/10 p-4 text-sm text-warning-foreground">
                         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                             <line x1="12" y1="9" x2="12" y2="13" />
                             <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
-                        <AlertDescription>This action cannot be undone. Files in this folder must be moved or deleted first.</AlertDescription>
-                    </RzAlert>
+                        <span>This action cannot be undone. Files in this folder must be moved or deleted first.</span>
+                    </div>
 
                     <div x-show="deleteError" class="mt-3 text-sm text-destructive" x-text="deleteError"></div>
 
@@ -569,8 +570,8 @@
                             </span>
                         </button>
                     </div>
-                </CardContent>
-            </RzCard>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -597,10 +598,6 @@
             </button>
         </div>
     </div>
-
-    <footer class="px-8 py-6 text-center text-xs text-muted-foreground/80">
-        QuickShareCloud &mdash; send files, not friction.
-    </footer>
 </div>
 
 @* Alpine.js data initialization (registered globally via alpine:init) *@
@@ -857,6 +854,7 @@
     private List<FileDto>? FileItems { get; set; }
     private FolderDto? SelectedFolder { get; set; }
     private int TotalCount { get; set; }
+    private UsageStats? Stats { get; set; }
     private FilesRenderState RenderState { get; set; } = FilesRenderState.Loading;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -909,6 +907,38 @@
             {
                 FileItems = [];
                 TotalCount = 0;
+            }
+
+            // Fetch profile for plan name
+            try
+            {
+                var profileResponse = await client.GetAsync("/api/account/profile");
+                if (profileResponse.IsSuccessStatusCode)
+                {
+                    await using var profileStream = await profileResponse.Content.ReadAsStreamAsync();
+                    var profile = await JsonSerializer.DeserializeAsync<ProfileResponse>(profileStream, JsonOptions);
+                    if (profile is not null)
+                    {
+                        Stats = new UsageStats(
+                            TotalFiles: TotalCount,
+                            TotalSize: FileItems?.Sum(f => f.Size) ?? 0,
+                            Plan: profile.Plan ?? "Free"
+                        );
+                    }
+                }
+            }
+            catch
+            {
+                // Profile fetch is optional; stats just won't show plan
+            }
+
+            if (Stats is null)
+            {
+                Stats = new UsageStats(
+                    TotalFiles: TotalCount,
+                    TotalSize: FileItems?.Sum(f => f.Size) ?? 0,
+                    Plan: "Free"
+                );
             }
 
             RenderState = FilesRenderState.Loaded;
@@ -995,6 +1025,8 @@
     private enum FilesRenderState { Loading, Loaded, Error }
 
     // --- DTOs ---
+
+    private sealed record UsageStats(int TotalFiles, long TotalSize, string Plan);
 
     private sealed record FolderDto(Guid Id, string Name, DateTime CreatedAt, int FileCount = 0);
 

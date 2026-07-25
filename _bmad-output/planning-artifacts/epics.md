@@ -1,8 +1,15 @@
 ---
-stepsCompleted: [1, 2, 3, 4]
+stepsCompleted:
+  - "step-01: validate-prerequisites (user confirmed ✅)"
+  - "step-02: design-epics (2 epics approved ✅)"
+  - "step-03: create-stories (19 stories total ✅)"
+  - "step-04: final-validation (all checks passed ✅)"
 inputDocuments:
   - "_bmad-output/planning-artifacts/prds/prd-TeleCloud-2026-07-19/prd.md"
-  - "_bmad-output/architecture/architecture-TeleCloud-owned-storage-2026-07-19/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/architectures/architecture-telecloud-2026-07-20/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/specs/spec-r2-storage/SPEC.md"
+  - "_bmad-output/specs/spec-r2-storage/upload-flow.md"
+  - "_bmad-output/specs/spec-r2-storage/download-flow.md"
   - "_bmad-output/planning-artifacts/ux-designs/ux-TeleCloud-2026-07-19/DESIGN.md"
   - "_bmad-output/planning-artifacts/ux-designs/ux-TeleCloud-2026-07-19/EXPERIENCE.md"
 ---
@@ -17,62 +24,60 @@ This document provides the complete epic and story breakdown for ZapDrop (former
 
 ### Functional Requirements
 
-FR-1: Split-and-store any-size file — chunk large files into ordered chunks, store on owned disk storage with SHA-256 verification
-FR-2: Parallel upload with chunk-level resume — concurrent chunk upload, survive connection loss without restart
-FR-3: Download reassembly with integrity — per-chunk + whole-file SHA-256 verification, corrupt chunk re-fetch
-FR-4: Encrypt-before-upload with key in fragment — AES-256-GCM, key in URL fragment (#), never transmitted to server
-FR-5: Independent per-chunk AEAD — unique nonce per chunk, AAD binds manifest_id + chunk_index, anti-swap/reorder
-FR-6: Verifiable zero-knowledge — user can verify ciphertext-only network traffic via browser DevTools inspection
-FR-7: Recipient-never-authenticates — download without account, login, or app install
-FR-8: Sender accounts with plans — Google OAuth sign-in, Free/Pro/Studio plan tiers
-FR-9: Server-enforced quota — per-plan limits (file size, monthly volume, expiry, concurrency) enforced server-side
-FR-10: Link expiry — sender sets expiration, expired deliveries return 410, storage reclaimed on expiry
-FR-11: Download-count cap — max downloads per link, Plan-bound (Free: 5, Pro: 50, Studio: configurable)
-FR-12: Paid delivery via Ko-fi — sender sets price, recipient pays via Ko-fi before download unlocks
-FR-13: Egress passthrough (Studio tier, post-MVP) — overage billed per-GB beyond monthly allowance
-FR-14: Password protection — server-side access gate, withholds Manifest until password verified
-FR-15: Branded delivery page — sender logo, message, background on recipient page (Pro/Studio only)
-FR-16: Download tracking — count + last-download timestamp visible to sender on dashboard
-FR-17: File management — list/search/sort/paginate deliveries, flat folder hierarchy, delete with cascade
-FR-18: Rate & volume guardrails — server-enforced rate limits, per-plan monthly volume ceilings
-FR-19: Report → takedown — anyone can report a delivery link, immediate server-side chunk+manifest deletion
-FR-20: Plan-scoped ad placement — interstitial ads only on Free-sender recipient pages; Pro/Studio always clean
-FR-21: Clean trial allowance — 3-5 ad-free deliveries for new accounts before ad gate activates
-FR-22: Anti-adblock recovery — soft-wall (ask + retry), never hard-block file downloads
+> **Note:** The PRD has a numbering conflict — two FR-11 (Download-count cap vs Password protection) and two FR-12 (Paid delivery via local rails vs Branded delivery page). They are listed here as written in the PRD and resolved with descriptive suffixes during mapping.
+
+- FR-1: **Split-and-store any-size file** — chunk large files into ordered chunks, store on R2 storage with SHA-256 verification
+- FR-2: **Parallel upload with chunk-level resume** — concurrent R2 multipart upload, survive connection loss without restart
+- FR-3: **Download reassembly with integrity** — per-chunk + whole-file SHA-256 verification, corrupt chunk re-fetch
+- FR-4: **Encrypt-before-upload with key in fragment** — AES-256-GCM, key in URL fragment (#), never transmitted to server
+- FR-5: **Independent per-chunk AEAD** — unique nonce per chunk, AAD binds manifest_id + chunk_index, anti-swap/reorder
+- FR-6: **Verifiable zero-knowledge** — user can verify ciphertext-only network traffic via browser DevTools inspection
+- FR-7: **Recipient-never-authenticates** — download without account, login, or app install
+- FR-8: **Sender accounts with plans** — Google OAuth sign-in, Free/Pro/Studio plan tiers
+- FR-9: **Server-enforced quota** — per-plan limits (file size, monthly volume, expiry, concurrency) enforced server-side
+- FR-10: **Link expiry** — sender sets expiration, expired deliveries return 410, R2 objects reclaimed on expiry
+- FR-11: **Download-count cap** — max downloads per link, Plan-bound (Free: 5, Pro: 50, Studio: configurable)
+- FR-12: **Paid delivery via VietQR** — sender sets price, recipient pays via VietQR before download unlocks
+- FR-13: **Egress passthrough (Studio tier, post-MVP)** — overage billed per-GB beyond monthly allowance
+- FR-14: **Password protection** — server-side access gate, withholds Manifest until password verified
+- FR-15: **Branded delivery page** — sender logo, message on recipient page (Pro/Studio only)
+- FR-16: **Download tracking** — count + last-download timestamp visible to sender on dashboard
+- FR-17: **File management** — list/search/sort/paginate deliveries, flat folder hierarchy, delete with cascade
+- FR-18: **Rate & volume guardrails** — server-enforced rate limits, per-plan monthly volume ceilings
+- FR-19: **Report → takedown** — anyone can report a delivery link, immediate R2 object + manifest deletion
+- FR-20: **Plan-scoped ad placement** — interstitial ads only on Free-sender recipient pages; Pro/Studio always clean
+- FR-21: **Clean trial allowance** — 3-5 ad-free deliveries for new accounts before ad gate activates
+- FR-22: **Anti-adblock recovery** — soft-wall (ask + retry), never hard-block file downloads
 
 ### NonFunctional Requirements
 
-NFR-1: Vietnamese network throughput — chunk-size × concurrency defaults benchmarked against VN ISP conditions
-NFR-2: Tier matrix configurability — all plan limits (sizes, caps, expiry ceilings) in configuration, not hardcoded
-NFR-3: Ad-content standards — curated network allowlist + category blocks, gambling-OK but not egregious
-NFR-4: Storage cost control — expiry + download-cap ensure storage/egress cost stays below revenue
-NFR-5: Desktop-first responsive — 3 breakpoints (mobile < 640px, tablet 640-1024px, desktop > 1024px)
-NFR-6: Accessibility — keyboard navigation, focus indicators, aria-live regions, prefers-reduced-motion respect
-NFR-7: Light mode only — no dark mode support required; color tokens single-theme
+- NFR-1: **Vietnamese network throughput** — chunk-size × concurrency defaults benchmarked against VN ISP conditions
+- NFR-2: **Tier matrix configurability** — all plan limits (sizes, caps, expiry ceilings) in configuration, not hardcoded
+- NFR-3: **Ad-content standards** — curated network allowlist + category blocks, gambling-OK but not egregious
+- NFR-4: **Storage cost control** — expiry + download-cap ensure storage/egress cost stays below revenue
+- NFR-5: **Desktop-first responsive** — 3 breakpoints (mobile < 640px, tablet 640-1024px, desktop > 1024px)
+- NFR-6: **Accessibility** — keyboard navigation, focus indicators, aria-live regions, prefers-reduced-motion respect
+- NFR-7: **Dark + light mode** — color tokens support both themes (light + dark), CSS variable swap
 
-### Additional Requirements (from Architecture)
+### Additional Requirements (from Architecture + SPEC)
 
-AR-1: IStorageProvider interface — LocalDisk primary, BackblazeB2 cold overflow; DI-registered singleton, config-switched
-AR-2: Three-phase chunked upload — POST /api/uploads/start → chunk uploads (parallel, idempotent) → POST commit (atomic)
-AR-3: UploadSession entity — 24h TTL, background daily cleanup job (Hangfire or HostedService)
-AR-4: Idempotent chunk operations — skip-if-exists by uploadId + chunkIndex, safe client retry
-AR-5: Wolverine transaction model — individual transactions per chunk, atomic commit for Delivery + Manifest + chunk linking
-AR-6: Entity model — Delivery → Manifest → Chunks cascade; UploadSession → Chunks (in-progress); DownloadTracking (IP-based)
-AR-7: Manifest as encrypted bytea in PostgreSQL — co-located with Delivery metadata, ACID queries
-AR-8: Clean-break migration — new Delivery/Manifest/Chunk entities via EF Core; legacy File/TempShare deprecated
-AR-9: API endpoints — /api/uploads/* (chunked ops), /api/deliveries/* (CRUD), /d/{shareId} (public, no-auth)
-AR-10: IP-based download tracking + rate limiting — no recipient auth, IP logs for abuse detection
-AR-11: Ko-fi webhook payment verification — signature-validated, atomic Delivery unlock on confirmed payment
-AR-12: LightResults Result<T> error handling — structured errors, validation failures return 400/403/413, system errors 500
-AR-13: Configuration-driven storage provider — TeleCloudOptions.StorageProvider, restart to switch
-AR-14: Background cleanup job — daily sweep of expired UploadSessions + orphaned chunks, batch-transactional
-AR-15: Client-side encryption (WASM/JS WebCrypto) — AES-256-GCM, per-chunk AEAD, key never leaves browser
-AR-16: Atomic download counter — increment per successful download, cap enforcement at API level, 410 when reached
-AR-17: Egress byte tracking — Delivery.EgressBytes + User.EgressAllowance, allowance check before chunk serving
-AR-18: Ad injection at page template level — User.PlanId lookup via Delivery.SenderId, invariant at template not handler
-AR-19: Access control — public /d/{shareId} no-auth, password as independent server-side gate, two-factor access
-AR-20: Zero-knowledge verification — in-app network inspector + DevTools guide, inspectable WASM/JS crypto
-AR-21: Anti-adblock soft-wall — "please allow ads" message + retry, never hard-block, ad-recovery via subdomain optional
+- AR-1: **IStorageProvider extended** — IStorageProvider gets R2-specific high-level methods (InitR2MultipartUpload, UploadR2Part, CompleteR2MultipartUpload, AbortR2MultipartUpload, GetPresignedDownloadUrl)
+- AR-2: **R2StorageProvider in DI** — R2StorageProvider registered as active; LocalDiskStorageProvider deprecated but kept for backward compat
+- AR-3: **Object key scheme** — `uploads/{userId}/{deliveryId}/{fileName}` — deterministic, scoped, no DB lookup needed for R2 access
+- AR-4: **Delivery.StoragePath on commit** — populated with R2 object key prefix for storage reclamation
+- AR-5: **R2 multipart upload endpoints** — `POST /api/deliveries/start-r2` (returns UploadId), `POST /api/deliveries/commit-r2` (completes multipart, writes Delivery)
+- AR-6: **Existing upload handler unchanged** — `StartUploadHandler` stays for backward compat; R2 bypasses chunk-creation flow entirely
+- AR-7: **UploadId in UploadSession** — R2 multipart uploadId stored in `UploadSession.R2UploadId`; each part = one encrypted chunk
+- AR-8: **Download via 302 redirect** — `DownloadDeliveryHandler` returns 302 to presigned R2 URL (no chunk streaming through server)
+- AR-9: **R2 SSE-S3 limitation accepted** — R2 does not support SSE-S3; encryption is automatic AES-256-GCM at rest (no customer-managed key option)
+- AR-10: **Error handling fail-fast** — R2 failures return 502 (upstream failure) for upload ops, 400 for validation errors
+- AR-11: **Storage reclamation** — On Delivery expiry or deletion, R2 objects deleted using `StoragePath` prefix
+- AR-12: **Initiate R2 multipart (CAP-1)** — endpoint receives delivery metadata, returns R2 UploadId
+- AR-13: **Upload chunks to R2 part (CAP-2)** — client uploads one chunk as R2 part against UploadId
+- AR-14: **Complete R2 multipart (CAP-3)** — server lists uploaded parts, completes multipart, writes Delivery record
+- AR-15: **Abort R2 multipart (CAP-4)** — client/expiry aborts incomplete multipart, cleans up uploaded parts
+- AR-16: **Serve download via R2 presigned URL (CAP-5)** — handler returns 302 redirect to presigned object URL
+- AR-17: **Delete R2 objects on expiry (CAP-6)** — background job deletes R2 objects when Delivery expires or is deleted
 
 ### UX Design Requirements
 
@@ -101,598 +106,889 @@ UX-DR22: Trust verification — progressive disclosure 🔒 badge → expandable
 
 ### FR Coverage Map
 
-FR-1: Epic 1 — Chunked file upload to owned storage
-FR-2: Epic 1 — Parallel upload with chunk-level resume
-FR-3: Epic 1 — Download reassembly with SHA-256 integrity
-FR-4: Epic 1 — AES-256-GCM encrypt-before-upload, key in fragment
-FR-5: Epic 1 — Independent per-chunk AEAD with AAD binding
-FR-6: Epic 2 — Verifiable zero-knowledge (trust panel + DevTools)
-FR-7: Epic 1 — Recipient-never-authenticates download endpoint
-FR-8: Epic 1 — Google OAuth sender accounts with plans
-FR-9: Epic 1 — Server-enforced quota per plan
-FR-10: Epic 1 — Link expiry with 410 response + storage reclaim
-FR-11: Epic 1 — Download-count cap per link, Plan-bound
-FR-12: Epic 2 — Paid delivery via Ko-fi webhook
-FR-13: Post-MVP — Egress passthrough (excluded)
-FR-14: Epic 2 — Password protection (server-side gate)
-FR-15: Epic 2 — Branded delivery page (logo, message, color)
-FR-16: Epic 2 — Download tracking (count + timestamp)
-FR-17: Epic 1 — File management CRUD (list/search/folders/delete)
-FR-18: Epic 3 — Rate & volume guardrails
-FR-19: Epic 3 — Report → takedown
-FR-20: Epic 3 — Plan-scoped ad placement (Free-sender only)
-FR-21: Epic 3 — Clean trial allowance (3-5 ad-free deliveries)
-FR-22: Epic 3 — Anti-adblock soft-wall (never hard-block)
+| FR | Epic | Description |
+|----|------|-------------|
+| FR-1 | Epic 1 | R2 chunked upload, any-size file |
+| FR-2 | Epic 1 | Parallel upload + chunk-level resume |
+| FR-3 | Epic 1 | Download reassembly + SHA-256 verification |
+| FR-4 | Epic 1 | Encrypt-before-upload, key in URL fragment |
+| FR-5 | Epic 1 | Independent per-chunk AEAD with AAD binding |
+| FR-6 | Epic 2 | Zero-knowledge verification panel |
+| FR-7 | Epic 1 | Recipient never authenticates |
+| FR-8 | Epic 1 | Google OAuth + Free/Pro/Studio plans |
+| FR-9 | Epic 1 | Server-enforced quota per plan |
+| FR-10 | Epic 1 | Link expiry + R2 storage reclamation |
+| FR-11 | Epic 1 | Download-count cap per link |
+| FR-12 | Epic 2 | Paid delivery via VietQR |
+| FR-13 | — | Egress passthrough (post-MVP, deferred) |
+| FR-14 | Epic 2 | Password protection (server-side gate) |
+| FR-15 | Epic 2 | Branded delivery page (Pro/Studio only) |
+| FR-16 | Epic 1 | Download tracking (count + timestamp) |
+| FR-17 | Epic 1 | File management CRUD + folders |
+| FR-18 | Epic 2 | Rate & volume guardrails |
+| FR-19 | Epic 2 | Report → takedown |
+| FR-20 | Epic 2 | Plan-scoped ad placement (Free only) |
+| FR-21 | Epic 2 | Clean trial allowance |
+| FR-22 | Epic 2 | Anti-adblock soft-wall |
 
 ## Epic List
 
 ### Epic 1: Core Delivery Pipeline
-Sender uploads any-size file (chunked + E2E encrypted), gets a share link, recipient downloads with integrity verification. The fundamental "send → store → share → download" engine, with accounts and quota enforced. File management included so senders can organize their deliveries from day one.
 
-**FRs covered:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-7, FR-8, FR-9, FR-10, FR-11, FR-17
+Sender can upload any-size file (chunked, encrypted), get a share link, recipient downloads with integrity verification — all under their account with plan-based quota, expiry, download caps, and file management.
 
-### Epic 2: Professional Delivery Experience
-Sender brands the delivery page, protects with password, charges via Ko-fi, sees download tracking. Recipients can verify encryption (trust panel). The professional handoff layer — what makes ZapDrop a studio tool, not just a file pipe.
+**FRs covered:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-7, FR-8, FR-9, FR-10, FR-11, FR-16, FR-17
 
-**FRs covered:** FR-6, FR-12, FR-14, FR-15, FR-16
+**Key deliverables:**
+- R2 multipart upload (start-r2 / commit-r2 / abort-r2)
+- Download via 302 presigned URL redirect
+- Client-side AES-256-GCM encryption (WebCrypto)
+- Google OAuth accounts + Free/Pro/Studio plans
+- Server-enforced quota per plan
+- Link expiry + download-count cap + R2 object reclamation
+- Upload UI (drop zone, progress, share link card)
+- Download UI (recipient page, integrity verification)
+- Dashboard with grid cards, status badges, notifications
+- File management CRUD + flat folder hierarchy
+- Design token system (colors, typography, spacing, shadows, breakpoints)
+- Responsive layout (desktop/tablet/mobile)
+- State patterns (empty, loading, error, success)
 
-### Epic 3: Platform Sustainability & Safety
-Free tier is ad-funded without poisoning paid users' experience. Abuse is reportable and auto-takedown. Rate guardrails and anti-adblock keep the platform solvent and safe. The operational layer — what keeps the lights on.
+## Epic 2: Professional Delivery & Platform Safety — Stories
 
-**FRs covered:** FR-18, FR-19, FR-20, FR-21, FR-22
+### Story 2.1: Password Protection Gate
 
----
+As a sender,
+I want to password-protect my deliveries,
+So that only recipients with the password can download the file.
 
-## Epic 1: Core Delivery Pipeline
+**Acceptance Criteria:**
 
-### Story 1.1: Storage Backend Foundation
+**Given** a sender creates a delivery with a password
+**When** they set a password in the upload flow
+**Then** the password is hashed (bcrypt) and stored server-side alongside the delivery manifest
+**And** the share link does NOT contain the password
+
+**Given** a recipient opens a password-protected delivery link
+**When** the download page loads
+**Then** the `PasswordGateSlot` renders a password input before showing the file card
+**And** the Manifest is NOT returned to the client until the password is verified
+
+**Given** the recipient enters the correct password
+**When** they submit the form
+**Then** the server validates against the stored bcrypt hash
+**And** returns the Manifest (file metadata, sizes, integrity hashes)
+**And** the download card renders below the password gate
+
+**Given** the recipient enters an incorrect password
+**When** they submit the form
+**Then** the server returns `401 Unauthorized`
+**And** the UI shows a validation error: "Wrong password — try again"
+**And** the input retains focus for re-entry
+
+**Files affected:**
+- `src/QuickShare.Server/Features/Deliveries/VerifyPassword/VerifyPasswordHandler.cs` — new
+- `src/QuickShare.Client/src/features/download/slots/PasswordGateSlot.tsx` — implement
+- `src/QuickShare.Server/Models/Delivery.cs` — add `PasswordHash` property
+- `src/QuickShare.Client/src/features/download/DownloadPage.tsx` — enable `PasswordGateSlot`
+
+### Story 2.2: Branded Delivery Page (Pro/Studio)
+
+As a Pro or Studio sender,
+I want recipients to see my brand on the download page,
+So that my deliveries look professional and consistent with my identity.
+
+**Acceptance Criteria:**
+
+**Given** a Pro/Studio sender uploads a delivery
+**When** they have branding configured in their account settings
+**Then** `BrandingSlot` on the download page renders:
+- Sender logo (max 180px width, preserving aspect ratio)
+- Sender display name
+- Optional personal message
+- Accent color applied to buttons and highlights
+
+**Given** a Free sender's delivery page renders
+**When** the branding feature flag is false
+**Then** `BrandingSlot` renders nothing (no layout shift)
+**And** no network request for branding data is made
+
+**Given** accent color is configured
+**When** the download page renders
+**Then** the CSS variable for accent (`--brand-accent`) is set from the sender's preference
+**And** primary buttons, links, and highlights use this color
+
+**Given** the sender updates their branding settings
+**When** they change logo, message, or accent color
+**Then** all existing delivery pages use the updated branding (read from sender profile at render time)
+
+**Files affected:**
+- `src/QuickShare.Client/src/features/download/slots/BrandingSlot.tsx` — implement
+- `src/QuickShare.Server/Features/Deliveries/Branding/GetBrandingHandler.cs` — new
+- `src/QuickShare.Server/Models/User.cs` — add `Branding` fields
+
+### Story 2.3: VietQR Payment Flow
+
+As a sender,
+I want to set a price for my delivery and collect payment via VietQR,
+So that recipients pay before they can download.
+
+**Acceptance Criteria:**
+
+**Given** a sender enables paid delivery
+**When** they set a price (VND) during upload
+**Then** a VietQR payment code is generated for that delivery
+**And** the delivery requires payment before the file is accessible
+
+**Given** a recipient opens a paid delivery link
+**When** the download page loads
+**Then** the `PaymentGateSlot` renders a VietQR code with the amount and bank info
+**And** shows "Waiting for payment..." with a timer
+**And** the file card is hidden until payment is confirmed
+
+**Given** the recipient scans and pays via their banking app
+**When** the VietQR webhook callback arrives
+**Then** the server marks the delivery as paid
+**And** the download page auto-advances (polling or WebSocket) to show the file card
+**And** a success message appears: "Payment received — your file is ready"
+
+**Given** payment is not received within the timeout window
+**When** the timer expires
+**Then** the page shows "Payment session expired — refresh to retry"
+**And** the sender is not charged
+
+**Given** a payment webhook fails or is delayed
+**When** the verification is pending
+**Then** the page continues polling at a reasonable interval (10s)
+**And** the user sees "Waiting for confirmation..."
+**And** after 5 minutes, shows "Confirmation taking longer than usual — refresh the page"
+
+**Files affected:**
+- `src/QuickShare.Server/Features/Deliveries/Payment/VietQRHandler.cs` — new
+- `src/QuickShare.Server/Features/Deliveries/Payment/VietQRWebhookHandler.cs` — new
+- `src/QuickShare.Client/src/features/download/slots/PaymentGateSlot.tsx` — implement
+- `src/QuickShare.Client/src/features/payment/VietQRDisplay.tsx` — new
+- `src/QuickShare.Server/Models/Delivery.cs` — add `Price`, `PaymentStatus` fields
+
+### Story 2.4: Zero-Knowledge Verification Panel
+
+As a recipient,
+I want to verify that the file I'm downloading is end-to-end encrypted and the server never saw plaintext,
+So that I can trust the privacy claim with technical evidence.
+
+**Acceptance Criteria:**
+
+**Given** a recipient opens any download page
+**When** the page renders
+**Then** an 🔒 badge with "End-to-End Encrypted" label is visible near the file info
+
+**Given** the recipient clicks or taps the encryption badge
+**When** the interaction is triggered
+**Then** an expandable panel slides open with:
+- Plain-language explanation: "This file was encrypted in your sender's browser before uploading. Even we can't read it."
+- Content hash (SHA-256 of the encrypted manifest)
+- A DevTools verification snippet the user can copy and run
+- "How this works" expandable technical details
+
+**Given** the recipient wants to verify technically
+**When** they open their browser DevTools (Network tab)
+**Then** they can inspect that all data sent to the server is ciphertext
+**And** the panel explains which requests to look for and what to expect
+
+**Given** the panel is open
+**When** the recipient clicks the close button or taps outside
+**Then** the panel slides closed with a smooth animation
+
+**Files affected:**
+- `src/QuickShare.Client/src/features/download/TrustBadge.tsx` — new
+- `src/QuickShare.Client/src/features/download/TrustPanel.tsx` — new
+- `src/QuickShare.Client/src/features/download/DevToolsSnippet.tsx` — new
+
+### Story 2.5: Rate & Volume Guardrails
+
+As a platform operator,
+I want rate limits and monthly volume ceilings enforced server-side,
+So that no single user can abuse system resources.
+
+**Acceptance Criteria:**
+
+**Given** an authenticated user exceeds the request rate limit
+**When** they send more than N requests per minute (configurable per plan)
+**Then** the server returns `429 Too Many Requests` with a `Retry-After` header
+**And** the response body includes the rate limit window info
+
+**Given** a user exceeds their plan's monthly upload volume
+**When** they attempt to initiate a new upload
+**Then** the server returns `403 Forbidden` with "Monthly volume limit reached"
+**And** the response body includes the current usage and reset date
+
+**Given** a user is on Free plan (2GB/month)
+**When** they've uploaded 2GB worth of deliveries this month
+**Then** subsequent upload attempts are blocked until the next billing cycle
+**And** existing deliveries and downloads continue to work normally
+
+**Given** a user is on Pro or Studio plan
+**When** they approach 80% of their volume limit
+**Then** a warning header is added to responses (`X-Volume-Warning: 80%`)
+**And** the dashboard shows a usage meter
+
+**Files affected:**
+- `src/QuickShare.Server/Middleware/RateLimitingMiddleware.cs` — new
+- `src/QuickShare.Server/Infrastructure/Quota/VolumeTracker.cs` — new (or extend QuotaEnforcer)
+- `src/QuickShare.Client/src/features/dashboard/UsageMeter.tsx` — new
+
+### Story 2.6: Report → Takedown
+
+As a platform,
+I want anyone to report a delivery link for abuse,
+So that inappropriate content can be removed immediately.
+
+**Acceptance Criteria:**
+
+**Given** a recipient (or anyone) visits any download page
+**When** they see content they believe is abusive
+**Then** a "Report this delivery" link is visible at the bottom of the page
+
+**Given** the visitor clicks the report link
+**When** the report form loads
+**Then** it shows:
+- Reason dropdown (Spam, Copyright, Malware, Harassment, Other)
+- Optional free-text message field
+- Submit button
+
+**Given** the report is submitted
+**When** the server receives the report
+**Then** it immediately:
+- Sets the delivery `Status` to `Takedown`
+- Deletes all R2 objects for that delivery via `DeleteObjectsAsync(StoragePath)`
+- Creates a `Report` record with reporter info, reason, timestamp
+- Returns a confirmation: "Report submitted — content has been removed"
+
+**Given** the original sender visits their dashboard
+**When** they see the delivery status
+**Then** it shows as "Takedown" with a notice that the content was reported
+**And** they cannot restore the delivery
+
+**Given** the same delivery link is visited after takedown
+**When** the handler processes the request
+**Then** it returns `410 Gone` with "This content has been removed due to a report"
+
+**Files affected:**
+- `src/QuickShare.Server/Features/Reports/CreateReport/CreateReportHandler.cs` — new
+- `src/QuickShare.Client/src/features/report/ReportForm.tsx` — new
+- `src/QuickShare.Client/src/features/download/DownloadPage.tsx` — add report link
+- `src/QuickShare.Server/Models/Report.cs` — new entity
+
+### Story 2.7: Ad Interstitial + Clean Trial + Anti-Adblock Soft-Wall
+
+As a platform operator,
+I want Free-tier recipients to see ads while ensuring a clean trial for new users,
+So that the platform generates revenue without blocking files.
+
+**Acceptance Criteria:**
+
+**Given** a Free-tier sender's delivery is viewed by a recipient
+**When** the download page loads
+**Then** a 3-5 second countdown overlay displays an ad
+**After** the countdown, an ad panel remains visible below the file card
+**And** revisits to the same link skip the countdown (cookie/session flag)
+**And** the download button is available immediately (ad does not block download)
+
+**Given** a Pro or Studio sender's delivery page loads
+**When** the page renders
+**Then** no ad is shown (feature flag `enableAds = false`)
+**And** the `AdInterstitialSlot` renders nothing
+
+**Given** a new account is created
+**When** the user sends their first 3-5 deliveries
+**Then** recipients see NO ads on those deliveries (clean trial)
+**After** the trial allowance is consumed
+**Then** subsequent deliveries from this sender show ads to Free-tier recipients
+
+**Given** an adblocker is detected (via script probe)
+**When** the ad is blocked
+**Then** a soft-wall message appears: "Please disable your ad blocker to support the service"
+**And** a "Continue to download" button is always visible (never hard-block)
+**And** the file download is never prevented by adblock detection
+
+**Files affected:**
+- `src/QuickShare.Client/src/features/download/slots/AdInterstitialSlot.tsx` — implement
+- `src/QuickShare.Client/src/features/ads/AdOverlay.tsx` — new (countdown + ad)
+- `src/QuickShare.Client/src/features/ads/AdPanel.tsx` — new (post-download ad panel)
+- `src/QuickShare.Client/src/features/ads/AdblockDetector.ts` — new (probe script)
+- `src/QuickShare.Client/src/features/ads/TrialTracker.ts` — new
+- `src/QuickShare.Server/Features/Accounts/TrialService.cs` — new
+
+### Story 2.8: Branding Settings UI (Pro/Studio)
+
+As a Pro or Studio sender,
+I want to configure my brand settings from my account page,
+So that my deliveries display my logo, message, and colors automatically.
+
+**Acceptance Criteria:**
+
+**Given** a Pro or Studio user navigates to account settings
+**When** they open the Branding section
+**Then** they see:
+- Logo upload area (drag-drop or click, max 180px width preview, file size limit)
+- Display name field (pre-filled from account name)
+- Personal message text area (max 200 chars)
+- Accent color picker (preset palette + custom hex input)
+- Save button
+
+**Given** the user uploads a logo image
+**When** the file is selected
+**Then** it is validated (max 500KB, PNG or JPG)
+**And** a preview is shown immediately
+**And** the image is uploaded to R2 with key `branding/{userId}/logo`
+
+**Given** the user changes accent color
+**When** they select from the palette or type a hex value
+**Then** a live preview updates to show the new color on buttons and highlights
+**And** the color is validated as accessible (WCAG contrast ratio)
+
+**Given** the user clicks Save
+**When** the form is submitted
+**Then** all branding fields are persisted to the user profile
+**And** a success toast appears: "Branding saved"
+**And** all existing delivery pages reflect the update on next load
+
+**Files affected:**
+- `src/QuickShare.Client/src/features/settings/BrandingSettings.tsx` — new
+- `src/QuickShare.Client/src/features/settings/LogoUploader.tsx` — new
+- `src/QuickShare.Client/src/features/settings/ColorPicker.tsx` — new
+- `src/QuickShare.Server/Features/Accounts/UpdateBrandingHandler.cs` — new
+
+**FRs covered:** FR-6, FR-12, FR-14, FR-15, FR-18, FR-19, FR-20, FR-21, FR-22
+
+**Key deliverables:**
+- Password protection (server-side Manifest gate)
+- Branded delivery page (logo, message, accent color)
+- VietQR payment flow + webhook verification
+- Zero-knowledge trust verification panel
+- Rate & volume guardrails (429/403)
+- Report → takedown endpoint (immediate R2 deletion)
+- Ad interstitial on Free-tier recipient pages
+- Clean trial allowance (3-5 ad-free deliveries)
+- Anti-adblock soft-wall (never hard-block)
+
+## Epic 1: Core Delivery Pipeline — Stories
+
+### Story 1.1: R2 Infrastructure & IStorageProvider Extension
 
 As a developer,
-I want the storage provider abstraction and core entity model in place,
-So that all upload/download operations have a consistent backend.
+I want R2 storage integrated as the active backend with a clear provider interface,
+So that upload and download flows can use Cloudflare R2 without touching the legacy local-disk backend.
 
 **Acceptance Criteria:**
 
-**Given** the app is configured with `StorageProvider: "LocalDisk"`
-**When** DI resolves `IStorageProvider`
-**Then** `LocalDiskStorageProvider` singleton returned with configured path
+**Given** the application starts
+**When** DI container resolves `IStorageProvider`
+**Then** the active implementation is `R2StorageProvider`
+**And** `LocalDiskStorageProvider` is still registered but marked deprecated
 
-**Given** EF Core migration applied
-**When** querying schema
-**Then** tables: `Deliveries`, `Manifests` (bytea), `Chunks`, `UploadSessions`, `DownloadTracking`; Delivery 1→1 Manifest, 1→N Chunks cascade
+**Given** the project has `IStorageProvider` interface defined
+**When** I extend it with R2-specific methods:
+- `InitR2MultipartUploadAsync(deliveryId, fileName) → R2InitResult`
+- `GenerateUploadPartUrlsAsync(uploadId, partNumbers) → R2PartUrl[]`
+- `CompleteR2MultipartUploadAsync(uploadId, deliveryId) → CompletionResult`
+- `AbortR2MultipartUploadAsync(uploadId) → void`
+- `GetPresignedDownloadUrlAsync(objectKey, expiry) → string`
+- `DeleteObjectsAsync(prefix) → void`
+**Then** `R2StorageProvider` implements all methods with real R2 API calls
+**And** `LocalDiskStorageProvider` throws `NotSupportedException` for new R2 methods
 
-**Given** legacy `Files`/`TempShares` exist
-**When** migration runs
-**Then** new tables for new entities; legacy tables preserved but deprecated
+**Given** the R2 config is loaded
+**When** `R2StorageProvider` initializes
+**Then** it reads `AccountId`, `BucketName`, `AccessKeyId`, `AccessKeySecret` from configuration
+**And** validates credentials with a `HeadBucket` call on startup (fail-fast)
 
-**Given** `StoreChunkAsync` called
-**When** valid chunk provided
-**Then** chunk persists to disk, returns storage reference
+**Given** a delivery is created
+**When** `Delivery.StoragePath` is set on commit
+**Then** the key follows the scheme `uploads/{userId}/{deliveryId}/{fileName}`
+**And** no additional DB lookup is needed to construct the R2 object key prefix
 
-**Given** `DeleteChunksAsync` called
-**When** array of chunk IDs provided
-**Then** all specified chunks removed from disk
+**Given** a delivery expires or is deleted
+**When** the background cleanup job runs
+**Then** it calls `DeleteObjectsAsync(StoragePath)` to delete all objects with that prefix
+**And** confirms deletion via R2 response (not blind delete)
 
-### Story 1.2: Chunked Upload API
+**Given** R2 returns a transient error (5xx, timeout)
+**When** a storage operation fails
+**Then** the handler returns `502 Bad Gateway` with a structured error body
+**And** validation errors (400) are not wrapped as 502
+
+**Files affected:**
+- `src/QuickShare.Server/Abstractions/IStorageProvider.cs` — extend interface
+- `src/QuickShare.Server/Infrastructure/Storage/R2StorageProvider.cs` — new implementation
+- `src/QuickShare.Server/Infrastructure/Storage/LocalDiskStorageProvider.cs` — stub new methods
+- `src/QuickShare.Server/Models/Delivery.cs` — add `StoragePath` property
+- `src/QuickShare.Server/Models/UploadSession.cs` — add `R2UploadId` property
+- `appsettings.json` — R2 config section
+
+### Story 1.2: Auth & Plan Tiers (Google OAuth + Free/Pro/Studio)
 
 As a sender,
-I want to upload large files as chunks with resume,
-So that files of any size can be sent reliably over unstable connections.
+I want to sign in with Google and get a plan with appropriate limits,
+So that I can upload files within my quota and upgrade when I need more capacity.
 
 **Acceptance Criteria:**
 
-**Given** authenticated sender
-**When** `POST /api/uploads/start` with `{ fileName, fileSize, mimeType }`
-**Then** `UploadSession` created with unique `uploadId`, status InProgress, 24h TTL; returns `{ uploadId, chunkSize }`
+**Given** a visitor clicks "Sign in with Google"
+**When** they complete OAuth flow
+**Then** a new account is created (or existing account is matched)
+**And** they receive a Free plan by default
+**And** they are redirected to the dashboard
 
-**Given** active session
-**When** `POST /api/uploads/{id}/chunks/{index}` with chunk bytes
-**Then** chunk stored via `IStorageProvider`; returns `{ chunkIndex, stored: true }`
+**Given** an authenticated user exists
+**When** they access any upload/download management endpoint
+**Then** the server enforces plan-based limits from configuration:
+- Free: max 100MB per file, 5 downloads per link, 7-day expiry, 2GB monthly volume
+- Pro: max 2GB per file, 50 downloads per link, 30-day expiry, 50GB monthly volume
+- Studio: max 20GB per file, configurable downloads, 90-day expiry, 500GB monthly volume
 
-**Given** same chunk retried
-**When** endpoint called again
-**Then** returns `{ alreadyExists: true }` without duplicate storage
+**Given** a user exceeds their plan quota
+**When** they attempt an upload
+**Then** the server returns `403 Forbidden` with a structured error body indicating which limit was hit
+**And** the quota check runs server-side (not client-side enforcement)
 
-**Given** partial upload after disconnect
-**When** `GET /api/uploads/{id}/status`
-**Then** returns `{ uploadedChunks: [0,1,3], missingChunks: [2,4..9] }`
+**Given** an unauthenticated user visits the site
+**When** they try to access protected endpoints (upload, dashboard)
+**Then** they receive `401 Unauthorized`
+**And** the client redirects to the sign-in page
 
-**Given** all chunks uploaded
-**When** `POST /api/uploads/{id}/commit`
-**Then** atomic Wolverine transaction: creates Delivery + Manifest, links chunks; returns `{ shareId, shareLink }`
+**Files affected:**
+- `src/QuickShare.Server/Auth/GoogleOAuthHandler.cs` — new
+- `src/QuickShare.Server/Models/User.cs` — plan, quotas
+- `src/QuickShare.Server/Infrastructure/Quota/QuotaEnforcer.cs` — new
+- `appsettings.json` — plan tier config
 
-**Given** commit with missing chunks
-**When** called
-**Then** 400 `{ error: "incomplete_upload", missingChunks: [...] }`
+### Story 1.3: R2 Multipart Upload — Presign All, Encrypt → R2, Zombie Sweep
 
-**Given** expired session (24h)
-**When** any endpoint called
-**Then** 410 `{ error: "session_expired" }`
+As a sender,
+I want to upload large files in encrypted chunks directly to R2 with part-level resume,
+So that even multi-GB files upload reliably and never touch the server.
 
-**Given** Free plan file exceeds limit
-**When** start called
-**Then** 413 `{ maxSize: "5GB", currentPlan: "Free" }`
+**Acceptance Criteria:**
 
-### Story 1.3: Recipient Download
+**Given** a sender is authenticated and within quota
+**When** they initiate an upload via `POST /api/deliveries/start-r2`
+**Then** the server calls `InitR2MultipartUploadAsync` to create an R2 multipart upload
+**And** generates presigned PUT URLs for all parts in one batch via `GenerateUploadPartUrlsAsync`
+**And** returns `{ deliveryId, uploadId, parts: [{ partNumber, url }] }`
+**And** a new `UploadSession` is persisted with `R2UploadId` and `DeliveryId`
+
+**Given** the client has the presigned URLs
+**When** it encrypts a chunk (WebCrypto AES-256-GCM)
+**Then** it PUTs the encrypted chunk directly to R2 using the presigned URL
+**And** records the `ETag` returned by R2 for that part
+
+**Given** all parts are uploaded
+**When** the client calls `POST /api/deliveries/commit-r2` with `{ uploadId, parts: [{ partNumber, etag }] }`
+**Then** the server calls `CompleteR2MultipartUploadAsync` (ListParts + Complete)
+**And** writes a `Delivery` record into the database
+**And** returns the delivery share link
+
+**Given** the client cancels mid-upload
+**When** it calls `POST /api/deliveries/abort-r2` with `{ uploadId }`
+**Then** the server calls `AbortR2MultipartUploadAsync`
+**And** deletes the `UploadSession`
+**And** all uploaded R2 parts are cleaned up by R2
+
+**Given** a sender starts an upload but never commits
+**When** the `UploadSession` TTL expires (24h from creation)
+**Then** a background job queries for expired sessions with non-null `R2UploadId`
+**And** calls `AbortR2MultipartUploadAsync` for each
+**And** deletes the `UploadSession` record
+
+**Given** any R2 API call fails during `start-r2` or `commit-r2`
+**When** the error is transient (5xx, timeout)
+**Then** the server returns `502 Bad Gateway`
+**And** the upload remains in a recoverable state
+
+**Files affected:**
+- `src/QuickShare.Server/Features/Uploads/StartR2/StartR2Handler.cs` — new
+- `src/QuickShare.Server/Features/Uploads/CommitR2/CommitR2Handler.cs` — new
+- `src/QuickShare.Server/Features/Uploads/AbortR2/AbortR2Handler.cs` — new
+- `src/QuickShare.Server/BackgroundJobs/ZombiePartSweeper.cs` — new
+- `src/QuickShare.Server/Infrastructure/Storage/R2StorageProvider.cs` — implement multipart methods
+- `src/QuickShare.Server/Infrastructure/Storage/IStorageProvider.cs` — add new R2 methods
+
+### Story 1.4: Download via 302 Redirect & Byte-Range Resume
+
+As a sender,
+I want recipients to download files via direct R2 presigned URLs with byte-range support,
+So that downloads are fast, server-free, and interrupted downloads can resume.
+
+**Acceptance Criteria:**
+
+**Given** a recipient visits a delivery link that is valid, not expired, and has downloads remaining
+**When** the request does NOT include a `Range` header
+**Then** `DownloadDeliveryHandler` generates a **7-day presigned GET URL**
+**And** increments the delivery download count
+**And** returns `302 Found` with `Location` set to the presigned URL
+
+**Given** a request includes a `Range` header
+**When** the handler generates the presigned URL
+**Then** it creates a **1-hour scoped presigned URL**
+**And** does NOT increment the download count
+**And** returns `302 Found` with `Location` set to the presigned URL
+
+**Given** presigned URL TTL is generated
+**When** the remaining delivery expiry is shorter than the default TTL
+**Then** the URL expiry is bounded by `min(defaultTtl, deliveryExpiry)`
+
+**Given** the delivery is expired
+**When** `DownloadDeliveryHandler` receives the request
+**Then** it returns `410 Gone` with an expiry message
+
+**Given** the download count cap is reached
+**When** the handler checks count before generating the URL
+**Then** it returns `403 Forbidden` with "Download limit reached"
+
+**Given** the delivery does not exist or the code is invalid
+**When** the handler processes the request
+**Then** it returns `404 Not Found`
+
+**Files affected:**
+- `src/QuickShare.Server/Features/Downloads/Download/DownloadDeliveryHandler.cs` — refactor for 302 + Range
+- `src/QuickShare.Server/Infrastructure/Storage/IStorageProvider.cs` — `GetPresignedDownloadUrlAsync`
+- `src/QuickShare.Server/Features/Downloads/Models/DownloadResult.cs` — new
+
+### Story 1.5: Client-Side Encryption (WebCrypto AES-256-GCM)
+
+As a sender,
+I want my files encrypted before they leave my browser,
+So that the server never sees plaintext content and I maintain zero-knowledge.
+
+**Acceptance Criteria:**
+
+**Given** a file is selected for upload
+**When** the client reads the file into an `ArrayBuffer`
+**Then** it generates a random 256-bit AES key and a random 96-bit IV
+**And** the key is placed in the URL fragment (`#key=base64`) — never sent to the server
+
+**Given** the file is split into fixed-size chunks
+**When** each chunk is encrypted
+**Then** AES-256-GCM is used with a unique nonce per chunk
+**And** the AAD (Additional Authenticated Data) binds `manifest_id + chunk_index`
+**And** the ciphertext is uploaded as one R2 part
+
+**Given** the sender copies the share link
+**When** the link contains `#key=base64`
+**Then** the fragment is never transmitted in server requests (browser spec)
+**And** the recipient page reads the key from `window.location.hash` to decrypt
+
+**Given** the recipient pastes the link
+**When** the download completes
+**Then** the client reassembles chunks in order
+**And** decrypts each chunk with AES-256-GCM using the key from the fragment
+**And** verifies per-chunk integrity via AEAD authentication tag
+**And** reconstructs the original file for the user
+
+**Files affected:**
+- `src/QuickShare.Client/src/lib/crypto.ts` — new (WebCrypto wrapper)
+- `src/QuickShare.Client/src/lib/chunker.ts` — new (split/reassemble)
+- `src/QuickShare.Client/src/workers/encryption.worker.ts` — new (offload from UI thread)
+- `src/QuickShare.Client/src/hooks/useEncryption.ts` — new
+
+### Story 1.6: Upload UI — Drop Zone, Progress, Share Link Card
+
+As a sender,
+I want a clear drag-and-drop upload interface with visible progress,
+So that I know my file is being encrypted and uploaded successfully.
+
+**Acceptance Criteria:**
+
+**Given** a sender is on the upload page
+**When** they drag a file over the drop zone
+**Then** the zone shows a hover state (dashed border → solid accent border)
+**And** an overlay message appears ("Drop to upload")
+**When** they drop the file (or click to browse + select)
+**Then** the upload begins immediately
+
+**Given** the upload is in progress
+**When** encryption and upload are running
+**Then** the UI shows an animated progress bar with percentage, speed (MB/s), and ETA
+**And** a label alternates between "Encrypting..." and "Uploading..." as phases change
+
+**Given** the upload completes successfully
+**When** the `commit-r2` response returns the share link
+**Then** the progress transitions to a **Share Link Card** with:
+- File icon + file name + file size
+- Read-only monospace link field with a `Copy` button
+- Expiry label (e.g., "Expires in 7 days")
+- Visual confirmation toast on copy
+
+**Given** the upload fails mid-way
+**When** a part upload fails (network loss, transient error)
+**Then** the UI pauses with a "Retry" button
+**And** resumes from the last successfully uploaded part (part-level resume)
+**And** shows an error toast with the failure reason
+
+**Given** the network is lost for more than 30 seconds
+**When** auto-retry attempts fail
+**Then** the UI pauses with "Connection lost — click Resume to continue"
+**And** preserves the `UploadSession` for later resume
+
+**Files affected:**
+- `src/QuickShare.Client/src/features/upload/UploadDropzone.tsx` — new
+- `src/QuickShare.Client/src/features/upload/UploadProgress.tsx` — new
+- `src/QuickShare.Client/src/features/upload/ShareLinkCard.tsx` — new
+- `src/QuickShare.Client/src/features/upload/useUpload.ts` — new (orchestration hook)
+- `src/QuickShare.Client/src/features/notifications/Toast.tsx` — new (shared toast)
+
+### Story 1.7: Download UI — Recipient Page, Integrity Verification
 
 As a recipient,
-I want to open a link and download without creating an account,
-So that receiving files is frictionless.
+I want to download shared files with a single click and verify their integrity,
+So that I can trust the file I receive is exactly what was sent.
 
 **Acceptance Criteria:**
 
-**Given** valid `shareId`
-**When** `GET /d/{shareId}` accessed
-**Then** download page: file name, size, download button; no auth required
+**Given** a recipient opens a delivery link (without `#key` — link is incomplete)
+**When** the page loads
+**Then** it shows a placeholder: "This link needs a decryption key — paste the full link"
+**And** a single-line text input for the key
 
-**Given** download with fragment key
-**When** recipient clicks Download
-**Then** chunks stream, SHA-256 verified per-chunk + whole-file, browser receives complete original
+**Given** the full link opens (with `#key`)
+**When** the page loads
+**Then** it displays:
+- File name and size
+- A prominent "Download" button
+- An encryption badge ("🔒 End-to-End Encrypted")
+- Download count display ("X of Y downloads remaining")
+- A "Report this delivery" link
 
-**Given** chunk fails SHA-256
-**When** hash mismatch
-**Then** chunk re-fetched (not whole file); 3 failures → clear error
+**Given** the recipient clicks "Download"
+**When** the delivery is valid and within cap
+**Then** the browser fetches the encrypted file from the presigned R2 URL
+**And** decrypts chunks in sequence using the key from `window.location.hash`
+**And** reassembles into the original file
+**And** triggers a browser download when ready
 
-**Given** expired delivery
-**When** accessed
-**Then** 410 page: "This delivery has expired" + clock icon + "Request re-send"
+**Given** integrity check runs
+**When** a chunk fails AEAD authentication (tag mismatch)
+**Then** the client re-fetches that specific chunk (byte-range on the presigned URL)
+**And** retries decryption
+**After** 3 consecutive failures on the same chunk
+**Then** shows "Download corrupted — please try again" with a retry button
 
-**Given** invalid shareId
-**When** accessed
-**Then** 404: "This link doesn't exist"
+**Given** the download cap is reached
+**When** the page loads
+**Then** the download button is disabled
+**And** shows "Download limit reached" with a message to the sender
 
-**Given** download-cap reached
-**When** accessed
-**Then** button disabled: "Download limit reached. Ask the sender to re-send."
+**Given** the link is expired
+**When** the page loads (410 from server)
+**Then** an expired-state page is displayed with "This link has expired — ask the sender to re-share"
 
-**Given** successful download
-**When** completes
-**Then** counter atomically incremented; IP + timestamp logged; EgressBytes updated
+**Files affected:**
+- `src/QuickShare.Client/src/features/download/DownloadPage.tsx` — new
+- `src/QuickShare.Client/src/features/download/DecryptWorker.ts` — new
+- `src/QuickShare.Client/src/features/download/useDownload.ts` — new
 
-### Story 1.4: E2E Encryption
+### Story 1.8: Link Lifecycle — Expiry, Download-Cap Enforcement, R2 Reclamation
+
+As a system,
+I want expired deliveries to automatically clean up and cap enforcement to block over-downloads,
+So that storage costs stay controlled and sender limits are honored.
+
+**Acceptance Criteria:**
+
+**Given** a delivery has a configured expiry (`Delivery.ExpiresAt`)
+**When** a background job runs (every 5 minutes)
+**Then** it queries for deliveries where `ExpiresAt < UtcNow` and `Status != Expired`
+**And** for each expired delivery it:
+- Changes `Status` to `Expired`
+- Calls `DeleteObjectsAsync(Delivery.StoragePath)` to remove R2 objects
+- Logs the cleanup result
+
+**Given** a delivery has a download cap (`Delivery.MaxDownloads`)
+**When** a no-`Range` download request arrives
+**Then** the handler increments `Delivery.DownloadCount`
+**And** if `DownloadCount >= MaxDownloads` after increment, marks the delivery as cap-reached
+**And** subsequent requests return `403 Forbidden` with "Download limit reached"
+
+**Given** a delivery is deleted by the sender
+**When** the delete endpoint is called
+**Then** the delivery is soft-deleted (or status set to `Deleted`)
+**And** R2 objects are deleted immediately via `DeleteObjectsAsync`
+**And** the share link returns `410 Gone`
+
+**Given** the cleanup job encounters an R2 error during deletion
+**When** the S3 API returns an error
+**Then** the job retries up to 3 times with exponential backoff
+**And** logs a warning if deletion fails permanently
+
+**Files affected:**
+- `src/QuickShare.Server/BackgroundJobs/DeliveryExpiryJob.cs` — new
+- `src/QuickShare.Server/Features/Deliveries/DeliveryService.cs` — add cap increment + deletion
+- `src/QuickShare.Server/Infrastructure/Storage/IStorageProvider.cs` — `DeleteObjectsAsync`
+
+### Story 1.9: Dashboard & File Management
 
 As a sender,
-I want files encrypted on my device before upload,
-So that no one — not ZapDrop, not the storage — can read them.
+I want to see all my deliveries in a grid with status badges and management actions,
+So that I can track, copy, extend, or delete my shared files.
 
 **Acceptance Criteria:**
 
-**Given** file selected in browser
-**When** upload starts
-**Then** WebCrypto generates AES-256-GCM key; file encrypted before chunking; per-chunk unique 96-bit nonce, AAD = `manifest_id ‖ chunk_index`; only ciphertext uploaded
+**Given** a sender is authenticated
+**When** they navigate to the dashboard
+**Then** the page shows a responsive grid of delivery cards (desktop: 3-col, tablet: 2-col, mobile: 1-col)
 
-**Given** encryption complete
-**When** manifest generated
-**Then** manifest encrypted with same key (name, MIME, size, whole-file + per-chunk SHA-256, chunk refs, crypto params); uploaded as ciphertext
+**Given** the dashboard loads with deliveries
+**When** each card renders
+**Then** it shows:
+- Thumbnail area (file type icon)
+- File name
+- Status badge (green = active, amber = expires <24h, gray = expired)
+- Download count ("X / Y downloads")
+- Days remaining (or "Expired")
+- Action icons: Copy link, Extend expiry, Delete
 
-**Given** commit succeeds
-**When** link generated
-**Then** format: `.../d/{shareId}#{base64url-key}`; key in URL fragment only, never in any request
+**Given** the sender has no deliveries yet
+**When** the dashboard loads
+**Then** an empty state is shown with an illustration and "Your first delivery is one click away" + Upload CTA
 
-**Given** recipient opens link with key
-**When** download starts
-**Then** browser extracts key from `window.location.hash`, decrypts manifest, decrypts each chunk with AEAD; failed auth → reject + re-fetch
+**Given** the dashboard is loading
+**When** data is being fetched
+**Then** skeleton cards with shimmer animation are displayed (3 per row)
 
-**Given** link without fragment (key stripped)
-**When** browser attempts decrypt
-**Then** fails; "Invalid or incomplete link — ask sender for full link"
+**Given** the sender types in the search bar
+**When** they enter text
+**Then** deliveries are filtered by file name in real-time (debounced 300ms)
 
-**Given** DevTools network inspection
-**When** reviewing request bodies
-**Then** all bodies contain only high-entropy ciphertext; key never appears
+**Given** the sender clicks Copy on a card
+**When** the action is triggered
+**Then** the delivery share link is copied to clipboard
+**And** a success toast appears ("Link copied!")
 
-### Story 1.5: Upload UI
+**Given** the sender clicks Delete on a card
+**When** they confirm in the confirmation dialog
+**Then** the delivery is deleted (server cleanup + R2 reclamation)
+**And** the card is removed from the grid with a fade-out animation
+**And** a success toast appears ("Delivery deleted")
 
-As a sender,
-I want a clean upload interface with real-time progress,
-So that I know when my file is ready and can share immediately.
+**Given** a sender clicks Extend on an active delivery
+**When** the extension is within plan limits
+**Then** the expiry is extended by the plan's max duration
+**And** the card updates with the new expiry date
 
-**Acceptance Criteria:**
+**Files affected:**
+- `src/QuickShare.Client/src/features/dashboard/DashboardPage.tsx` — new
+- `src/QuickShare.Client/src/features/dashboard/DeliveryCard.tsx` — new
+- `src/QuickShare.Client/src/features/dashboard/DeliveryGrid.tsx` — new
+- `src/QuickShare.Client/src/features/dashboard/StatusBadge.tsx` — new
+- `src/QuickShare.Client/src/features/dashboard/EmptyState.tsx` — new
+- `src/QuickShare.Client/src/features/dashboard/SkeletonCard.tsx` — new
+- `src/QuickShare.Client/src/features/dashboard/useDeliveries.ts` — new
+- `src/QuickShare.Server/Features/Deliveries/List/ListDeliveriesHandler.cs` — new
+- `src/QuickShare.Server/Features/Deliveries/Delete/DeleteDeliveryHandler.cs` — new
+- `src/QuickShare.Server/Features/Deliveries/Extend/ExtendDeliveryHandler.cs` — new
 
-**Given** sender on `/`
-**When** page loads
-**Then** centered drop zone: dashed border, upload icon, "Drag files here or click to browse"
+### Story 1.10: Design Token System & Responsive Layout
 
-**Given** file dragged over zone
-**When** drag enters
-**Then** border → solid accent, background → `--accent-subtle`, scale 1.01; drag leave reverts
-
-**Given** file selected
-**When** accepted
-**Then** file preview (icon + name + size) appears; upload begins immediately
-
-**Given** upload in progress
-**When** chunks uploading
-**Then** animated bar (4px, accent) + "Uploading — 45% · 12.4/27.5 MB · 2.1 MB/s · ~6s"
-
-**Given** encryption stage
-**When** encrypting
-**Then** text: "Encrypting..."
-
-**Given** upload complete
-**When** commit returns link
-**Then** bar fills 100%; Share Link Card: file icon+name+size, monospace link field + copy button, "Link copied" toast
-
-**Given** mobile (< 640px)
-**When** page loads
-**Then** drop zone → full-width "Select files" button (56px, accent)
-
-**Given** upload fails mid-way
-**When** chunk error
-**Then** red toast: "Upload failed. Check your connection." + Retry; only missing chunks re-upload
-
-**Given** Free plan exceeds limit
-**When** file selected
-**Then** inline message: "Files over 5 GB require Pro. This file is X GB." + Upgrade/Cancel; no modal
-
-### Story 1.6: Accounts & Plans
-
-As a sender,
-I want to sign in with Google and have plan limits enforced,
-So that my deliveries are tied to my account and I can upgrade for more capacity.
+As a developer,
+I want a consistent design token system with semantic colors, typography, spacing, and responsive breakpoints,
+So that all UI components share a coherent visual language and work across desktop, tablet, and mobile.
 
 **Acceptance Criteria:**
 
-**Given** unauthenticated user on `/`
-**When** page accessed
-**Then** redirected to Google OAuth; on sign-in, User created/matched with Free plan
+**Given** the design system is defined
+**When** CSS custom properties are loaded
+**Then** the following token categories are available:
 
-**Given** authenticated sender
-**When** accessing sender pages
-**Then** cookie validated server-side; nav shows name + plan
+**Colors:**
+- Brand: navy `#1A1A2E` + accent `#4F6CF7`
+- Semantic tokens: `--bg-primary`, `--bg-secondary`, `--bg-card`, `--text-primary`, `--text-secondary`, `--border-default`, `--border-focus`, `--border-error`
+- Status tokens: `--status-success`, `--status-warning`, `--status-error`
 
-**Given** Free plan sender
-**When** uploading
-**Then** limits server-enforced: 5 GB/file, 3-day expiry, 5 download-cap, 1-2 concurrency
+**Light & Dark themes:**
+- `:root` defines light theme values
+- `.dark` class swaps semantic tokens for dark mode
+- All components use `var(--token)` — no hardcoded colors
 
-**Given** Pro plan sender
-**When** uploading
-**Then** 50 GB/file, 30-day expiry, 50 download-cap, 3-4 concurrency, branded page enabled
+**Typography:**
+- Primary font: Inter (sans-serif)
+- Monospace font: JetBrains Mono (for code, share links)
+- Type scale: xs (12px), sm (14px), base (16px), lg (18px), xl (24px), 2xl (32px)
 
-**Given** Studio plan sender
-**When** uploading
-**Then** unlimited (chunked), 30-day expiry, configurable download-cap, 6+ concurrency, branded + paid enabled
+**Spacing:**
+- Scale: 4px → 8px → 12px → 16px → 24px → 32px → 48px → 64px
 
-**Given** sender exceeds limit
-**When** action attempted
-**Then** 403/413/429 with clear message + upgrade nudge; client bypass impossible
+**Border radius:**
+- Scale: sm (4px), md (8px), lg (12px), xl (16px), full (9999px)
 
-### Story 1.7: Delivery Controls
+**Shadows:**
+- sm, md, lg, xl — progressively deeper elevation
 
-As a sender,
-I want to control link expiry and download limits,
-So that I can protect files and manage costs.
+**Responsive breakpoints:**
+- Mobile: `< 640px` (1-col layout, bottom tab bar 56px)
+- Tablet: `640px – 1024px` (2-col layout)
+- Desktop: `> 1024px` (3-col layout, max content width 1200px)
 
-**Acceptance Criteria:**
+**Accessibility:**
+- All interactive elements are keyboard navigable (Tab, Enter, Escape)
+- Focus rings use `--border-focus` (2px solid, offset 2px)
+- Icon buttons have `aria-label`
+- Toast notifications use `aria-live="polite"`
+- `prefers-reduced-motion` disables all animations
 
-**Given** upload complete
-**When** link card displayed
-**Then** shows "Expires in X days"; Free shows plan-limited max
+**Microcopy:**
+- All UI text is in Vietnamese + English
+- Direct, honest tone — no AI hype words
+- Actionable, brief
 
-**Given** Pro/Studio before upload
-**When** on upload page
-**Then** can set custom expiry (up to plan max) and custom download-cap
+**Files affected:**
+- `src/QuickShare.Client/src/styles/tokens.css` — new
+- `src/QuickShare.Client/src/styles/global.css` — new
+- `src/QuickShare.Client/src/styles/responsive.css` — new
+- `src/QuickShare.Client/src/styles/dark.css` — new
+- `src/QuickShare.Client/src/index.html` — Inter + JetBrains Mono CDN links
 
-**Given** active delivery
-**When** extend called
-**Then** expiry +24h; toast: "Extended by 24h"
+### Story 1.11: Download Page Template with Epic 2 Hooks
 
-**Given** expired delivery
-**When** daily cleanup job runs
-**Then** chunks deleted, manifest + delivery cascade-deleted, storage reclaimed
-
-**Given** download-cap reached
-**When** download attempted
-**Then** 410 disabled; "Download limit reached. Ask sender to re-send."
-
-**Given** dashboard card
-**When** rendered
-**Then** shows "3 of 5 downloads", expiry badge (green/amber/gray), extend icon
-
-### Story 1.8: File Management
-
-As a sender,
-I want to view, search, organize, and delete deliveries,
-So that I can manage shared files efficiently.
+As a developer,
+I want the download page built with conditional slots for Epic 2 features from day one,
+So that Epic 2 stories (branding, password, payment, ads) slot in without touching the template.
 
 **Acceptance Criteria:**
 
-**Given** sender with deliveries on `/deliveries`
-**When** page loads
-**Then** grid of Delivery Cards: thumbnail (icon + gradient), name (truncated), status badge, download count, days remaining; hover lifts +2px
+**Given** the download page template is built
+**When** it renders for any recipient
+**Then** it includes the following conditional slots, each gated by a feature flag:
+
+```
+<BrandingSlot />         ← if enabled: sender logo + message + accent color
+<PasswordGateSlot />     ← if enabled: password form before file card
+<PaymentGateSlot />      ← if enabled: VietQR payment UI before file card
+<AdInterstitialSlot />   ← if enabled: ad overlay + ad panel
+```
+
+**Given** no Epic 2 features are active
+**When** all flags are `false`
+**Then** the template renders identically to a plain download page
+**And** empty slots render nothing (no layout shift)
+**And** no extra network requests are made for disabled features
+
+**Given** a feature flag is toggled on
+**When** the corresponding slot's feature becomes active
+**Then** the slot renders without requiring any template changes
+**And** the layout adapts naturally (cards shift down, password appears above file card, etc.)
+
+**Given** the download page is in its default state (Epic 1 only)
+**When** it renders
+**Then** it shows: download button, file info, encryption badge, report link, download count
+**And** the slot containers are present in the DOM but empty (display:none or null-rendered based on flag)
+
+**Files affected:**
+- `src/QuickShare.Client/src/features/download/DownloadPage.tsx` — refactor with conditional slot composition
+- `src/QuickShare.Client/src/features/download/slots/BrandingSlot.tsx` — placeholder
+- `src/QuickShare.Client/src/features/download/slots/PasswordGateSlot.tsx` — placeholder
+- `src/QuickShare.Client/src/features/download/slots/PaymentGateSlot.tsx` — placeholder
+- `src/QuickShare.Client/src/features/download/slots/AdInterstitialSlot.tsx` — placeholder
+- `src/QuickShare.Client/src/features/download/hooks/useFeatureFlags.ts` — new (feature flag provider)
 
-**Given** search field used
-**When** typing
-**Then** 300ms debounced filter by name + folder path; empty → "No deliveries match"
 
-**Given** card clicked
-**When** navigating
-**Then** `/deliveries/{id}`: full details, metadata, expiry/download status, copy/extend/delete buttons
-
-**Given** delete clicked
-**When** confirm dialog accepted
-**Then** chunks + manifest + delivery cascade-deleted; redirect with success toast
-
-**Given** copy link icon
-**When** clicked on any card
-**Then** link copied; "Copied!" toast
-
-**Given** many deliveries
-**When** paginating
-**Then** paginated; sort: newest, oldest, name A-Z, size; invalid sort → 400
-
-**Given** folders used
-**When** organizing
-**Then** flat hierarchy (root only); unique paths per user; move between folders; rename updates paths; duplicate → 409
-
-## Epic 2: Professional Delivery Experience
-
-### Story 2.1: Password Protection
-
-As a Pro/Studio sender,
-I want to set a password on my delivery,
-So that only the intended recipient can access it.
-
-**Acceptance Criteria:**
-
-**Given** Pro/Studio sender on upload page
-**When** "Password protect" is toggled
-**Then** a password field appears: "Set a password for this delivery"
-
-**Given** password set and delivery created
-**When** recipient opens the share link
-**Then** password field shown before file card: "This delivery is password-protected."
-
-**Given** correct password entered
-**When** submitted
-**Then** server verifies, releases Manifest → file card + download render; incorrect → 401 "Wrong password."
-
-**Given** server-side gate (not key derivation)
-**When** recipient has fragment key but not password
-**Then** key alone useless — server withholds Manifest until password verified
-
-### Story 2.2: Branded Delivery Page
-
-As a Pro/Studio sender,
-I want my logo and message on the recipient's download page,
-So that my delivery looks professional.
-
-**Acceptance Criteria:**
-
-**Given** Pro/Studio sender on upload page
-**When** branding section expanded
-**Then** fields: logo upload (max 180px), personal message textarea, accent color picker
-
-**Given** branding configured and delivery created
-**When** recipient opens link
-**Then** page shows: sender logo (centered), italic message (`--text-lg`, `--fg-muted`), download button in sender's accent color
-
-**Given** Free plan sender
-**When** uploading
-**Then** no branding options; download page shows generic ZapDrop branding
-
-**Given** Studio sender
-**When** branding configured
-**Then** background can be solid color or subtle gradient; Free/Pro senders never see ads on their own recipient page
-
-### Story 2.3: Download Tracking
-
-As a sender,
-I want to see when and how many times my delivery was downloaded,
-So that I know the client received it.
-
-**Acceptance Criteria:**
-
-**Given** sender viewing a delivery card
-**When** card renders
-**Then** shows download count: "12 downloads" or "3 of 5 downloads" (if cap set)
-
-**Given** sender on `/deliveries/{id}`
-**When** page loads
-**Then** shows total downloads, last download timestamp ("Downloaded 2h ago" / "Never downloaded"), cap status
-
-**Given** download completes
-**When** recipient finishes
-**Then** `DownloadTracking` created (IP + timestamp); `Delivery.DownloadCount` atomically incremented; visible to sender immediately
-
-**Given** no downloads yet
-**When** sender views delivery
-**Then** "Not yet downloaded" with gray clock icon
-
-### Story 2.4: Paid Delivery via Ko-fi
-
-As a Studio sender,
-I want to charge for my delivery via Ko-fi,
-So that I can sell deliverables directly.
-
-**Acceptance Criteria:**
-
-**Given** Studio sender on upload page
-**When** "Require payment" toggled
-**Then** price field appears: "Set price (VND)"
-
-**Given** price set and delivery created
-**When** recipient opens link
-**Then** payment prompt: "This delivery requires payment — X VND" with Ko-fi payment button; file card hidden
-
-**Given** recipient completes Ko-fi payment
-**When** webhook `POST /api/payments/ko-fi/webhook` fires with valid signature
-**Then** `Delivery.PaymentStatus` → Paid; delivery unlocked atomically; page auto-refreshes → file card + download
-
-**Given** invalid webhook signature
-**When** endpoint called
-**Then** 403; payment not processed; delivery stays locked
-
-**Given** payment not received (timeout)
-**When** recipient returns
-**Then** prompt still shows; "Payment not received. The delivery is still available." + retry; no penalty
-
-### Story 2.5: Trust Verification
-
-As a technical user,
-I want to verify files are truly encrypted end-to-end,
-So that I trust ZapDrop's zero-knowledge claim.
-
-**Acceptance Criteria:**
-
-**Given** any recipient on download page
-**When** page renders
-**Then** 🔒 "End-to-end encrypted" badge visible below download button (`--text-sm`, `--fg-muted`)
-
-**Given** recipient clicks badge or "Verify encryption"
-**When** activated
-**Then** expandable panel: "Your files were encrypted with AES-256-GCM before upload. ZapDrop cannot read them — only you hold the decryption key (embedded in your link)." + content hash
-
-**Given** technical user wants deeper check
-**When** expanding advanced section
-**Then** shows DevTools guide: "Open DevTools (F12) → Network tab. All request bodies are ciphertext. The key (after # in your link) is never sent to any server." + copyable snippet
-
-**Given** non-technical recipient
-**When** viewing page
-**Then** badge visible but non-intrusive; clicking optional; default experience is clean download
-
-## Epic 3: Platform Sustainability & Safety
-
-### Story 3.1: Rate & Volume Guardrails
-
-As an operator,
-I want server-enforced rate limits and volume caps,
-So that the platform stays solvent and abuse is contained.
-
-**Acceptance Criteria:**
-
-**Given** any sender uploading
-**When** requests exceed per-Plan rate limits
-**Then** server returns 429 with retry-after header; consecutive abuse → temporary throttle
-
-**Given** any sender
-**When** monthly upload volume exceeds Plan ceiling
-**Then** further uploads refused with 403: "Monthly upload limit reached. Upgrade to [next tier] for more."
-
-**Given** IP-based recipient rate limiting
-**When** excessive downloads from single IP
-**Then** download throttled with 429; abuse logged to DownloadTracking
-
-**Given** rate limits per Plan
-**When** limits are in configuration
-**Then** Free: most restrictive, Pro: moderate, Studio: generous; all values config-driven, not hardcoded
-
-**Given** metadata-only logging
-**When** any request is logged
-**Then** logs contain: who (user/IP), when (timestamp), what (shareId/endpoint), size (bytes); never content or plaintext metadata
-
-### Story 3.2: Report → Takedown
-
-As a recipient,
-I want to report a suspicious delivery,
-So that abusive content is removed quickly.
-
-**Acceptance Criteria:**
-
-**Given** any recipient on a download page
-**When** scrolling to bottom
-**Then** "Report this delivery" link visible (`--text-xs`, `--fg-muted`)
-
-**Given** report link clicked
-**When** activated
-**Then** simple form: reason dropdown (Spam, Malware, Illegal content, Other) + optional message textarea + Submit button
-
-**Given** report submitted
-**When** form posted
-**Then** confirmation: "Thank you. This delivery has been reported and will be reviewed."; delivery immediately locked (server-side): chunks deleted from storage, manifest + delivery cascade-deleted, link returns 410
-
-**Given** report submitted
-**When** delivery is takedown
-**Then** sender receives notification (email or in-app) that their delivery was reported and removed
-
-**Given** report submitted without auth
-**When** any recipient (even unauthenticated) reports
-**Then** report is accepted; no account required to report
-
-**Given** duplicate reports on same delivery
-**When** already-takedown delivery reported again
-**Then** 410 returned; "This delivery is no longer available"
-
-### Story 3.3: Ad Placement on Free Tier
-
-As an operator,
-I want ads on Free-tier recipient pages only,
-So that the free tier contributes revenue without touching paid users.
-
-**Acceptance Criteria:**
-
-**Given** Free plan sender's delivery
-**When** recipient opens the share link
-**Then** interstitial ad countdown appears (3-5s): "Your download will start in 3s..." with ad panel alongside; after countdown, ad panel remains below file card; download begins
-
-**Given** same Free-tier link re-opened
-**When** recipient returns
-**Then** no countdown; ad panel remains below file card
-
-**Given** Pro or Studio sender's delivery
-**When** recipient opens the share link
-**Then** NO ads, NO countdown — clean page. Ad-free handoff is a sold feature.
-
-**Given** ad rendering decision
-**When** page template loads
-**Then** `User.PlanId` is looked up via `Delivery.SenderId`; Free → ads injected; Pro/Studio → clean. Invariant at template level, not per-handler.
-
-**Given** ad content standards
-**When** ads are served
-**Then** network uses curated allowlist + category blocks; gambling permitted but not egregious/malicious content
-
-### Story 3.4: Clean Trial Allowance
-
-As a new sender,
-I want my first few deliveries to be ad-free,
-So that I can experience the professional handoff before deciding to upgrade.
-
-**Acceptance Criteria:**
-
-**Given** newly created Free account
-**When** sender creates their first delivery
-**Then** recipient sees a clean (ad-free) download page; `User.CleanDeliveriesRemaining` decremented from 5
-
-**Given** sender has clean deliveries remaining
-**When** creating deliveries
-**Then** each delivery consumes one clean credit until 0 remain
-
-**Given** sender exhausts clean trial (0 remaining)
-**When** creating a new delivery
-**Then** recipient sees the ad interstitial + ad panel (Story 3.3 behavior)
-
-**Given** sender upgrades to Pro/Studio
-**When** plan changes
-**Then** ads never shown regardless of clean trial status; Pro/Studio = always clean
-
-**Given** clean trial count
-**When** configurable
-**Then** default 5, tunable via configuration without code change
-
-### Story 3.5: Anti-Adblock Soft-Wall
-
-As an operator,
-I want to recover ad revenue from adblock users,
-So that the free tier remains sustainable — without blocking downloads.
-
-**Acceptance Criteria:**
-
-**Given** Free-tier recipient with adblocker detected
-**When** download page loads
-**Then** interstitial shows: "Free delivery is supported by ads. Please allow ads to keep ZapDrop free." + "Continue with ads" / "Retry" buttons
-
-**Given** adblock soft-wall shown
-**When** user clicks "Continue with ads"
-**Then** ad loads (if possible) or page proceeds to download; downloads are NEVER hard-blocked
-
-**Given** legitimate privacy user (Brave, Firefox privacy mode, DNS filtering)
-**When** adblock detected
-**Then** soft-wall still shows but Retry always available; user can always reach the download
-
-**Given** optional Ad-Shield subdomain serving
-**When** configured
-**Then** ads served via own subdomain to evade filter lists; but never at the cost of hard-blocking access
-
-**Given** Pro/Studio sender's delivery
-**When** recipient opens link
-**Then** no adblock detection runs; page is always clean regardless of recipient's adblocker
