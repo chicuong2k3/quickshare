@@ -107,74 +107,8 @@ app.MapGet("/logout", async (HttpContext context) =>
     context.Response.Redirect("/");
 });
 
-app.MapPost("/account/update", async (HttpContext httpContext, IHttpClientFactory clientFactory, IWebHostEnvironment env) =>
-{
-    if (httpContext.User.Identity?.IsAuthenticated != true)
-    {
-        httpContext.Response.Headers.Append("HX-Redirect", "/login");
-        return Results.Ok();
-    }
-
-    var form = await httpContext.Request.ReadFormAsync();
-    var name = form["name"].FirstOrDefault()?.Trim();
-
-    if (string.IsNullOrWhiteSpace(name))
-    {
-        httpContext.Response.Headers.Append("HX-Redirect", "/account?error=" + Uri.EscapeDataString("Name is required"));
-        return Results.Ok();
-    }
-
-    string? avatarUrl = null;
-    var avatarFile = form.Files.GetFile("avatar");
-    if (avatarFile is not null && avatarFile.Length > 0)
-    {
-        if (avatarFile.Length > 5 * 1024 * 1024)
-        {
-            httpContext.Response.Headers.Append("HX-Redirect", "/account?error=" + Uri.EscapeDataString("Image must be under 5 MB"));
-            return Results.Ok();
-        }
-
-        var ext = Path.GetExtension(avatarFile.FileName);
-        if (string.IsNullOrEmpty(ext)) ext = ".jpg";
-        var fileName = $"{Guid.NewGuid()}{ext}";
-        var avatarsDir = Path.Combine(env.WebRootPath, "avatars");
-        Directory.CreateDirectory(avatarsDir);
-        var filePath = Path.Combine(avatarsDir, fileName);
-
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await avatarFile.CopyToAsync(stream);
-
-        avatarUrl = $"/avatars/{fileName}";
-    }
-
-    var client = clientFactory.CreateClient(ApiClient.Name);
-    var response = await client.PutAsJsonAsync("/api/users/me/profile",
-        new { Name = name, AvatarUrl = avatarUrl });
-
-    if (!response.IsSuccessStatusCode)
-    {
-        httpContext.Response.Headers.Append("HX-Redirect", "/account?error=" + Uri.EscapeDataString("Failed to update profile"));
-        return Results.Ok();
-    }
-
-    var identity = httpContext.User.Identities.First();
-    var claims = identity.Claims
-        .Where(c => c.Type is not ClaimTypes.Name and not "avatar_url")
-        .ToList();
-    claims.Add(new Claim(ClaimTypes.Name, name));
-    if (avatarUrl is not null)
-        claims.Add(new Claim("avatar_url", avatarUrl));
-
-    var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
-    await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
-
-    httpContext.Response.Headers.Append("HX-Redirect", "/account");
-    return Results.Ok();
-}).WithMetadata(SkipAntiforgeryValidation.Instance);
-
 // Map the root Blazor component (Static SSR — no rendermode helper).
-app.MapRazorComponents<App>()
-   .AddHtmxorComponentEndpoints(app);
+app.MapRazorComponents<App>();
 
 // Dedicated antiforgery token endpoint (good practice for SSR apps that POST).
 app.MapGet("/antiforgery", (IAntiforgery antiforgery, HttpContext context) =>
