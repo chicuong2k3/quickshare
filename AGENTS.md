@@ -6,6 +6,12 @@
 - **No magic strings** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed).
 - **Isolation CSS** — always use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`).
 
+## HTMX Usage
+
+- **Never use HTMX for static data toggles** — if the data doesn't change server-side between states (e.g., billing monthly/yearly pricing, theme toggle, show/hide content), handle it client-side with vanilla JS or CSS classes. Server round-trips for static data are pure latency waste.
+- **Prefer Blazor enhanced navigation over `hx-boost`** — Blazor SSR has built-in enhanced navigation since .NET 9. Do NOT add `hx-boost="true"` globally. Only use explicit `hx-get`/`hx-post`/`hx-trigger` on elements that genuinely need partial server updates (search, form submissions, real-time data).
+- **Use HTMX only when**: the component genuinely needs server-rendered HTML in response to user input (search results, pagination, form validation feedback, real-time status updates).
+
 ## Architecture Rules
 
 ### Audit Fields (CreatedAt / UpdatedAt)

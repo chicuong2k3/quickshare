@@ -50,7 +50,12 @@
     margin-inline: auto;
     padding-bottom: 4rem;
 }
-@@media (min-width: 1024px) {
+@media (min-width: 640px) {
+    .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1024px) {
     .cards {
         grid-template-columns: repeat(3, 1fr);
         align-items: stretch;

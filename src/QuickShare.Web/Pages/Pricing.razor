@@ -12,30 +12,23 @@
         <p class="db-p db-text-muted">Choose the plan that fits your needs. No hidden fees. Cancel anytime.</p>
     </section>
 
-    @* ── BILLING TOGGLE + TIER CARDS (htmx partial) ── *@
-    <HtmxFragment>
+    @* ── BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) ── *@
     <section id="pricing-body">
         <div class="toggle-wrap">
             <div class="toggle-group">
-                <a role="button"
-                   href="/pricing"
-                   hx-get="/pricing" aria-pressed="@(IsYearly ? "false" : "true")"
-                   hx-target="#pricing-body"
-                   hx-select="#pricing-body"
-                   hx-swap="outerHTML swap:0.2s"
-                   class="db-btn @(IsYearly ? "db-btn--ghost" : "db-btn--primary")">
+                <button type="button"
+                        id="btn-monthly"
+                        onclick="pricingToggle('monthly')"
+                        class="db-btn @(IsYearly ? "db-btn--ghost" : "db-btn--primary")">
                     Monthly
-                </a>
-                <a role="button"
-                   href="/pricing?billing=yearly"
-                   hx-get="/pricing?billing=yearly" aria-pressed="@(IsYearly ? "true" : "false")"
-                   hx-target="#pricing-body"
-                   hx-select="#pricing-body"
-                   hx-swap="outerHTML swap:0.2s"
-                   class="db-btn @(IsYearly ? "db-btn--primary" : "db-btn--ghost")">
+                </button>
+                <button type="button"
+                        id="btn-yearly"
+                        onclick="pricingToggle('yearly')"
+                        class="db-btn @(IsYearly ? "db-btn--primary" : "db-btn--ghost")">
                     Yearly
                     <span class="tag">Save 20%</span>
-                </a>
+                </button>
             </div>
         </div>
 
@@ -83,16 +76,14 @@
                     <p class="db-text-muted" style="margin-top: 0.5rem">For creators &amp; professionals</p>
                 </div>
                 <div class="card__price">
-                    @if (IsYearly)
-                    {
-                        <div class="price-amount">$77</div>
-                        <div class="price-period db-text-muted">Billed yearly</div>
-                    }
-                    else
-                    {
+                    <div class="pricing-monthly @(IsYearly ? "hidden" : "")">
                         <div class="price-amount">$9</div>
                         <div class="price-period db-text-muted">Billed monthly</div>
-                    }
+                    </div>
+                    <div class="pricing-yearly @(IsYearly ? "" : "hidden")">
+                        <div class="price-amount">$77</div>
+                        <div class="price-period db-text-muted">Billed yearly</div>
+                    </div>
                 </div>
                 <button class="db-btn db-btn--primary">Start Free Trial</button>
                 <div class="features">
@@ -107,10 +98,6 @@
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                         <span><strong>100</strong> transfers/month</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>Files expire after <strong>30 days</strong></span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -131,16 +118,14 @@
                     <p class="db-text-muted" style="margin-top: 0.5rem">For teams &amp; enterprises</p>
                 </div>
                 <div class="card__price">
-                    @if (IsYearly)
-                    {
-                        <div class="price-amount">$239</div>
-                        <div class="price-period db-text-muted">Billed yearly</div>
-                    }
-                    else
-                    {
+                    <div class="pricing-monthly @(IsYearly ? "hidden" : "")">
                         <div class="price-amount">$29</div>
                         <div class="price-period db-text-muted">Billed monthly</div>
-                    }
+                    </div>
+                    <div class="pricing-yearly @(IsYearly ? "" : "hidden")">
+                        <div class="price-amount">$239</div>
+                        <div class="price-period db-text-muted">Billed yearly</div>
+                    </div>
                 </div>
                 <button class="db-btn db-btn--primary">Start Free Trial</button>
                 <div class="features">
@@ -173,7 +158,22 @@
 
         </div>
     </section>
-    </HtmxFragment>
+
+    <script>
+        function pricingToggle(billing) {
+            const isYearly = billing === 'yearly';
+            document.querySelectorAll('.pricing-monthly').forEach(el => el.classList.toggle('hidden', isYearly));
+            document.querySelectorAll('.pricing-yearly').forEach(el => el.classList.toggle('hidden', !isYearly));
+            const btnM = document.getElementById('btn-monthly');
+            const btnY = document.getElementById('btn-yearly');
+            btnM.className = 'db-btn ' + (isYearly ? 'db-btn--ghost' : 'db-btn--primary');
+            btnY.className = 'db-btn ' + (isYearly ? 'db-btn--primary' : 'db-btn--ghost');
+            const url = new URL(window.location);
+            if (isYearly) url.searchParams.set('billing', 'yearly');
+            else url.searchParams.delete('billing');
+            window.history.replaceState({}, '', url);
+        }
+    </script>
 
     @* ── FAQ ── *@
     <section class="faq">

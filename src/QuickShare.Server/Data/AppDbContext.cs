@@ -1,8 +1,7 @@
-using QuickShare.Shared.Infrastructure;
 
 namespace QuickShare.Server.Data;
 
-public class AppDbContext : DbContext, ISessionTicketDbContext
+public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -17,7 +16,6 @@ public class AppDbContext : DbContext, ISessionTicketDbContext
     public DbSet<Chunk> Chunks => Set<Chunk>();
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
-    public DbSet<SessionTicket> SessionTickets => Set<SessionTicket>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -146,15 +144,5 @@ public class AppDbContext : DbContext, ISessionTicketDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<SessionTicket>(entity =>
-        {
-            entity.ToTable("session_tickets");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Key).IsUnique();
-            entity.HasIndex(e => e.ExpiresAt);
-            entity.Property(e => e.Key).IsRequired().HasMaxLength(128);
-            entity.Property(e => e.Value).IsRequired();
-            entity.Property(e => e.SchemeName).IsRequired().HasMaxLength(64);
-        });
     }
 }

@@ -9,7 +9,6 @@ using QuickShare.Server.Infrastructure.Quota;
 using QuickShare.Server.Infrastructure.Storage;
 using QuickShare.Server.Data;
 using QuickShare.Server.Middleware;
-using QuickShare.Shared.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -26,9 +25,6 @@ builder.Services.AddDataProtection()
 builder.Services.AddDbContext<AppDbContext>(opts =>
     opts.UseNpgsql(connectionString)
         .AddInterceptors(new AuditableEntityInterceptor()));
-
-builder.Services.AddScoped<ISessionTicketDbContext>(sp =>
-    sp.GetRequiredService<AppDbContext>());
 
 builder.Services.Configure<StorageOptions>(
     builder.Configuration.GetSection(StorageOptions.Section));

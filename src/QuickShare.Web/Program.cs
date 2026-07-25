@@ -2,13 +2,9 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using QuickShare.Web;
 using QuickShare.Web.Api;
-using QuickShare.Web.Data;
-using QuickShare.Shared.Infrastructure;
-using QuickShare.Shared.Models;
 using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,18 +20,7 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dpPath))
     .SetApplicationName("QuickShare");
 
-builder.Services.AddDbContext<TicketDbContext>(opts =>
-    opts.UseNpgsql(connectionString));
 
-builder.Services.AddScoped<ISessionTicketDbContext>(sp =>
-    sp.GetRequiredService<TicketDbContext>());
-
-builder.Services.AddSingleton<ITicketStore>(sp =>
-{
-    return new SessionTicketStore(
-        sp.GetRequiredService<IServiceScopeFactory>(),
-        TimeSpan.FromDays(30));
-});
 
 // Blazor Static SSR.
 // In .NET 10, Static Server rendering is the default for AddRazorComponents();
@@ -86,12 +71,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 ));
             }
         };
-    });
-
-builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
-    .Configure<ITicketStore>((options, store) =>
-    {
-        options.SessionStore = store;
     });
 
 builder.Services.AddAuthorization();

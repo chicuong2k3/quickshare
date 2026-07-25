@@ -282,39 +282,6 @@ namespace QuickShare.Server.Migrations
                     b.ToTable("manifests", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Shared.Models.SessionTicket", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("SchemeName")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<byte[]>("Value")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("Key")
-                        .IsUnique();
-
-                    b.ToTable("session_tickets", (string)null);
-                });
-
             modelBuilder.Entity("QuickShare.Shared.Models.TempShare", b =>
                 {
                     b.Property<Guid>("Id")
