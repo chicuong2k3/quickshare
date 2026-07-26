@@ -2529,6 +2529,20 @@
     transition: box-shadow var(--db-transition);
 }
 
+.layout-avatar-skeleton[b-0bikmtq2d9] {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-surface);
+    animation: layout-avatar-pulse-b-0bikmtq2d9 1.5s ease-in-out infinite;
+}
+
+@keyframes layout-avatar-pulse-b-0bikmtq2d9 {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 .layout-avatar-img[b-0bikmtq2d9] {
     object-fit: cover;
 }

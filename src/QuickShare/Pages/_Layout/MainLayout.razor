@@ -6,7 +6,6 @@
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
     var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
     var userEmail = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
-    var userInitials = GetInitials(userName);
     var path = HttpContextAccessor.HttpContext?.Request.Path.Value ?? "";
 }
 
@@ -40,7 +39,7 @@
                             hx-trigger="load once, profileUpdated from:body"
                             hx-swap="outerHTML"
                             type="button" aria-label="User menu">
-                        @userInitials
+                        <span class="layout-avatar-skeleton"></span>
                     </button>
                     <div class="db-dropdown__content layout-avatar-dropdown">
                         <div class="layout-user-info">
@@ -81,18 +80,4 @@
 @code {
     private static string NavActive(bool isActive) =>
         isActive ? "db-nav-menu__item--active" : "";
-
-    private static string GetInitials(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return "?";
-        }
-        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1)
-        {
-            return parts[0][..1].ToUpperInvariant();
-        }
-        return string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant();
-    }
 }
