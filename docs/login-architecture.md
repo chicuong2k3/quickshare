@@ -16,7 +16,7 @@ QuickShare uses a **single Google OAuth flow** in the monolith app (port 9000). 
 | OAuth Challenge | `Program.cs` | `GET /login/{provider}` — triggers `ChallengeAsync()` |
 | Cookie Auth | `Program.cs` | Single `AddCookie()` — dual behavior: `/api/*` → 401, else redirect `/login` |
 | DataProtection | `Program.cs` | `PersistKeysToFileSystem` + `SetApplicationName("QuickShare")` — single app, no cross-process sharing needed |
-| User Registration Service | `Features/Users/Shared/UserRegistrationService.cs` | `RegisterAsync()` — idempotent user creation, called by both OAuth callback and `RegisterUserEndpoint` (DRY) |
+| User Registration Service | `Features/Users/Shared/UserRegistrationService.cs` | `RegisterAsync()` — idempotent user creation, called from OAuth `OnCreatingTicket` (all providers) |
 | Auth Constants | `QuickShare.Shared` / `AuthConstants.cs` | Cookie name, claim types, provider identifiers |
 | ClaimsPrincipal Extensions | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — lookup User from claims |
 | User Mapper | `Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
@@ -68,7 +68,6 @@ options.Events.OnCreatingTicket = async ctx =>
 
 - Adds `"provider": "google"` claim
 - Calls `UserRegistrationService.RegisterAsync()` **in-process** (no HTTP roundtrip to a separate Server)
-- `RegisterUserEndpoint` shares the same `UserRegistrationService` (DRY)
 - User is created BEFORE the cookie is set
 
 ---
@@ -199,8 +198,7 @@ if (app.Environment.IsDevelopment())
 |------|------|
 | `src/QuickShare/Pages/Login.razor` | Login page UI |
 | `src/QuickShare/Program.cs` | Single auth registration: cookie + Google OAuth + dev auto-signin |
-| `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY user registration (endpoint + OAuth callback) |
-| `src/QuickShare/Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` — delegates to `UserRegistrationService` |
+| `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY user registration (all OAuth providers) |
 | `src/QuickShare/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
 | `src/QuickShare/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — User lookup from claims |
 | `src/QuickShare.Shared/AuthConstants.cs` | Shared cookie name, claim types, provider identifiers |

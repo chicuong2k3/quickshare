@@ -2,7 +2,7 @@
 
 ## Overview
 
-QuickShare supports **server-mediated file uploads** via two backends: a legacy chunked upload through the server (stored on local disk) and the primary **R2 direct-upload path** (client uploads to Cloudflare R2 via presigned URLs, server never sees file bytes). Files are encrypted optionally by the client (AES-256-GCM) and the chunk manifest is always encrypted server-side (AES-CBC, keyed by share code).
+QuickShare supports **server-mediated file uploads** via the **R2 direct-upload path** (client uploads to Cloudflare R2 via presigned URLs, server never sees file bytes). Files are encrypted optionally by the client (AES-256-GCM) and the chunk manifest is always encrypted server-side (AES-CBC, keyed by share code).
 
 > Client → Server (R2 presigned URLs) → Client PUTs directly to R2 → Server (commit, create Delivery + Manifest) → Share link returned.
 
@@ -17,10 +17,6 @@ QuickShare supports **server-mediated file uploads** via two backends: a legacy 
 | `POST /api/uploads/start-r2` | `Features/Uploads/StartR2/StartR2Endpoint.cs` | Initiate R2 multipart upload, return presigned part URLs |
 | `POST /api/uploads/commit-r2` | `Features/Uploads/CommitR2/CommitR2Endpoint.cs` | Complete R2 upload, create Delivery record, return share link |
 | `POST /api/uploads/abort-r2` | `Features/Uploads/AbortR2/AbortR2Endpoint.cs` | Cancel in-progress R2 upload |
-| `POST /api/uploads/start` | `Features/Uploads/Start/StartUploadEndpoint.cs` | **Legacy** — start a server-chunked upload session |
-| `POST /api/uploads/{id}/chunks/{index}` | `Features/Uploads/Chunks/UploadChunkEndpoint.cs` | **Legacy** — upload a single chunk to server |
-| `GET /api/uploads/{id}/status` | `Features/Uploads/Status/UploadStatusEndpoint.cs` | **Legacy** — check chunk upload progress |
-| `POST /api/uploads/{id}/commit` | `Features/Uploads/Commit/CommitUploadEndpoint.cs` | **Legacy** — commit chunks, create Delivery + Manifest |
 
 ### Server Business Logic
 
@@ -29,10 +25,6 @@ QuickShare supports **server-mediated file uploads** via two backends: a legacy 
 | StartR2 Handler | `Features/Uploads/StartR2/StartR2Handler.cs` | Validate plan limits, init R2 multipart, create UploadSession |
 | CommitR2 Handler | `Features/Uploads/CommitR2/CommitR2Handler.cs` | Complete R2 multipart, create Delivery, generate share code |
 | AbortR2 Handler | `Features/Uploads/AbortR2/AbortR2Handler.cs` | Abort R2 multipart, remove UploadSession |
-| Start Handler | `Features/Uploads/Start/StartUploadHandler.cs` | **Legacy** — validate, create UploadSession |
-| UploadChunk Handler | `Features/Uploads/Chunks/UploadChunkHandler.cs` | **Legacy** — store chunk, SHA-256 hash, idempotent retry |
-| Commit Handler | `Features/Uploads/Commit/CommitUploadHandler.cs` | **Legacy** — validate all chunks present, create Delivery + encrypted Manifest |
-| UploadStatus Handler | `Features/Uploads/Status/UploadStatusHandler.cs` | **Legacy** — enumerate uploaded/missing chunk indices |
 
 ### Storage Layer
 
@@ -40,7 +32,7 @@ QuickShare supports **server-mediated file uploads** via two backends: a legacy 
 |-------|------|------|
 | IStorageProvider | `Abstractions/IStorageProvider.cs` | Interface: chunk store/retrieve, R2 multipart lifecycle, presigned URLs |
 | R2StorageProvider | `Infrastructure/Storage/R2StorageProvider.cs` | Cloudflare R2 via AWS S3 SDK (`IAmazonS3`) |
-| LocalDiskStorageProvider | `Infrastructure/LocalDiskStorageProvider.cs` | **Legacy** — chunk files on local disk (`{chunkId:N}.chunk`) |
+| LocalDiskStorageProvider | `Infrastructure/LocalDiskStorageProvider.cs` | **Deprecated** — local disk storage (R2 is primary) |
 
 ### Shared Models
 
@@ -129,68 +121,11 @@ Client Browser              Server API                    Cloudflare R2
   │  shareLink = /d/{code}    │                              │
 ```
 
-**Key differences from legacy path:**
+**Key differences from legacy path (removed):**
 - Client uploads directly to R2 (server never touches file bytes)
 - No `Chunk` or `Manifest` DB records — single R2 object per file
 - `Delivery.StoragePath` holds the R2 object key
 - Download uses `GetPresignedDownloadUrlAsync` instead of reassembling chunks
-
-### 2.2 Legacy Chunked Upload (Server-Mediated, Deprecated)
-
-```
-Client              Server API                  DB / Disk
-  │                     │                          │
-  │  POST /api/uploads/ │                          │
-  │    start            │                          │
-  │  { fileName,        │                          │
-  │    fileSize,        │                          │
-  │    mimeType }       │                          │
-  │────────────────────▶│                          │
-  │                     │── Validate plan limits   │
-  │                     │── Create UploadSession   │
-  │                     │   (Status="InProgress")  │
-  │  { uploadId,        │                          │
-  │    chunkSize }      │                          │
-  │◀────────────────────│                          │
-  │                     │                          │
-  │  === Upload each chunk ===                    │
-  │                     │                          │
-  │  POST /api/uploads/ │                          │
-  │    {id}/chunks/{i}  │                          │
-  │  (raw bytes body)   │                          │
-  │────────────────────▶│                          │
-  │                     │── Validate session       │
-  │                     │── Check idempotency      │
-  │                     │── StoreChunkAsync → disk │── chunk file
-  │                     │── SHA-256 hash chunk     │
-  │                     │── Insert Chunk record ───▶│── chunks table
-  │  { chunkIndex,      │                          │
-  │    stored: true }   │                          │
-  │◀────────────────────│                          │
-  │  ... repeat ...     │                          │
-  │                     │                          │
-  │  === All chunks done ===                      │
-  │                     │                          │
-  │  POST /api/uploads/ │                          │
-  │    {id}/commit      │                          │
-  │────────────────────▶│                          │
-  │                     │── Verify all chunks      │
-  │                     │   present (by index)     │
-  │                     │── Generate share code    │
-  │                     │── Create Delivery        │
-  │                     │── Create encrypted       │
-  │                     │   Manifest (ManifestData │
-  │                     │   → AES-CBC)             │
-  │                     │── Reassign chunks        │
-  │                     │   DeliveryId             │
-  │                     │── Mark session Committed │
-  │  { shareId,         │                          │
-  │    shareLink }      │                          │
-  │◀────────────────────│                          │
-```
-
-**Download path (legacy):**
-- `GET /d/{shareCode}` → decrypt Manifest → reassemble chunks from storage → stream to client
 
 ---
 
@@ -230,7 +165,7 @@ ManifestData (plaintext, serialized to JSON before encryption):
 └──────────────────────────────────────┘
 ```
 
-**Note:** R2 path does NOT use `Chunk` or `Manifest` tables. The entire file is one R2 object; `Delivery.StoragePath` holds the R2 object key. The legacy path uses chunks + manifest.
+**Note:** R2 path does NOT use `Chunk` or `Manifest` tables. The entire file is one R2 object; `Delivery.StoragePath` holds the R2 object key.
 
 ---
 
@@ -263,7 +198,7 @@ Encryption Flow:
   2. Client generates AES-256-GCM key via Web Crypto
   3. Client encrypts entire file: AES-256-GCM(file, key, 12-byte random nonce)
   4. Encrypted blob = nonce || ciphertext (prepended to results)
-  5. Upload proceeds normally (R2 or legacy)
+  5. Upload proceeds normally
   6. After commit, the raw key is appended to URL as fragment:
      /d/{shareCode}#key={base64url(rawKey)}
   → Server NEVER sees the key. Only someone with the full URL can decrypt.
@@ -274,7 +209,7 @@ Encryption Flow:
 
 ## 6. Plan Limits Enforcement
 
-Checked in `StartUploadHandler` and `StartR2Handler`:
+Checked in `StartR2Handler`:
 
 | Limit | Free | Pro | Studio |
 |-------|------|-----|--------|
@@ -282,7 +217,7 @@ Checked in `StartUploadHandler` and `StartR2Handler`:
 | Max expiry days | 7 | 30 | 90 |
 | Max downloads | 5 | 50 | unlimited |
 | Max monthly bytes | 2 GB | 50 GB | 500 GB |
-| Max concurrent (legacy) | 2 | 4 | 6 |
+| Max concurrent | 5 | 10 | 20 |
 
 ---
 
@@ -373,22 +308,12 @@ All upload endpoints use FastEndpoints with the standard cookie auth (no explici
 | `src/QuickShare/Features/Uploads/CommitR2/CommitR2Handler.cs` | R2 completion + Delivery creation |
 | `src/QuickShare/Features/Uploads/AbortR2/AbortR2Endpoint.cs` | `POST /api/uploads/abort-r2` |
 | `src/QuickShare/Features/Uploads/AbortR2/AbortR2Handler.cs` | R2 abort + session cleanup |
-| `src/QuickShare/Features/Uploads/Start/StartUploadEndpoint.cs` | **Legacy** `POST /api/uploads/start` |
-| `src/QuickShare/Features/Uploads/Start/StartUploadHandler.cs` | **Legacy** session creation |
-| `src/QuickShare/Features/Uploads/Chunks/UploadChunkEndpoint.cs` | **Legacy** `POST /api/uploads/{id}/chunks/{index}` |
-| `src/QuickShare/Features/Uploads/Chunks/UploadChunkHandler.cs` | **Legacy** chunk storage + SHA-256 |
-| `src/QuickShare/Features/Uploads/Commit/CommitUploadEndpoint.cs` | **Legacy** `POST /api/uploads/{id}/commit` |
-| `src/QuickShare/Features/Uploads/Commit/CommitUploadHandler.cs` | **Legacy** chunk validation → Delivery + Manifest |
-| `src/QuickShare/Features/Uploads/Status/UploadStatusEndpoint.cs` | **Legacy** `GET /api/uploads/{id}/status` |
-| `src/QuickShare/Features/Uploads/Status/UploadStatusHandler.cs` | **Legacy** chunk progress query |
-| `src/QuickShare/Features/Uploads/Shared/ManifestData.cs` | Manifest plaintext record (+ ChunkEntry) |
-| `src/QuickShare/Features/Uploads/Shared/ManifestEncryption.cs` | AES-CBC manifest encrypt/decrypt |
 | `src/QuickShare/Features/Uploads/UploadConstants.cs` | DefaultChunkSize = 25 MB |
 | `src/QuickShare/Abstractions/IStorageProvider.cs` | Storage interface |
 | `src/QuickShare/Infrastructure/Storage/R2StorageProvider.cs` | Cloudflare R2 via AWS SDK |
-| `src/QuickShare/Infrastructure/LocalDiskStorageProvider.cs` | **Legacy** local disk storage |
-| `src/QuickShare.Shared/Models/UploadSession.cs` | Upload session entity |
-| `src/QuickShare.Shared/Models/Delivery.cs` | Delivery (share) entity |
-| `src/QuickShare.Shared/Models/Chunk.cs` | Chunk entity |
-| `src/QuickShare.Shared/Models/Manifest.cs` | Manifest entity |
-| `src/QuickShare.Shared/Constants/PlanTierLimits.cs` | Per-plan limits |
+| `src/QuickShare/Infrastructure/LocalDiskStorageProvider.cs` | **Deprecated** local disk storage |
+| `src/QuickShare/Models/UploadSession.cs` | Upload session entity |
+| `src/QuickShare/Models/Delivery.cs` | Delivery (share) entity |
+| `src/QuickShare/Models/Chunk.cs` | Chunk entity (deprecated — R2 handles chunking) |
+| `src/QuickShare/Models/Manifest.cs` | Manifest entity (deprecated — R2 is single object) |
+| `src/QuickShare/Constants/PlanTierLimits.cs` | Per-plan limits |

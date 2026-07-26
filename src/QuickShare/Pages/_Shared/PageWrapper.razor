@@ -1,0 +1,16 @@
+<main class="@CssClass" @attributes="AdditionalAttributes">@ChildContent</main>
+
+@code {
+    [Parameter] public PageVariant Variant { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+
+    private string CssClass => Variant switch
+    {
+        PageVariant.Centered => "page page--centered",
+        PageVariant.Padded => "page page--padded",
+        PageVariant.Account => "page page--account",
+        PageVariant.Fill => "page page--fill",
+        _ => "page"
+    };
+}

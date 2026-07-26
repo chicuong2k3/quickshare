@@ -1,4 +1,4 @@
-namespace QuickShare.Services;
+namespace QuickShare.Infrastructure;
 
 public sealed class StorageOptions
 {

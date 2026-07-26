@@ -12,9 +12,7 @@ public record DownloadInfoResponse(
     int DownloadCount,
     int MaxDownloads,
     bool HasPassword,
-    bool HasPayment,
-    string SenderPlan,
-    decimal? Price
+    string SenderPlan
 );
 
 public sealed class DownloadInfoHandler
@@ -45,9 +43,7 @@ public sealed class DownloadInfoHandler
             delivery.DownloadCount,
             delivery.MaxDownloads,
             HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
-            HasPayment: delivery.Price.HasValue && delivery.Price > 0,
-            SenderPlan: senderPlan,
-            Price: delivery.Price
+            SenderPlan: senderPlan
         ));
     }
 }

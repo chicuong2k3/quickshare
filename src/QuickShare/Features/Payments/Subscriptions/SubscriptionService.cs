@@ -1,4 +1,4 @@
-using QuickShare.Models;
+
 
 namespace QuickShare.Features.Payments.Subscriptions;
 
@@ -89,9 +89,9 @@ public static class SubscriptionService
             sub.Status = SubscriptionStatus.Expired;
             sub.UpdatedAt = now;
 
-            if (sub.User.Plan != Constants.PlanTierLimits.Free)
+            if (sub.User.Plan != PlanTierLimits.Free)
             {
-                sub.User.Plan = Constants.PlanTierLimits.Free;
+                sub.User.Plan = PlanTierLimits.Free;
                 sub.User.UpdatedAt = now;
             }
         }

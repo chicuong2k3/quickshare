@@ -5,12 +5,10 @@ using Microsoft.AspNetCore.DataProtection;
 using FastEndpoints.Swagger;
 using System.Security.Claims;
 using QuickShare;
-using QuickShare.BackgroundJobs;
 using QuickShare.Features.Deliveries;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Storage;
-using QuickShare.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -65,17 +63,6 @@ builder.Services.AddHostedService<SubscriptionExpiryJob>();
 
 builder.Services.AddScoped<DeliveryService>();
 
-var allowedOrigins = (quickShareOptions.AllowedCorsOrigins ?? []).Where(o => !string.IsNullOrWhiteSpace(o)).ToArray();
-builder.Services.AddCors(o =>
-{
-    o.AddDefaultPolicy(p =>
-    {
-        if (allowedOrigins.Length > 0)
-            p.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader();
-        else
-            p.SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader();
-    });
-});
 
 builder.Host.UseWolverine(opts =>
 {
@@ -195,7 +182,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
-app.UseCors();
+
 
 if (app.Environment.IsDevelopment())
 {

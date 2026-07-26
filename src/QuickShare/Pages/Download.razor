@@ -16,7 +16,7 @@
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
-<div id="download-app" class="page">
+<PageWrapper id="download-app" Variant="PageVariant.Centered">
     <div class="card db-card">
         <div class="db-card__body">
             @switch (RenderState)
@@ -49,36 +49,6 @@
                                 <span id="dl-password-btn-text">Unlock</span>
                             </button>
                         </div>
-                    </div>
-
-                    @* Payment Gate *@
-                    <div id="download-phase-payment" class="db-text-center hidden">
-                        <div class="icon-box --warn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                            </svg>
-                        </div>
-                        <h2 class="db-h2" style="font-size: 1.125rem">Payment required</h2>
-                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">This delivery requires a payment of <strong id="dl-payment-amount"></strong> USD before downloading.</p>
-                        <div id="dl-payment-qr" class="hidden" style="margin-top: 1.5rem">
-                            <img id="qr-img" class="qr" alt="VietQR payment code" />
-                            <p style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--color-muted-foreground)">Scan with your banking app to pay</p>
-                            <div style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-muted-foreground); display: flex; align-items: center; justify-content: center; gap: 0.375rem">
-                                <span style="font-weight: 500; color: var(--color-foreground)">Bank:</span>
-                                <span id="dl-bank-info"></span>
-                                <span>&middot;</span>
-                                <span style="font-weight: 500; color: var(--color-foreground)">Account:</span>
-                                <span id="dl-bank-account"></span>
-                            </div>
-                        </div>
-                        <div id="dl-payment-loading" class="hidden" style="margin-top: 1.5rem">
-                            <div class="db-spinner"></div>
-                            <p class="db-p" style="margin-top: 0.5rem; font-size: 0.75rem">Generating payment code&hellip;</p>
-                        </div>
-                        <p id="dl-payment-error" class="hidden " style="margin-top: 1rem; text-align: center"></p>
-                        <button id="dl-payment-btn" type="button" class="btn hidden" style="margin-top: 1rem" onclick="downloadApp.checkPaymentStatus()" data-ai-action="download.payment.check">
-                            <span id="dl-payment-btn-text">I&rsquo;ve paid &mdash; check status</span>
-                        </button>
                     </div>
 
                     @* Ad Interstitial *@
@@ -229,7 +199,7 @@
     </div>
 
     <script src="/js/download.js"></script>
-</div>
+</PageWrapper>
 
 @code {
     [Parameter] public string ShareCode { get; set; } = "";
@@ -266,9 +236,7 @@
                 DownloadCount = value.DownloadCount,
                 MaxDownloads = value.MaxDownloads,
                 HasPassword = value.HasPassword,
-                HasPayment = value.HasPayment,
-                SenderPlan = value.SenderPlan,
-                Price = value.Price
+                SenderPlan = value.SenderPlan
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? $"expires {ExpiryCountdown(Info.ExpiresAt.Value)}" : "no expiry";
             RenderState = DownloadRenderState.Ready;
@@ -316,6 +284,6 @@
     {
         public string FileName { get; set; } = ""; public string ContentType { get; set; } = ""; public long FileSize { get; set; }
         public DateTime? ExpiresAt { get; set; } public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
-        public bool HasPassword { get; set; } public bool HasPayment { get; set; } public string SenderPlan { get; set; } = ""; public decimal? Price { get; set; }
+        public bool HasPassword { get; set; } public string SenderPlan { get; set; } = "";
     }
 }

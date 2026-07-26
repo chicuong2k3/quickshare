@@ -1,5 +1,3 @@
-.page { flex: 1; }
-.main { padding: 8rem 1.5rem 6rem; }
 .container { max-width: 64rem; margin: 0 auto; }
 
 .head-row { display: flex; flex-direction: column; gap: 0.5rem; }

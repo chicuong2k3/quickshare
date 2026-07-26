@@ -4,13 +4,14 @@
 @using QuickShare.Data
 @using QuickShare.Features.Payments.Kofi
 @using QuickShare.Features.Payments.Subscriptions
+@using Microsoft.AspNetCore.Http
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 
 <PageTitle>Billing — QuickShareCloud</PageTitle>
 
-<div class="page">
+<PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
         <span class="tag">Billing</span>
@@ -62,14 +63,13 @@
                     {
                         <div class="summary-card__actions">
                             <a href="/pricing" class="db-btn db-btn--secondary">Change Plan</a>
-                            <button class="db-btn db-btn--ghost db-btn--danger"
-                                    hx-post="/api/subscriptions/cancel"
-                                    hx-target="#billing-status"
-                                    hx-swap="innerHTML">
-                                Cancel Subscription
-                            </button>
+                            <form method="post" style="display:inline">
+                                <input type="hidden" name="Action" value="cancel" />
+                                <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
+                                    Cancel Subscription
+                                </button>
+                            </form>
                         </div>
-                        <div id="billing-status"></div>
                     }
                 }
             </div>
@@ -110,7 +110,7 @@
         }
     </section>
 
-</div>
+</PageWrapper>
 
 @code {
     private BillingHistoryResponse? billing;
@@ -160,16 +160,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try
+        var ct = CancellationToken.None;
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+
+        if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(HttpContextAccessor.HttpContext.Request.Method))
         {
-            var ct = CancellationToken.None;
-            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
-            billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
-            subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
+            var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
+            if (form["Action"] == "cancel")
+            {
+                await SubscriptionService.CancelAsync(user, Db, ct);
+                await Db.SaveChangesAsync(ct);
+            }
         }
-        catch
-        {
-            billing = null;
-        }
+
+        billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
+        subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
     }
 }

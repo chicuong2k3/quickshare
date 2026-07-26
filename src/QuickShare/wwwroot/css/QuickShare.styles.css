@@ -1,12 +1,4 @@
 /* /Pages/Account.razor.rz.scp.css */
-.page[b-3kdzk52p6q] {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 2rem;
-    padding: 8rem 1.5rem 5rem;
-}
 .card[b-3kdzk52p6q] {
     width: 100%;
     max-width: 28rem;
@@ -366,13 +358,6 @@
     padding: 4rem 1rem;
 }
 /* /Pages/Download.razor.rz.scp.css */
-.page[b-xq6nbnjkwo] {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    padding: 8rem 1.5rem 6rem;
-}
 .card[b-xq6nbnjkwo] {
     width: 100%;
     max-width: 28rem;
@@ -482,8 +467,6 @@
 .link[b-xq6nbnjkwo] { color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
 .link:hover[b-xq6nbnjkwo] { opacity: 0.8; }
 /* /Pages/Files.razor.rz.scp.css */
-.page[b-ujzmwxm7ol] { flex: 1; }
-.main[b-ujzmwxm7ol] { padding: 8rem 1.5rem 6rem; }
 .container[b-ujzmwxm7ol] { max-width: 64rem; margin: 0 auto; }
 
 .head-row[b-ujzmwxm7ol] { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -669,13 +652,6 @@
 .action-btn--danger:hover[b-ujzmwxm7ol] { background: color-mix(in srgb, var(--color-destructive) 10%, transparent); border-color: color-mix(in srgb, var(--color-destructive) 30%, transparent); }
 .folder-pill-wrap[b-ujzmwxm7ol] { position: relative; }
 /* /Pages/Login.razor.rz.scp.css */
-.page[b-cu6y1dpry2] {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    padding: 8rem 1.5rem 5rem;
-}
 .card[b-cu6y1dpry2] {
     width: 100%;
     max-width: 24rem;
@@ -698,13 +674,6 @@
     height: 1.25rem;
 }
 /* /Pages/P2PDownload.razor.rz.scp.css */
-.page[b-u4t1eu7iz3] {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-}
 .card[b-u4t1eu7iz3] { width: 100%; max-width: 28rem; }
 .card[b-u4t1eu7iz3]  .db-card__body { padding: 2.5rem; }
 
@@ -736,18 +705,6 @@
 .progress[b-u4t1eu7iz3] { margin-top: 1.5rem; height: 0.5rem; width: 100%; border-radius: 999px; background: var(--color-muted); overflow: hidden; }
 .progress-bar[b-u4t1eu7iz3] { height: 100%; border-radius: 999px; background: var(--color-primary); transition: width 0.3s; width: 0; }
 /* /Pages/P2PTransfer.razor.rz.scp.css */
-.page[b-8xlmr6nymc] {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-.main[b-8xlmr6nymc] {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    padding: 8rem 1.5rem 5rem;
-}
 .container[b-8xlmr6nymc] { width: 100%; max-width: 42rem; }
 .section[b-8xlmr6nymc] { text-align: center; }
 .h1[b-8xlmr6nymc] {
@@ -857,10 +814,6 @@
 }
 .icon-svg-lg[b-8xlmr6nymc] { width: 2.5rem; height: 2.5rem; }
 /* /Pages/Pricing.razor.rz.scp.css */
-.page[b-28844fozmi] {
-    padding-block: 4rem 6rem;
-    padding-inline: 1.5rem;
-}
 .hero[b-28844fozmi] {
     text-align: center;
     padding-block: 3rem 4rem;
@@ -1055,10 +1008,6 @@
     margin-top: 1.5rem;
 }
 /* /Pages/Upgrade.razor.rz.scp.css */
-.page[b-95c71r6f3w] {
-    padding-block: 4rem 6rem;
-    padding-inline: 1.5rem;
-}
 .hero[b-95c71r6f3w] {
     text-align: center;
     padding-block: 3rem 4rem;
@@ -1156,18 +1105,6 @@
     background: var(--color-card, #1a1a1a);
 }
 /* /Pages/Upload.razor.rz.scp.css */
-.page[b-mcf16oaodb] {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-.main[b-mcf16oaodb] {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    padding: 8rem 1.5rem 5rem;
-}
 .container[b-mcf16oaodb] { width: 100%; max-width: 42rem; }
 .section[b-mcf16oaodb] { text-align: center; }
 .h1[b-mcf16oaodb] {
@@ -1301,3 +1238,35 @@
     background: color-mix(in srgb, var(--color-destructive) 8%, transparent); color: var(--color-destructive);
 }
 .icon-error svg[b-mcf16oaodb] { width: 2.5rem; height: 2.5rem; }
+/* /Pages/_Shared/PageWrapper.razor.rz.scp.css */
+.page[b-hrmjoc3vmf] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.page--centered[b-hrmjoc3vmf] {
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 1.5rem 5rem;
+}
+
+.page--padded[b-hrmjoc3vmf] {
+    padding-block: 4rem 6rem;
+    padding-inline: 1.5rem;
+}
+
+.page--account[b-hrmjoc3vmf] {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2rem;
+    padding: 8rem 1.5rem 5rem;
+}
+
+.page--fill[b-hrmjoc3vmf] {
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 1.5rem 5rem;
+}

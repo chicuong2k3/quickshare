@@ -10,9 +10,8 @@
 
 <PageTitle>QuickShareCloud — send a file in seconds</PageTitle>
 
-<div class="page">
+<PageWrapper Variant="PageVariant.Fill">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
-    <main class="main">
         <div class="container">
             <input type="file" name="file" class="sr-only" aria-label="Choose a file to upload" onchange="uploadPage.onFileInput(event)" />
 
@@ -156,7 +155,6 @@
                 <button class="db-btn db-btn--primary" style="margin-top: 2.5rem" onclick="uploadPage.reset()">Try again</button>
             </section>
         </div>
-    </main>
-</div>
+</PageWrapper>
 
 <script src="/js/upload.js"></script>

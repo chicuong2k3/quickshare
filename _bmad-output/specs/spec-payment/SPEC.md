@@ -17,8 +17,8 @@ QuickShareCloud has a pricing page with three tiers and an Upgrade page with pay
 ## Capabilities
 
 - **CAP-1**
-  - **intent:** An authenticated user on `/upgrade` selects a plan and billing period, clicks "Pay with Ko-fi", and the server generates a `PaymentIntent` with a unique code (`QSC-XXXXXX`). The page shows the code prominently so the user copies it into their Ko-fi payment message.
-  - **success:** `POST /api/upgrade/initiate` with plan and billing creates a `PaymentIntent` record and returns `{ code, kofiPageUrl, expectedAmount, currency }`. Invalid plan returns 400. Unauthenticated returns 401.
+  - **intent:** An authenticated user on `/upgrade` selects a plan and billing period, clicks "Pay with Ko-fi", and the server generates a `PaymentIntent` with a unique code (`QSC-XXXXXX`). The page shows the code and a QR code of the Ko-fi URL with the code pre-filled in the message parameter.
+  - **success:** `POST /api/upgrade/initiate` with plan and billing creates a `PaymentIntent` record and returns `{ code, kofiPageUrl, kofiUrlWithCode, expectedAmount, currency }`. The button opens `kofiUrlWithCode` (message pre-filled). A QR code of the URL is rendered for mobile scanning. Invalid plan returns 400. Unauthenticated returns 401.
 
 - **CAP-2**
   - **intent:** Ko-fi sends real-time webhook events to QuickShareCloud. Ko-fi is a **pure payment gateway** — it processes payments and sends webhooks. The webhook matches the user by **payment code** (`QSC-XXXXXX`) from the Ko-fi message field — looks up the `PaymentIntent` record, then finds the user. Falls back to email matching if no code present. Subscription lifecycle management (cancel, change, expiry) is handled in-app.

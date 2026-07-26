@@ -13,15 +13,12 @@ The profile system displays and updates user identity (name, avatar). Users are 
 | Account Page (UI) | `Pages/Account.razor` | Profile card + delivery branding manager |
 | Account CSS | `Pages/Account.razor.css` | Scoped styles |
 | Account JS | `wwwroot/js/account.js` | Avatar preview + branding CRUD |
-| Profile Form Handler | `Pages/Account.razor` (code-behind) | `HandleUpdateProfile()` — validates + submits |
+| Profile Form Handler | `Pages/Account.razor` (code-behind) | `<form method="post">` handler — validates + submits, re-signs cookie |
 | Cookie Re-sign | `Pages/Account.razor` | `ctx.SignInAsync()` after profile update |
-| Register Endpoint | `Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` — delegates to `UserRegistrationService` |
-| Profile Endpoint | `Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
-| Update Endpoint | `Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
 | User Mapper | `Features/Users/Shared/UserMapper.cs` | Mapperly source-gen: `User` → `ProfileResponse` |
-| UserRegistrationService | `Features/Users/Shared/UserRegistrationService.cs` | DRY registration (endpoint + OAuth callback) |
+| UserRegistrationService | `Features/Users/Shared/UserRegistrationService.cs` | DRY registration (all OAuth providers) |
 | User DB Helper | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — user lookup |
-| Shared DTO | `QuickShare.Shared` / `Models/ProfileResponse.cs` | `ProfileResponse` DTO |
+| Shared DTO | `Models/ProfileResponse.cs` | `ProfileResponse` DTO |
 
 ---
 
@@ -161,16 +158,15 @@ After profile update (re-sign):
 
 ---
 
-## 8. API Endpoints
+## 8. API Endpoints (delivery branding — called from JS)
 
-| Method | Path | Auth | Handler |
-|--------|------|------|---------|
-| POST | `/api/users/register` | Anonymous | `RegisterUserEndpoint` |
-| GET | `/api/users/me/profile` | Required | `GetUserProfileEndpoint` |
-| PUT | `/api/users/me/profile` | Required | `UpdateUserProfileEndpoint` |
-| GET | `/api/deliveries` | Required | `ListDeliveriesEndpoint` |
-| GET | `/api/deliveries/{code}/brand` | Required | `GetBrandEndpoint` |
-| PUT | `/api/deliveries/{id}/brand` | Required | `SetBrandEndpoint` |
+Profile data is loaded in-process via `AppDbContext` or `IMessageBus` in `Account.razor`. Profile mutations use `<form method="post">` handlers. No dedicated user profile API endpoints exist. The account page also uses these JS-called endpoints for delivery branding:
+
+| Method | Path | Auth | Handler | Consumer |
+|--------|------|------|---------|----------|
+| GET | `/api/deliveries` | Required | `ListDeliveriesEndpoint` | account.js |
+| GET | `/api/deliveries/{code}/brand` | Required | `GetBrandEndpoint` | account.js |
+| PUT | `/api/deliveries/{id}/brand` | Required | `SetBrandEndpoint` | account.js |
 
 ---
 
@@ -178,13 +174,10 @@ After profile update (re-sign):
 
 | File | Role |
 |------|------|
-| `src/QuickShare/Pages/Account.razor` | Profile UI + `HandleUpdateProfile()` handler |
+| `src/QuickShare/Pages/Account.razor` | Profile UI + `<form method="post">` handler |
 | `src/QuickShare/Pages/Account.razor.css` | Scoped styles |
 | `src/QuickShare/wwwroot/js/account.js` | Avatar preview + branding manager JS |
-| `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY registration (endpoint + OAuth) |
-| `src/QuickShare/Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` |
-| `src/QuickShare/Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
-| `src/QuickShare/Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
+| `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY registration (all OAuth providers) |
 | `src/QuickShare/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
 | `src/QuickShare/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` |
 | `src/QuickShare/Features/Deliveries/Brand/GetBrandEndpoint.cs` | `GET /api/deliveries/{code}/brand` |

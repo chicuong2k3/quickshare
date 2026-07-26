@@ -1,7 +1,6 @@
-global using QuickShare.Abstractions;
 global using QuickShare.Data;
+global using QuickShare.Data.Entities;
 global using QuickShare.Infrastructure;
-global using QuickShare.Services;
 global using QuickShare.Features.Files.Shared;
 global using QuickShare.Features.Folders.Shared;
 global using Wolverine;
@@ -12,5 +11,3 @@ global using FastEndpoints;
 global using FluentValidation;
 global using QuickShare.Querying;
 global using QuickShare.Extensions;
-global using QuickShare.Models;
-global using QuickShare.Constants;

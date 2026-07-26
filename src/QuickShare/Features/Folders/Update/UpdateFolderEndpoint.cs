@@ -19,10 +19,8 @@ public sealed class UpdateFolderEndpoint : Endpoint<UpdateFolderCommand, FolderI
 
     public override async Task HandleAsync(UpdateFolderCommand req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FolderItemResponse>>(req, ct);
-        if (result.IsSuccess(out var value))
-            await Send.OkAsync(value, ct);
-        else if (result.IsFailure(out var error))
-            ThrowError(error.Message);
+        await this.SendResultOkAsync(
+            Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FolderItemResponse>>(req, ct),
+            ct);
     }
 }

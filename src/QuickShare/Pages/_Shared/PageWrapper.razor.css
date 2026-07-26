@@ -1,0 +1,31 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.page--centered {
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 1.5rem 5rem;
+}
+
+.page--padded {
+    padding-block: 4rem 6rem;
+    padding-inline: 1.5rem;
+}
+
+.page--account {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2rem;
+    padding: 8rem 1.5rem 5rem;
+}
+
+.page--fill {
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 1.5rem 5rem;
+}

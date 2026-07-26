@@ -1,7 +1,7 @@
 @layout MainLayout
 @page "/files"
 @attribute [Authorize]
-@using QuickShare.Models
+@using QuickShare.Data.Entities
 @using QuickShare.Features.Files.List
 @using QuickShare.Features.Folders.List
 @using QuickShare.Features.Folders.GetInfo
@@ -21,8 +21,7 @@
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
-<div class="page" id="files-app">
-    <main class="main">
+<PageWrapper id="files-app" Variant="PageVariant.Padded">
         <div class="container">
 
             @* PAGE HEADING + SEARCH *@
@@ -227,7 +226,6 @@
             </HtmxFragment>
 
         </div>
-    </main>
 
     @* CREATE FOLDER MODAL *@
     <div id="modal-create" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
@@ -315,7 +313,7 @@
             </div>
         </div>
     </div>
-</div>
+</PageWrapper>
 
 <script src="/js/files.js"></script>
 

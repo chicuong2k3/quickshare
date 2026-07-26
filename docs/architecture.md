@@ -16,62 +16,57 @@
 
 ### Auth
 - **Cookie auth** with dual behavior: `/api/*` paths return 401 (API behavior), other paths redirect `/login` (page behavior)
-- **Google OAuth** — `OnCreatingTicket` calls `UserRegistrationService.RegisterAsync()` in-process (DRY with `RegisterUserEndpoint`)
+- **Google OAuth** — `OnCreatingTicket` calls `UserRegistrationService.RegisterAsync()` in-process (shared across all OAuth providers)
 - `ClaimsPrincipalExtensions.cs` — User ID extraction via `GetUserAsync(db, ct)`
 - **Dev auto-signin** middleware — creates `dev-user` claims for local development
 
 ### Uploads (`Features/Uploads/`)
 - **R2 Multipart** (`StartR2`, `CommitR2`, `AbortR2`) — Cloudflare R2 presigned multipart upload flow
-- **Chunked** (`Start`, `Commit`, `Chunks`, `Status`) — Legacy chunk-by-chunk upload fallback
 - `UploadConstants.cs` — Upload limits and magic numbers
 
 ### Downloads (`Features/Downloads/`)
-- **Info** (`DownloadInfoEndpoint` + `Handler`) — File metadata with download gates:
+- **Info** (`DownloadInfoHandler`) — File metadata with download gates:
   - Password gate (if `HasPassword`)
-  - Payment gate (if `HasPayment` → VietQR payment)
   - Ad interstitial (free plan)
   - Download limit enforcement
+  - Called in-process via `IMessageBus` from `Download.razor` (no API endpoint)
 - **Download** (`DownloadDeliveryEndpoint` + `Handler`) — Stream file from storage to client, supports AES-GCM client-side decryption hint
 
 ### Files (`Features/Files/`)
-- **List** — Paginated `GET /api/files` with search (`?search=`) and folder filter (`?folderId=`)
-- **Move** — `PATCH /api/files/{id}/folder` — drag-drop between folders
-- **Delete** — `DELETE /api/files/{id}` — removes file from DB
+- **List** — `ListFilesHandler` called via `IMessageBus` from `Files.razor` (in-process, no API endpoint)
+- **Move** — `PATCH /api/files/{id}/folder` — drag-drop between folders (called from files.js)
 - **Download** — Direct file download by ID
-- **GetInfo** — Single file metadata
 - `Shared/Errors.cs` — File-specific error types
 - `Shared/FileMapper.cs` — Mapperly source-gen mapper (FileMetadata → FileItemResponse)
 
 ### Folders (`Features/Folders/`)
-| Endpoint | Method | Path |
-|----------|--------|------|
-| Create | POST | `/api/folders` |
-| List | GET | `/api/folders` |
-| GetInfo | GET | `/api/folders/{id}` |
-| Update | PUT | `/api/folders/{id}` |
-| Delete | DELETE | `/api/folders/{id}` |
+| Endpoint | Method | Path | Consumer |
+|----------|--------|------|----------|
+| Create | POST | `/api/folders` | files.js |
+| Update | PUT | `/api/folders/{id}` | files.js |
+| Delete | DELETE | `/api/folders/{id}` | files.js |
+| List | — | (in-process) | `Files.razor` via `IMessageBus` → `ListFoldersHandler` |
+| GetInfo | — | (in-process) | `Files.razor` via `IMessageBus` → `GetFolderInfoHandler` |
 
 ### Deliveries (`Features/Deliveries/`)
 - **List** — `GET /api/deliveries` — user's delivery history
 - **Brand** — `GET/PUT /api/deliveries/{id}/brand` — custom delivery branding (logo URL, message, accent color)
 - **Password** — `POST /api/deliveries/{code}/verify` — verify password-protected delivery
-- **Extend** — Extend delivery expiry timestamp
 - `DeliveryService.cs` — Shared delivery coordination logic
 
 ### Payments (`Features/Payments/`)
-- **Ko-fi** — `POST /api/payments/kofi/webhook` — Ko-fi payment webhook. Ko-fi is a **pure payment gateway** — it processes payments and sends webhooks. Subscription management (cancel, change, expiry) is handled in-app.
+- **Ko-fi Webhook** — `POST /api/payments/kofi/webhook` — Ko-fi payment webhook. Ko-fi is a **pure payment gateway** — it processes payments and sends webhooks. Subscription management (cancel, change, expiry) is handled in-app.
   - Records all payment types (subscriptions, tips, commissions, shop orders) as `PaymentEvent`
   - For subscription payments, delegates to `SubscriptionService` for in-app lifecycle management
   - Matches user by **payment code** (`QSC-XXXXXX`) entered in the Ko-fi message field — no email dependency
   - Fallback to email matching if no code found
-- **Upgrade Initiation** — `POST /api/upgrade/initiate` — Creates a `PaymentIntent` with unique code, expected amount, and 1-hour expiry. User includes this code in their Ko-fi payment message.
+- **Upgrade Initiation** — `Upgrade.razor` `<form method="post">` handler creates a `PaymentIntent` with unique code, expected amount, and 1-hour expiry. In-process, no API endpoint.
 - **Subscriptions** — In-app subscription lifecycle via `SubscriptionService`:
-  - `POST /api/subscriptions/cancel` — Cancel (plan continues to end of billing period)
-  - `GET /api/subscriptions/current` — Get current subscription state
+  - Cancel: `AccountBilling.razor` `<form method="post">` handler calls `SubscriptionService.CancelAsync()` directly
+  - Current: `AccountBilling.razor` calls `SubscriptionService.GetCurrentAsync()` directly in `OnInitializedAsync`
+  - Billing history: `AccountBilling.razor` calls `BillingHistoryService.GetForUserAsync()` directly
   - `SubscriptionExpiryJob` — Background service (runs every 15min) expires stale subscriptions and downgrades `User.Plan`
   - `Subscription` entity tracks: Plan, Status (Active/Cancelled/Expired), BillingPeriod, CurrentPeriodStart/End
-- **VietQR** — `POST /api/deliveries/{code}/payment/vietqr` — generate VietQR payment code
-- **VerifyPayment** — `GET /api/deliveries/{code}/payment` — poll payment status
 
 ### Reports (`Features/Reports/`)
 - `ReportDeliveryEndpoint` + `Handler` — `POST /api/deliveries/{code}/report` — abuse reporting (spam, malware, abuse, other)
@@ -80,9 +75,9 @@
 - **P2P** — `POST /api/shares/p2p` — create P2P share code + WebRTC signaling metadata
 
 ### Users (`Features/Users/`)
-- **Profile** — `GET/PUT /api/users/me/profile` — name, avatar URL CRUD
-- **Register** — `POST /api/users/register` — idempotent user creation
-- `Shared/UserRegistrationService.cs` — Extracted registration logic used by both `RegisterUserEndpoint` and Google OAuth callback (DRY)
+- **Profile** — `Account.razor` `<form method="post">` handler reads name/avatar, re-signs cookie. In-process via `IMessageBus` or `AppDbContext`.
+- **Registration** — `UserRegistrationService.RegisterAsync()` called in-process from Google OAuth `OnCreatingTicket` (DRY — same service used by all providers)
+- `Shared/UserRegistrationService.cs` — Registration logic shared between OAuth providers
 
 ---
 
@@ -112,13 +107,13 @@
 | Route | Page | Interactivity | Key Features |
 |-------|------|--------------|-------------|
 | `/` | `Upload.razor` | Vanilla JS | Drag-drop + paste upload, AES-256-GCM client-side encryption, R2 multipart, QR code generation, expiry selector (24h/7d) |
-| `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: password gate → VietQR payment gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation panel, abuse reporting form, sender branding |
+| `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation panel, abuse reporting form, sender branding |
 | `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling (offer/answer), PIN-protected encryption, data channel file streaming with progress |
 | `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, PIN gate, WebRTC answer, data channel file receipt, progress tracking |
 | `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop file move, CRUD modals (create/rename/delete folder), htmx-powered live search, download button per file |
 | `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload with preview), OAuth provider badge, delivery branding manager (logo/message/accent per delivery), htmx form submission |
-| `/account/billing` | `AccountBilling.razor` | htmx | Billing history, subscription status, in-app cancel via htmx `hx-post="/api/subscriptions/cancel"` |
-| `/upgrade` | `Upgrade.razor` | htmx | Plan upgrade page, Ko-fi payment integration |
+| `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler (calls `SubscriptionService.CancelAsync()` directly) |
+| `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade page, Ko-fi payment integration — form handler creates PaymentIntent, renders payment code + QR |
 | `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub, Facebook, TikTok |
 | `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly billing toggle via `hx-get` + `HtmxFragment`, FAQ accordion, CTA section |
 
@@ -128,10 +123,10 @@ SSR pages that previously called the API via HTTP (`IQuickShareApi`/Refit) now a
 
 | Page | Old (HTTP) | New (in-process) |
 |------|-----------|------------------|
-| `Files.razor` | `Api.GetFoldersAsync()`, `Api.GetFilesAsync()`, `Api.GetAccountProfileAsync()` | Inject `IMessageBus`, call `ListFoldersQuery`, `ListFilesQuery`, `GetUserProfileEndpoint` query records directly |
-| `Account.razor` | `Api.GetMyProfileAsync()`, `Api.UpdateMyProfileAsync()` | Inject `IMessageBus` / `AppDbContext`, call `GetUserProfileEndpoint` / `UpdateUserProfileEndpoint` query/command records |
-| `AccountBilling.razor` | `Api.GetBillingHistoryAsync()` | Inject `IMessageBus`, call `GetBillingHistoryEndpoint` query record |
-| `Upgrade.razor` | `Api.GetMyProfileAsync()` | Inject `IMessageBus`, call `GetUserProfileEndpoint` query record |
+| `Files.razor` | `Api.GetFoldersAsync()`, `Api.GetFilesAsync()` | Inject `IMessageBus`, call `ListFoldersQuery`, `ListFilesQuery` directly |
+| `Account.razor` | `Api.GetMyProfileAsync()`, `Api.UpdateMyProfileAsync()` | `<form method="post">` handler updates profile via `AppDbContext`; data loaded via `IMessageBus` |
+| `AccountBilling.razor` | `Api.GetBillingHistoryAsync()`, `Api.CancelSubscriptionAsync()` | Inject `BillingHistoryService`, `SubscriptionService` — call directly in `OnInitializedAsync` and form handler |
+| `Upgrade.razor` | `Api.InitiateUpgradeAsync()`, `Api.GetMyProfileAsync()` | `<form method="post">` handler creates `PaymentIntent` via `AppDbContext` directly; profile loaded via `IMessageBus` |
 
 **Rule:** If the endpoint's handler goes through `IMessageBus.InvokeAsync<Result<T>>(cmd)`, the page injects `IMessageBus` and calls the same command/query. If the endpoint uses `AppDbContext` inline, the page injects `AppDbContext` and queries directly with Mapperly mappers.
 
@@ -199,7 +194,7 @@ Models, DTOs, and constants now live directly in `src/QuickShare/Models/` and `s
 | `Subscription` | `subscriptions` | UserId (FK), Plan, Status (Active/Cancelled/Expired), BillingPeriod (monthly/yearly), CurrentPeriodStart, CurrentPeriodEnd, CancelledAt, CreatedAt, UpdatedAt |
 | `PaymentIntent` | `payment_intents` | UserId (FK), Code (unique, `QSC-XXXXXX`), Plan, Billing, Amount, Currency, Status (Pending/Completed/Expired), ExpiresAt (1h) |
 | `TempShare` | `temp_shares` | Short-lived encrypted P2P share with auto-expiry |
-| `Chunk` | `chunks` | Per-chunk tracking for legacy chunked upload |
+| `Chunk` | `chunks` | Per-chunk tracking (deprecated — R2 handles chunking client-side) |
 | `Manifest` | `manifests` | Upload manifest metadata |
 | `DownloadTracking` | `download_tracking` | Per-delivery download counters |
 | `PaymentEvent` | `payment_events` | Ko-fi payment webhook events |
@@ -278,8 +273,6 @@ Migrations under `Migrations/`. Key schema:
      │── GET /d/{code} ──▶── download/info ────▶│── DB lookup ──▶
      │◀─ password gate ──◀─────────────────────◀│
      │── password ───────▶── password/verify ──▶│── DB verify ──▶
-     │◀─ payment QR ─────◀── vietQR ───────────▶│── VietQR ─────▶
-     │── payment status ─▶── payment poll ─────▶│── DB check ───▶
      │◀─ ready ──────────◀─────────────────────◀│
      │── download ───────▶── download API ─────▶│── R2 fetch ───▶
      │◀─ AES-GCM decrypt ◀── file stream ──────◀│
@@ -359,15 +352,15 @@ src/QuickShare/
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
 ├── Features/              # FastEndpoints + Wolverine handlers
-│   ├── Deliveries/        # Brand, Extend, List, Password, DeliveryService
-│   ├── Downloads/         # Download, Info
-│   ├── Files/             # CRUD + Shared mappers
-│   ├── Folders/           # CRUD + Shared mappers
-│   ├── Payments/          # Kofi, VietQR, Subscriptions/
+│   ├── Deliveries/        # Brand, List, Password, DeliveryService
+│   ├── Downloads/         # Download
+│   ├── Files/             # Move + Shared mappers (List handler in-process)
+│   ├── Folders/           # Create, Update, Delete + Shared mappers (List/GetInfo handlers in-process)
+│   ├── Payments/          # Kofi webhook, SubscriptionService, BillingHistoryService
 │   ├── Reports/           # Abuse reporting
 │   ├── Shares/            # P2P share creation
-│   ├── Uploads/           # R2 + chunked upload
-│   └── Users/             # Profile, Register, UserRegistrationService, UserMapper
+│   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)
+│   └── Users/             # UserRegistrationService, UserMapper
 ├── Infrastructure/        # Storage (R2 + LocalDisk), Quota, Logging, Options, ExceptionHandler
 ├── Middleware/            # P2PConnectionManager, P2PSignaling, RateLimiting
 ├── Migrations/            # EF Core migrations

@@ -19,10 +19,8 @@ public sealed class MoveFileEndpoint : Endpoint<MoveFileCommand, FileItemRespons
 
     public override async Task HandleAsync(MoveFileCommand req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FileItemResponse>>(req, ct);
-        if (result.IsSuccess(out var value))
-            await Send.OkAsync(value, ct);
-        else if (result.IsFailure(out var error))
-            ThrowError(error.Message);
+        await this.SendResultOkAsync(
+            Resolve<IMessageBus>().InvokeAsync<LightResults.Result<FileItemResponse>>(req, ct),
+            ct);
     }
 }

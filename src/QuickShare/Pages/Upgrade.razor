@@ -3,49 +3,31 @@
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
+@using QuickShare.Data.Entities
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IConfiguration Config
 
-@{
-    // API and pages are same-origin now; browser JS uses relative URLs.
-    var apiBase = "";
-}
-
 <PageTitle>Upgrade to @planDisplay — QuickShareCloud</PageTitle>
 
-<script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 <script>
-function upgradeInitiate(plan, billing) {
-    fetch("@apiBase/api/upgrade/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: plan, billing: billing })
-    })
-        .then(r => { if (!r.ok) throw r; return r.json(); })
-        .then(data => {
-            var section = document.getElementById("payment-section");
-            if (section) {
-                section.innerHTML =
-                    '<div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--color-border);border-radius:0.5rem;text-align:center">' +
-                    '<h3 class="db-h3">Send <strong>' + data.currency + data.expectedAmount + '</strong> to our Ko-fi page</h3>' +
-                    '<p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>' +
-                    '<div style="margin:1.5rem 0;padding:1rem;background:var(--color-muted);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em">' +
-                    data.code + '</div>' +
-                    '<p class="db-text-muted" style="font-size:0.95rem">' +
-                    '<strong>Copy this code</strong> and paste it in the <strong>Message</strong> box when you pay on Ko-fi.</p>' +
-                    '<a href="' + data.kofiPageUrl + '" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">' +
-                    'Pay with Ko-fi</a>' +
-                    '<p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">' +
-                    'Code expires in 1 hour. Your plan will be activated automatically after payment.</p>' +
-                    '</div>';
-            }
-        })
-        .catch(err => console.error("Upgrade failed", err));
-}
+	function renderKofiQR(text) {
+	    var el = document.getElementById("kofi-qrcode");
+	    if (!el) return;
+	    el.innerHTML = "";
+	    if (!text || !window.qrcode) {
+	        if (!window.qrcode) el.textContent = "QR library not loaded.";
+	        return;
+	    }
+	    var qr = window.qrcode(0, "M");
+	    qr.addData(text);
+	    qr.make();
+	    var svg = qr.createSvgTag(5, 2);
+	    el.innerHTML = svg;
+	}
 </script>
 
-<div class="page">
+<PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
         <span class="tag">Upgrade</span>
@@ -93,15 +75,44 @@ function upgradeInitiate(plan, billing) {
                 &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
             </p>
 
-            <div class="payment-option">
-                <h3 class="db-h3">Ko-fi</h3>
-                <p class="db-text-muted">Pay with card or PayPal via Ko-fi</p>
-                <button type="button"
-                        onclick="upgradeInitiate('@selectedPlan', '@(IsYearly ? "yearly" : "monthly")')"
-                        class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                    Pay with Ko-fi
-                </button>
-            </div>
+            @if (paymentIntent is null)
+            {
+                <div class="payment-option">
+                    <h3 class="db-h3">Ko-fi</h3>
+                    <p class="db-text-muted">Pay with card or PayPal via Ko-fi</p>
+                    <form method="post">
+                        <input type="hidden" name="Plan" value="@selectedPlan" />
+                        <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
+                        <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                            Pay with Ko-fi
+                        </button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--color-border);border-radius:0.5rem;text-align:center">
+                    <h3 class="db-h3">Send <strong>@paymentIntent.Currency@paymentAmount</strong> to our Ko-fi page</h3>
+                    <p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>
+                    <div style="margin:1.5rem 0;padding:1rem;background:var(--color-muted);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em;font-family:monospace">
+                        @paymentIntent.Code
+                    </div>
+                    <p class="db-text-muted" style="font-size:0.95rem">
+                        The code is already filled in the payment page. You can also scan the QR code to pay on your phone.
+                    </p>
+                    <div id="kofi-qrcode" style="margin:1rem auto;display:flex;justify-content:center"></div>
+                    <a href="@kofiUrlWithCode" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                        Pay with Ko-fi
+                    </a>
+                    <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
+                        Code expires in 1 hour. Your plan will be activated automatically after payment.
+                    </p>
+                </div>
+
+                <script>
+                    (function() { renderKofiQR("@kofiUrlWithCode"); })();
+                </script>
+            }
 
             <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
                 Your plan will be upgraded immediately after payment confirmation.
@@ -110,7 +121,7 @@ function upgradeInitiate(plan, billing) {
         </div>
     </section>
 
-</div>
+</PageWrapper>
 
 
 
@@ -123,6 +134,7 @@ function upgradeInitiate(plan, billing) {
 
     private string selectedPlan = "pro";
     private string currentPlan = "free";
+    private PaymentIntent? paymentIntent;
 
     private string planDisplay => selectedPlan == "studio" ? "Studio" : "Pro";
     private string planDesc => selectedPlan == "studio"
@@ -151,6 +163,8 @@ function upgradeInitiate(plan, billing) {
         : new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" };
 
     private bool IsYearly => string.Equals(Billing, "yearly", StringComparison.OrdinalIgnoreCase);
+    private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);
+    private string kofiUrlWithCode => $"{Config["Kofi:PageUrl"]}?message={paymentIntent?.Code}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,11 +174,65 @@ function upgradeInitiate(plan, billing) {
             _ => "pro"
         };
 
-        try
+        var ctx = HttpContextAccessor.HttpContext!;
+        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+
+        if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))
         {
-            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
-            currentPlan = user.ToProfileResponse().Plan;
+            var form = await ctx.Request.ReadFormAsync();
+            var plan = form["Plan"].FirstOrDefault() ?? "pro";
+            var billing = form["Billing"].FirstOrDefault() ?? "monthly";
+            var isYearly = string.Equals(billing, "yearly", StringComparison.OrdinalIgnoreCase);
+
+            var pricingKey = plan.ToLowerInvariant() switch
+            {
+                "pro" when isYearly => "Pricing:ProYearly",
+                "pro" => "Pricing:ProMonthly",
+                "studio" when isYearly => "Pricing:StudioYearly",
+                _ => "Pricing:StudioMonthly"
+            };
+
+            var expectedAmount = Config.GetValue<int>(pricingKey);
+            var currency = Config["Pricing:Currency"]!;
+
+            var code = await GenerateUniqueCodeAsync(Db, CancellationToken.None);
+            paymentIntent = new PaymentIntent
+            {
+                Id = Guid.CreateVersion7(),
+                UserId = user.Id,
+                Code = code,
+                Plan = plan,
+                Billing = isYearly ? "yearly" : "monthly",
+                Amount = expectedAmount,
+                Currency = currency,
+                Status = PaymentIntentStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            };
+            Db.PaymentIntents.Add(paymentIntent);
+            await Db.SaveChangesAsync(CancellationToken.None);
         }
-        catch { }
+
+        currentPlan = user.ToProfileResponse().Plan;
+    }
+
+    private static async Task<string> GenerateUniqueCodeAsync(AppDbContext db, CancellationToken ct)
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const int randomLen = 6;
+        var random = Random.Shared;
+
+        while (true)
+        {
+            var code = "QSC-" + new string(Enumerable.Range(0, randomLen)
+                .Select(_ => chars[random.Next(chars.Length)])
+                .ToArray());
+
+            var exists = await db.PaymentIntents
+                .AnyAsync(i => i.Code == code && i.Status == PaymentIntentStatus.Pending, ct);
+
+            if (!exists)
+                return code;
+        }
     }
 }

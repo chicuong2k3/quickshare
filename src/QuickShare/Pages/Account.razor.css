@@ -1,11 +1,3 @@
-.page {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 2rem;
-    padding: 8rem 1.5rem 5rem;
-}
 .card {
     width: 100%;
     max-width: 28rem;

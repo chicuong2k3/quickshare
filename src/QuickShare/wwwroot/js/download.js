@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, paymentAmount: 0, paymentError: '', paymentChecking: false, qrDataUrl: '', bankInfo: '', bankAccount: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -11,15 +11,8 @@ window.downloadApp = (function () {
             function removeAttr(id, name) { var el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
             function render() {
-                hide('download-phase-password'); hide('download-phase-payment'); hide('download-phase-ad'); hide('download-phase-file');
+                hide('download-phase-password'); hide('download-phase-ad'); hide('download-phase-file');
                 if (state.phase === 'password') show('download-phase-password');
-                else if (state.phase === 'payment') {
-                    show('download-phase-payment');
-                    if (state.qrDataUrl) { show('dl-payment-qr'); hide('dl-payment-loading'); show('dl-payment-btn'); }
-                    else if (state.paymentError) { hide('dl-payment-qr'); hide('dl-payment-loading'); hide('dl-payment-btn'); }
-                    else { hide('dl-payment-qr'); show('dl-payment-loading'); hide('dl-payment-btn'); }
-                    if (state.paymentError) { show('dl-payment-error'); text('dl-payment-error', state.paymentError); } else hide('dl-payment-error');
-                }
                 else if (state.phase === 'ad') show('download-phase-ad');
                 else if (state.phase === 'file') {
                     show('download-phase-file');
@@ -39,7 +32,6 @@ window.downloadApp = (function () {
                 var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
                 state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
                 if (info.hasPassword) state.phase = 'password';
-                else if (info.hasPayment) { state.paymentAmount = info.price || 0; state.phase = 'payment'; initPayment(); }
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
                 render(); fetchBranding();
@@ -56,26 +48,13 @@ window.downloadApp = (function () {
                     })
                     .then(function (body) {
                         var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
-                        state.paymentAmount = info.price || 0;
-                        if (info.hasPayment) { state.phase = 'payment'; initPayment(); } else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); } else state.phase = 'file';
+                        if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); } else state.phase = 'file';
                     })
                     .catch(function (e) {
                         show('dl-password-error'); text('dl-password-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || 'Incorrect password.');
                     })
                     .finally(function () { text('dl-password-btn-text', 'Unlock'); removeAttr('dl-password-btn', 'disabled'); render(); });
             }
-
-            function initPayment() { text('dl-payment-amount', String(state.paymentAmount)); render();
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/payment/vietqr', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-                    .then(function (r) { return r.ok ? r.json() : null; })
-                    .then(function (data) { if (data) { state.qrDataUrl = data.qrDataUrl || ''; state.bankInfo = data.bankInfo || ''; state.bankAccount = data.bankAccount || ''; if (state.qrDataUrl) attr('dl-qr-img', 'src', state.qrDataUrl); text('dl-bank-info', state.bankInfo); text('dl-bank-account', state.bankAccount); } })
-                    .catch(function () { state.paymentError = 'Payment service unavailable.'; }).finally(function () { render(); }); }
-
-            function checkPaymentStatus() { text('dl-payment-btn-text', 'Checking\u2026'); attr('dl-payment-btn', 'disabled', 'disabled'); hide('dl-payment-error');
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/payment').then(function (r) { return r.ok ? r.json() : null; })
-                    .then(function (data) { if (data && data.paymentStatus === 'Paid') state.phase = 'file'; else state.paymentError = 'Payment not yet received.'; })
-                    .catch(function () { state.paymentError = 'Payment check failed.'; })
-                    .finally(function () { text('dl-payment-btn-text', 'I\u2019ve paid \u2014 check status'); removeAttr('dl-payment-btn', 'disabled'); render(); }); }
 
             function startAdTimer() { state.adCountdown = 5; text('dl-ad-countdown', 'Continue in 5s'); render();
                 state.adTimer = setInterval(function () { state.adCountdown--; text('dl-ad-countdown', 'Continue in ' + state.adCountdown + 's'); if (state.adCountdown <= 0) { clearInterval(state.adTimer); state.adTimer = null; state.phase = 'file'; render(); } }, 1000); }
@@ -99,5 +78,5 @@ window.downloadApp = (function () {
             async function decryptAndSave(url) { var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var keyB64 = keyMatch[1]; var base64 = keyB64.replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var response = await fetch(url); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var encryptedData = await response.arrayBuffer(); var nonce = encryptedData.slice(0, 12); var ciphertext = encryptedData.slice(12); var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); var blob = new Blob([decrypted]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = code; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-            return { verifyPassword: verifyPassword, checkPaymentStatus: checkPaymentStatus, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
+            return { verifyPassword: verifyPassword, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
         })();
