@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, otpVerifying: false, adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -11,8 +11,9 @@ window.downloadApp = (function () {
             function removeAttr(id, name) { var el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
             function render() {
-                hide('download-phase-password'); hide('download-phase-ad'); hide('download-phase-file');
+                hide('download-phase-password'); hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file');
                 if (state.phase === 'password') show('download-phase-password');
+                else if (state.phase === 'otp') show('download-phase-otp');
                 else if (state.phase === 'ad') show('download-phase-ad');
                 else if (state.phase === 'file') {
                     show('download-phase-file');
@@ -31,7 +32,8 @@ window.downloadApp = (function () {
                 var hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
                 var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
                 state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
-                if (info.hasPassword) state.phase = 'password';
+                if (info.hasOtp) state.phase = 'otp';
+                else if (info.hasPassword) state.phase = 'password';
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
                 render(); fetchBranding();
@@ -56,6 +58,50 @@ window.downloadApp = (function () {
                     .finally(function () { text('dl-password-btn-text', 'Unlock'); removeAttr('dl-password-btn', 'disabled'); render(); });
             }
 
+            function readOtp() {
+                var inputs = document.querySelectorAll('#dl-otp .db-otp__input');
+                var pin = '';
+                for (var i = 0; i < inputs.length; i++) pin += inputs[i].value;
+                return pin;
+            }
+
+            function otpInput(event, idx) {
+                var val = event.target.value.replace(/\D/g, '');
+                event.target.value = val;
+                if (val && idx < 5) {
+                    var next = document.querySelectorAll('#dl-otp .db-otp__input')[idx + 1];
+                    if (next) next.focus();
+                }
+            }
+
+            function otpKeydown(event, idx) {
+                if (event.key === 'Backspace' && !event.target.value && idx > 0) {
+                    var prev = document.querySelectorAll('#dl-otp .db-otp__input')[idx - 1];
+                    if (prev) prev.focus();
+                }
+                if (event.key === 'Enter') verifyOtp();
+            }
+
+            function verifyOtp() {
+                var otp = readOtp();
+                if (otp.length < 6) { show('dl-otp-error'); text('dl-otp-error', 'Please enter all 6 digits.'); return; }
+                hide('dl-otp-error'); text('dl-otp-btn-text', 'Verifying\u2026'); attr('dl-otp-btn', 'disabled', 'disabled');
+                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ otp: otp }) })
+                    .then(function (r) {
+                        return r.ok ? r.json().catch(function () { return {}; }) : r.json().then(function (b) { throw b; }).catch(function () { throw {}; });
+                    })
+                    .then(function () {
+                        var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
+                        if (info.hasPassword) state.phase = 'password';
+                        else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
+                        else state.phase = 'file';
+                    })
+                    .catch(function (e) {
+                        show('dl-otp-error'); text('dl-otp-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || 'Incorrect code.');
+                    })
+                    .finally(function () { text('dl-otp-btn-text', 'Unlock'); removeAttr('dl-otp-btn', 'disabled'); render(); });
+            }
+
             function startAdTimer() { state.adCountdown = 5; text('dl-ad-countdown', 'Continue in 5s'); render();
                 state.adTimer = setInterval(function () { state.adCountdown--; text('dl-ad-countdown', 'Continue in ' + state.adCountdown + 's'); if (state.adCountdown <= 0) { clearInterval(state.adTimer); state.adTimer = null; state.phase = 'file'; render(); } }, 1000); }
             function skipAd() { if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; } state.phase = 'file'; render(); }
@@ -78,5 +124,5 @@ window.downloadApp = (function () {
             async function decryptAndSave(url) { var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var keyB64 = keyMatch[1]; var base64 = keyB64.replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var response = await fetch(url); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var encryptedData = await response.arrayBuffer(); var nonce = encryptedData.slice(0, 12); var ciphertext = encryptedData.slice(12); var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); var blob = new Blob([decrypted]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = code; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-            return { verifyPassword: verifyPassword, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
+            return { verifyPassword: verifyPassword, verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
         })();

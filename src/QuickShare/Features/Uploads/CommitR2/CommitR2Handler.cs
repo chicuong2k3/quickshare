@@ -4,7 +4,7 @@ using LightResults;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp);
 
 public record CommitR2Response(string ShareCode, string ShareLink);
 
@@ -47,7 +47,8 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             ShareCode = shareCode,
             MaxDownloads = PlanTierLimits.GetMaxDownloads(user.Plan),
             StoragePath = cmd.ObjectKey,
-            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(user.Plan))
+            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(user.Plan)),
+            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null
         };
 
         var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);

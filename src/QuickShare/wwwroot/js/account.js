@@ -26,7 +26,7 @@ function previewAvatar(e) {
             listEl.style.display = (!state.loading && state.deliveries.length > 0) ? '' : 'none';
             if (!state.loading && state.deliveries.length > 0) {
                 listEl.innerHTML = state.deliveries.map(function (d, i) {
-                    return '<div class="branding-item" style="margin-bottom: 0.75rem">' + renderItem(d, i) + '</div>';
+                    return '<div class="account-branding-item" style="margin-bottom: 0.75rem">' + renderItem(d, i) + '</div>';
                 }).join('');
             }
         }
@@ -64,9 +64,9 @@ function previewAvatar(e) {
                 </div>' : '';
 
             return '\
-                <div class="branding-item-header">\
-                    <div class="branding-item-name">\
-                        <p class="branding-item-filename">' + escHtml(d.fileName) + '</p>\
+                <div class="account-branding-item-header">\
+                    <div class="account-branding-item-name">\
+                        <p class="account-branding-item-filename">' + escHtml(d.fileName) + '</p>\
                         <p style="font-size: 0.75rem; color: var(--color-muted-foreground); margin-top: 0.125rem">' + escHtml(d.shareCode) + '</p>\
                     </div>\
                     <button type="button" onclick="toggleEdit(' + i + ')" class="' + toggleCls + '">' + toggleText + '</button>\

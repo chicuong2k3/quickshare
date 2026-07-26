@@ -1,6 +1,6 @@
-@layout MainLayout
-@page "/account/billing"
+﻿@page "/account/billing"
 @attribute [Authorize]
+@attribute [StreamRendering]
 @using QuickShare.Data
 @using QuickShare.Features.Payments.Kofi
 @using QuickShare.Features.Payments.Subscriptions
@@ -9,7 +9,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 
-<PageTitle>Billing — QuickShareCloud</PageTitle>
+<PageTitle>Billing â€” QuickShareCloud</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
@@ -94,7 +94,7 @@
                                         @evt.CreatedAt.ToString("MMM dd, yyyy")
                                         @if (evt.Amount > 0)
                                         {
-                                            <span>· @evt.Amount.ToString("F2") @evt.Currency</span>
+                                            <span>Â· @evt.Amount.ToString("F2") @evt.Currency</span>
                                         }
                                     </div>
                                     @if (!string.IsNullOrEmpty(evt.InvoiceUrl))
@@ -177,3 +177,4 @@
         subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
     }
 }
+

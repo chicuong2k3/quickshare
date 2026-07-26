@@ -1,5 +1,4 @@
-@layout MainLayout
-@page "/pricing"
+﻿@page "/pricing"
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 
@@ -12,18 +11,18 @@
     var studioYearly = FormatPrice(Config.GetValue<int>("Pricing:StudioYearly", 239), currency);
 }
 
-<PageTitle>Pricing — QuickShareCloud</PageTitle>
+<PageTitle>Pricing â€” QuickShareCloud</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
-    @* ── HERO ── *@
+    @* â”€â”€ HERO â”€â”€ *@
     <section class="hero">
         <span class="tag">Transparent pricing</span>
         <h1 class="db-h1">Simple, transparent pricing</h1>
         <p class="db-p db-text-muted">Choose the plan that fits your needs. No hidden fees. Cancel anytime.</p>
     </section>
 
-    @* ── BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) ── *@
+    @* â”€â”€ BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) â”€â”€ *@
     <section id="pricing-body">
         <div class="toggle-wrap">
             <div class="toggle-group">
@@ -189,7 +188,7 @@
         }
     </script>
 
-    @* ── FAQ ── *@
+    @* â”€â”€ FAQ â”€â”€ *@
     <section class="faq">
         <div class="faq__head">
             <h2 class="db-h2">Frequently Asked Questions</h2>
@@ -209,7 +208,7 @@
         }
     </section>
 
-    @* ── CTA ── *@
+    @* â”€â”€ CTA â”€â”€ *@
     <section class="cta">
         <h3 class="cta__title">Ready to get started?</h3>
         <p class="db-text-muted">All plans include a 14-day free trial. No credit card required.</p>
@@ -241,3 +240,4 @@
         ("Can I get a custom plan?", "Yes! Contact our sales team for enterprise pricing, team features, and dedicated support options."),
     };
 }
+

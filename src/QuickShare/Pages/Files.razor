@@ -1,6 +1,6 @@
-@layout MainLayout
 @page "/files"
 @attribute [Authorize]
+@attribute [StreamRendering]
 @using QuickShare.Data.Entities
 @using QuickShare.Features.Files.List
 @using QuickShare.Features.Folders.List
@@ -24,18 +24,40 @@
 <PageWrapper id="files-app" Variant="PageVariant.Padded">
         <div class="container">
 
+            @if (!isHtmxRender)
+            {
+                <div id="files-content"
+                     hx-get="/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))"
+                     hx-trigger="load"
+                     hx-target="#files-content"
+                     hx-swap="outerHTML">
+                    <div class="head-row">
+                        <div><h1 style="font-weight:800;letter-spacing:-0.025em;color:var(--db-color-text)">Files</h1></div>
+                    </div>
+                    <div class="stats">
+                        @for (var i = 0; i < 4; i++) { <div class="stat-card"><div class="account-skeleton-line" style="width:5rem;height:0.75rem"></div><div class="account-skeleton-line" style="width:3rem;height:1.5rem;margin-top:0.5rem"></div></div> }
+                    </div>
+                    <div class="skeleton" style="margin-top:2.5rem">
+                        @for (var i = 0; i < 4; i++) { <div class="skel-row"><div class="skel-icon"></div><div class="skel-text"><div class="skel-line1"></div><div class="skel-line2"></div></div><div class="skel-last"></div></div> }
+                    </div>
+                </div>
+            }
+            else
+            {
+            <div id="files-content">
+
             @* PAGE HEADING + SEARCH *@
             <div class="head-row">
                 <div>
-                    <h1 style="font-weight: 800; letter-spacing: -0.025em; color: var(--color-foreground)">
+                    <h1 style="font-weight: 800; letter-spacing: -0.025em; color: var(--db-color-text)">
                         @(SelectedFolder is not null ? SelectedFolder.Name : "All files")
                     </h1>
-                    <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--color-muted-foreground)">
+                    <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--db-color-text-muted)">
                         @(SelectedFolder is not null ? $"Files in {SelectedFolder.Name}" : "Browse all your uploaded files")
                     </p>
                 </div>
                 <div class="search-wrap">
-                    <form method="get" action="/files" hx-trigger="input changed delay:500ms" hx-target="#files-list" hx-select="#files-list" hx-swap="outerHTML" hx-push-url="true" class="search-inner">
+                    <form method="get" action="/files" hx-trigger="input changed delay:500ms" hx-target="#files-content" hx-select="#files-content" hx-swap="outerHTML" hx-push-url="true" class="search-inner">
                         @if (!string.IsNullOrEmpty(FolderId))
                         {
                             <input type="hidden" name="folderId" value="@FolderId" />
@@ -47,7 +69,10 @@
                         @if (!string.IsNullOrEmpty(SearchTerm))
                         {
                             <button type="button" class="search-clear" aria-label="Clear search"
-                                    onclick="window.location.href='/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))'">
+                                    hx-get="/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))"
+                                    hx-target="#files-content"
+                                    hx-swap="outerHTML"
+                                    hx-push-url="true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             </button>
                         }
@@ -58,20 +83,20 @@
             @* STATS *@
             <div class="stats">
                 <div class="stat-card">
-                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Files</p>
-                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@(Stats?.TotalFiles ?? 0)</p>
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--db-color-text-muted)">Files</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--db-color-text)">@(Stats?.TotalFiles ?? 0)</p>
                 </div>
                 <div class="stat-card">
-                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Storage used</p>
-                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@FormatBytes(Stats?.TotalSize ?? 0)</p>
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--db-color-text-muted)">Storage used</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--db-color-text)">@FormatBytes(Stats?.TotalSize ?? 0)</p>
                 </div>
                 <div class="stat-card">
-                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Plan</p>
-                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@(Stats?.Plan ?? "Free")</p>
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--db-color-text-muted)">Plan</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--db-color-text)">@(Stats?.Plan ?? "Free")</p>
                 </div>
                 <div class="stat-card">
-                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-muted-foreground)">Folders</p>
-                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--color-foreground)">@(Folders?.Count ?? 0)</p>
+                    <p style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--db-color-text-muted)">Folders</p>
+                    <p style="margin-top:0.5rem;font-size:1.5rem;font-weight:700;color:var(--db-color-text)">@(Folders?.Count ?? 0)</p>
                 </div>
             </div>
 
@@ -81,7 +106,7 @@
                 {
                     <div class="folder-empty">
                         <div style="display:flex;align-items:center;gap:0.75rem">
-                            <svg style="width:1.25rem;height:1.25rem;flex-shrink:0;color:color-mix(in srgb, var(--color-muted-foreground) 60%, transparent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <svg style="width:1.25rem;height:1.25rem;flex-shrink:0;color:color-mix(in srgb, var(--db-color-text-muted) 60%, transparent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
                             </svg>
                             <span>No folders yet. Create one to organize your files.</span>
@@ -97,7 +122,12 @@
                 else if (Folders is not null)
                 {
                     <div class="folder-list" role="list" aria-label="Folders">
-                        <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? "" : "?search=" + Uri.EscapeDataString(SearchTerm))" role="listitem" class="folder-pill @(string.IsNullOrEmpty(FolderId) ? "--active" : "--inactive")">
+                        <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? "" : "?search=" + Uri.EscapeDataString(SearchTerm))"
+                           hx-get="/files@(string.IsNullOrEmpty(SearchTerm) ? "?search=" + Uri.EscapeDataString(SearchTerm) : "")"
+                           hx-target="#files-content"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"
+                           role="listitem" class="folder-pill @(string.IsNullOrEmpty(FolderId) ? "--active" : "--inactive")">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="22" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                             All Files
                         </a>
@@ -108,7 +138,12 @@
                                  ondragenter="filesPage.onDragEnter('@folder.Id')"
                                  ondragleave="filesPage.onDragLeave('@folder.Id')"
                                  ondrop="filesPage.onDrop(event,'@folder.Id')">
-                                <a href="@GetFolderUrl(folder.Id)" class="folder-pill @(string.Equals(FolderId, folder.Id.ToString(), StringComparison.OrdinalIgnoreCase) ? "--active" : "--inactive")">
+                                <a href="@GetFolderUrl(folder.Id)"
+                                   hx-get="@GetFolderUrl(folder.Id)"
+                                   hx-target="#files-content"
+                                   hx-swap="outerHTML"
+                                   hx-push-url="true"
+                                   class="folder-pill @(string.Equals(FolderId, folder.Id.ToString(), StringComparison.OrdinalIgnoreCase) ? "--active" : "--inactive")">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
                                     <span>@folder.Name</span>
                                     @if (folder.FileCount > 0)
@@ -158,12 +193,12 @@
                 {
                     <div class="error-card">
                         <div style="padding: 3rem; text-align: center">
-                            <div style="margin: 0 auto; display: flex; width: 3.5rem; height: 3.5rem; align-items: center; justify-content: center; border-radius: 1rem; background: color-mix(in srgb, var(--color-destructive) 8%, transparent); color: var(--color-destructive)">
+                            <div style="margin: 0 auto; display: flex; width: 3.5rem; height: 3.5rem; align-items: center; justify-content: center; border-radius: 1rem; background: color-mix(in srgb, var(--db-color-error) 8%, transparent); color: var(--db-color-error)">
                                 <svg style="width: 1.75rem; height: 1.75rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                             </div>
                             <h3 style="margin-top: 1.25rem; font-size: 1.125rem; font-weight: 600">Couldn&rsquo;t load files</h3>
-                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-muted-foreground)">There was a problem fetching your files. Please try again.</p>
-                            <a href="/files" class="db-btn db-btn--primary" style="margin-top: 2rem">Retry</a>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--db-color-text-muted)">There was a problem fetching your files. Please try again.</p>
+                            <a href="/files" hx-get="/files" hx-target="#files-content" hx-swap="outerHTML" class="db-btn db-btn--primary" style="margin-top: 2rem">Retry</a>
                         </div>
                     </div>
                 }
@@ -171,15 +206,15 @@
                 {
                     <div class="empty-card">
                         <div style="padding: 4rem; text-align: center">
-                            <div style="margin: 0 auto; display: flex; width: 5rem; height: 5rem; align-items: center; justify-content: center; border-radius: 1rem; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary)">
+                            <div style="margin: 0 auto; display: flex; width: 5rem; height: 5rem; align-items: center; justify-content: center; border-radius: 1rem; background: color-mix(in srgb, var(--db-color-accent) 8%, transparent); color: var(--db-color-accent)">
                                 <svg style="width: 2.5rem; height: 2.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="12" y1="10" x2="12" y2="16"/></svg>
                             </div>
                             <h2 style="margin-top: 1.5rem; font-size: 1.25rem; font-weight: 600">@(SelectedFolder is not null ? $"No files in {SelectedFolder.Name}" : "No files yet")</h2>
-                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-muted-foreground); max-width: 24rem; margin-inline: auto">@(SelectedFolder is not null ? "This folder is empty." : "Upload your first file.")</p>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--db-color-text-muted); max-width: 24rem; margin-inline: auto">@(SelectedFolder is not null ? "This folder is empty." : "Upload your first file.")</p>
                             @if (!string.IsNullOrEmpty(SearchTerm))
                             {
-                                <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--color-muted-foreground)">
-                                    No files matching &ldquo;@SearchTerm&rdquo;. <a href="/files" style="color: var(--color-primary)">Clear search</a>
+                                <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--db-color-text-muted)">
+                                    No files matching &ldquo;@SearchTerm&rdquo;. <a href="/files" hx-get="/files" hx-target="#files-content" hx-swap="outerHTML" style="color: var(--db-color-accent); cursor: pointer">Clear search</a>
                                 </p>
                             }
                             <a href="/" class="db-btn db-btn--primary" style="margin-top: 2rem">Upload a file</a>
@@ -225,10 +260,12 @@
             </div>
             </HtmxFragment>
 
+            </div>
+            }
         </div>
 
     @* CREATE FOLDER MODAL *@
-    <div id="modal-create" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
+    <div id="files-modal-create" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-card">
                 <div class="modal-body">
@@ -245,7 +282,7 @@
                     <div id="create-error" class="modal-error hidden"></div>
                     <div class="modal-actions">
                         <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
-                        <button type="button" id="create-submit-btn" class="db-btn" style="flex:1;background:var(--color-foreground);color:var(--color-background);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitCreateFolder()" data-ai-action="folders.create.submit">
+                        <button type="button" id="create-submit-btn" class="db-btn" style="flex:1;background:var(--db-color-text);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitCreateFolder()" data-ai-action="folders.create.submit">
                             <span id="create-btn-text">Create folder</span>
                             <span id="create-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Creating&hellip;</span>
                         </button>
@@ -256,7 +293,7 @@
     </div>
 
     @* RENAME FOLDER MODAL *@
-    <div id="modal-rename" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
+    <div id="files-modal-rename" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-card">
                 <div class="modal-body">
@@ -273,7 +310,7 @@
                     <div id="rename-error" class="modal-error hidden"></div>
                     <div class="modal-actions">
                         <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
-                        <button type="button" id="rename-submit-btn" class="db-btn" style="flex:1;background:var(--color-foreground);color:var(--color-background);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitRenameFolder()" data-ai-action="folders.rename.submit">
+                        <button type="button" id="rename-submit-btn" class="db-btn" style="flex:1;background:var(--db-color-text);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitRenameFolder()" data-ai-action="folders.rename.submit">
                             <span id="rename-btn-text">Rename</span>
                             <span id="rename-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Renaming&hellip;</span>
                         </button>
@@ -284,7 +321,7 @@
     </div>
 
     @* DELETE FOLDER MODAL *@
-    <div id="modal-delete" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
+    <div id="files-modal-delete" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-card files-modal-card--danger">
                 <div class="modal-body">
@@ -294,7 +331,7 @@
                         </div>
                         <div>
                             <h3 style="font-size:1.125rem;font-weight:600">Delete folder?</h3>
-                            <p style="margin-top:0.25rem;font-size:0.875rem;color:var(--color-muted-foreground)">Are you sure you want to delete <strong id="delete-name"></strong>?</p>
+                            <p style="margin-top:0.25rem;font-size:0.875rem;color:var(--db-color-text-muted)">Are you sure you want to delete <strong id="delete-name"></strong>?</p>
                         </div>
                     </div>
                     <div class="warning">
@@ -304,15 +341,16 @@
                     <div id="delete-error" class="modal-error hidden"></div>
                     <div class="modal-actions">
                         <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
-                        <button type="button" id="delete-submit-btn" style="flex:1;background:var(--color-destructive);color:var(--color-destructive-foreground);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitDeleteFolder()" data-ai-action="folders.delete.confirm">
+                        <button type="button" id="delete-submit-btn" style="flex:1;background:var(--db-color-error);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitDeleteFolder()" data-ai-action="folders.delete.confirm">
                             <span id="delete-btn-text">Delete folder</span>
                             <span id="delete-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Deleting&hellip;</span>
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
     </div>
+        </div>
+            }
 </PageWrapper>
 
 <script src="/js/files.js"></script>
@@ -330,9 +368,14 @@
     private int TotalCount { get; set; }
     private UsageStats? Stats { get; set; }
     private FilesRenderState RenderState { get; set; } = FilesRenderState.Loading;
+    private bool isHtmxRender;
 
     protected override async Task OnInitializedAsync()
     {
+        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
+        isHtmxRender = hxHeader == "true";
+        if (!isHtmxRender) return;
+
         try
         {
             var ct = CancellationToken.None;

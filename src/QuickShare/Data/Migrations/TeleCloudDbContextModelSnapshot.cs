@@ -22,7 +22,7 @@ namespace QuickShare.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("QuickShare.Models.Chunk", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Chunk", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -56,7 +56,7 @@ namespace QuickShare.Migrations
                     b.ToTable("chunks", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Delivery", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -100,14 +100,11 @@ namespace QuickShare.Migrations
                     b.Property<int>("MaxDownloads")
                         .HasColumnType("integer");
 
+                    b.Property<string>("OtpHash")
+                        .HasColumnType("text");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
-
-                    b.Property<string>("PaymentStatus")
-                        .HasColumnType("text");
-
-                    b.Property<decimal?>("Price")
-                        .HasColumnType("numeric");
 
                     b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid");
@@ -141,7 +138,7 @@ namespace QuickShare.Migrations
                     b.ToTable("deliveries", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.DownloadTracking", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -166,7 +163,7 @@ namespace QuickShare.Migrations
                     b.ToTable("download_tracking", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.FileMetadata", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.FileMetadata", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -229,7 +226,7 @@ namespace QuickShare.Migrations
                     b.ToTable("files", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Folder", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Folder", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -258,7 +255,7 @@ namespace QuickShare.Migrations
                     b.ToTable("folders", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Manifest", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Manifest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -282,7 +279,7 @@ namespace QuickShare.Migrations
                     b.ToTable("manifests", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.PaymentEvent", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -338,7 +335,7 @@ namespace QuickShare.Migrations
                     b.ToTable("payment_events", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.PaymentIntent", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.PaymentIntent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -391,7 +388,7 @@ namespace QuickShare.Migrations
                     b.ToTable("payment_intents", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Subscription", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Subscription", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -438,7 +435,7 @@ namespace QuickShare.Migrations
                     b.ToTable("subscriptions", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.TempShare", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.TempShare", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -468,7 +465,7 @@ namespace QuickShare.Migrations
                     b.ToTable("TempShares");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.UploadSession", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -516,7 +513,7 @@ namespace QuickShare.Migrations
                     b.ToTable("upload_sessions", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.User", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -549,7 +546,7 @@ namespace QuickShare.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.UserLogin", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -576,7 +573,7 @@ namespace QuickShare.Migrations
                     b.ToTable("user_logins", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.UserUsage", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.UserUsage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -602,9 +599,9 @@ namespace QuickShare.Migrations
                     b.ToTable("user_usage", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Chunk", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Chunk", b =>
                 {
-                    b.HasOne("QuickShare.Models.Delivery", "Delivery")
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
                         .WithMany()
                         .HasForeignKey("DeliveryId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -613,9 +610,9 @@ namespace QuickShare.Migrations
                     b.Navigation("Delivery");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Delivery", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", "Sender")
+                    b.HasOne("QuickShare.Data.Entities.User", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -623,18 +620,18 @@ namespace QuickShare.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.DownloadTracking", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
                 {
-                    b.HasOne("QuickShare.Models.Delivery", null)
+                    b.HasOne("QuickShare.Data.Entities.Delivery", null)
                         .WithMany()
                         .HasForeignKey("DeliveryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("QuickShare.Models.FileMetadata", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.FileMetadata", b =>
                 {
-                    b.HasOne("QuickShare.Models.Folder", "Folder")
+                    b.HasOne("QuickShare.Data.Entities.Folder", "Folder")
                         .WithMany()
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -643,20 +640,20 @@ namespace QuickShare.Migrations
                     b.Navigation("Folder");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Manifest", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Manifest", b =>
                 {
-                    b.HasOne("QuickShare.Models.Delivery", "Delivery")
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
                         .WithOne("Manifest")
-                        .HasForeignKey("QuickShare.Models.Manifest", "DeliveryId")
+                        .HasForeignKey("QuickShare.Data.Entities.Manifest", "DeliveryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Delivery");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.PaymentEvent", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", "User")
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -665,9 +662,9 @@ namespace QuickShare.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.PaymentIntent", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.PaymentIntent", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", "User")
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -676,9 +673,9 @@ namespace QuickShare.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Subscription", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Subscription", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", "User")
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -687,15 +684,15 @@ namespace QuickShare.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.TempShare", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.TempShare", b =>
                 {
-                    b.HasOne("QuickShare.Models.FileMetadata", "File")
+                    b.HasOne("QuickShare.Data.Entities.FileMetadata", "File")
                         .WithMany()
                         .HasForeignKey("FileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("QuickShare.Models.User", "Owner")
+                    b.HasOne("QuickShare.Data.Entities.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId");
 
@@ -704,18 +701,18 @@ namespace QuickShare.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.UploadSession", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", null)
+                    b.HasOne("QuickShare.Data.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("QuickShare.Models.UserLogin", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", "User")
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -724,9 +721,9 @@ namespace QuickShare.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.UserUsage", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.UserUsage", b =>
                 {
-                    b.HasOne("QuickShare.Models.User", "User")
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -735,7 +732,7 @@ namespace QuickShare.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("QuickShare.Models.Delivery", b =>
+            modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
                     b.Navigation("Manifest");
                 });

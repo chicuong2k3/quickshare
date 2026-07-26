@@ -1,5 +1,4 @@
-@layout MainLayout
-@page "/upgrade"
+﻿@page "/upgrade"
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
@@ -8,7 +7,7 @@
 @inject AppDbContext Db
 @inject IConfiguration Config
 
-<PageTitle>Upgrade to @planDisplay — QuickShareCloud</PageTitle>
+<PageTitle>Upgrade to @planDisplay â€” QuickShareCloud</PageTitle>
 
 <script>
 	function renderKofiQR(text) {
@@ -91,10 +90,10 @@
             }
             else
             {
-                <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--color-border);border-radius:0.5rem;text-align:center">
+                <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--db-color-border);border-radius:0.5rem;text-align:center">
                     <h3 class="db-h3">Send <strong>@paymentIntent.Currency@paymentAmount</strong> to our Ko-fi page</h3>
                     <p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>
-                    <div style="margin:1.5rem 0;padding:1rem;background:var(--color-muted);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em;font-family:monospace">
+                    <div style="margin:1.5rem 0;padding:1rem;background:var(--db-color-surface);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em;font-family:var(--db-font-mono)">
                         @paymentIntent.Code
                     </div>
                     <p class="db-text-muted" style="font-size:0.95rem">
@@ -236,3 +235,4 @@
         }
     }
 }
+

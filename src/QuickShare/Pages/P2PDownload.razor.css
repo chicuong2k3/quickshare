@@ -1,30 +1,133 @@
-.card { width: 100%; max-width: 28rem; }
-.card ::deep .db-card__body { padding: 2.5rem; }
+/* QuickShareCloud — P2P Download page (grunge-dark tokens) */
 
-.section { text-align: center; padding: 2.5rem 0; }
-.section--compact { padding: 1.5rem 0; }
-
-.icon {
-    display: flex; width: 4rem; height: 4rem; align-items: center; justify-content: center;
-    border-radius: 1rem; margin: 0 auto 1.5rem;
+.card {
+    width: 100%;
+    max-width: 28rem;
 }
-.icon--primary { background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary); }
-.icon--danger { background: color-mix(in srgb, var(--color-destructive) 8%, transparent); color: var(--color-destructive); }
-.icon svg { width: 2rem; height: 2rem; }
 
+.card ::deep .db-card__body {
+    padding: var(--db-space-6);
+}
+
+.section {
+    text-align: center;
+    padding: var(--db-space-6) 0;
+}
+
+.section--compact {
+    padding: var(--db-space-5) 0;
+}
+
+/* ─── Status icon (unified with Upload page) ─── */
+.icon-success {
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-4);
+    margin: 0 auto var(--db-space-5);
+    background: var(--db-color-success-subtle);
+    color: var(--db-color-success);
+}
+
+.icon-error {
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-4);
+    margin: 0 auto var(--db-space-5);
+    background: var(--db-color-error-subtle);
+    color: var(--db-color-error);
+}
+
+.icon-accent {
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-4);
+    margin: 0 auto var(--db-space-5);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+}
+
+.icon-success svg,
+.icon-error svg,
+.icon-accent svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* ─── PIN input ─── */
 .input {
-    width: 100%; max-width: 20rem; border-radius: 1rem;
-    border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
-    background: var(--color-background); padding: 0.875rem 1.25rem; font-size: 0.875rem; text-align: center;
+    width: 100%;
+    max-width: 20rem;
+    border-radius: var(--db-radius-4);
+    border: 1px solid color-mix(in srgb, var(--db-color-border) 60%, transparent);
+    background: var(--db-color-bg);
+    padding: 0.875rem 1.25rem;
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text);
+    text-align: center;
+    font-family: inherit;
 }
-.input:focus { outline: none; border-color: var(--color-ring); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ring) 20%, transparent); }
 
-.file-row { display: flex; align-items: flex-start; gap: 1.25rem; text-align: left; }
+.input:focus {
+    outline: none;
+    border-color: var(--db-color-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent) 20%, transparent);
+}
+
+/* ─── File row ─── */
+.file-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    text-align: left;
+}
+
 .file-icon {
-    display: flex; width: 4rem; height: 4rem; flex-shrink: 0; align-items: center; justify-content: center;
-    border-radius: 1rem; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary);
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-4);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
 }
-.file-icon svg { width: 1.75rem; height: 1.75rem; }
 
-.progress { margin-top: 1.5rem; height: 0.5rem; width: 100%; border-radius: 999px; background: var(--color-muted); overflow: hidden; }
-.progress-bar { height: 100%; border-radius: 999px; background: var(--color-primary); transition: width 0.3s; width: 0; }
+.file-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+/* ─── Progress bar ─── */
+.progress {
+    margin-top: var(--db-space-5);
+    height: 0.5rem;
+    width: 100%;
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-surface);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-accent);
+    transition: width 0.3s;
+    width: 0;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+    .progress-bar {
+        transition: none;
+    }
+}

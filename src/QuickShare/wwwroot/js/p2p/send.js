@@ -22,12 +22,20 @@
         function setPhase(phase) { state.phase = phase; render(); }
 
         function render() {
-            var sections = ['p2ps-idle', 'p2ps-creating', 'p2ps-waiting', 'p2ps-failed'];
+            var sections = ['p2ps-idle', 'p2ps-pin-dialog', 'p2ps-creating', 'p2ps-waiting', 'p2ps-failed'];
             sections.forEach(hide);
 
-            var phaseMap = { idle: 'p2ps-idle', creating: 'p2ps-creating', waiting: 'p2ps-waiting', failed: 'p2ps-failed' };
+            var phaseMap = { idle: 'p2ps-idle', pin: 'p2ps-pin-dialog', creating: 'p2ps-creating', waiting: 'p2ps-waiting', failed: 'p2ps-failed' };
             var elId = phaseMap[state.phase];
             if (elId) show(elId);
+
+            if (state.phase === 'pin') {
+                // focus first OTP input
+                setTimeout(function () {
+                    var first = document.querySelector('#p2ps-otp .db-otp__input');
+                    if (first) first.focus();
+                }, 100);
+            }
 
             if (state.phase === 'waiting') {
                 var linkInput = document.getElementById('p2ps-share-link');
@@ -64,16 +72,16 @@
                 var r = state._receivers[ids[i]];
                 var pct = Math.round(r.progress * 100);
                 var statusClass = 'rstatus-' + r.status;
-                html += '<div class="receiver-entry" style="display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0.75rem;border:1px solid var(--color-border);border-radius:0.5rem;margin-bottom:0.5rem;background:var(--color-card)">';
-                html += '<span style="font-weight:600;font-size:0.75rem;color:var(--color-muted-foreground);min-width:1.75rem">#' + r.index + '</span>';
-                html += '<span style="font-size:0.75rem;font-family:monospace;color:var(--color-muted-foreground);min-width:4rem">' + ids[i].slice(0, 6) + '\u2026</span>';
+                html += '<div class="p2p-receiver-entry" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border:1px solid var(--db-color-border);border-radius:var(--db-radius-2,8px);margin-bottom:0.5rem;background:var(--db-color-surface,var(--db-color-bg))">';
+                html += '<span style="font-weight:600;font-size:0.75rem;color:var(--db-color-text-muted);min-width:1.75rem">#' + r.index + '</span>';
+                html += '<span style="font-size:0.75rem;font-family:monospace;color:var(--db-color-text-muted);min-width:4rem">' + ids[i].slice(0, 6) + '\u2026</span>';
                 html += '<span class="' + statusClass + '" style="font-size:0.75rem;font-weight:500;padding:0.125rem 0.5rem;border-radius:999px;min-width:5.5rem;text-align:center">' + statusLabel(r.status) + '</span>';
                 if (r.status === 'receiving') {
-                    html += '<div style="flex:1;min-width:80px"><div style="height:4px;border-radius:2px;background:var(--color-border);overflow:hidden"><div style="height:100%;width:' + pct + '%;border-radius:2px;background:var(--color-primary);transition:width 0.3s ease"></div></div></div>';
-                    html += '<span style="font-size:0.75rem;color:var(--color-muted-foreground);min-width:3rem;text-align:right">' + pct + '%</span>';
+                    html += '<div style="flex:1;min-width:80px"><div style="height:4px;border-radius:2px;background:var(--db-color-border);overflow:hidden"><div style="height:100%;width:' + pct + '%;border-radius:2px;background:var(--db-color-accent);transition:width 0.3s ease"></div></div></div>';
+                    html += '<span style="font-size:0.75rem;color:var(--db-color-text-muted);min-width:3rem;text-align:right">' + pct + '%</span>';
                 }
                 if (r.status === 'done') {
-                    html += '<span style="font-size:0.75rem;color:var(--color-muted-foreground);margin-left:auto">' + formatBytes(state._file ? state._file.size : 0) + '</span>';
+                    html += '<span style="font-size:0.75rem;color:var(--db-color-text-muted);margin-left:auto">' + formatBytes(state._file ? state._file.size : 0) + '</span>';
                 }
                 html += '</div>';
             }
@@ -85,7 +93,8 @@
         function onFileSelect(event) {
             var file = event.target.files ? event.target.files[0] : null;
             if (!file) return;
-            startWithFile(file);
+            state._file = file;
+            setPhase('pin');
             event.target.value = '';
         }
 
@@ -98,6 +107,8 @@
             document.getElementById('drag-sub').classList.remove('hidden');
             document.getElementById('dropzone-idle').classList.add('hidden');
             document.getElementById('dropzone-drag').classList.remove('hidden');
+            var dz = document.querySelector('.p2p-dropzone');
+            if (dz) dz.classList.add('active');
         }
 
         function onDragLeave(event) {
@@ -109,6 +120,8 @@
             document.getElementById('drag-sub').classList.add('hidden');
             document.getElementById('dropzone-idle').classList.remove('hidden');
             document.getElementById('dropzone-drag').classList.add('hidden');
+            var dz = document.querySelector('.p2p-dropzone');
+            if (dz) dz.classList.remove('active');
         }
 
         function onDrop(event) {
@@ -117,7 +130,8 @@
             onDragLeave(event);
             var file = event.dataTransfer.files ? event.dataTransfer.files[0] : null;
             if (!file) return;
-            startWithFile(file);
+            state._file = file;
+            setPhase('pin');
         }
 
         // --- Share creation ---
@@ -294,15 +308,41 @@
             renderReceivers();
         }
 
-        // --- Actions ---
+        // --- PIN dialog ---
 
-        function togglePin() {
-            var cb = document.getElementById('p2ps-enable-pin');
-            var input = document.querySelector('.pin-input');
-            if (cb && input) {
-                if (cb.checked) input.classList.remove('hidden');
-                else { input.classList.add('hidden'); input.value = ''; state.pin = ''; }
+        function readOtp() {
+            var inputs = document.querySelectorAll('#p2ps-otp .db-otp__input');
+            var pin = '';
+            for (var i = 0; i < inputs.length; i++) pin += inputs[i].value;
+            return pin;
+        }
+
+        function confirmPin() {
+            var pin = readOtp();
+            state.pin = pin;
+            startWithFile(state._file);
+        }
+
+        function skipPin() {
+            state.pin = '';
+            startWithFile(state._file);
+        }
+
+        function otpInput(event, idx) {
+            var val = event.target.value.replace(/\D/g, '');
+            event.target.value = val;
+            if (val && idx < 5) {
+                var next = document.querySelectorAll('#p2ps-otp .db-otp__input')[idx + 1];
+                if (next) next.focus();
             }
+        }
+
+        function otpKeydown(event, idx) {
+            if (event.key === 'Backspace' && !event.target.value && idx > 0) {
+                var prev = document.querySelectorAll('#p2ps-otp .db-otp__input')[idx - 1];
+                if (prev) prev.focus();
+            }
+            if (event.key === 'Enter') confirmPin();
         }
 
         function copyLink() {
@@ -362,10 +402,8 @@
             state.progress = 0;
             state.error = '';
             state.pin = '';
-            var pinInput = document.querySelector('.pin-input');
-            if (pinInput) { pinInput.value = ''; pinInput.classList.add('hidden'); }
-            var cb = document.getElementById('p2ps-enable-pin');
-            if (cb) cb.checked = false;
+            var otpInputs = document.querySelectorAll('#p2ps-otp .db-otp__input');
+            for (var i = 0; i < otpInputs.length; i++) otpInputs[i].value = '';
             setPhase('idle');
         }
 
@@ -389,7 +427,10 @@
             onDragOver: onDragOver,
             onDragLeave: onDragLeave,
             onDrop: onDrop,
-            togglePin: togglePin,
+            confirmPin: confirmPin,
+            skipPin: skipPin,
+            otpInput: otpInput,
+            otpKeydown: otpKeydown,
             copyLink: copyLink,
             cancel: cancel,
             cancelTransfer: cancelTransfer,

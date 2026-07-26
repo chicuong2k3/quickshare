@@ -1,12 +1,11 @@
-@layout MainLayout
-@page "/login"
+﻿@page "/login"
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
     var returnUrl = HttpContextAccessor.HttpContext?.Request.Query["returnUrl"].FirstOrDefault() ?? "/";
 }
 
-<PageTitle>Sign in — QuickShareCloud</PageTitle>
+<PageTitle>Sign in â€” QuickShareCloud</PageTitle>
 
 <PageWrapper Variant="PageVariant.Centered">
     <div class="card">
@@ -41,3 +40,4 @@
         </div>
     </div>
 </PageWrapper>
+

@@ -11,7 +11,8 @@
         phase: 'idle',
         progress: 0, filename: '', link: '', expiresAt: '', error: '',
         expiry: '24h', copied: false, pasteTip: false, draggingActive: false,
-        encryptionEnabled: false, _encryptionUsed: false,
+        encryptionEnabled: true, _encryptionUsed: false,
+        otp: '',
         _abortController: null, _deliveryId: null, _uploadId: null,
         fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0
     };
@@ -30,11 +31,11 @@
             var dragText = document.getElementById('upload-drag-text');
             var idleSub = document.getElementById('upload-idle-subtext');
             var dragSub = document.getElementById('upload-drag-subtext');
-            var dropIdle = document.getElementById('upload-dropzone-idle');
-            var dropDrag = document.getElementById('upload-dropzone-drag');
+            var dropIdle = document.getElementById('dropzone-idle');
+            var dropDrag = document.getElementById('dropzone-drag');
             if (isDrag) { if (idleText) idleText.classList.add('hidden'); if (dragText) dragText.classList.remove('hidden'); if (idleSub) idleSub.classList.add('hidden'); if (dragSub) dragSub.classList.remove('hidden'); if (dropIdle) dropIdle.classList.add('hidden'); if (dropDrag) dropDrag.classList.remove('hidden'); }
             else { if (idleText) idleText.classList.remove('hidden'); if (dragText) dragText.classList.add('hidden'); if (idleSub) idleSub.classList.remove('hidden'); if (dragSub) dragSub.classList.add('hidden'); if (dropIdle) dropIdle.classList.remove('hidden'); if (dropDrag) dropDrag.classList.add('hidden'); }
-            var dz = document.getElementById('upload-dropzone');
+            var dz = document.getElementById('dropzone');
             if (dz) { if (state.draggingActive) dz.classList.add('active'); else dz.classList.remove('active'); }
         }
         if (state.phase === 'uploading') {
@@ -42,38 +43,26 @@
             document.getElementById('upload-progress-label').textContent = progressLabel();
             
                 document.getElementById('upload-progress-bar').setAttribute('aria-valuenow', state.progress);
-            if (state.encryptionEnabled) show('upload-encrypt-badge'); else hide('upload-encrypt-badge');
+            show('upload-encrypt-badge');
         }
         if (state.phase === 'success') {
             document.getElementById('upload-success-name').textContent = state.filename;
             document.getElementById('share-link').value = state.link;
-            if (state.encryptionEnabled || state._encryptionUsed) { show('upload-success-encrypt-badge'); } else hide('upload-success-encrypt-badge');
+            show('upload-success-encrypt-badge');
         }
         if (state.phase === 'error') {
             document.getElementById('upload-error-msg').textContent = state.error || 'An unknown error occurred.';
-        }
-
-        // Encrypt toggle UI
-        var encBtn = document.getElementById('upload-encrypt-btn');
-        var encOff = document.getElementById('upload-encrypt-off');
-        var encOn = document.getElementById('upload-encrypt-on');
-        if (state.encryptionEnabled) {
-            if (encBtn) { encBtn.classList.remove('upload-toggle-btn--off'); encBtn.classList.add('upload-toggle-btn--on'); }
-            if (encOff) encOff.classList.add('hidden'); if (encOn) encOn.classList.remove('hidden');
-        } else {
-            if (encBtn) { encBtn.classList.add('upload-toggle-btn--off'); encBtn.classList.remove('upload-toggle-btn--on'); }
-            if (encOn) encOn.classList.add('hidden'); if (encOff) encOff.classList.remove('hidden');
         }
 
         // Expiry toggle UI
         var btn24 = document.getElementById('upload-expiry-24h');
         var btn7d = document.getElementById('upload-expiry-7d');
         if (state.expiry === '24h') {
-            if (btn24) { btn24.classList.remove('upload-expiry-btn--off'); btn24.classList.add('upload-expiry-btn--on'); btn24.setAttribute('aria-checked','true'); }
-            if (btn7d) { btn7d.classList.add('upload-expiry-btn--off'); btn7d.classList.remove('upload-expiry-btn--on'); btn7d.setAttribute('aria-checked','false'); }
+            if (btn24) { btn24.classList.add('expiry-btn--on'); btn24.classList.remove('expiry-btn--off'); btn24.setAttribute('aria-checked','true'); }
+            if (btn7d) { btn7d.classList.add('expiry-btn--off'); btn7d.classList.remove('expiry-btn--on'); btn7d.setAttribute('aria-checked','false'); }
         } else {
-            if (btn7d) { btn7d.classList.remove('upload-expiry-btn--off'); btn7d.classList.add('upload-expiry-btn--on'); btn7d.setAttribute('aria-checked','true'); }
-            if (btn24) { btn24.classList.add('upload-expiry-btn--off'); btn24.classList.remove('upload-expiry-btn--on'); btn24.setAttribute('aria-checked','false'); }
+            if (btn7d) { btn7d.classList.add('expiry-btn--on'); btn7d.classList.remove('expiry-btn--off'); btn7d.setAttribute('aria-checked','true'); }
+            if (btn24) { btn24.classList.add('expiry-btn--off'); btn24.classList.remove('expiry-btn--on'); btn24.setAttribute('aria-checked','false'); }
         }
 
         // Paste tip
@@ -103,8 +92,27 @@
     }
 
     window.uploadPage = {
-        toggleEncryption: function () { state.encryptionEnabled = !state.encryptionEnabled; render(); },
         selectExpiry: function (v) { state.expiry = v; render(); },
+        otpInput: function (event, idx) {
+            var val = event.target.value.replace(/\D/g, '');
+            event.target.value = val;
+            if (val && idx < 5) {
+                var next = document.querySelectorAll('#upload-otp .db-otp__input')[idx + 1];
+                if (next) next.focus();
+            }
+        },
+        otpKeydown: function (event, idx) {
+            if (event.key === 'Backspace' && !event.target.value && idx > 0) {
+                var prev = document.querySelectorAll('#upload-otp .db-otp__input')[idx - 1];
+                if (prev) prev.focus();
+            }
+        },
+        readOtp: function () {
+            var inputs = document.querySelectorAll('#upload-otp .db-otp__input');
+            var pin = '';
+            for (var i = 0; i < inputs.length; i++) pin += inputs[i].value;
+            state.otp = pin;
+        },
 
         onDragOver: function (e) { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; state.draggingActive = true; if (state.phase === 'idle') state.phase = 'dragging'; render(); },
         onDragLeave: function (e) { e.preventDefault(); state.draggingActive = false; if (state.phase === 'dragging') state.phase = 'idle'; render(); },
@@ -138,7 +146,7 @@
 
     function reset() {
         state.phase = 'idle'; state.progress = 0; state.filename = ''; state.link = ''; state.expiresAt = '';
-        state.error = ''; state.copied = false; state.encryptionEnabled = false; state._encryptionUsed = false;
+        state.error = ''; state.copied = false; state.encryptionEnabled = true; state._encryptionUsed = false; state.otp = '';
         state._abortController = null; state._deliveryId = null; state._uploadId = null;
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
     }
@@ -209,7 +217,7 @@
             for (var r = 0; r < results.length; r++) { if (results[r].status === 'rejected') throw results[r].reason; }
         }
 
-        var commitResp = await fetch(api + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: state._deliveryId, uploadId: state._uploadId, objectKey: state.objectKey, fileName: file.name, contentType: file.type || 'application/octet-stream', fileSize: originalSize, parts: partEtags }) });
+        var commitResp = await fetch(api + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: state._deliveryId, uploadId: state._uploadId, objectKey: state.objectKey, fileName: file.name, contentType: file.type || 'application/octet-stream', fileSize: originalSize, parts: partEtags, otp: state.otp || null }) });
         if (!commitResp.ok) { var cErr = await commitResp.text(); throw new Error(cErr || 'Failed to finalize upload'); }
         var result = await commitResp.json();
         state.link = result.shareLink;

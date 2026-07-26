@@ -1,5 +1,20 @@
-/* Global utilities — shared across all pages */
-.hidden { display: none !important; }
+/* ============================================================
+   QuickShareCloud — shared design system
+   Built on daub (grunge-dark) tokens. Page-specific styling
+   lives in each component's scoped .razor.css; this file holds
+   only cross-page primitives and utilities.
+   ============================================================ */
+
+/* ─── Wire the loaded Sora face into daub's display/heading roles ─── */
+:root {
+    --db-font-display: "Sora", var(--db-font-ui);
+    --db-font-heading: "Sora", var(--db-font-ui);
+}
+
+/* ─── Utilities ─── */
+.hidden {
+    display: none !important;
+}
 
 .sr-only {
     position: absolute;
@@ -11,4 +26,414 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* ─── Display helpers ─── */
+.db-block {
+    display: block;
+}
+
+/* ─── Type: display headline with a single accent word ─── */
+.qs-display {
+    font-family: var(--db-font-heading);
+    font-weight: var(--db-weight-bold);
+    line-height: var(--db-leading-tight);
+    letter-spacing: -0.02em;
+    color: var(--db-color-text);
+    margin: 0;
+}
+
+.qs-accent {
+    color: var(--db-color-accent);
+}
+
+/* ─── Signature: the mono "readout" — file facts as a terminal line ─── */
+.qs-readout {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    letter-spacing: 0.04em;
+    color: var(--db-color-text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.qs-readout__sep {
+    opacity: 0.4;
+}
+
+/* ─── Signature motif: dashed actionable zone (drop / tap targets) ─── */
+.qs-zone {
+    border: 2px dashed var(--db-color-border);
+    border-radius: var(--db-radius-4);
+    background: var(--db-color-bg);
+    transition: border-color var(--db-transition), background var(--db-transition), transform var(--db-transition-bounce);
+}
+
+.qs-zone:hover {
+    border-color: var(--db-color-accent);
+    background: var(--db-color-accent-subtle);
+}
+
+.qs-zone.is-active {
+    border-color: var(--db-color-accent);
+    border-style: solid;
+    background: var(--db-color-accent-subtle);
+    transform: scale(1.006);
+}
+
+/* ─── Circular status glyph (success / error / lock / clock) ─── */
+.qs-glyph {
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-full);
+    margin-inline: auto;
+    background: var(--db-color-surface);
+    color: var(--db-color-text-secondary);
+}
+
+.qs-glyph svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.qs-glyph--accent {
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+}
+
+.qs-glyph--success {
+    background: var(--db-color-success-subtle);
+    color: var(--db-color-success);
+}
+
+.qs-glyph--error {
+    background: var(--db-color-error-subtle);
+    color: var(--db-color-error);
+}
+
+/* ─── Eyebrow: small structural label above a heading ─── */
+.qs-eyebrow {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    font-weight: var(--db-weight-medium);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--db-color-text-muted);
+    margin: 0;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+    .qs-zone,
+    .qs-zone.is-active {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* ─── Avatar dropdown: pin content to right edge of trigger ─── */
+.db-dropdown__trigger.layout-avatar-btn + .db-dropdown__content,
+.layout-avatar-dropdown {
+    right: 0;
+    left: auto !important;
+}
+
+/* ─── Account: profile card (shared for HTMX lazy-load) ─── */
+.account-card {
+    width: 100%;
+    max-width: 28rem;
+}
+
+.account-card ::deep .db-card__body {
+    padding: var(--db-space-6);
+}
+
+/* Skeleton */
+.account-skeleton-avatar {
+    width: 5rem;
+    height: 5rem;
+    border-radius: var(--db-radius-4);
+    background: var(--db-color-surface);
+    animation: account-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.account-skeleton-line {
+    height: 1rem;
+    border-radius: 0.25rem;
+    background: var(--db-color-surface);
+    animation: account-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.account-skeleton-name {
+    width: 10rem;
+    height: 1.25rem;
+}
+
+.account-skeleton-email {
+    width: 14rem;
+    height: 0.875rem;
+}
+
+.account-skeleton-badge {
+    width: 8rem;
+    height: 1.5rem;
+    border-radius: var(--db-radius-full);
+}
+
+@keyframes account-skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+}
+
+/* Profile */
+.account-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.account-avatar-wrap {
+    position: relative;
+    cursor: pointer;
+}
+
+.account-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-full);
+    background: color-mix(in srgb, var(--db-color-bg) 55%, transparent);
+    color: var(--db-color-text);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.account-avatar-wrap:hover .account-avatar-overlay {
+    opacity: 1;
+}
+
+.account-avatar-img {
+    width: 5rem;
+    height: 5rem;
+    border-radius: var(--db-radius-full);
+    object-fit: cover;
+    box-shadow: 0 0 0 2px var(--db-color-border);
+}
+
+.account-avatar-initial {
+    display: flex;
+    width: 5rem;
+    height: 5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+    font-size: var(--db-text-xl);
+    font-weight: var(--db-weight-bold);
+    box-shadow: 0 0 0 2px var(--db-color-border);
+}
+
+.account-form {
+    margin-top: var(--db-space-6);
+}
+
+.account-form-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.account-logout-row {
+    margin-top: var(--db-space-5);
+}
+
+/* Branding section */
+.account-section-icon {
+    display: flex;
+    width: 3rem;
+    height: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-4);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+}
+
+.account-section-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.account-section-head {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-4);
+    margin-bottom: var(--db-space-5);
+}
+
+.account-branding-empty {
+    text-align: center;
+    padding: var(--db-space-5) 0;
+    color: var(--db-color-text-muted);
+}
+
+.account-branding-item {
+    border: 1px solid color-mix(in srgb, var(--db-color-border) 40%, transparent);
+    border-radius: var(--db-radius-4);
+    background: var(--db-color-bg);
+    padding: var(--db-space-4);
+    transition: border-color 0.15s;
+}
+
+.account-branding-item:hover {
+    border-color: color-mix(in srgb, var(--db-color-border) 80%, transparent);
+}
+
+.account-branding-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.account-branding-item-name {
+    min-width: 0;
+    flex: 1;
+}
+
+.account-branding-item-filename {
+    font-size: var(--db-text-sm);
+    font-weight: var(--db-weight-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Edit toggle */
+.account-edit-toggle {
+    flex-shrink: 0;
+    margin-left: var(--db-space-3);
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--db-radius-3);
+    font-size: var(--db-text-xs);
+    font-weight: var(--db-weight-medium);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+.edit-toggle--active {
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+}
+
+.edit-toggle--inactive {
+    background: var(--db-color-surface);
+    color: var(--db-color-text-muted);
+}
+
+.edit-form {
+    margin-top: var(--db-space-4);
+    padding-top: var(--db-space-4);
+    border-top: 1px solid color-mix(in srgb, var(--db-color-border) 20%, transparent);
+}
+
+.edit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-3);
+}
+
+.color-row {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-3);
+}
+
+.color-swatch {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--db-radius-2);
+    border: 1px solid color-mix(in srgb, var(--db-color-border) 60%, transparent);
+    cursor: pointer;
+    padding: 0;
+}
+
+.color-text {
+    font-family: var(--db-font-mono);
+    flex: 1;
+}
+
+.edit-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-4);
+}
+
+/* Save button spinner */
+.account-save-btn {
+    position: relative;
+}
+
+.account-btn-spinner {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-btn-spinner::after {
+    content: '';
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: account-btn-spin 0.6s linear infinite;
+}
+
+@keyframes account-btn-spin {
+    to { transform: rotate(360deg); }
+}
+
+.account-save-btn.htmx-request .btn-text {
+    visibility: hidden;
+}
+
+.account-save-btn.htmx-request .account-btn-spinner {
+    display: flex;
+}
+
+.account-form-inner input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.account-save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.account-avatar-wrap-disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account-avatar-overlay { transition: none; }
+    .account-branding-item { transition: none; }
 }

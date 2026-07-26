@@ -1,112 +1,135 @@
-@layout MainLayout
-@page "/p2p/send"
+﻿@page "/p2p/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    // API and pages are same-origin now; browser JS uses relative URLs.
     var apiBase = string.Empty;
 }
 
-<PageTitle>QuickShareCloud — P2P file transfer</PageTitle>
+<PageTitle>QuickShareCloud â€” P2P file transfer</PageTitle>
 
-<div class="page">
+<PageWrapper Variant="PageVariant.Fill">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
-    <main class="main">
-        <div class="container">
-            <input type="file" name="file" id="p2ps-file-input" class="sr-only" aria-label="Choose a file" onchange="p2pSend.onFileSelect(event)" />
 
-            @* IDLE / DRAGGING *@
-            <section id="p2ps-idle" class="section">
-                <h1 class="h1">
-                    <span id="idle-h1">Send <span class="gradient">direct</span></span>
+    <div class="p2p-container">
+        <input type="file" name="file" id="p2ps-file-input" style="display:none" aria-label="Choose a file" onchange="p2pSend.onFileSelect(event)" />
+
+        @* IDLE / DRAGGING *@
+        <section id="p2ps-idle" class="p2p-section">
+            <div class="p2p-hero">
+                <span class="db-badge">P2P &middot; encrypted &middot; no server storage</span>
+                <h1 class="p2p-headline">
+                    <span id="idle-h1">Send <span class="p2p-accent">direct</span></span>
                     <span id="drag-h1" class="hidden">Drop your file</span>
                 </h1>
-                <p class="sub">
-                    <span id="idle-sub">Peer-to-peer &middot; no server storage &middot; encrypted</span>
+                <p class="p2p-sub">
+                    <span id="idle-sub">Peer-to-peer &middot; encrypted &middot; nothing touches our servers</span>
                     <span id="drag-sub" class="hidden">Release to start P2P transfer</span>
                 </p>
+            </div>
 
-                <div>
-                    <div id=""
-                         ondragover="p2pSend.onDragOver(event)"
-                         ondragenter="p2pSend.onDragOver(event)"
-                         ondragleave="p2pSend.onDragLeave(event)"
-                         ondrop="p2pSend.onDrop(event)"
-                         class="dropzone"
-                         onclick="document.getElementById('p2ps-file-input').click()">
-                        <div class="dropzone-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="dropzone-title">
-                                <span id="dropzone-idle">Drag &amp; drop a file to share directly</span>
-                                <span id="dropzone-drag" class="hidden">Drop it here</span>
-                            </p>
-                            <p class="dropzone-sub">or click to browse &middot; no size limit</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pin-row">
-                    <input type="checkbox" id="p2ps-enable-pin" class="pin-checkbox" onchange="p2pSend.togglePin()" />
-                    <label for="p2ps-enable-pin" class="pin-label">Protect with PIN</label>
-                    <input type="text" id="" class="pin-input hidden" placeholder="Enter a PIN" oninput="p2pSend.pin = this.value" />
-                </div>
-            </section>
-
-            @* CREATING LINK *@
-            <section id="p2ps-creating" class="section hidden">
-                <div class="db-spinner db-spinner--lg" style="margin: 0 auto"></div>
-                <h1 class="status-h1">Creating share link&hellip;</h1>
-            </section>
-
-            @* WAITING FOR PEER / SHARING *@
-            <section id="p2ps-waiting" class="section hidden">
-                <div class="db-spinner db-spinner--lg" style="margin: 0 auto"></div>
-                <h1 class="status-h1">Waiting for receiver</h1>
-                <p class="status-p">Share this link with the recipient:</p>
-                <div class="share-box">
-                    <div class="share-row">
-                        <input id="p2ps-share-link" type="text" readonly class="share-input" aria-label="Share link" />
-                        <button class="db-btn db-btn--primary" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="Copy share link">
-                            <span id="p2ps-copy-text">Copy link</span>
-                            <span id="p2ps-copy-done" class="hidden">Copied!</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="p2ps-qrcode" style="margin-top: 1.5rem; display: flex; justify-content: center"></div>
-
-                <div id="p2ps-receiver-list" style="display: none; margin-top: 1.5rem; width: 100%">
-                    <p style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--color-foreground)">Receivers</p>
-                    <div id="p2ps-receiver-items"></div>
-                </div>
-
-                <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--color-muted-foreground)">Link expires in 7 days. File transfers directly between peers.</p>
-                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pSend.cancel()">Cancel</button>
-            </section>
-
-            @* FAILED *@
-            <section id="p2ps-failed" class="section hidden">
-                <div class="icon-error">
-                    <svg class="icon-svg-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            <div class="p2p-dropzone"
+                 ondragover="p2pSend.onDragOver(event)"
+                 ondragenter="p2pSend.onDragOver(event)"
+                 ondragleave="p2pSend.onDragLeave(event)"
+                 ondrop="p2pSend.onDrop(event)"
+                 onclick="document.getElementById('p2ps-file-input').click()">
+                <div class="p2p-dropzone-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                 </div>
-                <h1 class="status-h1">Transfer failed</h1>
-                <p class="status-p" id="p2ps-error-msg">The P2P connection could not be established.</p>
-                <button class="db-btn db-btn--primary" style="margin-top: 2.5rem" onclick="p2pSend.reset()">Try again</button>
-            </section>
-        </div>
-    </main>
-</div>
+                <div class="p2p-dropzone-text">
+                    <p class="p2p-dropzone-title">
+                        <span id="dropzone-idle">Drop a file to start</span>
+                        <span id="dropzone-drag" class="hidden">Drop it here</span>
+                    </p>
+                    <p class="p2p-dropzone-sub">or click to browse &middot; no size limit</p>
+                </div>
+            </div>
+        </section>
+
+        @* PIN DIALOG â€” appears after file selection *@
+        <section id="p2ps-pin-dialog" class="p2p-section hidden">
+            <div class="p2p-pin-card db-card">
+                <div class="db-card__body">
+                    <div class="p2p-pin-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                    </div>
+                    <h2 class="p2p-status-h1">Set a PIN <span class="p2p-pin-optional">(optional)</span></h2>
+                    <p class="p2p-status-p">Recipients will need this PIN to download. Leave empty to skip.</p>
+                    <div id="p2ps-otp" class="db-otp p2p-otp" style="margin-top: var(--db-space-5)">
+                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,0)" onkeydown="p2pSend.otpKeydown(event,0)" />
+                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,1)" onkeydown="p2pSend.otpKeydown(event,1)" />
+                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,2)" onkeydown="p2pSend.otpKeydown(event,2)" />
+                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,3)" onkeydown="p2pSend.otpKeydown(event,3)" />
+                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,4)" onkeydown="p2pSend.otpKeydown(event,4)" />
+                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,5)" onkeydown="p2pSend.otpKeydown(event,5)" />
+                    </div>
+                    <div id="p2ps-pin-error" class="db-alert db-alert--error hidden" role="alert" style="margin-top: var(--db-space-4)"></div>
+                    <div style="margin-top: var(--db-space-5); display: flex; gap: var(--db-space-3)">
+                        <button class="db-btn db-btn--primary" style="flex:1" onclick="p2pSend.confirmPin()" data-ai-action="p2p.pin.confirm">Start transfer</button>
+                        <button class="db-btn db-btn--ghost" onclick="p2pSend.skipPin()">Skip</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @* CREATING LINK *@
+        <section id="p2ps-creating" class="p2p-section hidden">
+            <div class="db-spinner db-spinner--lg" role="status"></div>
+            <h1 class="p2p-status-h1">Creating share link&hellip;</h1>
+        </section>
+
+        @* WAITING FOR PEER / SHARING *@
+        <section id="p2ps-waiting" class="p2p-section hidden">
+            <div class="db-spinner db-spinner--lg" role="status"></div>
+            <h1 class="p2p-status-h1">Waiting for receiver</h1>
+            <p class="p2p-status-p">Share this link with the recipient:</p>
+
+            <div class="db-card p2p-share-card">
+                <div class="db-input-group">
+                    <input id="p2ps-share-link" type="text" readonly class="db-input" aria-label="Share link" />
+                    <button class="db-btn db-btn--primary" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="Copy share link">
+                        <span id="p2ps-copy-text">Copy link</span>
+                        <span id="p2ps-copy-done" class="hidden">Copied!</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="p2ps-qrcode" class="p2p-qr-frame"></div>
+
+            <div id="p2ps-receiver-list" class="p2p-receiver-list">
+                <p class="p2p-receiver-heading">Receivers</p>
+                <div id="p2ps-receiver-items"></div>
+            </div>
+
+            <p class="p2p-expiry-note">Link expires in 7 days &middot; the file moves directly between devices</p>
+            <button class="db-btn db-btn--ghost p2p-cancel-btn" onclick="p2pSend.cancel()">Cancel</button>
+        </section>
+
+        @* FAILED *@
+        <section id="p2ps-failed" class="p2p-section hidden">
+            <div class="db-alert db-alert--error p2p-error-alert" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span id="p2ps-error-msg">The P2P connection could not be established.</span>
+            </div>
+            <button class="db-btn db-btn--primary p2p-retry-btn" onclick="p2pSend.reset()">Try again</button>
+        </section>
+    </div>
+</PageWrapper>
 
 <script src="/js/p2p/signaling.js"></script>
 <script src="/js/p2p/peerConnection.js"></script>
 <script src="/js/p2p/fileTransfer.js"></script>
 <script src="/js/p2p/encryption.js"></script>
 <script src="/js/p2p/send.js"></script>
+

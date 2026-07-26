@@ -1,5 +1,4 @@
-@layout MainLayout
-@page "/"
+﻿@page "/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 
@@ -8,7 +7,7 @@
     var apiBase = "";
 }
 
-<PageTitle>QuickShareCloud — send a file in seconds</PageTitle>
+<PageTitle>QuickShareCloud â€” send a file in seconds</PageTitle>
 
 <PageWrapper Variant="PageVariant.Fill">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
@@ -27,7 +26,7 @@
                 </p>
 
                 <div>
-                    <div id=""
+                    <div id="dropzone"
                          ondragover="uploadPage.onDragOver(event)"
                          ondragenter="uploadPage.onDragOver(event)"
                          ondragleave="uploadPage.onDragLeave(event)"
@@ -53,25 +52,20 @@
                     </div>
                 </div>
 
-                @* Encryption toggle *@
+                @* OTP — optional 6-digit security code for downloaders *@
                 <div class="encrypt-toggle">
-                    <button type="button" id="upload-encrypt-btn"
-                            class="toggle-btn --off"
-                            onclick="uploadPage.toggleEncryption()"
-                            aria-label="Toggle end-to-end encryption">
-                        <span id="upload-encrypt-off" class="toggle-btn-content">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
-                            Encrypt
-                        </span>
-                        <span id="upload-encrypt-on" class="toggle-btn-content hidden">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
-                            </svg>
-                            End-to-end encrypted
-                        </span>
-                    </button>
+                    <div class="otp-wrap">
+                        <span class="otp-label">Security code (optional)</span>
+                        <div id="upload-otp" class="db-otp" style="gap: 0.5rem">
+                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        </div>
+                        <span class="otp-hint">Recipients must enter this code to download</span>
+                    </div>
                 </div>
 
                 @* Expiry selector *@
@@ -79,15 +73,15 @@
                     <span class="expiry-label">Expires in</span>
                     <div class="expiry-group" role="radiogroup" aria-label="Expiry duration">
                         <button type="button" role="radio" id="upload-expiry-24h"
-                                class="expiry-btn --on"
+                                class="expiry-btn expiry-btn--on"
                                 onclick="uploadPage.selectExpiry('24h')">24 hours</button>
                         <button type="button" role="radio" id="upload-expiry-7d"
-                                class="expiry-btn --off"
+                                class="expiry-btn expiry-btn--off"
                                 onclick="uploadPage.selectExpiry('7d')">7 days</button>
                     </div>
                 </div>
 
-                <div id="" class="hidden ">No image found in clipboard.</div>
+                <div id="upload-paste-tip" class="hidden ">No image found in clipboard.</div>
             </section>
 
             @* UPLOADING *@
@@ -95,7 +89,7 @@
                 <div class="db-spinner db-spinner--lg "></div>
                 <h1 class="status-h1" id="upload-filename"></h1>
                 <p class="status-p" id="upload-progress-label"></p>
-                <div id="upload-encrypt-badge" class="badge-encrypt hidden">
+                <div id="upload-encrypt-badge" class="badge-encrypt">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                     </svg>
@@ -128,12 +122,12 @@
                             <span id="upload-copied-text" class="hidden">Copied!</span>
                         </button>
                     </div>
-                    <p style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--color-muted-foreground)" id=""></p>
+                    <p id="upload-expiry-label" style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--db-color-text-muted)"></p>
                 </div>
 
                 <div id="qrcode" style="margin-top: 2rem; display: flex; justify-content: center"></div>
 
-                <div id="upload-success-encrypt-badge" class="badge-encrypt hidden" style="margin-top: 1rem">
+                <div id="upload-success-encrypt-badge" class="badge-encrypt" style="margin-top: 1rem">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                     </svg>
@@ -158,3 +152,4 @@
 </PageWrapper>
 
 <script src="/js/upload.js"></script>
+

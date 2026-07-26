@@ -26,11 +26,12 @@
 
 ### Downloads (`Features/Downloads/`)
 - **Info** (`DownloadInfoHandler`) — File metadata with download gates:
+  - OTP gate (if `HasOtp`) — receiver must enter the 6-digit code set by sender
   - Password gate (if `HasPassword`)
   - Ad interstitial (free plan)
   - Download limit enforcement
   - Called in-process via `IMessageBus` from `Download.razor` (no API endpoint)
-- **Download** (`DownloadDeliveryEndpoint` + `Handler`) — Stream file from storage to client, supports AES-GCM client-side decryption hint
+- **Download** (`DownloadDeliveryEndpoint` + `Handler`) — Stream file from storage to client, supports AES-GCM client-side decryption. All uploads are now AES-256-GCM encrypted by default (no toggle).
 
 ### Files (`Features/Files/`)
 - **List** — `ListFilesHandler` called via `IMessageBus` from `Files.razor` (in-process, no API endpoint)
@@ -52,6 +53,7 @@
 - **List** — `GET /api/deliveries` — user's delivery history
 - **Brand** — `GET/PUT /api/deliveries/{id}/brand` — custom delivery branding (logo URL, message, accent color)
 - **Password** — `POST /api/deliveries/{code}/verify` — verify password-protected delivery
+- **OTP** — `POST /api/deliveries/{code}/verify-otp` — verify 6-digit OTP code set by sender on upload
 - `DeliveryService.cs` — Shared delivery coordination logic
 
 ### Payments (`Features/Payments/`)
@@ -99,6 +101,7 @@
 | **RequestLoggingMiddleware** | Structured inbound request logging |
 | **P2P Signaling** | `P2PConnectionManager` (singleton) + `P2PSignalingMiddleware` — WebSocket-based WebRTC signaling relay |
 | **Rate Limiting** | `RateLimitingMiddleware` — configurable request throttling |
+| **HTTP Caching** | `HtmxCacheMiddleware` — `Cache-Control` headers for SSR/HTMX pages (2min private default, 5min public for home/pricing). Skips `/api/*`, `/send`, `/login`, `/logout`. |
 
 ---
 
@@ -106,16 +109,17 @@
 
 | Route | Page | Interactivity | Key Features |
 |-------|------|--------------|-------------|
-| `/` | `Upload.razor` | Vanilla JS | Drag-drop + paste upload, AES-256-GCM client-side encryption, R2 multipart, QR code generation, expiry selector (24h/7d) |
-| `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation panel, abuse reporting form, sender branding |
-| `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling (offer/answer), PIN-protected encryption, data channel file streaming with progress |
+| `/` | `Home.razor` | Server-rendered | Product landing page: hero, feature cards (encryption, auto-expiry, no signup), 3-step how-it-works, CTA |
+| `/send` | `Upload.razor` | Vanilla JS | Drag-drop + paste upload, AES-256-GCM always-on encryption, R2 multipart, QR code generation, expiry selector (24h/7d), optional 6-digit OTP security code |
+| `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: OTP gate (if set) → password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation, abuse reporting, sender branding |
+| `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling, PIN-protected encryption, data channel file streaming with progress |
 | `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, PIN gate, WebRTC answer, data channel file receipt, progress tracking |
-| `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop file move, CRUD modals (create/rename/delete folder), htmx-powered live search, download button per file |
-| `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload with preview), OAuth provider badge, delivery branding manager (logo/message/accent per delivery), htmx form submission |
-| `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler (calls `SubscriptionService.CancelAsync()` directly) |
-| `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade page, Ko-fi payment integration — form handler creates PaymentIntent, renders payment code + QR |
+| `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop move, CRUD modals, htmx-powered live search, download button |
+| `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload), OAuth badge, delivery branding manager, htmx form + lazy-load |
+| `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler |
+| `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade, Ko-fi payment — form creates PaymentIntent with code + QR |
 | `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub, Facebook, TikTok |
-| `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly billing toggle via `hx-get` + `HtmxFragment`, FAQ accordion, CTA section |
+| `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
 
 ### SSR Data Access Pattern
 
@@ -133,7 +137,7 @@ SSR pages that previously called the API via HTTP (`IQuickShareApi`/Refit) now a
 JS-based pages (Upload, Download, P2PTransfer, P2PDownload) call `/api/*` via `fetch()`/`XMLHttpRequest` — these use **relative URLs** (empty `apiBaseUrl` in `window.ZAPDROP_CONFIG`), so they work same-origin with no CORS.
 
 ### Component Layout
-- **`MainLayout.razor`** — Flex-column layout: header (logo + nav) → `@Body` → footer. Inherits `HtmxLayoutComponentBase` for htmx partial rendering
+- **`MainLayout.razor`** — Flex-column layout: header (logo + nav) → `@Body` → footer. Inherits `HtmxLayoutComponentBase` for htmx partial rendering. Navbar: DAUB nav-menu + avatar dropdown (initials + email + Account/Sign out links).
 - **`HtmxorLayout.razor`** — Base htmx layout component
 - **`App.razor`** — Root HTML: DAUB anti-FOUC script, `daub.css` CDN, `hx-boost="true"` on body, `daub.js` CDN, theme init (grunge-dark default), QR lib
 
@@ -189,7 +193,7 @@ Models, DTOs, and constants now live directly in `src/QuickShare/Models/` and `s
 | `UserUsage` | `user_usages` | Id, UserId (FK), PeriodStart (month), TotalBytesUploaded, TransferCount |
 | `Folder` | `folders` | Id (UUID), Name (UNIQUE) |
 | `FileMetadata` | `files` | Id (UUID), Filename, ContentType, Size, FolderId (FK), Tags (TEXT[]), CreatedAt |
-| `Delivery` | `deliveries` | ShareCode, FileName, ContentType, FileSize, ObjectKey (R2), ExpiresAt, DownloadCount, MaxDownloads, HasPassword, HasPayment, Price, PlanTier |
+| `Delivery` | `deliveries` | ShareCode, FileName, ContentType, FileSize, StoragePath, ExpiresAt, DownloadCount, MaxDownloads, PasswordHash, OtpHash, BrandLogo, BrandMessage, BrandAccent, Status |
 | `UploadSession` | `upload_sessions` | DeliveryId, UploadId (R2), ObjectKey (R2 multipart tracking) |
 | `Subscription` | `subscriptions` | UserId (FK), Plan, Status (Active/Cancelled/Expired), BillingPeriod (monthly/yearly), CurrentPeriodStart, CurrentPeriodEnd, CancelledAt, CreatedAt, UpdatedAt |
 | `PaymentIntent` | `payment_intents` | UserId (FK), Code (unique, `QSC-XXXXXX`), Plan, Billing, Amount, Currency, Status (Pending/Completed/Expired), ExpiresAt (1h) |
@@ -239,7 +243,7 @@ Migrations under `Migrations/`. Key schema:
 - `user_usages` — Id, UserId (FK), PeriodStart, TotalBytesUploaded, TransferCount
 - `folders` — Id (UUID PK), Name (TEXT UNIQUE), CreatedAt
 - `files` — Id (UUID PK), Filename, ContentType, Size, FolderId (FK), Tags, CreatedAt
-- `deliveries` — ShareCode, FileName, ContentType, FileSize, ObjectKey, ExpiresAt, etc.
+- `deliveries` — ShareCode, FileName, ContentType, FileSize, StoragePath, ExpiresAt, PasswordHash, OtpHash, etc.
 - `upload_sessions` — DeliveryId, UploadId (R2), ObjectKey
 - `payment_events` — Ko-fi payment event records
 - `subscriptions` — User subscription lifecycle (Active → Cancelled → Expired)
@@ -352,7 +356,7 @@ src/QuickShare/
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
 ├── Features/              # FastEndpoints + Wolverine handlers
-│   ├── Deliveries/        # Brand, List, Password, DeliveryService
+│   ├── Deliveries/        # Brand, List, Password, Otp, DeliveryService
 │   ├── Downloads/         # Download
 │   ├── Files/             # Move + Shared mappers (List handler in-process)
 │   ├── Folders/           # Create, Update, Delete + Shared mappers (List/GetInfo handlers in-process)
@@ -361,11 +365,11 @@ src/QuickShare/
 │   ├── Shares/            # P2P share creation
 │   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)
 │   └── Users/             # UserRegistrationService, UserMapper
-├── Infrastructure/        # Storage (R2 + LocalDisk), Quota, Logging, Options, ExceptionHandler
-├── Middleware/            # P2PConnectionManager, P2PSignaling, RateLimiting
+├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, HtmxCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware
+├── Middleware/            # (empty — middleware lives in Infrastructure/)
 ├── Migrations/            # EF Core migrations
 ├── Models/                # Entity models, DTOs (User, Delivery, Folder, etc.)
-├── Pages/                 # 10 Blazor SSR pages (.razor + .razor.css)
+├── Pages/                 # 11 Blazor SSR pages (.razor + .razor.css)
 ├── Services/              # TrialService
 ├── wwwroot/               # Static assets (js/, css/, lib/, avatars/)
 ├── App.razor              # Root HTML shell

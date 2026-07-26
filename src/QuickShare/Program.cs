@@ -227,6 +227,9 @@ app.UseHtmxAntiforgery();
 
 app.UseMiddleware<P2PSignalingMiddleware>();
 
+// ── HTTP caching for HTMX/SSR pages ──
+app.UseMiddleware<HtmxCacheMiddleware>();
+
 // ── API endpoints ──
 app.UseFastEndpoints()
    .UseSwaggerGen();

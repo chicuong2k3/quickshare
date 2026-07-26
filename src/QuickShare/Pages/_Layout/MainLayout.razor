@@ -5,18 +5,26 @@
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
     var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+    var userEmail = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+    var userInitials = GetInitials(userName);
     var path = HttpContextAccessor.HttpContext?.Request.Path.Value ?? "";
 }
 
-<div class="min-h-screen flex flex-col bg-background text-foreground">
+<div class="layout-root">
     <nav class="db-navbar">
         <a class="db-navbar__brand" href="/">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
-            QuickShareCloud
+            <span class="layout-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+            </span>
+            <span class="layout-brand-word">QuickShare<span class="layout-brand-cloud">Cloud</span></span>
         </a>
         <div class="db-navbar__nav">
             <div class="db-nav-menu">
-                <a class="db-nav-menu__item @NavActive(path == "/")" href="/">Send</a>
+                <a class="db-nav-menu__item @NavActive(path == "/send")" href="/send">Send</a>
                 <a class="db-nav-menu__item @NavActive(path.StartsWith("/p2p"))" href="/p2p/send">P2P</a>
                 <a class="db-nav-menu__item @NavActive(path == "/pricing")" href="/pricing">Pricing</a>
                 <a class="db-nav-menu__item @NavActive(path == "/files")" href="/files">Files</a>
@@ -26,8 +34,24 @@
         <div class="db-navbar__actions">
             @if (isAuthenticated)
             {
-                <a href="/account" class="db-btn db-btn--ghost db-btn--sm">@userName</a>
-                <a href="/logout" hx-boost="false" class="db-btn db-btn--ghost db-btn--sm">Sign out</a>
+                <div class="db-dropdown">
+                    <button class="db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn"
+                            hx-get="/api/me/avatar"
+                            hx-trigger="load, profileUpdated from:body"
+                            hx-swap="outerHTML"
+                            type="button" aria-label="User menu">
+                        @userInitials
+                    </button>
+                    <div class="db-dropdown__content layout-avatar-dropdown">
+                        <div class="layout-user-info">
+                            <span class="layout-user-info__name">@userName</span>
+                            <span class="layout-user-info__email">@userEmail</span>
+                        </div>
+                        <div class="db-dropdown__separator"></div>
+                        <a href="/account" class="db-dropdown__item">Account</a>
+                        <a href="/logout" hx-boost="false" class="db-dropdown__item">Sign out</a>
+                    </div>
+                </div>
             }
             else
             {
@@ -45,12 +69,30 @@
 
     @Body
 
-    <footer class="db-page-footer db-text-center">
-        <p class="db-caption db-text-muted">QuickShareCloud &mdash; send files, not friction.</p>
+    <footer class="layout-footer">
+        <div class="layout-footer__inner">
+            <span class="layout-footer__mark">QuickShareCloud</span>
+            <span class="layout-footer__sep" aria-hidden="true">&middot;</span>
+            <span class="layout-footer__note">send files, not friction</span>
+        </div>
     </footer>
 </div>
 
 @code {
     private static string NavActive(bool isActive) =>
         isActive ? "db-nav-menu__item--active" : "";
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "?";
+        }
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+        {
+            return parts[0][..1].ToUpperInvariant();
+        }
+        return string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant();
+    }
 }
