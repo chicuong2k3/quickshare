@@ -1,0 +1,95 @@
+namespace QuickShare.Features.Downloads.Download;
+
+public record DownloadDeliveryQuery(string ShareCode);
+
+public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+{
+    private static readonly TimeSpan FullDownloadTtl = TimeSpan.FromDays(7);
+    private static readonly TimeSpan RangeRequestTtl = TimeSpan.FromHours(1);
+
+    public async Task HandleAsync(DownloadDeliveryQuery query, AppDbContext db, CancellationToken ct)
+    {
+        var httpContext = httpContextAccessor.HttpContext!;
+        var response = httpContext.Response;
+
+        var delivery = await db.Deliveries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
+
+        if (delivery is null)
+        {
+            response.StatusCode = 404;
+            return;
+        }
+
+        if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
+        {
+            response.StatusCode = 410;
+            return;
+        }
+
+        if (delivery.DownloadCount >= delivery.MaxDownloads)
+        {
+            response.StatusCode = 403;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(delivery.StoragePath))
+        {
+            response.StatusCode = 500;
+            return;
+        }
+
+        var hasRangeHeader = httpContext.Request.Headers.ContainsKey("Range");
+        var ttl = hasRangeHeader ? RangeRequestTtl : FullDownloadTtl;
+
+        if (delivery.ExpiresAt.HasValue)
+        {
+            var remaining = delivery.ExpiresAt.Value - DateTime.UtcNow;
+            if (remaining < ttl)
+                ttl = remaining > TimeSpan.Zero ? remaining : TimeSpan.FromMinutes(5);
+        }
+
+        Uri presignedUrl;
+        try
+        {
+            presignedUrl = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath, ttl, ct);
+        }
+        catch
+        {
+            response.StatusCode = 502;
+            return;
+        }
+
+        response.Redirect(presignedUrl.AbsoluteUri, permanent: false);
+
+        if (!hasRangeHeader)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await using var scope = httpContext.RequestServices.CreateAsyncScope();
+                    var updateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    var entity = await updateDb.Deliveries.FindAsync([delivery.Id]);
+                    if (entity is not null)
+                    {
+                        entity.DownloadCount++;
+
+                        updateDb.DownloadTrackings.Add(new DownloadTracking
+                        {
+                            Id = Guid.CreateVersion7(),
+                            DeliveryId = delivery.Id,
+                            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+                            DownloadedAt = DateTime.UtcNow
+                        });
+
+                        await updateDb.SaveChangesAsync(CancellationToken.None);
+                    }
+                }
+                catch { /* counter update failure shouldn't break the download */ }
+            }, CancellationToken.None);
+        }
+    }
+}

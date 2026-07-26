@@ -1,0 +1,56 @@
+@inherits HtmxLayoutComponentBase
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Security.Claims
+
+@{
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+    var path = HttpContextAccessor.HttpContext?.Request.Path.Value ?? "";
+}
+
+<div class="min-h-screen flex flex-col bg-background text-foreground">
+    <nav class="db-navbar">
+        <a class="db-navbar__brand" href="/">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-foreground/70 text-xs font-bold">Q</span>
+            QuickShareCloud
+        </a>
+        <div class="db-navbar__nav">
+            <div class="db-nav-menu">
+                <a class="db-nav-menu__item @NavActive(path == "/")" href="/">Send</a>
+                <a class="db-nav-menu__item @NavActive(path.StartsWith("/p2p"))" href="/p2p/send">P2P</a>
+                <a class="db-nav-menu__item @NavActive(path == "/pricing")" href="/pricing">Pricing</a>
+                <a class="db-nav-menu__item @NavActive(path == "/files")" href="/files">Files</a>
+            </div>
+        </div>
+        <div class="db-navbar__spacer"></div>
+        <div class="db-navbar__actions">
+            @if (isAuthenticated)
+            {
+                <a href="/account" class="db-btn db-btn--ghost db-btn--sm">@userName</a>
+                <a href="/logout" hx-boost="false" class="db-btn db-btn--ghost db-btn--sm">Sign out</a>
+            }
+            else
+            {
+                <a href="/login" class="db-btn db-btn--primary db-btn--sm">Sign in</a>
+            }
+        </div>
+        <button class="db-navbar__toggle" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+        </button>
+    </nav>
+
+    @Body
+
+    <footer class="db-page-footer db-text-center">
+        <p class="db-caption db-text-muted">QuickShareCloud &mdash; send files, not friction.</p>
+    </footer>
+</div>
+
+@code {
+    private static string NavActive(bool isActive) =>
+        isActive ? "db-nav-menu__item--active" : "";
+}

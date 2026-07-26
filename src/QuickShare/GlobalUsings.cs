@@ -1,0 +1,17 @@
+global using QuickShare.Abstractions;
+global using QuickShare.Data;
+global using QuickShare.Infrastructure;
+global using QuickShare.Services;
+global using QuickShare.Features.Files.Shared;
+global using QuickShare.Features.Folders.Shared;
+global using Wolverine;
+global using Wolverine.EntityFrameworkCore;
+global using Wolverine.Postgresql;
+global using Microsoft.EntityFrameworkCore;
+global using FastEndpoints;
+global using FluentValidation;
+global using QuickShare.Querying;
+global using QuickShare.Extensions;
+global using QuickShare.Shared.Models;
+global using QuickShare.Shared.Constants;
+global using QuickShare.Shared;

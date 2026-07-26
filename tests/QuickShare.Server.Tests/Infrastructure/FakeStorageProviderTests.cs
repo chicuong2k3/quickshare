@@ -1,7 +1,7 @@
-using QuickShare.Server.Abstractions;
-using QuickShare.Server.Services;
+using QuickShare.Abstractions;
+using QuickShare.Services;
 
-namespace QuickShare.Server.Tests.Infrastructure;
+namespace QuickShare.Tests.Infrastructure;
 
 public sealed class FakeStorageProvider(string rootPath) : IStorageProvider
 {

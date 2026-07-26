@@ -1,0 +1,160 @@
+@layout MainLayout
+@page "/account/billing"
+@attribute [Authorize]
+@using QuickShare.Data
+@using QuickShare.Features.Payments.Kofi
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IConfiguration Config
+
+<PageTitle>Billing — QuickShareCloud</PageTitle>
+
+<div class="page">
+
+    <section class="hero">
+        <span class="tag">Billing</span>
+        <h1 class="db-h1">Subscription</h1>
+    </section>
+
+    <section class="billing-body">
+        @if (billing is null)
+        {
+            <div class="loading">
+                <p class="db-text-muted">Loading billing information...</p>
+            </div>
+        }
+        else
+        {
+            <div class="summary-card">
+                <div class="summary-card__head">
+                    <h2 class="db-h2">@billing.PlanDisplay Plan</h2>
+                    <p class="db-text-muted">@planDescription</p>
+                </div>
+                <div class="summary-card__price">
+                    <span class="price-amount">@planPrice</span>
+                    <span class="price-period db-text-muted">@billingPeriodLabel</span>
+                </div>
+                <div class="summary-card__features">
+                    @foreach (var feature in planFeatures)
+                    {
+                        <div class="feature">
+                            <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            <span>@feature</span>
+                        </div>
+                    }
+                </div>
+
+                @if (billing.Plan == "free")
+                {
+                    <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">Upgrade to Pro</a>
+                }
+                else
+                {
+                    <div class="summary-card__actions">
+                        <a href="@changePlanUrl" class="db-btn db-btn--secondary">Change Plan</a>
+                        <a href="@cancelUrl" class="db-btn db-btn--ghost db-btn--danger">Cancel Subscription</a>
+                    </div>
+                }
+            </div>
+
+            <div class="history">
+                <h2 class="db-h2">Payment History</h2>
+
+                @if (billing.Events.Count == 0)
+                {
+                    <p class="db-text-muted">No payment history yet.</p>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var evt in billing.Events)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-item__dot @eventDotClass(evt.EventType)"></div>
+                                <div class="timeline-item__content">
+                                    <div class="timeline-item__label">@evt.EventLabel</div>
+                                    <div class="timeline-item__meta db-text-muted">
+                                        @evt.CreatedAt.ToString("MMM dd, yyyy")
+                                        @if (evt.Amount > 0)
+                                        {
+                                            <span>· @evt.Amount.ToString("F2") @evt.Currency</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(evt.InvoiceUrl))
+                                    {
+                                        <a href="@evt.InvoiceUrl" target="_blank" class="db-link">View Receipt</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+</div>
+
+@code {
+    private BillingHistoryResponse? billing;
+
+    private string planPrice => (billing?.Plan, billingPeriod) switch
+    {
+        ("pro", "monthly") => FormatPrice(Config.GetValue<int>("Pricing:ProMonthly", 9)),
+        ("pro", "yearly") => FormatPrice(Config.GetValue<int>("Pricing:ProYearly", 77)),
+        ("studio", "monthly") => FormatPrice(Config.GetValue<int>("Pricing:StudioMonthly", 29)),
+        ("studio", "yearly") => FormatPrice(Config.GetValue<int>("Pricing:StudioYearly", 239)),
+        _ => "$0"
+    };
+
+    private string FormatPrice(int amount)
+    {
+        var currency = Config["Pricing:Currency"] ?? "$";
+        return currency == "VND" ? $"{amount:N0} {currency}" : $"{currency}{amount}";
+    }
+
+    private string planDescription => billing?.Plan switch
+    {
+        "pro" => "For creators & professionals",
+        "studio" => "For teams & enterprises",
+        _ => "Great for getting started"
+    };
+
+    private string[] planFeatures => billing?.Plan switch
+    {
+        "pro" => new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" },
+        "studio" => new[] { "20 GB per file", "500 GB / month", "Unlimited transfers", "Custom branding", "API access", "Dedicated support" },
+        _ => new[] { "100 MB per file", "2 GB / month", "5 transfers/month", "7-day expiry", "End-to-end encryption" }
+    };
+
+    private string billingPeriod => billing?.Events.FirstOrDefault(e =>
+        e.EventType is "subscription_created" or "subscription_renewed")?.Billing ?? "monthly";
+
+    private string billingPeriodLabel => billing?.Plan == "free" ? "/ forever" : $"/ {billingPeriod}";
+
+    private string changePlanUrl => Config["Kofi:ManageSubscriptionUrl"] ?? "#";
+    private string cancelUrl => Config["Kofi:CancelSubscriptionUrl"] ?? "#";
+
+    private string eventDotClass(string eventType) => eventType switch
+    {
+        "subscription_created" => "dot--created",
+        "subscription_renewed" => "dot--renewed",
+        "subscription_cancelled" => "dot--cancelled",
+        "subscription_expired" => "dot--expired",
+        _ => "dot--default"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var ct = CancellationToken.None;
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+            billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
+        }
+        catch
+        {
+            billing = null;
+        }
+    }
+}

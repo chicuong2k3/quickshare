@@ -1,6 +1,6 @@
-using QuickShare.Server.Infrastructure.Storage;
+using QuickShare.Infrastructure.Storage;
 
-namespace QuickShare.Server.Tests.Infrastructure;
+namespace QuickShare.Tests.Infrastructure;
 
 public sealed class R2ObjectKeyTests
 {
