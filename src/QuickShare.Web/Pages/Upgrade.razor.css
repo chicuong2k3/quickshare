@@ -1,0 +1,100 @@
+.page {
+    padding-block: 4rem 6rem;
+    padding-inline: 1.5rem;
+}
+.hero {
+    text-align: center;
+    padding-block: 3rem 4rem;
+    max-width: 48rem;
+    margin-inline: auto;
+}
+.hero ::deep .db-h1 {
+    margin-top: 0.75rem;
+}
+.tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-accent, #6366f1);
+    color: var(--color-accent, #6366f1);
+    background: color-mix(in srgb, var(--color-accent, #6366f1) 5%, transparent);
+}
+.hero p {
+    margin-top: 1rem;
+    max-width: 36rem;
+    margin-inline: auto;
+}
+
+.summary-card {
+    max-width: 32rem;
+    margin-inline: auto;
+    border: 2px solid var(--color-accent, #6366f1);
+    border-radius: 1rem;
+    background: var(--color-card, #1a1a1a);
+    padding: 2rem;
+    box-shadow: 0 4px 24px color-mix(in srgb, var(--color-accent, #6366f1) 15%, transparent);
+}
+.summary-card__head {
+    margin-bottom: 1rem;
+}
+.summary-card__price {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border, #333);
+}
+.summary-card__price .price-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+.summary-card__price .price-period {
+    font-size: 0.875rem;
+}
+.summary-card__features {
+    display: grid;
+    gap: 0.75rem;
+}
+.feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+}
+.feature__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--color-accent, #6366f1);
+}
+
+.payment {
+    max-width: 48rem;
+    margin-inline: auto;
+    margin-top: 4rem;
+    padding-top: 4rem;
+    border-top: 1px solid var(--color-border, #333);
+    text-align: center;
+}
+.payment-form {
+    margin-top: 2rem;
+}
+.payment-options {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 32rem;
+    margin-inline: auto;
+    margin-top: 2rem;
+}
+@media (min-width: 640px) {
+    .payment-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.payment-option {
+    border: 1px solid var(--color-border, #333);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    background: var(--color-card, #1a1a1a);
+}

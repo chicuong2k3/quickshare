@@ -1,0 +1,141 @@
+@layout MainLayout
+@page "/upgrade"
+@attribute [Authorize]
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IQuickShareApi Api
+@inject IConfiguration Config
+
+@{
+    var apiBase = (Config["QuickShare:ApiBaseUrl"] ?? "http://localhost:59155").TrimEnd('/');
+}
+
+<PageTitle>Upgrade to @planDisplay — QuickShareCloud</PageTitle>
+
+<script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+
+<div class="page">
+
+    <section class="hero">
+        <span class="tag">Upgrade</span>
+        <h1 class="db-h1">Upgrade to @planDisplay</h1>
+        <p class="db-p db-text-muted">
+            You're currently on the <strong>@currentPlan</strong> plan.
+            @planDisplay gives you @planSummary.
+        </p>
+    </section>
+
+    <section id="upgrade-body">
+        <div class="summary-card">
+            <div class="summary-card__head">
+                <h2 class="db-h2">@planDisplay</h2>
+                <p class="db-text-muted">@planDesc</p>
+            </div>
+            <div class="summary-card__price">
+                @if (IsYearly)
+                {
+                    <span class="price-amount">@planYearlyPrice</span>
+                    <span class="price-period db-text-muted">/ year</span>
+                }
+                else
+                {
+                    <span class="price-amount">@planMonthlyPrice</span>
+                    <span class="price-period db-text-muted">/ month</span>
+                }
+            </div>
+            <div class="summary-card__features">
+                @foreach (var feature in planFeatures)
+                {
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span>@feature</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="payment" id="payment-section">
+            <h2 class="db-h2">Complete your upgrade</h2>
+            <p class="db-text-muted" style="margin-top: 0.5rem">
+                Upgrading to <strong>@planDisplay</strong>
+                @(IsYearly ? " (yearly)" : " (monthly)")
+                &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+            </p>
+
+            <form hx-post="/api/upgrade/initiate" hx-target="#payment-section" hx-select="#payment-section" hx-swap="outerHTML" class="payment-form">
+                <input type="hidden" name="plan" value="@selectedPlan" />
+                <input type="hidden" name="billing" value="@(IsYearly ? "yearly" : "monthly")" />
+
+                <div class="payment-options">
+                    <div class="payment-option">
+                        <h3 class="db-h3">Ko-fi</h3>
+                        <p class="db-text-muted">Pay with card or PayPal</p>
+                        <button type="submit" name="provider" value="kofi" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                            Pay with Ko-fi
+                        </button>
+                    </div>
+                    <div class="payment-option">
+                        <h3 class="db-h3">VietQR</h3>
+                        <p class="db-text-muted">Vietnam bank transfer</p>
+                        <button type="submit" name="provider" value="vietqr" class="db-btn db-btn--secondary" style="width:100%;margin-top:1rem">
+                            Pay with VietQR
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
+                Your plan will be upgraded immediately after payment confirmation.
+                Need help? <a href="mailto:support@quicksharecloud.com" class="db-link">Contact support</a>.
+            </p>
+        </div>
+    </section>
+
+</div>
+
+
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Plan { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Billing { get; set; }
+
+    private string selectedPlan = "pro";
+    private string currentPlan = "free";
+
+    private string planDisplay => selectedPlan == "studio" ? "Studio" : "Pro";
+    private string planDesc => selectedPlan == "studio"
+        ? "For teams & enterprises"
+        : "For creators & professionals";
+    private string planSummary => selectedPlan == "studio"
+        ? "unlimited storage, unlimited transfers, API access, and dedicated support"
+        : "1 GB per file, 50 GB monthly storage, password protection, and priority support";
+    private string planMonthlyPrice => selectedPlan == "studio" ? "$29" : "$9";
+    private string planYearlyPrice => selectedPlan == "studio" ? "$239" : "$77";
+
+    private string[] planFeatures => selectedPlan == "studio"
+        ? new[] { "20 GB per file", "500 GB / month", "Unlimited transfers", "Custom branding", "API access", "Dedicated support" }
+        : new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" };
+
+    private bool IsYearly => string.Equals(Billing, "yearly", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        selectedPlan = Plan?.ToLowerInvariant() switch
+        {
+            "studio" => "studio",
+            _ => "pro"
+        };
+
+        try
+        {
+            var profile = await Api.GetMyProfileAsync();
+            if (profile is not null)
+            {
+                currentPlan = profile.Plan;
+            }
+        }
+        catch { }
+    }
+}

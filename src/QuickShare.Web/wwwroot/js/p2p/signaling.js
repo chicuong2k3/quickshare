@@ -80,6 +80,14 @@
         this._sendMessage({ type: type, data: payload });
     };
 
+    SignalingClient.prototype.sendTo = function (type, payload, receiverId) {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            if (this.onError) this.onError('WebSocket not connected');
+            return;
+        }
+        this._sendMessage({ type: type, data: payload, receiverId: receiverId });
+    };
+
     SignalingClient.prototype.close = function () {
         this._intentionalClose = true;
         if (this.ws) {
@@ -100,7 +108,7 @@
                 if (this.onRegistered) this.onRegistered(data.role);
                 break;
             case 'peer-joined':
-                if (this.onPeerJoined) this.onPeerJoined();
+                if (this.onPeerJoined) this.onPeerJoined(data.receiverId);
                 break;
             case 'file-meta':
                 if (this.onFileMeta) this.onFileMeta({
@@ -113,7 +121,7 @@
                 if (this.onWaiting) this.onWaiting(data.message);
                 break;
             case 'peer-left':
-                if (this.onPeerLeft) this.onPeerLeft(data.message);
+                if (this.onPeerLeft) this.onPeerLeft(data.message, data.receiverId);
                 break;
             case 'error':
                 if (this.onError) this.onError(data.message || 'Server error');
@@ -121,7 +129,7 @@
             case 'offer':
             case 'answer':
             case 'ice':
-                if (this.onRelay) this.onRelay(data.type, data.data);
+                if (this.onRelay) this.onRelay(data.type, data.data, data.receiverId);
                 break;
         }
     };

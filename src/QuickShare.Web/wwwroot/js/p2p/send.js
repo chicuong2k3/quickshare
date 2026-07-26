@@ -12,7 +12,8 @@
         var state = {
             phase: 'idle', progress: 0, shareCode: '', shareLink: '', error: '',
             pin: '', _file: null, _intentionalStop: false,
-            _signaling: null, _peerConnection: null, _dataChannel: null, _sender: null, _encKey: null
+            _signaling: null, _peerConnections: {}, _channels: {}, _senders: {}, _senderProgress: {},
+            _receiverCount: 0, _encKey: null
         };
 
         function setPhase(phase) { state.phase = phase; render(); }
@@ -141,12 +142,17 @@
             }
             state._signaling = new window.P2P.SignalingClient(apiBase(), state.shareCode);
             state._signaling.onRegistered = function () {};
-            state._signaling.onPeerJoined = function () { onPeerJoined(); };
-            state._signaling.onPeerLeft = function () { cleanup(); };
+            state._signaling.onPeerJoined = function (receiverId) { onPeerJoined(receiverId); };
+            state._signaling.onPeerLeft = function (message, receiverId) {
+                if (receiverId) onReceiverLeft(receiverId);
+            };
             state._signaling.onError = function (msg) { state.error = msg || 'Connection lost'; setPhase('failed'); };
-            state._signaling.onRelay = function (type, data) {
-                if (type === 'answer') onAnswer(data);
-                else if (type === 'ice' && data) state._peerConnection.addIceCandidate(data);
+            state._signaling.onRelay = function (type, data, receiverId) {
+                if (type === 'answer') onAnswer(data, receiverId);
+                else if (type === 'ice' && data && receiverId) {
+                    var pc = state._peerConnections[receiverId];
+                    if (pc) pc.addIceCandidate(data);
+                }
             };
             state._signaling.connect('sender', {
                 name: state._file.name,
@@ -157,22 +163,31 @@
 
         // --- WebRTC ---
 
-        function onPeerJoined() {
-            setPhase('connecting');
+        function onPeerJoined(receiverId) {
+            if (state.phase === 'idle' || state.phase === 'failed') return;
+            if (state.phase !== 'connecting' && state.phase !== 'transferring') {
+                setPhase('connecting');
+            }
+
             if (!window.P2P.PeerConnection) { state.error = 'P2P modules not loaded'; setPhase('failed'); return; }
 
-            state._peerConnection = new window.P2P.PeerConnection();
-            state._peerConnection.onIceCandidate = function (c) {
-                if (state._signaling) state._signaling.send('ice', c);
+            state._receiverCount++;
+            updateReceiverCount();
+
+            var pc = new window.P2P.PeerConnection();
+            state._peerConnections[receiverId] = pc;
+
+            pc.onIceCandidate = function (c) {
+                if (state._signaling) {
+                    state._signaling.sendTo('ice', { candidate: c }, receiverId);
+                }
             };
-            state._peerConnection.onConnectionState = function (s) {
+            pc.onConnectionState = function (s) {
                 if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) {
-                    state.error = 'Connection ' + s;
-                    setPhase('failed');
+                    onReceiverLeft(receiverId);
                 }
             };
 
-            // Derive encryption key from PIN if set
             var encPromise = Promise.resolve();
             if (state.pin) {
                 var salt = state.pin + state.shareCode;
@@ -182,46 +197,105 @@
             }
 
             encPromise.then(function () {
-                var channel = state._peerConnection.createDataChannel('filetransfer');
-                if (!channel) { state.error = 'Failed to create data channel'; setPhase('failed'); return; }
-                state._dataChannel = channel;
-                channel.onopen = function () { onChannelOpen(channel); };
-                channel.onerror = function () { state.error = 'Data channel error'; setPhase('failed'); };
+                var channel = pc.createDataChannel('filetransfer');
+                if (!channel) { onReceiverLeft(receiverId); return; }
+                state._channels[receiverId] = channel;
+                channel.onopen = function () { onChannelOpen(receiverId, channel); };
+                channel.onerror = function () { onReceiverLeft(receiverId); };
 
-                return state._peerConnection.createOffer();
+                return pc.createOffer();
             })
             .then(function (sdp) {
-                if (state._signaling) state._signaling.send('offer', { sdp: sdp });
+                if (state._signaling) {
+                    state._signaling.sendTo('offer', { sdp: sdp }, receiverId);
+                }
             })
-            .catch(function (err) {
-                state.error = 'WebRTC setup failed: ' + (err.message || err);
-                setPhase('failed');
+            .catch(function () {
+                onReceiverLeft(receiverId);
             });
         }
 
-        function onAnswer(data) {
+        function onAnswer(data, receiverId) {
             var sdp = data.sdp || data;
-            if (state._peerConnection) {
-                state._peerConnection.setRemoteSdp(sdp).catch(function () {
-                    state.error = 'Failed to set remote SDP'; setPhase('failed');
-                });
+            var pc = state._peerConnections[receiverId];
+            if (pc) {
+                pc.setRemoteSdp(sdp).catch(function () {});
             }
         }
 
-        function onChannelOpen(channel) {
+        function onChannelOpen(receiverId, channel) {
             if (!window.P2P.FileSender) { state.error = 'File sender module not loaded'; setPhase('failed'); return; }
 
             var enc = state._encKey ? { key: state._encKey, encrypt: window.P2P.encryption.encryptChunk } : null;
-            state._sender = new window.P2P.FileSender(state._file, channel, enc);
-            state._sender.onProgress = function (sent, total) {
-                state.progress = Math.round((sent / total) * 100);
+            var sender = new window.P2P.FileSender(state._file, channel, enc);
+            state._senders[receiverId] = sender;
+            state._senderProgress[receiverId] = 0;
+
+            sender.onProgress = function (sent, total) {
+                state._senderProgress[receiverId] = sent / total;
+                var totalPct = 0;
+                var count = 0;
+                var keys = Object.keys(state._senderProgress);
+                for (var i = 0; i < keys.length; i++) {
+                    totalPct += state._senderProgress[keys[i]];
+                    count++;
+                }
+                state.progress = count > 0 ? Math.round((totalPct / count) * 100) : 0;
                 updateProgress();
             };
-            state._sender.onComplete = function () { state.progress = 100; setPhase('success'); };
-            state._sender.onError = function (msg) { state.error = msg; setPhase('failed'); };
+            sender.onComplete = function () {
+                delete state._senders[receiverId];
+                delete state._channels[receiverId];
+                delete state._senderProgress[receiverId];
+                state._receiverCount--;
+                if (state._receiverCount <= 0) {
+                    state.progress = 100;
+                    setPhase('success');
+                }
+                updateReceiverCount();
+            };
+            sender.onError = function () {
+                onReceiverLeft(receiverId);
+            };
 
-            setPhase('transferring');
-            state._sender.start();
+            if (state.phase !== 'transferring') {
+                setPhase('transferring');
+            }
+            sender.start();
+        }
+
+        function onReceiverLeft(receiverId) {
+            if (state._senders[receiverId]) {
+                state._senders[receiverId].cancel();
+                delete state._senders[receiverId];
+            }
+            if (state._channels[receiverId]) {
+                delete state._channels[receiverId];
+            }
+            if (state._peerConnections[receiverId]) {
+                state._peerConnections[receiverId].close();
+                delete state._peerConnections[receiverId];
+            }
+            delete state._senderProgress[receiverId];
+            state._receiverCount = Math.max(0, state._receiverCount - 1);
+            updateReceiverCount();
+
+            if (state._receiverCount <= 0 && (state.phase === 'transferring' || state.phase === 'connecting')) {
+                setPhase('waiting');
+            }
+        }
+
+        function updateReceiverCount() {
+            var el = document.getElementById('p2ps-receiver-count');
+            var el2 = document.getElementById('p2ps-receiver-count-transfer');
+            if (state._receiverCount > 0) {
+                var text = state._receiverCount + ' receiver' + (state._receiverCount > 1 ? 's' : '') + ' connected';
+                if (el) { el.textContent = text; el.style.display = ''; }
+                if (el2) { el2.textContent = 'Sending to ' + state._receiverCount + ' receiver' + (state._receiverCount > 1 ? 's' : ''); el2.style.display = ''; }
+            } else {
+                if (el) el.style.display = 'none';
+                if (el2) el2.style.display = 'none';
+            }
         }
 
         // --- Actions ---
@@ -252,7 +326,7 @@
         }
 
         function cancel() { state._intentionalStop = true; cleanup(); setPhase('idle'); }
-        function cancelTransfer() { state._intentionalStop = true; if (state._sender) state._sender.cancel(); cleanup(); setPhase('idle'); }
+        function cancelTransfer() { state._intentionalStop = true; cleanup(); setPhase('idle'); }
 
         function renderQR(text) {
             var el = document.getElementById('p2ps-qrcode');
@@ -300,11 +374,23 @@
         }
 
         function cleanup() {
-            if (state._sender) { state._sender.cancel(); state._sender = null; }
+            var recvIds = Object.keys(state._senders);
+            for (var i = 0; i < recvIds.length; i++) {
+                if (state._senders[recvIds[i]]) state._senders[recvIds[i]].cancel();
+            }
+            state._senders = {};
+            state._senderProgress = {};
+
+            var pcIds = Object.keys(state._peerConnections);
+            for (var j = 0; j < pcIds.length; j++) {
+                if (state._peerConnections[pcIds[j]]) state._peerConnections[pcIds[j]].close();
+            }
+            state._peerConnections = {};
+            state._channels = {};
+
             if (state._signaling) { state._signaling.close(); state._signaling = null; }
-            if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; }
-            state._dataChannel = null;
             state._encKey = null;
+            state._receiverCount = 0;
         }
 
         // Expose public API

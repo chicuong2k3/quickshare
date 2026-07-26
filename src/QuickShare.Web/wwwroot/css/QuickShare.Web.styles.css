@@ -915,6 +915,107 @@
 .cta[b-yq5kbudyv8]  .db-btn {
     margin-top: 1.5rem;
 }
+/* /Pages/Upgrade.razor.rz.scp.css */
+.page[b-t9mgiy138f] {
+    padding-block: 4rem 6rem;
+    padding-inline: 1.5rem;
+}
+.hero[b-t9mgiy138f] {
+    text-align: center;
+    padding-block: 3rem 4rem;
+    max-width: 48rem;
+    margin-inline: auto;
+}
+.hero[b-t9mgiy138f]  .db-h1 {
+    margin-top: 0.75rem;
+}
+.tag[b-t9mgiy138f] {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-accent, #6366f1);
+    color: var(--color-accent, #6366f1);
+    background: color-mix(in srgb, var(--color-accent, #6366f1) 5%, transparent);
+}
+.hero p[b-t9mgiy138f] {
+    margin-top: 1rem;
+    max-width: 36rem;
+    margin-inline: auto;
+}
+
+.summary-card[b-t9mgiy138f] {
+    max-width: 32rem;
+    margin-inline: auto;
+    border: 2px solid var(--color-accent, #6366f1);
+    border-radius: 1rem;
+    background: var(--color-card, #1a1a1a);
+    padding: 2rem;
+    box-shadow: 0 4px 24px color-mix(in srgb, var(--color-accent, #6366f1) 15%, transparent);
+}
+.summary-card__head[b-t9mgiy138f] {
+    margin-bottom: 1rem;
+}
+.summary-card__price[b-t9mgiy138f] {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border, #333);
+}
+.summary-card__price .price-amount[b-t9mgiy138f] {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+.summary-card__price .price-period[b-t9mgiy138f] {
+    font-size: 0.875rem;
+}
+.summary-card__features[b-t9mgiy138f] {
+    display: grid;
+    gap: 0.75rem;
+}
+.feature[b-t9mgiy138f] {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+}
+.feature__icon[b-t9mgiy138f] {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--color-accent, #6366f1);
+}
+
+.payment[b-t9mgiy138f] {
+    max-width: 48rem;
+    margin-inline: auto;
+    margin-top: 4rem;
+    padding-top: 4rem;
+    border-top: 1px solid var(--color-border, #333);
+    text-align: center;
+}
+.payment-form[b-t9mgiy138f] {
+    margin-top: 2rem;
+}
+.payment-options[b-t9mgiy138f] {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 32rem;
+    margin-inline: auto;
+    margin-top: 2rem;
+}
+@media (min-width: 640px) {
+    .payment-options[b-t9mgiy138f] {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.payment-option[b-t9mgiy138f] {
+    border: 1px solid var(--color-border, #333);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    background: var(--color-card, #1a1a1a);
+}
 /* /Pages/Upload.razor.rz.scp.css */
 .page[b-fyo0uqdyip] {
     display: flex;

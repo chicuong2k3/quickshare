@@ -80,6 +80,8 @@
 
                 <div id="p2ps-qrcode" style="margin-top: 1.5rem; display: flex; justify-content: center"></div>
 
+                <p id="p2ps-receiver-count" class="status-p" style="margin-top: 1rem; display: none"></p>
+
                 <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--color-muted-foreground)">Link expires in 7 days. File transfers directly between peers.</p>
                 <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pSend.cancel()">Cancel</button>
             </section>
@@ -101,6 +103,7 @@
                         <div id="p2ps-progress-bar" class="progress-fill" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
+                <p id="p2ps-receiver-count-transfer" style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-muted-foreground); display: none"></p>
                 <button class="db-btn db-btn--ghost" style="margin-top: 2.5rem" onclick="p2pSend.cancelTransfer()">Cancel</button>
             </section>
 

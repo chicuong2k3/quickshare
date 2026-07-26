@@ -38,15 +38,16 @@ Singleton service managing all active P2P rooms.
 P2PRoom
 ├── ShareCode     — unique lookup key (16-char hex)
 ├── Sender        — WebSocket (null if not connected)
-├── Receiver      — WebSocket (null if not connected)
+├── Receivers     — ConcurrentDictionary<string, P2PReceiverConnection>
+│   └── P2PReceiverConnection { Id (8-char hex), Socket, JoinedAt }
 ├── FileName      — set by sender during register
 ├── FileSize      — set by sender during register
 ├── MimeType      — set by sender during register
 ├── CreatedAt     — room creation timestamp
 ├── LastActivity  — bumped on sender/receiver registration
 ├── SenderConnected    — Sender?.State == WebSocketState.Open
-├── ReceiverConnected  — Receiver?.State == WebSocketState.Open
-└── IsComplete         — both connected
+├── ReceiverConnected  — any receiver socket is open (Receivers.Values.Any(r => r.Socket.State == Open))
+└── IsComplete         — sender + at least 1 receiver
 ```
 
 Key behaviors:
@@ -76,21 +77,23 @@ Sender registers:
   2. Extract file metadata (name, size, mime) from register message
   3. Store metadata in P2PRoom
   4. Send { type: "registered", role: "sender" } back
-  5. If receiver already connected → notify sender ("peer-joined") + send file-meta to receiver
+  5. If receivers exist → for EACH receiver: notify sender ("peer-joined" with receiverId) + send file-meta to receiver
 
 Receiver registers:
-  1. TryRegisterReceiver(shareCode, ws) — fails if receiver already connected
-  2. Send { type: "registered", role: "receiver" } back
-  3. If sender already connected → notify sender ("peer-joined") + send file-meta to receiver
+  1. TryRegisterReceiver(shareCode, ws) → returns (bool, receiverId = 8-char hex)
+  2. Send { type: "registered", role: "receiver", receiverId } back
+  3. If sender already connected → notify sender ("peer-joined" with receiverId) + send file-meta to receiver
   4. If sender not connected → send { type: "waiting" }
 ```
 
 **Disconnect handling:**
-- When either peer disconnects, notify the other with `{ type: "peer-left" }`
-- Track role per connectionId (shareCode + ws.GetHashCode())
+- **Sender disconnects**: Notify ALL receivers with `{ type: "peer-left", message: "sender disconnected" }`
+- **Receiver disconnects**: Remove from `room.Receivers`, notify sender with `{ type: "peer-left", receiverId, message: "receiver disconnected" }`
+- Role tracked per connectionId (shareCode + ws.GetHashCode())
 
 **Relay (offer/answer/ice):**
-- Looks up the room, determines the opposite peer, forwards the message verbatim with `{ type, data }`
+- Sender → Server: `{ type, receiverId, data }` → Server routes to that specific receiver's WebSocket → Receiver gets `{ type, data }`
+- Receiver → Server: `{ type, data }` → Server looks up receiver's ID from WebSocket → Sender gets `{ type, receiverId, data }` → Sender routes to the correct PeerConnection
 
 ---
 
@@ -104,6 +107,7 @@ All modules registered under `window.P2P` namespace.
 - **`connect(role, fileMeta)`**: Opens WebSocket to `ws(s)://{apiBase}/ws/connect/{shareCode}`, sends `register` on open
 - **Auto-reconnect**: Up to 3 attempts with exponential backoff (1s, 2s, 4s)
 - **`send(type, payload)`**: Sends `{ type, data }` JSON message
+- **`sendTo(type, payload, receiverId)`**: Sends `{ type, data, receiverId }` — puts receiverId at root level for server routing
 - **`close()`**: Graceful shutdown
 
 **Inbound message dispatch:**
@@ -111,12 +115,12 @@ All modules registered under `window.P2P` namespace.
 | Server Message | Callback |
 |---------------|----------|
 | `registered` | `onRegistered(role)` |
-| `peer-joined` | `onPeerJoined()` |
+| `peer-joined` | `onPeerJoined(receiverId)` |
 | `file-meta` | `onFileMeta({ fileName, fileSize, mimeType })` |
 | `waiting` | `onWaiting(message)` |
-| `peer-left` | `onPeerLeft(message)` |
+| `peer-left` | `onPeerLeft(message, receiverId)` |
 | `error` | `onError(message)` |
-| `offer` / `answer` / `ice` | `onRelay(type, data)` |
+| `offer` / `answer` / `ice` | `onRelay(type, data, receiverId)` |
 
 ### 3.2 PeerConnection (`window.P2P.PeerConnection`)
 
@@ -357,7 +361,7 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 | **Share expiry** | Delivery record auto-expires after 7 days (checked on render) |
 | **Optional PIN protection** | AES-256-GCM with PBKDF2 (600K iterations) — even server can't decrypt |
 | **Connection limit** | `MaxP2PConnections` prevents DoS via connection exhaustion |
-| **Room slot protection** | Only one sender + one receiver per share code |
+| **Room slot protection** | Only one sender per share code; unlimited parallel receivers |
 
 ---
 

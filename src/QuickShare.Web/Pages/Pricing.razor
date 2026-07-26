@@ -1,5 +1,10 @@
 @layout MainLayout
 @page "/pricing"
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+}
 
 <PageTitle>Pricing — QuickShareCloud</PageTitle>
 
@@ -44,7 +49,10 @@
                     <div class="price-amount">$0</div>
                     <div class="price-period db-text-muted">Forever free</div>
                 </div>
-                <button class="db-btn db-btn--secondary">Get Started</button>
+                @if (!isAuthenticated)
+                {
+                    <a href="/login" class="db-btn db-btn--secondary">Get Started</a>
+                }
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -85,7 +93,9 @@
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
-                <button class="db-btn db-btn--primary">Start Free Trial</button>
+                <a href="@(isAuthenticated ? "/upgrade?plan=pro" : "/login")"
+                   onclick="if(@isAuthenticated.ToString().ToLower()){event.preventDefault();window.location.href='/upgrade?plan=pro'+(new URLSearchParams(location.search).get('billing')==='yearly'?'&billing=yearly':'')}"
+                   class="db-btn db-btn--primary">Start Free Trial</a>
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -94,10 +104,6 @@
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                         <span><strong>500 GB</strong> / month</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>100</strong> transfers/month</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -127,7 +133,9 @@
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
-                <button class="db-btn db-btn--primary">Start Free Trial</button>
+                <a href="@(isAuthenticated ? "/upgrade?plan=studio" : "/login")"
+                   onclick="if(@isAuthenticated.ToString().ToLower()){event.preventDefault();window.location.href='/upgrade?plan=studio'+(new URLSearchParams(location.search).get('billing')==='yearly'?'&billing=yearly':'')}"
+                   class="db-btn db-btn--primary">Start Free Trial</a>
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -199,7 +207,9 @@
     <section class="cta">
         <h3 class="cta__title">Ready to get started?</h3>
         <p class="db-text-muted">All plans include a 14-day free trial. No credit card required.</p>
-        <button class="db-btn db-btn--primary">Start Your Free Trial</button>
+        <a href="@(isAuthenticated ? "/upgrade" : "/login")"
+           onclick="if(@isAuthenticated.ToString().ToLower()){event.preventDefault();window.location.href='/upgrade'+(new URLSearchParams(location.search).get('billing')==='yearly'?'?billing=yearly':'')}"
+           class="db-btn db-btn--primary">Start Your Free Trial</a>
     </section>
 
 </div>

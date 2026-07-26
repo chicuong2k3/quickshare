@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -6,19 +7,26 @@ using Microsoft.Extensions.Options;
 
 namespace QuickShare.Server.Middleware;
 
+public sealed record P2PReceiverConnection
+{
+    public string Id { get; init; } = string.Empty;
+    public WebSocket Socket { get; init; } = null!;
+    public DateTime JoinedAt { get; init; } = DateTime.UtcNow;
+}
+
 public sealed class P2PRoom
 {
     public string ShareCode { get; init; } = string.Empty;
     public WebSocket? Sender { get; set; }
-    public WebSocket? Receiver { get; set; }
+    public ConcurrentDictionary<string, P2PReceiverConnection> Receivers { get; init; } = new(StringComparer.Ordinal);
     public string? FileName { get; set; }
     public long? FileSize { get; set; }
     public string? MimeType { get; set; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime LastActivity { get; set; }
     public bool SenderConnected => Sender?.State == WebSocketState.Open;
-    public bool ReceiverConnected => Receiver?.State == WebSocketState.Open;
-    public bool IsComplete => SenderConnected && ReceiverConnected;
+    public bool ReceiverConnected => Receivers.Values.Any(r => r.Socket.State == WebSocketState.Open);
+    public bool IsComplete => SenderConnected && Receivers.Count > 0;
 }
 
 public sealed class P2PConnectionManager : IDisposable
@@ -86,20 +94,24 @@ public sealed class P2PConnectionManager : IDisposable
         }
     }
 
-    public bool TryRegisterReceiver(string shareCode, WebSocket ws)
+    public (bool Success, string? ReceiverId) TryRegisterReceiver(string shareCode, WebSocket ws)
     {
-        if (_activeConnections <= 0) return false;
+        if (_activeConnections <= 0)
+            return (false, null);
 
         var room = GetOrCreateRoom(shareCode);
         lock (room)
         {
-            if (room.ReceiverConnected)
-                return false;
-
-            room.Receiver?.Dispose();
-            room.Receiver = ws;
+            var receiverId = Guid.NewGuid().ToString("n")[..8];
+            var entry = new P2PReceiverConnection
+            {
+                Id = receiverId,
+                Socket = ws,
+                JoinedAt = DateTime.UtcNow
+            };
+            room.Receivers[receiverId] = entry;
             room.LastActivity = DateTime.UtcNow;
-            return true;
+            return (true, receiverId);
         }
     }
 
@@ -110,9 +122,12 @@ public sealed class P2PConnectionManager : IDisposable
             lock (room)
             {
                 SafeClose(room.Sender);
-                SafeClose(room.Receiver);
+                foreach (var entry in room.Receivers.Values)
+                {
+                    SafeClose(entry.Socket);
+                }
+                room.Receivers.Clear();
                 room.Sender = null;
-                room.Receiver = null;
             }
             _logger.LogInformation("Room {ShareCode} removed", shareCode);
         }
@@ -136,10 +151,51 @@ public sealed class P2PConnectionManager : IDisposable
         {
             if (room.SenderConnected && excludeRole != "sender")
                 _ = SendToSocketAsync(room.Sender!, message, ct);
-            if (room.ReceiverConnected && excludeRole != "receiver")
-                _ = SendToSocketAsync(room.Receiver!, message, ct);
+            if (excludeRole != "receiver")
+            {
+                foreach (var recv in room.Receivers.Values)
+                {
+                    if (recv.Socket.State == WebSocketState.Open)
+                        _ = SendToSocketAsync(recv.Socket, message, ct);
+                }
+            }
         }
         await Task.CompletedTask;
+    }
+
+    public string? RemoveReceiver(P2PRoom room, WebSocket ws)
+    {
+        lock (room)
+        {
+            var kvp = room.Receivers.FirstOrDefault(r => r.Value.Socket == ws);
+            if (kvp.Value == null)
+                return null;
+
+            room.Receivers.TryRemove(kvp.Key, out _);
+            room.LastActivity = DateTime.UtcNow;
+            return kvp.Key;
+        }
+    }
+
+    public string? FindReceiverId(P2PRoom room, WebSocket ws)
+    {
+        lock (room)
+        {
+            var kvp = room.Receivers.FirstOrDefault(r => r.Value.Socket == ws);
+            return kvp.Value?.Id;
+        }
+    }
+
+    public async Task SendToReceiverAsync(string shareCode, string receiverId, object message, CancellationToken ct)
+    {
+        if (!_rooms.TryGetValue(shareCode, out var room))
+            return;
+
+        if (!room.Receivers.TryGetValue(receiverId, out var entry))
+            return;
+
+        if (entry.Socket.State == WebSocketState.Open)
+            await SendToSocketAsync(entry.Socket, message, ct);
     }
 
     public int GetActiveConnectionCount() => Interlocked.Add(ref _activeConnections, 0);

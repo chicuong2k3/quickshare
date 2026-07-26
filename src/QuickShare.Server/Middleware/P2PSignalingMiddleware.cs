@@ -61,20 +61,27 @@ public sealed class P2PSignalingMiddleware
         var room = _manager.GetRoom(shareCode);
         if (room != null)
         {
+            bool wasSender;
             lock (room)
             {
-                var wasSender = room.Sender == ws;
-                var wasReceiver = room.Receiver == ws;
+                wasSender = room.Sender == ws;
 
                 if (wasSender)
                 {
                     room.Sender = null;
-                    _ = NotifyPeer(room, shareCode, "peer-left", "sender");
                 }
-                if (wasReceiver)
+            }
+
+            if (wasSender)
+            {
+                _ = NotifyPeer(room, shareCode, "peer-left", "sender");
+            }
+            else
+            {
+                var disconnectedId = _manager.RemoveReceiver(room, ws);
+                if (disconnectedId != null)
                 {
-                    room.Receiver = null;
-                    _ = NotifyPeer(room, shareCode, "peer-left", "receiver");
+                    _ = NotifyPeer(room, shareCode, "peer-left", "receiver", disconnectedId);
                 }
             }
         }
@@ -187,7 +194,6 @@ public sealed class P2PSignalingMiddleware
                 return;
             }
 
-            // Extract file meta
             if (root.TryGetProperty("fileMeta", out var meta))
             {
                 var currentRoom = _manager.GetRoom(shareCode);
@@ -204,39 +210,53 @@ public sealed class P2PSignalingMiddleware
 
             await _manager.SendToSocketAsync(ws, new { type = "registered", role = "sender" }, ct);
 
-            // If receiver already connected, notify sender and send file-meta to receiver
             var room = _manager.GetRoom(shareCode);
-            if (room?.ReceiverConnected == true)
+            if (room != null)
             {
-                await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined" }, ct);
-                await _manager.SendToSocketAsync(room.Receiver!, new
+                P2PReceiverConnection[] existingReceivers;
+                lock (room)
                 {
-                    type = "file-meta",
-                    fileName = room.FileName,
-                    fileSize = room.FileSize,
-                    mimeType = room.MimeType
-                }, ct);
+                    existingReceivers = room.Receivers.Values.ToArray();
+                }
+
+                foreach (var recv in existingReceivers)
+                {
+                    if (recv.Socket.State == WebSocketState.Open)
+                    {
+                        await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined", receiverId = recv.Id }, ct);
+                        await _manager.SendToSocketAsync(recv.Socket, new
+                        {
+                            type = "file-meta",
+                            fileName = room.FileName,
+                            fileSize = room.FileSize,
+                            mimeType = room.MimeType
+                        }, ct);
+                    }
+                    else
+                    {
+                        room.Receivers.TryRemove(recv.Id, out _);
+                    }
+                }
             }
         }
         else // receiver
         {
-            if (!_manager.TryRegisterReceiver(shareCode, ws))
+            var (success, receiverId) = _manager.TryRegisterReceiver(shareCode, ws);
+            if (!success || receiverId == null)
             {
-                await _manager.SendToSocketAsync(ws, new { type = "error", message = "A receiver is already connected for this share" }, ct);
+                await _manager.SendToSocketAsync(ws, new { type = "error", message = "Failed to register receiver" }, ct);
                 return;
             }
 
             var room = _manager.GetRoom(shareCode);
             var hasSender = room?.SenderConnected == true;
 
-            await _manager.SendToSocketAsync(ws, new { type = "registered", role = "receiver" }, ct);
+            await _manager.SendToSocketAsync(ws, new { type = "registered", role = "receiver", receiverId }, ct);
 
             if (hasSender && room != null)
             {
-                // Notify sender that receiver joined
-                await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined" }, ct);
+                await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined", receiverId }, ct);
 
-                // Send file meta to receiver
                 await _manager.SendToSocketAsync(ws, new
                 {
                     type = "file-meta",
@@ -257,36 +277,51 @@ public sealed class P2PSignalingMiddleware
         var room = _manager.GetRoom(shareCode);
         if (room == null) return;
 
-        // Determine target: send offer/answer/ice to the other peer
-        WebSocket? target = null;
-        lock (room)
-        {
-            if (room.Sender == senderWs)
-                target = room.Receiver;
-            else if (room.Receiver == senderWs)
-                target = room.Sender;
-        }
+        var innerData = root.TryGetProperty("data", out var d) ? d : root;
 
-        if (target?.State == WebSocketState.Open)
+        if (room.Sender == senderWs)
         {
-            var innerData = root.TryGetProperty("data", out var d) ? d : root;
-            await _manager.SendToSocketAsync(target, new { type, data = innerData }, ct);
+            var receiverId = root.TryGetProperty("receiverId", out var rid) ? rid.GetString() : null;
+            if (receiverId == null) return;
+
+            await _manager.SendToReceiverAsync(shareCode, receiverId, new { type, data = innerData }, ct);
+        }
+        else
+        {
+            var recvId = _manager.FindReceiverId(room, senderWs);
+            if (recvId == null || room.Sender?.State != WebSocketState.Open) return;
+
+            await _manager.SendToSocketAsync(room.Sender, new { type, receiverId = recvId, data = innerData }, ct);
         }
     }
 
-    private async Task NotifyPeer(P2PRoom room, string shareCode, string eventType, string disconnectedRole)
+    private async Task NotifyPeer(P2PRoom room, string shareCode, string eventType, string disconnectedRole, string? receiverId = null)
     {
-        WebSocket? peer = disconnectedRole == "sender" ? room.Receiver : room.Sender;
-        if (peer?.State == WebSocketState.Open)
+        if (disconnectedRole == "sender")
         {
-            try
+            foreach (var recv in room.Receivers.Values)
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                await _manager.SendToSocketAsync(peer, new { type = eventType, message = $"{disconnectedRole} disconnected" }, cts.Token);
+                if (recv.Socket.State == WebSocketState.Open)
+                {
+                    try
+                    {
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                        await _manager.SendToSocketAsync(recv.Socket, new { type = eventType, message = "sender disconnected" }, cts.Token);
+                    }
+                    catch { /* best-effort */ }
+                }
             }
-            catch
+        }
+        else if (disconnectedRole == "receiver" && receiverId != null)
+        {
+            if (room.Sender?.State == WebSocketState.Open)
             {
-                // Best-effort
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await _manager.SendToSocketAsync(room.Sender, new { type = eventType, receiverId, message = "receiver disconnected" }, cts.Token);
+                }
+                catch { /* best-effort */ }
             }
         }
     }
