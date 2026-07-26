@@ -62,7 +62,9 @@ protected override async Task OnInitializedAsync()
 
 ### Layout Rule
 
-- **Do NOT put `@layout MainLayout` on individual pages.** It is set globally in `_Imports.razor`. Explicit `@layout` on a page overrides `[HtmxLayout]`, causing HTMX partial requests to return the full page (nav + footer) instead of just the content area.
+- **MainLayout MUST inherit `LayoutComponentBase`** (not `HtmxLayoutComponentBase`). If MainLayout inherits `HtmxLayoutComponentBase`, HTMXor will treat it as a valid HTMX layout and use it for partial requests, returning full nav + footer.
+- **HtmxorLayout inherits `HtmxLayoutComponentBase`** and renders only `@Body` — this is used automatically for HTMX partial responses via `[HtmxLayout(typeof(HtmxorLayout))]` in `_Imports.razor`.
+- `@layout MainLayout` on individual pages is fine — `[HtmxLayout]` will override it for HTMX requests.
 
 ## Code Style
 

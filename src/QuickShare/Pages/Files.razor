@@ -1,3 +1,4 @@
+﻿@layout MainLayout
 @page "/files"
 @attribute [Authorize]
 @attribute [StreamRendering]
@@ -17,7 +18,7 @@
     var apiBase = "";
 }
 
-<PageTitle>Files — QuickShareCloud</PageTitle>
+<PageTitle>Files â€” QuickShareCloud</PageTitle>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
@@ -348,9 +349,8 @@
                     </div>
                 </div>
             </div>
-    </div>
+            </div>
         </div>
-            }
 </PageWrapper>
 
 <script src="/js/files.js"></script>
@@ -451,3 +451,4 @@
     private enum FilesRenderState { Loading, Loaded, Error }
     private sealed record UsageStats(int TotalFiles, long TotalSize, string Plan);
 }
+

@@ -14,24 +14,30 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var db = Resolve<AppDbContext>();
-        var user = await HttpContext.User.GetUserAsync(db, ct);
-        var avatarUrl = user.AvatarUrl;
 
         string html;
-        if (!string.IsNullOrEmpty(avatarUrl))
+        try
         {
-            var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? "");
-            html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" />";
+            var user = await HttpContext.User.GetUserAsync(db, ct);
+            var avatarUrl = user.AvatarUrl;
+
+            if (!string.IsNullOrEmpty(avatarUrl))
+            {
+                var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? "");
+                html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" />";
+            }
+            else
+            {
+                html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">{GetInitials(user.Name)}</span>";
+            }
         }
-        else
+        catch
         {
-            var initials = GetInitials(user.Name);
-            html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">{initials}</span>";
+            html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">?</span>";
         }
 
         HttpContext.Response.ContentType = "text/html";
         await HttpContext.Response.WriteAsync(html, ct);
-        await HttpContext.Response.CompleteAsync();
     }
 
     private static string GetInitials(string? name)

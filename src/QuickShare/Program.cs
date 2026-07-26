@@ -207,6 +207,16 @@ if (app.Environment.IsDevelopment())
 
             ctx.User = principal;
             await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
+            await UserRegistrationService.RegisterAsync(
+                AuthConstants.DevProvider,
+                "dev-user",
+                "Dev User",
+                "dev@localhost",
+                avatarUrl: null,
+                db,
+                ctx.RequestAborted);
         }
         await next();
     });

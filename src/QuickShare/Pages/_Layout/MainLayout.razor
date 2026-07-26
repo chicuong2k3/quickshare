@@ -1,4 +1,4 @@
-@inherits HtmxLayoutComponentBase
+@inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
 @using System.Security.Claims
 
@@ -37,7 +37,7 @@
                 <div class="db-dropdown">
                     <button class="db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn"
                             hx-get="/api/me/avatar"
-                            hx-trigger="load, profileUpdated from:body"
+                            hx-trigger="load once, profileUpdated from:body"
                             hx-swap="outerHTML"
                             type="button" aria-label="User menu">
                         @userInitials

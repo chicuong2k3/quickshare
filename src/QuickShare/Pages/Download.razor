@@ -1,4 +1,5 @@
-﻿@page "/d/{ShareCode}"
+﻿@layout MainLayout
+@page "/d/{ShareCode}"
 @attribute [StreamRendering]
 @inject IMessageBus Bus
 @inject IHttpContextAccessor HttpContextAccessor
@@ -312,4 +313,5 @@
         public bool HasPassword { get; set; } public string SenderPlan { get; set; } = "";
     }
 }
+
 
