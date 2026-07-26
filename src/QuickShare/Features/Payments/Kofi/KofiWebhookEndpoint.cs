@@ -1,6 +1,7 @@
-namespace QuickShare.Features.Payments.Kofi;
-
 using System.Text.Json.Serialization;
+using QuickShare.Features.Payments.Subscriptions;
+
+namespace QuickShare.Features.Payments.Kofi;
 
 public sealed class KofiWebhookEndpoint : Endpoint<KofiWebhookRequest>
 {
@@ -12,8 +13,9 @@ public sealed class KofiWebhookEndpoint : Endpoint<KofiWebhookRequest>
         Summary(s =>
         {
             s.Summary = "Receive Ko-fi payment webhook";
-            s.Description = "Handles Ko-fi subscription events (created, renewed, cancelled, expired). Validates verification token, updates User.Plan, and stores payment history.";
-            s.Responses[200] = "Webhook processed or ignored.";
+            s.Description = "Records all Ko-fi payments. For plan upgrades, matches the user by the payment code " +
+                "in the message field (included when user pays from the upgrade page).";
+            s.Responses[200] = "Webhook processed.";
             s.Responses[401] = "Invalid verification token.";
         });
     }
@@ -22,6 +24,7 @@ public sealed class KofiWebhookEndpoint : Endpoint<KofiWebhookRequest>
     {
         var config = Resolve<IConfiguration>();
         var expectedToken = config["Kofi:VerificationToken"];
+        var logger = Resolve<ILogger<KofiWebhookEndpoint>>();
 
         if (string.IsNullOrEmpty(expectedToken) || req.VerificationToken != expectedToken)
         {
@@ -30,85 +33,120 @@ public sealed class KofiWebhookEndpoint : Endpoint<KofiWebhookRequest>
         }
 
         var db = Resolve<AppDbContext>();
-        var logger = Resolve<ILogger<KofiWebhookEndpoint>>();
 
-        if (!req.IsSubscriptionPayment)
+        var amount = 0m;
+        if (!string.IsNullOrEmpty(req.Amount))
+            decimal.TryParse(req.Amount, out amount);
+
+        var resolved = ResolvePlanFromAmount(amount, config);
+
+        // Try to match user by payment code in the message field.
+        User? user = null;
+        PaymentIntent? intent = null;
+
+        var code = ExtractPaymentCode(req.Message);
+        if (code is not null)
         {
-            logger.LogInformation("Ko-fi webhook ignored: not a subscription payment (type={Type})", req.Type);
-            await Send.OkAsync(new { status = "ignored", reason = "not a subscription payment" }, ct);
-            return;
+            intent = await db.PaymentIntents
+                .Where(i => i.Code == code && i.Status == PaymentIntentStatus.Pending)
+                .FirstOrDefaultAsync(ct);
+
+            if (intent is not null)
+            {
+                user = await db.Users.FindAsync(new object[] { intent.UserId }, ct);
+            }
         }
 
-        var eventType = ResolveEventType(req.IsFirstSubscriptionPayment, req.Type);
-        if (eventType is null)
+        // Fall back to email matching if no code match.
+        if (user is null && !string.IsNullOrEmpty(req.Email))
         {
-            logger.LogInformation("Ko-fi webhook ignored: unhandled type={Type}", req.Type);
-            await Send.OkAsync(new { status = "ignored", reason = $"unhandled type: {req.Type}" }, ct);
-            return;
+            user = await db.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
         }
 
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
-        if (user is null)
-        {
-            logger.LogWarning("Ko-fi webhook: no user found for email={Email}", req.Email);
-            await Send.OkAsync(new { status = "ignored", reason = "no matching user" }, ct);
-            return;
-        }
+        // Always record the payment event.
+        var paymentEvent = BuildPaymentEvent(user?.Id, req, resolved);
+        db.PaymentEvents.Add(paymentEvent);
 
-        if (eventType is "subscription_cancelled")
+        if (resolved is not null && user is not null)
         {
-            logger.LogInformation("Ko-fi subscription cancelled for user={UserId} plan={Plan} — graceful, no plan change", user.Id, user.Plan);
-            db.PaymentEvents.Add(BuildPaymentEvent(user.Id, eventType, req));
-            await db.SaveChangesAsync(ct);
-            await Send.OkAsync(new { status = "cancelled", userId = user.Id }, ct);
-            return;
-        }
+            var (plan, billing) = resolved.Value;
 
-        if (eventType is "subscription_expired")
+            if (req.Type is "Subscription" or "subscription_renewed")
+            {
+                await SubscriptionService.HandlePaymentAsync(user, plan, billing, db, ct);
+
+                if (intent is not null)
+                {
+                    intent.Status = PaymentIntentStatus.Completed;
+                    intent.CompletedAt = DateTime.UtcNow;
+                }
+
+                logger.LogInformation(
+                    "Payment processed: user={UserId} plan={Plan} billing={Billing} amount={Amount} {Currency} matchedBy={Method}",
+                    user.Id, plan, billing, amount, req.Currency,
+                    intent is not null ? "code" : "email");
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Ko-fi event recorded (no plan change): user={UserId} type={Type}",
+                    user.Id, req.Type);
+            }
+        }
+        else if (user is null)
         {
-            user.Plan = "free";
-            logger.LogInformation("Ko-fi subscription expired for user={UserId} — plan set to free", user.Id);
+            logger.LogWarning(
+                "Payment recorded without user link: email={Email} amount={Amount} {Currency} message={Message}",
+                req.Email, amount, req.Currency, req.Message);
         }
         else
         {
-            var plan = ResolvePlanFromTier(req.TierName);
-            user.Plan = plan;
-            logger.LogInformation("Ko-fi subscription {EventType} for user={UserId} — plan set to {Plan}", eventType, user.Id, plan);
+            logger.LogWarning(
+                "Payment amount={Amount} {Currency} does not match any plan pricing — recorded without plan activation",
+                amount, req.Currency);
         }
 
-        db.PaymentEvents.Add(BuildPaymentEvent(user.Id, eventType, req));
         await db.SaveChangesAsync(ct);
-
-        await Send.OkAsync(new { status = "processed", userId = user.Id, plan = user.Plan }, ct);
+        await Send.OkAsync(new { status = "processed" }, ct);
     }
 
-    private static string? ResolveEventType(bool isFirst, string type)
+    private static string? ExtractPaymentCode(string? message)
     {
-        if (isFirst)
-            return "subscription_created";
+        if (string.IsNullOrWhiteSpace(message))
+            return null;
 
-        return type.ToLowerInvariant() switch
+        // Codes are uppercase alphanumeric prefixed with "QSC-".
+        var idx = message.IndexOf("QSC-", StringComparison.Ordinal);
+        if (idx < 0)
+            return null;
+
+        var candidate = message.AsSpan(idx, Math.Min(10, message.Length - idx));
+        return candidate.ToString();
+    }
+
+    private static (string plan, string billing)? ResolvePlanFromAmount(decimal amount, IConfiguration config)
+    {
+        var pricing = config.GetSection("Pricing");
+
+        if (amount == pricing.GetValue<int>("ProMonthly"))   return ("pro", "monthly");
+        if (amount == pricing.GetValue<int>("ProYearly"))    return ("pro", "yearly");
+        if (amount == pricing.GetValue<int>("StudioMonthly")) return ("studio", "monthly");
+        if (amount == pricing.GetValue<int>("StudioYearly")) return ("studio", "yearly");
+
+        return null;
+    }
+
+    private PaymentEvent BuildPaymentEvent(Guid? userId, KofiWebhookRequest req,
+        (string plan, string billing)? resolved)
+    {
+        var plan = resolved?.plan ?? "";
+        var planDisplay = plan switch
         {
-            "subscription_renewed" => "subscription_renewed",
-            "subscription_cancelled" => "subscription_cancelled",
-            "subscription_expired" => "subscription_expired",
-            _ => null
+            "studio" => "Studio",
+            "pro" => "Pro",
+            _ => ""
         };
-    }
-
-    private static string ResolvePlanFromTier(string tierName)
-    {
-        var lower = tierName.ToLowerInvariant();
-        if (lower.Contains("studio"))
-            return "studio";
-        return "pro";
-    }
-
-    private PaymentEvent BuildPaymentEvent(Guid userId, string eventType, KofiWebhookRequest req)
-    {
-        var plan = ResolvePlanFromTier(req.TierName);
-        var planDisplay = plan == "studio" ? "Studio" : "Pro";
-        var billing = req.IsRecurringYearly ? "yearly" : "monthly";
+        var billing = resolved?.billing ?? "";
 
         var amount = 0m;
         if (!string.IsNullOrEmpty(req.Amount))
@@ -116,8 +154,8 @@ public sealed class KofiWebhookEndpoint : Endpoint<KofiWebhookRequest>
 
         return new PaymentEvent
         {
-            UserId = userId,
-            EventType = eventType,
+            UserId = userId ?? Guid.Empty,
+            EventType = NormalizeEventType(req.Type),
             Plan = plan,
             PlanDisplay = planDisplay,
             Billing = billing,
@@ -125,6 +163,21 @@ public sealed class KofiWebhookEndpoint : Endpoint<KofiWebhookRequest>
             Currency = req.Currency,
             InvoiceId = req.KofiTransactionId,
             InvoiceUrl = req.InvoiceUrl,
+        };
+    }
+
+    private static string NormalizeEventType(string type)
+    {
+        return type.ToLowerInvariant() switch
+        {
+            "subscription" => "subscription_created",
+            "subscription_renewed" => "subscription_renewed",
+            "subscription_cancelled" => "subscription_cancelled",
+            "subscription_expired" => "subscription_expired",
+            "tip" => "tip",
+            "commission" => "commission",
+            "shop_order" => "shop_order",
+            _ => type.ToLowerInvariant()
         };
     }
 }
@@ -141,6 +194,8 @@ public class KofiWebhookRequest
     public string Amount { get; set; } = string.Empty;
 
     public string Currency { get; set; } = "USD";
+
+    public string Message { get; set; } = string.Empty;
 
     [JsonPropertyName("kofi_transaction_id")]
     public string KofiTransactionId { get; set; } = string.Empty;

@@ -59,9 +59,19 @@
 - `DeliveryService.cs` — Shared delivery coordination logic
 
 ### Payments (`Features/Payments/`)
+- **Ko-fi** — `POST /api/payments/kofi/webhook` — Ko-fi payment webhook. Ko-fi is a **pure payment gateway** — it processes payments and sends webhooks. Subscription management (cancel, change, expiry) is handled in-app.
+  - Records all payment types (subscriptions, tips, commissions, shop orders) as `PaymentEvent`
+  - For subscription payments, delegates to `SubscriptionService` for in-app lifecycle management
+  - Matches user by **payment code** (`QSC-XXXXXX`) entered in the Ko-fi message field — no email dependency
+  - Fallback to email matching if no code found
+- **Upgrade Initiation** — `POST /api/upgrade/initiate` — Creates a `PaymentIntent` with unique code, expected amount, and 1-hour expiry. User includes this code in their Ko-fi payment message.
+- **Subscriptions** — In-app subscription lifecycle via `SubscriptionService`:
+  - `POST /api/subscriptions/cancel` — Cancel (plan continues to end of billing period)
+  - `GET /api/subscriptions/current` — Get current subscription state
+  - `SubscriptionExpiryJob` — Background service (runs every 15min) expires stale subscriptions and downgrades `User.Plan`
+  - `Subscription` entity tracks: Plan, Status (Active/Cancelled/Expired), BillingPeriod, CurrentPeriodStart/End
 - **VietQR** — `POST /api/deliveries/{code}/payment/vietqr` — generate VietQR payment code
 - **VerifyPayment** — `GET /api/deliveries/{code}/payment` — poll payment status
-- **Kofi** — `POST /api/payments/kofi` — Ko-fi donation webhook, billing history, upgrade initiation
 
 ### Reports (`Features/Reports/`)
 - `ReportDeliveryEndpoint` + `Handler` — `POST /api/deliveries/{code}/report` — abuse reporting (spam, malware, abuse, other)
@@ -88,7 +98,7 @@
 | **FastEndpoints Swagger** | OpenAPI/Swagger document generation at `/swagger` |
 | **QuotaEnforcer** | Per-plan limits: file size caps, monthly upload quota, transfer counts |
 | **DataProtection** | `PersistKeysToFileSystem` with `SetApplicationName("QuickShare")` — single app, no cross-process key sharing needed |
-| **Background Jobs** | 3 hosted services: `DeliveryCleanupService`, `ZombiePartSweeper`, `DeliveryExpiryJob` |
+| **Background Jobs** | 4 hosted services: `DeliveryCleanupService`, `ZombiePartSweeper`, `DeliveryExpiryJob`, `SubscriptionExpiryJob` |
 | **TrialService** | 14-day free trial tracking |
 | **GlobalExceptionHandler** | Centralized `ProblemDetails` error responses |
 | **RequestLoggingMiddleware** | Structured inbound request logging |
@@ -107,7 +117,7 @@
 | `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, PIN gate, WebRTC answer, data channel file receipt, progress tracking |
 | `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop file move, CRUD modals (create/rename/delete folder), htmx-powered live search, download button per file |
 | `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload with preview), OAuth provider badge, delivery branding manager (logo/message/accent per delivery), htmx form submission |
-| `/account/billing` | `AccountBilling.razor` | htmx | Billing history list with pagination |
+| `/account/billing` | `AccountBilling.razor` | htmx | Billing history, subscription status, in-app cancel via htmx `hx-post="/api/subscriptions/cancel"` |
 | `/upgrade` | `Upgrade.razor` | htmx | Plan upgrade page, Ko-fi payment integration |
 | `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub, Facebook, TikTok |
 | `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly billing toggle via `hx-get` + `HtmxFragment`, FAQ accordion, CTA section |
@@ -186,6 +196,8 @@ Models, DTOs, and constants now live directly in `src/QuickShare/Models/` and `s
 | `FileMetadata` | `files` | Id (UUID), Filename, ContentType, Size, FolderId (FK), Tags (TEXT[]), CreatedAt |
 | `Delivery` | `deliveries` | ShareCode, FileName, ContentType, FileSize, ObjectKey (R2), ExpiresAt, DownloadCount, MaxDownloads, HasPassword, HasPayment, Price, PlanTier |
 | `UploadSession` | `upload_sessions` | DeliveryId, UploadId (R2), ObjectKey (R2 multipart tracking) |
+| `Subscription` | `subscriptions` | UserId (FK), Plan, Status (Active/Cancelled/Expired), BillingPeriod (monthly/yearly), CurrentPeriodStart, CurrentPeriodEnd, CancelledAt, CreatedAt, UpdatedAt |
+| `PaymentIntent` | `payment_intents` | UserId (FK), Code (unique, `QSC-XXXXXX`), Plan, Billing, Amount, Currency, Status (Pending/Completed/Expired), ExpiresAt (1h) |
 | `TempShare` | `temp_shares` | Short-lived encrypted P2P share with auto-expiry |
 | `Chunk` | `chunks` | Per-chunk tracking for legacy chunked upload |
 | `Manifest` | `manifests` | Upload manifest metadata |
@@ -234,7 +246,9 @@ Migrations under `Migrations/`. Key schema:
 - `files` — Id (UUID PK), Filename, ContentType, Size, FolderId (FK), Tags, CreatedAt
 - `deliveries` — ShareCode, FileName, ContentType, FileSize, ObjectKey, ExpiresAt, etc.
 - `upload_sessions` — DeliveryId, UploadId (R2), ObjectKey
-- `payment_events` — Ko-fi webhook data
+- `payment_events` — Ko-fi payment event records
+- `subscriptions` — User subscription lifecycle (Active → Cancelled → Expired)
+- `payment_intents` — Upgrade payment codes (`QSC-XXXXXX`) for webhook user matching
 
 ---
 
@@ -339,7 +353,7 @@ Subsequent requests:
 ```
 src/QuickShare/
 ├── Abstractions/          # IStorageProvider interface
-├── BackgroundJobs/        # DeliveryExpiryJob, ZombiePartSweeper
+├── BackgroundJobs/        # DeliveryExpiryJob, ZombiePartSweeper, SubscriptionExpiryJob
 ├── Components/            # Layout/ (MainLayout, HtmxorLayout)
 ├── Constants/             # PlanTierLimits, AuthConstants
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor
@@ -349,7 +363,7 @@ src/QuickShare/
 │   ├── Downloads/         # Download, Info
 │   ├── Files/             # CRUD + Shared mappers
 │   ├── Folders/           # CRUD + Shared mappers
-│   ├── Payments/          # Kofi, VietQR
+│   ├── Payments/          # Kofi, VietQR, Subscriptions/
 │   ├── Reports/           # Abuse reporting
 │   ├── Shares/            # P2P share creation
 │   ├── Uploads/           # R2 + chunked upload

@@ -28,7 +28,7 @@ public sealed class VietQRRequestEndpoint : EndpointWithoutRequest
         var note = $"QSC-{delivery.ShareCode[..Math.Min(8, delivery.ShareCode.Length)]}";
         var qrDataUrl = $"https://api.vietqr.io/image/{bankId}-{bankAccount}-{amount}-{note}.jpg?accountName=QuickShareCloud";
 
-        logger.LogInformation("Generated VietQR for delivery {ShareCode}: amount={Amount} VND", shareCode, amount);
+            logger.LogInformation("Generated VietQR for delivery {ShareCode}: amount={Amount} USD", shareCode, amount);
 
         await Send.OkAsync(new
         {

@@ -3,6 +3,7 @@
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Payments.Kofi
+@using QuickShare.Features.Payments.Subscriptions
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
@@ -50,10 +51,26 @@
                 }
                 else
                 {
-                    <div class="summary-card__actions">
-                        <a href="@changePlanUrl" class="db-btn db-btn--secondary">Change Plan</a>
-                        <a href="@cancelUrl" class="db-btn db-btn--ghost db-btn--danger">Cancel Subscription</a>
-                    </div>
+                    @if (subscription?.Status == "Cancelled")
+                    {
+                        <p class="db-text-warning" style="margin-top:1rem">
+                            Your subscription is cancelled. Access continues until @subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy").
+                        </p>
+                        <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">Renew Subscription</a>
+                    }
+                    else
+                    {
+                        <div class="summary-card__actions">
+                            <a href="/pricing" class="db-btn db-btn--secondary">Change Plan</a>
+                            <button class="db-btn db-btn--ghost db-btn--danger"
+                                    hx-post="/api/subscriptions/cancel"
+                                    hx-target="#billing-status"
+                                    hx-swap="innerHTML">
+                                Cancel Subscription
+                            </button>
+                        </div>
+                        <div id="billing-status"></div>
+                    }
                 }
             </div>
 
@@ -97,6 +114,7 @@
 
 @code {
     private BillingHistoryResponse? billing;
+    private Subscription? subscription;
 
     private string planPrice => (billing?.Plan, billingPeriod) switch
     {
@@ -110,7 +128,7 @@
     private string FormatPrice(int amount)
     {
         var currency = Config["Pricing:Currency"] ?? "$";
-        return currency == "VND" ? $"{amount:N0} {currency}" : $"{currency}{amount}";
+        return $"{currency}{amount}";
     }
 
     private string planDescription => billing?.Plan switch
@@ -127,13 +145,9 @@
         _ => new[] { "100 MB per file", "2 GB / month", "5 transfers/month", "7-day expiry", "End-to-end encryption" }
     };
 
-    private string billingPeriod => billing?.Events.FirstOrDefault(e =>
-        e.EventType is "subscription_created" or "subscription_renewed")?.Billing ?? "monthly";
+    private string billingPeriod => subscription?.BillingPeriod ?? "monthly";
 
     private string billingPeriodLabel => billing?.Plan == "free" ? "/ forever" : $"/ {billingPeriod}";
-
-    private string changePlanUrl => Config["Kofi:ManageSubscriptionUrl"] ?? "#";
-    private string cancelUrl => Config["Kofi:CancelSubscriptionUrl"] ?? "#";
 
     private string eventDotClass(string eventType) => eventType switch
     {
@@ -151,6 +165,7 @@
             var ct = CancellationToken.None;
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
             billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
+            subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
         }
         catch
         {

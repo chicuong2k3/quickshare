@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -153,6 +155,41 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.CreatedAt).IsDescending();
             entity.Property(e => e.EventType).IsRequired();
             entity.Property(e => e.Plan).IsRequired();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.ToTable("subscriptions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Plan).IsRequired();
+            entity.Property(e => e.Status).IsRequired();
+            entity.Property(e => e.BillingPeriod).IsRequired();
+            entity.Property(e => e.CurrentPeriodStart).IsRequired();
+            entity.Property(e => e.CurrentPeriodEnd).IsRequired();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.CurrentPeriodEnd);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PaymentIntent>(entity =>
+        {
+            entity.ToTable("payment_intents");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Plan).IsRequired();
+            entity.Property(e => e.Billing).IsRequired();
+            entity.Property(e => e.Status).IsRequired();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Status);
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

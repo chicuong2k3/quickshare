@@ -1,3 +1,5 @@
+using QuickShare.Models;
+
 namespace QuickShare.Features.Payments.Kofi;
 
 public sealed class InitiateUpgradeRequest
@@ -15,9 +17,10 @@ public sealed class InitiateUpgradeEndpoint : Endpoint<InitiateUpgradeRequest>
         Summary(s =>
         {
             s.Summary = "Initiate a Ko-fi plan upgrade";
-            s.Description = "Returns a redirect URL to the Ko-fi product page for the selected plan and billing period.";
-            s.Responses[200] = "Redirect URL returned via HX-Redirect header.";
-            s.Responses[400] = "Invalid plan or missing product configuration.";
+            s.Description = "Creates a PaymentIntent with a unique code. The user must include this code in their " +
+                "Ko-fi payment message so the webhook can match the payment to their account.";
+            s.Responses[200] = "Payment code + Ko-fi URL + expected amount.";
+            s.Responses[400] = "Invalid plan or billing.";
             s.Responses[401] = "User is not authenticated.";
         });
     }
@@ -26,22 +29,81 @@ public sealed class InitiateUpgradeEndpoint : Endpoint<InitiateUpgradeRequest>
     {
         var plan = req.Plan?.ToLowerInvariant();
         var isYearly = string.Equals(req.Billing, "yearly", StringComparison.OrdinalIgnoreCase);
-        var billing = isYearly ? "Yearly" : "Monthly";
-        var planCapitalized = plan == "pro" ? "Pro" : "Studio";
-        var productKey = $"Kofi:Products:{planCapitalized}{billing}";
+
+        if (plan is not "pro" and not "studio")
+        {
+            ThrowError("Invalid plan. Must be 'pro' or 'studio'.", 400);
+            return;
+        }
+
+        var db = Resolve<AppDbContext>();
+        var user = await HttpContext.User.GetUserAsync(db, ct);
 
         var config = Resolve<IConfiguration>();
-        var productSlug = config[productKey];
+        var pricingKey = plan switch
+        {
+            "pro" when isYearly => "Pricing:ProYearly",
+            "pro" => "Pricing:ProMonthly",
+            "studio" when isYearly => "Pricing:StudioYearly",
+            _ => "Pricing:StudioMonthly"
+        };
 
-        if (string.IsNullOrEmpty(productSlug))
-            ThrowError($"Ko-fi product not configured for {planCapitalized} {billing}.", 500);
+        var expectedAmount = config.GetValue<int>(pricingKey);
+        var currency = config["Pricing:Currency"] ?? "$";
+        var kofiPageUrl = config["Kofi:PageUrl"] ?? "https://ko-fi.com/miraclefoundation";
 
-        var returnUrl = config["Kofi:ReturnUrl"] ?? "/";
-        var kofiUrl = $"https://ko-fi.com/{productSlug}?return_url={returnUrl}";
+        var code = await GenerateUniqueCodeAsync(db, ct);
+        var intent = new PaymentIntent
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            Code = code,
+            Plan = plan,
+            Billing = isYearly ? "yearly" : "monthly",
+            Amount = expectedAmount,
+            Currency = currency,
+            Status = PaymentIntentStatus.Pending,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddHours(1)
+        };
+        db.PaymentIntents.Add(intent);
+        await db.SaveChangesAsync(ct);
 
         var logger = Resolve<ILogger<InitiateUpgradeEndpoint>>();
-        logger.LogInformation("Initiating Ko-fi upgrade: plan={Plan} billing={Billing} url={Url}", plan, billing, kofiUrl);
+        logger.LogInformation(
+            "Payment intent created: user={UserId} code={Code} plan={Plan} billing={Billing} amount={Amount}",
+            user.Id, code, plan, isYearly ? "yearly" : "monthly", expectedAmount);
 
-        await Send.OkAsync(new { redirectUrl = kofiUrl }, ct);
+        await Send.OkAsync(new
+        {
+            code,
+            kofiPageUrl,
+            expectedAmount,
+            currency,
+            plan,
+            billing = isYearly ? "yearly" : "monthly",
+            expiresAt = intent.ExpiresAt
+        }, ct);
+    }
+
+    private static async Task<string> GenerateUniqueCodeAsync(AppDbContext db, CancellationToken ct)
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const int randomLen = 6;
+        var random = Random.Shared;
+
+        while (true)
+        {
+            var code = "QSC-" + new string(Enumerable.Range(0, randomLen)
+                .Select(_ => chars[random.Next(chars.Length)])
+                .ToArray());
+
+            var exists = await db.PaymentIntents
+                .AnyAsync(i => i.Code == code && i.Status == PaymentIntentStatus.Pending, ct);
+
+            if (!exists)
+                return code;
+        }
     }
 }
+

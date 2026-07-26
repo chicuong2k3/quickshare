@@ -10,7 +10,6 @@ using QuickShare.Features.Deliveries;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Storage;
-using QuickShare.Data;
 using QuickShare.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +61,7 @@ var quickShareOptions = quickShareConfig.Get<QuickShareOptions>() ?? new QuickSh
 builder.Services.AddHostedService<DeliveryCleanupService>();
 builder.Services.AddHostedService<ZombiePartSweeper>();
 builder.Services.AddHostedService<DeliveryExpiryJob>();
+builder.Services.AddHostedService<SubscriptionExpiryJob>();
 
 builder.Services.AddScoped<DeliveryService>();
 
@@ -206,7 +206,7 @@ if (app.Environment.IsDevelopment())
     // Runs before UseAuthentication/MapRazorComponents so [Authorize] pages see the dev user.
     app.Use(async (ctx, next) =>
     {
-        if (ctx.User.Identity?.IsAuthenticated != true)
+        if (ctx.User.Identity?.IsAuthenticated != true && ctx.Request.Query["logout"] != "1")
         {
             var claims = new[]
             {
@@ -264,7 +264,7 @@ app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpC
 app.MapGet("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    context.Response.Redirect("/");
+    context.Response.Redirect("/?logout=1");
 });
 
 // Dedicated antiforgery token endpoint (good practice for SSR apps that POST).

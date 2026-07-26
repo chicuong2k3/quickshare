@@ -23,7 +23,24 @@ function upgradeInitiate(plan, billing) {
         body: JSON.stringify({ plan: plan, billing: billing })
     })
         .then(r => { if (!r.ok) throw r; return r.json(); })
-        .then(data => { if (data.redirectUrl) window.location.href = data.redirectUrl; })
+        .then(data => {
+            var section = document.getElementById("payment-section");
+            if (section) {
+                section.innerHTML =
+                    '<div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--color-border);border-radius:0.5rem;text-align:center">' +
+                    '<h3 class="db-h3">Send <strong>' + data.currency + data.expectedAmount + '</strong> to our Ko-fi page</h3>' +
+                    '<p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>' +
+                    '<div style="margin:1.5rem 0;padding:1rem;background:var(--color-muted);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em">' +
+                    data.code + '</div>' +
+                    '<p class="db-text-muted" style="font-size:0.95rem">' +
+                    '<strong>Copy this code</strong> and paste it in the <strong>Message</strong> box when you pay on Ko-fi.</p>' +
+                    '<a href="' + data.kofiPageUrl + '" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">' +
+                    'Pay with Ko-fi</a>' +
+                    '<p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">' +
+                    'Code expires in 1 hour. Your plan will be activated automatically after payment.</p>' +
+                    '</div>';
+            }
+        })
         .catch(err => console.error("Upgrade failed", err));
 }
 </script>
@@ -126,7 +143,7 @@ function upgradeInitiate(plan, billing) {
     private string FormatPrice(int amount)
     {
         var currency = Config["Pricing:Currency"] ?? "$";
-        return currency == "VND" ? $"{amount:N0} {currency}" : $"{currency}{amount}";
+        return $"{currency}{amount}";
     }
 
     private string[] planFeatures => selectedPlan == "studio"

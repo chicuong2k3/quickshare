@@ -228,7 +228,7 @@
 
     private static string FormatPrice(int amount, string currency)
     {
-        return currency == "VND" ? $"{amount:N0} {currency}" : $"{currency}{amount}";
+        return $"{currency}{amount}";
     }
 
     private static readonly (string Question, string Answer)[] faqs = new[]
