@@ -12,6 +12,5 @@ global using FastEndpoints;
 global using FluentValidation;
 global using QuickShare.Querying;
 global using QuickShare.Extensions;
-global using QuickShare.Shared.Models;
-global using QuickShare.Shared.Constants;
-global using QuickShare.Shared;
+global using QuickShare.Models;
+global using QuickShare.Constants;

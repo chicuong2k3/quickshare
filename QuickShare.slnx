@@ -3,7 +3,6 @@
     <Project Path="src/QuickShare.Querying.Generators/QuickShare.Querying.Generators.csproj" />
     <Project Path="src/QuickShare.Querying/QuickShare.Querying.csproj" />
     <Project Path="src/QuickShare/QuickShare.csproj" />
-    <Project Path="src/QuickShare.Shared/QuickShare.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/QuickShare.Server.Tests/QuickShare.Server.Tests.csproj" />

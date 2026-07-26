@@ -1,4 +1,4 @@
-namespace QuickShare.Shared.Constants;
+namespace QuickShare.Constants;
 
 public static class PlanTierLimits
 {

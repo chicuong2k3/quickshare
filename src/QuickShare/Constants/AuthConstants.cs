@@ -1,4 +1,4 @@
-namespace QuickShare.Shared;
+namespace QuickShare.Constants;
 
 public static class AuthConstants
 {

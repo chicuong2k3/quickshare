@@ -1,4 +1,4 @@
-namespace QuickShare.Shared.Models;
+namespace QuickShare.Models;
 
 public sealed record FileItemResponse(
     Guid Id,

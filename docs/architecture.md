@@ -5,11 +5,10 @@
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
 | `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` | .NET 10, FastEndpoints, Wolverine, EF Core, Npgsql, Htmxor, DAUB |
-| `QuickShare.Shared` | Shared models, DTOs, constants | — | .NET 10 |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 
-> **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith serving both FastEndpoints API (`/api/*`) and Blazor SSR pages on **one port (9000)**. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMessageBus` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
+> **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMessageBus` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
 
 ---
 
@@ -172,9 +171,9 @@ wwwroot/
 
 ---
 
-## Shared (`QuickShare.Shared`)
+## Data Models & Constants (`Models/`, `Constants/`)
 
-Shared models, DTOs, and constants used by both the main `QuickShare` project and `QuickShare.Querying`.
+Models, DTOs, and constants now live directly in `src/QuickShare/Models/` and `src/QuickShare/Constants/`.
 
 ### Data Models
 
@@ -342,6 +341,7 @@ src/QuickShare/
 ├── Abstractions/          # IStorageProvider interface
 ├── BackgroundJobs/        # DeliveryExpiryJob, ZombiePartSweeper
 ├── Components/            # Layout/ (MainLayout, HtmxorLayout)
+├── Constants/             # PlanTierLimits, AuthConstants
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
 ├── Features/              # FastEndpoints + Wolverine handlers
@@ -357,6 +357,7 @@ src/QuickShare/
 ├── Infrastructure/        # Storage (R2 + LocalDisk), Quota, Logging, Options, ExceptionHandler
 ├── Middleware/            # P2PConnectionManager, P2PSignaling, RateLimiting
 ├── Migrations/            # EF Core migrations
+├── Models/                # Entity models, DTOs (User, Delivery, Folder, etc.)
 ├── Pages/                 # 10 Blazor SSR pages (.razor + .razor.css)
 ├── Services/              # TrialService
 ├── wwwroot/               # Static assets (js/, css/, lib/, avatars/)

@@ -1,4 +1,4 @@
-namespace QuickShare.Shared.Models;
+namespace QuickShare.Models;
 
 [DynamicSort]
 public record Manifest
