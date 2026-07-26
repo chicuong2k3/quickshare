@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using QuickShare.Infrastructure;
-using QuickShare.Services;
 
 namespace QuickShare.Tests.Infrastructure;
 
@@ -18,42 +17,42 @@ public sealed class LocalDiskStorageProviderStubTests
     public async Task InitR2MultipartUploadAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.InitR2MultipartUploadAsync(Guid.NewGuid(), "test.txt"));
+            () => Provider.InitR2MultipartUploadAsync(Guid.NewGuid(), "test.txt", TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task GenerateUploadPartUrlsAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.GenerateUploadPartUrlsAsync("upload-id", "obj-key", [1, 2, 3]));
+            () => Provider.GenerateUploadPartUrlsAsync("upload-id", "obj-key", [1, 2, 3], TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task CompleteR2MultipartUploadAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.CompleteR2MultipartUploadAsync("upload-id", "obj-key", []));
+            () => Provider.CompleteR2MultipartUploadAsync("upload-id", "obj-key", [], TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task AbortR2MultipartUploadAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.AbortR2MultipartUploadAsync("upload-id", "obj-key"));
+            () => Provider.AbortR2MultipartUploadAsync("upload-id", "obj-key", TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task GetPresignedDownloadUrlAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.GetPresignedDownloadUrlAsync("obj-key", TimeSpan.FromMinutes(1)));
+            () => Provider.GetPresignedDownloadUrlAsync("obj-key", TimeSpan.FromMinutes(1), TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task DeleteObjectsAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.DeleteObjectsAsync("prefix/"));
+            () => Provider.DeleteObjectsAsync("prefix/", TestContext.Current.CancellationToken));
     }
 
     [Fact]

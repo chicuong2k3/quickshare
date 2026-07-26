@@ -5,13 +5,14 @@
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
-    var apiBase = "";
+    var apiBase = string.Empty;
 }
 
 <PageTitle>QuickShareCloud — P2P file transfer</PageTitle>
 
-<PageWrapper Variant="PageVariant.Fill">
+<div class="page">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+    <main class="main">
         <div class="container">
             <input type="file" name="file" id="p2ps-file-input" class="sr-only" aria-label="Choose a file" onchange="p2pSend.onFileSelect(event)" />
 
@@ -101,7 +102,8 @@
                 <button class="db-btn db-btn--primary" style="margin-top: 2.5rem" onclick="p2pSend.reset()">Try again</button>
             </section>
         </div>
-</PageWrapper>
+    </main>
+</div>
 
 <script src="/js/p2p/signaling.js"></script>
 <script src="/js/p2p/peerConnection.js"></script>
