@@ -1,8 +1,8 @@
-# QuickShareCloud — Send File Architecture
+# QuickShare — Send File Architecture
 
 ## Overview
 
-QuickShareCloud supports **server-mediated file uploads** via two backends: a legacy chunked upload through the server (stored on local disk) and the primary **R2 direct-upload path** (client uploads to Cloudflare R2 via presigned URLs, server never sees file bytes). Files are encrypted optionally by the client (AES-256-GCM) and the chunk manifest is always encrypted server-side (AES-CBC, keyed by share code).
+QuickShare supports **server-mediated file uploads** via two backends: a legacy chunked upload through the server (stored on local disk) and the primary **R2 direct-upload path** (client uploads to Cloudflare R2 via presigned URLs, server never sees file bytes). Files are encrypted optionally by the client (AES-256-GCM) and the chunk manifest is always encrypted server-side (AES-CBC, keyed by share code).
 
 > Client → Server (R2 presigned URLs) → Client PUTs directly to R2 → Server (commit, create Delivery + Manifest) → Share link returned.
 
@@ -348,7 +348,7 @@ Client cancels mid-upload:
 
 ## 10. Server Wiring
 
-In `src/QuickShare.Server/Program.cs`:
+In `src/QuickShare/Program.cs`:
 
 ```csharp
 // Storage provider (configured via env/storage options)
@@ -365,28 +365,28 @@ All upload endpoints use FastEndpoints with the standard cookie auth (no explici
 
 | File | Role |
 |------|------|
-| `src/QuickShare.Web/Pages/Upload.razor` | Send page UI (`/` route) — drag/drop, paste, encrypt, expiry |
-| `src/QuickShare.Web/Pages/Upload.razor.js` | Upload state machine + R2 multipart orchestration |
-| `src/QuickShare.Server/Features/Uploads/StartR2/StartR2Endpoint.cs` | `POST /api/uploads/start-r2` |
-| `src/QuickShare.Server/Features/Uploads/StartR2/StartR2Handler.cs` | R2 init + UploadSession creation |
-| `src/QuickShare.Server/Features/Uploads/CommitR2/CommitR2Endpoint.cs` | `POST /api/uploads/commit-r2` |
-| `src/QuickShare.Server/Features/Uploads/CommitR2/CommitR2Handler.cs` | R2 completion + Delivery creation |
-| `src/QuickShare.Server/Features/Uploads/AbortR2/AbortR2Endpoint.cs` | `POST /api/uploads/abort-r2` |
-| `src/QuickShare.Server/Features/Uploads/AbortR2/AbortR2Handler.cs` | R2 abort + session cleanup |
-| `src/QuickShare.Server/Features/Uploads/Start/StartUploadEndpoint.cs` | **Legacy** `POST /api/uploads/start` |
-| `src/QuickShare.Server/Features/Uploads/Start/StartUploadHandler.cs` | **Legacy** session creation |
-| `src/QuickShare.Server/Features/Uploads/Chunks/UploadChunkEndpoint.cs` | **Legacy** `POST /api/uploads/{id}/chunks/{index}` |
-| `src/QuickShare.Server/Features/Uploads/Chunks/UploadChunkHandler.cs` | **Legacy** chunk storage + SHA-256 |
-| `src/QuickShare.Server/Features/Uploads/Commit/CommitUploadEndpoint.cs` | **Legacy** `POST /api/uploads/{id}/commit` |
-| `src/QuickShare.Server/Features/Uploads/Commit/CommitUploadHandler.cs` | **Legacy** chunk validation → Delivery + Manifest |
-| `src/QuickShare.Server/Features/Uploads/Status/UploadStatusEndpoint.cs` | **Legacy** `GET /api/uploads/{id}/status` |
-| `src/QuickShare.Server/Features/Uploads/Status/UploadStatusHandler.cs` | **Legacy** chunk progress query |
-| `src/QuickShare.Server/Features/Uploads/Shared/ManifestData.cs` | Manifest plaintext record (+ ChunkEntry) |
-| `src/QuickShare.Server/Features/Uploads/Shared/ManifestEncryption.cs` | AES-CBC manifest encrypt/decrypt |
-| `src/QuickShare.Server/Features/Uploads/UploadConstants.cs` | DefaultChunkSize = 25 MB |
-| `src/QuickShare.Server/Abstractions/IStorageProvider.cs` | Storage interface |
-| `src/QuickShare.Server/Infrastructure/Storage/R2StorageProvider.cs` | Cloudflare R2 via AWS SDK |
-| `src/QuickShare.Server/Infrastructure/LocalDiskStorageProvider.cs` | **Legacy** local disk storage |
+| `src/QuickShare/Pages/Upload.razor` | Send page UI (`/` route) — drag/drop, paste, encrypt, expiry |
+| `src/QuickShare/Pages/Upload.razor.js` | Upload state machine + R2 multipart orchestration |
+| `src/QuickShare/Features/Uploads/StartR2/StartR2Endpoint.cs` | `POST /api/uploads/start-r2` |
+| `src/QuickShare/Features/Uploads/StartR2/StartR2Handler.cs` | R2 init + UploadSession creation |
+| `src/QuickShare/Features/Uploads/CommitR2/CommitR2Endpoint.cs` | `POST /api/uploads/commit-r2` |
+| `src/QuickShare/Features/Uploads/CommitR2/CommitR2Handler.cs` | R2 completion + Delivery creation |
+| `src/QuickShare/Features/Uploads/AbortR2/AbortR2Endpoint.cs` | `POST /api/uploads/abort-r2` |
+| `src/QuickShare/Features/Uploads/AbortR2/AbortR2Handler.cs` | R2 abort + session cleanup |
+| `src/QuickShare/Features/Uploads/Start/StartUploadEndpoint.cs` | **Legacy** `POST /api/uploads/start` |
+| `src/QuickShare/Features/Uploads/Start/StartUploadHandler.cs` | **Legacy** session creation |
+| `src/QuickShare/Features/Uploads/Chunks/UploadChunkEndpoint.cs` | **Legacy** `POST /api/uploads/{id}/chunks/{index}` |
+| `src/QuickShare/Features/Uploads/Chunks/UploadChunkHandler.cs` | **Legacy** chunk storage + SHA-256 |
+| `src/QuickShare/Features/Uploads/Commit/CommitUploadEndpoint.cs` | **Legacy** `POST /api/uploads/{id}/commit` |
+| `src/QuickShare/Features/Uploads/Commit/CommitUploadHandler.cs` | **Legacy** chunk validation → Delivery + Manifest |
+| `src/QuickShare/Features/Uploads/Status/UploadStatusEndpoint.cs` | **Legacy** `GET /api/uploads/{id}/status` |
+| `src/QuickShare/Features/Uploads/Status/UploadStatusHandler.cs` | **Legacy** chunk progress query |
+| `src/QuickShare/Features/Uploads/Shared/ManifestData.cs` | Manifest plaintext record (+ ChunkEntry) |
+| `src/QuickShare/Features/Uploads/Shared/ManifestEncryption.cs` | AES-CBC manifest encrypt/decrypt |
+| `src/QuickShare/Features/Uploads/UploadConstants.cs` | DefaultChunkSize = 25 MB |
+| `src/QuickShare/Abstractions/IStorageProvider.cs` | Storage interface |
+| `src/QuickShare/Infrastructure/Storage/R2StorageProvider.cs` | Cloudflare R2 via AWS SDK |
+| `src/QuickShare/Infrastructure/LocalDiskStorageProvider.cs` | **Legacy** local disk storage |
 | `src/QuickShare.Shared/Models/UploadSession.cs` | Upload session entity |
 | `src/QuickShare.Shared/Models/Delivery.cs` | Delivery (share) entity |
 | `src/QuickShare.Shared/Models/Chunk.cs` | Chunk entity |

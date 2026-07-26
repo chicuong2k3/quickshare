@@ -1,8 +1,8 @@
-# QuickShareCloud — P2P Transfer Architecture
+# QuickShare — P2P Transfer Architecture
 
 ## Overview
 
-QuickShareCloud supports **direct peer-to-peer file transfers** via WebRTC, bypassing the server entirely for file data. The server acts only as a **signaling relay** — it creates share links, coordinates WebSocket connections between sender and receiver, and relays WebRTC SDP/ICE messages. The file bytes never touch the server.
+QuickShare supports **direct peer-to-peer file transfers** via WebRTC, bypassing the server entirely for file data. The server acts only as a **signaling relay** — it creates share links, coordinates WebSocket connections between sender and receiver, and relays WebRTC SDP/ICE messages. The file bytes never touch the server.
 
 > Sender → Server (metadata + signaling) → Receiver → WebRTC Data Channel (direct) → File delivered.
 
@@ -12,19 +12,19 @@ QuickShareCloud supports **direct peer-to-peer file transfers** via WebRTC, bypa
 
 | Layer | Project | File | Role |
 |-------|---------|------|------|
-| Share Link Creation | `QuickShare.Server` | `Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — creates share code + Delivery record. Base URL received via client callback. |
-| Connection Manager | `QuickShare.Server` | `Middleware/P2PConnectionManager.cs` | Room lifecycle, sender/receiver WebSocket tracking, connection limits |
-| Signaling Middleware | `QuickShare.Server` | `Middleware/P2PSignalingMiddleware.cs` | WebSocket endpoint `/ws/connect/{shareCode}` — register, relay offer/answer/ICE |
-| Server WebSocket Config | `QuickShare.Server` | `Program.cs` | `UseWebSockets` + `P2PSignalingMiddleware` + `P2PConnectionManager` singleton |
-| Sender Page UI | `QuickShare.Web` | `Pages/P2PTransfer.razor` | Sender page at `/p2p/send` — drag & drop, PIN toggle, share link generation |
-| Sender Page JS | `QuickShare.Web` | `wwwroot/js/p2p/send.js` | Coordinates file selection, share creation, SignalingClient + PeerConnection + FileSender |
-| Download Page UI | `QuickShare.Web` | `Pages/P2PDownload.razor` | Receiver page at `/p2p/d/{ShareCode}` |
-| Download Page JS | `QuickShare.Web` | `wwwroot/js/p2p/download.js` | Coordinates SignalingClient + PeerConnection + FileReceiver |
-| Signaling Client | `QuickShare.Web` | `wwwroot/js/p2p/signaling.js` | WebSocket connection, auto-reconnect, message relay callbacks |
-| Peer Connection | `QuickShare.Web` | `wwwroot/js/p2p/peerConnection.js` | RTCPeerConnection wrapper — offer, answer, ICE candidates, data channels |
-| File Sender | `QuickShare.Web` | `wwwroot/js/p2p/fileTransfer.js` | Chunked file send over WebRTC data channel with backpressure |
-| File Receiver | `QuickShare.Web` | `wwwroot/js/p2p/fileReceiver.js` | Chunked file receive — blob mode (<500MB) or StreamSaver (>500MB) |
-| Encryption | `QuickShare.Web` | `wwwroot/js/p2p/encryption.js` | PIN-based AES-256-GCM via Web Crypto PBKDF2 |
+| Share Link Creation | `QuickShare` | `Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — creates share code + Delivery record. Base URL received via client callback. |
+| Connection Manager | `QuickShare` | `Middleware/P2PConnectionManager.cs` | Room lifecycle, sender/receiver WebSocket tracking, connection limits |
+| Signaling Middleware | `QuickShare` | `Middleware/P2PSignalingMiddleware.cs` | WebSocket endpoint `/ws/connect/{shareCode}` — register, relay offer/answer/ICE |
+| Server WebSocket Config | `QuickShare` | `Program.cs` | `UseWebSockets` + `P2PSignalingMiddleware` + `P2PConnectionManager` singleton |
+| Sender Page UI | `QuickShare` | `Pages/P2PTransfer.razor` | Sender page at `/p2p/send` — drag & drop, PIN toggle, share link generation |
+| Sender Page JS | `QuickShare` | `wwwroot/js/p2p/send.js` | Coordinates file selection, share creation, SignalingClient + PeerConnection + FileSender |
+| Download Page UI | `QuickShare` | `Pages/P2PDownload.razor` | Receiver page at `/p2p/d/{ShareCode}` |
+| Download Page JS | `QuickShare` | `wwwroot/js/p2p/download.js` | Coordinates SignalingClient + PeerConnection + FileReceiver |
+| Signaling Client | `QuickShare` | `wwwroot/js/p2p/signaling.js` | WebSocket connection, auto-reconnect, message relay callbacks |
+| Peer Connection | `QuickShare` | `wwwroot/js/p2p/peerConnection.js` | RTCPeerConnection wrapper — offer, answer, ICE candidates, data channels |
+| File Sender | `QuickShare` | `wwwroot/js/p2p/fileTransfer.js` | Chunked file send over WebRTC data channel with backpressure |
+| File Receiver | `QuickShare` | `wwwroot/js/p2p/fileReceiver.js` | Chunked file receive — blob mode (<500MB) or StreamSaver (>500MB) |
+| Encryption | `QuickShare` | `wwwroot/js/p2p/encryption.js` | PIN-based AES-256-GCM via Web Crypto PBKDF2 |
 
 ---
 
@@ -322,7 +322,7 @@ The download page at `/p2p/d/{ShareCode}` renders one section at a time:
 
 ## 6. Server Wiring
 
-In `src/QuickShare.Server/Program.cs`:
+In `src/QuickShare/Program.cs`:
 
 ```csharp
 // P2P WebRTC signaling
@@ -369,16 +369,16 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 | File | Role |
 |------|------|
-| `src/QuickShare.Server/Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — share code generation (BaseUrl via client callback) |
-| `src/QuickShare.Server/Middleware/P2PConnectionManager.cs` | Room lifecycle, WebSocket tracking, cleanup |
-| `src/QuickShare.Server/Middleware/P2PSignalingMiddleware.cs` | WebSocket signaling relay (register, offer, answer, ICE) |
-| `src/QuickShare.Server/Program.cs` | WebSocket + middleware wiring |
-| `src/QuickShare.Web/Pages/P2PTransfer.razor` | Sender send page UI at `/p2p/send` |
-| `src/QuickShare.Web/Pages/P2PDownload.razor` | Receiver download page UI at `/p2p/d/{ShareCode}` |
-| `src/QuickShare.Web/wwwroot/js/p2p/send.js` | Sender page orchestrator — file select → share creation → WebRTC → FileSender |
-| `src/QuickShare.Web/wwwroot/js/p2p/download.js` | Download page orchestrator — SignalingClient + PeerConnection + FileReceiver |
-| `src/QuickShare.Web/wwwroot/js/p2p/signaling.js` | WebSocket signaling client |
-| `src/QuickShare.Web/wwwroot/js/p2p/peerConnection.js` | WebRTC RTCPeerConnection wrapper |
-| `src/QuickShare.Web/wwwroot/js/p2p/fileTransfer.js` | Chunked file sender with backpressure |
-| `src/QuickShare.Web/wwwroot/js/p2p/fileReceiver.js` | Chunked file receiver (blob + StreamSaver) |
-| `src/QuickShare.Web/wwwroot/js/p2p/encryption.js` | PIN-based AES-256-GCM encryption |
+| `src/QuickShare/Features/Shares/P2P/CreateP2PShareEndpoint.cs` | `POST /api/shares/p2p` — share code generation (BaseUrl via client callback) |
+| `src/QuickShare/Middleware/P2PConnectionManager.cs` | Room lifecycle, WebSocket tracking, cleanup |
+| `src/QuickShare/Middleware/P2PSignalingMiddleware.cs` | WebSocket signaling relay (register, offer, answer, ICE) |
+| `src/QuickShare/Program.cs` | WebSocket + middleware wiring |
+| `src/QuickShare/Pages/P2PTransfer.razor` | Sender send page UI at `/p2p/send` |
+| `src/QuickShare/Pages/P2PDownload.razor` | Receiver download page UI at `/p2p/d/{ShareCode}` |
+| `src/QuickShare/wwwroot/js/p2p/send.js` | Sender page orchestrator — file select → share creation → WebRTC → FileSender |
+| `src/QuickShare/wwwroot/js/p2p/download.js` | Download page orchestrator — SignalingClient + PeerConnection + FileReceiver |
+| `src/QuickShare/wwwroot/js/p2p/signaling.js` | WebSocket signaling client |
+| `src/QuickShare/wwwroot/js/p2p/peerConnection.js` | WebRTC RTCPeerConnection wrapper |
+| `src/QuickShare/wwwroot/js/p2p/fileTransfer.js` | Chunked file sender with backpressure |
+| `src/QuickShare/wwwroot/js/p2p/fileReceiver.js` | Chunked file receiver (blob + StreamSaver) |
+| `src/QuickShare/wwwroot/js/p2p/encryption.js` | PIN-based AES-256-GCM encryption |

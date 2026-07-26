@@ -1,78 +1,108 @@
-# QuickShareCloud — Profile Architecture
+# QuickShare — Profile Architecture
 
 ## Overview
 
-The profile system displays and updates user identity (name, avatar) fetched from the Server API. Users are registered in DB at Google OAuth login time via `POST /api/users/register`. Authenticated API endpoints resolve the DB user via `GetUserAsync()`.
+The profile system displays and updates user identity (name, avatar). Users are registered in DB at Google OAuth login time via `UserRegistrationService.RegisterAsync()` (called in-process from `OnCreatingTicket`). SSR pages access profile data in-process via `IMessageBus` or `AppDbContext`.
 
 ---
 
 ## 1. Component Map
 
-| Layer | Project | File | Role |
-|-------|---------|------|------|
-| Account Page (UI) | `QuickShare.Web` | `Pages/Account.razor` | Profile card + delivery branding manager |
-| Account JS | `QuickShare.Web` | `Pages/Account.razor.js` | Avatar preview + branding CRUD |
-| Account CSS | `QuickShare.Web` | `Pages/Account.razor.css` | Scoped styles |
-| Profile Form Handler | `QuickShare.Web` | `Pages/Account.razor` (code-behind) | `HandleUpdateProfile()` — validates + submits |
-| Web Cookie Re-sign | `QuickShare.Web` | `Pages/Account.razor` (line 146) | `ctx.SignInAsync()` after profile update |
-| Server Register Endpoint | `QuickShare.Server` | `Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` — idempotent user creation at login |
-| Server Profile Endpoint | `QuickShare.Server` | `Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
-| Server Update Endpoint | `QuickShare.Server` | `Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
-| Server User Mapper | `QuickShare.Server` | `Features/Users/Shared/UserMapper.cs` | Mapperly source-gen: `User` → `ProfileResponse` |
-| Server User DB Helper | `QuickShare.Server` | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — user lookup |
-| Shared Models | `QuickShare.Shared` | `Models/ProfileResponse.cs` | `ProfileResponse` DTO |
+| Layer | File | Role |
+|-------|------|------|
+| Account Page (UI) | `Pages/Account.razor` | Profile card + delivery branding manager |
+| Account CSS | `Pages/Account.razor.css` | Scoped styles |
+| Account JS | `wwwroot/js/account.js` | Avatar preview + branding CRUD |
+| Profile Form Handler | `Pages/Account.razor` (code-behind) | `HandleUpdateProfile()` — validates + submits |
+| Cookie Re-sign | `Pages/Account.razor` | `ctx.SignInAsync()` after profile update |
+| Register Endpoint | `Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` — delegates to `UserRegistrationService` |
+| Profile Endpoint | `Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
+| Update Endpoint | `Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
+| User Mapper | `Features/Users/Shared/UserMapper.cs` | Mapperly source-gen: `User` → `ProfileResponse` |
+| UserRegistrationService | `Features/Users/Shared/UserRegistrationService.cs` | DRY registration (endpoint + OAuth callback) |
+| User DB Helper | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — user lookup |
+| Shared DTO | `QuickShare.Shared` / `Models/ProfileResponse.cs` | `ProfileResponse` DTO |
 
 ---
 
-## 2. Data Flow — View Profile
+## 2. Data Flow — View Profile (SSR, In-Process)
 
 ```
-Browser                  Web (9000)                  Server (59155)              PostgreSQL
-   │                         │                           │                          │
-   │  GET /account (cookie)  │                           │                          │
-   │────────────────────────▶│                           │                          │
-   │                         │                           │                          │
-   │  OnInitializedAsync()   │                           │                          │
-   │                         │── GET /api/users/me/ ────▶│                          │
-   │                         │   profile                 │                          │
-   │                         │                           │                          │
-   │                         │  Cookie forwarded via     │                          │
-   │                         │  CookieForwardingHandler  │                          │
-   │                         │                           │                          │
-   │                         │                           │── Decrypt cookie ──────▶│
-   │                         │                           │◀── ClaimsPrincipal ─────│
-   │                         │                           │                          │
-│                         │                           │── GetUserAsync()──▶│
-│                         │                           │   (DB lookup)          │
-   │                         │                           │◀── User row ────────────│
-   │                         │                           │                          │
-   │                         │◀── ProfileResponse ───────│                          │
-   │                         │    { Name, Email,         │                          │
-   │                         │      AvatarUrl, Plan }    │                          │
-   │                         │                           │                          │
-   │◀─ Account.razor HTML ───│                           │                          │
-   │   + profile data        │                           │                          │
+Browser                  QuickShare (9000)            PostgreSQL
+   │                         │                          │
+   │  GET /account (cookie)  │                          │
+   │────────────────────────▶│                          │
+   │                         │                          │
+   │  OnInitializedAsync():  │                          │
+   │  Inject IMessageBus     │                          │
+   │  or AppDbContext        │                          │
+   │  (in-process query)     │                          │
+   │                         │── DB query ─────────────▶│
+   │                         │◀── User row ─────────────│
+   │                         │                          │
+   │◀─ Account.razor HTML ───│                          │
+   │   + profile data        │                          │
 ```
 
-### User Registration Flow
+User is resolved via `GetUserAsync()` which matches by `provider + providerKey` in `UserLogins` table.
 
-Users are registered in DB at **Google OAuth login time** by the Web's `OnCreatingTicket` callback, which calls `POST /api/users/register` (idempotent). Authenticated Server endpoints resolve the DB user via `GetUserAsync()`.
+---
 
-**Registration — at login (Web → Server):**
+## 3. Data Flow — Update Profile
 
 ```
-Web OnCreatingTicket                    Server POST /api/users/register
+Browser                  QuickShare (9000)            PostgreSQL
+   │                         │                          │
+   │  POST /account          │                          │
+   │  (hx-post, hx-target=   │                          │
+   │   "#profile-card")      │                          │
+   │  multipart/form-data    │                          │
+   │────────────────────────▶│                          │
+   │                         │                          │
+   │  HandleUpdateProfile()  │                          │
+   │  ├─ Validate name       │                          │
+   │  ├─ Validate avatar     │                          │
+   │  │  (max 5MB, image/*)  │                          │
+   │  ├─ If avatar upload:   │                          │
+   │  │  save to wwwroot/    │                          │
+   │  │  avatars/{guid}.ext  │                          │
+   │  ├─ IMessageBus or      │                          │
+   │  │  AppDbContext         │                          │
+   │  │  (in-process update) │── UPDATE users ─────────▶│
+   │  │                       │                          │
+   │  ├─ Re-sign cookie:     │                          │
+   │  │  ctx.SignInAsync()   │                          │
+   │  │                       │                          │
+   │◀─ Updated #profile-card │                          │
+   │   HTML (htmx swap)      │                          │
+```
+
+### Why Re-sign the Cookie?
+
+After updating the user's name or avatar, the auth cookie still carries the OLD claims. Re-signing ensures:
+1. The updated name appears in the nav bar immediately (without page refresh)
+2. Future requests carry the correct name/avatar_url claims
+3. `GetUserProfile` returns consistent data
+
+---
+
+## 4. User Registration Flow
+
+Users are registered at **Google OAuth login time** by `OnCreatingTicket`, which calls `UserRegistrationService.RegisterAsync()` in-process. The same service is used by `POST /api/users/register` for any programmatic registration.
+
+```
+OnCreatingTicket                          UserRegistrationService
      │                                         │
-     ├─ api.RegisterAsync(provider,            │
-     │   providerKey, name, email,             │
-     │   avatar) ─────────────────────────────▶│
+     ├─ RegistrationService.RegisterAsync(     │
+     │   provider, providerKey, name,          │
+     │   email, avatar, db, ct) ──────────────▶│
      │                                         ├─ Lookup by provider + providerKey
      │                                         ├─ If found: update name/email, return user
      │                                         ├─ If not: create User + UserLogin + UserUsage
      │                                         └─ Return ProfileResponse
 ```
 
-**User resolution — on every API call (`GetUserAsync`):**
+**User resolution on every authenticated request (`GetUserAsync`):**
 
 ```csharp
 // ClaimsPrincipalExtensions.cs
@@ -83,80 +113,11 @@ public static async Task<User> GetUserAsync(this ClaimsPrincipal principal, AppD
 }
 ```
 
-This means:
-- User must be registered at OAuth login time before any API call
-- `GetUserAsync` is a pure lookup — it throws if the user is not found
-- Server uses `provider + providerKey` (via `UserLogins` table) to find existing user, not just `email`
-
 ---
 
-## 3. Data Flow — Update Profile
+## 5. Delivery Branding Manager
 
-```
-Browser                  Web (9000)                  Server (59155)              Disk
-   │                         │                           │                          │
-   │  POST /account          │                           │                          │
-   │  (hx-post, hx-target=   │                           │                          │
-   │   "#profile-card")      │                           │                          │
-   │  multipart/form-data    │                           │                          │
-   │────────────────────────▶│                           │                          │
-   │                         │                           │                          │
-   │  HandleUpdateProfile()  │                           │                          │
-   │  ├─ Validate name       │                           │                          │
-   │  ├─ Validate avatar     │                           │                          │
-   │  │  (max 5MB, image/*)  │                           │                          │
-   │  ├─ If avatar upload:   │                           │                          │
-   │  │  save to wwwroot/    │── FileStream ────────────▶│                          │
-   │  │  avatars/{guid}.ext  │                           │                          │
-   │  │                       │                           │                          │
-   │  ├─ PUT /api/users/me/  │                           │                          │
-   │  │   profile            │──────────────────────────▶│                          │
-   │  │  { Name, AvatarUrl } │                           │── UPDATE users SET ────▶│
-   │  │                       │                           │   name, avatar_url      │
-   │  │                       │◀── OK ────────────────────│                          │
-   │  │                       │                           │                          │
-   │  ├─ Re-sign cookie:     │                           │                          │
-   │  │  Update Name claim   │                           │                          │
-   │  │  Update avatar_url   │                           │                          │
-   │  │  ctx.SignInAsync()   │                           │                          │
-   │  │                       │                           │                          │
-   │◀─ Updated #profile-card │                           │                          │
-   │   HTML (htmx swap)      │                           │                          │
-```
-
-### Why Re-sign the Cookie?
-
-After updating the user's name or avatar, the auth cookie still carries the OLD claims. Re-signing ensures:
-1. The updated name appears in the nav bar immediately (without page refresh)
-2. Future Server API calls carry the correct name/avatar_url claims
-3. `GetUserProfile` returns consistent data
-
----
-
-## 4. Delivery Branding Manager
-
-The right side of the Account page shows all deliveries and allows branding each one.
-
-```
-Account.razor.js                 Web (9000)                    Server (59155)
-     │                               │                              │
-     │  loadDeliveries()             │                              │
-     │  ── GET /api/deliveries ─────▶── GET /api/deliveries ──────▶│
-     │◀── JSON [{id, fileName,       │◀── JSON ─────────────────────│
-     │         shareCode,            │                              │
-     │         hasBranding}]         │                              │
-     │                               │                              │
-     │  toggleEdit(i)                │                              │
-     │  ── GET /api/deliveries/      │                              │
-     │     {code}/brand ────────────▶── GET .../brand ─────────────▶│
-     │◀── { logo, message, accent }  │◀── JSON ─────────────────────│
-     │                               │                              │
-     │  saveBranding(i)              │                              │
-     │  ── PUT /api/deliveries/      │                              │
-     │     {id}/brand ──────────────▶── PUT .../brand ─────────────▶│
-     │     { logo, message, accent } │  ── UPSERT delivery_brand ──▶│
-     │◀── OK                         │◀── OK ───────────────────────│
-```
+The right side of the Account page shows all deliveries and allows branding each one. JS fetches data from `/api/deliveries` and `/api/deliveries/{code}/brand` endpoints (same-origin, relative URLs).
 
 ### Branding Fields
 | Field | Type | Description |
@@ -165,29 +126,22 @@ Account.razor.js                 Web (9000)                    Server (59155)
 | Brand Message | `string?` | Custom message shown to downloader |
 | Accent Color | `string` | Hex color (`#6366f1`) for branded elements |
 
-### Branding Rendering (Download Page)
-When a downloader visits `/d/{code}`, the download page JS fetches the brand and renders:
-- Logo + message in a card above the file info
-- Accent color applied to border/shadow of branding card
-
 ---
 
-## 5. Avatar Upload Constraints
+## 6. Avatar Upload Constraints
 
 | Constraint | Value | Enforced In |
 |-----------|-------|-------------|
-| Max file size | 5 MB | `previewAvatar()` (JS client-side) + `HandleUpdateProfile()` (server-side) |
+| Max file size | 5 MB | JS client-side + server-side validation |
 | Allowed types | `image/*` | `accept="image/*"` on `<input>` + JS validation |
 | Storage path | `wwwroot/avatars/{guid}.{ext}` | `HandleUpdateProfile()` |
 | URL format | `/avatars/{guid}.{ext}` | Saved to DB + cookie claim |
 
-Client-side preview uses `FileReader.readAsDataURL()` to show the image before upload.
-
 ---
 
-## 6. Auth Cookie Claims
+## 7. Auth Cookie Claims
 
-After Google OAuth login (Web side):
+After Google OAuth login:
 
 | Claim Type | Value | Source |
 |-----------|-------|--------|
@@ -196,6 +150,7 @@ After Google OAuth login (Web side):
 | `ClaimTypes.Email` | Google email | OAuth callback |
 | `provider` | `"google"` | `OnCreatingTicket` |
 | `avatar_url` | Google picture URL | `OnCreatingTicket` |
+| `plan` | User's plan tier | `UserRegistrationService.RegisterAsync()` |
 
 After profile update (re-sign):
 
@@ -204,11 +159,9 @@ After profile update (re-sign):
 | `ClaimTypes.Name` | User-entered name |
 | `avatar_url` | `/avatars/{guid}.{ext}` (or null) |
 
-Note: `local_user_id` is NOT in the auth cookie. Server APIs derive the DB user ID via `GetUserAsync()` which matches by `provider + providerKey` in the `UserLogins` table.
-
 ---
 
-## 7. API Endpoints
+## 8. API Endpoints
 
 | Method | Path | Auth | Handler |
 |--------|------|------|---------|
@@ -219,47 +172,33 @@ Note: `local_user_id` is NOT in the auth cookie. Server APIs derive the DB user 
 | GET | `/api/deliveries/{code}/brand` | Required | `GetBrandEndpoint` |
 | PUT | `/api/deliveries/{id}/brand` | Required | `SetBrandEndpoint` |
 
-### Profile Response DTO
-```csharp
-public sealed record ProfileResponse(
-    Guid Id,
-    string Name,
-    string Email,
-    string AvatarUrl,
-    string Plan,
-    DateTime CreatedAt
-);
-```
-
-Mapped via `UserMapper.ToProfileResponse()` (Mapperly source-gen, in `QuickShare.Shared.Models`).
-
 ---
 
-## 8. File Reference
+## 9. File Reference
 
 | File | Role |
 |------|------|
-| `src/QuickShare.Web/Pages/Account.razor` | Profile UI + `HandleUpdateProfile()` handler |
-| `src/QuickShare.Web/Pages/Account.razor.css` | Scoped styles |
-| `src/QuickShare.Web/Pages/Account.razor.js` | Avatar preview + branding manager JS |
-| `src/QuickShare.Server/Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` — idempotent user creation |
-| `src/QuickShare.Server/Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
-| `src/QuickShare.Server/Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
-| `src/QuickShare.Server/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
-| `src/QuickShare.Server/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` |
-| `src/QuickShare.Shared/Models/User.cs` | User entity |
-| `src/QuickShare.Server/Features/Deliveries/Brand/GetBrandEndpoint.cs` | `GET /api/deliveries/{code}/brand` |
-| `src/QuickShare.Server/Features/Deliveries/Brand/SetBrandEndpoint.cs` | `PUT /api/deliveries/{id}/brand` |
+| `src/QuickShare/Pages/Account.razor` | Profile UI + `HandleUpdateProfile()` handler |
+| `src/QuickShare/Pages/Account.razor.css` | Scoped styles |
+| `src/QuickShare/wwwroot/js/account.js` | Avatar preview + branding manager JS |
+| `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY registration (endpoint + OAuth) |
+| `src/QuickShare/Features/Users/Register/RegisterUserEndpoint.cs` | `POST /api/users/register` |
+| `src/QuickShare/Features/Users/Profile/GetUserProfileEndpoint.cs` | `GET /api/users/me/profile` |
+| `src/QuickShare/Features/Users/Profile/UpdateUserProfileEndpoint.cs` | `PUT /api/users/me/profile` |
+| `src/QuickShare/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
+| `src/QuickShare/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` |
+| `src/QuickShare/Features/Deliveries/Brand/GetBrandEndpoint.cs` | `GET /api/deliveries/{code}/brand` |
+| `src/QuickShare/Features/Deliveries/Brand/SetBrandEndpoint.cs` | `PUT /api/deliveries/{id}/brand` |
 
 ---
 
-## 9. Error States
+## 10. Error States
 
 | Error | How Detected | User Sees |
 |-------|-------------|-----------|
 | Profile fetch failed | `OnInitializedAsync` catch | Renders with defaults ("Unknown", no avatar) |
-| Name empty | `HandleUpdateProfile` validation | `db-alert--error`: "Name is required" |
-| Avatar too large (>5MB) | JS + server validation | `alert()` JS; `db-alert--error` server |
-| Avatar wrong type | JS validation (`image/*`) | `alert()` JS |
-| Brand save failed | `fetch()` error | `db-alert--error` inline in JS template |
-| Network error | `fetch()` exception | `db-alert--error` inline |
+| Name empty | `HandleUpdateProfile` validation | Error alert: "Name is required" |
+| Avatar too large (>5MB) | JS + server validation | JS alert; server error alert |
+| Avatar wrong type | JS validation (`image/*`) | JS alert |
+| Brand save failed | `fetch()` error | Inline error alert |
+| Network error | `fetch()` exception | Inline error alert |
