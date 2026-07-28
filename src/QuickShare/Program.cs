@@ -22,9 +22,20 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dpPath))
     .SetApplicationName("QuickShare");
 
-builder.Services.AddDbContext<AppDbContext>(opts =>
-    opts.UseNpgsql(connectionString)
-        .AddInterceptors(new AuditableEntityInterceptor()));
+var useInMemoryDb = Type.GetType(
+    "Microsoft.EntityFrameworkCore.InMemoryDatabaseProvider, Microsoft.EntityFrameworkCore.InMemory") is not null;
+
+if (useInMemoryDb)
+{
+    builder.Services.AddDbContext<AppDbContext>(opts =>
+        opts.UseInMemoryDatabase("QuickShareTests"));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(opts =>
+        opts.UseNpgsql(connectionString)
+            .AddInterceptors(new AuditableEntityInterceptor()));
+}
 
 builder.Services.Configure<StorageOptions>(
     builder.Configuration.GetSection(StorageOptions.Section));
@@ -160,8 +171,15 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (db.Database.GetPendingMigrations().Any())
-        await db.Database.MigrateAsync();
+    if (db.Database.IsRelational())
+    {
+        if (db.Database.GetPendingMigrations().Any())
+            await db.Database.MigrateAsync();
+    }
+    else
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
 
     if (!await db.Folders.AnyAsync(f => f.Name == "/"))
     {
@@ -188,38 +206,6 @@ if (app.Environment.IsDevelopment())
 {
     // Dev-mode: log full request/response for debugging.
     app.UseMiddleware<RequestLoggingMiddleware>();
-
-    // Dev-mode: auto sign-in a local user so you can test without Google OAuth.
-    // Runs before UseAuthentication/MapRazorComponents so [Authorize] pages see the dev user.
-    app.Use(async (ctx, next) =>
-    {
-        if (ctx.User.Identity?.IsAuthenticated != true && ctx.Request.Query["logout"] != "1")
-        {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, "dev-user"),
-                new Claim(AuthConstants.ProviderClaimType, AuthConstants.DevProvider),
-                new Claim(ClaimTypes.Name, "Dev User"),
-                new Claim(ClaimTypes.Email, "dev@localhost")
-            };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            ctx.User = principal;
-            await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
-            await UserRegistrationService.RegisterAsync(
-                AuthConstants.DevProvider,
-                "dev-user",
-                "Dev User",
-                "dev@localhost",
-                avatarUrl: null,
-                db,
-                ctx.RequestAborted);
-        }
-        await next();
-    });
 }
 
 // Serve wwwroot/ (and optimized static assets if a manifest is present).

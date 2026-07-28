@@ -36,6 +36,7 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
             html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">?</span>";
         }
 
+        HttpContext.Response.StatusCode = 200;
         HttpContext.Response.ContentType = "text/html";
         await HttpContext.Response.WriteAsync(html, ct);
     }

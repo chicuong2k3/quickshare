@@ -31,6 +31,7 @@
 
     <!-- Web (Blazor SSR + htmx) dependencies -->
     <PackageReference Include="Htmxor" Version="1.0.0-beta.1.24" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
   </ItemGroup>
 
   <Target Name="CopyScopedCss" AfterTargets="Build">

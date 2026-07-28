@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http;
 
 namespace QuickShare.Infrastructure;
 
@@ -19,15 +20,26 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<Reque
         finally
         {
             sw.Stop();
-            buffer.Seek(0, SeekOrigin.Begin);
-            var responseBody = await new StreamReader(buffer).ReadToEndAsync();
-            buffer.Seek(0, SeekOrigin.Begin);
-            await buffer.CopyToAsync(originalBody);
+            var status = ctx.Response.StatusCode;
+            var canHaveBody = status != StatusCodes.Status204NoContent
+                              && status != StatusCodes.Status304NotModified;
+
+            string responseBody;
+            if (canHaveBody)
+            {
+                buffer.Seek(0, SeekOrigin.Begin);
+                responseBody = await new StreamReader(buffer).ReadToEndAsync();
+                buffer.Seek(0, SeekOrigin.Begin);
+                await buffer.CopyToAsync(originalBody);
+            }
+            else
+            {
+                responseBody = "";
+            }
             ctx.Response.Body = originalBody;
 
             var method = ctx.Request.Method;
             var path = ctx.Request.Path + ctx.Request.QueryString;
-            var status = ctx.Response.StatusCode;
             var elapsed = sw.ElapsedMilliseconds;
             var level = status >= 500 ? LogLevel.Error : status >= 400 ? LogLevel.Warning : LogLevel.Information;
 

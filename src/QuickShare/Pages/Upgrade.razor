@@ -33,54 +33,64 @@
         <span class="tag">Upgrade</span>
         <h1 class="db-h1">Upgrade to @planDisplay</h1>
         <p class="db-p db-text-muted">
-            You're currently on the <strong>@currentPlan</strong> plan.
+            @if (isFullyLoaded)
+            {
+                <text>You're currently on the <strong>@currentPlan</strong> plan. </text>
+            }
             @planDisplay gives you @planSummary.
         </p>
     </section>
 
-    <section id="upgrade-body">
-        <div class="summary-card">
-            <div class="summary-card__head">
-                <h2 class="db-h2">@planDisplay</h2>
-                <p class="db-text-muted">@planDesc</p>
+    @if (!isFullyLoaded)
+    {
+        @* Shell skeleton: rendered in < 500ms, no DB calls *@
+        <section id="upgrade-body"
+                 hx-get="/upgrade?plan=@selectedPlan&billing=@(Billing ?? "")"
+                 hx-trigger="load"
+                 hx-target="#upgrade-body"
+                 hx-swap="outerHTML"
+                 aria-busy="true">
+            <div class="summary-card">
+                <div class="summary-card__head">
+                    <h2 class="db-h2">@planDisplay</h2>
+                    <p class="db-text-muted">@planDesc</p>
+                </div>
+                <div class="summary-card__price">
+                    @if (IsYearly)
+                    {
+                        <span class="price-amount">@planYearlyPrice</span>
+                        <span class="price-period db-text-muted">/ year</span>
+                    }
+                    else
+                    {
+                        <span class="price-amount">@planMonthlyPrice</span>
+                        <span class="price-period db-text-muted">/ month</span>
+                    }
+                </div>
+                <div class="summary-card__features">
+                    @foreach (var feature in planFeatures)
+                    {
+                        <div class="feature">
+                            <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            <span>@feature</span>
+                        </div>
+                    }
+                </div>
             </div>
-            <div class="summary-card__price">
-                @if (IsYearly)
-                {
-                    <span class="price-amount">@planYearlyPrice</span>
-                    <span class="price-period db-text-muted">/ year</span>
-                }
-                else
-                {
-                    <span class="price-amount">@planMonthlyPrice</span>
-                    <span class="price-period db-text-muted">/ month</span>
-                }
-            </div>
-            <div class="summary-card__features">
-                @foreach (var feature in planFeatures)
-                {
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@feature</span>
-                    </div>
-                }
-            </div>
-        </div>
 
-        <div class="payment" id="payment-section">
-            <h2 class="db-h2">Complete your upgrade</h2>
-            <p class="db-text-muted" style="margin-top: 0.5rem">
-                Upgrading to <strong>@planDisplay</strong>
-                @(IsYearly ? " (yearly)" : " (monthly)")
-                &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
-            </p>
+            <div class="payment">
+                <h2 class="db-h2">Complete your upgrade</h2>
+                <p class="db-text-muted" style="margin-top: 0.5rem">
+                    Upgrading to <strong>@planDisplay</strong>
+                    @(IsYearly ? " (yearly)" : " (monthly)")
+                    &mdash; <strong>@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+                </p>
 
-            @if (paymentIntent is null)
-            {
                 <div class="payment-option">
                     <h3 class="db-h3">Ko-fi</h3>
                     <p class="db-text-muted">Pay with card or PayPal via Ko-fi</p>
                     <form method="post">
+                        <AntiforgeryToken />
                         <input type="hidden" name="Plan" value="@selectedPlan" />
                         <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
                         <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
@@ -88,38 +98,96 @@
                         </button>
                     </form>
                 </div>
-            }
-            else
-            {
-                <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--db-color-border);border-radius:0.5rem;text-align:center">
-                    <h3 class="db-h3">Send <strong>@paymentIntent.Currency@paymentAmount</strong> to our Ko-fi page</h3>
-                    <p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>
-                    <div style="margin:1.5rem 0;padding:1rem;background:var(--db-color-surface);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em;font-family:var(--db-font-mono)">
-                        @paymentIntent.Code
-                    </div>
-                    <p class="db-text-muted" style="font-size:0.95rem">
-                        The code is already filled in the payment page. You can also scan the QR code to pay on your phone.
-                    </p>
-                    <div id="kofi-qrcode" style="margin:1rem auto;display:flex;justify-content:center"></div>
-                    <a href="@kofiUrlWithCode" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                        Pay with Ko-fi
-                    </a>
-                    <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
-                        Code expires in 1 hour. Your plan will be activated automatically after payment.
-                    </p>
+            </div>
+        </section>
+    }
+    else
+    {
+        @* Full render: HTMX GET re-render or POST with data *@
+        <section id="upgrade-body">
+            <div class="summary-card">
+                <div class="summary-card__head">
+                    <h2 class="db-h2">@planDisplay</h2>
+                    <p class="db-text-muted">@planDesc</p>
                 </div>
+                <div class="summary-card__price">
+                    @if (IsYearly)
+                    {
+                        <span class="price-amount">@planYearlyPrice</span>
+                        <span class="price-period db-text-muted">/ year</span>
+                    }
+                    else
+                    {
+                        <span class="price-amount">@planMonthlyPrice</span>
+                        <span class="price-period db-text-muted">/ month</span>
+                    }
+                </div>
+                <div class="summary-card__features">
+                    @foreach (var feature in planFeatures)
+                    {
+                        <div class="feature">
+                            <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            <span>@feature</span>
+                        </div>
+                    }
+                </div>
+            </div>
 
-                <script>
-                    (function() { renderKofiQR("@kofiUrlWithCode"); })();
-                </script>
-            }
+            <div class="payment" id="payment-section">
+                <h2 class="db-h2">Complete your upgrade</h2>
+                <p class="db-text-muted" style="margin-top: 0.5rem">
+                    Upgrading to <strong>@planDisplay</strong>
+                    @(IsYearly ? " (yearly)" : " (monthly)")
+                    &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+                </p>
 
-            <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
-                Your plan will be upgraded immediately after payment confirmation.
-                Need help? <a href="mailto:support@quicksharecloud.com" class="db-link">Contact support</a>.
-            </p>
-        </div>
-    </section>
+                @if (paymentIntent is null)
+                {
+                    <div class="payment-option">
+                        <h3 class="db-h3">Ko-fi</h3>
+                        <p class="db-text-muted">Pay with card or PayPal via Ko-fi</p>
+                        <form method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Plan" value="@selectedPlan" />
+                            <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
+                            <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                                Pay with Ko-fi
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--db-color-border);border-radius:0.5rem;text-align:center">
+                        <h3 class="db-h3">Send <strong>@paymentIntent.Currency@paymentAmount</strong> to our Ko-fi page</h3>
+                        <p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>
+                        <div style="margin:1.5rem 0;padding:1rem;background:var(--db-color-surface);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em;font-family:var(--db-font-mono)">
+                            @paymentIntent.Code
+                        </div>
+                        <p class="db-text-muted" style="font-size:0.95rem">
+                            The code is already filled in the payment page. You can also scan the QR code to pay on your phone.
+                        </p>
+                        <div id="kofi-qrcode" style="margin:1rem auto;display:flex;justify-content:center"></div>
+                        <a href="@kofiUrlWithCode" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                            Pay with Ko-fi
+                        </a>
+                        <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
+                            Code expires in 1 hour. Your plan will be activated automatically after payment.
+                        </p>
+                    </div>
+
+                    <script>
+                        (function() { renderKofiQR("@kofiUrlWithCode"); })();
+                    </script>
+                }
+
+                <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
+                    Your plan will be upgraded immediately after payment confirmation.
+                    Need help? <a href="mailto:support@quicksharecloud.com" class="db-link">Contact support</a>.
+                </p>
+            </div>
+        </section>
+    }
 
 </PageWrapper>
 
@@ -134,6 +202,7 @@
 
     private string selectedPlan = "pro";
     private string currentPlan = "free";
+    private bool isFullyLoaded;
     private PaymentIntent? paymentIntent;
 
     private string planDisplay => selectedPlan == "studio" ? "Studio" : "Pro";
@@ -175,6 +244,18 @@
         };
 
         var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers["HX-Request"].FirstOrDefault(),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
+
+        // Shell render for GET: return immediately, no DB calls.
+        // POST requests must always process form data, so they are not skipped.
+        if (!isHtmxRequest && !isPost) return;
+
+        isFullyLoaded = true;
+
         var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
 
         if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))

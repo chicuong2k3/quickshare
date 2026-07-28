@@ -22,7 +22,8 @@
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
-<PageWrapper id="files-app" Variant="PageVariant.Padded">
+<PageWrapper id="files-app" Variant="PageVariant.Padded"
+     x-data="{ showCreateModal: false, showRenameModal: false, showDeleteModal: false, renameId: '', renameName: '', deleteId: '', deleteName: '', openCreateFolder() { this.showCreateModal = true; this.$nextTick(() => { let e = document.getElementById('create-error'); if (e) e.style.display = 'none'; let t = document.getElementById('create-folder-name'); if (t) { t.value = ''; t.focus(); } let l = document.getElementById('create-btn-loading'); if (l) l.style.display = 'none'; let b = document.getElementById('create-btn-text'); if (b) b.style.display = ''; let s = document.getElementById('create-submit-btn'); if (s) s.disabled = false; }); }, openRenameFolder(id, name) { this.renameId = id; this.renameName = name; this.showRenameModal = true; this.$nextTick(() => { let e = document.getElementById('rename-error'); if (e) e.style.display = 'none'; let i = document.getElementById('rename-folder-name'); if (i) { i.value = name; i.focus(); i.select(); } let l = document.getElementById('rename-btn-loading'); if (l) l.style.display = 'none'; let b = document.getElementById('rename-btn-text'); if (b) b.style.display = ''; let s = document.getElementById('rename-submit-btn'); if (s) s.disabled = false; }); }, openDeleteFolder(id, name) { this.deleteId = id; this.deleteName = name; this.showDeleteModal = true; this.$nextTick(() => { let e = document.getElementById('delete-error'); if (e) e.style.display = 'none'; document.getElementById('delete-name').textContent = name; let l = document.getElementById('delete-btn-loading'); if (l) l.style.display = 'none'; let b = document.getElementById('delete-btn-text'); if (b) b.style.display = ''; let s = document.getElementById('delete-submit-btn'); if (s) s.disabled = false; }); }, closeModals() { this.showCreateModal = false; this.showRenameModal = false; this.showDeleteModal = false; } }">
         <div class="container">
 
             @if (!isHtmxRender)
@@ -112,7 +113,7 @@
                             </svg>
                             <span>No folders yet. Create one to organize your files.</span>
                         </div>
-                        <button type="button" class="new-pill" onclick="filesPage.openCreateFolder()">
+                        <button type="button" class="new-pill" @click="openCreateFolder()">
                             <svg style="width:0.875rem;height:0.875rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                             </svg>
@@ -155,17 +156,17 @@
                                 @if (folder.Name != "/")
                                 {
                                     <div class="action-btns">
-                                        <button type="button" class="action-btn" aria-label="Rename @folder.Name" title="Rename folder" onclick="filesPage.openRenameFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
+                                        <button type="button" class="action-btn" aria-label="Rename @folder.Name" title="Rename folder" @click="openRenameFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                         </button>
-                                        <button type="button" class="action-btn files-action-btn--danger" aria-label="Delete @folder.Name" title="Delete folder" onclick="filesPage.openDeleteFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
+                                        <button type="button" class="action-btn files-action-btn--danger" aria-label="Delete @folder.Name" title="Delete folder" @click="openDeleteFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                                         </button>
                                     </div>
                                 }
                             </div>
                         }
-                        <button type="button" class="new-pill" onclick="filesPage.openCreateFolder()">
+                        <button type="button" class="new-pill" @click="openCreateFolder()">
                             <svg style="width:0.875rem;height:0.875rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New
                         </button>
                     </div>
@@ -266,26 +267,26 @@
         </div>
 
     @* CREATE FOLDER MODAL *@
-    <div id="files-modal-create" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
-        <div class="modal" onclick="event.stopPropagation()">
+    <div id="files-modal-create" class="modal-backdrop" x-show="showCreateModal" @click.self="closeModals()">
+        <div class="modal" @click.stop="">
             <div class="modal-card">
                 <div class="modal-body">
                     <div class="modal-header">
                         <h3 style="font-size:1.125rem;font-weight:600">New folder</h3>
-                        <button type="button" class="modal-close" aria-label="Close" onclick="filesPage.closeModals()">
+                        <button type="button" class="modal-close" aria-label="Close" @click="closeModals()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
                     <div class="modal-field">
                         <label for="create-folder-name" class="modal-label">Folder name</label>
-                        <input id="create-folder-name" type="text" class="modal-input" placeholder="e.g. Projects, Photos" maxlength="255" onkeydown="if(event.key==='Enter')filesPage.submitCreateFolder()" />
+                        <input id="create-folder-name" type="text" class="modal-input" placeholder="e.g. Projects, Photos" maxlength="255" @keydown.enter="filesPage.submitCreateFolder()" />
                     </div>
-                    <div id="create-error" class="modal-error hidden"></div>
+                    <div id="create-error" class="modal-error" style="display:none"></div>
                     <div class="modal-actions">
-                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
-                        <button type="button" id="create-submit-btn" class="db-btn" style="flex:1;background:var(--db-color-text);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitCreateFolder()" data-ai-action="folders.create.submit">
+                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" @click="closeModals()">Cancel</button>
+                        <button type="button" id="create-submit-btn" class="db-btn" style="flex:1;background:var(--db-color-text);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" @click="filesPage.submitCreateFolder()" data-ai-action="folders.create.submit">
                             <span id="create-btn-text">Create folder</span>
-                            <span id="create-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Creating&hellip;</span>
+                            <span id="create-btn-loading" style="display:none"><span class="db-spinner db-spinner--sm"></span>Creating&hellip;</span>
                         </button>
                     </div>
                 </div>
@@ -294,26 +295,26 @@
     </div>
 
     @* RENAME FOLDER MODAL *@
-    <div id="files-modal-rename" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
-        <div class="modal" onclick="event.stopPropagation()">
+    <div id="files-modal-rename" class="modal-backdrop" x-show="showRenameModal" @click.self="closeModals()">
+        <div class="modal" @click.stop="">
             <div class="modal-card">
                 <div class="modal-body">
                     <div class="modal-header">
                         <h3 style="font-size:1.125rem;font-weight:600">Rename folder</h3>
-                        <button type="button" class="modal-close" aria-label="Close" onclick="filesPage.closeModals()">
+                        <button type="button" class="modal-close" aria-label="Close" @click="closeModals()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
                     <div class="modal-field">
                         <label for="rename-folder-name" class="modal-label">Folder name</label>
-                        <input id="rename-folder-name" type="text" class="modal-input" maxlength="255" onkeydown="if(event.key==='Enter')filesPage.submitRenameFolder()" />
+                        <input id="rename-folder-name" type="text" class="modal-input" maxlength="255" @keydown.enter="filesPage.submitRenameFolder(renameId)" />
                     </div>
-                    <div id="rename-error" class="modal-error hidden"></div>
+                    <div id="rename-error" class="modal-error" style="display:none"></div>
                     <div class="modal-actions">
-                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
-                        <button type="button" id="rename-submit-btn" class="db-btn" style="flex:1;background:var(--db-color-text);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitRenameFolder()" data-ai-action="folders.rename.submit">
+                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" @click="closeModals()">Cancel</button>
+                        <button type="button" id="rename-submit-btn" class="db-btn" style="flex:1;background:var(--db-color-text);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" @click="filesPage.submitRenameFolder(renameId)" data-ai-action="folders.rename.submit">
                             <span id="rename-btn-text">Rename</span>
-                            <span id="rename-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Renaming&hellip;</span>
+                            <span id="rename-btn-loading" style="display:none"><span class="db-spinner db-spinner--sm"></span>Renaming&hellip;</span>
                         </button>
                     </div>
                 </div>
@@ -322,8 +323,8 @@
     </div>
 
     @* DELETE FOLDER MODAL *@
-    <div id="files-modal-delete" class="modal-backdrop hidden" onclick="filesPage.closeModals()">
-        <div class="modal" onclick="event.stopPropagation()">
+    <div id="files-modal-delete" class="modal-backdrop" x-show="showDeleteModal" @click.self="closeModals()">
+        <div class="modal" @click.stop="">
             <div class="modal-card files-modal-card--danger">
                 <div class="modal-body">
                     <div style="display:flex;align-items:center;gap:1rem">
@@ -339,12 +340,12 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         <span>This action cannot be undone.</span>
                     </div>
-                    <div id="delete-error" class="modal-error hidden"></div>
+                    <div id="delete-error" class="modal-error" style="display:none"></div>
                     <div class="modal-actions">
-                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" onclick="filesPage.closeModals()">Cancel</button>
-                        <button type="button" id="delete-submit-btn" style="flex:1;background:var(--db-color-error);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" onclick="filesPage.submitDeleteFolder()" data-ai-action="folders.delete.confirm">
+                        <button type="button" class="db-btn db-btn--ghost" style="flex:1" @click="closeModals()">Cancel</button>
+                        <button type="button" id="delete-submit-btn" style="flex:1;background:var(--db-color-error);color:var(--db-color-bg);border:none;border-radius:0.75rem;padding:0.75rem;font-size:0.875rem;font-weight:600;cursor:pointer" @click="filesPage.submitDeleteFolder(deleteId)" data-ai-action="folders.delete.confirm">
                             <span id="delete-btn-text">Delete folder</span>
-                            <span id="delete-btn-loading" class="hidden"><span class="db-spinner db-spinner--sm"></span>Deleting&hellip;</span>
+                            <span id="delete-btn-loading" style="display:none"><span class="db-spinner db-spinner--sm"></span>Deleting&hellip;</span>
                         </button>
                     </div>
                 </div>

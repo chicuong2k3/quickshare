@@ -24,19 +24,19 @@
     </section>
 
     @* â”€â”€ BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) â”€â”€ *@
-    <section id="pricing-body">
+    <section id="pricing-body"
+             x-data="{ billing: '@(IsYearly ? "yearly" : "monthly")' }"
+             x-effect="const u = new URL(window.location); billing === 'yearly' ? u.searchParams.set('billing','yearly') : u.searchParams.delete('billing'); history.replaceState({}, '', u)">
         <div class="toggle-wrap">
             <div class="toggle-group">
                 <button type="button"
-                        id="btn-monthly"
-                        onclick="pricingToggle('monthly')"
-                        class="db-btn @(IsYearly ? "db-btn--ghost" : "db-btn--primary")">
+                        x-on:click="billing = 'monthly'"
+                        x-bind:class="billing === 'monthly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
                     Monthly
                 </button>
                 <button type="button"
-                        id="btn-yearly"
-                        onclick="pricingToggle('yearly')"
-                        class="db-btn @(IsYearly ? "db-btn--primary" : "db-btn--ghost")">
+                        x-on:click="billing = 'yearly'"
+                        x-bind:class="billing === 'yearly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
                     Yearly
                     <span class="tag">Save 20%</span>
                 </button>
@@ -90,17 +90,17 @@
                     <p class="db-text-muted" style="margin-top: 0.5rem">For creators &amp; professionals</p>
                 </div>
                 <div class="card__price">
-                    <div class="pricing-monthly @(IsYearly ? "hidden" : "")">
+                    <div x-show="billing === 'monthly'" class="pricing-monthly">
                         <div class="price-amount">@proMonthly</div>
                         <div class="price-period db-text-muted">Billed monthly</div>
                     </div>
-                    <div class="pricing-yearly @(IsYearly ? "" : "hidden")">
+                    <div x-show="billing === 'yearly'" class="pricing-yearly">
                         <div class="price-amount">@proYearly</div>
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
                 <a href="@(isAuthenticated ? "/upgrade?plan=pro" : "/login")"
-                   onclick="if(@isAuthenticated.ToString().ToLower()){event.preventDefault();window.location.href='/upgrade?plan=pro'+(new URLSearchParams(location.search).get('billing')==='yearly'?'&billing=yearly':'')}"
+                   x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
                    class="db-btn db-btn--primary">Start Free Trial</a>
                 <div class="features">
                     <div class="feature">
@@ -130,17 +130,17 @@
                     <p class="db-text-muted" style="margin-top: 0.5rem">For teams &amp; enterprises</p>
                 </div>
                 <div class="card__price">
-                    <div class="pricing-monthly @(IsYearly ? "hidden" : "")">
+                    <div x-show="billing === 'monthly'" class="pricing-monthly">
                         <div class="price-amount">@studioMonthly</div>
                         <div class="price-period db-text-muted">Billed monthly</div>
                     </div>
-                    <div class="pricing-yearly @(IsYearly ? "" : "hidden")">
+                    <div x-show="billing === 'yearly'" class="pricing-yearly">
                         <div class="price-amount">@studioYearly</div>
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
                 <a href="@(isAuthenticated ? "/upgrade?plan=studio" : "/login")"
-                   onclick="if(@isAuthenticated.ToString().ToLower()){event.preventDefault();window.location.href='/upgrade?plan=studio'+(new URLSearchParams(location.search).get('billing')==='yearly'?'&billing=yearly':'')}"
+                   x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
                    class="db-btn db-btn--primary">Start Free Trial</a>
                 <div class="features">
                     <div class="feature">
@@ -173,21 +173,6 @@
         </div>
     </section>
 
-    <script>
-        function pricingToggle(billing) {
-            const isYearly = billing === 'yearly';
-            document.querySelectorAll('.pricing-monthly').forEach(el => el.classList.toggle('hidden', isYearly));
-            document.querySelectorAll('.pricing-yearly').forEach(el => el.classList.toggle('hidden', !isYearly));
-            const btnM = document.getElementById('btn-monthly');
-            const btnY = document.getElementById('btn-yearly');
-            btnM.className = 'db-btn ' + (isYearly ? 'db-btn--ghost' : 'db-btn--primary');
-            btnY.className = 'db-btn ' + (isYearly ? 'db-btn--primary' : 'db-btn--ghost');
-            const url = new URL(window.location);
-            if (isYearly) url.searchParams.set('billing', 'yearly');
-            else url.searchParams.delete('billing');
-            window.history.replaceState({}, '', url);
-        }
-    </script>
 
     @* â”€â”€ FAQ â”€â”€ *@
     <section class="faq">
@@ -210,11 +195,11 @@
     </section>
 
     @* â”€â”€ CTA â”€â”€ *@
-    <section class="cta">
+    <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
         <h3 class="cta__title">Ready to get started?</h3>
         <p class="db-text-muted">All plans include a 14-day free trial. No credit card required.</p>
         <a href="@(isAuthenticated ? "/upgrade" : "/login")"
-           onclick="if(@isAuthenticated.ToString().ToLower()){event.preventDefault();window.location.href='/upgrade'+(new URLSearchParams(location.search).get('billing')==='yearly'?'?billing=yearly':'')}"
+           x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')"
            class="db-btn db-btn--primary">Start Your Free Trial</a>
     </section>
 
