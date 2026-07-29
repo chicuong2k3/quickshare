@@ -14,11 +14,10 @@
     window.p2pSend = (function () {
         var state = {
             phase: 'idle', progress: 0, shareCode: '', shareLink: '', error: '',
-            pin: '', _file: null, _intentionalStop: false,
+            pin: '', _pinHash: null, _file: null, _intentionalStop: false,
             _signaling: null, _encKey: null,
             _receivers: {}, _receiverIndex: 0
         };
-
         function setPhase(phase) { state.phase = phase; render(); }
 
         function render() {
@@ -168,7 +167,7 @@
 
         // --- Signaling ---
 
-        async function connectSignaling() {
+        function connectSignaling() {
             if (state._signaling) {
                 state._signaling.close();
                 state._signaling = null;
@@ -193,14 +192,11 @@
                 name: state._file.name,
                 size: state._file.size,
                 mime: state._file.type || 'application/octet-stream',
-                hasPin: !!state.pin
+                hasPin: !!state.pin,
+                pinHash: state._pinHash || null
             };
-            if (state.pin) {
-                fileMeta.pinHash = await window.P2P.encryption.hashPin(state.pin, state.shareCode);
-            }
             state._signaling.connect('sender', fileMeta);
         }
-
         // --- WebRTC ---
 
         function onPeerJoined(receiverId) {
@@ -325,14 +321,14 @@
             return pin;
         }
 
-        function confirmPin() {
+        async function confirmPin() {
             var pin = readOtp();
             state.pin = pin;
-            startWithFile(state._file);
-        }
-
-        function skipPin() {
-            state.pin = '';
+            if (pin) {
+                state._pinHash = await window.P2P.encryption.hashPin(pin, state.shareCode || '');
+            } else {
+                state._pinHash = null;
+            }
             startWithFile(state._file);
         }
 
@@ -343,6 +339,12 @@
                 var next = document.querySelectorAll('#p2ps-otp .db-otp__input')[idx + 1];
                 if (next) next.focus();
             }
+        }
+
+        function skipPin() {
+            state.pin = '';
+            state._pinHash = null;
+            startWithFile(state._file);
         }
 
         function otpKeydown(event, idx) {
@@ -409,7 +411,7 @@
             if (qrEl) qrEl.innerHTML = '';
             state.progress = 0;
             state.error = '';
-            state.pin = '';
+            state.pin = ''; state._pinHash = null;
             var otpInputs = document.querySelectorAll('#p2ps-otp .db-otp__input');
             for (var i = 0; i < otpInputs.length; i++) otpInputs[i].value = '';
             setPhase('idle');
