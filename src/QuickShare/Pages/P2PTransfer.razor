@@ -23,7 +23,7 @@
                     <span id="drag-h1" class="hidden">Drop your file</span>
                 </h1>
                 <p class="p2p-sub">
-                    <span id="idle-sub">Peer-to-peer &middot; encrypted &middot; nothing touches our servers</span>
+                    <span id="idle-sub">Peer-to-peer &middot; nothing touches our servers</span>
                     <span id="drag-sub" class="hidden">Release to start P2P transfer</span>
                 </p>
             </div>
@@ -51,32 +51,6 @@
             </div>
         </section>
 
-        <section id="p2ps-pin-dialog" class="p2p-section hidden">
-            <div class="p2p-pin-card db-card">
-                <div class="db-card__body">
-                    <div class="p2p-pin-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                    </div>
-                    <h2 class="p2p-status-h1">Set a PIN <span class="p2p-pin-optional">(optional)</span></h2>
-                    <p class="p2p-status-p">Recipients will need this PIN to download. Leave empty to skip.</p>
-                    <div id="p2ps-otp" class="db-otp p2p-otp" style="margin-top: var(--db-space-5)">
-                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,0)" onkeydown="p2pSend.otpKeydown(event,0)" />
-                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,1)" onkeydown="p2pSend.otpKeydown(event,1)" />
-                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,2)" onkeydown="p2pSend.otpKeydown(event,2)" />
-                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,3)" onkeydown="p2pSend.otpKeydown(event,3)" />
-                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,4)" onkeydown="p2pSend.otpKeydown(event,4)" />
-                        <input class="db-otp__input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" oninput="p2pSend.otpInput(event,5)" onkeydown="p2pSend.otpKeydown(event,5)" />
-                    </div>
-                    <div id="p2ps-pin-error" class="db-alert db-alert--error hidden" role="alert" style="margin-top: var(--db-space-4)"></div>
-                    <div style="margin-top: var(--db-space-5); display: flex; gap: var(--db-space-3)">
-                        <button class="db-btn db-btn--primary" style="flex:1" onclick="p2pSend.confirmPin()" data-ai-action="p2p.pin.confirm">Start transfer</button>
-                        <button class="db-btn db-btn--ghost" onclick="p2pSend.skipPin()">Skip</button>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         @* CREATING LINK *@
         <section id="p2ps-creating" class="p2p-section hidden">

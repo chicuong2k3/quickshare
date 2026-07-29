@@ -92,37 +92,31 @@
     border-color: var(--db-color-accent);
     border-style: solid;
     background: var(--db-color-accent-subtle);
-    box-shadow:
-        0 0 0 3px color-mix(in srgb, var(--db-color-accent) 18%, transparent),
-        0 8px 32px color-mix(in srgb, var(--db-color-accent) 10%, transparent);
-    transform: scale(1.008);
 }
 
 .p2p-dropzone-icon {
     display: flex;
-    width: 5rem;
-    height: 5rem;
+    width: 3.5rem;
+    height: 3.5rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     background: var(--db-color-accent-subtle);
     color: var(--db-color-accent);
-    transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    transition: background 0.2s ease;
 }
 
 .p2p-dropzone:hover .p2p-dropzone-icon {
-    transform: translateY(-2px);
     background: color-mix(in srgb, var(--db-color-accent) 15%, transparent);
 }
 
 .p2p-dropzone.active .p2p-dropzone-icon {
     background: color-mix(in srgb, var(--db-color-accent) 20%, transparent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--db-color-accent) 12%, transparent);
 }
 
 .p2p-dropzone-icon svg {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
 }
 
 .p2p-dropzone-text {
@@ -159,19 +153,19 @@
 
 .p2p-pin-icon {
     display: flex;
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 3rem;
+    height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     margin: 0 auto var(--db-space-4);
     background: var(--db-color-accent-subtle);
     color: var(--db-color-accent);
 }
 
 .p2p-pin-icon svg {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 .p2p-pin-optional {
@@ -295,15 +289,14 @@
         padding: var(--db-space-6) var(--db-space-4);
         margin-top: var(--db-space-6);
     }
-
     .p2p-dropzone-icon {
-        width: 4rem;
-        height: 4rem;
+        width: 3rem;
+        height: 3rem;
     }
 
     .p2p-dropzone-icon svg {
-        width: 2rem;
-        height: 2rem;
+        width: 1.5rem;
+        height: 1.5rem;
     }
 
     .p2p-status-h1 {
@@ -313,8 +306,7 @@
 
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
-    .p2p-dropzone,
-    .p2p-dropzone.active {
+    .p2p-dropzone {
         transition: none;
         transform: none;
     }

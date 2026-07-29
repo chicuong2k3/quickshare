@@ -9,16 +9,16 @@
         window.p2pDownload = (function () {
             var state = {
                 phase: 'checking', progress: 0, fileName: '', fileSize: 0, mimeType: '',
-                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), pin: '', error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), hasPin: false, _pinHash: null,
-                _salt: '', _receivedBytes: 0, _startTime: 0,
-                _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _encKey: null, _intentionalStop: false,
+                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''),
+                _receivedBytes: 0, _startTime: 0,
+                _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _intentionalStop: false,
                 _pendingOffer: null, _pendingIceCandidates: []
             };
 
             function render() {
-                [{p:'checking',id:'p2pd-checking'},{p:'pin-required',id:'p2pd-pin'},{p:'ready',id:'p2pd-ready'},{p:'connecting',id:'p2pd-ready'},{p:'transferring',id:'p2pd-transfer'},{p:'complete',id:'p2pd-complete'},{p:'waiting-sender',id:'p2pd-waiting'},{p:'error',id:'p2pd-error'}].forEach(function(s){hide(s.id);});
+                [{p:'checking',id:'p2pd-checking'},{p:'ready',id:'p2pd-ready'},{p:'connecting',id:'p2pd-ready'},{p:'transferring',id:'p2pd-transfer'},{p:'complete',id:'p2pd-complete'},{p:'waiting-sender',id:'p2pd-waiting'},{p:'error',id:'p2pd-error'}].forEach(function(s){hide(s.id);});
                 var phaseEls = {
-                    'checking': 'p2pd-checking', 'pin-required': 'p2pd-pin', 'ready': 'p2pd-ready',
+                    'checking': 'p2pd-checking', 'ready': 'p2pd-ready',
                     'connecting': 'p2pd-ready', 'transferring': 'p2pd-transfer', 'complete': 'p2pd-complete',
                     'waiting-sender': 'p2pd-waiting', 'error': 'p2pd-error'
                 };
@@ -31,11 +31,6 @@
                     var btnTxt = document.getElementById('p2pd-dl-text');
                     if (state.phase === 'connecting') { if (btn) btn.disabled = true; if (btnTxt) btnTxt.textContent = 'Connecting\u2026'; }
                     else { if (btn) btn.disabled = false; if (btnTxt) btnTxt.textContent = 'Download directly'; }
-                }
-                if (state.phase === 'pin-required') {
-                    var pinInput = document.getElementById('p2pd-pin-input');
-                    var pinBtn = document.getElementById('p2pd-pin-btn');
-                    if (pinBtn) pinBtn.disabled = state.phase !== 'pin-required';
                 }
                 if (state.phase === 'transferring') {
                     text('p2pd-transfer-name', state.fileName);
@@ -69,7 +64,7 @@
                 if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = 'Signaling client not loaded'; render(); return; }
                 state._signaling = new window.P2P.SignalingClient(api, state.shareCode);
                 state._signaling.onRegistered = function () {};
-                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; state.hasPin = meta.hasPin || false; state._pinHash = meta.pinHash || null; state.phase = state.hasPin ? 'pin-required' : 'ready'; render(); };
+                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; if (state.phase !== 'ready' && state.phase !== 'connecting' && state.phase !== 'transferring' && state.phase !== 'complete') { state.phase = 'ready'; } render(); };
                 state._signaling.onPeerJoined = function () { if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
                 state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
                 state._signaling.onRelay = function (type, data) {
@@ -79,30 +74,7 @@
                         state._pendingIceCandidates.push(data);
                     }
                 };
-                state._signaling.onError = function (msg) { state.phase = 'error'; state.error = msg || 'Connection failed'; render(); };
                 state._signaling.connect('receiver');
-            }
-
-            function submitPin() {
-                var pin = document.getElementById('p2pd-pin-input').value.trim();
-                if (!pin) return;
-                state.phase = 'connecting'; render();
-                if (state._pinHash) {
-                    window.P2P.encryption.hashPin(pin, state.shareCode).then(function (computedHash) {
-                        if (computedHash !== state._pinHash) {
-                            state.phase = 'pin-required'; state.error = 'Incorrect PIN'; render();
-                            return;
-                        }
-                        deriveAndReady(pin);
-                    }).catch(function () { state.phase = 'pin-required'; state.error = 'Verification failed'; render(); });
-                } else {
-                    deriveAndReady(pin);
-                }
-            }
-
-            function deriveAndReady(pin) {
-                var salt = pin + state.shareCode;
-                window.P2P.encryption.deriveKey(pin, salt).then(function (key) { state._encKey = key; state.phase = 'ready'; render(); }).catch(function () { state.phase = 'error'; state.error = 'Failed to derive encryption key'; render(); });
             }
 
             function startDownload() {
@@ -125,13 +97,13 @@
 
             function handleOffer(data) {
                 var sdp = data.sdp || data;
+                if (sdp && typeof sdp === 'object' && sdp.sdp) sdp = sdp.sdp;
                 state._peerConnection.createAnswer(sdp).then(function (answerSdp) { state._signaling.send('answer', { sdp: answerSdp }); }).catch(function () { state.phase = 'error'; state.error = 'Failed to handle WebRTC offer'; render(); });
             }
 
             function onDataChannel(channel) {
                 state._dataChannel = channel;
-                var enc = state._encKey ? { key: state._encKey, decrypt: window.P2P.encryption.decryptChunk } : null;
-                state._receiver = new window.P2P.FileReceiver(channel, enc);
+                state._receiver = new window.P2P.FileReceiver(channel, null);
                 state._startTime = Date.now();
                 state._receiver.onFileInfo = function (info) { state.fileName = info.name; state.fileSize = info.size; state.mimeType = info.mime; };
                 state._receiver.onProgress = function (rec, tot) { state.progress = Math.round((rec / tot) * 100); state._receivedBytes = rec; render(); };
@@ -144,6 +116,6 @@
             function cleanup() { if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-            return { submitPin: submitPin, startDownload: startDownload, cancelDownload: cancelDownload };
+            return { startDownload: startDownload, cancelDownload: cancelDownload };
         })();
     })();

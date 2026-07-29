@@ -69,37 +69,31 @@
     border-color: var(--db-color-accent);
     border-style: solid;
     background: var(--db-color-accent-subtle);
-    box-shadow:
-        0 0 0 3px color-mix(in srgb, var(--db-color-accent) 18%, transparent),
-        0 8px 32px color-mix(in srgb, var(--db-color-accent) 10%, transparent);
-    transform: scale(1.008);
 }
 
 .dropzone-icon {
     display: flex;
-    width: 5rem;
-    height: 5rem;
+    width: 3.5rem;
+    height: 3.5rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     background: var(--db-color-accent-subtle);
     color: var(--db-color-accent);
-    transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    transition: background 0.2s ease;
 }
 
 .dropzone:hover .dropzone-icon {
-    transform: translateY(-2px);
     background: color-mix(in srgb, var(--db-color-accent) 15%, transparent);
 }
 
 .dropzone.active .dropzone-icon {
     background: color-mix(in srgb, var(--db-color-accent) 20%, transparent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--db-color-accent) 12%, transparent);
 }
 
 .dropzone-icon svg {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
 }
 
 .dropzone-title {
@@ -269,19 +263,19 @@
 /* ─── Success icon ─── */
 .icon-success {
     display: flex;
-    width: 5rem;
-    height: 5rem;
+    width: 3.5rem;
+    height: 3.5rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     margin: 0 auto;
     background: var(--db-color-success-subtle);
     color: var(--db-color-success);
 }
 
 .icon-success svg {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
 }
 
 /* ─── Share box ─── */
@@ -327,31 +321,29 @@
 .share-input:focus {
     outline: none;
     border-color: var(--db-color-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent) 20%, transparent);
 }
 
 /* ─── Error icon ─── */
 .icon-error {
     display: flex;
-    width: 5rem;
-    height: 5rem;
+    width: 3.5rem;
+    height: 3.5rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     margin: 0 auto;
     background: var(--db-color-error-subtle);
     color: var(--db-color-error);
 }
 
 .icon-error svg {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
 }
 
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
-    .dropzone,
-    .dropzone.active {
+    .dropzone {
         transition: none;
         transform: none;
     }

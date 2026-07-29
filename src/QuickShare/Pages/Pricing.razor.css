@@ -82,7 +82,6 @@
 
 .card--popular {
     border: 2px solid var(--db-color-accent);
-    box-shadow: 0 4px 24px color-mix(in srgb, var(--db-color-accent) 15%, transparent);
     position: relative;
 }
 
@@ -152,6 +151,7 @@
 
 /* ─── FAQ ─── */
 .faq {
+    width: 100%;
     max-width: 48rem;
     margin-inline: auto;
     margin-top: var(--db-space-8);
@@ -163,6 +163,7 @@
 }
 
 .faq details {
+    width: 100%;
     border: 1px solid var(--db-color-border);
     border-radius: var(--db-radius-2);
     margin-bottom: var(--db-space-4);
@@ -187,8 +188,8 @@
     width: 1.25rem;
     height: 1.25rem;
     flex-shrink: 0;
-    opacity: 0.5;
-    transition: transform 0.2s;
+    margin-left: auto;
+    transition: rotate 250ms ease;
 }
 
 .faq details[open] summary .faq-chevron {
@@ -199,7 +200,21 @@
     padding: 0 1.25rem 1.25rem;
     border-top: 1px solid var(--db-color-border);
     font-size: var(--db-text-sm);
-    color: var(--db-color-text-secondary);
+    line-height: 1.7;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-width: 0;
+    transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease, border-top-width 0.35s ease;
+}
+
+.faq details[open] .faq-answer {
+    max-height: 24rem;
+    opacity: 1;
+    padding: 1rem 1.25rem 1.25rem;
+    border-top-width: 1px;
 }
 
 /* ─── CTA ─── */
@@ -218,13 +233,16 @@
     font-family: var(--db-font-heading);
     font-size: var(--db-text-xl);
     font-weight: var(--db-weight-bold);
-    color: var(--db-color-text);
-}
-
-.cta p {
-    margin-top: var(--db-space-3);
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-secondary);
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    .faq details,
+    .faq .faq-chevron,
+    .faq .faq-answer,
+    .cta {
+        transition: none !important;
+        animation: none !important;
+    }
 }
 
 .cta ::deep .db-btn {

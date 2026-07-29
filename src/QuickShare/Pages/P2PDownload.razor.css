@@ -21,11 +21,11 @@
 /* ─── Status icon (unified with Upload page) ─── */
 .icon-success {
     display: flex;
-    width: 4rem;
-    height: 4rem;
+    width: 3rem;
+    height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     margin: 0 auto var(--db-space-5);
     background: var(--db-color-success-subtle);
     color: var(--db-color-success);
@@ -33,11 +33,11 @@
 
 .icon-error {
     display: flex;
-    width: 4rem;
-    height: 4rem;
+    width: 3rem;
+    height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     margin: 0 auto var(--db-space-5);
     background: var(--db-color-error-subtle);
     color: var(--db-color-error);
@@ -45,11 +45,11 @@
 
 .icon-accent {
     display: flex;
-    width: 4rem;
-    height: 4rem;
+    width: 3rem;
+    height: 3rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     margin: 0 auto var(--db-space-5);
     background: var(--db-color-accent-subtle);
     color: var(--db-color-accent);
@@ -58,8 +58,8 @@
 .icon-success svg,
 .icon-error svg,
 .icon-accent svg {
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 /* ─── PIN input ─── */
@@ -79,7 +79,6 @@
 .input:focus {
     outline: none;
     border-color: var(--db-color-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent) 20%, transparent);
 }
 
 /* ─── File row ─── */
@@ -92,19 +91,19 @@
 
 .file-icon {
     display: flex;
-    width: 4rem;
-    height: 4rem;
+    width: 3rem;
+    height: 3rem;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-4);
+    border-radius: var(--db-radius-3);
     background: var(--db-color-accent-subtle);
     color: var(--db-color-accent);
 }
 
 .file-icon svg {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 /* ─── Progress bar ─── */

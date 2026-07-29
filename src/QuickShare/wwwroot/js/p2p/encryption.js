@@ -81,3 +81,4 @@
         generateSalt: generateSalt,
         hashPin: hashPin
     };
+})();

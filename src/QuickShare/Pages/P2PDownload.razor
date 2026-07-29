@@ -27,22 +27,6 @@
                 <p class="db-p" style="margin-top: 1.25rem">Connecting to sender&hellip;</p>
             </section>
 
-            @* PIN REQUIRED *@
-            <section id="p2pd-pin" class="section hidden">
-                <div class="icon-accent">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                </div>
-                <h1 class="db-h2" style="font-size: 1.25rem">PIN required</h1>
-                <p class="db-p" style="margin-top: 0.5rem">This file is protected. Enter the PIN to decrypt.</p>
-                <div style="margin-top: 1.5rem">
-                    <input id="p2pd-pin-input" type="text" class="input" placeholder="Enter PIN" />
-                </div>
-                <button id="p2pd-pin-btn" class="db-btn db-btn--primary" style="margin-top: 1.5rem" onclick="p2pDownload.submitPin()">
-                    <span id="p2pd-pin-text">Start download</span>
-                </button>
-            </section>
 
             @* READY *@
             <section id="p2pd-ready" class="hidden">
@@ -62,7 +46,7 @@
                         <span id="p2pd-dl-text">Download directly</span>
                     </button>
                 </div>
-                <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--db-color-text-muted); text-align: center">Direct peer-to-peer transfer &middot; encrypted &middot; no server copy</p>
+                <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--db-color-text-muted); text-align: center">Direct peer-to-peer transfer &middot; no server copy</p>
             </section>
 
             @* TRANSFERRING *@

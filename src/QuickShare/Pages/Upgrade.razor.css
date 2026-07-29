@@ -32,11 +32,10 @@
 .summary-card {
     max-width: 32rem;
     margin-inline: auto;
-    border: 2px solid var(--db-color-accent);
-    border-radius: var(--db-radius-4);
+    border: 1px solid var(--db-color-accent);
+    border-radius: var(--db-radius-3);
     background: var(--db-color-surface);
-    padding: var(--db-space-5);
-    box-shadow: 0 4px 24px color-mix(in srgb, var(--db-color-accent) 15%, transparent);
+    padding: var(--db-space-6);
 }
 
 .summary-card__head {

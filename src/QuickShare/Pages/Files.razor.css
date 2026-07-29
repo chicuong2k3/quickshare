@@ -68,7 +68,6 @@
 .search-input:focus {
     outline: none;
     border-color: var(--db-color-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent) 20%, transparent);
 }
 
 .search-clear {
@@ -307,7 +306,6 @@
 
 .file-row:hover {
     border-color: color-mix(in srgb, var(--db-color-border) 60%, transparent);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--db-color-bg) 60%, transparent);
 }
 
 .file-row.dragging {
@@ -483,7 +481,6 @@
     border-radius: var(--db-radius-3);
     border: 1px solid var(--db-color-border);
     background: var(--db-color-surface);
-    box-shadow: 0 4px 24px color-mix(in srgb, var(--db-color-bg) 80%, transparent);
 }
 
 .files-modal-card--danger {
@@ -546,7 +543,6 @@
 .modal-input:focus {
     outline: none;
     border-color: var(--db-color-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent) 20%, transparent);
 }
 
 .modal-error {

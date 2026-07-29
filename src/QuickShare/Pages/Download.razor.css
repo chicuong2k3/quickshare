@@ -56,7 +56,6 @@
 .input:focus {
     outline: none;
     border-color: var(--db-color-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent) 20%, transparent);
 }
 
 .error {
