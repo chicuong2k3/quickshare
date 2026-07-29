@@ -1,6 +1,6 @@
 namespace QuickShare.Features.Downloads.Download;
 
-public record DownloadDeliveryQuery(string ShareCode);
+public record DownloadDeliveryQuery(string ShareCode, string? Otp);
 
 public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
 {
@@ -28,12 +28,20 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             return;
         }
 
+        if (!string.IsNullOrEmpty(delivery.OtpHash))
+        {
+            if (string.IsNullOrEmpty(query.Otp) || !BCrypt.Net.BCrypt.Verify(query.Otp, delivery.OtpHash))
+            {
+                response.StatusCode = 403;
+                return;
+            }
+        }
+
         if (delivery.DownloadCount >= delivery.MaxDownloads)
         {
             response.StatusCode = 403;
             return;
         }
-
         if (string.IsNullOrEmpty(delivery.StoragePath))
         {
             response.StatusCode = 500;

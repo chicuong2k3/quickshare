@@ -189,7 +189,8 @@
             state._signaling.connect('sender', {
                 name: state._file.name,
                 size: state._file.size,
-                mime: state._file.type || 'application/octet-stream'
+                mime: state._file.type || 'application/octet-stream',
+                hasPin: !!state.pin
             });
         }
 

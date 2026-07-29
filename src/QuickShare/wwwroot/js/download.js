@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, otpVerifying: false, adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -29,8 +29,10 @@ window.downloadApp = (function () {
             }
 
             function init() {
+                var infoEl = document.getElementById('download-info-data');
+                if (!infoEl) { setTimeout(init, 50); return; }
                 var hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
-                var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
+                var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
                 state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
                 if (info.hasOtp) state.phase = 'otp';
                 else if (info.hasPassword) state.phase = 'password';
@@ -38,7 +40,6 @@ window.downloadApp = (function () {
                 else state.phase = 'file';
                 render(); fetchBranding();
             }
-
             function expiryLabel(e) { var r = new Date(e) - new Date(); if (r <= 0) return 'expired'; var m = Math.floor(r / 60000); if (m < 60) return 'expires in ' + m + ' min'; var h = Math.floor(m / 60); if (h < 24) return 'expires in ' + h + ' h'; var d = Math.floor(h / 24); return 'expires in ' + d + ' day' + (d === 1 ? '' : 's'); }
 
             function verifyPassword() {
@@ -91,6 +92,7 @@ window.downloadApp = (function () {
                         return r.ok ? r.json().catch(function () { return {}; }) : r.json().then(function (b) { throw b; }).catch(function () { throw {}; });
                     })
                     .then(function () {
+                        state.verifiedOtp = otp;
                         var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
                         if (info.hasPassword) state.phase = 'password';
                         else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
@@ -118,6 +120,7 @@ window.downloadApp = (function () {
                     .finally(function () { removeAttr('dl-report-submit', 'disabled'); text('dl-report-submit', 'Submit report'); }); }
 
             function handleDownload() { state.downloading = true; render(); var code = shareCode(); var url = apiBase() + '/api/downloads/' + code;
+                if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);
                 if (state.isEncrypted) { decryptAndSave(url)['catch'](function (e) { if (window.DAUB) DAUB.toast('Download failed: ' + e.message, 'error'); })['finally'](function () { state.downloading = false; render(); }); }
                 else { state.downloading = false; window.location.href = url; } }
 

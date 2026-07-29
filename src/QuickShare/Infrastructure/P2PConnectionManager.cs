@@ -22,6 +22,7 @@ public sealed class P2PRoom
     public string? FileName { get; set; }
     public long? FileSize { get; set; }
     public string? MimeType { get; set; }
+    public bool HasPin { get; set; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime LastActivity { get; set; }
     public bool SenderConnected => Sender?.State == WebSocketState.Open;

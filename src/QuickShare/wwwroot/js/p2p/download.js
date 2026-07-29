@@ -69,7 +69,7 @@
                 if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = 'Signaling client not loaded'; render(); return; }
                 state._signaling = new window.P2P.SignalingClient(api, state.shareCode);
                 state._signaling.onRegistered = function () {};
-                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; state.phase = state.hasPin ? 'pin-required' : 'ready'; render(); };
+                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; state.hasPin = meta.hasPin || false; state.phase = state.hasPin ? 'pin-required' : 'ready'; render(); };
                 state._signaling.onPeerJoined = function () { if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
                 state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
                 state._signaling.onRelay = function (type, data) {

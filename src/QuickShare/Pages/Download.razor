@@ -18,6 +18,10 @@
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
 <PageWrapper id="download-app" Variant="PageVariant.Centered">
+    @if (Info is not null)
+    {
+        <script id="download-info-data" type="application/json">@RawJson(Info)</script>
+    }
     <div class="card db-card">
         <div class="db-card__body">
             @switch (RenderState)
@@ -30,8 +34,6 @@
                     break;
 
                 case DownloadRenderState.Ready:
-                    <script id="download-info-data" type="application/json">@RawJson(Info)</script>
-
                     @* Password Gate *@
                     <div id="download-phase-password" class="db-text-center hidden">
                         <div class="icon-box --lock">
@@ -262,6 +264,7 @@
                 DownloadCount = value.DownloadCount,
                 MaxDownloads = value.MaxDownloads,
                 HasPassword = value.HasPassword,
+                HasOtp = value.HasOtp,
                 SenderPlan = value.SenderPlan
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? $"expires {ExpiryCountdown(Info.ExpiresAt.Value)}" : "no expiry";
@@ -270,7 +273,7 @@
         catch { RenderState = DownloadRenderState.Error; }
     }
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
     private static string FormatBytes(long bytes)
     {
@@ -310,7 +313,7 @@
     {
         public string FileName { get; set; } = ""; public string ContentType { get; set; } = ""; public long FileSize { get; set; }
         public DateTime? ExpiresAt { get; set; } public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
-        public bool HasPassword { get; set; } public string SenderPlan { get; set; } = "";
+        public bool HasPassword { get; set; } public bool HasOtp { get; set; } public string SenderPlan { get; set; } = "";
     }
 }
 

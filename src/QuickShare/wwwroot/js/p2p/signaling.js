@@ -43,7 +43,7 @@
             self.reconnectAttempts = 0;
             var msg = { type: 'register', role: role };
             if (role === 'sender' && fileMeta) {
-                msg.fileMeta = { name: fileMeta.name, size: fileMeta.size, mime: fileMeta.mime };
+                msg.fileMeta = { name: fileMeta.name, size: fileMeta.size, mime: fileMeta.mime, hasPin: fileMeta.hasPin || false };
             }
             self._sendMessage(msg);
         };
@@ -114,7 +114,8 @@
                 if (this.onFileMeta) this.onFileMeta({
                     fileName: data.fileName,
                     fileSize: data.fileSize,
-                    mimeType: data.mimeType
+                    mimeType: data.mimeType,
+                    hasPin: data.hasPin || false
                 });
                 break;
             case 'waiting':
