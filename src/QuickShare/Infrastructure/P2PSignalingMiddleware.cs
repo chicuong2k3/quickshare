@@ -205,6 +205,7 @@ public sealed class P2PSignalingMiddleware
                         currentRoom.FileSize = meta.TryGetProperty("size", out var s) && s.TryGetInt64(out var size) ? size : null;
                         currentRoom.MimeType = meta.TryGetProperty("mime", out var m) ? m.GetString() : null;
                         currentRoom.HasPin = meta.TryGetProperty("hasPin", out var hp) && hp.GetBoolean();
+                        currentRoom.PinHash = meta.TryGetProperty("pinHash", out var ph) && ph.ValueKind != JsonValueKind.Null ? ph.GetString() : null;
                     }
                 }
             }
@@ -231,7 +232,8 @@ public sealed class P2PSignalingMiddleware
                             fileName = room.FileName,
                             fileSize = room.FileSize,
                             mimeType = room.MimeType,
-                            hasPin = room.HasPin
+                            hasPin = room.HasPin,
+                            pinHash = room.PinHash
                         }, ct);
                     }
                     else
@@ -258,14 +260,14 @@ public sealed class P2PSignalingMiddleware
             if (hasSender && room != null)
             {
                 await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined", receiverId }, ct);
-
                 await _manager.SendToSocketAsync(ws, new
                 {
                     type = "file-meta",
                     fileName = room.FileName,
                     fileSize = room.FileSize,
                     mimeType = room.MimeType,
-                    hasPin = room.HasPin
+                    hasPin = room.HasPin,
+                    pinHash = room.PinHash
                 }, ct);
             }
             else

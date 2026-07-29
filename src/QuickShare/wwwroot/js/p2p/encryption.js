@@ -66,11 +66,18 @@
         return Array.from(salt, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
+    async function hashPin(pin, salt) {
+        var enc = new TextEncoder();
+        var data = enc.encode(pin + '|' + salt);
+        var hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    }
+
     window.P2P = window.P2P || {};
     window.P2P.encryption = {
         deriveKey: deriveKey,
         encryptChunk: encryptChunk,
         decryptChunk: decryptChunk,
-        generateSalt: generateSalt
+        generateSalt: generateSalt,
+        hashPin: hashPin
     };
-})();

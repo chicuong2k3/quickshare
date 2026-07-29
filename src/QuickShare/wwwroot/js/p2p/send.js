@@ -168,17 +168,20 @@
 
         // --- Signaling ---
 
-        function connectSignaling() {
-            if (!window.P2P || !window.P2P.SignalingClient) {
-                state.error = 'Signaling client not loaded'; setPhase('failed'); return;
+        async function connectSignaling() {
+            if (state._signaling) {
+                state._signaling.close();
+                state._signaling = null;
             }
             state._signaling = new window.P2P.SignalingClient(apiBase(), state.shareCode);
             state._signaling.onRegistered = function () {};
             state._signaling.onPeerJoined = function (receiverId) { onPeerJoined(receiverId); };
             state._signaling.onPeerLeft = function (message, receiverId) {
-                if (receiverId) onReceiverLeft(receiverId);
+                var idx = -1;
+                for (var i = 0; i < state._receiverList.length; i++) { if (state._receiverList[i].id === receiverId) { idx = i; break; } }
+                if (idx >= 0) { state._receiverList.splice(idx, 1); render(); }
+                delete state._receivers[receiverId];
             };
-            state._signaling.onError = function (msg) { state.error = msg || 'Connection lost'; setPhase('failed'); };
             state._signaling.onRelay = function (type, data, receiverId) {
                 if (type === 'answer') onAnswer(data, receiverId);
                 else if (type === 'ice' && data && receiverId) {
@@ -186,12 +189,16 @@
                     if (rcv && rcv.pc) rcv.pc.addIceCandidate(data);
                 }
             };
-            state._signaling.connect('sender', {
+            var fileMeta = {
                 name: state._file.name,
                 size: state._file.size,
                 mime: state._file.type || 'application/octet-stream',
                 hasPin: !!state.pin
-            });
+            };
+            if (state.pin) {
+                fileMeta.pinHash = await window.P2P.encryption.hashPin(state.pin, state.shareCode);
+            }
+            state._signaling.connect('sender', fileMeta);
         }
 
         // --- WebRTC ---

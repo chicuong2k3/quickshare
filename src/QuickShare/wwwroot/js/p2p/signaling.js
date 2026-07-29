@@ -43,7 +43,7 @@
             self.reconnectAttempts = 0;
             var msg = { type: 'register', role: role };
             if (role === 'sender' && fileMeta) {
-                msg.fileMeta = { name: fileMeta.name, size: fileMeta.size, mime: fileMeta.mime, hasPin: fileMeta.hasPin || false };
+                msg.fileMeta = { name: fileMeta.name, size: fileMeta.size, mime: fileMeta.mime, hasPin: fileMeta.hasPin || false, pinHash: fileMeta.pinHash || null };
             }
             self._sendMessage(msg);
         };
@@ -115,7 +115,8 @@
                     fileName: data.fileName,
                     fileSize: data.fileSize,
                     mimeType: data.mimeType,
-                    hasPin: data.hasPin || false
+                    hasPin: data.hasPin || false,
+                    pinHash: data.pinHash || null
                 });
                 break;
             case 'waiting':

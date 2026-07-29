@@ -9,7 +9,7 @@
         window.p2pDownload = (function () {
             var state = {
                 phase: 'checking', progress: 0, fileName: '', fileSize: 0, mimeType: '',
-                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), pin: '', error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), hasPin: false,
+                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), pin: '', error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), hasPin: false, _pinHash: null,
                 _salt: '', _receivedBytes: 0, _startTime: 0,
                 _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _encKey: null, _intentionalStop: false,
                 _pendingOffer: null, _pendingIceCandidates: []
@@ -69,7 +69,7 @@
                 if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = 'Signaling client not loaded'; render(); return; }
                 state._signaling = new window.P2P.SignalingClient(api, state.shareCode);
                 state._signaling.onRegistered = function () {};
-                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; state.hasPin = meta.hasPin || false; state.phase = state.hasPin ? 'pin-required' : 'ready'; render(); };
+                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; state.hasPin = meta.hasPin || false; state._pinHash = meta.pinHash || null; state.phase = state.hasPin ? 'pin-required' : 'ready'; render(); };
                 state._signaling.onPeerJoined = function () { if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
                 state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
                 state._signaling.onRelay = function (type, data) {
@@ -87,6 +87,20 @@
                 var pin = document.getElementById('p2pd-pin-input').value.trim();
                 if (!pin) return;
                 state.phase = 'connecting'; render();
+                if (state._pinHash) {
+                    window.P2P.encryption.hashPin(pin, state.shareCode).then(function (computedHash) {
+                        if (computedHash !== state._pinHash) {
+                            state.phase = 'pin-required'; state.error = 'Incorrect PIN'; render();
+                            return;
+                        }
+                        deriveAndReady(pin);
+                    }).catch(function () { state.phase = 'pin-required'; state.error = 'Verification failed'; render(); });
+                } else {
+                    deriveAndReady(pin);
+                }
+            }
+
+            function deriveAndReady(pin) {
                 var salt = pin + state.shareCode;
                 window.P2P.encryption.deriveKey(pin, salt).then(function (key) { state._encKey = key; state.phase = 'ready'; render(); }).catch(function () { state.phase = 'error'; state.error = 'Failed to derive encryption key'; render(); });
             }
