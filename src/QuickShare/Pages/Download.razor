@@ -86,7 +86,7 @@
                                 <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M7 4v16 M17 4v16 M2 12h20 M2 8h20" />
                             </svg>
                         </div>
-                        <h3 class="db-h3" style="font-size: 1rem">QuickShareCloud</h3>
+                        <h3 class="db-h3" style="font-size: 1rem">Powered by QuickShareCloud</h3>
                         <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Send large files securely with end-to-end encryption. <a href="/pricing" class="link">Upgrade for more</a></p>
                         <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.75rem; color: var(--db-color-text-muted)">
                             <svg class="badge--sovereign" style="width: 0.875rem; height: 0.875rem" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
@@ -102,7 +102,7 @@
                             <img id="dl-brand-logo" class="brand-logo hidden" alt="Sender" />
                                 <div>
                                     <p style="font-size: 0.75rem; font-weight: 500; color: color-mix(in srgb, var(--db-color-text-muted) 60%, transparent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.125rem">Sender</p>
-                                    <p id="dl-brand-message" style="font-size: 0.875rem">Sent a file for you</p>
+                                    <p id="dl-brand-message" style="font-size: 0.875rem">Sent you a file</p>
                                 </div>
                             </div>
                         </div>
@@ -126,18 +126,18 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                                 </svg>
-                                Sovereign
+                                Verified
                             </button>
                         </div>
 
                         <div id="dl-zk-panel" class="zk-panel hidden">
                             <div class="zk-row">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">Attestation verified</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File integrity confirmed via sovereign attestation channel.</p></div>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">File integrity confirmed</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File integrity verified via cryptographic attestation.</p></div>
                             </div>
                             <div class="zk-row">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">No sovereign override detected</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">Delivery chain has not been tampered with.</p></div>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">No tampering detected</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File has not been tampered with since upload.</p></div>
                             </div>
                             <div class="zk-row">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -164,7 +164,7 @@
                         <div style="margin-top: 1.5rem; text-align: center">
                             <button id="" type="button" class="report-toggle" onclick="downloadApp.toggleReport()">Report abuse</button>
                             <div id="dl-report-form" class="report-form hidden">
-                                <p style="font-size: 0.75rem; font-weight: 500; color: var(--db-color-text); margin-bottom: 0.75rem">Report this delivery</p>
+                                <p style="font-size: 0.75rem; font-weight: 500; color: var(--db-color-text); margin-bottom: 0.75rem">Report this file</p>
                                 <div class="report-fields">
                                     <select id="dl-report-reason" class="select">
                                         <option value="">Select a reason</option>
@@ -189,8 +189,8 @@
                                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This delivery has expired</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Deliveries are removed automatically after expiry. Ask the sender to re-send.</p>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This shared file has expired</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Shared files are removed automatically after expiry. Ask the sender to re-send.</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
                     </div>
                     break;
@@ -203,7 +203,7 @@
                             </svg>
                         </div>
                         <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This link doesn&rsquo;t exist</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">The delivery may have been removed or the link is incorrect.</p>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">The file may have been removed or the link is incorrect.</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
                     </div>
                     break;
@@ -211,7 +211,7 @@
                 case DownloadRenderState.LimitReached:
                     <div class="db-text-center" style="padding: 2.5rem 0">
                         <h1 class="db-h1" style="font-size: 1.25rem">Download limit reached</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">This delivery has reached its download cap. Ask the sender to re-send.</p>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">This shared file has reached its download limit. Ask the sender to re-send.</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
                     </div>
                     break;

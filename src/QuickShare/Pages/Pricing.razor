@@ -18,7 +18,7 @@
 
     @* â”€â”€ HERO â”€â”€ *@
     <section class="hero">
-        <span class="tag">Transparent pricing</span>
+        <span class="tag">Simple pricing</span>
         <h1 class="db-h1">Simple, transparent pricing</h1>
         <p class="db-p db-text-muted">Choose the plan that fits your needs. No hidden fees. Cancel anytime.</p>
     </section>
@@ -109,7 +109,11 @@
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>500 GB</strong> / month</span>
+                        <span><strong>50 GB</strong> / month</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span><strong>100</strong> transfers/month</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -149,7 +153,7 @@
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>Unlimited</strong> storage</span>
+                        <span><strong>500 GB</strong> / month</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -197,10 +201,10 @@
     @* â”€â”€ CTA â”€â”€ *@
     <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
         <h3 class="cta__title">Ready to get started?</h3>
-        <p class="db-text-muted">All plans include a 14-day free trial. No credit card required.</p>
+        <p class="db-text-muted">Start free, no credit card required. Pro and Studio include a 14-day trial.</p>
         <a href="@(isAuthenticated ? "/upgrade" : "/login")"
            x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')"
-           class="db-btn db-btn--primary">Start Your Free Trial</a>
+           class="db-btn db-btn--primary">Get Started</a>
     </section>
 
 </PageWrapper>
@@ -218,12 +222,12 @@
 
     private static readonly (string Question, string Answer)[] faqs = new[]
     {
-        ("What's included in all plans?", "All plans include end-to-end encryption, password protection, and 24/7 customer support. Differences are file sizes, monthly storage limits, and transfer counts."),
+        ("What's included in all plans?", "All plans include end-to-end encryption. Password protection, custom branding, and priority support are available on Pro and Studio plans."),
         ("Can I upgrade or downgrade anytime?", "Yes! Change your plan anytime. Upgrades take effect immediately, and downgrades apply at the end of your billing cycle."),
         ("Is there a free trial?", "Absolutely. All paid plans include a 14-day free trial with full access. No credit card required to start."),
         ("What happens to my files if I cancel?", "Your files remain accessible for 7 days after cancellation. Download them anytime during this period."),
         ("Do you offer refunds?", "We offer a full refund within 30 days of purchase if you're not satisfied. After that, you can cancel anytime with no penalties."),
-        ("Can I get a custom plan?", "Yes! Contact our sales team for enterprise pricing, team features, and dedicated support options."),
+        ("Can I get a custom plan?", "Yes! Contact us at support@quicksharecloud.com for enterprise pricing, team features, and dedicated support options."),
     };
 }
 

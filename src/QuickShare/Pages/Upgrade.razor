@@ -210,8 +210,8 @@
         ? "For teams & enterprises"
         : "For creators & professionals";
     private string planSummary => selectedPlan == "studio"
-        ? "unlimited storage, unlimited transfers, API access, and dedicated support"
-        : "1 GB per file, 50 GB monthly storage, password protection, and priority support";
+        ? "500 GB monthly storage, unlimited transfers, API access, and dedicated support"
+        : "1 GB per file, 50 GB monthly storage, 100 transfers/month, password protection, and priority support";
     private string planMonthlyPrice => FormatPrice(
         selectedPlan == "studio"
             ? Config.GetValue<int>("Pricing:StudioMonthly", 29)
