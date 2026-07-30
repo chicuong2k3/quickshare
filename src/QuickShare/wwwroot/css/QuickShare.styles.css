@@ -1928,6 +1928,8 @@
     font-family: var(--db-font-heading);
     font-size: var(--db-text-xl);
     font-weight: var(--db-weight-bold);
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
     .card[b-28844fozmi],
@@ -1940,7 +1942,7 @@
     }
 }
 
-.cta ::deep .db-btn {
+.cta[b-28844fozmi]  .db-btn {
     margin-top: var(--db-space-5);
 }
 

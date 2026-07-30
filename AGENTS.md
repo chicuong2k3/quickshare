@@ -41,16 +41,17 @@ protected override async Task OnInitializedAsync()
      hx-get="/page-url"
      hx-trigger="load"
      hx-target="#page-content"
+     hx-select="#page-content"
      hx-swap="outerHTML">
     @* skeleton markup *@
 </div>
 ```
-
 ```html
 @* All navigation links use HTMX *@
 <a href="/page?filter=X"
    hx-get="/page?filter=X"
    hx-target="#page-content"
+   hx-select="#page-content"
    hx-swap="outerHTML"
    hx-push-url="true">Filter X</a>
 ```
@@ -65,6 +66,22 @@ protected override async Task OnInitializedAsync()
 - **MainLayout MUST inherit `LayoutComponentBase`** (not `HtmxLayoutComponentBase`). If MainLayout inherits `HtmxLayoutComponentBase`, HTMXor will treat it as a valid HTMX layout and use it for partial requests, returning full nav + footer.
 - **HtmxorLayout inherits `HtmxLayoutComponentBase`** and renders only `@Body` — this is used automatically for HTMX partial responses via `[HtmxLayout(typeof(HtmxorLayout))]` in `_Imports.razor`.
 - `@layout MainLayout` on individual pages is fine — `[HtmxLayout]` will override it for HTMX requests.
+
+### HTMXor Direct Routing (.NET 10 compatibility)
+
+- **`AddHtmxorComponentEndpoints(app)` is NOT compatible with .NET 10** — it uses reflection to access internal Blazor APIs that changed between .NET 8 and .NET 10. Calling it throws `NullReferenceException` at startup. Do NOT add it to `Program.cs`.
+- **Without Direct Routing, ALL HTMX responses return full HTML pages** (including `<html>`, `<head>`, nav, footer from `App.razor`). The `[HtmxLayout]` attribute only affects the layout INSIDE the page pipeline; it does NOT strip the outer HTML document.
+- **Workaround: always use `hx-select`** on every element that uses `hx-get`/`hx-post` + `hx-target`. This tells HTMX to extract only the targeted element from the full HTML response before swapping.
+- Pattern:
+  ```html
+  <div id="my-content"
+       hx-get="/page"
+       hx-trigger="load"
+       hx-target="#my-content"
+       hx-select="#my-content"
+       hx-swap="outerHTML">
+  ```
+- **Without `hx-select`, the full HTML document is injected into the target element**, causing duplicate nav/footer and broken layout.
 
 ## Code Style
 

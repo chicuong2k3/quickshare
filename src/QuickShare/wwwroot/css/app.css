@@ -352,6 +352,8 @@ body::after,
 
 /* Page content wrapper — center + constrain */
 .page {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 72rem;
     margin: 0 auto;
@@ -371,6 +373,10 @@ body::after,
 }
 
 .page--fill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     max-width: 42rem;
 }
 

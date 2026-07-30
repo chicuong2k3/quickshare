@@ -233,6 +233,8 @@
     font-family: var(--db-font-heading);
     font-size: var(--db-text-xl);
     font-weight: var(--db-weight-bold);
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
     .card,

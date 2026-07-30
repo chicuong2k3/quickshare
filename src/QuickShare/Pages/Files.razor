@@ -32,6 +32,7 @@
                      hx-get="/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))"
                      hx-trigger="load"
                      hx-target="#files-content"
+                     hx-select="#files-content"
                      hx-swap="outerHTML">
                     <div class="head-row">
                         <div><h1 style="font-weight:800;letter-spacing:-0.025em;color:var(--db-color-text)">Files</h1></div>
@@ -73,6 +74,7 @@
                             <button type="button" class="search-clear" aria-label="Clear search"
                                     hx-get="/files@(string.IsNullOrEmpty(FolderId) ? "" : "?folderId=" + Uri.EscapeDataString(FolderId))"
                                     hx-target="#files-content"
+                                    hx-select="#files-content"
                                     hx-swap="outerHTML"
                                     hx-push-url="true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -127,6 +129,7 @@
                         <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? "" : "?search=" + Uri.EscapeDataString(SearchTerm))"
                            hx-get="/files@(string.IsNullOrEmpty(SearchTerm) ? "?search=" + Uri.EscapeDataString(SearchTerm) : "")"
                            hx-target="#files-content"
+                           hx-select="#files-content"
                            hx-swap="outerHTML"
                            hx-push-url="true"
                            role="listitem" class="folder-pill @(string.IsNullOrEmpty(FolderId) ? "--active" : "--inactive")">
@@ -143,6 +146,7 @@
                                 <a href="@GetFolderUrl(folder.Id)"
                                    hx-get="@GetFolderUrl(folder.Id)"
                                    hx-target="#files-content"
+                                   hx-select="#files-content"
                                    hx-swap="outerHTML"
                                    hx-push-url="true"
                                    class="folder-pill @(string.Equals(FolderId, folder.Id.ToString(), StringComparison.OrdinalIgnoreCase) ? "--active" : "--inactive")">
@@ -200,7 +204,7 @@
                             </div>
                             <h3 style="margin-top: 1.25rem; font-size: 1.125rem; font-weight: 600">Couldn&rsquo;t load files</h3>
                             <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--db-color-text-muted)">There was a problem fetching your files. Please try again.</p>
-                            <a href="/files" hx-get="/files" hx-target="#files-content" hx-swap="outerHTML" class="db-btn db-btn--primary" style="margin-top: 2rem">Retry</a>
+                            <a href="/files" hx-get="/files" hx-target="#files-content" hx-select="#files-content" hx-swap="outerHTML" class="db-btn db-btn--primary" style="margin-top: 2rem">Retry</a>
                         </div>
                     </div>
                 }
@@ -216,7 +220,7 @@
                             @if (!string.IsNullOrEmpty(SearchTerm))
                             {
                                 <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--db-color-text-muted)">
-                                    No files matching &ldquo;@SearchTerm&rdquo;. <a href="/files" hx-get="/files" hx-target="#files-content" hx-swap="outerHTML" style="color: var(--db-color-accent); cursor: pointer">Clear search</a>
+                                    No files matching &ldquo;@SearchTerm&rdquo;. <a href="/files" hx-get="/files" hx-target="#files-content" hx-select="#files-content" hx-swap="outerHTML" style="color: var(--db-color-accent); cursor: pointer">Clear search</a>
                                 </p>
                             }
                             <a href="/" class="db-btn db-btn--primary" style="margin-top: 2rem">Upload a file</a>
