@@ -327,6 +327,57 @@ body::after,
     }
 }
 
+/* ─── Layout fixes: navbar, footer, page structure ─── */
+.db-navbar {
+    height: 3.5rem !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(28,22,16,0.06) !important;
+    box-shadow: none !important;
+}
+
+.layout-root {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+}
+
+.layout-footer {
+    margin-top: auto !important;
+    padding: var(--db-space-4) 0 !important;
+    text-align: center;
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted);
+    border-top: 1px solid rgba(28,22,16,0.06);
+}
+
+/* Page content wrapper — center + constrain */
+.page {
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: var(--db-space-6) var(--db-space-4);
+    flex: 1;
+}
+
+.page--padded {
+    padding: var(--db-space-8) var(--db-space-4);
+}
+
+.page--centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 32rem;
+}
+
+.page--fill {
+    max-width: 42rem;
+}
+
+.page--account {
+    max-width: 32rem;
+}
+
 /* ─── Kira heading & paragraph margins — generous breathing room ─── */
 .db-h1, h1 { margin: 0 0 22px 0; }
 .db-h2, h2 { margin: 0 0 16px 0; }
