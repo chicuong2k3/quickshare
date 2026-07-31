@@ -6,6 +6,7 @@ using FastEndpoints.Swagger;
 using System.Security.Claims;
 using QuickShare;
 using QuickShare.Features.Deliveries;
+using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Storage;
@@ -71,8 +72,10 @@ builder.Services.AddHostedService<DeliveryCleanupService>();
 builder.Services.AddHostedService<ZombiePartSweeper>();
 builder.Services.AddHostedService<DeliveryExpiryJob>();
 builder.Services.AddHostedService<SubscriptionExpiryJob>();
+builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 
 builder.Services.AddScoped<DeliveryService>();
+builder.Services.AddScoped<PayOSService>();
 
 
 builder.Host.UseWolverine(opts =>

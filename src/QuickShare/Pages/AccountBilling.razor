@@ -1,9 +1,9 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/account/billing"
 @attribute [Authorize]
 @attribute [StreamRendering]
 @using QuickShare.Data
-@using QuickShare.Features.Payments.Kofi
+@using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.Subscriptions
 @using Microsoft.AspNetCore.Http
 @inject AppDbContext Db

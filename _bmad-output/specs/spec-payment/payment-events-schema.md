@@ -2,39 +2,37 @@
 
 ## `payment_events` Table
 
-Stores every Ko-fi webhook event for subscription history display.
+Stores every PayOS webhook event for subscription history display.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `Id` | `uuid` | Primary key |
 | `UserId` | `uuid` | FK → `users.Id` |
-| `EventType` | `text` | `subscription_created`, `subscription_renewed`, `subscription_cancelled`, `subscription_expired` |
+| `EventType` | `text` | `"payment"` for PayOS one-time/subscription payments |
 | `Plan` | `text` | `pro` or `studio` |
 | `PlanDisplay` | `text` | Human-friendly: `"Pro"`, `"Studio"` |
 | `Billing` | `text` | `monthly` or `yearly` |
-| `Amount` | `decimal` | Payment amount in USD |
-| `Currency` | `text` | `"USD"` (Ko-fi default) |
-| `InvoiceId` | `text` | Ko-fi invoice/reference ID |
-| `InvoiceUrl` | `text` | Ko-fi receipt URL (from webhook body) |
+| `Amount` | `decimal` | Payment amount in VND |
+| `Currency` | `text` | `"VND"` (PayOS default) |
+| `InvoiceId` | `text` | PayOS transaction reference |
+| `InvoiceUrl` | `text` | PayOS receipt URL (optional, not always available) |
 | `CreatedAt` | `timestamp with time zone` | When webhook was received (set by `AuditableEntityInterceptor`) |
 
-## Webhook Event → Row Mapping
+## Webhook Data → Row Mapping
 
-| Webhook Field | Column |
-|---------------|--------|
-| `type` | `EventType` |
-| `tier_name` (or product lookup) | `Plan`, `PlanDisplay` |
-| `is_recurring_yearly` | `Billing` |
-| `amount` | `Amount` |
-| `currency` | `Currency` |
-| `kofi_transaction_id` | `InvoiceId` |
-| `receipt_url` or `invoice_url` | `InvoiceUrl` |
+| PayOS Webhook Field | Column |
+|---------------------|--------|
+| `data.orderCode` | Stored on `PaymentIntent.PayOSOrderCode` |
+| `data.amount` | `Amount` |
+| `data.currency` | `Currency` |
+| `data.reference` | `InvoiceId` |
+| `data.paymentLinkId` | `InvoiceUrl` (optional) |
 
 ## Account Billing Page Query
 
 The `/account/billing` page needs:
 1. Current user's `Plan` + `PlanDisplay` from the `users` table
-2. Most recent `payment_events` row for this user where `EventType = 'subscription_created'` or `'subscription_renewed'` (to show next billing date: `CreatedAt + 1 month/year`)
+2. Most recent `payment_events` row for this user (to show next billing date: `CreatedAt + 1 month/year`)
 3. All `payment_events` for this user, ordered by `CreatedAt DESC`, for the history timeline
 
 ## Billing Period Display Logic
@@ -55,7 +53,7 @@ public class PaymentEvent : BaseAuditEntity
     public string PlanDisplay { get; set; } = "";
     public string Billing { get; set; } = "";
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "VND";
     public string InvoiceId { get; set; } = "";
     public string InvoiceUrl { get; set; } = "";
 

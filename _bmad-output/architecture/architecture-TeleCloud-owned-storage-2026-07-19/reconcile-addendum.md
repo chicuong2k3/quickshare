@@ -22,7 +22,7 @@
 - Atomic commit with resume capability → AD-5 (transaction boundaries), AD-3 (UploadSession state)
 
 **Payment Architecture (§E, §F)**
-- Stripe unavailable in Vietnam → AD-11 (Ko-fi webhook primary, VietQR deferred as implementation detail)
+- Stripe unavailable in Vietnam → AD-11 (PayOS webhook primary)
 - Transaction-based delivery unlock → AD-11 (webhook signature verification)
 
 **Vietnam Market (§F)**
@@ -89,7 +89,7 @@
 - Optimal chunk size (256-512MB) → Configuration-driven, not invariant
 
 **Webhook Security Details**
-- Ko-fi signature verification mechanism → Implementation detail
+- PayOS HMAC signature verification mechanism → Implementation detail
 
 ## Critical Gaps
 

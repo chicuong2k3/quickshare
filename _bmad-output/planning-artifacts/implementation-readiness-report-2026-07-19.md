@@ -158,7 +158,7 @@ The PRD is **final and complete** with 22 numbered FRs and 9 extracted NFRs. All
 | FR-9 | Server-enforced quota | Epic 1 — Story 1.6 (Accounts & Plans) | ✅ Covered |
 | FR-10 | Link expiry | Epic 1 — Story 1.7 (Delivery Controls) | ✅ Covered |
 | FR-11 | Download-count cap | Epic 1 — Story 1.7 (Delivery Controls) | ✅ Covered |
-| FR-12 | Paid delivery via Ko-fi | Epic 2 — Story 2.4 (Paid Delivery via Ko-fi) | ✅ Covered |
+| FR-12 | Paid delivery via PayOS | Epic 2 — Story 2.4 (Paid Delivery via PayOS) | ✅ Covered |
 | FR-13 | Egress passthrough (Studio tier) | Post-MVP (excluded per PRD §6.2) | ✅ Acknowledged |
 | FR-14 | Password protection | Epic 2 — Story 2.1 (Password Protection) | ✅ Covered |
 | FR-15 | Branded delivery page | Epic 2 — Story 2.2 (Branded Delivery Page) | ✅ Covered |
@@ -209,7 +209,7 @@ The PRD is **final and complete** with 22 numbered FRs and 9 extracted NFRs. All
 | Password gate | Server-side password gate (AR-19), server withholds Manifest | ✅ Supported |
 | Branded delivery | Ad injection at template level via PlanId lookup (AR-18), per-Delivery branding config | ✅ Supported |
 | Download tracking | IP-based DownloadTracking entity (AR-10), atomic counter (AR-16) | ✅ Supported |
-| Payment (Ko-fi) | Ko-fi webhook signature validation, atomic Delivery unlock (AR-11) | ✅ Supported |
+| Payment (PayOS) | PayOS webhook signature verification, atomic Delivery unlock (AR-11) | ✅ Supported |
 | Trust verification | Zero-knowledge dev tools guide (AR-20), inspectable WASM/JS crypto | ✅ Supported |
 | Report → takedown | Immediate chunk+manifest deletion on report (covered in stories 3.2) | ✅ Supported |
 | Ad placement (Free tier) | Template-level ad injection by PlanId (AR-18), clean trial via User.CleanDeliveriesRemaining | ✅ Supported |
@@ -250,7 +250,7 @@ None. UX documentation is complete and aligned with PRD and Architecture.
 | Epic | Stories | Forward Dependencies? |
 |---|---|---|
 | Epic 1 | 1.1 (foundation) → 1.2 (upload API) → 1.3 (download) → 1.4 (encryption) → 1.5 (upload UI) → 1.6 (accounts) → 1.7 (delivery controls) → 1.8 (file management) | ✅ None — each builds on previous stories only |
-| Epic 2 | 2.1 (password) → 2.2 (branded page) → 2.3 (tracking) → 2.4 (ko-fi paid) → 2.5 (trust verification) | ✅ None — all independent of each other, all depend on Epic 1 foundation |
+| Epic 2 | 2.1 (password) → 2.2 (branded page) → 2.3 (tracking) → 2.4 (payos paid) → 2.5 (trust verification) | ✅ None — all independent of each other, all depend on Epic 1 foundation |
 | Epic 3 | 3.1 (guardrails) → 3.2 (report) → 3.3 (ads) → 3.4 (clean trial) → 3.5 (anti-adblock) | ✅ None — stories 3.4 and 3.5 depend on 3.3 (ad system), no forward references beyond Epic 3 |
 
 ### Story Quality

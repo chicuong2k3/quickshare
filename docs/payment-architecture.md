@@ -2,11 +2,13 @@
 
 ## Overview
 
-QuickShare uses **Ko-fi as a pure payment gateway** — it processes payments and sends webhooks, but does not manage subscription lifecycle. There are no Ko-fi product URLs. Instead, the server generates a unique **payment code** (`QSC-XXXXXX`) for each upgrade attempt, and the user enters this code in their Ko-fi payment message. The webhook extracts the code from the message to match the payment to the user.
+QuickShare uses **PayOS as a payment gateway** — it processes payments (bank transfer via VietQR, card, e-wallet) and sends webhooks. The server generates a unique **`PayOSOrderCode`** (numeric) for each upgrade attempt, calls PayOS API to create a payment link, and the user scans the QR code or clicks the checkout URL to pay. The webhook matches the payment by `orderCode` and activates the subscription.
 
-> User → `/upgrade` → server creates `PaymentIntent` → user copies code → pays on Ko-fi with code in message → webhook matches by code → `Subscription` activated → `User.Plan` set.
+> User → `/upgrade` → server creates `PaymentIntent` with `PayOSOrderCode` → calls PayOS API → user scans QR/pays → PayOS webhook arrives → matches by `orderCode` → `Subscription` activated → `User.Plan` set.
 
-All subscription management (cancel, re-activate, expire, downgrade) is handled in-app. Ko-fi only collects the money.
+All subscription management (cancel, re-activate, expire, downgrade) is handled in-app. PayOS only collects the money.
+
+**Why PayOS instead of Ko-fi?** Ko-fi pre-filled the payment message field with the tracking code (`QSC-XXXXXX`), showing it to the buyer in the checkout textarea — a UX issue. PayOS's numeric `orderCode` is passed server-to-server via webhook, invisible to the user.
 
 ---
 
@@ -14,15 +16,16 @@ All subscription management (cancel, re-activate, expire, downgrade) is handled 
 
 | Layer | File | Role |
 |-------|------|------|
-| Upgrade Page | `Pages/Upgrade.razor` | `<form method="post">` handler — creates `PaymentIntent` with unique code, renders payment UI + QR. In-process (no API endpoint). |
-| Webhook Handler | `Features/Payments/Kofi/KofiWebhookEndpoint.cs` | `POST /api/payments/kofi/webhook` — receives Ko-fi events, resolves plan by amount, matches user by payment code (fallback email), records `PaymentEvent`, delegates to `SubscriptionService` |
-| Billing History Service | `Features/Payments/Kofi/BillingHistoryService.cs` | Shared billing-history query (used by SSR page directly) |
+| Upgrade Page | `Pages/Upgrade.razor` | `<form method="post">` handler — creates `PaymentIntent` with `PayOSOrderCode`, calls `PayOSService` to create PayOS payment link. Renders QR + checkout URL. In-process (no API endpoint). |
+| PayOS Service | `Features/Payments/PayOS/PayOSService.cs` | `PayOSClient` wrapper — creates payment links via `POST /v2/payment-requests`, generates unique numeric `PayOSOrderCode` |
+| Webhook Handler | `Features/Payments/PayOS/PayOSWebhookEndpoint.cs` | `POST /api/payments/payos/webhook` — verifies HMAC-SHA256 signature via SDK, matches `PaymentIntent` by `PayOSOrderCode`, records `PaymentEvent`, delegates to `SubscriptionService` |
+| Billing History Service | `Features/Payments/BillingHistoryService.cs` | Shared billing-history query (used by SSR page directly) |
 | Subscription Service | `Features/Payments/Subscriptions/SubscriptionService.cs` | Static service: `HandlePaymentAsync`, `CancelAsync`, `ExpireStaleAsync`, `GetCurrentAsync` |
 | Billing Page | `Pages/AccountBilling.razor` | `<form method="post" Action=cancel>` — calls `SubscriptionService.CancelAsync()` directly. Loads subscription + billing history via services directly. |
 | Expiry Job | `BackgroundJobs/SubscriptionExpiryJob.cs` | Background service (15-min interval) expires stale subscriptions |
-| PaymentIntent Model | `Models/PaymentIntent.cs` | Entity: Code, UserId, Plan, Billing, Amount, Status, ExpiresAt |
-| Subscription Model | `Models/Subscription.cs` | Entity: UserId, Plan, Status, BillingPeriod, CurrentPeriodStart/End |
-| PaymentEvent Model | `Models/PaymentEvent.cs` | Entity: UserId, EventType, Plan, Amount, InvoiceId, InvoiceUrl |
+| PaymentIntent Model | `Data/Entities/PaymentIntent.cs` | Entity: `Code`, `PayOSOrderCode`, `UserId`, `Plan`, `Billing`, `Amount`, `Status`, `ExpiresAt` |
+| Subscription Model | `Data/Entities/Subscription.cs` | Entity: `UserId`, `Plan`, `Status`, `BillingPeriod`, `CurrentPeriodStart/End` |
+| PaymentEvent Model | `Data/Entities/PaymentEvent.cs` | Entity: `UserId`, `EventType`, `Plan`, `Amount`, `Currency`, `InvoiceId` |
 
 ---
 
@@ -30,27 +33,28 @@ All subscription management (cancel, re-activate, expire, downgrade) is handled 
 
 ### 2.1 PaymentIntent
 
-Represents a single upgrade attempt with a unique payment code.
+Represents a single upgrade attempt with internal tracking code + PayOS order code.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `Id` | `Guid` | PK (Guid v7) |
 | `UserId` | `Guid` | FK → User |
-| `Code` | `string` | Unique, format `QSC-XXXXXX` (6 alphanumeric chars excluding 0/O/1/I) |
+| `Code` | `string` | Internal format `QSC-XXXXXX` (for backward compatibility) |
+| `PayOSOrderCode` | `long` | PayOS numeric order code (unique, indexed). Generated as `timestamp * 1000 + random`. |
 | `Plan` | `string` | `"pro"` / `"studio"` |
 | `Billing` | `string` | `"monthly"` / `"yearly"` |
-| `Amount` | `decimal` | Expected amount from Pricing config (e.g. $9, $239) |
-| `Currency` | `string` | `"USD"` or `"$"` |
+| `Amount` | `decimal` | Expected amount in VND (from Pricing config) |
+| `Currency` | `string` | `"VND"` |
 | `Status` | `PaymentIntentStatus` | `Pending` / `Completed` / `Expired` |
 | `CreatedAt` | `DateTime` | UTC |
-| `CompletedAt` | `DateTime?` | UTC, set when webhook processes the code |
+| `CompletedAt` | `DateTime?` | UTC, set when webhook processes the order code |
 | `ExpiresAt` | `DateTime` | UTC, 1 hour after creation |
 
-**Lifetime**: Created on `/upgrade` → `Pending` → webhook matches → `Completed`. Or 1h auto-expiry (not enforced by job; webhook ignores stale codes).
+**Lifetime**: Created on `/upgrade` → `Pending` → PayOS webhook matches → `Completed`. Or 1h auto-expiry (not enforced by job; webhook ignores stale codes).
 
 ### 2.2 Subscription
 
-Tracks the full in-app subscription lifecycle.
+Tracks the full in-app subscription lifecycle (unchanged from Ko-fi era).
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -91,26 +95,22 @@ Tracks the full in-app subscription lifecycle.
                     └────────────┘
 ```
 
-- **Active**: User has paid. `User.Plan` matches subscription plan.
-- **Cancelled**: User cancelled via in-app API. Plan continues until `CurrentPeriodEnd`. Can re-activate by paying again.
-- **Expired**: `CurrentPeriodEnd` passed. `User.Plan` set to `"free"`. Terminal state.
-
 ### 2.3 PaymentEvent
 
-Immutable audit log of every Ko-fi webhook event.
+Immutable audit log of every PayOS webhook event.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `Id` (inherited) | `Guid` | PK |
-| `UserId` | `Guid` | FK → User (may be `Guid.Empty` if unlinked) |
-| `EventType` | `string` | `"subscription_created"`, `"subscription_renewed"`, `"tip"`, etc. |
-| `Plan` | `string` | Resolved plan code (`"pro"` / `"studio"` / `""`) |
+| `UserId` | `Guid` | FK → User |
+| `EventType` | `string` | `"payment"` for PayOS payments |
+| `Plan` | `string` | Resolved plan code (`"pro"` / `"studio"`) |
 | `PlanDisplay` | `string` | Human-readable (`"Pro"` / `"Studio"`) |
-| `Billing` | `string` | `"monthly"` / `"yearly"` / `""` |
-| `Amount` | `decimal` | Payment amount |
-| `Currency` | `string` | `"USD"` |
-| `InvoiceId` | `string` | Ko-fi transaction ID |
-| `InvoiceUrl` | `string` | Link to Ko-fi receipt |
+| `Billing` | `string` | `"monthly"` / `"yearly"` |
+| `Amount` | `decimal` | Payment amount in VND |
+| `Currency` | `string` | `"VND"` |
+| `InvoiceId` | `string` | PayOS transaction reference |
+| `InvoiceUrl` | `string` | PayOS payment link URL |
 
 ---
 
@@ -119,7 +119,7 @@ Immutable audit log of every Ko-fi webhook event.
 ### 3.1 Flow Diagram
 
 ```
-User Browser                     QuickShare (9000)                  Ko-fi
+User Browser                     QuickShare (9000)                  PayOS API
      │                                │                              │
      │  GET /upgrade?plan=pro&        │                              │
      │  billing=monthly               │                              │
@@ -135,124 +135,131 @@ User Browser                     QuickShare (9000)                  Ko-fi
      │                                │   detect POST, read form     │
      │                                │                              │
      │                                │── Lookup pricing:           │
-     │                                │   Pricing:ProMonthly = $9   │
+     │                                │   Pricing:ProMonthly = 50000│
      │                                │                              │
-     │                                │── Generate unique code:     │
-     │                                │   QSC-A3X9K2                │
+     │                                │── Generate unique codes:    │
+     │                                │   Code = QSC-A3X9K2         │
+     │                                │   PayOSOrderCode = 1722345..│
      │                                │                              │
      │                                │── Create PaymentIntent:     │
      │                                │   Pending, expires 1h       │
      │                                │   Save to DB                │
      │                                │                              │
-     │                                │── Build kofiUrlWithCode:    │
-     │                                │   https://ko-fi.com/...     │
-     │                                │   ?message=QSC-A3X9K2       │
+     │                                │── Call PayOS API:           │
+     │                                │   POST /v2/payment-requests │
+     │                                │   { orderCode, amount, .. } │
+     │                                │──────────────────────────────▶│
+     │                                │                              │
+     │                                │◀─────────────────────────────│
+     │                                │   { checkoutUrl, qrCode, ..}│
      │                                │                              │
      │◀───────────────────────────────│                              │
      │  (re-rendered Upgrade.razor    │                              │
-     │   with payment section:        │                              │
-     │   code, QR, Ko-fi link)        │                              │
+     │   with: QR code (VietQR),      │                              │
+     │   checkout button)             │                              │
      │                                │                              │
-     │  Page shows code prominently.  │                              │
-     │  QR auto-renders via JS on     │                              │
-     │  page load.                    │                              │
+     │  User scans QR via banking app │                              │
+     │  OR clicks checkout link.      │                              │
+     │──────────────────────────────────────────────────────────────│
      │                                │                              │
-     │  User clicks "Pay with Ko-fi"  │                              │
-     │  → opens kofiUrlWithCode       │                              │
-     │    (message pre-filled).       │                              │
-     │  OR scans QR code on phone.    │                              │
-     │─────────────────────────────────────────────────────────────▶│
+     │  User completes payment.       │                              │
      │                                │                              │
-     │  User completes payment on     │                              │
-     │  Ko-fi (code already in        │                              │
-     │  message field).               │                              │
-     │                                │                              │
-     │                                │  POST /api/payments/kofi/    │
-     │                                │  webhook (verification_token)│
+     │                                │  POST /api/payments/payos/   │
+     │                                │  webhook ({code, data, sign} )│
      │                                │◀─────────────────────────────│
      │                                │                              │
-     │                                │── Verify token              │
-     │                                │── Extract "QSC-A3X9K2" from │
-     │                                │   message field              │
-     │                                │── Lookup PaymentIntent      │
-     │                                │── Find user via intent.UserId│
+     │                                │── Verify HMAC signature     │
+     │                                │   via SDK                    │
      │                                │                              │
-     │                                │── Resolve plan from amount  │
-     │                                │   $9 → Pro Monthly          │
+     │                                │── Extract data.orderCode    │
+     │                                │   = 1722345...              │
+     │                                │                              │
+     │                                │── Lookup PaymentIntent      │
+     │                                │   by PayOSOrderCode          │
+     │                                │                              │
+     │                                │── Find user via intent      │
      │                                │                              │
      │                                │── HandlePaymentAsync()      │
      │                                │   → Create/update           │
      │                                │     Subscription (Active)   │
      │                                │   → User.Plan = "pro"       │
+     │                                │                              │
      │                                │── Mark PaymentIntent        │
      │                                │   Completed                 │
+     │                                │                              │
      │                                │── Save PaymentEvent         │
      │                                │                              │
-     │◀───────────────────────────────│  (redirect from Ko-fi)      │
+     │◀───────────────────────────────│  (redirect from PayOS       │
+     │                                │   returnUrl)                │
      │                                │                              │
 ```
 
 ### 3.2 QR Code
 
-After the form POST, `Upgrade.razor` re-renders with the payment section containing a `<div id="kofi-qrcode">` placeholder. A `<script>` block auto-invokes `renderKofiQR()` on page load to generate an SVG QR code of the `kofiUrlWithCode`. Uses the existing `qrcode.min.js` library (loaded globally via `App.razor`):
+After the form POST, `Upgrade.razor` re-renders with the payment section containing a `<div id="payos-qrcode">` placeholder. A `<script>` block auto-invokes `renderPayOSQR()` on page load to generate an SVG QR code from the PayOS VietQR string. Uses the existing `qrcode.min.js` library (loaded globally via `App.razor`):
 
 ```js
-function renderKofiQR(text) {
-    var el = document.getElementById("kofi-qrcode");
+function renderPayOSQR(qrContent) {
+    var el = document.getElementById("payos-qrcode");
     if (!el) return;
     el.innerHTML = "";
-    if (!text || !window.qrcode) {
+    if (!qrContent || !window.qrcode) {
         if (!window.qrcode) el.textContent = "QR library not loaded.";
         return;
     }
-    var qr = window.qrcode(0, "M");     // Type 0, error correction M
-    qr.addData(text);
+    var qr = window.qrcode(0, "M");
+    qr.addData(qrContent);
     qr.make();
-    var svg = qr.createSvgTag(5, 2);    // cell 5px, margin 2
+    var svg = qr.createSvgTag(5, 2);
     el.innerHTML = svg;
 }
 ```
 
-The QR allows users to scan with their phone and pay on mobile while staying on the desktop page.
+The QR allows users to scan with their banking app and pay via VietQR while staying on the desktop page.
 
 ---
 
-## 4. Webhook User Matching Strategy
+## 4. Webhook Processing
 
-The `KofiWebhookEndpoint` matches incoming payments to users in this order:
+The `PayOSWebhookEndpoint` processes incoming PayOS webhooks:
 
-1. **Extract `QSC-` code from `message` field**: If the Ko-fi payment has a message containing `QSC-XXXXXX`, extract the code.
-2. **Lookup `PaymentIntent`**: Find a `Pending` `PaymentIntent` with that code → get `UserId`.
-3. **Email fallback**: If no code found (e.g. direct Ko-fi payment without going through upgrade page), fall back to `Email` field in webhook payload.
+1. **Verify HMAC-SHA256 signature**: SDK `Webhooks.VerifyAsync()` re-computes signature from received `data` and compares with `signature` field. Invalid → 401.
+2. **Extract `orderCode`**: `data.orderCode` is the numeric PayOS order code.
+3. **Lookup `PaymentIntent`**: Find a `Pending` `PaymentIntent` with `PayOSOrderCode == orderCode`.
+4. **Find user**: `intent.UserId` → user lookup.
+5. **Activate subscription**: `SubscriptionService.HandlePaymentAsync()`.
+6. **Record event**: `PaymentEvent` with type `"payment"`.
 
 ```
-Ko-fi webhook payload:
+PayOS webhook payload (verified):
 {
-  "message": "QSC-A3X9K2",
-  "email": "user@example.com",
-  "amount": "9.00",
-  "currency": "USD",
-  "type": "Subscription",
-  "verification_token": "...",
-  ...
+  "code": "00",
+  "desc": "success",
+  "success": true,
+  "data": {
+    "orderCode": 1722345678000,
+    "amount": 50000,
+    "currency": "VND",
+    "reference": "TF230204212323",
+    ...
+  },
+  "signature": "8d8640d802576397a1ce45ebda..."
 }
 
 Matching logic:
-  message.contains("QSC-") ? → Lookup PaymentIntent by code → find User
-                              → Fallback: lookup User by email
+  Verify signature via SDK
+  → Lookup PaymentIntent by PayOSOrderCode == data.orderCode
+  → Find user via PaymentIntent.UserId
+  → Activate subscription
 ```
-
-Amount-to-plan mapping is done via `Pricing` config:
-- `Pricing:ProMonthly` = $9 → `("pro", "monthly")`
-- `Pricing:ProYearly` = $77 → `("pro", "yearly")`
-- `Pricing:StudioMonthly` = $29 → `("studio", "monthly")`
-- `Pricing:StudioYearly` = $239 → `("studio", "yearly")`
 
 ---
 
 ## 5. Subscription Management
 
-Subscription mutations are handled via **Blazor SSR form handlers** — no API endpoints. The billing page (`AccountBilling.razor`) calls `SubscriptionService` directly:
+(Unchanged — same as Ko-fi era.)
+
+Subscription mutations are handled via **Blazor SSR form handlers** — no API endpoints. The billing page (`AccountBilling.razor`) calls `SubscriptionService` directly.
 
 ### Cancel Subscription — Form Handler in `AccountBilling.razor`
 
@@ -278,6 +285,8 @@ Effects:
 
 ## 6. Background Job: SubscriptionExpiryJob
 
+(Unchanged — same as Ko-fi era.)
+
 Runs every 15 minutes on a `BackgroundService`.
 
 ```
@@ -293,91 +302,145 @@ SubscriptionExpiryJob
   SaveChangesAsync()
 ```
 
-- **Interval**: 15 minutes (`TimeSpan.FromMinutes(15)`)
-- **Safety**: Only downgrades subscriptions past `CurrentPeriodEnd`
-- **No double-dip**: `CurrentPeriodEnd` is always in the future for active subscriptions (extended on renew)
-
 ---
 
-## 7. Billing History
+## 7. PayOS Integration Details
 
-### Direct Service Call — `AccountBilling.razor`
+### 7.1 PayOS SDK Initialization
 
-The billing page calls `BillingHistoryService.GetForUserAsync(user, db, ct)` directly in `OnInitializedAsync`. No API endpoint — the SSR page runs in-process on the server.
+```csharp
+var client = new PayOSClient(clientId, apiKey, checksumKey);
+```
 
-`BillingHistoryResponse` contains `User.Plan` + chronological list of `PaymentEvent` items:
+Credentials from `PayOS:ClientId`, `PayOS:ApiKey`, `PayOS:ChecksumKey` in `appsettings.json` or environment variables (`PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`).
 
-```json
+### 7.2 Payment Link Request
+
+```csharp
+var request = new CreatePaymentLinkRequest
 {
-  "plan": "pro",
-  "planDisplay": "Pro",
-  "events": [
-    {
-      "eventType": "subscription_created",
-      "eventLabel": "Subscription created — Pro Monthly",
-      "planDisplay": "Pro",
-      "billing": "monthly",
-      "amount": 9.00,
-      "currency": "USD",
-      "invoiceId": "abc123",
-      "invoiceUrl": "https://ko-fi.com/...",
-      "createdAt": "2026-07-26T..."
-    }
-  ]
+    OrderCode = payOSOrderCode,     // numeric, unique
+    Amount = amountVnd,             // in VND (e.g. 50000)
+    Description = "UPGRADE",        // max 9 chars for non-linked banks
+    ReturnUrl = "https://quicksharecloud.com/upgrade",
+    CancelUrl = "https://quicksharecloud.com/upgrade",
+    ExpiredAt = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds()
+};
+
+var response = await client.PaymentRequests.CreateAsync(request);
+// response.CheckoutUrl, response.QrCode
+```
+
+### 7.3 Webhook URL Registration
+
+PayOS requires the webhook URL to be registered via `POST /confirm-webhook` before it sends payment notifications.
+This is handled automatically at startup by `PayOSWebhookRegistrationHostedService`:
+
+```csharp
+var result = await client.Webhooks.ConfirmAsync("https://your-domain.com/api/payments/payos/webhook");
+```
+
+The webhook URL is read from `PayOS:WebhookUrl` in config. It is **not hardcoded** in `appsettings.json` —
+it MUST be set per environment:
+
+| Environment | How to set | Example value |
+|-------------|-----------|---------------|
+| **Development** | `PayOS__WebhookUrl` env var or `appsettings.Development.json` | `https://xxx.ngrok-free.app/api/payments/payos/webhook` |
+| **Production** | Env var via CI/CD / Docker / Azure App Settings | `https://quicksharecloud.com/api/payments/payos/webhook` |
+
+**Development with tunnel (ngrok / Cloudflare Tunnel):**
+```bash
+# 1. Start tunnel
+ngrok http 9001
+# 2. Copy the tunnel URL, set env var
+set PAYOS__WEBHOOK_URL=https://xxx.ngrok-free.app/api/payments/payos/webhook
+# 3. Run the app, the hosted service will auto-register the URL with PayOS
+```
+
+**Fallback**: If `WebhookUrl` is empty or points to `localhost`, the hosted service logs a warning
+and skips registration. The webhook URL can then be configured manually on the
+[PayOS merchant dashboard](https://my.payos.vn) (Cài đặt → Webhook URL) if needed.
+
+### 7.4 Webhook Verification
+
+```csharp
+var verifiedData = await client.Webhooks.VerifyAsync(webhookData);
+// verifiedData.OrderCode, verifiedData.Amount, verifiedData.Reference
+```
+
+### 7.5 PayOSOrderCode Generation
+
+```csharp
+public static long GenerateOrderCode()
+{
+    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    var random = Random.Shared.Next(100, 999);
+    return (timestamp * 1000) + random;
 }
 ```
 
-### Billing Page (`/account/billing`)
-
-- **Free users**: Shows "Upgrade" CTA linking to `/pricing`
-- **Active subscribers**: Shows plan name, status (Active), billing period, next billing date, "Cancel Subscription" button using `<form method="post">` handler
-- **Cancelled subscribers**: Shows "Access continues until <date>", "Renew Subscription" linking to `/pricing`
-- **Expired subscribers**: Shows expired banner, "Upgrade Again" linking to `/pricing`
-- All users see chronological payment event timeline
+Combines Unix timestamp (seconds) with 3 random digits for uniqueness. Collision check against DB before assignment.
 
 ---
 
-## 8. Configuration
+## 9. Configuration
 
-| Key | Purpose | Example |
-|-----|---------|---------|
-| `Kofi:PageUrl` | Ko-fi page URL for "Pay with Ko-fi" link | `https://ko-fi.com/miraclefoundation` |
-| `Kofi:VerificationToken` | Secret token for webhook auth | GUID |
-| `Pricing:ProMonthly` | Pro monthly price | `9` |
-| `Pricing:ProYearly` | Pro yearly price | `77` |
-| `Pricing:StudioMonthly` | Studio monthly price | `29` |
-| `Pricing:StudioYearly` | Studio yearly price | `239` |
-| `Pricing:Currency` | Currency symbol | `$` |
-
-No `Products`, `ManageSubscriptionUrl`, or `CancelSubscriptionUrl` — these were removed.
-
----
-
-## 10. Security Model
-
-| Concern | Protection |
-|---------|-----------|
-| **Unauthorized webhook** | `verification_token` must match configured secret |
-| **Replay / stale payments** | `PaymentIntent.Code` is single-use (set to `Completed` after first match) |
-| **Unlinked payments** | Payments without matching code or email are recorded as `PaymentEvent` but don't affect any `User.Plan` |
-| **Amount tampering** | Plan is resolved from server-side amount config, not from the client's request |
-| **Payment code forgery** | `QSC-XXXXXX` codes are generated server-side with alphanumeric pool (no 0/O/1/I), uniqueness checked against DB |
-| **Code expiry** | `PaymentIntent.ExpiresAt` = 1 hour; stale codes are ignored by webhook (status check) |
+```json
+{
+  "PayOS": {
+    "ClientId": "",
+    "ApiKey": "",
+    "ChecksumKey": "",
+    "ReturnUrl": "https://quicksharecloud.com/upgrade",
+    "CancelUrl": "https://quicksharecloud.com/upgrade"
+  },
+  "Pricing": {
+    "ProMonthly": 50000,
+    "ProYearly": 500000,
+    "StudioMonthly": 200000,
+    "StudioYearly": 2000000,
+    "Currency": "VND"
+  }
+}
+```
 
 ---
 
-## 10. File Reference
+## 10. Billing History
 
-| File | Role |
-|------|------|
-| `Models/PaymentIntent.cs` | Entity: upgrade payment code |
-| `Models/Subscription.cs` | Entity: subscription lifecycle |
-| `Models/PaymentEvent.cs` | Entity: webhook event audit log |
-| `Models/BillingHistoryResponse.cs` | Response DTO for billing page |
-| `Features/Payments/Kofi/KofiWebhookEndpoint.cs` | `POST /api/payments/kofi/webhook` — payment code matching + event recording |
-| `Features/Payments/Kofi/BillingHistoryService.cs` | Shared billing history query |
-| `Features/Payments/Subscriptions/SubscriptionService.cs` | Core subscription logic (activate, cancel, expire) |
-| `BackgroundJobs/SubscriptionExpiryJob.cs` | 15-min background expiry |
-| `Pages/Upgrade.razor` | Upgrade page — form handler creates PaymentIntent, renders payment code + QR |
-| `Pages/AccountBilling.razor` | Billing page — form handler for cancel, direct service calls for data |
-| `Constants/PlanTierLimits.cs` | Plan limit constants |
+(Unchanged from Ko-fi era.)
+
+`BillingHistoryService.GetForUserAsync()` queries `payment_events` table:
+
+```sql
+SELECT * FROM payment_events
+WHERE "UserId" = @userId
+ORDER BY "CreatedAt" DESC
+```
+
+Results are displayed in `/account/billing` as a chronological timeline with event labels (e.g. "Payment — Pro Monthly", "Subscription cancelled").
+
+---
+
+## 11. File Layout
+
+```
+Features/Payments/
+├── PayOS/
+│   ├── PayOSService.cs           # Payment link creation + order code generation
+│   └── PayOSWebhookEndpoint.cs   # POST /api/payments/payos/webhook
+├── Subscriptions/
+│   └── SubscriptionService.cs    # HandlePayment, Cancel, Expire, GetCurrent
+├── BillingHistoryService.cs       # Payment event query
+BackgroundJobs/
+└── SubscriptionExpiryJob.cs       # 15-min expiry job
+Data/Entities/
+├── PaymentIntent.cs               # Code, PayOSOrderCode, Plan, Billing, Status
+├── Subscription.cs                # Plan, Status, BillingPeriod, CurrentPeriodStart/End
+└── PaymentEvent.cs                # EventType, Plan, Amount, Currency, InvoiceId
+Pages/
+├── Upgrade.razor                  # Plan selection + PayOS payment
+└── AccountBilling.razor           # Subscription status + billing history
+Constants/
+└── PlanTierLimits.cs              # Plan limit constants
+```

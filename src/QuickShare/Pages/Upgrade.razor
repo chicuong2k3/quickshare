@@ -1,26 +1,28 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/upgrade"
 @attribute [Authorize]
 @using QuickShare.Data
+@using QuickShare.Features.Payments.PayOS
 @using QuickShare.Features.Users.Shared
 @using QuickShare.Data.Entities
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IConfiguration Config
+@inject PayOSService PayOS
 
-<PageTitle>Upgrade to @planDisplay â€” QuickShareCloud</PageTitle>
+<PageTitle>Nâng cấp lên @planDisplay — QuickShareCloud</PageTitle>
 
 <script>
-	function renderKofiQR(text) {
-	    var el = document.getElementById("kofi-qrcode");
+	function renderPayOSQR(qrContent) {
+	    var el = document.getElementById("payos-qrcode");
 	    if (!el) return;
 	    el.innerHTML = "";
-	    if (!text || !window.qrcode) {
+	    if (!qrContent || !window.qrcode) {
 	        if (!window.qrcode) el.textContent = "QR library not loaded.";
 	        return;
 	    }
 	    var qr = window.qrcode(0, "M");
-	    qr.addData(text);
+	    qr.addData(qrContent);
 	    qr.make();
 	    var svg = qr.createSvgTag(5, 2);
 	    el.innerHTML = svg;
@@ -30,14 +32,14 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <span class="tag">Upgrade</span>
-        <h1 class="db-h1">Upgrade to @planDisplay</h1>
+        <span class="tag">Nâng cấp</span>
+        <h1 class="db-h1">Nâng cấp lên @planDisplay</h1>
         <p class="db-p db-text-muted">
             @if (isFullyLoaded)
             {
-                <text>You're currently on the <strong>@currentPlan</strong> plan. </text>
+                <text>Bạn đang ở gói <strong>@currentPlan</strong>. </text>
             }
-            @planDisplay gives you @planSummary.
+            @planDisplay mang đến cho bạn @planSummary.
         </p>
     </section>
 
@@ -60,12 +62,12 @@
                     @if (IsYearly)
                     {
                         <span class="price-amount">@planYearlyPrice</span>
-                        <span class="price-period db-text-muted">/ year</span>
+                        <span class="price-period db-text-muted">/ năm</span>
                     }
                     else
                     {
                         <span class="price-amount">@planMonthlyPrice</span>
-                        <span class="price-period db-text-muted">/ month</span>
+                        <span class="price-period db-text-muted">/ tháng</span>
                     }
                 </div>
                 <div class="summary-card__features">
@@ -80,22 +82,22 @@
             </div>
 
             <div class="payment">
-                <h2 class="db-h2">Complete your upgrade</h2>
+                <h2 class="db-h2">Hoàn tất nâng cấp</h2>
                 <p class="db-text-muted" style="margin-top: 0.5rem">
-                    Upgrading to <strong>@planDisplay</strong>
-                    @(IsYearly ? " (yearly)" : " (monthly)")
+                    Nâng cấp lên <strong>@planDisplay</strong>
+                    @(IsYearly ? " (hàng năm)" : " (hàng tháng)")
                     &mdash; <strong>@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
                 </p>
 
                 <div class="payment-option">
-                    <h3 class="db-h3">Ko-fi</h3>
-                    <p class="db-text-muted">Pay with card or PayPal via Ko-fi</p>
+                    <h3 class="db-h3">Chuyển khoản / Thẻ</h3>
+                    <p class="db-text-muted">Thanh toán qua PayOS (chuyển khoản, thẻ nội địa, Visa/Mastercard)</p>
                     <form method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="Plan" value="@selectedPlan" />
                         <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
                         <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                            Pay with Ko-fi
+                            Thanh toán với PayOS
                         </button>
                     </form>
                 </div>
@@ -115,12 +117,12 @@
                     @if (IsYearly)
                     {
                         <span class="price-amount">@planYearlyPrice</span>
-                        <span class="price-period db-text-muted">/ year</span>
+                        <span class="price-period db-text-muted">/ năm</span>
                     }
                     else
                     {
                         <span class="price-amount">@planMonthlyPrice</span>
-                        <span class="price-period db-text-muted">/ month</span>
+                        <span class="price-period db-text-muted">/ tháng</span>
                     }
                 </div>
                 <div class="summary-card__features">
@@ -135,24 +137,24 @@
             </div>
 
             <div class="payment" id="payment-section">
-                <h2 class="db-h2">Complete your upgrade</h2>
+                <h2 class="db-h2">Hoàn tất nâng cấp</h2>
                 <p class="db-text-muted" style="margin-top: 0.5rem">
-                    Upgrading to <strong>@planDisplay</strong>
-                    @(IsYearly ? " (yearly)" : " (monthly)")
+                    Nâng cấp lên <strong>@planDisplay</strong>
+                    @(IsYearly ? " (hàng năm)" : " (hàng tháng)")
                     &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
                 </p>
 
                 @if (paymentIntent is null)
                 {
                     <div class="payment-option">
-                        <h3 class="db-h3">Ko-fi</h3>
-                        <p class="db-text-muted">Pay with card or PayPal via Ko-fi</p>
+                        <h3 class="db-h3">Chuyển khoản / Thẻ</h3>
+                        <p class="db-text-muted">Thanh toán qua PayOS (chuyển khoản, thẻ nội địa, Visa/Mastercard)</p>
                         <form method="post">
                             <AntiforgeryToken />
                             <input type="hidden" name="Plan" value="@selectedPlan" />
                             <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
                             <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                                Pay with Ko-fi
+                                Thanh toán với PayOS
                             </button>
                         </form>
                     </div>
@@ -160,31 +162,49 @@
                 else
                 {
                     <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--db-color-border);border-radius:0.5rem;text-align:center">
-                        <h3 class="db-h3">Send <strong>@paymentIntent.Currency@paymentAmount</strong> to our Ko-fi page</h3>
-                        <p class="db-text-muted" style="margin-top:0.5rem">Ko-fi accepts card, PayPal, and Ko-fi balance.</p>
-                        <div style="margin:1.5rem 0;padding:1rem;background:var(--db-color-surface);border-radius:0.5rem;font-size:1.5rem;font-weight:700;letter-spacing:0.2em;font-family:var(--db-font-mono)">
-                            @paymentIntent.Code
-                        </div>
-                        <p class="db-text-muted" style="font-size:0.95rem">
-                            The code is already filled in the payment page. You can also scan the QR code to pay on your phone.
-                        </p>
-                        <div id="kofi-qrcode" style="margin:1rem auto;display:flex;justify-content:center"></div>
-                        <a href="@kofiUrlWithCode" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                            Pay with Ko-fi
-                        </a>
+                        <h3 class="db-h3">Thanh toán <strong>@FormatPrice((int)paymentIntent.Amount)</strong></h3>
+                        <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
+
+                        @if (payOSResult is not null && payOSResult.Success)
+                        {
+                            <div style="margin:1.5rem 0;padding:1rem;background:var(--db-color-surface);border-radius:0.5rem">
+                                <p class="db-text-muted" style="font-size:0.95rem;margin-bottom:1rem">
+                                    Quét mã QR bằng ứng dụng ngân hàng để thanh toán, hoặc nhấn nút bên dưới.
+                                </p>
+                                <div id="payos-qrcode" style="margin:0 auto;display:flex;justify-content:center"></div>
+                                <a href="@payOSResult.CheckoutUrl" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                                    Thanh toán với PayOS
+                                </a>
+                            </div>
+
+                            <script>
+                                (function() { renderPayOSQR("@payOSResult.QrCode"); })();
+                            </script>
+                        }
+                        else if (payOSResult is not null)
+                        {
+                            <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
+                                <p>Không thể tạo link thanh toán: @payOSResult.ErrorMessage</p>
+                                <form method="post" style="margin-top:1rem">
+                                    <AntiforgeryToken />
+                                    <input type="hidden" name="Plan" value="@selectedPlan" />
+                                    <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
+                                    <button type="submit" class="db-btn db-btn--primary">
+                                        Thử lại
+                                    </button>
+                                </form>
+                            </div>
+                        }
+
                         <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
-                            Code expires in 1 hour. Your plan will be activated automatically after payment.
+                            Gói sẽ được kích hoạt tự động sau khi thanh toán thành công.
                         </p>
                     </div>
-
-                    <script>
-                        (function() { renderKofiQR("@kofiUrlWithCode"); })();
-                    </script>
                 }
 
                 <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
-                    Your plan will be upgraded immediately after payment confirmation.
-                    Need help? <a href="mailto:support@quicksharecloud.com" class="db-link">Contact support</a>.
+                    Gói sẽ được nâng cấp ngay sau khi xác nhận thanh toán.
+                    Cần hỗ trợ? <a href="mailto:support@quicksharecloud.com" class="db-link">Liên hệ support</a>.
                 </p>
             </div>
         </section>
@@ -205,36 +225,38 @@
     private string currentPlan = "free";
     private bool isFullyLoaded;
     private PaymentIntent? paymentIntent;
+    private PayOSPaymentResult? payOSResult;
 
     private string planDisplay => selectedPlan == "studio" ? "Studio" : "Pro";
     private string planDesc => selectedPlan == "studio"
-        ? "For teams & enterprises"
-        : "For creators & professionals";
+        ? "Dành cho team & doanh nghiệp"
+        : "Dành cho nhà sáng tạo & chuyên gia";
     private string planSummary => selectedPlan == "studio"
-        ? "500 GB monthly storage, unlimited transfers, API access, and dedicated support"
-        : "1 GB per file, 50 GB monthly storage, 100 transfers/month, password protection, and priority support";
+        ? "500 GB dung lượng/tháng, không giới hạn chuyển, API, hỗ trợ riêng"
+        : "1 GB/tệp, 50 GB dung lượng/tháng, 100 lượt chuyển/tháng, bảo vệ mật khẩu, hỗ trợ ưu tiên";
     private string planMonthlyPrice => FormatPrice(
         selectedPlan == "studio"
-            ? Config.GetValue<int>("Pricing:StudioMonthly", 29)
-            : Config.GetValue<int>("Pricing:ProMonthly", 9));
+            ? Config.GetValue<int>("Pricing:StudioMonthly", 200000)
+            : Config.GetValue<int>("Pricing:ProMonthly", 50000));
     private string planYearlyPrice => FormatPrice(
         selectedPlan == "studio"
-            ? Config.GetValue<int>("Pricing:StudioYearly", 239)
-            : Config.GetValue<int>("Pricing:ProYearly", 77));
+            ? Config.GetValue<int>("Pricing:StudioYearly", 2000000)
+            : Config.GetValue<int>("Pricing:ProYearly", 500000));
 
     private string FormatPrice(int amount)
     {
-        var currency = Config["Pricing:Currency"] ?? "$";
-        return $"{currency}{amount}";
+        var currency = Config["Pricing:Currency"] ?? "VND";
+        return currency == "VND"
+            ? $"{amount:N0}₫"
+            : $"{currency}{amount}";
     }
 
     private string[] planFeatures => selectedPlan == "studio"
-        ? new[] { "20 GB per file", "500 GB / month", "Unlimited transfers", "Custom branding", "API access", "Dedicated support" }
-        : new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" };
+        ? new[] { "20 GB/tệp", "500 GB / tháng", "Không giới hạn chuyển", "Tùy chỉnh thương hiệu", "Truy cập API", "Hỗ trợ riêng" }
+        : new[] { "1 GB/tệp", "50 GB / tháng", "100 lượt chuyển/tháng", "Bảo vệ mật khẩu", "Hỗ trợ ưu tiên" };
 
     private bool IsYearly => string.Equals(Billing, "yearly", StringComparison.OrdinalIgnoreCase);
     private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);
-    private string kofiUrlWithCode => $"{Config["Kofi:PageUrl"]}?message={paymentIntent?.Code}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -275,14 +297,26 @@
             };
 
             var expectedAmount = Config.GetValue<int>(pricingKey);
-            var currency = Config["Pricing:Currency"]!;
+            var currency = Config["Pricing:Currency"] ?? "VND";
 
+            // Generate internal tracking code and PayOS order code
             var code = await GenerateUniqueCodeAsync(Db, CancellationToken.None);
+            var payOSOrderCode = PayOSService.GenerateOrderCode();
+
+            // Check uniqueness of PayOS order code in DB
+            while (await Db.PaymentIntents.AnyAsync(
+                i => i.PayOSOrderCode == payOSOrderCode && i.Status == PaymentIntentStatus.Pending,
+                CancellationToken.None))
+            {
+                payOSOrderCode = PayOSService.GenerateOrderCode();
+            }
+
             paymentIntent = new PaymentIntent
             {
                 Id = Guid.CreateVersion7(),
                 UserId = user.Id,
                 Code = code,
+                PayOSOrderCode = payOSOrderCode,
                 Plan = plan,
                 Billing = isYearly ? "yearly" : "monthly",
                 Amount = expectedAmount,
@@ -293,6 +327,20 @@
             };
             Db.PaymentIntents.Add(paymentIntent);
             await Db.SaveChangesAsync(CancellationToken.None);
+
+            // Create PayOS payment link
+            var description = $"QSC-{code[^6..]}"; // last 6 chars as description
+            payOSResult = await PayOS.CreatePaymentLinkAsync(
+                payOSOrderCode,
+                expectedAmount,
+                description,
+                CancellationToken.None);
+
+            if (!payOSResult.Success)
+            {
+                // Payment link creation failed — keep PaymentIntent for retry
+                // The UI will show the error with a retry button
+            }
         }
 
         currentPlan = user.ToProfileResponse().Plan;
@@ -318,5 +366,3 @@
         }
     }
 }
-
-

@@ -9,7 +9,7 @@ public record PaymentEvent : BaseAuditEntity
     public string PlanDisplay { get; set; } = string.Empty;
     public string Billing { get; set; } = string.Empty;
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "VND";
     public string InvoiceId { get; set; } = string.Empty;
     public string InvoiceUrl { get; set; } = string.Empty;
 

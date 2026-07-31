@@ -57,12 +57,12 @@
 - `DeliveryService.cs` — Shared delivery coordination logic
 
 ### Payments (`Features/Payments/`)
-- **Ko-fi Webhook** — `POST /api/payments/kofi/webhook` — Ko-fi payment webhook. Ko-fi is a **pure payment gateway** — it processes payments and sends webhooks. Subscription management (cancel, change, expiry) is handled in-app.
-  - Records all payment types (subscriptions, tips, commissions, shop orders) as `PaymentEvent`
+- **PayOS Webhook** — `POST /api/payments/payos/webhook` — PayOS payment webhook. PayOS is a **payment gateway** supporting bank transfer (VietQR), card, and e-wallet. Subscription management (cancel, change, expiry) is handled in-app.
+  - Records payments as `PaymentEvent`
   - For subscription payments, delegates to `SubscriptionService` for in-app lifecycle management
-  - Matches user by **payment code** (`QSC-XXXXXX`) entered in the Ko-fi message field — no email dependency
-  - Fallback to email matching if no code found
-- **Upgrade Initiation** — `Upgrade.razor` `<form method="post">` handler creates a `PaymentIntent` with unique code, expected amount, and 1-hour expiry. In-process, no API endpoint.
+  - Matches user by **`PayOSOrderCode`** (numeric) — looks up `PaymentIntent` by `orderCode` → finds user
+- **Upgrade Initiation** — `Upgrade.razor` `<form method="post">` handler creates a `PaymentIntent` with `PayOSOrderCode`, expected amount, and 1-hour expiry. Calls `PayOSService.CreatePaymentLinkAsync()` to generate PayOS checkout URL + QR. In-process, no API endpoint.
+- **PayOSService** — `Features/Payments/PayOS/PayOSService.cs` — creates PayOS payment links via `POST /v2/payment-requests` API. Manages `PayOSClient` initialization.
 - **Subscriptions** — In-app subscription lifecycle via `SubscriptionService`:
   - Cancel: `AccountBilling.razor` `<form method="post">` handler calls `SubscriptionService.CancelAsync()` directly
   - Current: `AccountBilling.razor` calls `SubscriptionService.GetCurrentAsync()` directly in `OnInitializedAsync`
@@ -117,7 +117,7 @@
 | `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop move, CRUD modals, htmx-powered live search, download button |
 | `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload), OAuth badge, delivery branding manager, htmx form + lazy-load |
 | `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler |
-| `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade, Ko-fi payment — form creates PaymentIntent with code + QR |
+| `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade, PayOS payment — form creates PaymentIntent + calls PayOS API |
 | `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub, Facebook, TikTok |
 | `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
 
@@ -201,7 +201,7 @@ Models, DTOs, and constants now live directly in `src/QuickShare/Models/` and `s
 | `Chunk` | `chunks` | Per-chunk tracking (deprecated — R2 handles chunking client-side) |
 | `Manifest` | `manifests` | Upload manifest metadata |
 | `DownloadTracking` | `download_tracking` | Per-delivery download counters |
-| `PaymentEvent` | `payment_events` | Ko-fi payment webhook events |
+| `PaymentEvent` | `payment_events` | PayOS payment webhook events |
 
 ### Constants
 - `PlanTierLimits.cs` — Plan-specific limits (file size, monthly storage, transfer count)
@@ -245,7 +245,7 @@ Migrations under `Migrations/`. Key schema:
 - `files` — Id (UUID PK), Filename, ContentType, Size, FolderId (FK), Tags, CreatedAt
 - `deliveries` — ShareCode, FileName, ContentType, FileSize, StoragePath, ExpiresAt, PasswordHash, OtpHash, etc.
 - `upload_sessions` — DeliveryId, UploadId (R2), ObjectKey
-- `payment_events` — Ko-fi payment event records
+- `payment_events` — PayOS payment event records
 - `subscriptions` — User subscription lifecycle (Active → Cancelled → Expired)
 - `payment_intents` — Upgrade payment codes (`QSC-XXXXXX`) for webhook user matching
 
@@ -360,7 +360,7 @@ src/QuickShare/
 │   ├── Downloads/         # Download
 │   ├── Files/             # Move + Shared mappers (List handler in-process)
 │   ├── Folders/           # Create, Update, Delete + Shared mappers (List/GetInfo handlers in-process)
-│   ├── Payments/          # Kofi webhook, SubscriptionService, BillingHistoryService
+│   ├── Payments/          # PayOS webhook, SubscriptionService, BillingHistoryService
 │   ├── Reports/           # Abuse reporting
 │   ├── Shares/            # P2P share creation
 │   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)

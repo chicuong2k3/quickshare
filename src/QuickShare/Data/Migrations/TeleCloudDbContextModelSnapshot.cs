@@ -366,6 +366,9 @@ namespace QuickShare.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long>("PayOSOrderCode")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasColumnType("text");
@@ -379,6 +382,9 @@ namespace QuickShare.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("PayOSOrderCode")
                         .IsUnique();
 
                     b.HasIndex("Status");

@@ -33,7 +33,7 @@ flowchart LR
     Browser -->|Chunk Upload / Download| API[TeleCloud.Server<br/>FastEndpoints + Wolverine]
     API -->|Metadata| PG[(PostgreSQL)]
     API -->|Chunk Storage| Storage[Storage Provider<br/>Local Disk / Backblaze B2]
-    API -->|Payment Webhook| KoFi[Ko-fi Payment]
+    API -->|Payment Webhook| PayOS[PayOS Payment]
 
     style Web fill:#1a1a2e,stroke:#5E6AD2,color:#fff
     style API fill:#16213e,stroke:#5E6AD2,color:#fff
@@ -114,7 +114,7 @@ interface IStorageProvider {
 
 - **Binds:** FR-13
 - **Prevents:** Payment polling overhead; webhook forgery; delivery unlock inconsistency
-- **Rule:** Ko-fi webhook-based payment verification. Public webhook endpoint `/api/payments/ko-fi/webhook` receives payment notifications, validates webhook signatures, unlocks `Delivery` atomically via transactional update. Payment status stored on `Delivery` entity; unlock triggered by webhook only—no client-side polling. Webhook signature verification prevents spoofed payment notifications.
+- **Rule:** PayOS webhook-based payment verification. Public webhook endpoint `/api/payments/payos/webhook` receives payment notifications, verifies HMAC-SHA256 signature via SDK, unlocks `Delivery` atomically via transactional update. Payment status stored on `Delivery` entity; unlock triggered by webhook only—no client-side polling. HMAC signature verification prevents spoofed payment notifications.
 
 ### AD-12 — Error Handling and Validation
 
@@ -187,8 +187,8 @@ Automatic overflow trigger logic (local disk capacity threshold → Backblaze B2
 ### Ad Network Integration
 FR-20/FR-22 ad network integration details (Adsterra/PopAds API integration, impression tracking, adblock detection) deferred to delivery page implementation. Architecture supports ad injection but specific network selection and integration patterns not invariant.
 
-### VietQR Secondary Integration
-Ko-fi webhook primary payment integration; VietQR/MoMo/ZaloPay secondary integration deferred to post-MVP expansion. Architecture webhook pattern reusable but specific QR code generation and bank integration flows not invariant.
+### VietQR / PayOS Integration
+PayOS webhook primary payment integration for plan upgrades. PayOS handles bank transfer (VietQR), card, and e-wallet payments. Architecture webhook pattern reusable for per-delivery payments if needed.
 
 ### Compression and Optimization
 Stream-as-you-go download, client-side compression, and chunk size optimization algorithms deferred to performance tuning phase. Architecture supports chunked transfer but specific compression strategies not invariant.
@@ -198,7 +198,7 @@ Stream-as-you-go download, client-side compression, and chunk size optimization 
 1. **Chunk Size Calibration** — 256–512 MB default size tunable via configuration, but optimal size for Vietnamese networks requires production benchmarking.
 2. **Concurrent Upload Limits** — Per-Plan concurrency limits (Free: 1-2, Pro: 3-4, Studio: 6+) need load testing validation.
 3. **Overflow Trigger Thresholds** — Local disk capacity percentage that triggers Backblaze B2 overflow requires operational definition.
-4. **Webhook Security** — Ko-fi webhook signature verification mechanism and key management requires documentation.
+4. **Webhook Security** — PayOS webhook HMAC signature verification mechanism and key management requires documentation.
 5. **Background Job Scheduling** — Specific task scheduler implementation (Hangfire vs. HostedService) requires selection.
 6. **Clean Trial Tracking** — Clean delivery allowance counting and reset mechanism requires UX flow specification.
 

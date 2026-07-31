@@ -142,9 +142,9 @@ includedFiles:
 
 **The PRD and epics DO NOT cover plan upgrade subscriptions.** This is the work you were just starting:
 
-- **Ko-fi subscription flow**: User on `/upgrade` picks a plan → redirects to Ko-fi → Ko-fi webhook confirms → user's `User.Plan` field updates
+- **PayOS payment flow**: User on `/upgrade` picks a plan → redirects to PayOS → PayOS webhook confirms → user's `User.Plan` field updates
 - **Plan lifecycle**: subscription created → plan set to "pro"/"studio", cancelled → grace period, expired → drop to "free"
-- **`/api/upgrade/initiate` endpoint** and **`/api/payments/kofi/webhook` endpoint** — not in any epic
+- **`/api/upgrade/initiate` endpoint** and **`/api/payments/payos/webhook` endpoint** — not in any epic
 
 The PRD's FR-12/VietQR is about *recipient-paid downloads per link*, not sender-paid plan subscriptions. These are two distinct payment flows, and the plan-upgrade flow is entirely missing from planning artifacts.
 
@@ -169,18 +169,18 @@ Architecture doc only covers P2P (`architecture-P2P-2026-07-20/ARCHITECTURE-SPIN
 - ✅ DESIGN.md color tokens, typography, spacing match the Epics Story 1.10 design system
 - ✅ EXPERIENCE.md specifies Blazor SSR + RizzyUI (matches current codebase)
 - ✅ Microcopy patterns defined in Vietnamese + English
-- 🟡 No UX flow for the plan upgrade/checkout experience (`/upgrade` page, Ko-fi redirect, post-payment landing)
+- 🟡 No UX flow for the plan upgrade/checkout experience (`/upgrade` page, PayOS redirect, post-payment landing)
 
 ### UX ↔ Architecture Alignment
 - ✅ EXPERIENCE.md specifies SSR with antiforgery, matching the existing FastEndpoints pattern
 - ⚠️ Architecture doc missing for core delivery pipeline (R2 storage), so UX → Architecture alignment cannot be fully verified
-- 🟡 No UX for payment confirmation flow (Ko-fi webhook → plan update → redirect to homepage)
+- 🟡 No UX for payment confirmation flow (PayOS webhook → plan update → redirect to homepage)
 
 ### Warnings
 
 | Severity | Issue |
 |----------|-------|
-| 🔴 | **No UX exists for the plan upgrade flow** — `/upgrade` page, plan selection summary card, Ko-fi redirect, post-payment homepage redirect. This is the work you're currently building but it has no UX design contract. |
+| 🔴 | **No UX exists for the plan upgrade flow** — `/upgrade` page, plan selection summary card, PayOS redirect, post-payment homepage redirect. This is the work you're currently building but it has no UX design contract. |
 | 🟡 | Epics reference React/TypeScript client (`src/QuickShare.Client/src/...`) but EXPERIENCE.md and current codebase use Blazor/Razor. Epics need tech-stack correction. |
 | 🟡 | `/account/billing` is listed as "future" in site structure — no design for `/upgrade` at all. |
 | 🟡 | UX covers VietQR per-delivery payment (recipient pays to download), not plan subscription (sender pays for plan tier). These are different flows. |
@@ -233,7 +233,7 @@ Architecture doc only covers P2P (`architecture-P2P-2026-07-20/ARCHITECTURE-SPIN
 
 | Issue | Fix |
 |-------|-----|
-| **Plan upgrade/subscription entirely missing** — no epic or story for Ko-fi flow, `/api/upgrade/initiate`, webhook, plan lifecycle | Add Epic 3: "Sender upgrades plan via Ko-fi subscription" |
+| **Plan upgrade/subscription entirely missing** — no epic or story for PayOS flow, `/api/upgrade/initiate`, webhook, plan lifecycle | Add Epic 3: "Sender upgrades plan via PayOS subscription" |
 | **Story 1.11 forward dependency** on Epic 2 features | Move to Epic 2 as Story 2.0, or make slots truly nullable |
 | **No pricing page story** — `/pricing` exists in codebase but not in epics | Add story covering billing toggle, plan cards, CTA routing |
 
@@ -272,22 +272,22 @@ The existing planning artifacts cover the full ZapDrop product vision (chunked u
 | **PRD** | ✅ Complete (for ZapDrop) | 19 FRs, strong market research; plan upgrade omitted |
 | **Architecture** | ⚠️ Incomplete | Only P2P covered; no core pipeline or payment architecture |
 | **Epics** | ⚠️ Partial | 100% FR coverage for ZapDrop; **0% for plan upgrade** |
-| **UX** | ⚠️ Partial | Strong for ZapDrop; **no UX for `/upgrade`, Ko-fi flow** |
+| **UX** | ⚠️ Partial | Strong for ZapDrop; **no UX for `/upgrade`, PayOS flow** |
 | **Epic Quality** | 🟡 Minor issues | 2 stories without ACs, 1 forward dep, React→Blazor mismatch |
 
 ### Critical Issues Requiring Immediate Action
 
 | # | Issue | What to do |
 |---|-------|------------|
-| 1 | **No plan upgrade in PRD/Epics/UX** — Ko-fi subscription flow, plan lifecycle, webhook handling, post-payment redirect are unspecced | Complete the `bmad-spec` you started, then feed it into PRD/Epics. Or build a minimal Epic 3 directly. |
+| 1 | **No plan upgrade in PRD/Epics/UX** — PayOS payment flow, plan lifecycle, webhook handling, post-payment redirect are unspecced | Complete the `bmad-spec` you started, then feed it into PRD/Epics. Or build a minimal Epic 3 directly. |
 | 2 | **Architecture gap** — no architecture for payment endpoints, webhook security, plan state machine | Create a lightweight architecture spine for the payment module |
-| 3 | **WHAT YOU'RE CURRENTLY BUILDING vs WHAT'S SPECCED** — the `/upgrade` page, Pricing.razor, Ko-fi integration are being built without planning artifacts. This creates drift. | Either: (a) finish the spec → PRD → epics chain, or (b) accept building payment as a standalone mini-feature and bypass the full planning pipeline |
+| 3 | **WHAT YOU'RE CURRENTLY BUILDING vs WHAT'S SPECCED** — the `/upgrade` page, Pricing.razor, PayOS integration are being built without planning artifacts. This creates drift. | Either: (a) finish the spec → PRD → epics chain, or (b) accept building payment as a standalone mini-feature and bypass the full planning pipeline |
 
 ### Recommended Next Steps
 
-1. **Complete the payment spec** (`/bmad-spec` — you were mid-guided mode) to define Ko-fi redirect + webhook flow and plan lifecycle
-2. **Create Epic 3 Plan Subscription** with 2-3 stories: Initiate Ko-fi payment, Receive Ko-fi webhook, Update plan state
-3. **Add UX for `/upgrade` page** — plan summary card, Ko-fi redirect flow, post-payment confirmation
+1. **Complete the payment spec** (`/bmad-spec` — you were mid-guided mode) to define PayOS redirect + webhook flow and plan lifecycle
+2. **Create Epic 3 Plan Subscription** with 2-3 stories: Initiate PayOS payment, Receive PayOS webhook, Update plan state
+3. **Add UX for `/upgrade` page** — plan summary card, PayOS redirect flow, post-payment confirmation
 4. **Fix tech-stack references** in epics — replace `src/QuickShare.Client/src/...` with actual Blazor Razor paths
 5. **Fix Story 1.10/1.11** — add BDD ACs or merge into parent stories
 

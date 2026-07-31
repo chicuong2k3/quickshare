@@ -332,7 +332,7 @@ Generate migration: `dotnet ef migrations add AddDeliveryEntities --context Tele
 
 - `Delivery.PasswordHash` will be used in Story 2.1 (password gate)
 - `Delivery.BrandLogo/BrandMessage/BrandAccent` will be used in Story 2.2 (branded page)
-- `Delivery.Price/PaymentStatus` will be used in Story 2.4 (paid delivery via Ko-fi)
+- `Delivery.Price/PaymentStatus` will be used in Story 2.4 (paid delivery via PayOS)
 - `DownloadTracking` will be used in Story 2.3 (download tracking)
 - `UploadSession` will be used in Story 1.2 (chunked upload API)
 - `Chunk.Sha256` will be used in Story 1.3 (download integrity) and Story 1.4 (E2E encryption AAD binding)

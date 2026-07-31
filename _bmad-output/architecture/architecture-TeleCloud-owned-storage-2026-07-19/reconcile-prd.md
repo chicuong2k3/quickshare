@@ -18,7 +18,7 @@
 - **FR-9 (Server-enforced quota)**: Referenced in AD-9 (API Endpoint Structure) but enforcement architecture, quota model, and limit checking not specified.
 - **FR-10 (Link expiry)**: Mentioned as functional requirement but expiry mechanism, TTL management, and cleanup processes not architecturally defined.
 - **FR-11 (Download-count cap)**: Referenced in AD-10 (Download Abuse Protection) but counting mechanism, enforcement point, and atomic counter design not specified.
-- **FR-13 (Egress passthrough Studio tier)**: Payment integration covered by AD-11 (Payment Integration Architecture) but only for Ko-fi webhook. Metering infrastructure, per-GB billing, and overage tracking architecture missing.
+- **FR-13 (Egress passthrough Studio tier)**: Payment integration covered by AD-11 (Payment Integration Architecture) but only for PayOS webhook. Metering infrastructure, per-GB billing, and overage tracking architecture missing.
 - **FR-14 (Download tracking/receipt)**: Referenced in AD-6 (Entity Relationship Model) and AD-10 (Download Abuse Protection) but tracking metadata model and query patterns not detailed.
 
 ### 🔴 Missing coverage: FR-4, FR-5, FR-6, FR-7, FR-12, FR-20, FR-21, FR-22
@@ -79,7 +79,7 @@
 
 ### 6. **Payment Integration Architecture Incomplete (MEDIUM)**
 **Impact:** Revenue generation architecture underspecified
-- AD-11 covers Ko-fi webhook but architectural scope limited
+- AD-11 covers PayOS webhook but architectural scope limited
 - No VietQR integration architecture (primary payment rail per PRD assumption)
 - No egress passthrough metering infrastructure
 - No per-GB billing architecture for Studio tier

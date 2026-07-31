@@ -1,4 +1,4 @@
-namespace QuickShare.Features.Payments.Kofi;
+namespace QuickShare.Features.Payments;
 
 /// <summary>
 /// Shared billing-history logic used by both the REST endpoint

@@ -185,6 +185,8 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.PayOSOrderCode).IsRequired();
+            entity.HasIndex(e => e.PayOSOrderCode).IsUnique();
             entity.Property(e => e.Plan).IsRequired();
             entity.Property(e => e.Billing).IsRequired();
             entity.Property(e => e.Status).IsRequired();

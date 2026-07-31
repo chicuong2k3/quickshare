@@ -6,7 +6,7 @@ Audit all HTTP API endpoints, remove dead endpoints, and convert unnecessary Raz
 ## Architecture Principle
 - **Browser JS** (`upload.js`, `download.js`, `files.js`, `account.js`, `p2p/send.js`) → must call HTTP endpoints (cannot call server C# directly)
 - **Blazor SSR pages** → call services directly or use `<form method="post">` handlers — NO intermediate API endpoint
-- **External callers** (Ko-fi IPN) → must call HTTP endpoints
+- **External callers** (PayOS webhook) → must call HTTP endpoints
 
 ## Important Details
 - **Stack**: .NET 10 Blazor Static SSR + FastEndpoints + Wolverine (IMessageBus) + EF Core
@@ -34,7 +34,7 @@ Audit all HTTP API endpoints, remove dead endpoints, and convert unnecessary Raz
 | `PUT /api/folders/{id}` | UpdateFolderEndpoint | files.js |
 | `DELETE /api/folders/{id}` | DeleteFolderEndpoint | files.js |
 | `POST /api/shares/p2p` | CreateP2PShareEndpoint | p2p/send.js |
-| `POST /api/payments/kofi/webhook` | KofiWebhookEndpoint | External (Ko-fi IPN) |
+| `POST /api/payments/payos/webhook` | PayOSWebhookEndpoint | External (PayOS webhook) |
 
 ### DEAD endpoints removed (18 total)
 
@@ -74,7 +74,7 @@ Audit all HTTP API endpoints, remove dead endpoints, and convert unnecessary Raz
 
 ### 3. Razor-facing endpoints converted to form handlers
 - **AccountBilling.razor**: Cancel button → `<form method="post" Action=cancel>` → `SubscriptionService.CancelAsync()`
-- **Upgrade.razor**: Pay with Ko-fi button → `<form method="post" Plan/Billing>` → creates PaymentIntent directly
+- **Upgrade.razor**: Pay with PayOS button → `<form method="post" Plan/Billing>` → creates PaymentIntent + calls PayOS API → shows QR/checkout URL
 - Both pages now handle mutations the same way they load data: via direct service calls, no HTTP round-trip
 
 ### 4. Shared handlers preserved
@@ -82,7 +82,7 @@ Audit all HTTP API endpoints, remove dead endpoints, and convert unnecessary Raz
 - `ListFoldersHandler.cs` — used by Files.razor via IMessageBus
 - `GetFolderInfoHandler.cs` — used by Files.razor via IMessageBus
 - `DownloadInfoHandler.cs` — used by Download.razor via IMessageBus
-- `SubscriptionService.cs` — used by AccountBilling.razor, SubscriptionExpiryJob, KofiWebhookEndpoint
+- `SubscriptionService.cs` — used by AccountBilling.razor, SubscriptionExpiryJob, PayOSWebhookEndpoint
 - `BillingHistoryService.cs` — used by AccountBilling.razor
 
 ## Relevant Files
