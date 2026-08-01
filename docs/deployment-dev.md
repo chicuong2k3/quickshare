@@ -101,6 +101,12 @@ docker compose up -d --remove-orphans quickshare
 docker compose logs -f quickshare
 ```
 
+## Verify workflow run
+
+- GitHub Actions tab → latest run → `build` + `deploy` jobs
+- On the server, a running job spawns `Runner.Worker`; logs at `C:\actions-runner\_diag\Worker_*.log`
+- Runner status: repo → Settings → Actions → Runners
+
 ## Notes
 
 - Missing `DB_CONNECTION_STRING` → app crashes at startup.
