@@ -1,6 +1,6 @@
 # ── QuickShareCloud — Dev Stack ──
 # Server: Windows Server + Docker
-# Domain: codemagic.io.vn (Cloudflare Tunnel)
+# Domain: quickshare.codemagic.io.vn (Cloudflare Tunnel)
 # Branch: dev  |  Image tag: dev
 
 services:
@@ -31,8 +31,8 @@ services:
       - PayOS__ApiKey=${PAYOS_API_KEY:-}
       - PayOS__ChecksumKey=${PAYOS_CHECKSUM_KEY:-}
       - PayOS__WebhookUrl=${PAYOS_WEBHOOK_URL:-}
-      - PayOS__ReturnUrl=https://codemagic.io.vn/upgrade
-      - PayOS__CancelUrl=https://codemagic.io.vn/upgrade
+      - PayOS__ReturnUrl=https://quickshare.codemagic.io.vn/upgrade
+      - PayOS__CancelUrl=https://quickshare.codemagic.io.vn/upgrade
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
