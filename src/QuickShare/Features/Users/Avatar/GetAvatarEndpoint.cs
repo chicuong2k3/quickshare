@@ -24,16 +24,16 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
             if (!string.IsNullOrEmpty(avatarUrl))
             {
                 var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? string.Empty);
-                html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" />";
+                html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" tabindex=\"0\" />";
             }
             else
             {
-                html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">{GetInitials(user.Name)}</span>";
+                html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" tabindex=\"0\">{GetInitials(user.Name)}</span>";
             }
         }
         catch
         {
-            html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">?</span>";
+            html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" tabindex=\"0\">?</span>";
         }
 
         HttpContext.Response.StatusCode = 200;
