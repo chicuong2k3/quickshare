@@ -5,7 +5,7 @@
 
 services:
   quickshare:
-    image: ghcr.io/chicuong2k3/quickshare:dev
+    image: ghcr.io/chicuong2k3/TeleCloud:dev
     container_name: quickshare
     restart: unless-stopped
     ports:
