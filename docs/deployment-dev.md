@@ -10,7 +10,7 @@ flowchart LR
     subgraph GitHub["GitHub"]
         REPO["chicuong2k3/TeleCloud<br/>branch: dev"]
         ACTIONS["GitHub Actions<br/>(ubuntu-latest)"]
-        GHCR[("ghcr.io<br/>TeleCloud:dev")]
+        GHCR[("ghcr.io<br/>telecloud:dev")]
     end
 
     subgraph Server["Windows Server (this machine)"]
@@ -51,7 +51,7 @@ sequenceDiagram
     GitHub->>Actions: trigger "Deploy to Dev" workflow
     Actions->>Actions: checkout source
     Actions->>Actions: setup-buildx + login ghcr (GITHUB_TOKEN)
-    Actions->>GHCR: build & push TeleCloud:dev + TeleCloud:<sha>
+    Actions->>GHCR: build & push telecloud:dev + telecloud:<sha>
     Actions->>Runner: deploy job (runs-on: self-hosted)
     Runner->>Runner: docker login ghcr.io
     Runner->>Runner: cd ${{ secrets.DEV_DEPLOY_PATH }}
@@ -67,7 +67,7 @@ sequenceDiagram
 | Component | Location / Value | Notes |
 |-----------|------------------|-------|
 | Workflow | `.github/workflows/deploy-dev.yml` | Triggers on push to `dev` branch or `workflow_dispatch` |
-| Image | `ghcr.io/chicuong2k3/TeleCloud:dev` | Also tagged `:<commit-sha>` |
+| Image | `ghcr.io/chicuong2k3/telecloud:dev` | Lowercase (ghcr requirement); also tagged `:<commit-sha>` |
 | Runner | `C:\actions-runner`, repo `chicuong2k3/TeleCloud` | Registered to `Default` pool, `runs-on: self-hosted` |
 | Deploy path | `C:\deploy\quickshare` | Secret `DEV_DEPLOY_PATH` points to this folder |
 | Compose | `C:\deploy\quickshare\docker-compose.yml` | Service `quickshare`, binds `127.0.0.1:8080` |
