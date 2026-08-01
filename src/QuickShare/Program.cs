@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
@@ -11,22 +12,31 @@ using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Storage;
+using Npgsql;
+using Wolverine.ErrorHandling;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Forwarded Headers (Cloudflare Tunnel + Docker) ──
-// Cloudflare Tunnel terminates TLS and forwards as HTTP.
-// Without this, OAuth middleware generates http:// redirect URIs.
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
+const string DefaultConnectionName = "DefaultConnection";
+const string MissingConnectionStringError = "ConnectionStrings:DefaultConnection missing";
+const int DatabaseKeepAliveSeconds = 30;
+const int DatabaseRetryAttemptCount = 5;
+var databaseMaxRetryDelay = TimeSpan.FromSeconds(10);
+var databaseRetrySchedule = new[]
 {
-    options.ForwardedHeaders = ForwardedHeaders.All;
-    // Container only receives from Docker host/cloudflared — trust all proxies.
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection missing");
+    TimeSpan.FromSeconds(2),
+    TimeSpan.FromSeconds(5),
+    TimeSpan.FromSeconds(15)
+};
 
+var configuredConnectionString = builder.Configuration.GetConnectionString(DefaultConnectionName)
+    ?? throw new InvalidOperationException(MissingConnectionStringError);
+var connectionBuilder = new NpgsqlConnectionStringBuilder(configuredConnectionString)
+{
+    KeepAlive = DatabaseKeepAliveSeconds,
+    TcpKeepAlive = true
+};
+var connectionString = connectionBuilder.ConnectionString;
 // Shared DataProtection keyring (same ApplicationName + KeyPath the two projects used before).
 var dpPath = builder.Configuration["DataProtection:KeyPath"]
     ?? Path.Combine(Path.GetTempPath(), "QuickShare", "keys");
@@ -46,7 +56,8 @@ if (useInMemoryDb)
 else
 {
     builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseNpgsql(connectionString)
+        opts.UseNpgsql(connectionString, npgsqlOptions =>
+                npgsqlOptions.EnableRetryOnFailure(DatabaseRetryAttemptCount, databaseMaxRetryDelay, null))
             .AddInterceptors(new AuditableEntityInterceptor()));
 }
 
@@ -93,6 +104,9 @@ builder.Services.AddScoped<PayOSService>();
 builder.Host.UseWolverine(opts =>
 {
     opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
+    opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
+    opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
+    opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
     opts.UseEntityFrameworkCoreTransactions();
     opts.Policies.AutoApplyTransactions();
 }, ExtensionDiscovery.ManualOnly);
