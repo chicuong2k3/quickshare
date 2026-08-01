@@ -7,6 +7,8 @@
         function text(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
         var SIGNALING_CONNECT_TIMEOUT_MS = 15000;
         var SIGNALING_CONNECT_TIMEOUT_MESSAGE = 'Could not reach signaling server. Check network and try again.';
+        var RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
+        var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = 'Sender did not respond in time. Please try again.';
 
         window.p2pDownload = (function () {
             var state = {
@@ -14,7 +16,8 @@
                 shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''),
                 _receivedBytes: 0, _startTime: 0,
                 _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _intentionalStop: false,
-                _pendingOffer: null, _pendingIceCandidates: [], _isRegistered: false, _connectTimeoutId: null
+                _pendingOffer: null, _pendingIceCandidates: [], _isRegistered: false, _connectTimeoutId: null,
+                _handshakeTimeoutId: null
             };
 
             function render() {
@@ -78,6 +81,26 @@
                     render();
                 }, SIGNALING_CONNECT_TIMEOUT_MS);
             }
+            function clearHandshakeTimeout() {
+                if (state._handshakeTimeoutId) {
+                    clearTimeout(state._handshakeTimeoutId);
+                    state._handshakeTimeoutId = null;
+                }
+            }
+
+            function armHandshakeTimeout() {
+                clearHandshakeTimeout();
+                state._handshakeTimeoutId = setTimeout(function () {
+                    if (state.phase !== 'connecting') {
+                        return;
+                    }
+
+                    state.phase = 'error';
+                    state.error = RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE;
+                    render();
+                }, RECEIVER_HANDSHAKE_TIMEOUT_MS);
+            }
+
 
 
             function init() {
@@ -96,6 +119,13 @@
                 state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; clearConnectTimeout(); if (state.phase !== 'ready' && state.phase !== 'connecting' && state.phase !== 'transferring' && state.phase !== 'complete') { state.phase = 'ready'; } render(); };
                 state._signaling.onPeerJoined = function () { clearConnectTimeout(); if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
                 state._signaling.onWaiting = function () { clearConnectTimeout(); state.phase = 'waiting-sender'; render(); };
+                state._signaling.onPeerLeft = function () {
+                    clearHandshakeTimeout();
+                    if (state.phase === 'connecting' || state.phase === 'ready' || state.phase === 'transferring') {
+                        state.phase = 'waiting-sender';
+                        render();
+                    }
+                };
                 state._signaling.onRelay = function (type, data) {
                     if (type === 'offer') {
                         if (state._peerConnection) {
@@ -118,16 +148,16 @@
                     }
 
                     clearConnectTimeout();
+                    clearHandshakeTimeout();
                     state.phase = 'error';
                     state.error = message || SIGNALING_CONNECT_TIMEOUT_MESSAGE;
-                    render();
                 };
                 armConnectTimeout();
                 state._signaling.connect('receiver');
             }
 
             function startDownload() {
-                state.phase = 'connecting'; render();
+                state.phase = 'connecting'; armHandshakeTimeout(); render();
                 if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) { state.phase = 'error'; state.error = 'P2P modules not loaded'; render(); return; }
                 state._peerConnection = new window.P2P.PeerConnection();
                 state._peerConnection.onDataChannel = function (channel) { onDataChannel(channel); };
@@ -157,13 +187,14 @@
                 state._startTime = Date.now();
                 state._receiver.onFileInfo = function (info) { state.fileName = info.name; state.fileSize = info.size; state.mimeType = info.mime; };
                 state._receiver.onProgress = function (rec, tot) { state.progress = Math.round((rec / tot) * 100); state._receivedBytes = rec; render(); };
-                state._receiver.onComplete = function () { state.progress = 100; state.phase = 'complete'; render(); };
-                state._receiver.onError = function (msg) { state.phase = 'error'; state.error = msg; render(); };
+                state._receiver.onComplete = function () { clearHandshakeTimeout(); state.progress = 100; state.phase = 'complete'; render(); };
+                state._receiver.onError = function (msg) { clearHandshakeTimeout(); state.phase = 'error'; state.error = msg; render(); };
+                clearHandshakeTimeout();
                 state.phase = 'transferring'; state._receiver.start(); render();
             }
 
-            function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
-            function cleanup() { clearConnectTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
+            function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); clearHandshakeTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
+            function cleanup() { clearConnectTimeout(); clearHandshakeTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
             return { startDownload: startDownload, cancelDownload: cancelDownload };
