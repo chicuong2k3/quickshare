@@ -14,6 +14,7 @@ services:
       - quickshare_keys:/app/keys
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
       - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
       - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
@@ -33,6 +34,11 @@ services:
       - PayOS__WebhookUrl=${PAYOS_WEBHOOK_URL:-}
       - PayOS__ReturnUrl=https://quickshare.codemagic.io.vn/upgrade
       - PayOS__CancelUrl=https://quickshare.codemagic.io.vn/upgrade
+      - Pricing__ProMonthly=${PRICING_PRO_MONTHLY:-2000}
+      - Pricing__ProYearly=${PRICING_PRO_YEARLY:-20000}
+      - Pricing__StudioMonthly=${PRICING_STUDIO_MONTHLY:-5000}
+      - Pricing__StudioYearly=${PRICING_STUDIO_YEARLY:-50000}
+      - Pricing__Currency=${PRICING_CURRENCY:-VND}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
