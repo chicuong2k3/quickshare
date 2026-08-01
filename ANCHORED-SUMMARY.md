@@ -14,9 +14,9 @@ Audit all HTTP API endpoints, remove dead endpoints, and convert unnecessary Raz
 - **Blazor pages load data via**: `IMessageBus.InvokeAsync()` → handler → EF Core, or service classes directly
 - **Blazor pages handle mutations via**: `<form method="post">` → `OnInitializedAsync` reads form → calls service directly
 
-## Endpoint Status (33 original → 15 remaining)
+## Endpoint Status (33 original → 17 remaining)
 
-### LIVE endpoints (15 — all called from browser JS or external webhook)
+### LIVE endpoints (17 — all called from browser JS, HTMX, or external webhook)
 
 | Route | Endpoint Class | Called From |
 |---|---|---|
@@ -27,8 +27,10 @@ Audit all HTTP API endpoints, remove dead endpoints, and convert unnecessary Raz
 | `GET /api/deliveries/{ShareCode}/brand` | GetBrandEndpoint | account.js, download.js |
 | `PUT /api/deliveries/{DeliveryId}/brand` | SetBrandEndpoint | account.js |
 | `POST /api/deliveries/{ShareCode}/verify` | VerifyPasswordEndpoint | download.js |
+| `POST /api/deliveries/{ShareCode}/verify-otp` | VerifyOtpEndpoint | download.js |
 | `POST /api/deliveries/{ShareCode}/report` | ReportDeliveryEndpoint | download.js |
 | `GET /api/downloads/{ShareCode}` | DownloadDeliveryEndpoint | download.js |
+| `GET /api/me/avatar` | GetAvatarEndpoint | MainLayout (HTMX nav avatar) |
 | `PATCH /api/files/{fileId}/folder` | MoveFileEndpoint | files.js |
 | `POST /api/folders` | CreateFolderEndpoint | files.js |
 | `PUT /api/folders/{id}` | UpdateFolderEndpoint | files.js |

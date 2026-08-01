@@ -30,7 +30,7 @@ QuickShare supports **server-mediated file uploads** via the **R2 direct-upload 
 
 | Layer | File | Role |
 |-------|------|------|
-| IStorageProvider | `Abstractions/IStorageProvider.cs` | Interface: chunk store/retrieve, R2 multipart lifecycle, presigned URLs |
+| IStorageProvider | `Infrastructure/IStorageProvider.cs` | Interface: chunk store/retrieve, R2 multipart lifecycle, presigned URLs |
 | R2StorageProvider | `Infrastructure/Storage/R2StorageProvider.cs` | Cloudflare R2 via AWS S3 SDK (`IAmazonS3`) |
 | LocalDiskStorageProvider | `Infrastructure/LocalDiskStorageProvider.cs` | **Deprecated** — local disk storage (R2 is primary) |
 
@@ -38,21 +38,21 @@ QuickShare supports **server-mediated file uploads** via the **R2 direct-upload 
 
 | Model | File | Role |
 |-------|------|------|
-| `UploadSession` | `Shared/Models/UploadSession.cs` | Tracks in-progress upload: sender, file meta, status, R2 IDs |
-| `Delivery` | `Shared/Models/Delivery.cs` | The "share" — file metadata, share code, download limits, branding |
-| `Chunk` | `Shared/Models/Chunk.cs` | One chunk of a file: index, size, storage ref, SHA-256 |
-| `Manifest` | `Shared/Models/Manifest.cs` | Encrypted chunk index (binary blob, AES-CBC keyed by share code) |
+| `UploadSession` | `Data/Entities/UploadSession.cs` | Tracks in-progress upload: sender, file meta, status, R2 IDs |
+| `Delivery` | `Data/Entities/Delivery.cs` | The "share" — file metadata, share code, download limits, branding |
+| `Chunk` | `Data/Entities/Chunk.cs` | One chunk of a file: index, size, storage ref, SHA-256 |
+| `Manifest` | `Data/Entities/Manifest.cs` | Encrypted chunk index (binary blob, AES-CBC keyed by share code) |
 | `ManifestData` | `Features/Uploads/Shared/ManifestData.cs` | Plaintext manifest: file metadata + `ChunkEntry[]` |
 | `ManifestEncryption` | `Features/Uploads/Shared/ManifestEncryption.cs` | AES-CBC encrypt/decrypt manifest using SHA-256 of share code |
 | `UploadConstants` | `Features/Uploads/UploadConstants.cs` | `DefaultChunkSize = 25 MB` |
-| `PlanTierLimits` | `Shared/Constants/PlanTierLimits.cs` | Per-plan limits: max file size, max expiry, max downloads, concurrency |
+| `PlanTierLimits` | `Infrastructure/PlanTierLimits.cs` | Per-plan limits: max file size, max expiry, max downloads, concurrency |
 
 ### Frontend
 
 | Layer | File | Role |
 |-------|------|------|
 | Upload Page | `Pages/Upload.razor` | Route `/` — full send page: drag/drop, paste, encryption toggle, expiry picker |
-| Upload Logic | `Pages/Upload.razor.js` | State machine: idle → uploading → success/error, R2 multipart orchestration |
+| Upload Logic | `wwwroot/js/upload.js` | State machine: idle → uploading → success/error, R2 multipart orchestration |
 
 ---
 
@@ -188,18 +188,17 @@ ManifestEncryption.Decrypt(encryptedData, shareCode):
 
 ---
 
-## 5. Client-Side Encryption (Optional)
+## 5. Client-Side Encryption (Always-On)
 
-The upload page offers an **"Encrypt"** toggle. When enabled, the client encrypts the entire file before upload.
+Every upload is encrypted client-side **before the bytes leave the browser** — there is no toggle (`upload.js` sets `encryptionEnabled: true` unconditionally).
 
 ```
-Encryption Flow:
-  1. User toggles "Encrypt" ON
-  2. Client generates AES-256-GCM key via Web Crypto
-  3. Client encrypts entire file: AES-256-GCM(file, key, 12-byte random nonce)
-  4. Encrypted blob = nonce || ciphertext (prepended to results)
-  5. Upload proceeds normally
-  6. After commit, the raw key is appended to URL as fragment:
+Encryption Flow (every upload):
+  1. Client generates AES-256-GCM key via Web Crypto
+  2. Client encrypts entire file: AES-256-GCM(file, key, 12-byte random nonce)
+  3. Encrypted blob = nonce || ciphertext (prepended to results)
+  4. Upload proceeds normally
+  5. After commit, the raw key is appended to URL as fragment:
      /d/{shareCode}#key={base64url(rawKey)}
   → Server NEVER sees the key. Only someone with the full URL can decrypt.
   → Key is in the URL fragment (not sent to server during download page load).
@@ -217,7 +216,7 @@ Checked in `StartR2Handler`:
 | Max expiry days | 7 | 30 | 90 |
 | Max downloads | 5 | 50 | unlimited |
 | Max monthly bytes | 2 GB | 50 GB | 500 GB |
-| Max concurrent | 5 | 10 | 20 |
+| Max concurrent | 2 | 4 | 6 |
 
 ---
 
@@ -227,7 +226,7 @@ The upload page at `/` renders one section at a time:
 
 | State | Section ID | Trigger |
 |-------|-----------|---------|
-| **idle** | `upload-idle` | Page load — drag/drop zone, paste hint, encrypt toggle, expiry picker |
+| **idle** | `upload-idle` | Page load — drag/drop zone, paste hint, always-on encryption badge, expiry picker |
 | **dragging** | `upload-idle` (visual) | File being dragged over drop zone |
 | **uploading** | `upload-uploading` | File selected — progress bar, speed, ETA, cancel button |
 | **success** | `upload-success` | Commit returns share link — copy button, QR code, encrypt badge |
@@ -235,11 +234,11 @@ The upload page at `/` renders one section at a time:
 
 ---
 
-## 8. Upload Orchestration (Upload.razor.js)
+## 8. Upload Orchestration (wwwroot/js/upload.js)
 
 ```
 doUpload(file):
-  1. Optional encryption:
+  1. Always-on encryption:
      - webcrypto.generateKey(AES-GCM, 256)
      - encrypt(file, key) → nonce + ciphertext
      - encode raw key → base64url
@@ -287,9 +286,12 @@ In `src/QuickShare/Program.cs`:
 
 ```csharp
 // Storage provider (configured via env/storage options)
-builder.Services.AddScoped<IStorageProvider, R2StorageProvider>();
-// Or for local dev:
-builder.Services.AddScoped<IStorageProvider, LocalDiskStorageProvider>();
+builder.Services.AddSingleton<R2StorageProvider>();
+// IStorageProvider resolves to R2 by default.
+builder.Services.AddSingleton<IStorageProvider>(sp =>
+    sp.GetRequiredService<R2StorageProvider>());
+// When R2 is NOT configured, fall back to local disk:
+builder.Services.AddSingleton<IStorageProvider, LocalDiskStorageProvider>();
 ```
 
 All upload endpoints use FastEndpoints with the standard cookie auth (no explicit `AllowAnonymous()` — they require authentication).
@@ -301,7 +303,7 @@ All upload endpoints use FastEndpoints with the standard cookie auth (no explici
 | File | Role |
 |------|------|
 | `src/QuickShare/Pages/Upload.razor` | Send page UI (`/` route) — drag/drop, paste, encrypt, expiry |
-| `src/QuickShare/Pages/Upload.razor.js` | Upload state machine + R2 multipart orchestration |
+| `src/QuickShare/wwwroot/js/upload.js` | Upload state machine + R2 multipart orchestration |
 | `src/QuickShare/Features/Uploads/StartR2/StartR2Endpoint.cs` | `POST /api/uploads/start-r2` |
 | `src/QuickShare/Features/Uploads/StartR2/StartR2Handler.cs` | R2 init + UploadSession creation |
 | `src/QuickShare/Features/Uploads/CommitR2/CommitR2Endpoint.cs` | `POST /api/uploads/commit-r2` |
@@ -309,11 +311,11 @@ All upload endpoints use FastEndpoints with the standard cookie auth (no explici
 | `src/QuickShare/Features/Uploads/AbortR2/AbortR2Endpoint.cs` | `POST /api/uploads/abort-r2` |
 | `src/QuickShare/Features/Uploads/AbortR2/AbortR2Handler.cs` | R2 abort + session cleanup |
 | `src/QuickShare/Features/Uploads/UploadConstants.cs` | DefaultChunkSize = 25 MB |
-| `src/QuickShare/Abstractions/IStorageProvider.cs` | Storage interface |
+| `src/QuickShare/Infrastructure/IStorageProvider.cs` | Storage interface |
 | `src/QuickShare/Infrastructure/Storage/R2StorageProvider.cs` | Cloudflare R2 via AWS SDK |
 | `src/QuickShare/Infrastructure/LocalDiskStorageProvider.cs` | **Deprecated** local disk storage |
-| `src/QuickShare/Models/UploadSession.cs` | Upload session entity |
-| `src/QuickShare/Models/Delivery.cs` | Delivery (share) entity |
-| `src/QuickShare/Models/Chunk.cs` | Chunk entity (deprecated — R2 handles chunking) |
-| `src/QuickShare/Models/Manifest.cs` | Manifest entity (deprecated — R2 is single object) |
-| `src/QuickShare/Constants/PlanTierLimits.cs` | Per-plan limits |
+| `src/QuickShare/Data/Entities/UploadSession.cs` | Upload session entity |
+| `src/QuickShare/Data/Entities/Delivery.cs` | Delivery (share) entity |
+| `src/QuickShare/Data/Entities/Chunk.cs` | Chunk entity (deprecated — R2 handles chunking) |
+| `src/QuickShare/Data/Entities/Manifest.cs` | Manifest entity (deprecated — R2 is single object) |
+| `src/QuickShare/Infrastructure/PlanTierLimits.cs` | Per-plan limits |

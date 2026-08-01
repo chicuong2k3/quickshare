@@ -112,8 +112,8 @@
 | `/` | `Home.razor` | Server-rendered | Product landing page: hero, feature cards (encryption, auto-expiry, no signup), 3-step how-it-works, CTA |
 | `/send` | `Upload.razor` | Vanilla JS | Drag-drop + paste upload, AES-256-GCM always-on encryption, R2 multipart, QR code generation, expiry selector (24h/7d), optional 6-digit OTP security code |
 | `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: OTP gate (if set) → password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation, abuse reporting, sender branding |
-| `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling, PIN-protected encryption, data channel file streaming with progress |
-| `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, PIN gate, WebRTC answer, data channel file receipt, progress tracking |
+| `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling, data channel file streaming with progress |
+| `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, WebRTC answer, data channel file receipt, progress tracking |
 | `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop move, CRUD modals, htmx-powered live search, download button |
 | `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload), OAuth badge, delivery branding manager, htmx form + lazy-load |
 | `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler |
@@ -150,7 +150,7 @@ JS-based pages (Upload, Download, P2PTransfer, P2PDownload) call `/api/*` via `f
 | **Interactivity** | htmx (`hx-boost`, `hx-get`, `hx-post`, `hx-target`, `hx-swap`) + vanilla JS modules |
 | **Styling** | DAUB component classes + CSS isolation via `.razor.css` (Blazor auto-scope) |
 | **CSS Variables** | `--color-foreground`, `--color-background`, `--color-primary`, `--color-accent`, `--color-border`, `--color-muted`, `--color-destructive`, `--color-warning`, `--color-success`, `--color-ring` |
-| **P2P** | Custom `RTCPeerConnection` + data channels (`/wwwroot/js/p2p/`): `signaling.js`, `peerConnection.js`, `fileTransfer.js`, `fileReceiver.js`, `encryption.js` |
+| **P2P** | Custom `RTCPeerConnection` + data channels (`/wwwroot/js/p2p/`): `signaling.js`, `peerConnection.js`, `fileTransfer.js`, `fileReceiver.js` |
 | **QR** | `qrcode-generator` (npm vendor-copied to `wwwroot/lib/qrcode/qrcode.min.js`) |
 | **API** | JS pages call relative `/api/*` (same origin); SSR pages use in-process `IMessageBus` or `AppDbContext` |
 | **Auth** | `AuthorizeRouteView` + `[Authorize]` on protected pages; cookie auth with dual `/api` vs page redirect behavior |
@@ -180,32 +180,32 @@ wwwroot/
 
 ---
 
-## Data Models & Constants (`Models/`, `Constants/`)
+## Data Models & Constants (Entities + Infrastructure)
 
-Models, DTOs, and constants now live directly in `src/QuickShare/Models/` and `src/QuickShare/Constants/`.
+Entities live in `src/QuickShare/Data/Entities/` (namespace `QuickShare.Data.Entities`); constants live in `src/QuickShare/Infrastructure/`.
 
 ### Data Models
 
 | Entity | Table | Key Fields |
 |--------|-------|-----------|
 | `User` | `users` | Id (Guid v7), Name, Email, AvatarUrl, Plan (Free/Pro/Studio), CreatedAt, UpdatedAt |
-| `UserLogin` | `user_logins` | Id, UserId (FK), Provider (google/github/facebook/tiktok), ProviderKey |
+| `UserLogin` | `user_logins` | Id, UserId (FK), Provider (google — only Google OAuth is configured), ProviderKey |
 | `UserUsage` | `user_usages` | Id, UserId (FK), PeriodStart (month), TotalBytesUploaded, TransferCount |
 | `Folder` | `folders` | Id (UUID), Name (UNIQUE) |
 | `FileMetadata` | `files` | Id (UUID), Filename, ContentType, Size, FolderId (FK), Tags (TEXT[]), CreatedAt |
 | `Delivery` | `deliveries` | ShareCode, FileName, ContentType, FileSize, StoragePath, ExpiresAt, DownloadCount, MaxDownloads, PasswordHash, OtpHash, BrandLogo, BrandMessage, BrandAccent, Status |
 | `UploadSession` | `upload_sessions` | DeliveryId, UploadId (R2), ObjectKey (R2 multipart tracking) |
 | `Subscription` | `subscriptions` | UserId (FK), Plan, Status (Active/Cancelled/Expired), BillingPeriod (monthly/yearly), CurrentPeriodStart, CurrentPeriodEnd, CancelledAt, CreatedAt, UpdatedAt |
-| `PaymentIntent` | `payment_intents` | UserId (FK), Code (unique, `QSC-XXXXXX`), Plan, Billing, Amount, Currency, Status (Pending/Completed/Expired), ExpiresAt (1h) |
-| `TempShare` | `temp_shares` | Short-lived encrypted P2P share with auto-expiry |
+| `PaymentIntent` | `payment_intents` | UserId (FK), Code (unique, `QSC-XXXXXX`), PayOSOrderCode (unique), Plan, Billing, Amount, Currency, Status (Pending/Completed/Expired), ExpiresAt (1h) |
+| `TempShare` | `TempShares` | Legacy P2P share reference — no longer used (P2P shares create `Delivery` records) |
 | `Chunk` | `chunks` | Per-chunk tracking (deprecated — R2 handles chunking client-side) |
 | `Manifest` | `manifests` | Upload manifest metadata |
 | `DownloadTracking` | `download_tracking` | Per-delivery download counters |
 | `PaymentEvent` | `payment_events` | PayOS payment webhook events |
 
 ### Constants
-- `PlanTierLimits.cs` — Plan-specific limits (file size, monthly storage, transfer count)
-- `AuthConstants.cs` — Cookie name, scheme constants, provider identifiers
+- `Infrastructure/PlanTierLimits.cs` — plan limits: max file size, max expiry days, max downloads, monthly bytes, concurrency
+- `Infrastructure/AuthConstants.cs` — cookie name, claim types, provider identifiers
 
 ### Base Types
 - `BaseAuditEntity.cs` — `Id`, `CreatedAt` (default `= DateTime.UtcNow`), `UpdatedAt?`
@@ -298,7 +298,7 @@ Sender Browser                 QuickShare (9000)            Receiver Browser
      │── ICE candidates ───────────│─── relay ICE ────────────▶│
      │                              │                           │
      │═════ DataChannel opened ════════════════════════════════│ (direct P2P)
-     │── file chunks (encrypted) ─────────────────────────────▶│
+     │── file chunks (plaintext) ─────────────────────────────▶│
      │◀────────────────────────────────────────────── ack ─────│
 ```
 
@@ -349,11 +349,9 @@ Subsequent requests:
 
 ```
 src/QuickShare/
-├── Abstractions/          # IStorageProvider interface
-├── BackgroundJobs/        # DeliveryExpiryJob, ZombiePartSweeper, SubscriptionExpiryJob
+├── Infrastructure/       # IStorageProvider, LocalDiskStorageProvider, Storage/ (R2), PlanTierLimits, AuthConstants, background jobs (DeliveryExpiryJob, ZombiePartSweeper, SubscriptionExpiryJob)
 ├── Components/            # Layout/ (MainLayout, HtmxorLayout)
-├── Constants/             # PlanTierLimits, AuthConstants
-├── Data/                  # AppDbContext, AuditableEntityInterceptor
+├── Data/                  # AppDbContext, AuditableEntityInterceptor, Entities/
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
 ├── Features/              # FastEndpoints + Wolverine handlers
 │   ├── Deliveries/        # Brand, List, Password, Otp, DeliveryService
@@ -363,6 +361,8 @@ src/QuickShare/
 │   ├── Payments/          # PayOS webhook, SubscriptionService, BillingHistoryService
 │   ├── Reports/           # Abuse reporting
 │   ├── Shares/            # P2P share creation
+│   ├── Uploads/           # StartR2, CommitR2, AbortR2 + Shared/ (ManifestEncryption, ManifestData)
+│   ├── Users/             # Avatar endpoint, Shared/ (UserRegistrationService, UserMapper)
 │   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)
 │   └── Users/             # UserRegistrationService, UserMapper
 ├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, HtmxCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware

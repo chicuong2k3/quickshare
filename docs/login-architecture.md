@@ -17,7 +17,7 @@ QuickShare uses a **single Google OAuth flow** in the monolith app (port 9000). 
 | Cookie Auth | `Program.cs` | Single `AddCookie()` — dual behavior: `/api/*` → 401, else redirect `/login` |
 | DataProtection | `Program.cs` | `PersistKeysToFileSystem` + `SetApplicationName("QuickShare")` — single app, no cross-process sharing needed |
 | User Registration Service | `Features/Users/Shared/UserRegistrationService.cs` | `RegisterAsync()` — idempotent user creation, called from OAuth `OnCreatingTicket` (all providers) |
-| Auth Constants | `QuickShare.Shared` / `AuthConstants.cs` | Cookie name, claim types, provider identifiers |
+| Auth Constants | `Infrastructure/AuthConstants.cs` | Cookie name, claim types, provider identifiers |
 | ClaimsPrincipal Extensions | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — lookup User from claims |
 | User Mapper | `Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
 | Dev Auto-Signin | `Program.cs` | Auto-signs in as `DevProvider` for development |
@@ -39,34 +39,30 @@ Single `AddAuthentication().AddCookie().AddGoogle()` registration in `Program.cs
 ```csharp
 options.Events.OnCreatingTicket = async ctx =>
 {
-    ctx.Identity?.AddClaim(new Claim("provider", "google"));
-
-    var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-    var registrationService = ctx.HttpContext.RequestServices.GetRequiredService<UserRegistrationService>();
+    ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, AuthConstants.GoogleProvider));
 
     var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
     var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
     var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    var avatar = ctx.Principal?.FindFirst("avatar_url")?.Value;
+    var avatar = ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null;
 
     if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(subject))
     {
-        var profile = await registrationService.RegisterAsync(new RegisterUserRequest
-        {
-            Provider = "google",
-            ProviderKey = subject,
-            Name = name ?? email,
-            Email = email,
-            AvatarUrl = avatar
-        }, db, CancellationToken.None);
-
-        ctx.Identity?.AddClaim(new Claim("avatar", profile.AvatarUrl ?? ""));
-        ctx.Identity?.AddClaim(new Claim("plan", profile.Plan.ToString()));
+        // Register in-process (no HTTP roundtrip) via the shared registration service.
+        var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+        await UserRegistrationService.RegisterAsync(
+            AuthConstants.GoogleProvider,
+            subject,
+            name ?? email,
+            email,
+            avatar,
+            db,
+            ctx.HttpContext.RequestAborted);
     }
 };
 ```
 
-- Adds `"provider": "google"` claim
+- Adds `"provider": "google"` claim — the **only** claim added. Avatar/plan are read from the DB via `GetUserAsync()` per request, not from claims.
 - Calls `UserRegistrationService.RegisterAsync()` **in-process** (no HTTP roundtrip to a separate Server)
 - User is created BEFORE the cookie is set
 
@@ -93,8 +89,8 @@ Browser                  QuickShare (9000)           Google OAuth
    │◀────────────────────────────────────────────────────│
    │                         │                           │
    │  Callback:              │                           │
-   │  GET /auth/google/      │                           │
-   │  callback?code=...      │                           │
+   │  GET /signin-google?    │                           │
+   │  code=...               │                           │
    │────────────────────────▶│                           │
    │                         │── Exchange code ─────────▶│
    │                         │◀─ access_token ───────────│
@@ -136,7 +132,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 ctx.Response.StatusCode = 401;
                 return Task.CompletedTask;
             }
-            ctx.Response.Redirect("/login");
+            ctx.Response.Redirect(ctx.RedirectUri);
             return Task.CompletedTask;
         };
         options.Events.OnRedirectToAccessDenied = ctx =>
@@ -146,7 +142,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 ctx.Response.StatusCode = 403;
                 return Task.CompletedTask;
             }
-            ctx.Response.Redirect("/login");
+            ctx.Response.Redirect(ctx.RedirectUri);
             return Task.CompletedTask;
         };
     })
@@ -158,7 +154,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 - FastEndpoints secure-by-default: endpoints without `AllowAnonymous()` require auth
 
 ### Protected Pages
-- `AuthorizeRouteView` + `[Authorize]` attribute on `/files`, `/account`, `/account/billing`, `/upgrade`
+- `AuthorizeRouteView` + `[Authorize]` attribute on `/files`, `/account`, `/account/profile`, `/account/billing`, `/upgrade`
 - Public pages: `/`, `/login`, `/pricing`, `/d/{code}`, `/p2p/*`
 
 ---
@@ -201,4 +197,4 @@ if (app.Environment.IsDevelopment())
 | `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY user registration (all OAuth providers) |
 | `src/QuickShare/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
 | `src/QuickShare/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — User lookup from claims |
-| `src/QuickShare.Shared/AuthConstants.cs` | Shared cookie name, claim types, provider identifiers |
+| `src/QuickShare/Infrastructure/AuthConstants.cs` | Shared cookie name, claim types, provider identifiers |

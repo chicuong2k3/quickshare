@@ -138,6 +138,134 @@
     text-align: center;
     padding: var(--db-space-8) var(--db-space-4);
 }
+/* /Pages/AccountProfile.razor.rz.scp.css */
+/* QuickShareCloud — AccountProfile.razor (profile card)
+   Scoped CSS: bundled into QuickShare.styles.css (loaded globally via App.razor),
+   so these rules also apply when the card is lazy-loaded into /account via HTMX
+   (same component renders the partial, so b-* scope attributes are present).
+
+   Shared container (.account-card), the /account skeleton, and the branding
+   section stay in wwwroot/css/app.css. */
+
+/* Profile */
+.account-profile[b-16m4l4s27l] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.account-avatar-wrap[b-16m4l4s27l] {
+    position: relative;
+    cursor: pointer;
+}
+
+.account-avatar-overlay[b-16m4l4s27l] {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-full);
+    background: color-mix(in srgb, var(--db-color-bg) 55%, transparent);
+    color: var(--db-color-text);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.account-avatar-wrap:hover .account-avatar-overlay[b-16m4l4s27l] {
+    opacity: 1;
+}
+
+.account-avatar-img[b-16m4l4s27l] {
+    width: 5rem;
+    height: 5rem;
+    border-radius: var(--db-radius-full);
+    object-fit: cover;
+}
+
+.account-avatar-initial[b-16m4l4s27l] {
+    display: flex;
+    width: 5rem;
+    height: 5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+    font-size: var(--db-text-xl);
+    font-weight: var(--db-weight-bold);
+}
+
+.account-form[b-16m4l4s27l] {
+    margin-top: var(--db-space-6);
+}
+
+.account-form-inner[b-16m4l4s27l] {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.account-logout-row[b-16m4l4s27l] {
+    margin-top: var(--db-space-5);
+}
+
+/* Save button spinner */
+.account-save-btn[b-16m4l4s27l] {
+    position: relative;
+}
+
+.account-btn-spinner[b-16m4l4s27l] {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-btn-spinner[b-16m4l4s27l]::after {
+    content: '';
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: account-btn-spin-b-16m4l4s27l 0.6s linear infinite;
+}
+
+@keyframes account-btn-spin-b-16m4l4s27l {
+    to { transform: rotate(360deg); }
+}
+
+.account-save-btn.htmx-request .btn-text[b-16m4l4s27l] {
+    visibility: hidden;
+}
+
+.account-save-btn.htmx-request .account-btn-spinner[b-16m4l4s27l] {
+    display: flex;
+}
+
+.account-form-inner input:disabled[b-16m4l4s27l] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.account-save-btn:disabled[b-16m4l4s27l] {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.account-avatar-wrap-disabled[b-16m4l4s27l] {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account-avatar-overlay[b-16m4l4s27l] { transition: none; }
+}
 /* /Pages/Download.razor.rz.scp.css */
 /* QuickShareCloud — Download page (grunge-dark tokens) */
 

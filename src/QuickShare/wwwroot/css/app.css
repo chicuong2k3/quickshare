@@ -532,10 +532,6 @@ body::after,
     max-width: 28rem;
 }
 
-.account-card ::deep .db-card__body {
-    padding: var(--db-space-6);
-}
-
 /* Skeleton */
 .account-skeleton-avatar {
     width: 5rem;
@@ -573,69 +569,7 @@ body::after,
     50% { opacity: 0.7; }
 }
 
-/* Profile */
-.account-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.account-avatar-wrap {
-    position: relative;
-    cursor: pointer;
-}
-
-.account-avatar-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--db-radius-full);
-    background: color-mix(in srgb, var(--db-color-bg) 55%, transparent);
-    color: var(--db-color-text);
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.account-avatar-wrap:hover .account-avatar-overlay {
-    opacity: 1;
-}
-
-.account-avatar-img {
-    width: 5rem;
-    height: 5rem;
-    border-radius: var(--db-radius-full);
-    object-fit: cover;
-}
-
-.account-avatar-initial {
-    display: flex;
-    width: 5rem;
-    height: 5rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--db-radius-full);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
-    font-size: var(--db-text-xl);
-    font-weight: var(--db-weight-bold);
-}
-
-.account-form {
-    margin-top: var(--db-space-6);
-}
-
-.account-form-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.account-logout-row {
-    margin-top: var(--db-space-5);
-}
+/* Profile card styles now in Pages/AccountProfile.razor.css (scoped) */
 
 /* Branding section */
 .account-section-icon {
@@ -761,59 +695,8 @@ body::after,
     margin-top: var(--db-space-4);
 }
 
-/* Save button spinner */
-.account-save-btn {
-    position: relative;
-}
-
-.account-btn-spinner {
-    display: none;
-    position: absolute;
-    inset: 0;
-    align-items: center;
-    justify-content: center;
-}
-
-.account-btn-spinner::after {
-    content: '';
-    display: block;
-    width: 1.125rem;
-    height: 1.125rem;
-    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: account-btn-spin 0.6s linear infinite;
-}
-
-@keyframes account-btn-spin {
-    to { transform: rotate(360deg); }
-}
-
-.account-save-btn.htmx-request .btn-text {
-    visibility: hidden;
-}
-
-.account-save-btn.htmx-request .account-btn-spinner {
-    display: flex;
-}
-
-.account-form-inner input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.account-save-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-.account-avatar-wrap-disabled {
-    pointer-events: none;
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+/* Save button spinner styles now in Pages/AccountProfile.razor.css (scoped) */
 
 @media (prefers-reduced-motion: reduce) {
-    .account-avatar-overlay { transition: none; }
     .account-branding-item { transition: none; }
 }
