@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -12,6 +13,17 @@ using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Forwarded Headers (Cloudflare Tunnel + Docker) ──
+// Cloudflare Tunnel terminates TLS and forwards as HTTP.
+// Without this, OAuth middleware generates http:// redirect URIs.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.All;
+    // Container only receives from Docker host/cloudflared — trust all proxies.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection missing");
 
@@ -205,6 +217,9 @@ using (var scope = app.Services.CreateScope())
 app.UseExceptionHandler();
 
 
+
+// Must be early — before auth, before static files.
+app.UseForwardedHeaders();
 if (app.Environment.IsDevelopment())
 {
     // Dev-mode: log full request/response for debugging.
