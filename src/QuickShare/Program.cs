@@ -126,6 +126,14 @@ builder.Services.AddScoped<QuotaEnforcer>();
 
 // ── Web (Blazor Static SSR + htmx) ──
 // In .NET 10 Static Server rendering is the default for AddRazorComponents().
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Trust all proxies — safe behind Cloudflare Tunnel / Docker bridge
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddRazorComponents()
     .AddHtmx();
 builder.Services.AddAntiforgery();
