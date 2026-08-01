@@ -1,3 +1,11 @@
+## Communication Mode
+
+- **Caveman mode ON by default.** All agent responses MUST use caveman-full compression: drop articles, filler, hedging, pleasantries. Fragments OK. Short synonyms. Code blocks unchanged. Never self-reference or announce the style.
+- **Auto-clarity for security warnings, destructive ops, ambiguous sequences, or when user asks to clarify.**
+- **RTK (`rtk` prefix) cho MỌI lệnh bash.** `git status` → `rtk git status`. `dotnet build` → `rtk dotnet build`. Built-in tools (`read`, `grep`, `glob`) không qua bash hook — dùng `rtk read`/`rtk grep`/`rtk find` cho output lớn.
+- **Pre-change impact check via slnmap MCP.** Trước khi sửa code: `find_symbol` → `find_usages` → `impact_analysis`.
+- **Vietnamese input → Vietnamese caveman output.**
+
 # QuickShareCloud — Agent Instructions
 
 ## HTMX Lazy Loading (DEFAULT — every page)
@@ -86,7 +94,8 @@ protected override async Task OnInitializedAsync()
 ## Code Style
 
 - **One statement per line** — do not chain multiple statements on a single line. Each statement must be on its own line.
-- **No magic strings** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed).
+- **`string.Empty`, never `""`** — always use `string.Empty` instead of `""` for empty strings. Exception: `""` is required where the language mandates a compile-time constant (`const` declarations, attribute arguments, default parameter values, `switch` `case` labels) — everywhere else use `string.Empty`.
+- **No magic strings / numbers** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed). Protocol identifiers, HTTP headers, route paths, config keys, entity statuses, roles, and wire formats MUST be centralized in `static class` string constants (e.g. `AuthConstants`, `PlanTierLimits`, `P2PProtocol`, `RoutePaths`).
 - **Isolation CSS** — always use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`).
 
 ## HTMX Usage
@@ -125,3 +134,5 @@ protected override async Task OnInitializedAsync()
   ```
 - **Exception:** LINQ `.Select()` projections that include server-side subqueries (e.g. `db.Files.Count(...)`) or computed expression fields are exempt — EF Core cannot translate Mapperly-generated methods to SQL. In those cases, construct the DTO inline within `.Select()`.
 - **Exception:** Simple value-object responses (e.g. `new SomeResponse(sessionId, chunkSize)`) that don't map from a single entity do not require Mapperly.
+
+@RTK.md
