@@ -39,6 +39,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    networks:
+      - cfnet
 
   # cloudflared tunnel — connects to Cloudflare, routes to quickshare:8080
   # Uncomment if cloudflared not running on host.
@@ -52,7 +54,13 @@ services:
   #   depends_on:
   #     quickshare:
   #       condition: service_healthy
+  #   networks:
+  #     - cfnet
 
 volumes:
   quickshare_keys:
     driver: local
+
+networks:
+  cfnet:
+    external: true

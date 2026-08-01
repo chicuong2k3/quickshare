@@ -72,8 +72,9 @@ sequenceDiagram
 | Compose | `C:\deploy\quickshare\docker-compose.yml` | Service `quickshare`, binds `127.0.0.1:8080` |
 | Env vars | `C:\deploy\quickshare\.env` | Read by compose, passed into the container as `__`-separated keys |
 | Container port | `8080` (internal) | `ASPNETCORE_URLS=http://+:8080`, non-root `appuser` |
+| Network | `cfnet` (external, shared with cloudflared) | Tunnel routes `http://quickshare:8080` |
 | Key volume | `quickshare_keys:/app/keys` | DataProtection keys, keeps auth cookies stable |
-| Public URL | `https://quickshare.codemagic.io.vn` | Cloudflare tunnel (host) → `http://localhost:8080` |
+| Public URL | `https://quickshare.codemagic.io.vn` | Cloudflare tunnel (host) → `http://quickshare:8080` (cfnet network) |
 | Database | `DB_CONNECTION_STRING` in `.env` | PostgreSQL (host or third-party) |
 
 ## Env var → app config flow
@@ -112,4 +113,4 @@ docker compose logs -f quickshare
 - Missing `DB_CONNECTION_STRING` → app crashes at startup.
 - Wrong Google OAuth → login does not work (other OAuth providers are optional).
 - R2 not configured → app falls back to local disk; uploads via R2 will fail.
-- Cloudflare tunnel runs on the host, routes `http://localhost:8080` (quickshare binds loopback, not exposed publicly).
+- Cloudflare tunnel runs in the `cfnet` network, routes `http://quickshare:8080` (quickshare is on the same `cfnet` network, so no host port is exposed publicly; `127.0.0.1:8080` binding is only for local host access).
