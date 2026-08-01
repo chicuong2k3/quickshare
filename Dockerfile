@@ -18,7 +18,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 # Create non-root user
-RUN adduser --disabled-password --gecos "" appuser && \
+RUN useradd --create-home --user-group appuser && \
     mkdir -p /app/keys && chown -R appuser:appuser /app
 
 # DataProtection keys persisted to volume
