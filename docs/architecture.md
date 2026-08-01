@@ -4,11 +4,28 @@
 
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
-| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` | .NET 10, FastEndpoints, Wolverine, EF Core, Npgsql, Htmxor, DAUB |
+| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Wolverine, EF Core, Npgsql, Htmxor, DAUB |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 
 > **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMessageBus` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
+>
+> In Docker the app listens on `8080` (`ASPNETCORE_URLS=http://+:8080`) and runs as non-root `appuser`. See [Deployment — Dev (self-hosted runner)](deployment-dev.md).
+
+---
+
+## Deployment (Dev)
+
+CI/CD deploys the app to a Windows server via a self-hosted GitHub Actions runner. Both `build` and `deploy` jobs run on `self-hosted` (no GitHub-hosted runner):
+
+- **Image**: `ghcr.io/chicuong2k3/telecloud:dev` (lowercase — ghcr requirement)
+- **Runner**: `C:\actions-runner`, repo `chicuong2k3/TeleCloud`, pool `Default`
+- **Deploy path**: `C:\deploy\quickshare` (`docker-compose.yml` + `.env`), service `quickshare`, binds `127.0.0.1:8080`
+- **Public URL**: `https://quickshare.codemagic.io.vn` (Cloudflare tunnel on host → `http://localhost:8080`)
+- **Env vars**: `.env` on server → compose `environment:` → container `IConfiguration` (keys like `ConnectionStrings__DefaultConnection`, `Authentication__Google__ClientId`, `R2__AccountId`, `PayOS__ClientId`)
+- **Key volume**: `quickshare_keys:/app/keys` — DataProtection keys, keeps auth cookies stable
+
+Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 
 ---
 
