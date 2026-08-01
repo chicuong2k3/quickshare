@@ -2,6 +2,7 @@
 @page "/upgrade"
 @attribute [Authorize]
 @using QuickShare.Features.Payments.PayOS
+@using QuickShare.Features.Payments.Subscriptions
 @using QuickShare.Features.Users.Shared
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
@@ -213,11 +214,30 @@
 
 
 @code {
+    [Parameter]
     [SupplyParameterFromQuery]
     public string? Plan { get; set; }
 
+    [Parameter]
     [SupplyParameterFromQuery]
     public string? Billing { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = PayOSOrderCodeQueryKey)]
+    public long? PayOSOrderCode { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = PayOSCodeQueryKey)]
+    public string? PayOSCode { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = PayOSStatusQueryKey)]
+    public string? PayOSStatus { get; set; }
+    private const string PayOSOrderCodeQueryKey = "orderCode";
+    private const string PayOSCodeQueryKey = "code";
+    private const string PayOSStatusQueryKey = "status";
+    private const string PayOSSuccessCode = "00";
+    private const string PayOSPaidStatus = "PAID";
 
     private string selectedPlan = PlanTierLimits.Pro;
     private string currentPlan = PlanTierLimits.Free;
@@ -270,14 +290,23 @@
             HtmxHeaders.RequestValue,
             StringComparison.OrdinalIgnoreCase);
         var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
+        var shouldProcessCallback = IsSuccessfulPayOSCallback(ctx);
 
         // Shell render for GET: return immediately, no DB calls.
-        // POST requests must always process form data, so they are not skipped.
-        if (!isHtmxRequest && !isPost) return;
+        // Exceptions:
+        // - POST must always process payment form.
+        // - Successful PayOS callback query must reconcile payment status.
+        if (!isHtmxRequest && !isPost && !shouldProcessCallback) return;
 
         isFullyLoaded = true;
 
-        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+        var ct = CancellationToken.None;
+        var user = await ctx.User.GetUserAsync(Db, ct);
+
+        if (!Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))
+        {
+            await TryFinalizePaymentFromCallbackAsync(user, ctx, ct);
+        }
 
         if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))
         {
@@ -324,7 +353,7 @@
                 ExpiresAt = DateTime.UtcNow.AddHours(1)
             };
             Db.PaymentIntents.Add(paymentIntent);
-            await Db.SaveChangesAsync(CancellationToken.None);
+            await Db.SaveChangesAsync(ct);
 
             // Create PayOS payment link
             var description = $"QSC-{code[^6..]}"; // last 6 chars as description
@@ -332,7 +361,7 @@
                 payOSOrderCode,
                 expectedAmount,
                 description,
-                CancellationToken.None);
+                ct);
 
             if (!payOSResult.Success)
             {
@@ -362,5 +391,88 @@
             if (!exists)
                 return code;
         }
+    }
+    private async Task TryFinalizePaymentFromCallbackAsync(User user, HttpContext ctx, CancellationToken ct)
+    {
+        if (!IsSuccessfulPayOSCallback(ctx))
+        {
+            return;
+        }
+
+        if (!TryGetPayOSOrderCode(ctx, out var orderCode))
+        {
+            return;
+        }
+
+        var intent = await Db.PaymentIntents
+            .Where(i => i.UserId == user.Id)
+            .Where(i => i.PayOSOrderCode == orderCode)
+            .Where(i => i.Status == PaymentIntentStatus.Pending)
+            .FirstOrDefaultAsync(ct);
+
+        if (intent is null)
+        {
+            return;
+        }
+
+        await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, Db, ct);
+
+        var invoiceId = orderCode.ToString();
+        var hasExistingPaymentEvent = await Db.PaymentEvents
+            .Where(x => x.UserId == user.Id)
+            .Where(x => x.EventType == PaymentEventTypes.Payment)
+            .Where(x => x.InvoiceId == invoiceId)
+            .AnyAsync(ct);
+
+        if (!hasExistingPaymentEvent)
+        {
+            Db.PaymentEvents.Add(new PaymentEvent
+            {
+                UserId = user.Id,
+                EventType = PaymentEventTypes.Payment,
+                Plan = intent.Plan,
+                PlanDisplay = intent.Plan switch
+                {
+                    PlanTierLimits.Studio => "Studio",
+                    PlanTierLimits.Pro => "Pro",
+                    _ => string.Empty
+                },
+                Billing = intent.Billing,
+                Amount = intent.Amount,
+                Currency = intent.Currency,
+                InvoiceId = invoiceId,
+                InvoiceUrl = string.Empty
+            });
+        }
+
+        intent.Status = PaymentIntentStatus.Completed;
+        intent.CompletedAt = DateTime.UtcNow;
+        await Db.SaveChangesAsync(ct);
+    }
+
+    private bool IsSuccessfulPayOSCallback(HttpContext ctx)
+    {
+        if (!TryGetPayOSOrderCode(ctx, out _))
+        {
+            return false;
+        }
+
+        var callbackCode = PayOSCode ?? ctx.Request.Query[PayOSCodeQueryKey].FirstOrDefault();
+        var callbackStatus = PayOSStatus ?? ctx.Request.Query[PayOSStatusQueryKey].FirstOrDefault();
+        var isSuccessCode = string.Equals(callbackCode, PayOSSuccessCode, StringComparison.OrdinalIgnoreCase);
+        var isPaidStatus = string.Equals(callbackStatus, PayOSPaidStatus, StringComparison.OrdinalIgnoreCase);
+        return isSuccessCode || isPaidStatus;
+    }
+
+    private bool TryGetPayOSOrderCode(HttpContext ctx, out long orderCode)
+    {
+        if (PayOSOrderCode.HasValue)
+        {
+            orderCode = PayOSOrderCode.Value;
+            return true;
+        }
+
+        var orderCodeRaw = ctx.Request.Query[PayOSOrderCodeQueryKey].FirstOrDefault();
+        return long.TryParse(orderCodeRaw, out orderCode);
     }
 }

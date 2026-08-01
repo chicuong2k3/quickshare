@@ -1,8 +1,5 @@
 using System.Diagnostics;
 using System.Net;
-using Microsoft.Extensions.DependencyInjection;
-using QuickShare.Data;
-using QuickShare.Data.Entities;
 
 namespace QuickShare.Server.Tests.E2E;
 
@@ -114,5 +111,6 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         Assert.True(sw.ElapsedMilliseconds < 500,
             $"POST /upgrade took {sw.ElapsedMilliseconds}ms");
     }
+
 }
 
