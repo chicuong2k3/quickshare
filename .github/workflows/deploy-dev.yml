@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ lower(github.repository) }}
+  IMAGE_NAME: chicuong2k3/telecloud
 
 jobs:
   build:
