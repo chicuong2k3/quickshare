@@ -17,8 +17,10 @@ public sealed class VerifyPasswordHandler(IHttpContextAccessor httpContextAccess
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
 
-        if (delivery is null || delivery.PasswordHash is null)
-            return Result.Success(new VerifyPasswordResponse(true)); // No password set = always valid
+        if (delivery is null)
+            return Result.Failure<VerifyPasswordResponse>(new LightResults.Error("Delivery not found."));
+        if (delivery.PasswordHash is null)
+            return Result.Success(new VerifyPasswordResponse(true));
 
         var httpContext = httpContextAccessor.HttpContext!;
         var sessionKey = $"{SessionKeyPrefix}{delivery.Id}";
