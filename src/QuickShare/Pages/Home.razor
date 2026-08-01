@@ -20,6 +20,69 @@
         </div>
     </section>
 
+    <section class="home-why" aria-labelledby="why-use-app">
+        <div class="home-why__head">
+            <h2 id="why-use-app" class="db-h2">Why use this app</h2>
+            <p class="db-text-muted home-why__sub">
+                Two clear modes: Cloud Send via Cloudflare relay for durable link sharing, and P2P transfer for instant device-to-device delivery.
+            </p>
+        </div>
+        <div class="home-why__badges" aria-label="Choose transfer mode">
+            <span class="home-why__badge">
+                <strong>Need long-term link?</strong>
+                Use Cloud Send.
+            </span>
+            <span class="home-why__badge">
+                <strong>Need instant live transfer?</strong>
+                Use P2P.
+            </span>
+        </div>
+        <div class="db-card home-why__card">
+            <div class="db-card__body">
+                <table class="home-why__table">
+                    <caption class="home-why__caption">Cloud Send vs P2P transfer in real usage</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">What matters</th>
+                            <th scope="col">Cloud Send (server relay)</th>
+                            <th scope="col">P2P transfer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">How delivery works</th>
+                            <td>Upload once to cloud relay, share one secure link anywhere.</td>
+                            <td>Direct device-to-device stream between sender and receiver.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Can recipient open later?</th>
+                            <td>Yes. Link stays available until expiry.</td>
+                            <td>No. Both sides must be online during transfer.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Storage retention</th>
+                            <td>Yes. File kept in cloud storage until your expiry window.</td>
+                            <td>No retained file on server after transfer session.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Best fit</th>
+                            <td>Remote sharing, async handoff, longer availability.</td>
+                            <td>Fast local handoff when both devices online now.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Scale when needed</th>
+                            <td>Upgrade for larger limits and longer retention.</td>
+                            <td>Great for quick transfers, not long-term hosting.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="home-why__actions">
+                    <a href="/send" class="db-btn db-btn--primary">Send a file now</a>
+                    <a href="/pricing" class="db-btn db-btn--ghost">See Pro limits</a>
+                </div>
+            </div>
+        </div>
+    </section>
     <section class="home-features">
         <div class="db-grid db-grid--3 db-gap-4">
             <div class="db-card">

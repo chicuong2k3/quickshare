@@ -1290,6 +1290,101 @@
     height: 1.25rem;
 }
 
+.home-why[b-7pgleol9qe] {
+    max-width: 64rem;
+    margin: var(--db-space-7) auto 0;
+}
+
+.home-why__head[b-7pgleol9qe] {
+    text-align: center;
+}
+
+.home-why__sub[b-7pgleol9qe] {
+    max-width: 40rem;
+    margin: var(--db-space-3) auto 0;
+}
+
+.home-why__badges[b-7pgleol9qe] {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-4);
+}
+
+.home-why__badge[b-7pgleol9qe] {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--db-space-1);
+    padding: var(--db-space-3) var(--db-space-4);
+    border: 1px solid var(--db-color-border-subtle);
+    border-radius: var(--db-radius-2);
+    background: var(--db-color-surface);
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-secondary);
+    text-align: left;
+}
+
+.home-why__badge strong[b-7pgleol9qe] {
+    color: var(--db-color-text);
+}
+.home-why__card[b-7pgleol9qe] {
+    margin-top: var(--db-space-5);
+}
+
+.home-why__table[b-7pgleol9qe] {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.home-why__caption[b-7pgleol9qe] {
+    caption-side: top;
+    text-align: left;
+    margin-bottom: var(--db-space-3);
+    color: var(--db-color-text-muted);
+    font-size: var(--db-text-sm);
+}
+
+.home-why__table th[b-7pgleol9qe],
+.home-why__table td[b-7pgleol9qe] {
+    padding: var(--db-space-3);
+    border-bottom: 1px solid var(--db-color-border-subtle);
+    vertical-align: top;
+}
+
+.home-why__table thead th[b-7pgleol9qe] {
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted);
+    background: var(--db-color-surface);
+}
+
+.home-why__table tbody th[b-7pgleol9qe] {
+    width: 28%;
+    font-weight: var(--db-weight-semibold);
+}
+
+.home-why__actions[b-7pgleol9qe] {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-5);
+}
+
+@media (max-width: 900px) {
+    .home-why__card[b-7pgleol9qe] {
+        overflow-x: auto;
+    }
+
+    .home-why__table[b-7pgleol9qe] {
+        min-width: 44rem;
+    }
+
+    .home-why__badges[b-7pgleol9qe] {
+        flex-direction: column;
+    }
+}
 .home-how[b-7pgleol9qe] {
     max-width: 48rem;
     margin: var(--db-space-7) auto 0;
@@ -1309,6 +1404,12 @@
 @media (max-width: 640px) {
     .home-how__steps[b-7pgleol9qe] {
         grid-template-columns: 1fr;
+    }
+
+    .home-hero__actions[b-7pgleol9qe],
+    .home-why__actions[b-7pgleol9qe] {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 
