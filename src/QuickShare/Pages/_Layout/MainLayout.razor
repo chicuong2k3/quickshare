@@ -6,7 +6,7 @@
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
     var userName = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
     var userEmail = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
-    var path = HttpContextAccessor.HttpContext?.Request.Path.Value ?? "";
+    var path = HttpContextAccessor.HttpContext?.Request.Path.Value ?? string.Empty;
 }
 
 <div class="layout-root">
@@ -23,10 +23,10 @@
         </a>
         <div class="db-navbar__nav">
             <div class="db-nav-menu">
-                <a class="db-nav-menu__item @NavActive(path == "/send")" href="/send">Send</a>
-                <a class="db-nav-menu__item @NavActive(path.StartsWith("/p2p"))" href="/p2p/send">P2P</a>
-                <a class="db-nav-menu__item @NavActive(path == "/pricing")" href="/pricing">Pricing</a>
-                <a class="db-nav-menu__item @NavActive(path == "/files")" href="/files">Files</a>
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">Send</a>
+                <a class="db-nav-menu__item @NavActive(path.StartsWith(RoutePaths.P2p))" href="/p2p/send">P2P</a>
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Pricing)" href="/pricing">Pricing</a>
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Files)" href="/files">Files</a>
             </div>
         </div>
         <div class="db-navbar__spacer"></div>
@@ -79,5 +79,5 @@
 
 @code {
     private static string NavActive(bool isActive) =>
-        isActive ? "db-nav-menu__item--active" : "";
+        isActive ? "db-nav-menu__item--active" : string.Empty;
 }

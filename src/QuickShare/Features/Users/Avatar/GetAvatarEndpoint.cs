@@ -23,7 +23,7 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
 
             if (!string.IsNullOrEmpty(avatarUrl))
             {
-                var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? "");
+                var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? string.Empty);
                 html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" />";
             }
             else
@@ -37,7 +37,7 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
         }
 
         HttpContext.Response.StatusCode = 200;
-        HttpContext.Response.ContentType = "text/html";
+        HttpContext.Response.ContentType = MediaTypes.Html;
         await HttpContext.Response.WriteAsync(html, ct);
     }
 

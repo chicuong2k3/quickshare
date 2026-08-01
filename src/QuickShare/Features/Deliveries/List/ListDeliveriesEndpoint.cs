@@ -5,7 +5,7 @@ public sealed class ListDeliveriesEndpoint : EndpointWithoutRequest
     public override void Configure()
     {
         Get("/api/deliveries");
-        Description(b => b.WithTags("Deliveries"));
+        Description(b => b.WithTags(ApiTags.Deliveries));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

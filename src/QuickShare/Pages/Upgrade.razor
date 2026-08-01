@@ -1,10 +1,8 @@
 @layout MainLayout
 @page "/upgrade"
 @attribute [Authorize]
-@using QuickShare.Data
 @using QuickShare.Features.Payments.PayOS
 @using QuickShare.Features.Users.Shared
-@using QuickShare.Data.Entities
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IConfiguration Config
@@ -95,7 +93,7 @@
                     <form method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="Plan" value="@selectedPlan" />
-                        <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
+                        <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                         <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
                             Thanh toán với PayOS
                         </button>
@@ -152,7 +150,7 @@
                         <form method="post">
                             <AntiforgeryToken />
                             <input type="hidden" name="Plan" value="@selectedPlan" />
-                            <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
+                            <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                             <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
                                 Thanh toán với PayOS
                             </button>
@@ -188,7 +186,7 @@
                                 <form method="post" style="margin-top:1rem">
                                     <AntiforgeryToken />
                                     <input type="hidden" name="Plan" value="@selectedPlan" />
-                                    <input type="hidden" name="Billing" value="@(IsYearly ? "yearly" : "monthly")" />
+                                    <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                                     <button type="submit" class="db-btn db-btn--primary">
                                         Thử lại
                                     </button>
@@ -221,55 +219,55 @@
     [SupplyParameterFromQuery]
     public string? Billing { get; set; }
 
-    private string selectedPlan = "pro";
-    private string currentPlan = "free";
+    private string selectedPlan = PlanTierLimits.Pro;
+    private string currentPlan = PlanTierLimits.Free;
     private bool isFullyLoaded;
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
 
-    private string planDisplay => selectedPlan == "studio" ? "Studio" : "Pro";
-    private string planDesc => selectedPlan == "studio"
+    private string planDisplay => selectedPlan == PlanTierLimits.Studio ? "Studio" : "Pro";
+    private string planDesc => selectedPlan == PlanTierLimits.Studio
         ? "Dành cho team & doanh nghiệp"
         : "Dành cho nhà sáng tạo & chuyên gia";
-    private string planSummary => selectedPlan == "studio"
+    private string planSummary => selectedPlan == PlanTierLimits.Studio
         ? "500 GB dung lượng/tháng, không giới hạn chuyển, API, hỗ trợ riêng"
         : "1 GB/tệp, 50 GB dung lượng/tháng, 100 lượt chuyển/tháng, bảo vệ mật khẩu, hỗ trợ ưu tiên";
     private string planMonthlyPrice => FormatPrice(
-        selectedPlan == "studio"
-            ? Config.GetValue<int>("Pricing:StudioMonthly", 200000)
-            : Config.GetValue<int>("Pricing:ProMonthly", 50000));
+        selectedPlan == PlanTierLimits.Studio
+            ? Config.GetValue<int>(PricingKeys.StudioMonthly, 200000)
+            : Config.GetValue<int>(PricingKeys.ProMonthly, 50000));
     private string planYearlyPrice => FormatPrice(
-        selectedPlan == "studio"
-            ? Config.GetValue<int>("Pricing:StudioYearly", 2000000)
-            : Config.GetValue<int>("Pricing:ProYearly", 500000));
+        selectedPlan == PlanTierLimits.Studio
+            ? Config.GetValue<int>(PricingKeys.StudioYearly, 2000000)
+            : Config.GetValue<int>(PricingKeys.ProYearly, 500000));
 
     private string FormatPrice(int amount)
     {
-        var currency = Config["Pricing:Currency"] ?? "VND";
-        return currency == "VND"
+        var currency = Config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
+        return currency == PricingKeys.DefaultCurrency
             ? $"{amount:N0}₫"
             : $"{currency}{amount}";
     }
 
-    private string[] planFeatures => selectedPlan == "studio"
+    private string[] planFeatures => selectedPlan == PlanTierLimits.Studio
         ? new[] { "20 GB/tệp", "500 GB / tháng", "Không giới hạn chuyển", "Tùy chỉnh thương hiệu", "Truy cập API", "Hỗ trợ riêng" }
         : new[] { "1 GB/tệp", "50 GB / tháng", "100 lượt chuyển/tháng", "Bảo vệ mật khẩu", "Hỗ trợ ưu tiên" };
 
-    private bool IsYearly => string.Equals(Billing, "yearly", StringComparison.OrdinalIgnoreCase);
+    private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
     private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);
 
     protected override async Task OnInitializedAsync()
     {
         selectedPlan = Plan?.ToLowerInvariant() switch
         {
-            "studio" => "studio",
-            _ => "pro"
+            PlanTierLimits.Studio => PlanTierLimits.Studio,
+            _ => PlanTierLimits.Pro
         };
 
         var ctx = HttpContextAccessor.HttpContext!;
         var isHtmxRequest = string.Equals(
-            ctx.Request.Headers["HX-Request"].FirstOrDefault(),
-            "true",
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
             StringComparison.OrdinalIgnoreCase);
         var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
 
@@ -284,20 +282,20 @@
         if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))
         {
             var form = await ctx.Request.ReadFormAsync();
-            var plan = form["Plan"].FirstOrDefault() ?? "pro";
-            var billing = form["Billing"].FirstOrDefault() ?? "monthly";
-            var isYearly = string.Equals(billing, "yearly", StringComparison.OrdinalIgnoreCase);
+            var plan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
+            var billing = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
+            var isYearly = string.Equals(billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
 
             var pricingKey = plan.ToLowerInvariant() switch
             {
-                "pro" when isYearly => "Pricing:ProYearly",
-                "pro" => "Pricing:ProMonthly",
-                "studio" when isYearly => "Pricing:StudioYearly",
-                _ => "Pricing:StudioMonthly"
+                PlanTierLimits.Pro when isYearly => PricingKeys.ProYearly,
+                PlanTierLimits.Pro => PricingKeys.ProMonthly,
+                PlanTierLimits.Studio when isYearly => PricingKeys.StudioYearly,
+                _ => PricingKeys.StudioMonthly
             };
 
             var expectedAmount = Config.GetValue<int>(pricingKey);
-            var currency = Config["Pricing:Currency"] ?? "VND";
+            var currency = Config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
 
             // Generate internal tracking code and PayOS order code
             var code = await GenerateUniqueCodeAsync(Db, CancellationToken.None);
@@ -318,7 +316,7 @@
                 Code = code,
                 PayOSOrderCode = payOSOrderCode,
                 Plan = plan,
-                Billing = isYearly ? "yearly" : "monthly",
+                Billing = isYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly,
                 Amount = expectedAmount,
                 Currency = currency,
                 Status = PaymentIntentStatus.Pending,

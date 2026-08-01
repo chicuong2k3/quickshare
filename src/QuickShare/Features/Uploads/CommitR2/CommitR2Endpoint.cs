@@ -8,7 +8,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         Post("/api/uploads/commit-r2");
         Validator<CommitR2Validator>();
-        Description(b => b.WithTags("Uploads"));
+        Description(b => b.WithTags(ApiTags.Uploads));
         Summary(s =>
         {
             s.Summary = "Complete an R2 multipart upload";
@@ -36,10 +36,10 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
 public class CommitR2Request
 {
     public Guid DeliveryId { get; set; }
-    public string UploadId { get; set; } = "";
-    public string ObjectKey { get; set; } = "";
-    public string FileName { get; set; } = "";
-    public string ContentType { get; set; } = "";
+    public string UploadId { get; set; } = string.Empty;
+    public string ObjectKey { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
     public long FileSize { get; set; }
     public IReadOnlyList<R2PartEtag> Parts { get; set; } = [];
     public string? Otp { get; set; }

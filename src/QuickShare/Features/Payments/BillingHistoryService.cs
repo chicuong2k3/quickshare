@@ -39,8 +39,8 @@ public static class BillingHistoryService
 
         var planDisplay = user.Plan switch
         {
-            "pro" => "Pro",
-            "studio" => "Studio",
+            PlanTierLimits.Pro => "Pro",
+            PlanTierLimits.Studio => "Studio",
             _ => "Free"
         };
 
@@ -51,10 +51,10 @@ public static class BillingHistoryService
     {
         return eventType switch
         {
-            "subscription_created" => $"Subscription created — {planDisplay} {billing}",
-            "subscription_renewed" => $"Subscription renewed — {planDisplay} {billing}",
-            "subscription_cancelled" => "Subscription cancelled",
-            "subscription_expired" => "Subscription expired",
+            PaymentEventTypes.SubscriptionCreated => $"Subscription created — {planDisplay} {billing}",
+            PaymentEventTypes.SubscriptionRenewed => $"Subscription renewed — {planDisplay} {billing}",
+            PaymentEventTypes.SubscriptionCancelled => "Subscription cancelled",
+            PaymentEventTypes.SubscriptionExpired => "Subscription expired",
             _ => eventType
         };
     }

@@ -27,7 +27,7 @@ public sealed class ZombiePartSweeper(IServiceScopeFactory scopeFactory, IStorag
         var now = DateTime.UtcNow;
 
         var stale = await db.UploadSessions
-            .Where(s => s.Status == "InProgress" && s.ExpiresAt < now && s.R2UploadId != null && s.StoragePath != null)
+            .Where(s => s.Status == UploadSessionStatus.InProgress && s.ExpiresAt < now && s.R2UploadId != null && s.StoragePath != null)
             .ToListAsync(ct);
 
         if (stale.Count == 0) return;

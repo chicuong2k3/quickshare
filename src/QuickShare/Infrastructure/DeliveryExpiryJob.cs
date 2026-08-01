@@ -27,7 +27,7 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
         var now = DateTime.UtcNow;
 
         var expired = await db.Deliveries
-            .Where(d => d.ExpiresAt != null && d.ExpiresAt < now && d.Status == "Active")
+            .Where(d => d.ExpiresAt != null && d.ExpiresAt < now && d.Status == DeliveryStatus.Active)
             .ToListAsync(ct);
 
         if (expired.Count == 0) return;
@@ -61,7 +61,7 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
                         maxRetries, delivery.Id);
             }
 
-            delivery.Status = "Expired";
+            delivery.Status = DeliveryStatus.Expired;
         }
 
         await db.SaveChangesAsync(ct);

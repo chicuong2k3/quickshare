@@ -7,7 +7,7 @@ public sealed class VerifyPasswordEndpoint : Endpoint<VerifyPasswordRequest>
         Post("/api/deliveries/{ShareCode}/verify");
         AllowAnonymous();
         Validator<VerifyPasswordValidator>();
-        Description(b => b.WithTags("Deliveries"));
+        Description(b => b.WithTags(ApiTags.Deliveries));
     }
 
     public override async Task HandleAsync(VerifyPasswordRequest req, CancellationToken ct)
@@ -26,4 +26,4 @@ public sealed class VerifyPasswordEndpoint : Endpoint<VerifyPasswordRequest>
     }
 }
 
-public class VerifyPasswordRequest { public string Password { get; set; } = ""; }
+public class VerifyPasswordRequest { public string Password { get; set; } = string.Empty; }

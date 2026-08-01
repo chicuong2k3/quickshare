@@ -75,7 +75,7 @@ public sealed class R2StorageProvider : IStorageProvider
             {
                 BucketName = _options.BucketName,
                 Key = objectKey,
-                ContentType = "application/octet-stream",
+                ContentType = MediaTypes.OctetStream,
             };
 
             var response = await _s3.InitiateMultipartUploadAsync(request, ct);

@@ -20,7 +20,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         problem.Extensions["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
         httpContext.Response.StatusCode = problem.Status.Value;
-        httpContext.Response.ContentType = "application/problem+json";
+        httpContext.Response.ContentType = MediaTypes.ProblemJson;
         await httpContext.Response.WriteAsJsonAsync(problem, ct);
 
         return true;

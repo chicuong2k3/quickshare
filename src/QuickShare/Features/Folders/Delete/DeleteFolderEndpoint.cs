@@ -5,7 +5,7 @@ public sealed class DeleteFolderEndpoint : Endpoint<DeleteFolderCommand>
     public override void Configure()
     {
         Delete("/api/folders/{id}");
-        Description(b => b.WithTags("Folders"));
+        Description(b => b.WithTags(ApiTags.Folders));
         Summary(s =>
         {
             s.Summary = "Delete a folder";

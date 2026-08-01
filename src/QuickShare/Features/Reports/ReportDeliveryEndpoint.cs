@@ -7,7 +7,7 @@ public sealed class ReportDeliveryEndpoint : Endpoint<ReportDeliveryRequest>
         Post("/api/deliveries/{ShareCode}/report");
         AllowAnonymous();
         Validator<ReportDeliveryValidator>();
-        Description(b => b.WithTags("Reports"));
+        Description(b => b.WithTags(ApiTags.Reports));
     }
 
     public override async Task HandleAsync(ReportDeliveryRequest req, CancellationToken ct)
@@ -16,8 +16,8 @@ public sealed class ReportDeliveryEndpoint : Endpoint<ReportDeliveryRequest>
         var cmd = new ReportDeliveryCommand(shareCode, req.Reason, req.Message);
         var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<string>>(cmd, ct);
         if (result.IsSuccess(out var msg)) await Send.OkAsync(new { message = msg }, ct);
-        else ThrowError("not_found", 404);
+        else ThrowError(ErrorCodes.NotFound, 404);
     }
 }
 
-public class ReportDeliveryRequest { public string Reason { get; set; } = ""; public string? Message { get; set; } }
+public class ReportDeliveryRequest { public string Reason { get; set; } = string.Empty; public string? Message { get; set; } }

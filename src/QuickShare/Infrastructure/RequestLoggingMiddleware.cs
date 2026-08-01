@@ -34,7 +34,7 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<Reque
             }
             else
             {
-                responseBody = "";
+                responseBody = string.Empty;
             }
             ctx.Response.Body = originalBody;
 

@@ -5,10 +5,11 @@ public static class PlanTierLimits
     public const string Free = "free";
     public const string Pro = "pro";
     public const string Studio = "studio";
+    public const string Anonymous = "anonymous";
 
     public static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) GetMonthlyLimits(string plan)
     {
-        return (plan ?? "").ToLowerInvariant() switch
+        return (plan ?? string.Empty).ToLowerInvariant() switch
         {
             Free => (MaxBytesPerMonth: 2_147_483_648L, MaxTransfersPerMonth: null),   // 2 GB
             Pro => (MaxBytesPerMonth: 53_687_091_200L, MaxTransfersPerMonth: null),   // 50 GB
@@ -19,7 +20,7 @@ public static class PlanTierLimits
 
     public static long? GetMaxFileSize(string plan)
     {
-        return (plan ?? "").ToLowerInvariant() switch
+        return (plan ?? string.Empty).ToLowerInvariant() switch
         {
             Free => 104_857_600L,            // 100 MB
             Pro => 2_147_483_648L,           // 2 GB
@@ -30,7 +31,7 @@ public static class PlanTierLimits
 
     public static int GetMaxExpiryDays(string plan)
     {
-        return (plan ?? "").ToLowerInvariant() switch
+        return (plan ?? string.Empty).ToLowerInvariant() switch
         {
             Free => 7,
             Pro => 30,
@@ -41,7 +42,7 @@ public static class PlanTierLimits
 
     public static int GetMaxDownloads(string plan)
     {
-        return (plan ?? "").ToLowerInvariant() switch
+        return (plan ?? string.Empty).ToLowerInvariant() switch
         {
             Free => 5,
             Pro => 50,
@@ -52,7 +53,7 @@ public static class PlanTierLimits
 
     public static int GetMaxConcurrency(string plan)
     {
-        return (plan ?? "").ToLowerInvariant() switch
+        return (plan ?? string.Empty).ToLowerInvariant() switch
         {
             Free => 2,
             Pro => 4,

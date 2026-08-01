@@ -8,7 +8,7 @@ public sealed class StartR2Endpoint : Endpoint<StartR2Request, StartR2Response>
     {
         Post("/api/uploads/start-r2");
         Validator<StartR2Validator>();
-        Description(b => b.WithTags("Uploads"));
+        Description(b => b.WithTags(ApiTags.Uploads));
         Summary(s =>
         {
             s.Summary = "Start an R2 multipart upload";
@@ -33,8 +33,8 @@ public sealed class StartR2Endpoint : Endpoint<StartR2Request, StartR2Response>
 
 public class StartR2Request
 {
-    public string FileName { get; set; } = "";
+    public string FileName { get; set; } = string.Empty;
     public long FileSize { get; set; }
-    public string ContentType { get; set; } = "";
+    public string ContentType { get; set; } = string.Empty;
     public IReadOnlyList<int> PartNumbers { get; set; } = [];
 }

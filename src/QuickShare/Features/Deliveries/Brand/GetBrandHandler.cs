@@ -13,7 +13,7 @@ public sealed class GetBrandHandler
             .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
 
         if (delivery is null)
-            return Result.Failure<BrandResponse>(new LightResults.Error("not_found"));
+            return Result.Failure<BrandResponse>(new LightResults.Error(ErrorCodes.NotFound));
 
         return Result.Success(new BrandResponse(delivery.BrandLogo, delivery.BrandMessage, delivery.BrandAccent));
     }

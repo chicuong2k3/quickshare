@@ -1,15 +1,15 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/pricing"
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
-    var currency = Config["Pricing:Currency"] ?? "$";
-    var proMonthly = FormatPrice(Config.GetValue<int>("Pricing:ProMonthly", 9), currency);
-    var proYearly = FormatPrice(Config.GetValue<int>("Pricing:ProYearly", 77), currency);
-    var studioMonthly = FormatPrice(Config.GetValue<int>("Pricing:StudioMonthly", 29), currency);
-    var studioYearly = FormatPrice(Config.GetValue<int>("Pricing:StudioYearly", 239), currency);
+    var currency = Config[PricingKeys.Currency] ?? "$";
+    var proMonthly = FormatPrice(Config.GetValue<int>(PricingKeys.ProMonthly, 9), currency);
+    var proYearly = FormatPrice(Config.GetValue<int>(PricingKeys.ProYearly, 77), currency);
+    var studioMonthly = FormatPrice(Config.GetValue<int>(PricingKeys.StudioMonthly, 29), currency);
+    var studioYearly = FormatPrice(Config.GetValue<int>(PricingKeys.StudioYearly, 239), currency);
 }
 
 <PageTitle>Pricing â€” QuickShareCloud</PageTitle>
@@ -25,7 +25,7 @@
 
     @* â”€â”€ BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) â”€â”€ *@
     <section id="pricing-body"
-             x-data="{ billing: '@(IsYearly ? "yearly" : "monthly")' }"
+             x-data="{ billing: '@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)' }"
              x-effect="const u = new URL(window.location); billing === 'yearly' ? u.searchParams.set('billing','yearly') : u.searchParams.delete('billing'); history.replaceState({}, '', u)">
         <div class="toggle-wrap">
             <div class="toggle-group">
@@ -99,7 +99,7 @@
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
-                <a href="@(isAuthenticated ? "/upgrade?plan=pro" : "/login")"
+                <a href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
                    x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
                    class="db-btn db-btn--primary">Start Free Trial</a>
                 <div class="features">
@@ -143,7 +143,7 @@
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
-                <a href="@(isAuthenticated ? "/upgrade?plan=studio" : "/login")"
+                <a href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
                    x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
                    class="db-btn db-btn--primary">Start Free Trial</a>
                 <div class="features">
@@ -202,7 +202,7 @@
     <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
         <h3 class="cta__title">Ready to get started?</h3>
         <p class="db-text-muted">Start free, no credit card required. Pro and Studio include a 14-day trial.</p>
-        <a href="@(isAuthenticated ? "/upgrade" : "/login")"
+        <a href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
            x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')"
            class="db-btn db-btn--primary">Get Started</a>
     </section>
@@ -213,7 +213,7 @@
     [SupplyParameterFromQuery]
     public string? Billing { get; set; }
 
-    private bool IsYearly => string.Equals(Billing, "yearly", StringComparison.OrdinalIgnoreCase);
+    private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
 
     private static string FormatPrice(int amount, string currency)
     {

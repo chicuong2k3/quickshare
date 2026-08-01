@@ -1,4 +1,4 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/d/{ShareCode}"
 @attribute [StreamRendering]
 @inject IMessageBus Bus
@@ -10,7 +10,7 @@
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
-    var apiBase = "";
+    var apiBase = string.Empty;
 }
 
 <PageTitle>Download â€” QuickShareCloud</PageTitle>
@@ -230,10 +230,10 @@
 </PageWrapper>
 
 @code {
-    [Parameter] public string ShareCode { get; set; } = "";
+    [Parameter] public string ShareCode { get; set; } = string.Empty;
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
-    private string ExpiryLabel = "";
+    private string ExpiryLabel = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -245,7 +245,7 @@
             if (!result.IsSuccess(out var value))
             {
                 result.IsFailure(out var error);
-                var msg = error.Message ?? "";
+                var msg = error.Message ?? string.Empty;
                 if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.Expired;
                 else if (msg.Contains("limit", StringComparison.OrdinalIgnoreCase))
@@ -290,11 +290,11 @@
         if (remaining <= TimeSpan.Zero) return "expired";
         if (remaining.TotalHours < 1) return $"in {(int)remaining.TotalMinutes} min";
         if (remaining.TotalHours < 24) return $"in {(int)remaining.TotalHours} h";
-        return $"in {(int)remaining.TotalDays} day{((int)remaining.TotalDays == 1 ? "" : "s")}";
+        return $"in {(int)remaining.TotalDays} day{((int)remaining.TotalDays == 1 ? string.Empty : "s")}";
     }
     private static MarkupString FileIcon(string? contentType)
     {
-        var key = (contentType ?? "").ToLowerInvariant();
+        var key = (contentType ?? string.Empty).ToLowerInvariant();
         var d = key switch
         {
             var s when s.StartsWith("image/") => "M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6",
@@ -311,9 +311,9 @@
     private enum DownloadRenderState { Loading, Ready, Expired, NotFound, LimitReached, Error }
     private sealed class DownloadInfoDto
     {
-        public string FileName { get; set; } = ""; public string ContentType { get; set; } = ""; public long FileSize { get; set; }
+        public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }
         public DateTime? ExpiresAt { get; set; } public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
-        public bool HasPassword { get; set; } public bool HasOtp { get; set; } public string SenderPlan { get; set; } = "";
+        public bool HasPassword { get; set; } public bool HasOtp { get; set; } public string SenderPlan { get; set; } = string.Empty;
     }
 }
 

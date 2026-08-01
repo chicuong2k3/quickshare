@@ -6,7 +6,7 @@ public sealed class DownloadDeliveryEndpoint : Endpoint<DownloadDeliveryRequest>
     {
         Get("/api/downloads/{ShareCode}");
         AllowAnonymous();
-        Description(b => b.WithTags("Downloads"));
+        Description(b => b.WithTags(ApiTags.Downloads));
         Summary(s =>
         {
             s.Summary = "Download a delivery";

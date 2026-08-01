@@ -74,14 +74,14 @@ public sealed class P2PSignalingMiddleware
 
             if (wasSender)
             {
-                _ = NotifyPeer(room, shareCode, "peer-left", "sender");
+                _ = NotifyPeer(room, shareCode, P2PProtocol.TypePeerLeft, P2PProtocol.RoleSender);
             }
             else
             {
                 var disconnectedId = _manager.RemoveReceiver(room, ws);
                 if (disconnectedId != null)
                 {
-                    _ = NotifyPeer(room, shareCode, "peer-left", "receiver", disconnectedId);
+                    _ = NotifyPeer(room, shareCode, P2PProtocol.TypePeerLeft, P2PProtocol.RoleReceiver, disconnectedId);
                 }
             }
         }
@@ -146,20 +146,20 @@ public sealed class P2PSignalingMiddleware
             using var doc = JsonDocument.Parse(text);
             var root = doc.RootElement;
 
-            if (!root.TryGetProperty("type", out var typeProp))
+            if (!root.TryGetProperty(P2PProtocol.PropType, out var typeProp))
                 return;
 
-            var type = typeProp.GetString() ?? "";
+            var type = typeProp.GetString() ?? string.Empty;
 
             switch (type)
             {
-                case "register":
+                case P2PProtocol.TypeRegister:
                     await HandleRegisterAsync(ws, shareCode, connectionId, root, ct);
                     break;
 
-                case "offer":
-                case "answer":
-                case "ice":
+                case P2PProtocol.TypeOffer:
+                case P2PProtocol.TypeAnswer:
+                case P2PProtocol.TypeIce:
                     await HandleRelayAsync(shareCode, ws, type, root, ct);
                     break;
 
@@ -171,46 +171,46 @@ public sealed class P2PSignalingMiddleware
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Invalid JSON from share {ShareCode}", shareCode);
-            await _manager.SendToSocketAsync(ws, new { type = "error", message = "Invalid JSON" }, ct);
+            await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeError, message = "Invalid JSON" }, ct);
         }
     }
 
     private async Task HandleRegisterAsync(WebSocket ws, string shareCode, string connectionId, JsonElement root, CancellationToken ct)
     {
-        var role = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() : null;
-        if (role is not ("sender" or "receiver"))
+        var role = root.TryGetProperty(P2PProtocol.PropRole, out var roleProp) ? roleProp.GetString() : null;
+        if (role is not (P2PProtocol.RoleSender or P2PProtocol.RoleReceiver))
         {
-            await _manager.SendToSocketAsync(ws, new { type = "error", message = "Role must be 'sender' or 'receiver'" }, ct);
+            await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeError, message = "Role must be 'sender' or 'receiver'" }, ct);
             return;
         }
 
         _roles[connectionId] = role;
 
-        if (role == "sender")
+        if (role == P2PProtocol.RoleSender)
         {
             if (!_manager.TryRegisterSender(shareCode, ws))
             {
-                await _manager.SendToSocketAsync(ws, new { type = "error", message = "A sender is already registered for this share" }, ct);
+                await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeError, message = "A sender is already registered for this share" }, ct);
                 return;
             }
 
-            if (root.TryGetProperty("fileMeta", out var meta))
+            if (root.TryGetProperty(P2PProtocol.PropFileMeta, out var meta))
             {
                 var currentRoom = _manager.GetRoom(shareCode);
                 if (currentRoom != null)
                 {
                     lock (currentRoom)
                     {
-                        currentRoom.FileName = meta.TryGetProperty("name", out var n) ? n.GetString() : null;
-                        currentRoom.FileSize = meta.TryGetProperty("size", out var s) && s.TryGetInt64(out var size) ? size : null;
-                        currentRoom.MimeType = meta.TryGetProperty("mime", out var m) ? m.GetString() : null;
-                        currentRoom.HasPin = meta.TryGetProperty("hasPin", out var hp) && hp.GetBoolean();
-                        currentRoom.PinHash = meta.TryGetProperty("pinHash", out var ph) && ph.ValueKind != JsonValueKind.Null ? ph.GetString() : null;
+                        currentRoom.FileName = meta.TryGetProperty(P2PProtocol.PropName, out var n) ? n.GetString() : null;
+                        currentRoom.FileSize = meta.TryGetProperty(P2PProtocol.PropSize, out var s) && s.TryGetInt64(out var size) ? size : null;
+                        currentRoom.MimeType = meta.TryGetProperty(P2PProtocol.PropMime, out var m) ? m.GetString() : null;
+                        currentRoom.HasPin = meta.TryGetProperty(P2PProtocol.PropHasPin, out var hp) && hp.GetBoolean();
+                        currentRoom.PinHash = meta.TryGetProperty(P2PProtocol.PropPinHash, out var ph) && ph.ValueKind != JsonValueKind.Null ? ph.GetString() : null;
                     }
                 }
             }
 
-            await _manager.SendToSocketAsync(ws, new { type = "registered", role = "sender" }, ct);
+            await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeRegistered, role = P2PProtocol.RoleSender }, ct);
 
             var room = _manager.GetRoom(shareCode);
             if (room != null)
@@ -225,10 +225,10 @@ public sealed class P2PSignalingMiddleware
                 {
                     if (recv.Socket.State == WebSocketState.Open)
                     {
-                        await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined", receiverId = recv.Id }, ct);
+                        await _manager.SendToSocketAsync(room.Sender!, new { type = P2PProtocol.TypePeerJoined, receiverId = recv.Id }, ct);
                         await _manager.SendToSocketAsync(recv.Socket, new
                         {
-                            type = "file-meta",
+                            type = P2PProtocol.TypeFileMeta,
                             fileName = room.FileName,
                             fileSize = room.FileSize,
                             mimeType = room.MimeType,
@@ -248,21 +248,21 @@ public sealed class P2PSignalingMiddleware
             var (success, receiverId) = _manager.TryRegisterReceiver(shareCode, ws);
             if (!success || receiverId == null)
             {
-                await _manager.SendToSocketAsync(ws, new { type = "error", message = "Failed to register receiver" }, ct);
+                await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeError, message = "Failed to register receiver" }, ct);
                 return;
             }
 
             var room = _manager.GetRoom(shareCode);
             var hasSender = room?.SenderConnected == true;
 
-            await _manager.SendToSocketAsync(ws, new { type = "registered", role = "receiver", receiverId }, ct);
+            await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeRegistered, role = P2PProtocol.RoleReceiver, receiverId }, ct);
 
             if (hasSender && room != null)
             {
-                await _manager.SendToSocketAsync(room.Sender!, new { type = "peer-joined", receiverId }, ct);
+                await _manager.SendToSocketAsync(room.Sender!, new { type = P2PProtocol.TypePeerJoined, receiverId }, ct);
                 await _manager.SendToSocketAsync(ws, new
                 {
-                    type = "file-meta",
+                    type = P2PProtocol.TypeFileMeta,
                     fileName = room.FileName,
                     fileSize = room.FileSize,
                     mimeType = room.MimeType,
@@ -272,7 +272,7 @@ public sealed class P2PSignalingMiddleware
             }
             else
             {
-                await _manager.SendToSocketAsync(ws, new { type = "waiting", message = "Waiting for sender to come online" }, ct);
+                await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeWaiting, message = "Waiting for sender to come online" }, ct);
             }
         }
     }
@@ -282,11 +282,11 @@ public sealed class P2PSignalingMiddleware
         var room = _manager.GetRoom(shareCode);
         if (room == null) return;
 
-        var innerData = root.TryGetProperty("data", out var d) ? d : root;
+        var innerData = root.TryGetProperty(P2PProtocol.PropData, out var d) ? d : root;
 
         if (room.Sender == senderWs)
         {
-            var receiverId = root.TryGetProperty("receiverId", out var rid) ? rid.GetString() : null;
+            var receiverId = root.TryGetProperty(P2PProtocol.PropReceiverId, out var rid) ? rid.GetString() : null;
             if (receiverId == null) return;
 
             await _manager.SendToReceiverAsync(shareCode, receiverId, new { type, data = innerData }, ct);
@@ -302,7 +302,7 @@ public sealed class P2PSignalingMiddleware
 
     private async Task NotifyPeer(P2PRoom room, string shareCode, string eventType, string disconnectedRole, string? receiverId = null)
     {
-        if (disconnectedRole == "sender")
+        if (disconnectedRole == P2PProtocol.RoleSender)
         {
             foreach (var recv in room.Receivers.Values)
             {
@@ -317,7 +317,7 @@ public sealed class P2PSignalingMiddleware
                 }
             }
         }
-        else if (disconnectedRole == "receiver" && receiverId != null)
+        else if (disconnectedRole == P2PProtocol.RoleReceiver && receiverId != null)
         {
             if (room.Sender?.State == WebSocketState.Open)
             {

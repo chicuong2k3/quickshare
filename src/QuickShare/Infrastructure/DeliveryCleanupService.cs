@@ -71,7 +71,7 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
         var now = DateTime.UtcNow;
 
         var abandoned = await db.UploadSessions
-            .Where(s => s.Status == "InProgress" && s.ExpiresAt < now)
+            .Where(s => s.Status == UploadSessionStatus.InProgress && s.ExpiresAt < now)
             .ToListAsync(ct);
 
         if (abandoned.Count == 0) return;

@@ -5,7 +5,7 @@ public sealed class MoveFileEndpoint : Endpoint<MoveFileCommand, FileItemRespons
     public override void Configure()
     {
         Patch("/api/files/{fileId}/folder");
-        Description(b => b.WithTags("Files"));
+        Description(b => b.WithTags(ApiTags.Files));
         Summary(s =>
         {
             s.Summary = "Move a file to a different folder";

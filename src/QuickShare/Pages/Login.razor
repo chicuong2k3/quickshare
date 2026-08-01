@@ -1,9 +1,9 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/login"
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var returnUrl = HttpContextAccessor.HttpContext?.Request.Query["returnUrl"].FirstOrDefault() ?? "/";
+    var returnUrl = HttpContextAccessor.HttpContext?.Request.Query["returnUrl"].FirstOrDefault() ?? RoutePaths.Home;
 }
 
 <PageTitle>Sign in â€” QuickShareCloud</PageTitle>

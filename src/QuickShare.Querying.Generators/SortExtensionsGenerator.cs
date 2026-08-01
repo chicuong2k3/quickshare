@@ -11,6 +11,8 @@ namespace QuickShare.Querying.Generators;
 [Generator]
 public sealed class SortExtensionsGenerator : IIncrementalGenerator
 {
+    private const string DynamicSortAttributeName = "QuickShare.Querying.DynamicSortAttribute";
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var provider = context.SyntaxProvider
@@ -21,7 +23,7 @@ public sealed class SortExtensionsGenerator : IIncrementalGenerator
                     if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node) is not INamedTypeSymbol typeSymbol)
                         return null;
                     var hasAttr = typeSymbol.GetAttributes().Any(a =>
-                        a.AttributeClass?.ToDisplayString() == "QuickShare.Querying.DynamicSortAttribute");
+                        a.AttributeClass?.ToDisplayString() == DynamicSortAttributeName);
                     return hasAttr ? typeSymbol : null;
                 });
 

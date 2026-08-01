@@ -47,13 +47,13 @@
                     }
                 </div>
 
-                @if (billing.Plan == "free")
+                @if (billing.Plan == PlanTierLimits.Free)
                 {
                     <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">Upgrade to Pro</a>
                 }
                 else
                 {
-                    @if (subscription?.Status == "Cancelled")
+                    @if (subscription?.Status == SubscriptionStatus.Cancelled)
                     {
                         <p class="db-text-warning" style="margin-top:1rem">
                             Your subscription is cancelled. Access continues until @subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy").
@@ -65,7 +65,7 @@
                         <div class="summary-card__actions">
                             <a href="/pricing" class="db-btn db-btn--secondary">Change Plan</a>
                             <form method="post" style="display:inline">
-                                <input type="hidden" name="Action" value="cancel" />
+                                <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
                                 <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
                                     Cancel Subscription
                                 </button>
@@ -114,48 +114,50 @@
 </PageWrapper>
 
 @code {
+    private const string SubscriptionActionCancel = "cancel";
+
     private BillingHistoryResponse? billing;
     private Subscription? subscription;
 
     private string planPrice => (billing?.Plan, billingPeriod) switch
     {
-        ("pro", "monthly") => FormatPrice(Config.GetValue<int>("Pricing:ProMonthly", 9)),
-        ("pro", "yearly") => FormatPrice(Config.GetValue<int>("Pricing:ProYearly", 77)),
-        ("studio", "monthly") => FormatPrice(Config.GetValue<int>("Pricing:StudioMonthly", 29)),
-        ("studio", "yearly") => FormatPrice(Config.GetValue<int>("Pricing:StudioYearly", 239)),
+        (PlanTierLimits.Pro, BillingPeriods.Monthly) => FormatPrice(Config.GetValue<int>(PricingKeys.ProMonthly, 9)),
+        (PlanTierLimits.Pro, BillingPeriods.Yearly) => FormatPrice(Config.GetValue<int>(PricingKeys.ProYearly, 77)),
+        (PlanTierLimits.Studio, BillingPeriods.Monthly) => FormatPrice(Config.GetValue<int>(PricingKeys.StudioMonthly, 29)),
+        (PlanTierLimits.Studio, BillingPeriods.Yearly) => FormatPrice(Config.GetValue<int>(PricingKeys.StudioYearly, 239)),
         _ => "$0"
     };
 
     private string FormatPrice(int amount)
     {
-        var currency = Config["Pricing:Currency"] ?? "$";
+        var currency = Config[PricingKeys.Currency] ?? "$";
         return $"{currency}{amount}";
     }
 
     private string planDescription => billing?.Plan switch
     {
-        "pro" => "For creators & professionals",
-        "studio" => "For teams & enterprises",
+        PlanTierLimits.Pro => "For creators & professionals",
+        PlanTierLimits.Studio => "For teams & enterprises",
         _ => "Great for getting started"
     };
 
     private string[] planFeatures => billing?.Plan switch
     {
-        "pro" => new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" },
-        "studio" => new[] { "20 GB per file", "500 GB / month", "Unlimited transfers", "Custom branding", "API access", "Dedicated support" },
+        PlanTierLimits.Pro => new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" },
+        PlanTierLimits.Studio => new[] { "20 GB per file", "500 GB / month", "Unlimited transfers", "Custom branding", "API access", "Dedicated support" },
         _ => new[] { "100 MB per file", "2 GB / month", "5 transfers/month", "7-day expiry", "End-to-end encryption" }
     };
 
-    private string billingPeriod => subscription?.BillingPeriod ?? "monthly";
+    private string billingPeriod => subscription?.BillingPeriod ?? BillingPeriods.Monthly;
 
-    private string billingPeriodLabel => billing?.Plan == "free" ? "/ forever" : $"/ {billingPeriod}";
+    private string billingPeriodLabel => billing?.Plan == PlanTierLimits.Free ? "/ forever" : $"/ {billingPeriod}";
 
     private string eventDotClass(string eventType) => eventType switch
     {
-        "subscription_created" => "dot--created",
-        "subscription_renewed" => "dot--renewed",
-        "subscription_cancelled" => "dot--cancelled",
-        "subscription_expired" => "dot--expired",
+        PaymentEventTypes.SubscriptionCreated => "dot--created",
+        PaymentEventTypes.SubscriptionRenewed => "dot--renewed",
+        PaymentEventTypes.SubscriptionCancelled => "dot--cancelled",
+        PaymentEventTypes.SubscriptionExpired => "dot--expired",
         _ => "dot--default"
     };
 
@@ -167,7 +169,7 @@
         if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(HttpContextAccessor.HttpContext.Request.Method))
         {
             var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
-            if (form["Action"] == "cancel")
+            if (form["Action"] == SubscriptionActionCancel)
             {
                 await SubscriptionService.CancelAsync(user, Db, ct);
                 await Db.SaveChangesAsync(ct);

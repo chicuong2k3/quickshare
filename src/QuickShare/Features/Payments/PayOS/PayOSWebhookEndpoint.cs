@@ -15,7 +15,7 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
     {
         Post("/api/payments/payos/webhook");
         AllowAnonymous();
-        Description(b => b.WithTags("Payments"));
+        Description(b => b.WithTags(ApiTags.Payments));
         Summary(s =>
         {
             s.Summary = "Receive PayOS payment webhook";
@@ -60,14 +60,14 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
                 {
                     OrderCode = req.Data.OrderCode,
                     Amount = req.Data.Amount,
-                    Description = req.Data.Description ?? "",
-                    AccountNumber = req.Data.AccountNumber ?? "",
-                    Reference = req.Data.Reference ?? "",
-                    TransactionDateTime = req.Data.TransactionDateTime ?? "",
+                    Description = req.Data.Description ?? string.Empty,
+                    AccountNumber = req.Data.AccountNumber ?? string.Empty,
+                    Reference = req.Data.Reference ?? string.Empty,
+                    TransactionDateTime = req.Data.TransactionDateTime ?? string.Empty,
                     Currency = req.Data.Currency ?? "VND",
-                    PaymentLinkId = req.Data.PaymentLinkId ?? "",
-                    Code = req.Data.Code ?? "",
-                    Description2 = req.Data.Description2 ?? ""
+                    PaymentLinkId = req.Data.PaymentLinkId ?? string.Empty,
+                    Code = req.Data.Code ?? string.Empty,
+                    Description2 = req.Data.Description2 ?? string.Empty
                 },
                 Signature = req.Signature
             };
@@ -114,19 +114,19 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
         var paymentEvent = new PaymentEvent
         {
             UserId = user.Id,
-            EventType = "payment",
+            EventType = PaymentEventTypes.Payment,
             Plan = intent.Plan,
             PlanDisplay = intent.Plan switch
             {
-                "studio" => "Studio",
-                "pro" => "Pro",
-                _ => ""
+                PlanTierLimits.Studio => "Studio",
+                PlanTierLimits.Pro => "Pro",
+                _ => string.Empty
             },
             Billing = intent.Billing,
             Amount = intent.Amount,
             Currency = intent.Currency,
             InvoiceId = verified.Reference ?? verified.PaymentLinkId,
-            InvoiceUrl = ""
+            InvoiceUrl = string.Empty
         };
         db.PaymentEvents.Add(paymentEvent);
 
@@ -153,11 +153,11 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
 /// </summary>
 public sealed class PayOSWebhookData
 {
-    public string Code { get; set; } = "";
-    public string Description { get; set; } = "";
+    public string Code { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
     public bool Success { get; set; }
     public PayOSWebhookDataPayload Data { get; set; } = new();
-    public string Signature { get; set; } = "";
+    public string Signature { get; set; } = string.Empty;
 }
 
 public sealed class PayOSWebhookDataPayload

@@ -5,7 +5,7 @@ public sealed class CreateFolderEndpoint : Endpoint<CreateFolderCommand, FolderI
     public override void Configure()
     {
         Post("/api/folders");
-        Description(b => b.WithTags("Folders"));
+        Description(b => b.WithTags(ApiTags.Folders));
         Summary(s =>
         {
             s.Summary = "Create a folder";

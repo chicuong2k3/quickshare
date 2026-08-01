@@ -1,11 +1,11 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
-    var apiBase = "";
+    var apiBase = string.Empty;
 }
 
 <PageTitle>QuickShareCloud â€” send a file in seconds</PageTitle>

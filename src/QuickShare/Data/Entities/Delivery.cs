@@ -19,8 +19,14 @@ public record Delivery : BaseAuditEntity
     public string? BrandLogo { get; set; }
     public string? BrandMessage { get; set; }
     public string? BrandAccent { get; set; }
-    public string Status { get; set; } = "Active";
+    public string Status { get; set; } = DeliveryStatus.Active;
     public string? StoragePath { get; set; }
     public User? Sender { get; init; }
     public Manifest? Manifest { get; init; }
+}
+
+public static class DeliveryStatus
+{
+    public const string Active = "Active";
+    public const string Expired = "Expired";
 }

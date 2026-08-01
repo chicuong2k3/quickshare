@@ -51,7 +51,7 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,
-            Status = "InProgress",
+            Status = UploadSessionStatus.InProgress,
             ExpiresAt = DateTime.UtcNow.AddDays(maxExpiryDays),
             R2UploadId = initResult.UploadId,
             StoragePath = initResult.ObjectKey

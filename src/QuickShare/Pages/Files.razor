@@ -1,4 +1,4 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/files"
 @attribute [Authorize]
 @attribute [StreamRendering]
@@ -15,7 +15,7 @@
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
-    var apiBase = "";
+    var apiBase = string.Empty;
 }
 
 <PageTitle>Files â€” QuickShareCloud</PageTitle>
@@ -126,7 +126,7 @@
                 else if (Folders is not null)
                 {
                     <div class="folder-list" role="list" aria-label="Folders">
-                        <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? "" : "?search=" + Uri.EscapeDataString(SearchTerm))"
+                        <a href="/files@(string.IsNullOrEmpty(SearchTerm) ? string.Empty : "?search=" + Uri.EscapeDataString(SearchTerm))"
                            hx-get="/files@(string.IsNullOrEmpty(SearchTerm) ? "?search=" + Uri.EscapeDataString(SearchTerm) : "")"
                            hx-target="#files-content"
                            hx-select="#files-content"
@@ -157,7 +157,7 @@
                                         <span class="folder-count">@folder.FileCount</span>
                                     }
                                 </a>
-                                @if (folder.Name != "/")
+                                @if (folder.Name != Folder.RootName)
                                 {
                                     <div class="action-btns">
                                         <button type="button" class="action-btn" aria-label="Rename @folder.Name" title="Rename folder" @click="openRenameFolder('@folder.Id','@folder.Name.Replace("'","\\'")')">
@@ -259,7 +259,7 @@
                         }
                     </div>
                     <p class="file-footer">
-                        Showing @FileItems.Count file@(FileItems.Count != 1 ? "s" : "")
+                        Showing @FileItems.Count file@(FileItems.Count != 1 ? "s" : string.Empty)
                         @if (TotalCount > FileItems.Count) { <text> of @TotalCount</text> }
                     </p>
                 }
@@ -366,7 +366,7 @@
     [SupplyParameterFromQuery] public string? FolderId { get; set; }
     [SupplyParameterFromQuery] public string? Search { get; set; }
 
-    private string SearchTerm => Search ?? "";
+    private string SearchTerm => Search ?? string.Empty;
     private List<FolderItemResponse>? Folders { get; set; }
     private List<FileItemResponse>? FileItems { get; set; }
     private FolderItemResponse? SelectedFolder { get; set; }
@@ -377,8 +377,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
-        isHtmxRender = hxHeader == "true";
+        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers[HtmxHeaders.Request].FirstOrDefault();
+        isHtmxRender = hxHeader == HtmxHeaders.RequestValue;
         if (!isHtmxRender) return;
 
         try
@@ -437,7 +437,7 @@
     private string GetFileDownloadUrl(Guid fileId) => $"/api/files/{fileId}/download";
 
     private static MarkupString FileIcon(string ct) {
-        var key = (ct ?? "").ToLowerInvariant();
+        var key = (ct ?? string.Empty).ToLowerInvariant();
         var d = key switch {
             var s when s.StartsWith("image/") => "M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6",
             var s when s.StartsWith("video/") => "m22 8-6 4 6 4V8Z M14 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z",

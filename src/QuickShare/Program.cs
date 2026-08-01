@@ -112,14 +112,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.Cookie.Name = AuthConstants.CookieName;
-        options.LoginPath = "/login";
-        options.LogoutPath = "/logout";
+        options.LoginPath = RoutePaths.Login;
+        options.LogoutPath = RoutePaths.Logout;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
         options.Events.OnRedirectToLogin = ctx =>
         {
             // API callers get a status code; browser page requests get the redirect.
-            if (ctx.Request.Path.StartsWithSegments("/api"))
+            if (ctx.Request.Path.StartsWithSegments(RoutePaths.Api))
             {
                 ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return Task.CompletedTask;
@@ -129,7 +129,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
         options.Events.OnRedirectToAccessDenied = ctx =>
         {
-            if (ctx.Request.Path.StartsWithSegments("/api"))
+            if (ctx.Request.Path.StartsWithSegments(RoutePaths.Api))
             {
                 ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return Task.CompletedTask;
@@ -184,9 +184,9 @@ using (var scope = app.Services.CreateScope())
         await db.Database.EnsureCreatedAsync();
     }
 
-    if (!await db.Folders.AnyAsync(f => f.Name == "/"))
+    if (!await db.Folders.AnyAsync(f => f.Name == Folder.RootName))
     {
-        db.Folders.Add(new Folder { Id = Guid.CreateVersion7(), Name = "/" });
+        db.Folders.Add(new Folder { Id = Guid.CreateVersion7(), Name = Folder.RootName });
         await db.SaveChangesAsync();
     }
 
@@ -250,7 +250,7 @@ app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpC
 });
 
 // Logout endpoint.
-app.MapGet("/logout", async (HttpContext context) =>
+app.MapGet(RoutePaths.Logout, async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     context.Response.Redirect("/?logout=1");

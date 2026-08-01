@@ -1,4 +1,4 @@
-﻿@layout MainLayout
+@layout MainLayout
 @page "/p2p/d/{ShareCode}"
 @inject IConfiguration Config
 
@@ -9,7 +9,7 @@
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
-    var apiBase = "";
+    var apiBase = string.Empty;
     var shareCode = ShareCode;
 }
 

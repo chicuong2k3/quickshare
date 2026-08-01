@@ -26,15 +26,15 @@ public sealed class DownloadInfoHandler
             .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
 
         if (delivery is null)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error("delivery_not_found"));
+            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
 
         if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error("delivery_expired"));
+            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryExpired));
 
         if (delivery.DownloadCount >= delivery.MaxDownloads)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error("download_limit_reached"));
+            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
 
-        var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? "anonymous" : delivery.Sender.Plan;
+        var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
 
         return Result.Success(new DownloadInfoResponse(
             delivery.FileName,

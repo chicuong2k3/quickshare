@@ -13,7 +13,7 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
         Post("/api/shares/p2p");
         AllowAnonymous();
         Validator<CreateP2PShareValidator>();
-        Description(b => b.WithTags("P2P"));
+        Description(b => b.WithTags(ApiTags.P2p));
         Summary(s =>
         {
             s.Summary = "Create a P2P share link (metadata only)";

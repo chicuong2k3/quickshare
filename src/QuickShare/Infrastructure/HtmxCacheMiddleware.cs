@@ -9,13 +9,13 @@ public sealed class HtmxCacheMiddleware
 
     private static readonly HashSet<string> NoCachePaths = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/send", "/login", "/logout", "/upgrade",
-        "/account/billing", "/p2p/send"
+        RoutePaths.Send, RoutePaths.Login, RoutePaths.Logout, RoutePaths.Upgrade,
+        RoutePaths.AccountBilling, RoutePaths.P2pSend
     };
 
     private static readonly HashSet<string> PublicPaths = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/", "/pricing"
+        RoutePaths.Home, RoutePaths.Pricing
     };
 
     public HtmxCacheMiddleware(RequestDelegate next)
@@ -45,12 +45,12 @@ public sealed class HtmxCacheMiddleware
             return false;
         }
 
-        if (context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
+        if (context.Request.Path.StartsWithSegments(RoutePaths.Api, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        if (NoCachePaths.Contains(context.Request.Path.Value ?? ""))
+        if (NoCachePaths.Contains(context.Request.Path.Value ?? string.Empty))
         {
             return false;
         }
@@ -60,7 +60,7 @@ public sealed class HtmxCacheMiddleware
 
     private static void ApplyCacheHeaders(HttpContext context)
     {
-        var isPublic = PublicPaths.Contains(context.Request.Path.Value ?? "");
+        var isPublic = PublicPaths.Contains(context.Request.Path.Value ?? string.Empty);
         var maxAge = isPublic ? PublicDefault : PrivateDefault;
         var visibility = isPublic ? "public" : "private";
 

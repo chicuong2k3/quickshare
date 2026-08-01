@@ -39,7 +39,7 @@ public sealed class RateLimitingMiddleware
                 var retryAfter = (int)(Window - (now - window.Start)).TotalSeconds;
                 context.Response.StatusCode = 429;
                 context.Response.Headers.RetryAfter = retryAfter.ToString();
-                context.Response.Headers.ContentType = "application/json";
+                context.Response.Headers.ContentType = MediaTypes.Json;
                 context.Response.WriteAsync(
                     $"{{\"error\":\"rate_limit_exceeded\",\"message\":\"Too many requests. Try again in {retryAfter} seconds.\",\"retryAfter\":{retryAfter}}}");
                 return;

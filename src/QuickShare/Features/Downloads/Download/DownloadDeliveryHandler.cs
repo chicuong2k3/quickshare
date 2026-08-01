@@ -48,7 +48,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             return;
         }
 
-        var hasRangeHeader = httpContext.Request.Headers.ContainsKey("Range");
+        var hasRangeHeader = httpContext.Request.Headers.ContainsKey(HttpHeaders.Range);
         var ttl = hasRangeHeader ? RangeRequestTtl : FullDownloadTtl;
 
         if (delivery.ExpiresAt.HasValue)
@@ -89,7 +89,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                         {
                             Id = Guid.CreateVersion7(),
                             DeliveryId = delivery.Id,
-                            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+                            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
                             DownloadedAt = DateTime.UtcNow
                         });
 

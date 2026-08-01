@@ -151,9 +151,9 @@ public sealed class P2PConnectionManager : IDisposable
 
         lock (room)
         {
-            if (room.SenderConnected && excludeRole != "sender")
+            if (room.SenderConnected && excludeRole != P2PProtocol.RoleSender)
                 _ = SendToSocketAsync(room.Sender!, message, ct);
-            if (excludeRole != "receiver")
+            if (excludeRole != P2PProtocol.RoleReceiver)
             {
                 foreach (var recv in room.Receivers.Values)
                 {

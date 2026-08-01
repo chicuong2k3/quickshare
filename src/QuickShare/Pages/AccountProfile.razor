@@ -1,4 +1,4 @@
-﻿@page "/account/profile"
+@page "/account/profile"
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
@@ -10,7 +10,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var apiBase = "";
+    var apiBase = string.Empty;
 }
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
@@ -69,9 +69,11 @@
 <script src="/js/account.js"></script>
 
 @code {
-    private string name = "";
-    private string email = "";
-    private string avatar = "";
+    private const string ProfileUpdatedTrigger = "profileUpdated";
+
+    private string name = string.Empty;
+    private string email = string.Empty;
+    private string avatar = string.Empty;
     private string plan = "free";
     private string provider = "unknown";
     private string? formError;
@@ -165,7 +167,7 @@
             var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
 
-            httpContext.Response.Headers["HX-Trigger"] = "profileUpdated";
+            httpContext.Response.Headers[HtmxHeaders.Trigger] = ProfileUpdatedTrigger;
         }
     }
 }

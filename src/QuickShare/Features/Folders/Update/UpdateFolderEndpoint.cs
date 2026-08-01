@@ -5,7 +5,7 @@ public sealed class UpdateFolderEndpoint : Endpoint<UpdateFolderCommand, FolderI
     public override void Configure()
     {
         Put("/api/folders/{id}");
-        Description(b => b.WithTags("Folders"));
+        Description(b => b.WithTags(ApiTags.Folders));
         Summary(s =>
         {
             s.Summary = "Update a folder";

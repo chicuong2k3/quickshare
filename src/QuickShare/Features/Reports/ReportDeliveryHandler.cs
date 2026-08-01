@@ -12,7 +12,7 @@ public sealed class ReportDeliveryHandler(IStorageProvider storage)
             .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
 
         if (delivery is null)
-            return Result.Failure<string>(new LightResults.Error("not_found"));
+            return Result.Failure<string>(new LightResults.Error(ErrorCodes.NotFound));
 
         // Takedown: mark delivery as taken down and delete from R2
         if (delivery.StoragePath is not null)

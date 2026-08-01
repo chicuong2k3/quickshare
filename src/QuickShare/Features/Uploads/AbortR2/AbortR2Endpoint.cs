@@ -6,7 +6,7 @@ public sealed class AbortR2Endpoint : Endpoint<AbortR2Request>
     {
         Post("/api/uploads/abort-r2");
         Validator<AbortR2Validator>();
-        Description(b => b.WithTags("Uploads"));
+        Description(b => b.WithTags(ApiTags.Uploads));
         Summary(s =>
         {
             s.Summary = "Abort an R2 multipart upload";
@@ -31,6 +31,6 @@ public sealed class AbortR2Endpoint : Endpoint<AbortR2Request>
 public class AbortR2Request
 {
     public Guid DeliveryId { get; set; }
-    public string UploadId { get; set; } = "";
-    public string ObjectKey { get; set; } = "";
+    public string UploadId { get; set; } = string.Empty;
+    public string ObjectKey { get; set; } = string.Empty;
 }
