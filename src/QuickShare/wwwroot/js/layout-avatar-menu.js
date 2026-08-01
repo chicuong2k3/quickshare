@@ -1,6 +1,13 @@
 (function () {
     'use strict';
 
+    var initFlag = '__layoutAvatarMenuInitialized';
+    if (window[initFlag]) {
+        return;
+    }
+
+    window[initFlag] = true;
+
     function closeAllMenus() {
         var menus = document.querySelectorAll('.db-dropdown.is-open');
         for (var i = 0; i < menus.length; i++) {
