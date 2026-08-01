@@ -9,12 +9,12 @@ container to Docker using a self-hosted runner.
 flowchart LR
     subgraph GitHub["GitHub"]
         REPO["chicuong2k3/TeleCloud<br/>branch: dev"]
-        ACTIONS["GitHub Actions<br/>(ubuntu-latest)"]
         GHCR[("ghcr.io<br/>telecloud:dev")]
     end
 
     subgraph Server["Windows Server (this machine)"]
         RUNNER["Self-hosted Runner<br/>C:\\actions-runner"]
+        ACTIONS["GitHub Actions<br/>(runs-on: self-hosted)"]
         COMPOSE["C:\\deploy\\quickshare<br/>docker-compose.yml + .env"]
         CONTAINER["Container: quickshare<br/>:8080"]
         CF["cloudflared tunnel<br/>→ quickshare.codemagic.io.vn"]
@@ -41,22 +41,21 @@ flowchart LR
 sequenceDiagram
     participant Dev as Developer
     participant GitHub as GitHub (dev branch)
-    participant Actions as GitHub Actions (ubuntu-latest)
-    participant GHCR as ghcr.io
     participant Runner as Self-hosted Runner (Windows)
+    participant GHCR as ghcr.io
     participant Compose as docker compose (C:\deploy\quickshare)
     participant App as Container quickshare
 
     Dev->>GitHub: push to dev branch
-    GitHub->>Actions: trigger "Deploy to Dev" workflow
-    Actions->>Actions: checkout source
-    Actions->>Actions: setup-buildx + login ghcr (GITHUB_TOKEN)
-    Actions->>GHCR: build & push telecloud:dev + telecloud:<sha>
-    Actions->>Runner: deploy job (runs-on: self-hosted)
+    GitHub->>Runner: trigger "Deploy to Dev" workflow (runs-on: self-hosted)
+    Runner->>Runner: checkout source
+    Runner->>Runner: setup-buildx + login ghcr (GITHUB_TOKEN)
+    Runner->>GHCR: build & push telecloud:dev + telecloud:<sha>
+    Runner->>Runner: deploy job (needs: build)
     Runner->>Runner: docker login ghcr.io
     Runner->>Runner: cd ${{ secrets.DEV_DEPLOY_PATH }}
     Runner->>Compose: docker compose pull quickshare
-    Compose->>GHCR: pull TeleCloud:dev
+    Compose->>GHCR: pull telecloud:dev
     Compose->>App: docker compose up -d quickshare
     App->>App: migrate DB + create root folder "/"
     App-->>Runner: healthcheck HTTP :8080
@@ -68,7 +67,7 @@ sequenceDiagram
 |-----------|------------------|-------|
 | Workflow | `.github/workflows/deploy-dev.yml` | Triggers on push to `dev` branch or `workflow_dispatch` |
 | Image | `ghcr.io/chicuong2k3/telecloud:dev` | Lowercase (ghcr requirement); also tagged `:<commit-sha>` |
-| Runner | `C:\actions-runner`, repo `chicuong2k3/TeleCloud` | Registered to `Default` pool, `runs-on: self-hosted` |
+| Runner | `C:\actions-runner`, repo `chicuong2k3/TeleCloud` | Registered to `Default` pool; both `build` and `deploy` jobs run on `self-hosted` |
 | Deploy path | `C:\deploy\quickshare` | Secret `DEV_DEPLOY_PATH` points to this folder |
 | Compose | `C:\deploy\quickshare\docker-compose.yml` | Service `quickshare`, binds `127.0.0.1:8080` |
 | Env vars | `C:\deploy\quickshare\.env` | Read by compose, passed into the container as `__`-separated keys |
