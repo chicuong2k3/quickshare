@@ -5,6 +5,8 @@
         function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
         function hide(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
         function text(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+        var SIGNALING_CONNECT_TIMEOUT_MS = 15000;
+        var SIGNALING_CONNECT_TIMEOUT_MESSAGE = 'Could not reach signaling server. Check network and try again.';
 
         window.p2pDownload = (function () {
             var state = {
@@ -12,7 +14,7 @@
                 shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''),
                 _receivedBytes: 0, _startTime: 0,
                 _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _intentionalStop: false,
-                _pendingOffer: null, _pendingIceCandidates: []
+                _pendingOffer: null, _pendingIceCandidates: [], _isRegistered: false, _connectTimeoutId: null
             };
 
             function render() {
@@ -57,16 +59,43 @@
                 }
                 return l;
             }
+            function clearConnectTimeout() {
+                if (state._connectTimeoutId) {
+                    clearTimeout(state._connectTimeoutId);
+                    state._connectTimeoutId = null;
+                }
+            }
+
+            function armConnectTimeout() {
+                clearConnectTimeout();
+                state._connectTimeoutId = setTimeout(function () {
+                    if (state._isRegistered || state.phase !== 'checking') {
+                        return;
+                    }
+
+                    state.phase = 'error';
+                    state.error = SIGNALING_CONNECT_TIMEOUT_MESSAGE;
+                    render();
+                }, SIGNALING_CONNECT_TIMEOUT_MS);
+            }
+
 
             function init() {
                 render();
                 var api = apiBase();
                 if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = 'Signaling client not loaded'; render(); return; }
                 state._signaling = new window.P2P.SignalingClient(api, state.shareCode);
-                state._signaling.onRegistered = function () {};
-                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; if (state.phase !== 'ready' && state.phase !== 'connecting' && state.phase !== 'transferring' && state.phase !== 'complete') { state.phase = 'ready'; } render(); };
-                state._signaling.onPeerJoined = function () { if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
-                state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
+                state._signaling.onRegistered = function () {
+                    state._isRegistered = true;
+                    clearConnectTimeout();
+                    if (state.phase === 'checking') {
+                        state.phase = 'waiting-sender';
+                        render();
+                    }
+                };
+                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; clearConnectTimeout(); if (state.phase !== 'ready' && state.phase !== 'connecting' && state.phase !== 'transferring' && state.phase !== 'complete') { state.phase = 'ready'; } render(); };
+                state._signaling.onPeerJoined = function () { clearConnectTimeout(); if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
+                state._signaling.onWaiting = function () { clearConnectTimeout(); state.phase = 'waiting-sender'; render(); };
                 state._signaling.onRelay = function (type, data) {
                     if (type === 'offer') {
                         if (state._peerConnection) {
@@ -83,6 +112,17 @@
                         }
                     }
                 };
+                state._signaling.onError = function (message) {
+                    if (state._intentionalStop) {
+                        return;
+                    }
+
+                    clearConnectTimeout();
+                    state.phase = 'error';
+                    state.error = message || SIGNALING_CONNECT_TIMEOUT_MESSAGE;
+                    render();
+                };
+                armConnectTimeout();
                 state._signaling.connect('receiver');
             }
 
@@ -122,8 +162,8 @@
                 state.phase = 'transferring'; state._receiver.start(); render();
             }
 
-            function cancelDownload() { state._intentionalStop = true; if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
-            function cleanup() { if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
+            function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
+            function cleanup() { clearConnectTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
             return { startDownload: startDownload, cancelDownload: cancelDownload };

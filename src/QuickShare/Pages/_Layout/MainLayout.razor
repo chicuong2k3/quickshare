@@ -37,11 +37,12 @@
                     <button class="db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn"
                             hx-get="/api/me/avatar"
                             hx-trigger="load once, profileUpdated from:body"
-                            hx-swap="outerHTML"
+                            hx-swap="innerHTML"
+                            data-avatar-menu-trigger="true"
                             type="button" aria-label="User menu">
                         <span class="layout-avatar-skeleton"></span>
                     </button>
-                    <div class="db-dropdown__content layout-avatar-dropdown">
+                    <div class="db-dropdown__content layout-avatar-dropdown" data-avatar-menu-content="true">
                         <div class="layout-user-info">
                             <span class="layout-user-info__name">@userName</span>
                             <span class="layout-user-info__email">@userEmail</span>

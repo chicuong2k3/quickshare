@@ -2645,6 +2645,13 @@
 .layout-root[b-0bikmtq2d9]  .db-dropdown {
     position: relative;
 }
+.layout-root[b-0bikmtq2d9]  .db-dropdown__content {
+    display: none;
+}
+
+.layout-root[b-0bikmtq2d9]  .db-dropdown.is-open .db-dropdown__content {
+    display: block;
+}
 
 .layout-avatar-btn[b-0bikmtq2d9] {
     cursor: pointer;

@@ -73,6 +73,13 @@
 .layout-root ::deep .db-dropdown {
     position: relative;
 }
+.layout-root ::deep .db-dropdown__content {
+    display: none;
+}
+
+.layout-root ::deep .db-dropdown.is-open .db-dropdown__content {
+    display: block;
+}
 
 .layout-avatar-btn {
     cursor: pointer;
