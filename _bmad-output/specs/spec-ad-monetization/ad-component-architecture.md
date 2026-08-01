@@ -303,6 +303,7 @@ This prevents client-side reward forgery.
 | **Token replay** | Capture valid token via network tab, resend it | `daily_ad_tracking.token_hashes[]` stores SHA-256 of every processed token. Duplicate hash → 200 with no quota change. |
 | **Automation (Puppeteer/Playwright)** | Script auto-plays ad | Google AdMob has bot detection. Automated traffic gets no reward token or gets it invalidated. Google's anti-fraud systems handle this. |
 | **Fake Google SSV response** | MITM proxy that fakes `200 OK` from Google SSV | Server calls Google SSV over HTTPS with certificate validation. MITM requires compromising server's TLS trust store. |
+| **DevTools inspection** (F12, Ctrl+Shift+I, Inspect Element) | User opens DevTools to inspect ad component, read source, capture network tokens, or modify DOM/CSS | 🟡 **Supplemental defense.** `anti-devtools.js` detects `debugger` pause timing (>100ms gap) → `location.reload()` silently refreshes page. Production only; bypassed by `?debug=true`. Primary defense remains Google SSV + token hash idempotency.
 
 ### Defense-in-Depth: Server-Side Verification Flow
 
@@ -376,6 +377,69 @@ This prevents client-side reward forgery.
 | Multiple users sharing same IP with identical token patterns | Token farm | Flag for review |
 
 > These heuristics are **not implemented in v1** — they are noted here so the logging schema supports them when needed. v1 relies entirely on Google SSV + idempotency + daily limit.
+
+### DevTools Detection & Auto-Reload (supplemental defense)
+
+**Status: Production only. Configurable. Has escape hatch.**
+
+When a user opens DevTools (F12, Ctrl+Shift+I, right-click → Inspect), the `debugger` statement pauses JavaScript execution. By measuring execution timing around a `debugger` call in a loop, we detect the pause and trigger `location.reload()`.
+
+#### Implementation
+
+```js
+// wwwroot/js/anti-devtools.js
+// Only injected in production. Skipped when ?debug=true URL param is present.
+(function() {
+    'use strict';
+
+    // Escape hatch: devs can add ?debug=true to bypass detection for current session
+    if (window.location.search.includes('debug=true')) return;
+
+    function detectDevTools() {
+        var before = performance.now();
+        debugger;                          // DevTools open → pause here → timing gap
+        var after = performance.now();
+        return (after - before) > 100;     // >100ms gap = DevTools detected
+    }
+
+    // Check periodically. 2000ms interval — <0.0001% CPU. DevTools takes seconds to open; 2s detection is more than enough.
+    setInterval(function() {
+        if (detectDevTools()) {
+            location.reload();             // Immediate refresh — wipes any inspection state
+        }
+    }, 2000);
+})();
+```
+
+#### Production-Only Injection
+
+```razor
+@* In App.razor or MainLayout.razor *@
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment Env
+
+@if (Env.IsProduction())
+{
+    <script src="~/js/anti-devtools.js" asp-append-version="true"></script>
+}
+```
+
+#### Threat Model Update
+
+| Vector | Before (no DevTools detection) | After (with DevTools detection) |
+|--------|------|------|
+| **User opens DevTools to inspect ad component** | Can view HTML, CSS, network calls, JS source | Page immediately refreshes — inspection window closes |
+| **User opens DevTools to find/copy ad reward token** | Can see token in Network tab → replay attempt | Page refreshes before they can capture token → must replay blind (caught by SSV + hash) |
+| **User opens DevTools to modify DOM/CSS** | Can experiment with hiding/restyling ad | Page refreshes → DOM reset |
+| **User has "Deactivate breakpoints" enabled** | — | Detection fails (no pause on `debugger`) — but SSV still active |
+| **User has React/Vue DevTools extension** | — | Extensions that trigger JS evaluation may cause false positive. Mitigated by 100ms threshold. |
+
+#### Limitations (documented, not hidden)
+
+1. **Bypassable:** User with "Deactivate breakpoints" enabled in DevTools settings defeats detection entirely
+2. **Not primary defense:** DevTools detection is a speed bump — Google SSV remains the actual security boundary
+3. **False positives possible:** Some browser extensions may trigger the timing gap. The 100ms threshold minimizes this; if it still occurs, user sees an unexplained refresh (acceptable degradation for free tier)
+4. **No user-facing message:** Page simply reloads silently. No alert, no warning dialog — that would confirm to the attacker that detection exists
 
 ## Data Model Changes
 

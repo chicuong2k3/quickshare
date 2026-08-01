@@ -1,0 +1,16 @@
+namespace QuickShare.Infrastructure;
+
+public static class AdConstants
+{
+    public const int MaxDailyAds = 3;
+    public const long RewardBandwidthBytes = 104_857_600L; // 100 MB
+    public const string AdMobScriptUrl = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+    public const string CssPrefix = "ad-";
+    public const string RewardPromptRoute = "/ads/reward-prompt";
+    public const string RewardCallbackRoute = "/api/ads/reward-callback";
+    public const string DevToolsDetectionScript = "/js/anti-devtools.js";
+
+    public const string ConsentCookieName = "ad-consent";
+    public const string ConsentCookieValueGranted = "granted";
+    public const string ConsentCookieValueDenied = "denied";
+}

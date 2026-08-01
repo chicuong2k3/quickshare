@@ -3,9 +3,11 @@
 @attribute [StreamRendering]
 @inject IMessageBus Bus
 @inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
 @using System.Text.Json
 @using System.Text.Json.Serialization
-@using Wolverine
+@using QuickShare.Components.Shared
+@using QuickShare.Infrastructure
 @using QuickShare.Features.Downloads.Info
 
 @{
@@ -179,6 +181,9 @@
                                 </div>
                             </div>
                         </div>
+
+                        @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
+                        <QuickShare.Components.Shared.AdComponent />
                     </div>
                     break;
 
@@ -223,20 +228,23 @@
                     </div>
                     break;
             }
-        </div>
+    </div>
     </div>
 
     <script src="/js/download.js"></script>
+
 </PageWrapper>
 
 @code {
     [Parameter] public string ShareCode { get; set; } = string.Empty;
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
-    private string ExpiryLabel = string.Empty;
+    private string ExpiryLabel { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+
+
         try
         {
             var result = await Bus.InvokeAsync<LightResults.Result<DownloadInfoResponse>>(

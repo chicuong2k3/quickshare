@@ -38,6 +38,8 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
 
         HttpContext.Response.StatusCode = 200;
         HttpContext.Response.ContentType = MediaTypes.Html;
+        HttpContext.Response.Headers["Cache-Control"] = "private, max-age=3600";
+        HttpContext.Response.Headers["Vary"] = "Cookie";
         await HttpContext.Response.WriteAsync(html, ct);
     }
 

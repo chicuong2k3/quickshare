@@ -700,3 +700,68 @@ body::after,
 @media (prefers-reduced-motion: reduce) {
     .account-branding-item { transition: none; }
 }
+
+/* --- Ad reward card (ad- namespace - global for HTMX responses) --- */
+.ad-reward-card {
+    border: 1px solid var(--db-color-border);
+    border-radius: var(--db-radius-lg);
+    padding: var(--db-space-4);
+    background: var(--db-color-surface);
+    margin-top: var(--db-space-4);
+}
+
+.ad-reward-card__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-3);
+    align-items: center;
+}
+
+.ad-reward-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-3);
+    align-items: center;
+    text-align: center;
+}
+
+.ad-reward-card__title {
+    font-weight: 600;
+    color: var(--db-color-text);
+    font-size: 0.9375rem;
+}
+
+.ad-reward-card__description {
+    color: var(--db-color-text-muted);
+    font-size: 0.8125rem;
+    margin: 0;
+}
+
+.ad-reward-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    padding: var(--db-space-2) var(--db-space-4);
+    border-radius: var(--db-radius-md);
+    background: var(--db-color-accent);
+    color: var(--db-on-accent);
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: opacity 0.2s ease;
+}
+
+.ad-reward-btn:hover { opacity: 0.9; }
+.ad-reward-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ad-upgrade-link {
+    color: var(--db-color-accent);
+    font-size: 0.8125rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.ad-upgrade-link:hover {
+    color: var(--db-color-accent-hover);
+}

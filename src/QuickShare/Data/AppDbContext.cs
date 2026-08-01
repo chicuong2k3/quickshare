@@ -17,8 +17,9 @@ public class AppDbContext : DbContext
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
-    public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<DailyAdTracking> DailyAdTrackings => Set<DailyAdTracking>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -192,6 +193,20 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Status).IsRequired();
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.Status);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DailyAdTracking>(entity =>
+        {
+            entity.ToTable("daily_ad_tracking");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.Date }).IsUnique();
+            entity.Property(e => e.Date).IsRequired();
+            entity.Property(e => e.AdCount).IsRequired().HasDefaultValue(0);
+            entity.Property(e => e.TokenHashes).HasColumnType("text[]").HasDefaultValue(Array.Empty<string>());
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

@@ -69,9 +69,18 @@
                 state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
                 state._signaling.onRelay = function (type, data) {
                     if (type === 'offer') {
-                        state._pendingOffer = data;
+                        if (state._peerConnection) {
+                            handleOffer(data);
+                        } else {
+                            state._pendingOffer = data;
+                        }
                     } else if (type === 'ice' && data) {
-                        state._pendingIceCandidates.push(data);
+                        var candidate = data.candidate || data;
+                        if (state._peerConnection) {
+                            state._peerConnection.addIceCandidate(candidate);
+                        } else {
+                            state._pendingIceCandidates.push(candidate);
+                        }
                     }
                 };
                 state._signaling.connect('receiver');
@@ -90,7 +99,8 @@
                     state._pendingOffer = null;
                 }
                 for (var i = 0; i < state._pendingIceCandidates.length; i++) {
-                    state._peerConnection.addIceCandidate(state._pendingIceCandidates[i]);
+                    var pendingCandidate = state._pendingIceCandidates[i].candidate || state._pendingIceCandidates[i];
+                    state._peerConnection.addIceCandidate(pendingCandidate);
                 }
                 state._pendingIceCandidates = [];
             }

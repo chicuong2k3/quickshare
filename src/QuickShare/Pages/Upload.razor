@@ -1,4 +1,5 @@
 @layout MainLayout
+@using QuickShare.Components.Shared
 @page "/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
@@ -149,6 +150,11 @@
                 <p class="status-p" id="upload-error-msg">An unknown error occurred.</p>
                 <button class="db-btn db-btn--primary" style="margin-top: 2.5rem" onclick="uploadPage.reset()">Try again</button>
             </section>
+
+    @* Rewarded ad for free-plan users *@
+    <div class="upload-ad-section">
+        <AdComponent />
+    </div>
         </div>
 </PageWrapper>
 

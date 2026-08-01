@@ -19,7 +19,7 @@
 <div id="profile-card" class="db-card account-card">
     <div class="db-card__body">
         <div class="account-profile">
-            <div class="account-avatar-wrap" @click="$refs.avatarFileInput.click()">
+            <div class="account-avatar-wrap" onclick="document.getElementById('avatarFileInput').click()">
                 @if (!string.IsNullOrEmpty(avatar))
                 {
                     <img id="avatarPreview" class="account-avatar-img" src="@avatar" alt="@name" />
@@ -50,7 +50,7 @@
                     <input id="name" name="name" type="text" required value="@name" class="db-field__input db-input" />
                 </label>
                 <div>
-                    <input x-ref="avatarFileInput" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
+                    <input id="avatarFileInput" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
                 </div>
                 <button type="submit" class="db-btn db-btn--primary account-save-btn" style="width: 100%" data-ai-action="profile.save.submit">
                     <span class="btn-text">Save changes</span>

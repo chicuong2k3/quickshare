@@ -164,10 +164,7 @@
             state._signaling.onRegistered = function () {};
             state._signaling.onPeerJoined = function (receiverId) { onPeerJoined(receiverId); };
             state._signaling.onPeerLeft = function (message, receiverId) {
-                var idx = -1;
-                for (var i = 0; i < state._receiverList.length; i++) { if (state._receiverList[i].id === receiverId) { idx = i; break; } }
-                if (idx >= 0) { state._receiverList.splice(idx, 1); render(); }
-                delete state._receivers[receiverId];
+                onReceiverLeft(receiverId);
             };
             state._signaling.onRelay = function (type, data, receiverId) {
                 if (type === 'answer') onAnswer(data, receiverId);
@@ -206,7 +203,7 @@
 
             pc.onIceCandidate = function (c) {
                 if (state._signaling) {
-                    state._signaling.sendTo('ice', { candidate: c }, receiverId);
+                    state._signaling.sendTo('ice', c, receiverId);
                 }
             };
             pc.onConnectionState = function (s) {

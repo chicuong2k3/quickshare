@@ -34,7 +34,6 @@ public sealed class QuotaEnforcer(AppDbContext db)
     /// <summary>
     /// Throws if uploading <paramref name="fileSize"/> bytes would exceed
     /// the user's plan-tier monthly byte limit.
-    /// </summary>
     public async Task CheckUploadQuotaAsync(User user, long fileSize, CancellationToken ct = default)
     {
         var (maxBytesPerMonth, _) = PlanTierLimits.GetMonthlyLimits(user.Plan);
@@ -42,13 +41,15 @@ public sealed class QuotaEnforcer(AppDbContext db)
             return; // unlimited
 
         var usage = await EnsureUsageRecordAsync(user, ct);
+        // Effective limit = base monthly limit + bonus bandwidth from rewarded ads
+        var effectiveLimit = maxBytesPerMonth.Value + usage.DailyBandwidthBonus;
         var projectedTotal = usage.TotalBytesUploaded + fileSize;
-        if (projectedTotal > maxBytesPerMonth.Value)
+        if (projectedTotal > effectiveLimit)
         {
             throw new QuotaExceededException(
-                $"Upload would exceed monthly limit of {maxBytesPerMonth.Value:N0} bytes " +
-                $"(used: {usage.TotalBytesUploaded:N0}, requested: {fileSize:N0}). " +
-                $"Upgrade your plan at /settings/billing.");
+                $"Upload would exceed monthly limit of {effectiveLimit:N0} bytes " +
+                $"(used: {usage.TotalBytesUploaded:N0}, bonus: {usage.DailyBandwidthBonus:N0}, requested: {fileSize:N0}). " +
+                $"Upgrade your plan at /pricing.");
         }
     }
 

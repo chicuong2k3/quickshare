@@ -1,4 +1,5 @@
 ﻿@layout MainLayout
+@using QuickShare.Components.Shared
 @page "/p2p/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
@@ -97,6 +98,11 @@
             </div>
             <button class="db-btn db-btn--primary p2p-retry-btn" onclick="p2pSend.reset()">Try again</button>
         </section>
+    </div>
+
+    @* Rewarded ad for free-plan users *@
+    <div class="p2p-ad-section">
+        <AdComponent />
     </div>
 </PageWrapper>
 

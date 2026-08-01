@@ -16,4 +16,5 @@ public static class RoutePaths
     public const string Api = "/api";
     public const string UpgradePro = "/upgrade?plan=pro";
     public const string UpgradeStudio = "/upgrade?plan=studio";
+    public const string CookieConsent = "/api/cookie-consent";
 }

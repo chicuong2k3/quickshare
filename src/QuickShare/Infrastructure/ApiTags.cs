@@ -10,4 +10,5 @@ public static class ApiTags
     public const string P2p = "P2P";
     public const string Reports = "Reports";
     public const string Uploads = "Uploads";
+    public const string Ads = "Ads";
 }

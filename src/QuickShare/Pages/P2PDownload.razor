@@ -1,4 +1,6 @@
 @layout MainLayout
+@using QuickShare.Components.Shared
+@using QuickShare.Infrastructure
 @page "/p2p/d/{ShareCode}"
 @inject IConfiguration Config
 
@@ -91,6 +93,11 @@
 
         </div>
     </div>
+
+        @* Rewarded ad for free-plan users *@
+        <div class="p2p-ad-section" style="margin-top: 1.5rem">
+            <AdComponent />
+        </div>
 </PageWrapper>
 
 <script src="/js/p2p/signaling.js"></script>

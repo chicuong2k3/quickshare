@@ -1,0 +1,150 @@
+@* AdComponent.razor — self-contained rewarded ad component.
+   Resolves user plan and remaining ads internally via DB.
+   Renders nothing for anonymous users, consent CTA for no-consent,
+   skeleton on first render, full ad prompt on HTMX response.
+   Pro/Studio users: skeleton flashes briefly then clears. *@
+@using QuickShare.Infrastructure
+@using QuickShare.Extensions
+@using Microsoft.AspNetCore.Antiforgery
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IAntiforgery Antiforgery
+
+@* Anonymous: no ads *@
+@if (!_isAuthenticated)
+{
+    return;
+}
+
+@* No consent: show upgrade CTA *@
+@if (!HasAdConsent)
+{
+    <div id="ad-reward-card" class="ad-reward-card">
+        <div class="ad-reward-card__body">
+            <div class="ad-reward-card__title">Unlock free bandwidth</div>
+            <p class="ad-reward-card__description">Accept cookies to watch rewarded ads and get +100MB extra bandwidth per ad.</p>
+            <p class="ad-reward-card__description" style="margin-top:0.5rem">
+                <a href="javascript:location.reload()" class="ad-upgrade-link">Refresh page after accepting cookies</a>
+            </p>
+        </div>
+    </div>
+    return;
+}
+
+@* Shell render — skeleton, hx-get to dedicated /ads/reward-prompt page *@
+@if (!IsHxRequest)
+{
+    <div id="ad-reward-card"
+         class="ad-reward-card"
+         hx-get="@AdConstants.RewardPromptRoute"
+         hx-trigger="load"
+         hx-target="#ad-reward-card"
+         hx-select="#ad-reward-card"
+         hx-swap="outerHTML">
+        <div class="ad-reward-card__skeleton">
+            <div class="db-skeleton db-skeleton--text" style="width:55%"></div>
+            <div class="db-skeleton db-skeleton--button" style="width:35%; height:2.5rem; margin-top:0.75rem"></div>
+        </div>
+    </div>
+    return;
+}
+
+@* HTMX response — _userPlan resolved, Pro users get empty clear-out *@
+@if (_userPlan != PlanTierLimits.Free)
+{
+    <div id="ad-reward-card"></div>
+    return;
+}
+
+@* Full reward prompt with AdMob JS init *@
+<div id="ad-reward-card" class="ad-reward-card">
+    <div class="ad-reward-card__body">
+        <div class="ad-reward-card__title">Watch a short ad to get +100MB extra bandwidth</div>
+        <p class="ad-reward-card__description">
+            You have <strong>@RemainingAds ad@(RemainingAds == 1 ? string.Empty : "s")</strong> remaining today.
+            Free plan bandwidth resets daily.
+        </p>
+        <p id="ad-reward-error" class="ad-reward-card__description" style="color:var(--color-destructive);display:none"></p>
+        @if (RemainingAds > 0)
+        {
+            <button id="ad-reward-watch-btn"
+                    type="button"
+                    class="ad-reward-btn"
+                    data-ai-action="ad.reward.watch">
+                <svg style="width:1rem;height:1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Watch Ad for +100MB
+            </button>
+        }
+        else
+        {
+            <button id="ad-reward-watch-btn"
+                    type="button"
+                    class="ad-reward-btn"
+                    disabled
+                    data-ai-action="ad.reward.limit">
+                Limit reached
+            </button>
+        }
+        <a href="/pricing" class="ad-upgrade-link">Upgrade to Pro for unlimited bandwidth</a>
+    </div>
+
+    @{
+        var tokens = Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!);
+        var antiForgeryToken = tokens.RequestToken ?? string.Empty;
+    }
+    <script>
+        QuickShareAds.init({
+            adUnitId: 'ca-app-pub-3940256099942544/5224354917',
+            callbackUrl: '@AdConstants.RewardCallbackRoute',
+            antiForgeryToken: '@antiForgeryToken',
+            remainingAds: @RemainingAds
+        });
+    </script>
+</div>
+
+@code {
+
+    private bool HasAdConsent =>
+        HttpContextAccessor.HttpContext?.Request.Cookies[AdConstants.ConsentCookieName] == AdConstants.ConsentCookieValueGranted;
+
+    private bool _isAuthenticated;
+    private string? _userPlan;
+    private int RemainingAds { get; set; } = AdConstants.MaxDailyAds;
+    private bool IsHxRequest { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+
+        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
+        IsHxRequest = hxHeader == "true";
+        if (!IsHxRequest) return; // Shell render — no DB calls
+        if (!_isAuthenticated) return;
+        if (!HasAdConsent) return;
+
+        // HTMX data fetch: resolve plan + remaining ads from DB
+        try
+        {
+            var principal = HttpContextAccessor.HttpContext!.User;
+            var dbUser = await principal.GetUserAsync(Db, CancellationToken.None);
+            if (dbUser is null) return;
+
+            _userPlan = dbUser.Plan;
+            if (_userPlan != PlanTierLimits.Free) return; // Pro/Studio — render nothing
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var tracking = await Db.DailyAdTrackings
+                .FirstOrDefaultAsync(t => t.UserId == dbUser.Id && t.Date == today);
+
+            var completedToday = tracking?.AdCount ?? 0;
+            RemainingAds = Math.Max(0, AdConstants.MaxDailyAds - completedToday);
+        }
+        catch
+        {
+            _userPlan = PlanTierLimits.Free;
+            RemainingAds = AdConstants.MaxDailyAds;
+        }
+    }
+}
