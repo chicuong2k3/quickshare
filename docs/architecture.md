@@ -18,8 +18,8 @@
 
 CI/CD deploys the app to a Windows server via a self-hosted GitHub Actions runner. Both `build` and `deploy` jobs run on `self-hosted` (no GitHub-hosted runner):
 
-- **Image**: `ghcr.io/chicuong2k3/telecloud:dev` (lowercase — ghcr requirement)
-- **Runner**: `C:\actions-runner`, repo `chicuong2k3/TeleCloud`, pool `Default`
+- **Image**: `ghcr.io/chicuong2k3/quickshare:dev` (lowercase — ghcr requirement)
+- **Runner**: `C:\actions-runner`, repo `chicuong2k3/quickshare`, pool `Default`
 - **Deploy path**: `C:\deploy\quickshare` (`docker-compose.yml` + `.env`), service `quickshare`, binds `127.0.0.1:8080`
 - **Public URL**: `https://quickshare.codemagic.io.vn` (Cloudflare tunnel on host → `http://localhost:8080`)
 - **Env vars**: `.env` on server → compose `environment:` → container `IConfiguration` (keys like `ConnectionStrings__DefaultConnection`, `Authentication__Google__ClientId`, `R2__AccountId`, `PayOS__ClientId`)

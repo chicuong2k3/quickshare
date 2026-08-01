@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: chicuong2k3/telecloud
+  IMAGE_NAME: chicuong2k3/quickshare
 
 jobs:
   build:

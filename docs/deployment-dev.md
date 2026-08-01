@@ -8,8 +8,8 @@ container to Docker using a self-hosted runner.
 ```mermaid
 flowchart LR
     subgraph GitHub["GitHub"]
-        REPO["chicuong2k3/TeleCloud<br/>branch: dev"]
-        GHCR[("ghcr.io<br/>telecloud:dev")]
+        REPO["chicuong2k3/quickshare<br/>branch: dev"]
+        GHCR[("ghcr.io<br/>quickshare:dev")]
     end
 
     subgraph Server["Windows Server (this machine)"]
@@ -50,12 +50,12 @@ sequenceDiagram
     GitHub->>Runner: trigger "Deploy to Dev" workflow (runs-on: self-hosted)
     Runner->>Runner: checkout source
     Runner->>Runner: setup-buildx + login ghcr (GITHUB_TOKEN)
-    Runner->>GHCR: build & push telecloud:dev + telecloud:<sha>
+    Runner->>GHCR: build & push quickshare:dev + quickshare:<sha>
     Runner->>Runner: deploy job (needs: build)
     Runner->>Runner: docker login ghcr.io
     Runner->>Runner: cd ${{ secrets.DEV_DEPLOY_PATH }}
     Runner->>Compose: docker compose pull quickshare
-    Compose->>GHCR: pull telecloud:dev
+    Compose->>GHCR: pull quickshare:dev
     Compose->>App: docker compose up -d quickshare
     App->>App: migrate DB + create root folder "/"
     App-->>Runner: healthcheck HTTP :8080
@@ -66,8 +66,8 @@ sequenceDiagram
 | Component | Location / Value | Notes |
 |-----------|------------------|-------|
 | Workflow | `.github/workflows/deploy-dev.yml` | Triggers on push to `dev` branch or `workflow_dispatch` |
-| Image | `ghcr.io/chicuong2k3/telecloud:dev` | Lowercase (ghcr requirement); also tagged `:<commit-sha>` |
-| Runner | `C:\actions-runner`, repo `chicuong2k3/TeleCloud` | Registered to `Default` pool; both `build` and `deploy` jobs run on `self-hosted` |
+| Image | `ghcr.io/chicuong2k3/quickshare:dev` | Lowercase (ghcr requirement); also tagged `:<commit-sha>` |
+| Runner | `C:\actions-runner`, repo `chicuong2k3/quickshare` | Registered to `Default` pool; both `build` and `deploy` jobs run on `self-hosted` |
 | Deploy path | `C:\deploy\quickshare` | Secret `DEV_DEPLOY_PATH` points to this folder |
 | Compose | `C:\deploy\quickshare\docker-compose.yml` | Service `quickshare`, binds `127.0.0.1:8080` |
 | Env vars | `C:\deploy\quickshare\.env` | Read by compose, passed into the container as `__`-separated keys |
