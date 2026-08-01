@@ -24,16 +24,16 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
             if (!string.IsNullOrEmpty(avatarUrl))
             {
                 var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? string.Empty);
-                html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" tabindex=\"0\" />";
+                html = $"<button type=\"button\" class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" aria-label=\"User menu\"><img class=\"layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" /></button>";
             }
             else
             {
-                html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" tabindex=\"0\">{GetInitials(user.Name)}</span>";
+                html = $"<button type=\"button\" class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" aria-label=\"User menu\">{GetInitials(user.Name)}</button>";
             }
         }
         catch
         {
-            html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" tabindex=\"0\">?</span>";
+            html = $"<button type=\"button\" class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\" aria-label=\"User menu\">?</button>";
         }
 
         HttpContext.Response.StatusCode = 200;
