@@ -9,15 +9,17 @@
         var SIGNALING_CONNECT_TIMEOUT_MESSAGE = 'Could not reach signaling server. Check network and try again.';
         var RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
         var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = 'Sender did not respond in time. Please try again.';
+        var ICE_CONNECT_TIMEOUT_MS = 12000;
+        var ICE_CONNECT_TIMEOUT_MESSAGE = 'Direct device-to-device transfer failed: the two devices are not on the same network (different Wi\u2011Fi, or a NAT/firewall blocks the direct connection). P2P only works when the devices are close together \u2014 e.g. on the same Wi\u2011Fi or hotspot. Ask the sender to use a normal server (R2) transfer instead.';
 
         window.p2pDownload = (function () {
             var state = {
                 phase: 'checking', progress: 0, fileName: '', fileSize: 0, mimeType: '',
-                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''),
+                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '',
                 _receivedBytes: 0, _startTime: 0,
                 _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _intentionalStop: false,
                 _pendingOffer: null, _pendingIceCandidates: [], _isRegistered: false, _connectTimeoutId: null,
-                _handshakeTimeoutId: null
+                _handshakeTimeoutId: null, _iceTimeoutId: null
             };
 
             function render() {
@@ -46,7 +48,7 @@
                 if (state.phase === 'complete') text('p2pd-complete-name', state.fileName);
                 if (state.phase === 'error') {
                     text('p2pd-error-msg', state.error || 'Connection failed');
-                    if (state.fallbackUrl) { show('p2pd-fallback'); document.getElementById('p2pd-fallback').href = state.fallbackUrl; }
+                    show('p2pd-retry');
                 }
             }
 
@@ -99,6 +101,22 @@
                     state.error = RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE;
                     render();
                 }, RECEIVER_HANDSHAKE_TIMEOUT_MS);
+            }
+            function clearIceTimeout() {
+                if (state._iceTimeoutId) {
+                    clearTimeout(state._iceTimeoutId);
+                    state._iceTimeoutId = null;
+                }
+            }
+            function armIceTimeout() {
+                clearIceTimeout();
+                state._iceTimeoutId = setTimeout(function () {
+                    if (state.phase === 'connecting' && !state._dataChannel) {
+                        state.phase = 'error';
+                        state.error = ICE_CONNECT_TIMEOUT_MESSAGE;
+                        render();
+                    }
+                }, ICE_CONNECT_TIMEOUT_MS);
             }
 
 
@@ -157,12 +175,12 @@
             }
 
             function startDownload() {
-                state.phase = 'connecting'; armHandshakeTimeout(); render();
+                state.phase = 'connecting'; armHandshakeTimeout(); armIceTimeout(); render();
                 if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) { state.phase = 'error'; state.error = 'P2P modules not loaded'; render(); return; }
                 state._peerConnection = new window.P2P.PeerConnection();
-                state._peerConnection.onDataChannel = function (channel) { onDataChannel(channel); };
+                state._peerConnection.onDataChannel = function (channel) { clearIceTimeout(); onDataChannel(channel); };
                 state._peerConnection.onIceCandidate = function (c) { if (state._signaling) state._signaling.send('ice', c); };
-                state._peerConnection.onConnectionState = function (s) { if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) { state.phase = 'error'; state.error = 'Connection ' + s; render(); } };
+                state._peerConnection.onConnectionState = function (s) { if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) { clearIceTimeout(); clearHandshakeTimeout(); state.phase = 'error'; state.error = ICE_CONNECT_TIMEOUT_MESSAGE; render(); } };
                 // Process any offer/ICE that arrived before user clicked download
                 if (state._pendingOffer) {
                     handleOffer(state._pendingOffer);
@@ -194,7 +212,7 @@
             }
 
             function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); clearHandshakeTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
-            function cleanup() { clearConnectTimeout(); clearHandshakeTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
+            function cleanup() { clearConnectTimeout(); clearHandshakeTimeout(); clearIceTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
             return { startDownload: startDownload, cancelDownload: cancelDownload };

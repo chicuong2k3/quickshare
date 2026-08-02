@@ -5,6 +5,7 @@
 // is shown in a dynamic list below the QR code.
 (function () {
     'use strict';
+    var RECEIVER_CONNECT_TIMEOUT_MS = 20000;
     function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
     function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
@@ -185,6 +186,17 @@
         function onPeerJoined(receiverId) {
             if (state.phase === 'idle' || state.phase === 'failed') return;
             if (!window.P2P.PeerConnection) { state.error = 'P2P modules not loaded'; setPhase('failed'); return; }
+
+            // If ICE cannot connect (peers on different networks / NAT), give
+            // the receiver a while to establish the connection, then stop
+            // showing "Connecting\u2026" forever — the receiver shows its own
+            // clear error message.
+            setTimeout(function () {
+                var pulled = state._receivers[receiverId];
+                if (pulled && pulled.status === 'connecting' && !pulled.channel) {
+                    onReceiverLeft(receiverId);
+                }
+            }, RECEIVER_CONNECT_TIMEOUT_MS);
 
             state._receiverIndex++;
             state._receivers[receiverId] = {

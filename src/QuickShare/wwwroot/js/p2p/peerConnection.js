@@ -3,27 +3,16 @@
 (function () {
     'use strict';
 
+    // P2P direct only — no TURN. Relay costs like hosting the file, and the
+    // server has a standard R2 send/receive path for that. When peers cannot
+    // reach each other directly (different networks/NAT), the UI tells the
+    // user instead of relaying through a bandwidth-hungry TURN server.
     var ICE_SERVERS = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-        },
-        {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-        },
-        {
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-        }
+        { urls: 'stun:stun4.l.google.com:19302' }
     ];
 
     function PeerConnection() {
@@ -38,12 +27,16 @@
         this.onError = null;
     }
 
+    function resolveIceServers() {
+        return ICE_SERVERS;
+    }
+
     PeerConnection.prototype._ensurePC = function () {
         if (this.pc) return;
         var self = this;
 
         try {
-            this.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            this.pc = new RTCPeerConnection({ iceServers: resolveIceServers() });
         } catch (e) {
             if (self.onError) self.onError('RTCPeerConnection creation failed: ' + e.message);
             return;
