@@ -36,18 +36,19 @@ public sealed class R2StorageProvider : IStorageProvider
 
         try
         {
-            var response = await _s3.ListBucketsAsync(ct);
-            var exists = response.Buckets.Any(b => b.BucketName == _options.BucketName);
-            if (!exists)
-                _logger.LogWarning("R2 bucket '{Bucket}' not found", _options.BucketName);
-            else
-                _logger.LogInformation("R2 bucket '{Bucket}' verified", _options.BucketName);
+            // HeadBucket works with R2 tokens scoped to a single bucket, whereas
+            // ListBuckets requires "All buckets" permission on the token.
+            await _s3.HeadBucketAsync(new HeadBucketRequest
+            {
+                BucketName = _options.BucketName,
+            }, ct);
+            _logger.LogInformation("R2 bucket '{Bucket}' verified", _options.BucketName);
 
             _bucketVerified = true;
         }
         catch (AmazonS3Exception ex)
         {
-            throw R2StorageException.FromAmazonS3(ex, $"ListBuckets({_options.BucketName})");
+            throw R2StorageException.FromAmazonS3(ex, $"HeadBucket({_options.BucketName})");
         }
     }
 

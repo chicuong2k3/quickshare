@@ -17,6 +17,11 @@ RUN dotnet publish src/QuickShare/QuickShare.csproj -c Release -o /app --no-rest
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
+# AWSSDK (R2) needs the Kerberos GSSAPI native lib for SigV4a signing.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libgssapi-krb5-2 && \
+    rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
 RUN useradd --create-home --user-group appuser && \
     mkdir -p /app/keys && chown -R appuser:appuser /app
