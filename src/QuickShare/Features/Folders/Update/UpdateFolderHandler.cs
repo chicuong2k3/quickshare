@@ -1,12 +1,12 @@
 using LightResults;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Folders.Update;
 
 public record UpdateFolderCommand(Guid Id, string Name);
-
 public sealed class UpdateFolderHandler
 {
-    public async Task<Result<FolderItemResponse>> Handle(UpdateFolderCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async Task<Result<FolderItemResponse>> Handle(UpdateFolderCommand command, AppDbContext db, IHttpContextAccessor http, CacheService cache, CancellationToken ct)
     {
         var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
@@ -23,6 +23,9 @@ public sealed class UpdateFolderHandler
             return Result.Failure<FolderItemResponse>(new ConflictError($"Folder '{command.Name}' already exists"));
 
         await db.Folders.Where(f => f.Id == command.Id).ExecuteUpdateAsync(s => s.SetProperty(f => f.Name, command.Name), ct);
+
+        await cache.RemoveAsync($"folders:list:{userId}", ct);
+        await cache.RemoveAsync($"folder:info:{command.Id}", ct);
 
         return Result.Success(folder.ToFolderItemResponse() with { Name = command.Name });
     }

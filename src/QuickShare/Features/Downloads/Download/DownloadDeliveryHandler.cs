@@ -1,3 +1,5 @@
+using QuickShare.Infrastructure.Caching;
+
 namespace QuickShare.Features.Downloads.Download;
 
 public record DownloadDeliveryQuery(string ShareCode, string? Otp);
@@ -94,6 +96,9 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                         });
 
                         await updateDb.SaveChangesAsync(CancellationToken.None);
+
+                        var cache = scope.ServiceProvider.GetRequiredService<CacheService>();
+                        await cache.RemoveAsync($"download:info:{query.ShareCode}");
                     }
                 }
                 catch { /* counter update failure shouldn't break the download */ }

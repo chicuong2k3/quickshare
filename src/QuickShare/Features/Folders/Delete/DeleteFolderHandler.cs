@@ -1,12 +1,12 @@
 using LightResults;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Folders.Delete;
 
 public record DeleteFolderCommand(Guid Id);
-
 public sealed class DeleteFolderHandler
 {
-    public async Task<Result> Handle(DeleteFolderCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async Task<Result> Handle(DeleteFolderCommand command, AppDbContext db, IHttpContextAccessor http, CacheService cache, CancellationToken ct)
     {
         var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
@@ -24,6 +24,9 @@ public sealed class DeleteFolderHandler
 
         db.Folders.Remove(folder);
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveAsync($"folders:list:{userId}", ct);
+        await cache.RemoveAsync($"folder:info:{command.Id}", ct);
 
         return Result.Success();
     }

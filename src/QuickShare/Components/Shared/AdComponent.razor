@@ -5,6 +5,7 @@
    Pro/Studio users: skeleton flashes briefly then clears. *@
 @using QuickShare.Infrastructure
 @using QuickShare.Extensions
+@using QuickShare.Infrastructure.Caching
 @using Microsoft.AspNetCore.Antiforgery
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
@@ -133,12 +134,18 @@
 
             _userPlan = dbUser.Plan;
             if (_userPlan != PlanTierLimits.Free) return; // Pro/Studio — render nothing
-
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var tracking = await Db.DailyAdTrackings
-                .FirstOrDefaultAsync(t => t.UserId == dbUser.Id && t.Date == today);
+            var completedToday = await StaticCache.Instance.GetOrSetAsync(
+                $"ads:daily:{dbUser.Id}:{today}",
+                async ct =>
+                {
+                    var tracking = await Db.DailyAdTrackings
+                        .FirstOrDefaultAsync(t => t.UserId == dbUser.Id && t.Date == today, ct);
+                    return tracking?.AdCount ?? 0;
+                },
+                TimeSpan.FromMinutes(1)
+            );
 
-            var completedToday = tracking?.AdCount ?? 0;
             RemainingAds = Math.Max(0, AdConstants.MaxDailyAds - completedToday);
         }
         catch

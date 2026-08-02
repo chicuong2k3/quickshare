@@ -1,12 +1,12 @@
 using LightResults;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Reports;
 
 public record ReportDeliveryCommand(string ShareCode, string Reason, string? Message);
-
 public sealed class ReportDeliveryHandler(IStorageProvider storage)
 {
-    public async Task<Result<string>> Handle(ReportDeliveryCommand cmd, AppDbContext db, CancellationToken ct)
+    public async Task<Result<string>> Handle(ReportDeliveryCommand cmd, AppDbContext db, CacheService cache, CancellationToken ct)
     {
         var delivery = await db.Deliveries
             .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
@@ -14,7 +14,6 @@ public sealed class ReportDeliveryHandler(IStorageProvider storage)
         if (delivery is null)
             return Result.Failure<string>(new LightResults.Error(ErrorCodes.NotFound));
 
-        // Takedown: mark delivery as taken down and delete from R2
         if (delivery.StoragePath is not null)
         {
             await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
@@ -22,6 +21,8 @@ public sealed class ReportDeliveryHandler(IStorageProvider storage)
 
         delivery.Status = "Takedown";
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveAsync($"download:info:{cmd.ShareCode}", ct);
 
         return Result.Success("Thank you. This delivery has been reported and will be reviewed.");
     }

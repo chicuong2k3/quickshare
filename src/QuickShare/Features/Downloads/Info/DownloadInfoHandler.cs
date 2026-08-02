@@ -1,4 +1,5 @@
 using LightResults;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Downloads.Info;
 
@@ -18,34 +19,42 @@ public record DownloadInfoResponse(
 
 public sealed class DownloadInfoHandler
 {
-    public async Task<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, AppDbContext db, CancellationToken ct)
+    public async Task<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, AppDbContext db, CacheService cache, CancellationToken ct)
     {
-        var delivery = await db.Deliveries
-            .AsNoTracking()
-            .Include(d => d.Sender)
-            .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
+        return await cache.GetOrSetAsync(
+            $"download:info:{query.ShareCode}",
+            async ct2 =>
+            {
+                var delivery = await db.Deliveries
+                    .AsNoTracking()
+                    .Include(d => d.Sender)
+                    .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct2);
 
-        if (delivery is null)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
+                if (delivery is null)
+                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
 
-        if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryExpired));
+                if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
+                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryExpired));
 
-        if (delivery.DownloadCount >= delivery.MaxDownloads)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
+                if (delivery.DownloadCount >= delivery.MaxDownloads)
+                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
 
-        var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
+                var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
 
-        return Result.Success(new DownloadInfoResponse(
-            delivery.FileName,
-            delivery.ContentType,
-            delivery.FileSize,
-            delivery.ExpiresAt,
-            delivery.DownloadCount,
-            delivery.MaxDownloads,
-            HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
-            HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
-            SenderPlan: senderPlan
-        ));
+                return Result.Success(new DownloadInfoResponse(
+                    delivery.FileName,
+                    delivery.ContentType,
+                    delivery.FileSize,
+                    delivery.ExpiresAt,
+                    delivery.DownloadCount,
+                    delivery.MaxDownloads,
+                    HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
+                    HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
+                    SenderPlan: senderPlan
+                ));
+            },
+            duration: TimeSpan.FromSeconds(30),
+            token: ct
+        );
     }
 }

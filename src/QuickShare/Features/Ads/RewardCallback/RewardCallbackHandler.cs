@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Ads.RewardCallback;
 
@@ -9,7 +10,7 @@ namespace QuickShare.Features.Ads.RewardCallback;
 /// Processes AdMob rewarded ad reward callbacks from the client.
 /// Verifies reward, checks daily limits, grants bandwidth bonus.
 /// </summary>
-public sealed class RewardCallbackHandler(AppDbContext db)
+public sealed class RewardCallbackHandler(AppDbContext db, CacheService cache)
 {
     /// <summary>
     /// Process a reward callback from the client after AdMob rewarded ad completion.
@@ -109,6 +110,8 @@ public sealed class RewardCallbackHandler(AppDbContext db)
         p2pUsage.UnlockedUploads += AdConstants.P2pUploadsPerAd;
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveAsync($"ads:daily:{userId}:{today}", ct);
 
         return RewardCallbackResult.Granted(
             AdConstants.RewardBandwidthBytes,

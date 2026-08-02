@@ -1,4 +1,4 @@
-
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Payments.Subscriptions;
 
@@ -107,10 +107,19 @@ public static class SubscriptionService
     /// </summary>
     public static async Task<Subscription?> GetCurrentAsync(User user, AppDbContext db, CancellationToken ct)
     {
-        return await db.Subscriptions
-            .Where(s => s.UserId == user.Id)
-            .OrderByDescending(s => s.CurrentPeriodEnd)
-            .FirstOrDefaultAsync(ct);
+        var cache = StaticCache.Instance;
+        return await cache.GetOrSetAsync(
+            $"billing:sub:{user.Id}",
+            async ct2 =>
+            {
+                return await db.Subscriptions
+                    .Where(s => s.UserId == user.Id)
+                    .OrderByDescending(s => s.CurrentPeriodEnd)
+                    .FirstOrDefaultAsync(ct2);
+            },
+            duration: TimeSpan.FromMinutes(2),
+            token: ct
+        );
     }
 
     private static Subscription CreateSubscription(Guid userId, string plan, string billingPeriod)

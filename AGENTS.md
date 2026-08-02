@@ -135,4 +135,17 @@ protected override async Task OnInitializedAsync()
 - **Exception:** LINQ `.Select()` projections that include server-side subqueries (e.g. `db.Files.Count(...)`) or computed expression fields are exempt — EF Core cannot translate Mapperly-generated methods to SQL. In those cases, construct the DTO inline within `.Select()`.
 - **Exception:** Simple value-object responses (e.g. `new SomeResponse(sessionId, chunkSize)`) that don't map from a single entity do not require Mapperly.
 
+### FusionCache (Data-Layer Caching)
+
+- **All read-heavy data paths MUST use `CacheService` or `StaticCache.Instance`** — no direct DB queries without caching.
+- `CacheService` (via DI) for Wolverine handlers/endpoints. `StaticCache.Instance` for static classes and Razor inline blocks.
+- **TTL guidelines:**
+  - Download info: 30s (download count changes frequently)
+  - File/folder lists: 15–30s (user-visible mutations)
+  - User/billing data: 2–5min (profile/subscription changes)
+  - Plan limits/config: 1h+ (rarely changes)
+  - Ad tracking: 1min (per-ad refresh)
+- **Invalidation:** Every mutation handler MUST invalidate affected cache keys after `SaveChangesAsync`. Use `cache.RemoveAsync(key, ct)`.
+- **Kill switch:** Set `"FusionCache": { "Enabled": false }` in appsettings to bypass all caching (for testing/local dev).
+
 @RTK.md

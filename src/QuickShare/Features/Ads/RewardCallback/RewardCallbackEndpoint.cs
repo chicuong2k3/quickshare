@@ -1,4 +1,5 @@
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Ads.RewardCallback;
 
@@ -29,7 +30,7 @@ public sealed class RewardCallbackEndpoint : Endpoint<RewardCallbackRequest>
             return;
         }
 
-        var handler = new RewardCallbackHandler(Resolve<AppDbContext>());
+        var handler = new RewardCallbackHandler(Resolve<AppDbContext>(), Resolve<CacheService>());
         var result = await handler.HandleAsync(user.Id, req.Token, req.RewardAmount, ct);
 
         var response = new RewardCallbackResponse

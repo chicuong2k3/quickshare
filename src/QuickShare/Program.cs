@@ -11,6 +11,8 @@ using QuickShare.Features.Deliveries;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Quota;
+using QuickShare.Infrastructure.Caching;
+using ZiggyCreatures.Caching.Fusion;
 using QuickShare.Infrastructure.Storage;
 using Npgsql;
 using Wolverine.ErrorHandling;
@@ -167,6 +169,20 @@ builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 builder.Services.AddScoped<DeliveryService>();
 builder.Services.AddScoped<PayOSService>();
 
+// ── FusionCache with kill-switch toggle ──
+var cacheSection = builder.Configuration.GetSection(CacheSettings.Section);
+builder.Services.Configure<CacheSettings>(cacheSection);
+var cacheSettings = cacheSection.Get<CacheSettings>() ?? new CacheSettings();
+
+builder.Services.AddFusionCache()
+    .WithDefaultEntryOptions(new FusionCacheEntryOptions
+    {
+        Duration = TimeSpan.FromMinutes(cacheSettings.DefaultDurationMinutes),
+        FailSafeMaxDuration = TimeSpan.FromHours(cacheSettings.FailSafeMaxDurationHours),
+        FailSafeThrottleDuration = TimeSpan.FromSeconds(cacheSettings.FailSafeThrottleDurationSeconds),
+    });
+
+builder.Services.AddSingleton<CacheService>();
 
 builder.Host.UseWolverine(opts =>
 {
@@ -304,6 +320,11 @@ using (var scope = app.Services.CreateScope())
         logger.LogWarning("R2 not configured — using LocalDiskStorageProvider. Upload/download via R2 will throw.");
     }
 }
+
+// Wire static cache holder so static classes (PlanTierLimits) can use cache.
+var cacheService = app.Services.GetRequiredService<CacheService>();
+StaticCache.Initialize(cacheService);
+PlanTierLimits.InitializeCache(cacheService);
 
 app.UseExceptionHandler();
 

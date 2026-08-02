@@ -1,12 +1,12 @@
 using LightResults;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Folders.Create;
 
 public record CreateFolderCommand(string Name);
-
 public sealed class CreateFolderHandler
 {
-    public async Task<Result<FolderItemResponse>> Handle(CreateFolderCommand command, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async Task<Result<FolderItemResponse>> Handle(CreateFolderCommand command, AppDbContext db, IHttpContextAccessor http, CacheService cache, CancellationToken ct)
     {
         var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
@@ -24,6 +24,8 @@ public sealed class CreateFolderHandler
 
         db.Folders.Add(folder);
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveAsync($"folders:list:{userId}", ct);
 
         return Result.Success(folder.ToFolderItemResponse());
     }

@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Configuration;
+using QuickShare.Infrastructure.Caching;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace QuickShare.Infrastructure;
 
@@ -17,67 +18,84 @@ public static class PlanTierLimits
     private const string MaxDownloadsKey = "MaxDownloads";
     private const string MaxConcurrencyKey = "MaxConcurrency";
 
+    private static readonly FusionCacheEntryOptions PlanLimitsOptions = new()
+    {
+        Duration = TimeSpan.FromHours(1),
+        FailSafeMaxDuration = TimeSpan.FromHours(24),
+        FailSafeThrottleDuration = TimeSpan.FromSeconds(30),
+    };
+
+    private static CacheService? _cache;
     private static IConfiguration? _config;
 
     public static void Initialize(IConfiguration config) => _config = config;
 
-    /// <summary>Returns the max expiry as a TimeSpan. Free tier uses hours; paid tiers use days.</summary>
+    /// <summary>Wire the cache after DI container is built.</summary>
+    public static void InitializeCache(CacheService cache) => _cache = cache;
+
+    private static bool CacheEnabled => _cache is not null && _cache.Enabled;
+
     public static TimeSpan GetMaxExpiry(string plan)
     {
-        return (plan ?? string.Empty).ToLowerInvariant() switch
-        {
-            Free => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
-            Pro => TimeSpan.FromDays(GetInt(Pro, MaxExpiryDaysKey, 30)),
-            Studio => TimeSpan.FromDays(GetInt(Studio, MaxExpiryDaysKey, 90)),
-            _ => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
-        };
+        plan = Normalize(plan);
+        if (!CacheEnabled) return DirectGetMaxExpiry(plan);
+
+        return _cache!.GetOrSet<TimeSpan>(
+            $"plan:maxExpiry:{plan}",
+            (_, _) => DirectGetMaxExpiry(plan),
+            PlanLimitsOptions
+        );
     }
 
     public static long? GetMaxFileSize(string plan)
     {
-        return (plan ?? string.Empty).ToLowerInvariant() switch
-        {
-            Free => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
-            Pro => GetLong(Pro, MaxFileSizeKey, 21_474_836_480L),
-            Studio => GetLong(Studio, MaxFileSizeKey, 107_374_182_400L),
-            _ => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
-        };
+        plan = Normalize(plan);
+        if (!CacheEnabled) return DirectGetMaxFileSize(plan);
+
+        return _cache!.GetOrSet<long?>(
+            $"plan:maxFileSize:{plan}",
+            (_, _) => DirectGetMaxFileSize(plan),
+            PlanLimitsOptions
+        );
     }
 
     public static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) GetMonthlyLimits(string plan)
     {
-        return (plan ?? string.Empty).ToLowerInvariant() switch
-        {
-            Free => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
-            Pro => (GetLong(Pro, MaxMonthlyBytesKey, 214_748_364_800L), null),
-            Studio => (GetLong(Studio, MaxMonthlyBytesKey, 2_199_023_255_552L), null),
-            _ => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
-        };
+        plan = Normalize(plan);
+        if (!CacheEnabled) return DirectGetMonthlyLimits(plan);
+
+        return _cache!.GetOrSet<(long?, int?)>(
+            $"plan:monthlyLimits:{plan}",
+            (_, _) => DirectGetMonthlyLimits(plan),
+            PlanLimitsOptions
+        );
     }
 
     public static int GetMaxDownloads(string plan)
     {
-        return (plan ?? string.Empty).ToLowerInvariant() switch
-        {
-            Free => GetInt(Free, MaxDownloadsKey, 10),
-            Pro => GetInt(Pro, MaxDownloadsKey, 100),
-            Studio => GetInt(Studio, MaxDownloadsKey, int.MaxValue),
-            _ => GetInt(Free, MaxDownloadsKey, 10),
-        };
+        plan = Normalize(plan);
+        if (!CacheEnabled) return DirectGetMaxDownloads(plan);
+
+        return _cache!.GetOrSet<int>(
+            $"plan:maxDownloads:{plan}",
+            (_, _) => DirectGetMaxDownloads(plan),
+            PlanLimitsOptions
+        );
     }
 
     public static int GetMaxConcurrency(string plan)
     {
-        return (plan ?? string.Empty).ToLowerInvariant() switch
-        {
-            Free => GetInt(Free, MaxConcurrencyKey, 2),
-            Pro => GetInt(Pro, MaxConcurrencyKey, 5),
-            Studio => GetInt(Studio, MaxConcurrencyKey, 10),
-            _ => GetInt(Free, MaxConcurrencyKey, 2),
-        };
+        plan = Normalize(plan);
+        if (!CacheEnabled) return DirectGetMaxConcurrency(plan);
+
+        return _cache!.GetOrSet<int>(
+            $"plan:maxConcurrency:{plan}",
+            (_, _) => DirectGetMaxConcurrency(plan),
+            PlanLimitsOptions
+        );
     }
 
-    /// <summary>Null means unlimited (paid plans).</summary>
+    /// <summary>Null means unlimited (paid plans). No config read — no cache needed.</summary>
     public static int? GetMaxDailyP2PUploads(string plan)
     {
         return (plan ?? string.Empty).ToLowerInvariant() switch
@@ -87,6 +105,52 @@ public static class PlanTierLimits
             _ => AdConstants.MaxDailyP2PUploads,
         };
     }
+
+    // ── Direct (uncached) resolvers ──
+
+    private static string Normalize(string plan) => (plan ?? string.Empty).ToLowerInvariant();
+
+    private static TimeSpan DirectGetMaxExpiry(string plan) => plan switch
+    {
+        Free => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
+        Pro => TimeSpan.FromDays(GetInt(Pro, MaxExpiryDaysKey, 30)),
+        Studio => TimeSpan.FromDays(GetInt(Studio, MaxExpiryDaysKey, 90)),
+        _ => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
+    };
+
+    private static long? DirectGetMaxFileSize(string plan) => plan switch
+    {
+        Free => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
+        Pro => GetLong(Pro, MaxFileSizeKey, 21_474_836_480L),
+        Studio => GetLong(Studio, MaxFileSizeKey, 107_374_182_400L),
+        _ => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
+    };
+
+    private static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) DirectGetMonthlyLimits(string plan) => plan switch
+    {
+        Free => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
+        Pro => (GetLong(Pro, MaxMonthlyBytesKey, 214_748_364_800L), null),
+        Studio => (GetLong(Studio, MaxMonthlyBytesKey, 2_199_023_255_552L), null),
+        _ => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
+    };
+
+    private static int DirectGetMaxDownloads(string plan) => plan switch
+    {
+        Free => GetInt(Free, MaxDownloadsKey, 10),
+        Pro => GetInt(Pro, MaxDownloadsKey, 100),
+        Studio => GetInt(Studio, MaxDownloadsKey, int.MaxValue),
+        _ => GetInt(Free, MaxDownloadsKey, 10),
+    };
+
+    private static int DirectGetMaxConcurrency(string plan) => plan switch
+    {
+        Free => GetInt(Free, MaxConcurrencyKey, 2),
+        Pro => GetInt(Pro, MaxConcurrencyKey, 5),
+        Studio => GetInt(Studio, MaxConcurrencyKey, 10),
+        _ => GetInt(Free, MaxConcurrencyKey, 2),
+    };
+
+    // ── Config helpers ──
 
     private static double GetDouble(string tier, string key, double fallback)
     {
