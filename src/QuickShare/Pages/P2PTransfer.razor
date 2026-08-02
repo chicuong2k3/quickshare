@@ -3,6 +3,8 @@
 @page "/p2p/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @{
     var apiBase = string.Empty;

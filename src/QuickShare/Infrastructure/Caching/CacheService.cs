@@ -8,16 +8,9 @@ namespace QuickShare.Infrastructure.Caching;
 /// When <see cref="CacheSettings.Enabled"/> is false, all operations are no-ops
 /// (GetOrSet always calls the factory, Set/Remove do nothing).
 /// </summary>
-public sealed class CacheService
+public sealed class CacheService(IFusionCache cache, IOptions<CacheSettings> settings)
 {
-    private readonly IFusionCache _cache;
-    private readonly CacheSettings _settings;
-
-    public CacheService(IFusionCache cache, IOptions<CacheSettings> settings)
-    {
-        _cache = cache;
-        _settings = settings.Value;
-    }
+    private readonly CacheSettings _settings = settings.Value;
 
     public bool Enabled => _settings.Enabled;
 
@@ -28,7 +21,7 @@ public sealed class CacheService
         FusionCacheEntryOptions? options = null)
     {
         if (!_settings.Enabled) return factory(default!, default);
-        return _cache.GetOrSet<T>(key, factory, options: options);
+        return cache.GetOrSet<T>(key, factory, options: options);
     }
 
     /// <summary>Async version — Get from cache or call factory.</summary>
@@ -39,7 +32,7 @@ public sealed class CacheService
         CancellationToken token = default)
     {
         if (!_settings.Enabled) return await factory(default!, token);
-        return await _cache.GetOrSetAsync<T>(key, factory, options: options, token: token);
+        return await cache.GetOrSetAsync<T>(key, factory, options: options, token: token);
     }
 
     // ── Simple overloads (no FusionCacheExecutionContext ceremony) ──
@@ -48,21 +41,21 @@ public sealed class CacheService
     public T? GetOrSet<T>(string key, Func<T> factory, TimeSpan? duration = null)
     {
         if (!_settings.Enabled) return factory();
-        return _cache.GetOrSet<T>(key, (_, _) => factory(), DurationOptions(duration));
+        return cache.GetOrSet<T>(key, (_, _) => factory(), DurationOptions(duration));
     }
 
     /// <summary>Get or set with a CancellationToken-aware factory.</summary>
     public T? GetOrSet<T>(string key, Func<CancellationToken, T> factory, TimeSpan? duration = null)
     {
         if (!_settings.Enabled) return factory(default);
-        return _cache.GetOrSet<T>(key, (_, ct) => factory(ct), DurationOptions(duration));
+        return cache.GetOrSet<T>(key, (_, ct) => factory(ct), DurationOptions(duration));
     }
 
     /// <summary>Async get-or-set with a CancellationToken-aware factory.</summary>
     public async Task<T> GetOrSetAsync<T>(string key, Func<CancellationToken, Task<T>> factory, TimeSpan? duration = null, CancellationToken token = default)
     {
         if (!_settings.Enabled) return await factory(token);
-        return await _cache.GetOrSetAsync<T>(key, (_, ct) => factory(ct), DurationOptions(duration), token);
+        return await cache.GetOrSetAsync<T>(key, (_, ct) => factory(ct), DurationOptions(duration), token);
     }
 
     /// <summary>Invalidate a cache entry (semantic alias for Remove).</summary>
@@ -83,27 +76,27 @@ public sealed class CacheService
     public void Set<T>(string key, T value, FusionCacheEntryOptions? options = null)
     {
         if (!_settings.Enabled) return;
-        _cache.Set(key, value, options);
+        cache.Set(key, value, options);
     }
 
     /// <summary>Set a value in cache (async). No-op when disabled.</summary>
     public async ValueTask SetAsync<T>(string key, T value, FusionCacheEntryOptions? options = null, CancellationToken token = default)
     {
         if (!_settings.Enabled) return;
-        await _cache.SetAsync<T>(key, value, options, token);
+        await cache.SetAsync<T>(key, value, options, token);
     }
 
     /// <summary>Remove a cache entry. No-op when disabled.</summary>
     public void Remove(string key)
     {
         if (!_settings.Enabled) return;
-        _cache.Remove(key);
+        cache.Remove(key);
     }
 
     /// <summary>Remove a cache entry (async). No-op when disabled.</summary>
     public async ValueTask RemoveAsync(string key, CancellationToken token = default)
     {
         if (!_settings.Enabled) return;
-        await _cache.RemoveAsync(key, token: token);
+        await cache.RemoveAsync(key, token: token);
     }
 }

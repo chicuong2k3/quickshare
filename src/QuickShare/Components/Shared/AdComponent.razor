@@ -7,6 +7,9 @@
 @using QuickShare.Extensions
 @using QuickShare.Infrastructure.Caching
 @using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IAntiforgery Antiforgery
@@ -22,10 +25,10 @@
 {
     <div id="ad-reward-card" class="ad-reward-card">
         <div class="ad-reward-card__body">
-            <div class="ad-reward-card__title">Unlock free bandwidth</div>
-            <p class="ad-reward-card__description">Accept cookies to watch rewarded ads and get +100MB extra bandwidth per ad.</p>
+            <div class="ad-reward-card__title">@Loc["ad_no_consent_title"]</div>
+            <p class="ad-reward-card__description">@Loc["ad_no_consent_desc"]</p>
             <p class="ad-reward-card__description" style="margin-top:0.5rem">
-                <a href="javascript:location.reload()" class="ad-upgrade-link">Refresh page after accepting cookies</a>
+                <a href="javascript:location.reload()" class="ad-upgrade-link">@Loc["ad_no_consent_refresh_link"]</a>
             </p>
         </div>
     </div>
@@ -60,10 +63,10 @@
 @* Full reward prompt with AdMob JS init *@
 <div id="ad-reward-card" class="ad-reward-card">
     <div class="ad-reward-card__body">
-        <div class="ad-reward-card__title">Watch a short ad to get +100MB extra bandwidth</div>
+        <div class="ad-reward-card__title">@Loc["ad_reward_title"]</div>
         <p class="ad-reward-card__description">
-            You have <strong>@RemainingAds ad@(RemainingAds == 1 ? string.Empty : "s")</strong> remaining today.
-            Free plan bandwidth resets daily.
+            @Loc["ad_remaining_prefix"] <strong>@RemainingAds @(RemainingAds == 1 ? Loc["ad_remaining_ad_singular"] : Loc["ad_remaining_ad_plural"])</strong> @Loc["ad_remaining_suffix"]
+            @Loc["ad_free_plan_note"]
         </p>
         <p id="ad-reward-error" class="ad-reward-card__description" style="color:var(--color-destructive);display:none"></p>
         @if (RemainingAds > 0)
@@ -75,7 +78,7 @@
                 <svg style="width:1rem;height:1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
-                Watch Ad for +100MB
+                @Loc["ad_reward_watch_btn"]
             </button>
         }
         else
@@ -85,10 +88,10 @@
                     class="ad-reward-btn"
                     disabled
                     data-ai-action="ad.reward.limit">
-                Limit reached
+                @Loc["ad_reward_limit_reached"]
             </button>
         }
-        <a href="/pricing" class="ad-upgrade-link">Upgrade to Pro for unlimited bandwidth</a>
+        <a href="/pricing" class="ad-upgrade-link">@Loc["ad_upgrade_link"]</a>
     </div>
 
     @{

@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="lang_en" xml:space="preserve"><value>English</value></data>
+  <data name="lang_vi" xml:space="preserve"><value>Tiếng Việt</value></data>
+  <data name="nav_pricing" xml:space="preserve"><value>Pricing</value></data>
+  <data name="nav_send" xml:space="preserve"><value>Send</value></data>
+  <data name="nav_files" xml:space="preserve"><value>Files</value></data>
+  <data name="nav_account" xml:space="preserve"><value>Account</value></data>
+  <data name="nav_login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="nav_logout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="btn_get_started" xml:space="preserve"><value>Get Started</value></data>
+  <data name="btn_start_free_trial" xml:space="preserve"><value>Start Free Trial</value></data>
+  <data name="btn_upgrade" xml:space="preserve"><value>Upgrade</value></data>
+  <data name="home_title" xml:space="preserve"><value>QuickShareCloud — send files, not friction</value></data>
+  <data name="home_tag" xml:space="preserve"><value>Secure · Fast · Temporary</value></data>
+  <data name="home_h1_send" xml:space="preserve"><value>Send</value></data>
+  <data name="home_h1_anything" xml:space="preserve"><value>anything</value></data>
+  <data name="home_h1_zero" xml:space="preserve"><value>zero friction</value></data>
+  <data name="home_sub" xml:space="preserve"><value>Encrypted file sharing with auto-expiry. No accounts needed for recipients. Files delete themselves.</value></data>
+  <data name="home_btn_start" xml:space="preserve"><value>Start sending</value></data>
+  <data name="home_btn_pricing" xml:space="preserve"><value>View pricing</value></data>
+  <data name="home_why_title" xml:space="preserve"><value>Why use this app</value></data>
+  <data name="home_why_sub" xml:space="preserve"><value>Two clear modes: Cloud Send for share-anytime links, and P2P transfer for instant device-to-device delivery.</value></data>
+  <data name="home_badge_cloud" xml:space="preserve"><value>Need long-term link? Use Cloud Send.</value></data>
+  <data name="home_badge_p2p" xml:space="preserve"><value>Need instant live transfer? Use P2P.</value></data>
+  <data name="home_table_caption" xml:space="preserve"><value>Cloud Send vs P2P transfer in real usage</value></data>
+  <data name="home_table_what" xml:space="preserve"><value>What matters</value></data>
+  <data name="home_table_cloud" xml:space="preserve"><value>Cloud Send</value></data>
+  <data name="home_table_p2p" xml:space="preserve"><value>P2P transfer</value></data>
+  <data name="home_row1_label" xml:space="preserve"><value>How delivery works</value></data>
+  <data name="home_row1_cloud" xml:space="preserve"><value>Create one link and share it anywhere.</value></data>
+  <data name="home_row1_p2p" xml:space="preserve"><value>Direct device-to-device stream.</value></data>
+  <data name="home_row2_label" xml:space="preserve"><value>Can recipient open later?</value></data>
+  <data name="home_row2_cloud" xml:space="preserve"><value>Yes. Link stays available until expiry.</value></data>
+  <data name="home_row2_p2p" xml:space="preserve"><value>No. Both sides must be online during transfer.</value></data>
+  <data name="home_row3_label" xml:space="preserve"><value>Storage retention</value></data>
+  <data name="home_row3_cloud" xml:space="preserve"><value>Yes. File stays available until your expiry window.</value></data>
+  <data name="home_row3_p2p" xml:space="preserve"><value>No saved copy after the transfer session ends.</value></data>
+  <data name="home_row4_label" xml:space="preserve"><value>Best fit</value></data>
+  <data name="home_row4_cloud" xml:space="preserve"><value>Remote sharing, async handoff, longer availability.</value></data>
+  <data name="home_row4_p2p" xml:space="preserve"><value>Fast local handoff when both devices online now.</value></data>
+  <data name="home_row5_label" xml:space="preserve"><value>Scale when needed</value></data>
+  <data name="home_row5_cloud" xml:space="preserve"><value>Upgrade for larger limits and longer retention.</value></data>
+  <data name="home_row5_p2p" xml:space="preserve"><value>Great for quick transfers, not long-term hosting.</value></data>
+  <data name="home_btn_send_now" xml:space="preserve"><value>Send a file now</value></data>
+  <data name="home_btn_pro_limits" xml:space="preserve"><value>See Pro limits</value></data>
+  <data name="home_feat1_title" xml:space="preserve"><value>End-to-end encrypted</value></data>
+  <data name="home_feat1_desc" xml:space="preserve"><value>Files are encrypted before they leave your device. Only intended recipients can decrypt.</value></data>
+  <data name="home_feat2_title" xml:space="preserve"><value>Auto-expiring links</value></data>
+  <data name="home_feat2_desc" xml:space="preserve"><value>Free transfers auto-expire after 2 hours. Pro and Studio keep files for 30–90 days.</value></data>
+  <data name="home_feat3_title" xml:space="preserve"><value>No recipient signup</value></data>
+  <data name="home_feat3_desc" xml:space="preserve"><value>Share a link — that's it. Recipients download directly in their browser.</value></data>
+  <data name="home_how_title" xml:space="preserve"><value>How it works</value></data>
+  <data name="home_step1_title" xml:space="preserve"><value>Upload your file</value></data>
+  <data name="home_step1_desc" xml:space="preserve"><value>Drag and drop any file up to 5 GB. Encryption happens in your browser.</value></data>
+  <data name="home_step2_title" xml:space="preserve"><value>Share the link</value></data>
+  <data name="home_step2_desc" xml:space="preserve"><value>Copy the secure link and send it via email, chat, or however you prefer.</value></data>
+  <data name="home_step3_title" xml:space="preserve"><value>It deletes itself</value></data>
+  <data name="home_step3_desc" xml:space="preserve"><value>File auto-expires. No cleanup needed.</value></data>
+  <data name="home_cta_title" xml:space="preserve"><value>Ready to send?</value></data>
+  <data name="home_cta_sub" xml:space="preserve"><value>It takes less than 10 seconds. No account needed to start — sign in for higher limits.</value></data>
+  <data name="home_cta_btn" xml:space="preserve"><value>Send your first file</value></data>
+  <data name="pricing_title" xml:space="preserve"><value>Pricing — QuickShareCloud</value></data>
+  <data name="pricing_tag" xml:space="preserve"><value>Simple pricing</value></data>
+  <data name="pricing_h1" xml:space="preserve"><value>Simple, transparent pricing</value></data>
+  <data name="pricing_sub" xml:space="preserve"><value>Choose the plan that fits your needs. No hidden fees. Cancel anytime.</value></data>
+  <data name="pricing_monthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="pricing_yearly" xml:space="preserve"><value>Yearly</value></data>
+  <data name="pricing_save" xml:space="preserve"><value>Save 20%</value></data>
+  <data name="pricing_free_name" xml:space="preserve"><value>Free</value></data>
+  <data name="pricing_free_desc" xml:space="preserve"><value>Great for getting started</value></data>
+  <data name="pricing_free_price_period" xml:space="preserve"><value>Forever free</value></data>
+  <data name="pricing_free_feat_size" xml:space="preserve"><value>5 GB per file</value></data>
+  <data name="pricing_free_feat_monthly" xml:space="preserve"><value>15 GB / month</value></data>
+  <data name="pricing_free_feat_expiry" xml:space="preserve"><value>Files expire after 2 hours</value></data>
+  <data name="pricing_free_feat_lossless" xml:space="preserve"><value>Lossless quality — no compression</value></data>
+  <data name="pricing_free_feat_e2e" xml:space="preserve"><value>End-to-end encryption</value></data>
+  <data name="pricing_pro_name" xml:space="preserve"><value>Pro</value></data>
+  <data name="pricing_pro_desc" xml:space="preserve"><value>For creators &amp; professionals</value></data>
+  <data name="pricing_pro_billed_monthly" xml:space="preserve"><value>Billed monthly</value></data>
+  <data name="pricing_pro_billed_yearly" xml:space="preserve"><value>Billed yearly</value></data>
+  <data name="pricing_pro_feat_size" xml:space="preserve"><value>20 GB per file</value></data>
+  <data name="pricing_pro_feat_monthly" xml:space="preserve"><value>200 GB / month</value></data>
+  <data name="pricing_pro_feat_expiry" xml:space="preserve"><value>30-day expiry</value></data>
+  <data name="pricing_pro_feat_password" xml:space="preserve"><value>Password protection</value></data>
+  <data name="pricing_pro_feat_noads" xml:space="preserve"><value>No ads</value></data>
+  <data name="pricing_studio_name" xml:space="preserve"><value>Studio</value></data>
+  <data name="pricing_studio_desc" xml:space="preserve"><value>For teams &amp; enterprises</value></data>
+  <data name="pricing_studio_billed_monthly" xml:space="preserve"><value>Billed monthly</value></data>
+  <data name="pricing_studio_billed_yearly" xml:space="preserve"><value>Billed yearly</value></data>
+  <data name="pricing_studio_feat_size" xml:space="preserve"><value>100 GB per file</value></data>
+  <data name="pricing_studio_feat_monthly" xml:space="preserve"><value>2 TB / month</value></data>
+  <data name="pricing_studio_feat_expiry" xml:space="preserve"><value>90-day expiry</value></data>
+  <data name="pricing_studio_feat_branding" xml:space="preserve"><value>Custom branding</value></data>
+  <data name="pricing_studio_feat_api" xml:space="preserve"><value>API access</value></data>
+  <data name="pricing_card_badge" xml:space="preserve"><value>Most Popular</value></data>
+  <data name="pricing_faq_title" xml:space="preserve"><value>Frequently Asked Questions</value></data>
+  <data name="pricing_faq_sub" xml:space="preserve"><value>Get answers to common questions about our plans</value></data>
+  <data name="pricing_faq_q1" xml:space="preserve"><value>What's the catch with Free tier?</value></data>
+  <data name="pricing_faq_a1" xml:space="preserve"><value>Free tier is instant delivery — your file stays available for 2 hours. After that, it's permanently deleted. This lets us offer huge 5 GB transfers for free. Need longer? Upgrade to Pro.</value></data>
+  <data name="pricing_faq_q2" xml:space="preserve"><value>Are my files compressed?</value></data>
+  <data name="pricing_faq_a2" xml:space="preserve"><value>Never. What you upload is what the recipient downloads — byte for byte. No compression, no re-encoding. Photographers and video editors trust us for this.</value></data>
+  <data name="pricing_faq_q3" xml:space="preserve"><value>How fast are downloads?</value></data>
+  <data name="pricing_faq_a3" xml:space="preserve"><value>Files transfer through Cloudflare's global edge network. No server bottleneck, no throttling.</value></data>
+  <data name="pricing_faq_q4" xml:space="preserve"><value>Can I upgrade or downgrade?</value></data>
+  <data name="pricing_faq_a4" xml:space="preserve"><value>Yes! Change your plan anytime. Upgrades take effect immediately.</value></data>
+  <data name="pricing_faq_q5" xml:space="preserve"><value>Is there a free trial?</value></data>
+  <data name="pricing_faq_a5" xml:space="preserve"><value>All paid plans include a 14-day free trial. No credit card required.</value></data>
+  <data name="pricing_faq_q6" xml:space="preserve"><value>Do recipients need an account?</value></data>
+  <data name="pricing_faq_a6" xml:space="preserve"><value>No. Recipients download directly in their browser — no account, no app required.</value></data>
+  <data name="pricing_faq_q7" xml:space="preserve"><value>What happens if I cancel?</value></data>
+  <data name="pricing_faq_a7" xml:space="preserve"><value>Your files remain accessible for 7 days after cancellation.</value></data>
+  <data name="pricing_faq_q8" xml:space="preserve"><value>Do you offer refunds?</value></data>
+  <data name="pricing_faq_a8" xml:space="preserve"><value>Full refund within 30 days if you're not satisfied.</value></data>
+  <data name="pricing_cta_title" xml:space="preserve"><value>Ready to get started?</value></data>
+  <data name="pricing_cta_sub" xml:space="preserve"><value>Start free, no credit card required. Pro and Studio include a 14-day trial.</value></data>
+  <data name="billing_title" xml:space="preserve"><value>Billing — QuickShareCloud</value></data>
+  <data name="billing_h1" xml:space="preserve"><value>Subscription</value></data>
+  <data name="billing_loading" xml:space="preserve"><value>Loading billing information...</value></data>
+  <data name="billing_free_desc" xml:space="preserve"><value>Great for getting started</value></data>
+  <data name="billing_pro_desc" xml:space="preserve"><value>For creators &amp; professionals</value></data>
+  <data name="billing_studio_desc" xml:space="preserve"><value>For teams &amp; enterprises</value></data>
+  <data name="billing_period_label" xml:space="preserve"><value>/ forever</value></data>
+  <data name="billing_btn_upgrade" xml:space="preserve"><value>Upgrade to Pro</value></data>
+  <data name="billing_btn_change" xml:space="preserve"><value>Change Plan</value></data>
+  <data name="billing_btn_cancel" xml:space="preserve"><value>Cancel Subscription</value></data>
+  <data name="billing_btn_renew" xml:space="preserve"><value>Renew Subscription</value></data>
+  <data name="billing_cancelled" xml:space="preserve"><value>Your subscription is cancelled. Access continues until {0}.</value></data>
+  <data name="billing_history_title" xml:space="preserve"><value>Payment History</value></data>
+  <data name="billing_history_empty" xml:space="preserve"><value>No payment history yet.</value></data>
+  <data name="billing_view_receipt" xml:space="preserve"><value>View Receipt</value></data>
+  <data name="billing_feat_free" xml:space="preserve"><value>5 GB per file | 15 GB / month | 2-hour expiry | Lossless quality | End-to-end encryption</value></data>
+  <data name="billing_feat_pro" xml:space="preserve"><value>20 GB per file | 200 GB / month | 30-day expiry | Password protection | No ads | Priority support</value></data>
+  <data name="billing_feat_studio" xml:space="preserve"><value>100 GB per file | 2 TB / month | 90-day expiry | Custom branding | API access | Dedicated support</value></data>
+  <data name="login_page_title" xml:space="preserve"><value>Sign in — QuickShareCloud</value></data>
+  <data name="login_title" xml:space="preserve"><value>Sign in to QuickShareCloud</value></data>
+  <data name="login_subtitle" xml:space="preserve"><value>Choose a provider to continue</value></data>
+  <data name="login_btn_google" xml:space="preserve"><value>Continue with Google</value></data>
+  <data name="login_btn_github" xml:space="preserve"><value>Continue with GitHub</value></data>
+  <data name="login_btn_facebook" xml:space="preserve"><value>Continue with Facebook</value></data>
+  <data name="login_btn_tiktok" xml:space="preserve"><value>Continue with TikTok</value></data>
+  <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
+  <data name="account_branding_title" xml:space="preserve"><value>Share Branding</value></data>
+  <data name="account_branding_desc" xml:space="preserve"><value>Customise how recipients see your shared files.</value></data>
+  <data name="account_branding_loading" xml:space="preserve"><value>Loading shared files…</value></data>
+  <data name="account_branding_empty" xml:space="preserve"><value>No shared files yet. Send a file first to brand it.</value></data>
+  <data name="account_profile_name_label" xml:space="preserve"><value>Display name</value></data>
+  <data name="account_profile_save_btn" xml:space="preserve"><value>Save changes</value></data>
+  <data name="account_profile_error_name_required" xml:space="preserve"><value>Name is required</value></data>
+  <data name="account_profile_error_image_size" xml:space="preserve"><value>Image must be under 5 MB</value></data>
+  <data name="account_profile_error_update_failed" xml:space="preserve"><value>Failed to update profile</value></data>
+  <data name="lang_switch_label" xml:space="preserve"><value>Switch language</value></data>
+  <data name="cookie_consent_title" xml:space="preserve"><value>Cookie Settings</value></data>
+  <data name="cookie_consent_desc" xml:space="preserve"><value>We use cookies and Google AdMob to show rewarded ads that unlock extra bandwidth. By accepting, you allow AdMob to use cookies for ad personalization and measurement.</value></data>
+  <data name="cookie_consent_upgrade_link" xml:space="preserve"><value>Upgrade to Pro</value></data>
+  <data name="cookie_consent_noads" xml:space="preserve"><value>for an ad-free experience.</value></data>
+  <data name="cookie_consent_reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="cookie_consent_accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="ad_no_consent_title" xml:space="preserve"><value>Unlock free bandwidth</value></data>
+  <data name="ad_no_consent_desc" xml:space="preserve"><value>Accept cookies to watch rewarded ads and get +100MB extra bandwidth per ad.</value></data>
+  <data name="ad_no_consent_refresh_link" xml:space="preserve"><value>Refresh page after accepting cookies</value></data>
+  <data name="ad_reward_title" xml:space="preserve"><value>Watch a short ad to get +100MB extra bandwidth</value></data>
+  <data name="ad_remaining_prefix" xml:space="preserve"><value>You have</value></data>
+  <data name="ad_remaining_ad_singular" xml:space="preserve"><value>ad</value></data>
+  <data name="ad_remaining_ad_plural" xml:space="preserve"><value>ads</value></data>
+  <data name="ad_remaining_suffix" xml:space="preserve"><value>remaining today.</value></data>
+  <data name="ad_free_plan_note" xml:space="preserve"><value>Free plan bandwidth resets daily.</value></data>
+  <data name="ad_reward_watch_btn" xml:space="preserve"><value>Watch Ad for +100MB</value></data>
+  <data name="ad_reward_limit_reached" xml:space="preserve"><value>Limit reached</value></data>
+  <data name="ad_upgrade_link" xml:space="preserve"><value>Upgrade to Pro for unlimited bandwidth</value></data>
+  <!-- Upload page -->
+  <data name="upload_title" xml:space="preserve"><value>QuickShareCloud — send a file in seconds</value></data>
+  <data name="upload_file_input_label" xml:space="preserve"><value>Choose a file to upload</value></data>
+  <data name="upload_idle_send_prefix" xml:space="preserve"><value>Send </value></data>
+  <data name="upload_idle_anything" xml:space="preserve"><value>anything</value></data>
+  <data name="upload_idle_send_anything" xml:space="preserve"><value>Send anything</value></data>
+  <data name="upload_drag_drop_file" xml:space="preserve"><value>Drop your file</value></data>
+  <data name="upload_idle_sub_limit" xml:space="preserve"><value>200 MB per file · sign in to unlock higher limits</value></data>
+  <data name="upload_drag_release" xml:space="preserve"><value>Release to start the transfer</value></data>
+  <data name="upload_dropzone_idle" xml:space="preserve"><value>Drag &amp; drop your files here</value></data>
+  <data name="upload_dropzone_drag" xml:space="preserve"><value>Drop it here</value></data>
+  <data name="upload_dropzone_sub" xml:space="preserve"><value>or Ctrl+V to paste, or click to browse</value></data>
+  <data name="upload_otp_label" xml:space="preserve"><value>Security code (optional)</value></data>
+  <data name="upload_otp_hint" xml:space="preserve"><value>If set, recipients must enter this code to download</value></data>
+  <data name="upload_expiry_label" xml:space="preserve"><value>Expires in</value></data>
+  <data name="upload_expiry_aria" xml:space="preserve"><value>Expiry duration</value></data>
+  <data name="upload_expiry_24h" xml:space="preserve"><value>24 hours</value></data>
+  <data name="upload_expiry_7d" xml:space="preserve"><value>7 days</value></data>
+  <data name="upload_paste_no_image" xml:space="preserve"><value>No image found in clipboard.</value></data>
+  <data name="upload_encrypted" xml:space="preserve"><value>Encrypted</value></data>
+  <data name="upload_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="upload_success_title" xml:space="preserve"><value>Your file is ready</value></data>
+  <data name="upload_share_link_label" xml:space="preserve"><value>Share link</value></data>
+  <data name="upload_copy_link_aria" xml:space="preserve"><value>Copy share link</value></data>
+  <data name="upload_copy_link" xml:space="preserve"><value>Copy link</value></data>
+  <data name="upload_copied" xml:space="preserve"><value>Copied!</value></data>
+  <data name="upload_encrypted_key_in_link" xml:space="preserve"><value>Encrypted · key stays in the link</value></data>
+  <data name="upload_send_another" xml:space="preserve"><value>Send another file</value></data>
+  <data name="upload_error_title" xml:space="preserve"><value>Upload failed</value></data>
+  <data name="upload_error_unknown" xml:space="preserve"><value>An unknown error occurred.</value></data>
+  <data name="upload_try_again" xml:space="preserve"><value>Try again</value></data>
+  <!-- Download page -->
+  <data name="download_title" xml:space="preserve"><value>Download — QuickShareCloud</value></data>
+  <data name="download_checking_link" xml:space="preserve"><value>Checking link…</value></data>
+  <data name="download_password_title" xml:space="preserve"><value>This file is password-protected</value></data>
+  <data name="download_password_desc" xml:space="preserve"><value>Enter the sender's password to access the file.</value></data>
+  <data name="download_password_placeholder" xml:space="preserve"><value>Enter password</value></data>
+  <data name="download_unlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="download_otp_title" xml:space="preserve"><value>Enter security code</value></data>
+  <data name="download_otp_desc" xml:space="preserve"><value>Ask the sender for the 6-digit code to unlock this file.</value></data>
+  <data name="download_ad_powered_by" xml:space="preserve"><value>Powered by QuickShareCloud</value></data>
+  <data name="download_ad_desc" xml:space="preserve"><value>Send large files securely with end-to-end encryption. Upgrade for more</value></data>
+  <data name="download_ad_countdown" xml:space="preserve"><value>Continue in 5s</value></data>
+  <data name="download_skip_ad" xml:space="preserve"><value>Skip ad</value></data>
+  <data name="download_sender_label" xml:space="preserve"><value>Sender</value></data>
+  <data name="download_sent_you_file" xml:space="preserve"><value>Sent you a file</value></data>
+  <data name="download_sender_alt" xml:space="preserve"><value>Sender</value></data>
+  <data name="download_e2e_encrypted" xml:space="preserve"><value>End-to-end encrypted</value></data>
+  <data name="download_verified" xml:space="preserve"><value>Verified</value></data>
+  <data name="download_zk_integrity" xml:space="preserve"><value>File integrity confirmed</value></data>
+  <data name="download_zk_integrity_desc" xml:space="preserve"><value>File integrity verified via cryptographic attestation.</value></data>
+  <data name="download_zk_no_tamper" xml:space="preserve"><value>No tampering detected</value></data>
+  <data name="download_zk_no_tamper_desc" xml:space="preserve"><value>File has not been tampered with since upload.</value></data>
+  <data name="download_zk_hash" xml:space="preserve"><value>Hash integrity check passed</value></data>
+  <data name="download_zk_hash_desc" xml:space="preserve"><value>SHA-256 hash matches the original upload manifest.</value></data>
+  <data name="download_zk_downloads" xml:space="preserve"><value>downloads</value></data>
+  <data name="download_zk_max" xml:space="preserve"><value>max</value></data>
+  <data name="download_download_btn" xml:space="preserve"><value>Download</value></data>
+  <data name="download_report_abuse" xml:space="preserve"><value>Report abuse</value></data>
+  <data name="download_report_title" xml:space="preserve"><value>Report this file</value></data>
+  <data name="download_report_select_reason" xml:space="preserve"><value>Select a reason</value></data>
+  <data name="download_report_spam" xml:space="preserve"><value>Spam or unsolicited</value></data>
+  <data name="download_report_malware" xml:space="preserve"><value>Malware or harmful</value></data>
+  <data name="download_report_abusive" xml:space="preserve"><value>Abusive content</value></data>
+  <data name="download_report_other" xml:space="preserve"><value>Other</value></data>
+  <data name="download_report_details_placeholder" xml:space="preserve"><value>Optional details…</value></data>
+  <data name="download_report_submit" xml:space="preserve"><value>Submit report</value></data>
+  <data name="download_report_done" xml:space="preserve"><value>Report submitted. Thank you.</value></data>
+  <data name="download_expired_title" xml:space="preserve"><value>This shared file has expired</value></data>
+  <data name="download_expired_desc" xml:space="preserve"><value>Shared files are removed automatically after expiry. Ask the sender to re-send.</value></data>
+  <data name="download_send_file" xml:space="preserve"><value>Send a file</value></data>
+  <data name="download_notfound_title" xml:space="preserve"><value>This link doesn't exist</value></data>
+  <data name="download_notfound_desc" xml:space="preserve"><value>The file may have been removed or the link is incorrect.</value></data>
+  <data name="download_limit_title" xml:space="preserve"><value>Download limit reached</value></data>
+  <data name="download_limit_desc" xml:space="preserve"><value>This shared file has reached its download limit. Ask the sender to re-send.</value></data>
+  <data name="download_error_title" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="download_error_desc" xml:space="preserve"><value>We couldn't reach the download service. Please try again.</value></data>
+  <data name="download_no_expiry" xml:space="preserve"><value>no expiry</value></data>
+  <data name="download_expires" xml:space="preserve"><value>expires {0}</value></data>
+  <data name="download_countdown_expired" xml:space="preserve"><value>expired</value></data>
+  <data name="download_countdown_min" xml:space="preserve"><value>in {0} min</value></data>
+  <data name="download_countdown_hour" xml:space="preserve"><value>in {0} h</value></data>
+  <data name="download_countdown_day" xml:space="preserve"><value>in {0} day</value></data>
+  <data name="download_countdown_days" xml:space="preserve"><value>in {0} days</value></data>
+  <!-- Files page -->
+  <data name="files_title" xml:space="preserve"><value>Files — QuickShareCloud</value></data>
+  <data name="files_heading" xml:space="preserve"><value>Files</value></data>
+  <data name="files_all_files" xml:space="preserve"><value>All files</value></data>
+  <data name="files_in_folder" xml:space="preserve"><value>Files in {0}</value></data>
+  <data name="files_browse_all" xml:space="preserve"><value>Browse all your uploaded files</value></data>
+  <data name="files_search_files" xml:space="preserve"><value>Search files…</value></data>
+  <data name="files_clear_search" xml:space="preserve"><value>Clear search</value></data>
+  <data name="files_stat_files" xml:space="preserve"><value>Files</value></data>
+  <data name="files_stat_storage" xml:space="preserve"><value>Storage used</value></data>
+  <data name="files_stat_plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="files_plan_free" xml:space="preserve"><value>Free</value></data>
+  <data name="files_stat_folders" xml:space="preserve"><value>Folders</value></data>
+  <data name="files_no_folders" xml:space="preserve"><value>No folders yet. Create one to organize your files.</value></data>
+  <data name="files_new_folder_btn" xml:space="preserve"><value>New Folder</value></data>
+  <data name="files_folders_aria" xml:space="preserve"><value>Folders</value></data>
+  <data name="files_all_files_pill" xml:space="preserve"><value>All Files</value></data>
+  <data name="files_rename_folder_aria" xml:space="preserve"><value>Rename {0}</value></data>
+  <data name="files_rename_folder_title" xml:space="preserve"><value>Rename folder</value></data>
+  <data name="files_delete_folder_aria" xml:space="preserve"><value>Delete {0}</value></data>
+  <data name="files_delete_folder_title" xml:space="preserve"><value>Delete folder</value></data>
+  <data name="files_new" xml:space="preserve"><value>New</value></data>
+  <data name="files_error_title" xml:space="preserve"><value>Couldn't load files</value></data>
+  <data name="files_error_desc" xml:space="preserve"><value>There was a problem fetching your files. Please try again.</value></data>
+  <data name="files_retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="files_empty_title" xml:space="preserve"><value>No files yet</value></data>
+  <data name="files_empty_folder_title" xml:space="preserve"><value>No files in {0}</value></data>
+  <data name="files_empty_upload" xml:space="preserve"><value>Upload your first file.</value></data>
+  <data name="files_empty_folder_desc" xml:space="preserve"><value>This folder is empty.</value></data>
+  <data name="files_empty_search" xml:space="preserve"><value>No files matching &#x201C;{0}&#x201D;.</value></data>
+  <data name="files_clear_search_link" xml:space="preserve"><value>Clear search</value></data>
+  <data name="files_upload_file" xml:space="preserve"><value>Upload a file</value></data>
+  <data name="files_list_aria" xml:space="preserve"><value>Files</value></data>
+  <data name="files_download_file_aria" xml:space="preserve"><value>Download {0}</value></data>
+  <data name="files_download_file_title" xml:space="preserve"><value>Download file</value></data>
+  <data name="files_showing" xml:space="preserve"><value>Showing {0} files</value></data>
+  <data name="files_showing_of" xml:space="preserve"><value>Showing {0} of {1} files</value></data>
+  <data name="files_modal_new_folder" xml:space="preserve"><value>New folder</value></data>
+  <data name="files_modal_close" xml:space="preserve"><value>Close</value></data>
+  <data name="files_modal_folder_name" xml:space="preserve"><value>Folder name</value></data>
+  <data name="files_modal_folder_placeholder" xml:space="preserve"><value>e.g. Projects, Photos</value></data>
+  <data name="files_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="files_modal_create_folder" xml:space="preserve"><value>Create folder</value></data>
+  <data name="files_creating" xml:space="preserve"><value>Creating…</value></data>
+  <data name="files_modal_rename_folder" xml:space="preserve"><value>Rename folder</value></data>
+  <data name="files_modal_rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="files_renaming" xml:space="preserve"><value>Renaming…</value></data>
+  <data name="files_modal_delete_folder" xml:space="preserve"><value>Delete folder?</value></data>
+  <data name="files_modal_delete_confirm" xml:space="preserve"><value>Are you sure you want to delete {0}?</value></data>
+  <data name="files_modal_delete_warning" xml:space="preserve"><value>This action cannot be undone.</value></data>
+  <data name="files_modal_delete_btn" xml:space="preserve"><value>Delete folder</value></data>
+  <data name="files_deleting" xml:space="preserve"><value>Deleting…</value></data>
+  <!-- P2P Send page -->
+  <data name="p2p_send_choose_file_aria" xml:space="preserve"><value>Choose a file</value></data>
+  <data name="p2p_send_headline_send" xml:space="preserve"><value>Send</value></data>
+  <data name="p2p_send_headline_direct" xml:space="preserve"><value>direct</value></data>
+  <data name="p2p_send_headline_drop" xml:space="preserve"><value>Drop your file</value></data>
+  <data name="p2p_send_sub_p2p" xml:space="preserve"><value>Peer-to-peer · direct device-to-device transfer</value></data>
+  <data name="p2p_send_sub_release" xml:space="preserve"><value>Release to start P2P transfer</value></data>
+  <data name="p2p_send_dropzone_idle" xml:space="preserve"><value>Drop a file to start</value></data>
+  <data name="p2p_send_dropzone_drag" xml:space="preserve"><value>Drop it here</value></data>
+  <data name="p2p_send_dropzone_sub" xml:space="preserve"><value>or click to browse · no size limit</value></data>
+  <data name="p2p_send_creating" xml:space="preserve"><value>Creating share link…</value></data>
+  <data name="p2p_send_share_prompt" xml:space="preserve"><value>Share this link with the recipient:</value></data>
+  <data name="p2p_send_share_link_aria" xml:space="preserve"><value>Share link</value></data>
+  <data name="p2p_send_copy_link_aria" xml:space="preserve"><value>Copy share link</value></data>
+  <data name="p2p_send_copy_link" xml:space="preserve"><value>Copy link</value></data>
+  <data name="p2p_send_copied" xml:space="preserve"><value>Copied!</value></data>
+  <data name="p2p_send_receivers" xml:space="preserve"><value>Receivers</value></data>
+  <data name="p2p_send_expiry_note" xml:space="preserve"><value>Link expires in 7 days · keep this tab open while receiver downloads · selecting a new file creates a new link</value></data>
+  <data name="p2p_send_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="p2p_send_error_part1" xml:space="preserve"><value>The direct connection could not be established. Try again or </value></data>
+  <data name="p2p_send_error_cloud_link" xml:space="preserve"><value>use cloud upload</value></data>
+  <data name="p2p_send_error_part2" xml:space="preserve"><value> instead.</value></data>
+  <data name="p2p_send_watch_ad" xml:space="preserve"><value>Watch ad to unlock +1 upload</value></data>
+  <data name="p2p_send_try_again" xml:space="preserve"><value>Try again</value></data>
+  <!-- P2P Download page -->
+  <data name="p2p_download_connecting" xml:space="preserve"><value>Connecting to sender…</value></data>
+  <data name="p2p_download_download_btn" xml:space="preserve"><value>Download directly</value></data>
+  <data name="p2p_download_p2p_note" xml:space="preserve"><value>Direct peer-to-peer transfer · straight device to device</value></data>
+  <data name="p2p_download_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="p2p_download_complete" xml:space="preserve"><value>Download complete</value></data>
+  <data name="p2p_download_send_file" xml:space="preserve"><value>Send a file</value></data>
+  <data name="p2p_download_waiting" xml:space="preserve"><value>Waiting for sender</value></data>
+  <data name="p2p_download_waiting_note" xml:space="preserve"><value>Sender must keep the P2P Send tab open. If sender selected a new file, this old link will stay waiting — ask for the latest link.</value></data>
+  <data name="p2p_download_error_title" xml:space="preserve"><value>Connection unavailable</value></data>
+  <data name="p2p_download_try_again" xml:space="preserve"><value>Try again</value></data>
+  <!-- Upgrade page -->
+  <data name="upgrade_page_title" xml:space="preserve"><value>Upgrade to {0} — QuickShareCloud</value></data>
+  <data name="upgrade_tag" xml:space="preserve"><value>Upgrade</value></data>
+  <data name="upgrade_h1" xml:space="preserve"><value>Upgrade to {0}</value></data>
+  <data name="upgrade_current_plan" xml:space="preserve"><value>You're on the </value></data>
+  <data name="upgrade_current_plan_suffix" xml:space="preserve"><value> plan.</value></data>
+  <data name="upgrade_plan_brings" xml:space="preserve"><value>{0} gives you {1}.</value></data>
+  <data name="upgrade_period_yearly" xml:space="preserve"><value>/ year</value></data>
+  <data name="upgrade_period_monthly" xml:space="preserve"><value>/ month</value></data>
+  <data name="upgrade_billing_yearly_label" xml:space="preserve"><value> (yearly)</value></data>
+  <data name="upgrade_billing_monthly_label" xml:space="preserve"><value> (monthly)</value></data>
+  <data name="upgrade_complete_title" xml:space="preserve"><value>Complete upgrade</value></data>
+  <data name="upgrade_complete_desc" xml:space="preserve"><value>Upgrade to {0}{1} — {2}</value></data>
+  <data name="upgrade_payment_method_title" xml:space="preserve"><value>Bank transfer / Card</value></data>
+  <data name="upgrade_payment_method_desc" xml:space="preserve"><value>Pay via PayOS (bank transfer, domestic card, Visa/Mastercard)</value></data>
+  <data name="upgrade_pay_now_btn" xml:space="preserve"><value>Pay with PayOS</value></data>
+  <data name="upgrade_payment_info_title" xml:space="preserve"><value>Payment </value></data>
+  <data name="upgrade_payos_support" xml:space="preserve"><value>PayOS supports bank transfer, domestic cards, Visa/Mastercard.</value></data>
+  <data name="upgrade_qr_instruction" xml:space="preserve"><value>Scan the QR code with your banking app, or pay directly below.</value></data>
+  <data name="upgrade_payos_iframe_title" xml:space="preserve"><value>PayOS payment</value></data>
+  <data name="upgrade_auto_activate" xml:space="preserve"><value>Your plan will be activated automatically after successful payment.</value></data>
+  <data name="upgrade_payment_error" xml:space="preserve"><value>Could not create payment link: {0}</value></data>
+  <data name="upgrade_retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="upgrade_creating_link" xml:space="preserve"><value>Creating payment link…</value></data>
+  <data name="upgrade_auto_upgrade_note" xml:space="preserve"><value>Your plan will be upgraded immediately after payment confirmation.</value></data>
+  <data name="upgrade_need_help" xml:space="preserve"><value>Need help?</value></data>
+  <data name="upgrade_contact_support" xml:space="preserve"><value>Contact support</value></data>
+  <data name="upgrade_plan_desc_pro" xml:space="preserve"><value>For creators &amp; professionals</value></data>
+  <data name="upgrade_plan_desc_studio" xml:space="preserve"><value>For teams &amp; enterprises</value></data>
+  <data name="upgrade_plan_summary_pro" xml:space="preserve"><value>1 GB/file, 50 GB/month, 100 transfers/month, password protection, priority support</value></data>
+  <data name="upgrade_plan_summary_studio" xml:space="preserve"><value>500 GB/month, unlimited transfers, API, dedicated support</value></data>
+  <data name="upgrade_feat_pro_1" xml:space="preserve"><value>1 GB/file</value></data>
+  <data name="upgrade_feat_pro_2" xml:space="preserve"><value>50 GB / month</value></data>
+  <data name="upgrade_feat_pro_3" xml:space="preserve"><value>100 transfers/month</value></data>
+  <data name="upgrade_feat_pro_4" xml:space="preserve"><value>Password protection</value></data>
+  <data name="upgrade_feat_pro_5" xml:space="preserve"><value>Priority support</value></data>
+  <data name="upgrade_feat_studio_1" xml:space="preserve"><value>20 GB/file</value></data>
+  <data name="upgrade_feat_studio_2" xml:space="preserve"><value>500 GB / month</value></data>
+  <data name="upgrade_feat_studio_3" xml:space="preserve"><value>Unlimited transfers</value></data>
+  <data name="upgrade_feat_studio_4" xml:space="preserve"><value>Custom branding</value></data>
+  <data name="upgrade_feat_studio_5" xml:space="preserve"><value>API access</value></data>
+  <data name="upgrade_feat_studio_6" xml:space="preserve"><value>Dedicated support</value></data>
+</root>

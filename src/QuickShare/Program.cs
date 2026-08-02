@@ -223,8 +223,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddRazorComponents()
     .AddHtmx();
+builder.Services.AddLocalization();
 builder.Services.AddAntiforgery();
-builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
 
 // ── Unified cookie auth + Google OAuth ──
 // A single AddAuthentication call serves both the API (401/403 on /api/*) and the

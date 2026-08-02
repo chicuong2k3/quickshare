@@ -1,15 +1,8 @@
 namespace QuickShare.Features.ClientErrors;
 
 /// <summary>Accepts browser-side JavaScript errors so they can be written to the server-side log (Serilog → Seq).</summary>
-public sealed class ReportClientErrorEndpoint : Endpoint<ReportClientErrorRequest>
+public sealed class ReportClientErrorEndpoint(ILogger<ReportClientErrorEndpoint> logger) : Endpoint<ReportClientErrorRequest>
 {
-    private readonly ILogger<ReportClientErrorEndpoint> _logger;
-
-    public ReportClientErrorEndpoint(ILogger<ReportClientErrorEndpoint> logger)
-    {
-        _logger = logger;
-    }
-
     public override void Configure()
     {
         Post("/api/client-errors");
@@ -27,7 +20,7 @@ public sealed class ReportClientErrorEndpoint : Endpoint<ReportClientErrorReques
     {
         var userAgent = HttpContext.Request.Headers.UserAgent.FirstOrDefault() ?? "unknown";
 
-        _logger.LogError(
+        logger.LogError(
             "Client JS error: {ClientErrorMessage} at {ClientErrorSource}:{ClientErrorLine}:{ClientErrorColumn} | page {ClientErrorHref} | UA {ClientErrorUserAgent}{ClientErrorStack}",
             req.Message,
             req.Source,
