@@ -56,6 +56,37 @@ namespace QuickShare.Migrations
                     b.ToTable("chunks", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.DailyAdTracking", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AdCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.PrimitiveCollection<string[]>("TokenHashes")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasDefaultValue(new string[0]);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("daily_ad_tracking", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
                     b.Property<Guid>("Id")
@@ -585,6 +616,9 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<long>("DailyBandwidthBonus")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("PeriodStart")
                         .HasColumnType("timestamp with time zone");
 
@@ -614,6 +648,17 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DailyAdTracking", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>

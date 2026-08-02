@@ -11,4 +11,5 @@ public static class ApiTags
     public const string Reports = "Reports";
     public const string Uploads = "Uploads";
     public const string Ads = "Ads";
+    public const string ClientErrors = "Client Errors";
 }
