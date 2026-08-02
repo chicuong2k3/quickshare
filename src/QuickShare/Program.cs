@@ -14,8 +14,13 @@ using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Storage;
 using Npgsql;
 using Wolverine.ErrorHandling;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog((context, _, loggerConfiguration) =>
+{
+    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+});
 
 const string DefaultConnectionName = "DefaultConnection";
 const string MissingConnectionStringError = "ConnectionStrings:DefaultConnection missing";

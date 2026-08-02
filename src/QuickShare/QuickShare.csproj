@@ -33,6 +33,10 @@
     <!-- Web (Blazor SSR + htmx) dependencies -->
     <PackageReference Include="Htmxor" Version="1.0.0-beta.1.24" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
   </ItemGroup>
 
   <Target Name="CopyScopedCss" AfterTargets="Build">

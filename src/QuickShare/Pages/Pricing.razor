@@ -1,10 +1,29 @@
 @layout MainLayout
 @page "/pricing"
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var currentUserPlan = PlanTierLimits.Free;
+
+    if (isAuthenticated)
+    {
+        var userIdClaim = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(userIdClaim, out var userId))
+        {
+            currentUserPlan = Db.Users
+                .AsNoTracking()
+                .Where(x => x.Id == userId)
+                .Select(x => x.Plan)
+                .FirstOrDefault() ?? PlanTierLimits.Free;
+        }
+    }
+    var currentPlanRank = GetPlanRank(currentUserPlan);
+
     var currency = Config[PricingKeys.Currency] ?? "$";
     var proMonthly = FormatPrice(Config.GetValue<int>(PricingKeys.ProMonthly, 9), currency);
     var proYearly = FormatPrice(Config.GetValue<int>(PricingKeys.ProYearly, 77), currency);
@@ -99,9 +118,12 @@
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
-                <a href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
-                   x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
-                   class="db-btn db-btn--primary">Start Free Trial</a>
+                @if (currentPlanRank < ProPlanRank)
+                {
+                    <a href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
+                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
+                       class="db-btn db-btn--primary">Start Free Trial</a>
+                }
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -143,9 +165,12 @@
                         <div class="price-period db-text-muted">Billed yearly</div>
                     </div>
                 </div>
-                <a href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
-                   x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
-                   class="db-btn db-btn--primary">Start Free Trial</a>
+                @if (currentPlanRank < StudioPlanRank)
+                {
+                    <a href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
+                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
+                       class="db-btn db-btn--primary">Start Free Trial</a>
+                }
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -214,6 +239,20 @@
     public string? Billing { get; set; }
 
     private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
+    private const int FreePlanRank = 0;
+    private const int ProPlanRank = 1;
+    private const int StudioPlanRank = 2;
+
+    private static int GetPlanRank(string plan)
+    {
+        return (plan ?? string.Empty).ToLowerInvariant() switch
+        {
+            PlanTierLimits.Studio => StudioPlanRank,
+            PlanTierLimits.Pro => ProPlanRank,
+            _ => FreePlanRank
+        };
+    }
+
 
     private static string FormatPrice(int amount, string currency)
     {

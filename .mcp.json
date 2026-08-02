@@ -3,6 +3,13 @@
     "slnmap": {
       "command": "slnmap",
       "args": ["serve", "--db", "C:/Users/nguye/Desktop/codes/TeleCloud/slnmap.db"]
+    },
+    "seq": {
+      "command": "seq-mcp-server",
+      "env": {
+        "SEQ_SERVER_URL": "https://seq.codemagic.io.vn",
+        "SEQ_API_KEY": "4FDtwKRi4qKMaBzdYN4J"
+      }
     }
   }
 }
