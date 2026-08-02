@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="lang_en" xml:space="preserve"><value>English</value></data>
+  <data name="lang_vi" xml:space="preserve"><value>Tiếng Việt</value></data>
+  <data name="nav_pricing" xml:space="preserve"><value>Bảng giá</value></data>
+  <data name="nav_send" xml:space="preserve"><value>Gửi</value></data>
+  <data name="nav_files" xml:space="preserve"><value>Tệp</value></data>
+  <data name="nav_account" xml:space="preserve"><value>Tài khoản</value></data>
+  <data name="nav_login" xml:space="preserve"><value>Đăng nhập</value></data>
+  <data name="nav_logout" xml:space="preserve"><value>Đăng xuất</value></data>
+  <data name="btn_get_started" xml:space="preserve"><value>Bắt đầu</value></data>
+  <data name="btn_start_free_trial" xml:space="preserve"><value>Dùng thử miễn phí</value></data>
+  <data name="btn_upgrade" xml:space="preserve"><value>Nâng cấp</value></data>
+  <data name="home_title" xml:space="preserve"><value>QuickShareCloud — gửi file, không phiền phức</value></data>
+  <data name="home_tag" xml:space="preserve"><value>Bảo mật · Nhanh · Tạm thời</value></data>
+  <data name="home_h1_send" xml:space="preserve"><value>Gửi</value></data>
+  <data name="home_h1_anything" xml:space="preserve"><value>mọi thứ</value></data>
+  <data name="home_h1_zero" xml:space="preserve"><value>không phiền phức</value></data>
+  <data name="home_sub" xml:space="preserve"><value>Chia sẻ file mã hóa tự động xóa. Người nhận không cần tạo tài khoản. File tự hủy.</value></data>
+  <data name="home_btn_start" xml:space="preserve"><value>Bắt đầu gửi</value></data>
+  <data name="home_btn_pricing" xml:space="preserve"><value>Xem bảng giá</value></data>
+  <data name="home_why_title" xml:space="preserve"><value>Tại sao dùng ứng dụng này</value></data>
+  <data name="home_why_sub" xml:space="preserve"><value>Hai chế độ rõ ràng: Cloud Send để gửi link dùng bất cứ lúc nào, và P2P để chuyển file trực tiếp giữa các thiết bị.</value></data>
+  <data name="home_badge_cloud" xml:space="preserve"><value>Cần link tồn tại lâu? Dùng Cloud Send.</value></data>
+  <data name="home_badge_p2p" xml:space="preserve"><value>Cần chuyển file ngay lập tức? Dùng P2P.</value></data>
+  <data name="home_table_caption" xml:space="preserve"><value>Cloud Send vs P2P trong thực tế</value></data>
+  <data name="home_table_what" xml:space="preserve"><value>Tiêu chí</value></data>
+  <data name="home_table_cloud" xml:space="preserve"><value>Cloud Send</value></data>
+  <data name="home_table_p2p" xml:space="preserve"><value>P2P</value></data>
+  <data name="home_row1_label" xml:space="preserve"><value>Cách gửi</value></data>
+  <data name="home_row1_cloud" xml:space="preserve"><value>Tạo một link và chia sẻ bất cứ đâu.</value></data>
+  <data name="home_row1_p2p" xml:space="preserve"><value>Truyền trực tiếp giữa hai thiết bị.</value></data>
+  <data name="home_row2_label" xml:space="preserve"><value>Người nhận mở sau được không?</value></data>
+  <data name="home_row2_cloud" xml:space="preserve"><value>Được. Link tồn tại đến khi hết hạn.</value></data>
+  <data name="home_row2_p2p" xml:space="preserve"><value>Không. Cả hai phải online cùng lúc.</value></data>
+  <data name="home_row3_label" xml:space="preserve"><value>Lưu trữ</value></data>
+  <data name="home_row3_cloud" xml:space="preserve"><value>Có. File được giữ đến khi hết hạn.</value></data>
+  <data name="home_row3_p2p" xml:space="preserve"><value>Không lưu lại sau khi chuyển xong.</value></data>
+  <data name="home_row4_label" xml:space="preserve"><value>Phù hợp nhất</value></data>
+  <data name="home_row4_cloud" xml:space="preserve"><value>Chia sẻ từ xa, không đồng bộ, cần file tồn tại lâu.</value></data>
+  <data name="home_row4_p2p" xml:space="preserve"><value>Chuyển nhanh trong mạng nội bộ khi cả hai cùng online.</value></data>
+  <data name="home_row5_label" xml:space="preserve"><value>Mở rộng khi cần</value></data>
+  <data name="home_row5_cloud" xml:space="preserve"><value>Nâng cấp để có giới hạn cao hơn và thời gian lưu lâu hơn.</value></data>
+  <data name="home_row5_p2p" xml:space="preserve"><value>Tuyệt vời cho chuyển nhanh, không dành cho lưu trữ dài hạn.</value></data>
+  <data name="home_btn_send_now" xml:space="preserve"><value>Gửi file ngay</value></data>
+  <data name="home_btn_pro_limits" xml:space="preserve"><value>Xem giới hạn Pro</value></data>
+  <data name="home_feat1_title" xml:space="preserve"><value>Mã hóa đầu cuối</value></data>
+  <data name="home_feat1_desc" xml:space="preserve"><value>File được mã hóa trước khi rời thiết bị của bạn. Chỉ người nhận mới giải mã được.</value></data>
+  <data name="home_feat2_title" xml:space="preserve"><value>Link tự động hết hạn</value></data>
+  <data name="home_feat2_desc" xml:space="preserve"><value>Gói Free tự hết hạn sau 2 giờ. Pro và Studio giữ file 30–90 ngày.</value></data>
+  <data name="home_feat3_title" xml:space="preserve"><value>Người nhận không cần đăng ký</value></data>
+  <data name="home_feat3_desc" xml:space="preserve"><value>Chia sẻ link — thế là xong. Người nhận tải trực tiếp trên trình duyệt.</value></data>
+  <data name="home_how_title" xml:space="preserve"><value>Cách hoạt động</value></data>
+  <data name="home_step1_title" xml:space="preserve"><value>Tải file lên</value></data>
+  <data name="home_step1_desc" xml:space="preserve"><value>Kéo thả file tối đa 5 GB. Mã hóa diễn ra ngay trong trình duyệt.</value></data>
+  <data name="home_step2_title" xml:space="preserve"><value>Chia sẻ link</value></data>
+  <data name="home_step2_desc" xml:space="preserve"><value>Sao chép link bảo mật và gửi qua email, chat, hoặc bất cứ đâu.</value></data>
+  <data name="home_step3_title" xml:space="preserve"><value>File tự xóa</value></data>
+  <data name="home_step3_desc" xml:space="preserve"><value>File tự động hết hạn. Không cần dọn dẹp.</value></data>
+  <data name="home_cta_title" xml:space="preserve"><value>Sẵn sàng gửi?</value></data>
+  <data name="home_cta_sub" xml:space="preserve"><value>Chưa tới 10 giây. Không cần tài khoản để bắt đầu — đăng nhập để có giới hạn cao hơn.</value></data>
+  <data name="home_cta_btn" xml:space="preserve"><value>Gửi file đầu tiên</value></data>
+  <data name="pricing_title" xml:space="preserve"><value>Bảng giá — QuickShareCloud</value></data>
+  <data name="pricing_tag" xml:space="preserve"><value>Giá đơn giản</value></data>
+  <data name="pricing_h1" xml:space="preserve"><value>Bảng giá đơn giản, minh bạch</value></data>
+  <data name="pricing_sub" xml:space="preserve"><value>Chọn gói phù hợp với nhu cầu. Không phí ẩn. Hủy bất cứ lúc nào.</value></data>
+  <data name="pricing_monthly" xml:space="preserve"><value>Hàng tháng</value></data>
+  <data name="pricing_yearly" xml:space="preserve"><value>Hàng năm</value></data>
+  <data name="pricing_save" xml:space="preserve"><value>Tiết kiệm 20%</value></data>
+  <data name="pricing_free_name" xml:space="preserve"><value>Miễn phí</value></data>
+  <data name="pricing_free_desc" xml:space="preserve"><value>Tuyệt vời để bắt đầu</value></data>
+  <data name="pricing_free_price_period" xml:space="preserve"><value>Miễn phí vĩnh viễn</value></data>
+  <data name="pricing_free_feat_size" xml:space="preserve"><value>5 GB mỗi file</value></data>
+  <data name="pricing_free_feat_monthly" xml:space="preserve"><value>15 GB / tháng</value></data>
+  <data name="pricing_free_feat_expiry" xml:space="preserve"><value>File hết hạn sau 2 giờ</value></data>
+  <data name="pricing_free_feat_lossless" xml:space="preserve"><value>Chất lượng gốc — không nén</value></data>
+  <data name="pricing_free_feat_e2e" xml:space="preserve"><value>Mã hóa đầu cuối</value></data>
+  <data name="pricing_pro_name" xml:space="preserve"><value>Pro</value></data>
+  <data name="pricing_pro_desc" xml:space="preserve"><value>Cho nhà sáng tạo &amp; chuyên nghiệp</value></data>
+  <data name="pricing_pro_billed_monthly" xml:space="preserve"><value>Thanh toán hàng tháng</value></data>
+  <data name="pricing_pro_billed_yearly" xml:space="preserve"><value>Thanh toán hàng năm</value></data>
+  <data name="pricing_pro_feat_size" xml:space="preserve"><value>20 GB mỗi file</value></data>
+  <data name="pricing_pro_feat_monthly" xml:space="preserve"><value>200 GB / tháng</value></data>
+  <data name="pricing_pro_feat_expiry" xml:space="preserve"><value>Lưu 30 ngày</value></data>
+  <data name="pricing_pro_feat_password" xml:space="preserve"><value>Bảo vệ mật khẩu</value></data>
+  <data name="pricing_pro_feat_noads" xml:space="preserve"><value>Không quảng cáo</value></data>
+  <data name="pricing_studio_name" xml:space="preserve"><value>Studio</value></data>
+  <data name="pricing_studio_desc" xml:space="preserve"><value>Cho đội nhóm &amp; doanh nghiệp</value></data>
+  <data name="pricing_studio_billed_monthly" xml:space="preserve"><value>Thanh toán hàng tháng</value></data>
+  <data name="pricing_studio_billed_yearly" xml:space="preserve"><value>Thanh toán hàng năm</value></data>
+  <data name="pricing_studio_feat_size" xml:space="preserve"><value>100 GB mỗi file</value></data>
+  <data name="pricing_studio_feat_monthly" xml:space="preserve"><value>2 TB / tháng</value></data>
+  <data name="pricing_studio_feat_expiry" xml:space="preserve"><value>Lưu 90 ngày</value></data>
+  <data name="pricing_studio_feat_branding" xml:space="preserve"><value>Thương hiệu tùy chỉnh</value></data>
+  <data name="pricing_studio_feat_api" xml:space="preserve"><value>Truy cập API</value></data>
+  <data name="pricing_card_badge" xml:space="preserve"><value>Phổ biến nhất</value></data>
+  <data name="pricing_faq_title" xml:space="preserve"><value>Câu hỏi thường gặp</value></data>
+  <data name="pricing_faq_sub" xml:space="preserve"><value>Giải đáp thắc mắc về các gói</value></data>
+  <data name="pricing_faq_q1" xml:space="preserve"><value>Gói Miễn phí có giới hạn gì?</value></data>
+  <data name="pricing_faq_a1" xml:space="preserve"><value>Gói Free là chuyển file tức thời — file của bạn tồn tại trong 2 giờ. Sau đó file bị xóa vĩnh viễn. Điều này cho phép chúng tôi cung cấp mức chuyển 5 GB miễn phí. Cần lâu hơn? Nâng cấp lên Pro.</value></data>
+  <data name="pricing_faq_q2" xml:space="preserve"><value>File của tôi có bị nén không?</value></data>
+  <data name="pricing_faq_a2" xml:space="preserve"><value>Không bao giờ. File bạn tải lên là file người nhận tải xuống — từng byte một. Không nén, không mã hóa lại. Nhiếp ảnh gia và editor tin dùng chúng tôi vì lý do này.</value></data>
+  <data name="pricing_faq_q3" xml:space="preserve"><value>Tốc độ tải nhanh không?</value></data>
+  <data name="pricing_faq_a3" xml:space="preserve"><value>File truyền qua mạng lưới Cloudflare toàn cầu. Không nghẽn cổ chai server, không giới hạn băng thông.</value></data>
+  <data name="pricing_faq_q4" xml:space="preserve"><value>Có thể nâng cấp hoặc hạ cấp không?</value></data>
+  <data name="pricing_faq_a4" xml:space="preserve"><value>Có! Đổi gói bất cứ lúc nào. Nâng cấp có hiệu lực ngay lập tức.</value></data>
+  <data name="pricing_faq_q5" xml:space="preserve"><value>Có dùng thử miễn phí không?</value></data>
+  <data name="pricing_faq_a5" xml:space="preserve"><value>Tất cả gói trả phí đều có 14 ngày dùng thử miễn phí. Không cần thẻ tín dụng.</value></data>
+  <data name="pricing_faq_q6" xml:space="preserve"><value>Người nhận có cần tài khoản không?</value></data>
+  <data name="pricing_faq_a6" xml:space="preserve"><value>Không. Người nhận tải file trực tiếp trên trình duyệt — không cần tài khoản, không cần cài app.</value></data>
+  <data name="pricing_faq_q7" xml:space="preserve"><value>Nếu tôi hủy thì sao?</value></data>
+  <data name="pricing_faq_a7" xml:space="preserve"><value>File của bạn vẫn truy cập được trong 7 ngày sau khi hủy.</value></data>
+  <data name="pricing_faq_q8" xml:space="preserve"><value>Có hoàn tiền không?</value></data>
+  <data name="pricing_faq_a8" xml:space="preserve"><value>Hoàn tiền đầy đủ trong 30 ngày nếu bạn không hài lòng.</value></data>
+  <data name="pricing_cta_title" xml:space="preserve"><value>Sẵn sàng bắt đầu?</value></data>
+  <data name="pricing_cta_sub" xml:space="preserve"><value>Bắt đầu miễn phí, không cần thẻ tín dụng. Pro và Studio có 14 ngày dùng thử.</value></data>
+  <data name="billing_title" xml:space="preserve"><value>Thanh toán — QuickShareCloud</value></data>
+  <data name="billing_h1" xml:space="preserve"><value>Gói đăng ký</value></data>
+  <data name="billing_loading" xml:space="preserve"><value>Đang tải thông tin thanh toán...</value></data>
+  <data name="billing_free_desc" xml:space="preserve"><value>Tuyệt vời để bắt đầu</value></data>
+  <data name="billing_pro_desc" xml:space="preserve"><value>Cho nhà sáng tạo &amp; chuyên nghiệp</value></data>
+  <data name="billing_studio_desc" xml:space="preserve"><value>Cho đội nhóm &amp; doanh nghiệp</value></data>
+  <data name="billing_period_label" xml:space="preserve"><value>/ vĩnh viễn</value></data>
+  <data name="billing_btn_upgrade" xml:space="preserve"><value>Nâng cấp lên Pro</value></data>
+  <data name="billing_btn_change" xml:space="preserve"><value>Đổi gói</value></data>
+  <data name="billing_btn_cancel" xml:space="preserve"><value>Hủy đăng ký</value></data>
+  <data name="billing_btn_renew" xml:space="preserve"><value>Gia hạn đăng ký</value></data>
+  <data name="billing_cancelled" xml:space="preserve"><value>Đăng ký của bạn đã bị hủy. Vẫn truy cập được đến {0}.</value></data>
+  <data name="billing_history_title" xml:space="preserve"><value>Lịch sử thanh toán</value></data>
+  <data name="billing_history_empty" xml:space="preserve"><value>Chưa có lịch sử thanh toán.</value></data>
+  <data name="billing_view_receipt" xml:space="preserve"><value>Xem hóa đơn</value></data>
+  <data name="billing_feat_free" xml:space="preserve"><value>5 GB mỗi file | 15 GB / tháng | Hết hạn sau 2 giờ | Chất lượng gốc | Mã hóa đầu cuối</value></data>
+  <data name="billing_feat_pro" xml:space="preserve"><value>20 GB mỗi file | 200 GB / tháng | Lưu 30 ngày | Bảo vệ mật khẩu | Không quảng cáo | Hỗ trợ ưu tiên</value></data>
+  <data name="billing_feat_studio" xml:space="preserve"><value>100 GB mỗi file | 2 TB / tháng | Lưu 90 ngày | Thương hiệu tùy chỉnh | API | Hỗ trợ riêng</value></data>
+  <data name="lang_switch_label" xml:space="preserve"><value>Đổi ngôn ngữ</value></data>
+</root>

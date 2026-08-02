@@ -1,3 +1,19 @@
+/* /Components/Shared/LanguageSwitch.razor.rz.scp.css */
+.lang-switch select[b-wj28xx8gp4] {
+    background: transparent;
+    border: 1px solid var(--db-color-border, #e2e8f0);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--db-color-text, #1a202c);
+    cursor: pointer;
+    outline: none;
+}
+
+.lang-switch select:focus-visible[b-wj28xx8gp4] {
+    border-color: var(--db-color-accent, #4F6CF7);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent, #4F6CF7) 25%, transparent);
+}
 /* /Pages/Account.razor.rz.scp.css */
 /* Account styles now in wwwroot/css/app.css */
 /* /Pages/AccountBilling.razor.rz.scp.css */

@@ -6,24 +6,26 @@
 @using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.Subscriptions
 @using Microsoft.AspNetCore.Http
+@using Microsoft.Extensions.Localization
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
+@inject IStringLocalizer<QuickShare.Resources.Shared> Loc
 
-<PageTitle>Billing â€” QuickShareCloud</PageTitle>
+<PageTitle>@Loc["billing_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <span class="tag">Billing</span>
-        <h1 class="db-h1">Subscription</h1>
+        <span class="tag">@Loc["billing_h1"]</span>
+        <h1 class="db-h1">@Loc["billing_h1"]</h1>
     </section>
 
     <section class="billing-body">
         @if (billing is null)
         {
             <div class="loading">
-                <p class="db-text-muted">Loading billing information...</p>
+                <p class="db-text-muted">@Loc["billing_loading"]</p>
             </div>
         }
         else
@@ -49,25 +51,25 @@
 
                 @if (billing.Plan == PlanTierLimits.Free)
                 {
-                    <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">Upgrade to Pro</a>
+                    <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">@Loc["billing_btn_upgrade"]</a>
                 }
                 else
                 {
                     @if (subscription?.Status == SubscriptionStatus.Cancelled)
                     {
                         <p class="db-text-warning" style="margin-top:1rem">
-                            Your subscription is cancelled. Access continues until @subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy").
+                            @string.Format(Loc["billing_cancelled"], subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy"))
                         </p>
-                        <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">Renew Subscription</a>
+                        <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">@Loc["billing_btn_renew"]</a>
                     }
                     else
                     {
                         <div class="summary-card__actions">
-                            <a href="/pricing" class="db-btn db-btn--secondary">Change Plan</a>
+                            <a href="/pricing" class="db-btn db-btn--secondary">@Loc["billing_btn_change"]</a>
                             <form method="post" style="display:inline">
                                 <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
                                 <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
-                                    Cancel Subscription
+                                    @Loc["billing_btn_cancel"]
                                 </button>
                             </form>
                         </div>
@@ -76,11 +78,11 @@
             </div>
 
             <div class="history">
-                <h2 class="db-h2">Payment History</h2>
+                <h2 class="db-h2">@Loc["billing_history_title"]</h2>
 
                 @if (billing.Events.Count == 0)
                 {
-                    <p class="db-text-muted">No payment history yet.</p>
+                    <p class="db-text-muted">@Loc["billing_history_empty"]</p>
                 }
                 else
                 {
@@ -95,12 +97,12 @@
                                         @evt.CreatedAt.ToString("MMM dd, yyyy")
                                         @if (evt.Amount > 0)
                                         {
-                                            <span>Â· @evt.Amount.ToString("F2") @evt.Currency</span>
+                                            <span>· @evt.Amount.ToString("F2") @evt.Currency</span>
                                         }
                                     </div>
                                     @if (!string.IsNullOrEmpty(evt.InvoiceUrl))
                                     {
-                                        <a href="@evt.InvoiceUrl" target="_blank" class="db-link">View Receipt</a>
+                                        <a href="@evt.InvoiceUrl" target="_blank" class="db-link">@Loc["billing_view_receipt"]</a>
                                     }
                                 </div>
                             </div>
@@ -136,21 +138,21 @@
 
     private string planDescription => billing?.Plan switch
     {
-        PlanTierLimits.Pro => "For creators & professionals",
-        PlanTierLimits.Studio => "For teams & enterprises",
-        _ => "Great for getting started"
+        PlanTierLimits.Pro => Loc["billing_pro_desc"],
+        PlanTierLimits.Studio => Loc["billing_studio_desc"],
+        _ => Loc["billing_free_desc"]
     };
 
     private string[] planFeatures => billing?.Plan switch
     {
-        PlanTierLimits.Pro => new[] { "20 GB per file", "200 GB / month", "30-day expiry", "Password protection", "No ads", "Priority support" },
-        PlanTierLimits.Studio => new[] { "100 GB per file", "2 TB / month", "90-day expiry", "Custom branding", "API access", "Dedicated support" },
-        _ => new[] { "5 GB per file", "15 GB / month", "2-hour expiry", "Lossless quality", "End-to-end encryption" }
+        PlanTierLimits.Pro => Loc["billing_feat_pro"].Value.Split(" | "),
+        PlanTierLimits.Studio => Loc["billing_feat_studio"].Value.Split(" | "),
+        _ => Loc["billing_feat_free"].Value.Split(" | ")
     };
 
     private string billingPeriod => subscription?.BillingPeriod ?? BillingPeriods.Monthly;
 
-    private string billingPeriodLabel => billing?.Plan == PlanTierLimits.Free ? "/ forever" : $"/ {billingPeriod}";
+    private string billingPeriodLabel => billing?.Plan == PlanTierLimits.Free ? Loc["billing_period_label"] : $"/ {billingPeriod}";
 
     private string eventDotClass(string eventType) => eventType switch
     {
@@ -180,5 +182,3 @@
         subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
     }
 }
-
-

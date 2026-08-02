@@ -1,6 +1,9 @@
 @inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
 @using System.Security.Claims
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.Resources.Shared> Loc
+@using QuickShare.Components.Shared
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
@@ -23,14 +26,15 @@
         </a>
         <div class="db-navbar__nav">
             <div class="db-nav-menu">
-                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">Send</a>
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">@Loc["nav_send"]</a>
                 <a class="db-nav-menu__item @NavActive(path.StartsWith(RoutePaths.P2p))" href="/p2p/send">P2P</a>
-                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Pricing)" href="/pricing">Pricing</a>
-                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Files)" href="/files">Files</a>
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Pricing)" href="/pricing">@Loc["nav_pricing"]</a>
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Files)" href="/files">@Loc["nav_files"]</a>
             </div>
         </div>
         <div class="db-navbar__spacer"></div>
         <div class="db-navbar__actions">
+            <LanguageSwitch />
             @if (isAuthenticated)
             {
                 <div class="db-dropdown">
@@ -48,14 +52,14 @@
                             <span class="layout-user-info__email">@userEmail</span>
                         </div>
                         <div class="db-dropdown__separator"></div>
-                        <a href="/account" class="db-dropdown__item">Account</a>
-                        <a href="/logout" hx-boost="false" class="db-dropdown__item">Sign out</a>
+                        <a href="/account" class="db-dropdown__item">@Loc["nav_account"]</a>
+                        <a href="/logout" hx-boost="false" class="db-dropdown__item">@Loc["nav_logout"]</a>
                     </div>
                 </div>
             }
             else
             {
-                <a href="/login" class="db-btn db-btn--primary db-btn--sm">Sign in</a>
+                <a href="/login" class="db-btn db-btn--primary db-btn--sm">@Loc["nav_login"]</a>
             }
         </div>
         <button class="db-navbar__toggle" aria-label="Menu">
@@ -67,7 +71,7 @@
         </button>
     </nav>
 
-    @* Cookie consent banner — shows until user accepts/rejects AdMob cookies *@
+    @* Cookie consent banner *@
     <CookieConsent />
 
     @Body

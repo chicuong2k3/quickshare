@@ -17,6 +17,10 @@ using QuickShare.Infrastructure.Storage;
 using Npgsql;
 using Wolverine.ErrorHandling;
 using Serilog;
+using Serilog.Enrichers.Span;
+using Prometheus;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 
 // ── Load .env file (if present) for local development ──
@@ -81,7 +85,9 @@ if (envFilePath is not null)
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
-    loggerConfiguration.ReadFrom.Configuration(context.Configuration);
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.WithSpan();
 });
 
 const string DefaultConnectionName = "DefaultConnection";
@@ -190,8 +196,6 @@ builder.Host.UseWolverine(opts =>
     opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
     opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
     opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
-    opts.UseEntityFrameworkCoreTransactions();
-    opts.Policies.AutoApplyTransactions();
 }, ExtensionDiscovery.ManualOnly);
 
 // ── API (FastEndpoints + Swagger) ──
@@ -220,7 +224,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.AddRazorComponents()
     .AddHtmx();
 builder.Services.AddAntiforgery();
-builder.Services.AddLocalization();
+builder.Services.AddLocalization(opts => opts.ResourcesPath = "Resources");
 
 // ── Unified cookie auth + Google OAuth ──
 // A single AddAuthentication call serves both the API (401/403 on /api/*) and the
@@ -286,9 +290,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
-PlanTierLimits.Initialize(builder.Configuration);
+// ── Observability: health checks + Prometheus metrics ──
+var healthChecksBuilder = builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"]);
 
+if (hasR2)
+{
+    var r2HealthUri = new Uri($"https://{r2Options.AccountId}.r2.cloudflarestorage.com");
+    healthChecksBuilder.AddUrlGroup(r2HealthUri, name: "r2", tags: ["storage"]);
+}
 var app = builder.Build();
+
 
 using (var scope = app.Services.CreateScope())
 {
@@ -328,6 +340,11 @@ PlanTierLimits.InitializeCache(cacheService);
 
 app.UseExceptionHandler();
 
+// ── Observability endpoints (before auth — metrics are internal) ──
+app.UseHttpMetrics(); // capture HTTP-level metrics (duration, status code, etc.)
+app.MapHealthChecks("/health");
+app.MapMetrics();
+
 
 
 // Must be early — before auth, before static files.
@@ -340,6 +357,16 @@ if (app.Environment.IsDevelopment())
 
 // Serve wwwroot/ (and optimized static assets if a manifest is present).
 app.UseStaticFiles();
+
+// ── Localization (cookie-based culture, falls back to Accept-Language header) ──
+var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("vi") };
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures,
+    RequestCultureProviders = { new CookieRequestCultureProvider() }
+});
 
 app.UseMiddleware<RateLimitingMiddleware>();
 

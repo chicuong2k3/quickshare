@@ -3,9 +3,11 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
 @using QuickShare.Infrastructure.Caching
+@using Microsoft.Extensions.Localization
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
+@inject IStringLocalizer<QuickShare.Resources.Shared> Loc
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
@@ -35,18 +37,18 @@
     var studioYearly = FormatPrice(Config.GetValue<int>(PricingKeys.StudioYearly, 239), currency);
 }
 
-<PageTitle>Pricing â€” QuickShareCloud</PageTitle>
+<PageTitle>@Loc["pricing_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
-    @* â”€â”€ HERO â”€â”€ *@
+    @* HERO *@
     <section class="hero">
-        <span class="tag">Simple pricing</span>
-        <h1 class="db-h1">Simple, transparent pricing</h1>
-        <p class="db-p db-text-muted">Choose the plan that fits your needs. No hidden fees. Cancel anytime.</p>
+        <span class="tag">@Loc["pricing_tag"]</span>
+        <h1 class="db-h1">@Loc["pricing_h1"]</h1>
+        <p class="db-p db-text-muted">@Loc["pricing_sub"]</p>
     </section>
 
-    @* â”€â”€ BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) â”€â”€ *@
+    @* BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) *@
     <section id="pricing-body"
              x-data="{ billing: '@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)' }"
              x-effect="const u = new URL(window.location); billing === 'yearly' ? u.searchParams.set('billing','yearly') : u.searchParams.delete('billing'); history.replaceState({}, '', u)">
@@ -55,13 +57,13 @@
                 <button type="button"
                         x-on:click="billing = 'monthly'"
                         x-bind:class="billing === 'monthly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
-                    Monthly
+                    @Loc["pricing_monthly"]
                 </button>
                 <button type="button"
                         x-on:click="billing = 'yearly'"
                         x-bind:class="billing === 'yearly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
-                    Yearly
-                    <span class="tag">Save 20%</span>
+                    @Loc["pricing_yearly"]
+                    <span class="tag">@Loc["pricing_save"]</span>
                 </button>
             </div>
         </div>
@@ -71,37 +73,37 @@
             @* Free Plan *@
             <div class="card">
                 <div class="card__head">
-                    <h3 class="db-h3">Free</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">Great for getting started</p>
+                    <h3 class="db-h3">@Loc["pricing_free_name"]</h3>
+                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_free_desc"]</p>
                 </div>
                 <div class="card__price">
                     <div class="price-amount">$0</div>
-                    <div class="price-period db-text-muted">Forever free</div>
+                    <div class="price-period db-text-muted">@Loc["pricing_free_price_period"]</div>
                 </div>
                 @if (!isAuthenticated)
                 {
-                    <a href="/login" class="db-btn db-btn--secondary">Get Started</a>
+                    <a href="/login" class="db-btn db-btn--secondary">@Loc["btn_get_started"]</a>
                 }
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>5 GB</strong> per file</span>
+                        <span>@Loc["pricing_free_feat_size"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>15 GB</strong> / month</span>
+                        <span>@Loc["pricing_free_feat_monthly"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>Files expire after <strong>2 hours</strong></span>
+                        <span>@Loc["pricing_free_feat_expiry"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>Lossless</strong> quality — no compression</span>
+                        <span>@Loc["pricing_free_feat_lossless"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>End-to-end <strong>encryption</strong></span>
+                        <span>@Loc["pricing_free_feat_e2e"]</span>
                     </div>
                 </div>
             </div>
@@ -109,92 +111,92 @@
             @* Pro Plan *@
             <div class="card">
                 <div class="card__head">
-                    <h3 class="db-h3">Pro</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">For creators &amp; professionals</p>
+                    <h3 class="db-h3">@Loc["pricing_pro_name"]</h3>
+                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_pro_desc"]</p>
                 </div>
                 <div class="card__price">
                     <div x-show="billing === 'monthly'" class="pricing-monthly">
                         <div class="price-amount">@proMonthly</div>
-                        <div class="price-period db-text-muted">Billed monthly</div>
+                        <div class="price-period db-text-muted">@Loc["pricing_pro_billed_monthly"]</div>
                     </div>
                     <div x-show="billing === 'yearly'" class="pricing-yearly">
                         <div class="price-amount">@proYearly</div>
-                        <div class="price-period db-text-muted">Billed yearly</div>
+                        <div class="price-period db-text-muted">@Loc["pricing_pro_billed_yearly"]</div>
                     </div>
                 </div>
                 @if (currentPlanRank < ProPlanRank)
                 {
                     <a href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
                        x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
-                       class="db-btn db-btn--primary">Start Free Trial</a>
+                       class="db-btn db-btn--primary">@Loc["btn_start_free_trial"]</a>
                 }
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>20 GB</strong> per file</span>
+                        <span>@Loc["pricing_pro_feat_size"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>200 GB</strong> / month</span>
+                        <span>@Loc["pricing_pro_feat_monthly"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>30-day</strong> expiry</span>
+                        <span>@Loc["pricing_pro_feat_expiry"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>Password</strong> protection</span>
+                        <span>@Loc["pricing_pro_feat_password"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>No ads</strong></span>
+                        <span>@Loc["pricing_pro_feat_noads"]</span>
                     </div>
                 </div>
             </div>
 
             @* Studio Plan (Most Popular) *@
             <div class="card card--popular">
-                <span class="card__badge">Most Popular</span>
+                <span class="card__badge">@Loc["pricing_card_badge"]</span>
                 <div class="card__head">
-                    <h3 class="db-h3">Studio</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">For teams &amp; enterprises</p>
+                    <h3 class="db-h3">@Loc["pricing_studio_name"]</h3>
+                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_studio_desc"]</p>
                 </div>
                 <div class="card__price">
                     <div x-show="billing === 'monthly'" class="pricing-monthly">
                         <div class="price-amount">@studioMonthly</div>
-                        <div class="price-period db-text-muted">Billed monthly</div>
+                        <div class="price-period db-text-muted">@Loc["pricing_studio_billed_monthly"]</div>
                     </div>
                     <div x-show="billing === 'yearly'" class="pricing-yearly">
                         <div class="price-amount">@studioYearly</div>
-                        <div class="price-period db-text-muted">Billed yearly</div>
+                        <div class="price-period db-text-muted">@Loc["pricing_studio_billed_yearly"]</div>
                     </div>
                 </div>
                 @if (currentPlanRank < StudioPlanRank)
                 {
                     <a href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
                        x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
-                       class="db-btn db-btn--primary">Start Free Trial</a>
+                       class="db-btn db-btn--primary">@Loc["btn_start_free_trial"]</a>
                 }
                 <div class="features">
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>100 GB</strong> per file</span>
+                        <span>@Loc["pricing_studio_feat_size"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>2 TB</strong> / month</span>
+                        <span>@Loc["pricing_studio_feat_monthly"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>90-day</strong> expiry</span>
+                        <span>@Loc["pricing_studio_feat_expiry"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>Custom</strong> branding</span>
+                        <span>@Loc["pricing_studio_feat_branding"]</span>
                     </div>
                     <div class="feature">
                         <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>API</strong> access</span>
+                        <span>@Loc["pricing_studio_feat_api"]</span>
                     </div>
                 </div>
             </div>
@@ -203,11 +205,11 @@
     </section>
 
 
-    @* â”€â”€ FAQ â”€â”€ *@
+    @* FAQ *@
     <section class="faq">
         <div class="faq__head">
-            <h2 class="db-h2">Frequently Asked Questions</h2>
-            <p class="db-text-muted" style="margin-top: 0.75rem">Get answers to common questions about our plans</p>
+            <h2 class="db-h2">@Loc["pricing_faq_title"]</h2>
+            <p class="db-text-muted" style="margin-top: 0.75rem">@Loc["pricing_faq_sub"]</p>
         </div>
         @foreach (var (q, a) in faqs)
         {
@@ -223,13 +225,13 @@
         }
     </section>
 
-    @* â”€â”€ CTA â”€â”€ *@
+    @* CTA *@
     <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
-        <h3 class="cta__title">Ready to get started?</h3>
-        <p class="db-text-muted">Start free, no credit card required. Pro and Studio include a 14-day trial.</p>
+        <h3 class="cta__title">@Loc["pricing_cta_title"]</h3>
+        <p class="db-text-muted">@Loc["pricing_cta_sub"]</p>
         <a href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
            x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')"
-           class="db-btn db-btn--primary">Get Started</a>
+           class="db-btn db-btn--primary">@Loc["btn_get_started"]</a>
     </section>
 
 </PageWrapper>
@@ -259,17 +261,15 @@
         return $"{currency}{amount}";
     }
 
-    private static readonly (string Question, string Answer)[] faqs = new[]
+    private (string Question, string Answer)[] faqs => new[]
     {
-        ("What's the catch with Free tier?", "Free tier is instant delivery — your file stays available for 2 hours. That's enough time for the recipient to download, even large files. After that, it's permanently deleted. This lets us offer huge 5 GB transfers for free. Need longer? Upgrade to Pro."),
-        ("Are my files compressed or reduced in quality?", "Never. What you upload is exactly what the recipient downloads — byte for byte. No compression, no re-encoding, no 'storage saver.' Photographers and video editors trust us for this reason."),
-        ("How fast are downloads?", "Files transfer directly through Cloudflare's global edge network. No server bottleneck, no throttling. Your recipient's connection speed is the only limit."),
-        ("Can I upgrade or downgrade anytime?", "Yes! Change your plan anytime. Upgrades take effect immediately, and downgrades apply at the end of your billing cycle."),
-        ("Is there a free trial?", "Absolutely. All paid plans include a 14-day free trial with full access. No credit card required to start."),
-        ("Do recipients need an account?", "No. Recipients download files directly in their browser — no account, no app, no signup required. Works on any device."),
-        ("What happens to my files if I cancel?", "Your files remain accessible for 7 days after cancellation. Download them anytime during this period."),
-        ("Do you offer refunds?", "We offer a full refund within 30 days of purchase if you're not satisfied. After that, you can cancel anytime with no penalties."),
+        (Loc["pricing_faq_q1"].Value, Loc["pricing_faq_a1"].Value),
+        (Loc["pricing_faq_q2"].Value, Loc["pricing_faq_a2"].Value),
+        (Loc["pricing_faq_q3"].Value, Loc["pricing_faq_a3"].Value),
+        (Loc["pricing_faq_q4"].Value, Loc["pricing_faq_a4"].Value),
+        (Loc["pricing_faq_q5"].Value, Loc["pricing_faq_a5"].Value),
+        (Loc["pricing_faq_q6"].Value, Loc["pricing_faq_a6"].Value),
+        (Loc["pricing_faq_q7"].Value, Loc["pricing_faq_a7"].Value),
+        (Loc["pricing_faq_q8"].Value, Loc["pricing_faq_a8"].Value),
     };
 }
-
-
