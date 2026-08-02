@@ -7,48 +7,82 @@ sources: []
 
 > **Canonical contract.** This SPEC and the files in `companions:` are the complete, preservation-validated contract for what to build, test, and validate.
 
-# TeleCloud Pricing Page
+# QuickShareCloud — Pricing & Tier Limits (Revamp 2026-08)
 
 ## Why
 
-TeleCloud currently operates as an anonymous, free file-sharing service with no monetization path. Adding a pricing page captures the opportunity to present TeleCloud as a tiered SaaS product — converting casual free users into paying subscribers while establishing the product's value proposition. Modeled after WeTransfer's proven tier structure, the page serves as both a marketing surface and the entry point for future subscription conversion, even before the full auth and payment infrastructure is built.
+Current pricing is not competitive. Free tier (100 MB/file, 2 GB/month, 7-day expiry) loses to Google Drive (15 GB free, permanent) and Telegram (2 GB/file, unlimited storage) on every metric that matters to a first-time user. The pricing page still references a deprecated 5-tier USD model (Free/Starter/Ultimate/Teams/Enterprise) that never shipped.
+
+**Strategic pivot:** Stop competing on storage GB (unwinnable). Compete on *transfer capability* — file size, speed, lossless quality, and zero-recipient-friction. Free tier becomes "instant delivery" (files auto-delete after short TTL), paid tiers are "storage + branding."
+
+## Competitive Differentiators (non-storage)
+
+| Differentiator | Google Drive | Telegram | **QuickShareCloud** |
+|---|---|---|---|
+| Max file size (free) | 15 GB total, no per-file cap but slow | 2 GB hard cap | **5 GB** |
+| Share before upload completes | No — must wait for progress bar | No | **Yes** (streaming presigned URL) |
+| Recipient needs account | Yes (Google) | Yes (Telegram app) | **No** — browser only |
+| Lossless (no re-encode) | Photos: no. Drive: yes but slow. | Default: compresses | **Always** — byte-identical |
+| E2E encryption | No (server holds keys) | Cloud chat: no | **Yes** — AES-256-GCM, key in URL fragment |
+| Download speed bottleneck | Google edge | Telegram DC | **Cloudflare global edge** (R2 presigned URL) |
 
 ## Capabilities
 
-- **CAP-1**
-  - **intent:** Display a pricing page at `/pricing` showing the 3 individual plan tiers (Free, Starter, Ultimate) in a comparison layout with a monthly/yearly billing toggle. Teams and Enterprise tiers are hidden until auth/team infrastructure exists.
-  - **success:** Page renders at `/pricing` with all 3 visible tiers, correct features per tier, correct prices for both monthly and yearly billing. Toggle switches displayed prices and the URL updates to reflect the selected billing period.
+### CAP-1: Free tier — instant delivery model
+- **intent:** Free users can send files up to 5 GB. Files auto-expire after 2 hours (configurable). No long-term storage — this is "send and forget."
+- **success:** Free user uploads 5 GB file, gets share link. Recipient downloads. After TTL expires, link returns 410. R2 objects reclaimed by background job.
 
-- **CAP-2**
-  - **intent:** Present a feature comparison table showing which capabilities are available per tier, with visual distinction between included and unavailable features. Team-gated features show "Coming Soon" since Teams/Enterprise tiers are hidden.
-  - **success:** Each feature row shows a checkmark (available) or dash/x (unavailable) per tier. Team-gated features show "Coming Soon" badge. The table is visually scannable and responsive across device sizes.
+### CAP-2: Paid tiers — real storage
+- **intent:** Pro (30-day) and Studio (90-day) tiers offer real cloud storage with higher limits. Files persist for the full duration. Password protection, branding, and higher concurrency included.
+- **success:** Pro/Studio user uploads file, link stays alive for full expiry period. Recipient can download anytime within window. Limits enforced server-side.
 
-- **CAP-3**
-  - **intent:** Provide distinct call-to-action buttons per tier — "Get Started" for Free tier (links to /upload page), "Subscribe" for paid tiers (routes to in-app checkout flow to be built).
-  - **success:** Each tier card has a uniquely styled CTA button. Free CTA navigates to the existing upload page. Paid CTAs navigate to the in-app checkout route. Ultimate CTA is visually emphasized as the recommended tier.
+### CAP-3: Config-driven limits
+- **intent:** All tier limits (file size, monthly bandwidth, expiry duration, downloads, concurrency) are configurable in `appsettings.json` under `Pricing:Limits`. No hardcoded magic numbers.
+- **success:** Changing a value in appsettings.json changes the enforced limit at runtime (after restart). `PlanTierLimits` reads from `IConfiguration` with sensible defaults.
 
-- **CAP-4**
-  - **intent:** Include an FAQ section answering common questions about plans, cancellation, over-limit behavior, payment methods, and recipient requirements.
-  - **success:** FAQ section with expandable/collapsible items. Answers are consistent with tier definitions in `pricing-tiers.md`. All stated questions from the WeTransfer reference FAQ are addressed.
+### CAP-4: Pricing page reflects current tiers
+- **intent:** `/pricing` page displays Free/Pro/Studio with correct limits, prices in VND, and competitive messaging (file size, no-recipient-account, lossless, E2E).
+- **success:** Page renders 3 tiers. Yearly toggle works (Alpine.js, no server round-trip). Feature lists match `PlanTierLimits`. CTA buttons route correctly.
+
+### CAP-5: Lossless quality messaging
+- **intent:** Marketing copy and download page communicate that files are never re-encoded, compressed, or altered. "What you send is what they receive — byte for byte."
+- **success:** Home page and pricing page include lossless messaging. Download page includes "byte-identical" verification info in the E2E panel.
+
+## Tier Limits (source of truth: `pricing-tiers.md`)
+
+| Limit | Free | Pro | Studio |
+|---|---|---|---|
+| File size | 5 GB | 20 GB | 100 GB |
+| Monthly bandwidth | 15 GB | 200 GB | 2 TB |
+| Expiry | 2 hours | 30 days | 90 days |
+| Max downloads | 10 | 100 | Unlimited |
+| Max concurrency | 2 | 5 | 10 |
+| Price/month (VND) | 0 | 49,000 | 199,000 |
+| Price/year (VND) | 0 | 490,000 | 1,990,000 |
 
 ## Constraints
 
-- Must use RizzyUI Razor components exclusively for UI elements: RzButton (instead of raw `<button>`/`<a>`), RzBadge (for status indicators), RzCard (card containers), RzTable (comparison table), RzSeparator, RzSpinner, etc. from [rizzyui.jalex.io](https://rizzyui.jalex.io). Plain `<div>`, `<span>`, `<p>`, `<header>`, `<footer>`, `<main>`, `<nav>` wrappers and `<svg>` icons are allowed for layout/structure only. Tailwind CSS v4 remains for spacing, alignment, and overrides. Alpine.js for client interactivity (billing toggle, FAQ accordion).
-- File size limits vary by tier: Free = 200 MB, Starter = 750 MB, Ultimate = 1.5 GB. Telegram's 2 GB ceiling means the Ultimate 1.5 GB limit keeps headroom. All tiers require authentication to upload — anonymous upload is disabled.
-- Tier definitions, prices, and feature matrices are defined in `pricing-tiers.md` companion as the single source of truth. The page reads from this canonical data — no hardcoding prices or features in Razor components.
+- All limits MUST be configurable in `appsettings.json` under `Pricing:Limits:<tier>:<field>`. `PlanTierLimits` reads config with fallback defaults.
+- Expiry is stored as `TimeSpan` internally (not `int` days). Free tier uses hours, paid tiers use days — unified under one type.
+- `CommitR2Handler` and `StartR2Handler` call `PlanTierLimits.GetMaxExpiry(plan)` returning `TimeSpan`, applied to `ExpiresAt`.
+- `ExpiresAt` column remains `DateTime` — no schema change needed.
+- Pricing page uses Alpine.js for billing toggle (static data, no server round-trip per AGENTS.md HTMX rule).
+- Must use VND currency. Prices are integers (no decimals for VND).
 
 ## Non-goals
 
-- No payment processing, subscription lifecycle management, or billing infrastructure. The Subscribe button triggers checkout navigation only — the actual payment flow (Stripe, Paddle, etc.) is a separate capability.
-- No backend enforcement of tier limits on uploads/downloads. The pricing page is informational/marketing. Per-tier rate limiting, quota tracking, and enforcement require auth and subscription state.
-- No admin dashboard or CMS for managing tiers and prices. Tier data is defined in the `pricing-tiers.md` companion and compiled at build time.
-- No user authentication or account creation. The pricing page is accessible to anonymous visitors. Free tier CTA links to the existing anonymous upload flow.
+- No changes to P2P limits (P2P is same-WiFi only, not in competitive scope).
+- No changes to payment processing, subscription lifecycle, or PayOS integration.
+- No Team/Enterprise tiers at this time.
+- No per-user configurable expiry (sender picks from plan ceiling, not arbitrary).
 
 ## Success signal
 
-A visitor navigates to `/pricing`, sees 3 tiers (Free, Starter, Ultimate) with their features and prices, toggles between monthly and yearly billing (prices update correctly), clicks a CTA button that routes to the appropriate destination (/upload for Free, in-app checkout route for paid), and can expand FAQ items to read answers. The page renders correctly on mobile, tablet, and desktop viewports using the existing RizzyUI + Tailwind stack.
+Free user uploads 5 GB video, sends link via Zalo, recipient downloads immediately while upload still in progress. Link returns 410 after 2 hours. Pro user uploads 20 GB project, link stays alive 30 days with password protection. Pricing page at `/pricing` shows correct VND prices, limits match config. All limits changeable via `appsettings.json` without recompilation.
 
 ## Assumptions
 
-- Pricing page is purely static informational content. All tier data (prices, features, limits) is compiled into the app at build time from `pricing-tiers.md` / a JSON config. No runtime API calls are needed to render tiers.
-- Monthly/Yearly toggle applies a 20% discount for yearly billing (standard SaaS convention). The WeTransfer reference input shows the billing toggle but does not specify a discount rate.
+- R2 storage cost (₫390/GB-month) makes free tier "instant delivery" model economically viable — files exist for minutes/hours, not days.
+- Cloudflare R2 egress is $0 — download bandwidth costs nothing.
+- Free tier users are ad-supported; ad revenue covers the near-zero storage cost of 2-hour TTL.
+- Streaming upload (share before upload completes) is already implemented via presigned URLs — this spec does not add it, only markets it.

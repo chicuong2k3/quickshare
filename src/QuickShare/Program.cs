@@ -16,6 +16,66 @@ using Npgsql;
 using Wolverine.ErrorHandling;
 using Serilog;
 
+
+// ── Load .env file (if present) for local development ──
+// Docker compose injects these as env vars; local `dotnet run` needs them loaded manually.
+// Walk up from the current directory to find .env (repo root may differ from project dir).
+static string? FindEnvFile()
+{
+    var dir = Directory.GetCurrentDirectory();
+    for (var i = 0; i < 6; i++)
+    {
+        var candidate = Path.Combine(dir, ".env");
+        if (File.Exists(candidate))
+            return candidate;
+        var parent = Directory.GetParent(dir);
+        if (parent is null)
+            break;
+        dir = parent.FullName;
+    }
+    return null;
+}
+
+
+// Convert UPPER_SNAKE_CASE to PascalCase (e.g. "ACCESS_KEY_ID" → "AccessKeyId")
+static string ToPascalCase(string snake)
+{
+    var parts = snake.Split('_', StringSplitOptions.RemoveEmptyEntries);
+    return string.Concat(parts.Select(p =>
+        char.ToUpperInvariant(p[0]) + p[1..].ToLowerInvariant()));
+}
+
+var envFilePath = FindEnvFile();
+if (envFilePath is not null)
+{
+    foreach (var line in File.ReadAllLines(envFilePath))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#'))
+            continue;
+        var eqIndex = trimmed.IndexOf('=');
+        if (eqIndex <= 0)
+            continue;
+        var key = trimmed[..eqIndex].Trim();
+        var value = trimmed[(eqIndex + 1)..].Trim();
+        if (string.IsNullOrEmpty(value))
+            continue;
+
+        Environment.SetEnvironmentVariable(key, value);
+
+        // Also set .NET-style __ variant so config binding works.
+        // .env uses R2_ACCESS_KEY_ID; .NET expects R2__AccessKeyId → R2:AccessKeyId.
+        var firstUnderscore = key.IndexOf('_');
+        if (firstUnderscore > 0)
+        {
+            var section = key[..firstUnderscore];
+            var propertySnake = key[(firstUnderscore + 1)..];
+            var dotnetKey = $"{section}__{ToPascalCase(propertySnake)}";
+            Environment.SetEnvironmentVariable(dotnetKey, value);
+        }
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
@@ -39,7 +99,9 @@ var configuredConnectionString = builder.Configuration.GetConnectionString(Defau
 var connectionBuilder = new NpgsqlConnectionStringBuilder(configuredConnectionString)
 {
     KeepAlive = DatabaseKeepAliveSeconds,
-    TcpKeepAlive = true
+    TcpKeepAlive = true,
+    TcpKeepAliveTime = 30,
+    TcpKeepAliveInterval = 10,
 };
 var connectionString = connectionBuilder.ConnectionString;
 // Shared DataProtection keyring (same ApplicationName + KeyPath the two projects used before).
@@ -207,6 +269,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddAuthorization();
+
+PlanTierLimits.Initialize(builder.Configuration);
 
 var app = builder.Build();
 

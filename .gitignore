@@ -4,3 +4,7 @@ obj/
 appsettings.*.json
 !appsettings.Development.json
 .vs/
+
+
+# Secrets — NEVER commit
+.env

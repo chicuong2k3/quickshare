@@ -143,9 +143,9 @@
 
     private string[] planFeatures => billing?.Plan switch
     {
-        PlanTierLimits.Pro => new[] { "1 GB per file", "50 GB / month", "100 transfers/month", "Password protection", "Priority support" },
-        PlanTierLimits.Studio => new[] { "20 GB per file", "500 GB / month", "Unlimited transfers", "Custom branding", "API access", "Dedicated support" },
-        _ => new[] { "100 MB per file", "2 GB / month", "5 transfers/month", "7-day expiry", "End-to-end encryption" }
+        PlanTierLimits.Pro => new[] { "20 GB per file", "200 GB / month", "30-day expiry", "Password protection", "No ads", "Priority support" },
+        PlanTierLimits.Studio => new[] { "100 GB per file", "2 TB / month", "90-day expiry", "Custom branding", "API access", "Dedicated support" },
+        _ => new[] { "5 GB per file", "15 GB / month", "2-hour expiry", "Lossless quality", "End-to-end encryption" }
     };
 
     private string billingPeriod => subscription?.BillingPeriod ?? BillingPeriods.Monthly;

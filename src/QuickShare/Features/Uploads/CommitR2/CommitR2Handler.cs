@@ -47,7 +47,7 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             ShareCode = shareCode,
             MaxDownloads = PlanTierLimits.GetMaxDownloads(user.Plan),
             StoragePath = cmd.ObjectKey,
-            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(user.Plan)),
+            ExpiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(user.Plan)),
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null
         };
 

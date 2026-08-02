@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+
 namespace QuickShare.Infrastructure;
 
 public static class PlanTierLimits
@@ -7,14 +9,27 @@ public static class PlanTierLimits
     public const string Studio = "studio";
     public const string Anonymous = "anonymous";
 
-    public static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) GetMonthlyLimits(string plan)
+    private const string ConfigPrefix = "Pricing:Limits";
+    private const string MaxFileSizeKey = "MaxFileSizeBytes";
+    private const string MaxMonthlyBytesKey = "MaxMonthlyBytes";
+    private const string MaxExpiryHoursKey = "MaxExpiryHours";
+    private const string MaxExpiryDaysKey = "MaxExpiryDays";
+    private const string MaxDownloadsKey = "MaxDownloads";
+    private const string MaxConcurrencyKey = "MaxConcurrency";
+
+    private static IConfiguration? _config;
+
+    public static void Initialize(IConfiguration config) => _config = config;
+
+    /// <summary>Returns the max expiry as a TimeSpan. Free tier uses hours; paid tiers use days.</summary>
+    public static TimeSpan GetMaxExpiry(string plan)
     {
         return (plan ?? string.Empty).ToLowerInvariant() switch
         {
-            Free => (MaxBytesPerMonth: 2_147_483_648L, MaxTransfersPerMonth: null),   // 2 GB
-            Pro => (MaxBytesPerMonth: 53_687_091_200L, MaxTransfersPerMonth: null),   // 50 GB
-            Studio => (MaxBytesPerMonth: 536_870_912_000L, MaxTransfersPerMonth: null), // 500 GB
-            _ => (MaxBytesPerMonth: 2_147_483_648L, MaxTransfersPerMonth: null),
+            Free => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
+            Pro => TimeSpan.FromDays(GetInt(Pro, MaxExpiryDaysKey, 30)),
+            Studio => TimeSpan.FromDays(GetInt(Studio, MaxExpiryDaysKey, 90)),
+            _ => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
         };
     }
 
@@ -22,21 +37,21 @@ public static class PlanTierLimits
     {
         return (plan ?? string.Empty).ToLowerInvariant() switch
         {
-            Free => 104_857_600L,            // 100 MB
-            Pro => 2_147_483_648L,           // 2 GB
-            Studio => 21_474_836_480L,       // 20 GB
-            _ => 104_857_600L,
+            Free => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
+            Pro => GetLong(Pro, MaxFileSizeKey, 21_474_836_480L),
+            Studio => GetLong(Studio, MaxFileSizeKey, 107_374_182_400L),
+            _ => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
         };
     }
 
-    public static int GetMaxExpiryDays(string plan)
+    public static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) GetMonthlyLimits(string plan)
     {
         return (plan ?? string.Empty).ToLowerInvariant() switch
         {
-            Free => 7,
-            Pro => 30,
-            Studio => 90,
-            _ => 7,
+            Free => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
+            Pro => (GetLong(Pro, MaxMonthlyBytesKey, 214_748_364_800L), null),
+            Studio => (GetLong(Studio, MaxMonthlyBytesKey, 2_199_023_255_552L), null),
+            _ => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
         };
     }
 
@@ -44,10 +59,21 @@ public static class PlanTierLimits
     {
         return (plan ?? string.Empty).ToLowerInvariant() switch
         {
-            Free => 5,
-            Pro => 50,
-            Studio => int.MaxValue, // configurable
-            _ => 5,
+            Free => GetInt(Free, MaxDownloadsKey, 10),
+            Pro => GetInt(Pro, MaxDownloadsKey, 100),
+            Studio => GetInt(Studio, MaxDownloadsKey, int.MaxValue),
+            _ => GetInt(Free, MaxDownloadsKey, 10),
+        };
+    }
+
+    public static int GetMaxConcurrency(string plan)
+    {
+        return (plan ?? string.Empty).ToLowerInvariant() switch
+        {
+            Free => GetInt(Free, MaxConcurrencyKey, 2),
+            Pro => GetInt(Pro, MaxConcurrencyKey, 5),
+            Studio => GetInt(Studio, MaxConcurrencyKey, 10),
+            _ => GetInt(Free, MaxConcurrencyKey, 2),
         };
     }
 
@@ -62,14 +88,21 @@ public static class PlanTierLimits
         };
     }
 
-    public static int GetMaxConcurrency(string plan)
+    private static double GetDouble(string tier, string key, double fallback)
     {
-        return (plan ?? string.Empty).ToLowerInvariant() switch
-        {
-            Free => 2,
-            Pro => 4,
-            Studio => 6,
-            _ => 2,
-        };
+        var val = _config?.GetValue<double?>($"{ConfigPrefix}:{tier}:{key}");
+        return val ?? fallback;
+    }
+
+    private static int GetInt(string tier, string key, int fallback)
+    {
+        var val = _config?.GetValue<int?>($"{ConfigPrefix}:{tier}:{key}");
+        return val ?? fallback;
+    }
+
+    private static long? GetLong(string tier, string key, long? fallback)
+    {
+        var val = _config?.GetValue<long?>($"{ConfigPrefix}:{tier}:{key}");
+        return val ?? fallback;
     }
 }
