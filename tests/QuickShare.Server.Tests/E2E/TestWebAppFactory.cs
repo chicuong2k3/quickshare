@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -30,6 +31,12 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             // factory instance isolates every test class. RemoveAll is required so
             // the Npgsql options from Program.cs are not left registered too
             // (EF forbids two providers in one service provider).
+            // EF Core 10 AddDbContext registers both DbContextOptions<T>
+            // and IDbContextOptionsConfiguration<T>. The latter is what the
+            // Npgsql registration from Program.cs survives in — RemoveAll of
+            // just the options leaves both providers registered and EF throws
+            // "Only a single database provider can be registered".
+            services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<DbContextOptions>();
             services.RemoveAll<AppDbContext>();
