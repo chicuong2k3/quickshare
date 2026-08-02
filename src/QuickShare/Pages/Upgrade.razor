@@ -177,7 +177,20 @@
                             </div>
 
                             <script>
-                                (function() { renderPayOSQR("@payOSResult.QrCode"); })();
+                                (function() {
+                                    var qrContent = "@payOSResult.QrCode";
+                                    // qrcode.min.js loads at the end of <body> (App.razor), so this
+                                    // inline script can run before the library exists. Poll until it
+                                    // is available (max ~5s), then render.
+                                    var attempts = 0;
+                                    var timer = setInterval(function() {
+                                        attempts++;
+                                        if (window.qrcode || attempts >= 50) {
+                                            clearInterval(timer);
+                                            renderPayOSQR(qrContent);
+                                        }
+                                    }, 100);
+                                })();
                             </script>
                         }
                         else if (payOSResult is not null)

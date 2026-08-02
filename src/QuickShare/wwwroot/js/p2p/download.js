@@ -10,7 +10,7 @@
         var RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
         var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = 'Sender did not respond in time. Please try again.';
         var ICE_CONNECT_TIMEOUT_MS = 12000;
-        var ICE_CONNECT_TIMEOUT_MESSAGE = 'Direct device-to-device transfer failed: the two devices are not on the same network (different Wi\u2011Fi, or a NAT/firewall blocks the direct connection). P2P only works when the devices are close together \u2014 e.g. on the same Wi\u2011Fi or hotspot. Ask the sender to use a normal server (R2) transfer instead.';
+        var ICE_CONNECT_TIMEOUT_MESSAGE = 'Direct device-to-device transfer failed: the two devices are not on the same network (different Wi\u2011Fi, or a NAT/firewall blocks the direct connection). To use peer-to-peer, connect both devices to the same Wi\u2011Fi or hotspot, or join a common mesh VPN (e.g. Tailscale, ZeroTier) and reopen this link; otherwise ask the sender to use a normal server (R2) transfer instead.';
 
         window.p2pDownload = (function () {
             var state = {

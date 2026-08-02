@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using QuickShare.Extensions;
 
 namespace QuickShare.Features.Shares.P2P;
 
@@ -17,17 +18,35 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
         Summary(s =>
         {
             s.Summary = "Create a P2P share link (metadata only)";
-            s.Description = "Creates a share link for WebRTC P2P file transfer. No file upload required.";
+            s.Description = "Creates a share link for WebRTC P2P file transfer. No file upload required. Unlimited for all users.";
             s.Responses[201] = "Share created. Returns shareCode and shareLink.";
         });
     }
 
     public override async Task HandleAsync(CreateP2PShareRequest req, CancellationToken ct)
     {
+        // Resolve identity: authenticated user or anonymous (IP-tracked).
+        var db = Resolve<AppDbContext>();
+        var principal = HttpContext.User;
+        var isAuthenticated = principal.Identity?.IsAuthenticated == true;
+
+        User? user = null;
+        if (isAuthenticated)
+        {
+            try
+            {
+                user = await principal.GetUserAsync(db, ct);
+            }
+            catch (InvalidOperationException)
+            {
+                // Unknown user claims — treat as anonymous rather than failing the share.
+                isAuthenticated = false;
+            }
+        }
+
         var shareCode = GenerateShareCode();
 
         // Ensure uniqueness
-        var db = Resolve<AppDbContext>();
         while (await db.Deliveries.AnyAsync(d => d.ShareCode == shareCode, ct))
         {
             shareCode = GenerateShareCode();
@@ -44,7 +63,8 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest, Cre
             MaxDownloads = 0,
             DownloadCount = 0,
             EgressBytes = 0,
-            ExpiresAt = DateTime.UtcNow.AddDays(7)
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            SenderId = isAuthenticated ? user!.Id : null
         };
 
         db.Deliveries.Add(delivery);

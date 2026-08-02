@@ -296,7 +296,62 @@ The download page at `/p2p/d/{ShareCode}` renders one section at a time:
 
 ---
 
-## 6. Server Wiring
+## 6. Direct-Connect Only — No TURN, Bandwidth, & Error UX
+
+### No TURN relay (design decision)
+
+P2P uses **only STUN hole-punching** — no TURN server. The ICE servers in
+`wwwroot/js/p2p/peerConnection.js` are Google STUN endpoints only.
+
+Rationale: a TURN relay carries the **whole file through the server** (roughly
+2× the file in bandwidth once in + once out), which defeats the entire point of
+P2P — the server would consume bandwidth exactly as if it hosted the file, and
+this project already has a normal **R2 upload/download** path for that case.
+Self-hosting TURN on a low-bandwidth VPS is not worthwhile.
+
+**Bandwidth effect:**
+
+| Path | Server bandwidth cost |
+|------|----------------------|
+| P2P direct (STUN hole-punch, works same LAN/low-NAT) | **0** |
+| TURN relay (removed) | ~2× file — never used |
+| Normal server (R2) transfer | 0 egress (R2 egress free) |
+
+### When direct connection works
+
+Direct P2P connects when both devices can reach each other, i.e.:
+
+- on the **same Wi-Fi / LAN**, or **hotspot** (`192.168.x.x` shared network), or
+- joined to a **common mesh VPN** (Tailscale, ZeroTier) so both devices share a
+  virtual LAN IP that WebRTC can reach directly.
+
+### Error UX (already implemented)
+
+When ICE cannot connect (`connectionState` stuck, `failed`, `disconnected`), the
+UI must say **why** — not hang silently:
+
+- `wwwroot/js/p2p/download.js` — ICE-connect timeout (~12 s) + connection-state
+  failure both set an error message:
+
+```text
+Direct device-to-device transfer failed: the two devices are not on the same
+network (different Wi-Fi, or a NAT/firewall blocks the direct connection). To
+use a peer-to-peer, connect both devices to the same Wi-Fi or hotspot, or join
+a common mesh VPN (e.g. Tailscale, ZeroTier) and reopen this link; otherwise
+ask to use a normal server (R2) transfer instead.
+```
+
+  with a **Try again** button.
+- `wwwroot/js/p2p/send.js` — sender-side **20 s** receiver-connect timeout stops
+  showing `Connecting…` forever; receiver shows its own detailed message.
+- There is **no server-side fallback link** for P2P: a P2P share creates a
+  `Delivery` row with **no uploaded file** in `CreateP2PShareEndpoint`, so
+  `/d/{ShareCode}` has nothing to serve. When direct connect fails the user is
+  told to switch to a normal server transfer.
+
+---
+
+## 7. Server Wiring
 
 In `src/QuickShare/Program.cs`:
 
@@ -317,7 +372,7 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 ---
 
-## 7. Configuration
+## 8. Configuration
 
 | Config Key | Purpose | Default |
 |------------|---------|---------|
@@ -327,7 +382,7 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 ---
 
-## 8. Security Model
+## 9. Security Model
 
 | Concern | Protection |
 |---------|-----------|
@@ -341,7 +396,7 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 ---
 
-## 9. File Reference
+## 10. File Reference
 
 | File | Role |
 |------|------|
