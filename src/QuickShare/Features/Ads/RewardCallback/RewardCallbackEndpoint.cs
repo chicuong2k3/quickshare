@@ -1,4 +1,3 @@
-using System.Text.Json;
 using QuickShare.Infrastructure;
 
 namespace QuickShare.Features.Ads.RewardCallback;
@@ -39,6 +38,7 @@ public sealed class RewardCallbackEndpoint : Endpoint<RewardCallbackRequest>
             QuotaAddedMb = (int)(result.QuotaAddedBytes / (1024 * 1024)),
             QuotaNowMb = (int)(result.QuotaNowBytes / (1024 * 1024)),
             AdsRemainingToday = result.AdsRemainingToday,
+            P2pUploadsUnlocked = result.P2pUploadsUnlocked,
             Error = result.Error
         };
 
@@ -46,9 +46,7 @@ public sealed class RewardCallbackEndpoint : Endpoint<RewardCallbackRequest>
             : result.Error?.Contains("limit", StringComparison.OrdinalIgnoreCase) == true ? 429
             : 400;
 
-        HttpContext.Response.StatusCode = statusCode;
-        HttpContext.Response.ContentType = "application/json";
-        await JsonSerializer.SerializeAsync(HttpContext.Response.Body, response, cancellationToken: ct);
+        await Send.ResponseAsync(response, statusCode, ct);
     }
 }
 
@@ -64,5 +62,6 @@ public sealed class RewardCallbackResponse
     public int QuotaAddedMb { get; set; }
     public int QuotaNowMb { get; set; }
     public int AdsRemainingToday { get; set; }
+    public int P2pUploadsUnlocked { get; set; }
     public string? Error { get; set; }
 }

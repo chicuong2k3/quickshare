@@ -1,0 +1,215 @@
+[
+  {
+    "vp": "desktop",
+    "name": "home",
+    "path": "/",
+    "status": 200,
+    "url": "http://localhost:9000/",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "login",
+    "path": "/login",
+    "status": 200,
+    "url": "http://localhost:9000/login",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "pricing",
+    "path": "/pricing",
+    "status": 200,
+    "url": "http://localhost:9000/pricing",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "upgrade",
+    "path": "/upgrade",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Fupgrade",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "send",
+    "path": "/send",
+    "status": 200,
+    "url": "http://localhost:9000/send",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "p2p-send",
+    "path": "/p2p/send",
+    "status": 200,
+    "url": "http://localhost:9000/p2p/send",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "p2p-download",
+    "path": "/p2p/d/deadbeefdeadbeef",
+    "status": 200,
+    "url": "http://localhost:9000/p2p/d/deadbeefdeadbeef",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "download",
+    "path": "/d/deadbeefdeadbeef",
+    "error": "Error: page.goto: net::ERR_ABORTED at http://localhost:9000/d/deadbeefdeadbeef\nCall log:\n\u001b[2m  - navigating to \"http://localhost:9000/d/deadbeefdeadbeef\", waiting until \"networkidle\"\u001b[22m\n"
+  },
+  {
+    "vp": "desktop",
+    "name": "files",
+    "path": "/files",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Ffiles",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "account",
+    "path": "/account",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Faccount",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "account-profile",
+    "path": "/account/profile",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Faccount%2Fprofile",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "desktop",
+    "name": "account-billing",
+    "path": "/account/billing",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Faccount%2Fbilling",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "home",
+    "path": "/",
+    "status": 200,
+    "url": "http://localhost:9000/",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "login",
+    "path": "/login",
+    "status": 200,
+    "url": "http://localhost:9000/login",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "pricing",
+    "path": "/pricing",
+    "status": 200,
+    "url": "http://localhost:9000/pricing",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "upgrade",
+    "path": "/upgrade",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Fupgrade",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "send",
+    "path": "/send",
+    "status": 200,
+    "url": "http://localhost:9000/send",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "p2p-send",
+    "path": "/p2p/send",
+    "status": 200,
+    "url": "http://localhost:9000/p2p/send",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "p2p-download",
+    "path": "/p2p/d/deadbeefdeadbeef",
+    "status": 200,
+    "url": "http://localhost:9000/p2p/d/deadbeefdeadbeef",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "download",
+    "path": "/d/deadbeefdeadbeef",
+    "status": 0,
+    "url": "http://localhost:9000/d/deadbeefdeadbeef",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "files",
+    "path": "/files",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Ffiles",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "account",
+    "path": "/account",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Faccount",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "account-profile",
+    "path": "/account/profile",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Faccount%2Fprofile",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  },
+  {
+    "vp": "mobile",
+    "name": "account-billing",
+    "path": "/account/billing",
+    "status": 200,
+    "url": "http://localhost:9000/login?ReturnUrl=%2Faccount%2Fbilling",
+    "title": "QuickShareCloud",
+    "consoleErrors": []
+  }
+]

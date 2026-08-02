@@ -51,6 +51,17 @@ public static class PlanTierLimits
         };
     }
 
+    /// <summary>Null means unlimited (paid plans).</summary>
+    public static int? GetMaxDailyP2PUploads(string plan)
+    {
+        return (plan ?? string.Empty).ToLowerInvariant() switch
+        {
+            Pro => null,
+            Studio => null,
+            _ => AdConstants.MaxDailyP2PUploads,
+        };
+    }
+
     public static int GetMaxConcurrency(string plan)
     {
         return (plan ?? string.Empty).ToLowerInvariant() switch

@@ -2285,6 +2285,48 @@
     margin-top: var(--db-space-5);
 }
 
+/* ─── Payment info (PayOS checkout) ─── */
+.payment-info[b-95c71r6f3w] {
+    margin-top: var(--db-space-5);
+    padding: var(--db-space-6);
+    border: 1px solid var(--db-color-border);
+    border-radius: var(--db-radius-3);
+    background: var(--db-color-surface);
+    text-align: center;
+}
+
+.payment-info--loading[b-95c71r6f3w] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--db-space-3);
+    padding: var(--db-space-8) var(--db-space-6);
+}
+
+.payos-checkout[b-95c71r6f3w] {
+    margin: var(--db-space-5) 0;
+    padding: var(--db-space-4);
+    background: var(--db-color-bg);
+    border-radius: var(--db-radius-3);
+}
+
+.payos-iframe-wrap[b-95c71r6f3w] {
+    position: relative;
+    width: 100%;
+    max-width: 30rem;
+    margin-inline: auto;
+    border-radius: var(--db-radius-3);
+    overflow: hidden;
+    border: 1px solid var(--db-color-border);
+}
+
+.payos-iframe[b-95c71r6f3w] {
+    display: block;
+    width: 100%;
+    height: 36rem;
+    border: none;
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
     .summary-card[b-95c71r6f3w] {

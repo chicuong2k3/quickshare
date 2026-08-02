@@ -87,6 +87,46 @@ namespace QuickShare.Migrations
                     b.ToTable("daily_ad_tracking", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.DailyP2PUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("UnlockedUploads")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("UploadCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IpAddress", "Date")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NULL");
+
+                    b.HasIndex("UserId", "Date")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
+
+                    b.ToTable("daily_p2p_usage", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
                     b.Property<Guid>("Id")
@@ -657,6 +697,16 @@ namespace QuickShare.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DailyP2PUsage", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
                 });

@@ -88,12 +88,33 @@ public sealed class RewardCallbackHandler(AppDbContext db)
 
         usage.DailyBandwidthBonus += AdConstants.RewardBandwidthBytes;
 
+        // Also unlock extra daily P2P upload slots for the user.
+        var p2pUsage = await db.DailyP2PUsages
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.Date == today, ct);
+
+        if (p2pUsage is null)
+        {
+            p2pUsage = new DailyP2PUsage
+            {
+                Id = Guid.CreateVersion7(),
+                UserId = userId,
+                IpAddress = string.Empty,
+                Date = today,
+                UploadCount = 0,
+                UnlockedUploads = 0
+            };
+            db.DailyP2PUsages.Add(p2pUsage);
+        }
+
+        p2pUsage.UnlockedUploads += AdConstants.P2pUploadsPerAd;
+
         await db.SaveChangesAsync(ct);
 
         return RewardCallbackResult.Granted(
             AdConstants.RewardBandwidthBytes,
             usage.DailyBandwidthBonus,
-            AdConstants.MaxDailyAds - tracking.AdCount);
+            AdConstants.MaxDailyAds - tracking.AdCount,
+            AdConstants.P2pUploadsPerAd);
     }
 
     private static string ComputeTokenHash(string token)
@@ -140,9 +161,10 @@ public sealed class RewardCallbackResult
     public long QuotaAddedBytes { get; private init; }
     public long QuotaNowBytes { get; private init; }
     public int AdsRemainingToday { get; private init; }
+    public int P2pUploadsUnlocked { get; private init; }
 
-    public static RewardCallbackResult Granted(long quotaAdded, long quotaNow, int remaining)
-        => new() { IsSuccess = true, QuotaAddedBytes = quotaAdded, QuotaNowBytes = quotaNow, AdsRemainingToday = remaining };
+    public static RewardCallbackResult Granted(long quotaAdded, long quotaNow, int remaining, int p2pUploadsUnlocked)
+        => new() { IsSuccess = true, QuotaAddedBytes = quotaAdded, QuotaNowBytes = quotaNow, AdsRemainingToday = remaining, P2pUploadsUnlocked = p2pUploadsUnlocked };
 
     public static RewardCallbackResult Invalid(string error)
         => new() { IsSuccess = false, Error = error };

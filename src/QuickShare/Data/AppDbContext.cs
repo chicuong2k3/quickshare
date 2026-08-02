@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<DailyAdTracking> DailyAdTrackings => Set<DailyAdTracking>();
+    public DbSet<DailyP2PUsage> DailyP2PUsages => Set<DailyP2PUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -207,6 +208,28 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Date).IsRequired();
             entity.Property(e => e.AdCount).IsRequired().HasDefaultValue(0);
             entity.Property(e => e.TokenHashes).HasColumnType("text[]").HasDefaultValue(Array.Empty<string>());
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DailyP2PUsage>(entity =>
+        {
+            entity.ToTable("daily_p2p_usage");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Date).IsRequired();
+            entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.UploadCount).IsRequired().HasDefaultValue(0);
+            entity.Property(e => e.UnlockedUploads).IsRequired().HasDefaultValue(0);
+            // Authenticated: one row per user per day
+            entity.HasIndex(e => new { e.UserId, e.Date })
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NOT NULL");
+            // Anonymous: one row per IP per day
+            entity.HasIndex(e => new { e.IpAddress, e.Date })
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NULL");
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

@@ -16,9 +16,84 @@
         var state = {
             phase: 'idle', progress: 0, shareCode: '', shareLink: '', error: '',
             _file: null, _intentionalStop: false,
-            _signaling: null, _receivers: {}, _receiverIndex: 0
+            _signaling: null, _receivers: {}, _receiverIndex: 0,
+            _quota: null
         };
         function setPhase(phase) { state.phase = phase; render(); }
+
+        // --- Daily P2P upload quota ---
+
+        function fetchQuota() {
+            var api = apiBase();
+            fetch(api + '/api/p2p/quota', { headers: { 'Accept': 'application/json' } })
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (data) {
+                    state._quota = data;
+                    renderQuota();
+                })
+                .catch(function () { /* banner stays hidden on network error */ });
+        }
+
+        function renderQuota() {
+            var el = document.getElementById('p2ps-quota');
+            if (!el || !state._quota) return;
+
+            if (state._quota.unlimited) {
+                el.classList.add('hidden');
+                return;
+            }
+
+            var remaining = state._quota.remaining;
+            var allowance = state._quota.allowance;
+            var unlocked = state._quota.unlocked || 0;
+            var suffix = unlocked > 0 ? ' (+' + unlocked + ' from ads)' : '';
+            var text = 'P2P uploads today: ' + remaining + ' of ' + allowance + ' left' + suffix;
+            if (remaining <= 0) {
+                text = 'Daily P2P upload limit reached (' + allowance + '/' + allowance + '). ';
+                text += state._quota.canUnlockWithAd
+                    ? 'Watch an ad to unlock +1 more upload, or upgrade to Pro.'
+                    : 'Sign in or upgrade to Pro for unlimited uploads.';
+            }
+
+            el.textContent = text;
+            el.classList.toggle('hidden', remaining > 0 && !(state._quota.canUnlockWithAd && unlocked === 0));
+            if (remaining <= 0) el.classList.remove('hidden');
+        }
+
+        function showAdUnlock() {
+            var btn = document.getElementById('p2ps-ad-unlock-btn');
+            if (!btn || !state._quota || !state._quota.canUnlockWithAd) return;
+            btn.classList.remove('hidden');
+        }
+
+        function hideAdUnlock() {
+            var btn = document.getElementById('p2ps-ad-unlock-btn');
+            if (btn) btn.classList.add('hidden');
+        }
+
+        function onAdRewarded() {
+            // Ad reward granted (bandwidth +1 P2P upload) — refresh quota and offer retry.
+            hideAdUnlock();
+            fetchQuota();
+            if (state.phase === 'failed' && state._file) {
+                setPhase('idle');
+                startWithFile(state._file);
+            }
+        }
+
+        function triggerAdUnlock() {
+            if (window.QuickShareAds && typeof window.QuickShareAds.showRewardedAd === 'function') {
+                window.QuickShareAds.showRewardedAd();
+                return;
+            }
+            // Fallback: scroll to the ad card so the user can click Watch Ad.
+            var card = document.getElementById('ad-reward-card');
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        window.addEventListener('quickshare:ad-rewarded', onAdRewarded);
+        var unlockBtn = document.getElementById('p2ps-ad-unlock-btn');
+        if (unlockBtn) unlockBtn.addEventListener('click', triggerAdUnlock);
 
         function render() {
             var sections = ['p2ps-idle', 'p2ps-creating', 'p2ps-waiting', 'p2ps-failed'];
@@ -128,6 +203,7 @@
         function startWithFile(file) {
             state._file = file;
             setPhase('creating');
+            hideAdUnlock();
 
             var body = { FileName: file.name, FileSize: file.size, MimeType: file.type || 'application/octet-stream', BaseUrl: window.location.origin };
 
@@ -138,7 +214,13 @@
                 body: JSON.stringify(body)
             })
             .then(function (res) {
-                if (!res.ok) return res.text().then(function (t) { throw new Error(t || 'Failed to create share'); });
+                if (!res.ok) return res.text().then(function (t) {
+                    var parsed = null;
+                    try { parsed = JSON.parse(t); } catch (e) { /* not JSON */ }
+                    var err = new Error((parsed && parsed.message) || t || 'Failed to create share');
+                    err.quota = parsed;
+                    throw err;
+                });
                 return res.json();
             })
             .then(function (data) {
@@ -146,10 +228,16 @@
                 state.shareLink = data.shareLink || (window.location.origin + '/p2p/d/' + data.shareCode);
                 state.phase = 'waiting';
                 render();
+                fetchQuota();
                 connectSignaling();
             })
             .catch(function (err) {
                 state.error = err.message || 'Failed to create share link';
+                if (err.quota && err.quota.error === 'daily_p2p_upload_limit_reached') {
+                    state._quota = err.quota;
+                    renderQuota();
+                    showAdUnlock();
+                }
                 setPhase('failed');
             });
         }
@@ -352,6 +440,8 @@
             if (qrEl) qrEl.innerHTML = '';
             state.progress = 0;
             state.error = '';
+            hideAdUnlock();
+            fetchQuota();
             setPhase('idle');
         }
 
@@ -368,6 +458,9 @@
             if (state._signaling) { state._signaling.close(); state._signaling = null; }
         }
 
+        // Init: load quota banner once the page is ready
+        fetchQuota();
+
         // Expose public API
         return {
             onFileSelect: onFileSelect,
@@ -377,7 +470,8 @@
             copyLink: copyLink,
             cancel: cancel,
             cancelTransfer: cancelTransfer,
-            reset: reset
+            reset: reset,
+            fetchQuota: fetchQuota
         };
     })();
 })();

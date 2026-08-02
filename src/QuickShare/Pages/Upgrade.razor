@@ -143,74 +143,66 @@
                     &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
                 </p>
 
-                @if (paymentIntent is null)
+                @if (payOSResult is not null && payOSResult.Success)
                 {
-                    <div class="payment-option">
-                        <h3 class="db-h3">Chuyển khoản / Thẻ</h3>
-                        <p class="db-text-muted">Thanh toán qua PayOS (chuyển khoản, thẻ nội địa, Visa/Mastercard)</p>
-                        <form method="post">
+                    <div class="payment-info">
+                        <h3 class="db-h3">Thanh toán <strong>@FormatPrice((int)paymentIntent!.Amount)</strong></h3>
+                        <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
+
+                        <div class="payos-checkout">
+                            <p class="db-text-muted" style="font-size:0.95rem;margin-bottom:0.75rem">
+                                Quét mã QR bằng ứng dụng ngân hàng, hoặc thanh toán trực tiếp bên dưới.
+                            </p>
+                            <div id="payos-qrcode" style="margin:0 auto 1rem;display:flex;justify-content:center"></div>
+
+                            <div class="payos-iframe-wrap">
+                                <iframe src="@payOSResult.CheckoutUrl"
+                                        title="Thanh toán PayOS"
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups"
+                                        loading="lazy"
+                                        class="payos-iframe"></iframe>
+                            </div>
+                        </div>
+
+                        <script>
+                            (function() {
+                                var qrContent = "@payOSResult.QrCode";
+                                var attempts = 0;
+                                var timer = setInterval(function() {
+                                    attempts++;
+                                    if (window.qrcode || attempts >= 50) {
+                                        clearInterval(timer);
+                                        renderPayOSQR(qrContent);
+                                    }
+                                }, 100);
+                            })();
+                        </script>
+
+                        <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
+                            Gói sẽ được kích hoạt tự động sau khi thanh toán thành công.
+                        </p>
+                    </div>
+                }
+                else if (payOSResult is not null)
+                {
+                    <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
+                        <p>Không thể tạo link thanh toán: @payOSResult.ErrorMessage</p>
+                        <form method="post" style="margin-top:1rem">
                             <AntiforgeryToken />
                             <input type="hidden" name="Plan" value="@selectedPlan" />
                             <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
-                            <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                                Thanh toán với PayOS
+                            <button type="submit" class="db-btn db-btn--primary">
+                                Thử lại
                             </button>
                         </form>
                     </div>
                 }
                 else
                 {
-                    <div class="payment-info" style="margin-top:1rem;padding:1.5rem;border:1px solid var(--db-color-border);border-radius:0.5rem;text-align:center">
-                        <h3 class="db-h3">Thanh toán <strong>@FormatPrice((int)paymentIntent.Amount)</strong></h3>
-                        <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
-
-                        @if (payOSResult is not null && payOSResult.Success)
-                        {
-                            <div style="margin:1.5rem 0;padding:1rem;background:var(--db-color-surface);border-radius:0.5rem">
-                                <p class="db-text-muted" style="font-size:0.95rem;margin-bottom:1rem">
-                                    Quét mã QR bằng ứng dụng ngân hàng để thanh toán, hoặc nhấn nút bên dưới.
-                                </p>
-                                <div id="payos-qrcode" style="margin:0 auto;display:flex;justify-content:center"></div>
-                                <a href="@payOSResult.CheckoutUrl" target="_blank" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                                    Thanh toán với PayOS
-                                </a>
-                            </div>
-
-                            <script>
-                                (function() {
-                                    var qrContent = "@payOSResult.QrCode";
-                                    // qrcode.min.js loads at the end of <body> (App.razor), so this
-                                    // inline script can run before the library exists. Poll until it
-                                    // is available (max ~5s), then render.
-                                    var attempts = 0;
-                                    var timer = setInterval(function() {
-                                        attempts++;
-                                        if (window.qrcode || attempts >= 50) {
-                                            clearInterval(timer);
-                                            renderPayOSQR(qrContent);
-                                        }
-                                    }, 100);
-                                })();
-                            </script>
-                        }
-                        else if (payOSResult is not null)
-                        {
-                            <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
-                                <p>Không thể tạo link thanh toán: @payOSResult.ErrorMessage</p>
-                                <form method="post" style="margin-top:1rem">
-                                    <AntiforgeryToken />
-                                    <input type="hidden" name="Plan" value="@selectedPlan" />
-                                    <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
-                                    <button type="submit" class="db-btn db-btn--primary">
-                                        Thử lại
-                                    </button>
-                                </form>
-                            </div>
-                        }
-
-                        <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
-                            Gói sẽ được kích hoạt tự động sau khi thanh toán thành công.
-                        </p>
+                    @* PaymentIntent created, PayOS call in progress (loading state) *@
+                    <div class="payment-info payment-info--loading">
+                        <p class="db-text-muted">Đang tạo link thanh toán...</p>
+                        <div class="db-spinner" style="margin:1rem auto"></div>
                     </div>
                 }
 
@@ -306,84 +298,85 @@
         var shouldProcessCallback = IsSuccessfulPayOSCallback(ctx);
 
         // Shell render for GET: return immediately, no DB calls.
-        // Exceptions:
-        // - POST must always process payment form.
-        // - Successful PayOS callback query must reconcile payment status.
         if (!isHtmxRequest && !isPost && !shouldProcessCallback) return;
 
         isFullyLoaded = true;
 
         var ct = CancellationToken.None;
         var user = await ctx.User.GetUserAsync(Db, ct);
+        currentPlan = user.ToProfileResponse().Plan;
 
-        if (!Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))
+        // Handle PayOS redirect callback (orderCode in query string)
+        if (!isPost)
         {
             await TryFinalizePaymentFromCallbackAsync(user, ctx, ct);
         }
 
-        if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method))
+        // Auto-create payment on first load (HTMX GET) or on form submit / retry (POST).
+        // Skip if we just processed a successful callback (payment already complete).
+        if (!shouldProcessCallback)
         {
-            var form = await ctx.Request.ReadFormAsync();
-            var plan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
-            var billing = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
-            var isYearly = string.Equals(billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
-
-            var pricingKey = plan.ToLowerInvariant() switch
+            if (isPost)
             {
-                PlanTierLimits.Pro when isYearly => PricingKeys.ProYearly,
-                PlanTierLimits.Pro => PricingKeys.ProMonthly,
-                PlanTierLimits.Studio when isYearly => PricingKeys.StudioYearly,
-                _ => PricingKeys.StudioMonthly
-            };
-
-            var expectedAmount = Config.GetValue<int>(pricingKey);
-            var currency = Config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
-
-            // Generate internal tracking code and PayOS order code
-            var code = await GenerateUniqueCodeAsync(Db, CancellationToken.None);
-            var payOSOrderCode = PayOSService.GenerateOrderCode();
-
-            // Check uniqueness of PayOS order code in DB
-            while (await Db.PaymentIntents.AnyAsync(
-                i => i.PayOSOrderCode == payOSOrderCode && i.Status == PaymentIntentStatus.Pending,
-                CancellationToken.None))
-            {
-                payOSOrderCode = PayOSService.GenerateOrderCode();
+                var form = await ctx.Request.ReadFormAsync();
+                var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
+                var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
+                var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
+                await CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
             }
-
-            paymentIntent = new PaymentIntent
+            else if (isHtmxRequest)
             {
-                Id = Guid.CreateVersion7(),
-                UserId = user.Id,
-                Code = code,
-                PayOSOrderCode = payOSOrderCode,
-                Plan = plan,
-                Billing = isYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly,
-                Amount = expectedAmount,
-                Currency = currency,
-                Status = PaymentIntentStatus.Pending,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
-            };
-            Db.PaymentIntents.Add(paymentIntent);
-            await Db.SaveChangesAsync(ct);
-
-            // Create PayOS payment link
-            var description = $"QSC-{code[^6..]}"; // last 6 chars as description
-            payOSResult = await PayOS.CreatePaymentLinkAsync(
-                payOSOrderCode,
-                expectedAmount,
-                description,
-                ct);
-
-            if (!payOSResult.Success)
-            {
-                // Payment link creation failed — keep PaymentIntent for retry
-                // The UI will show the error with a retry button
+                await CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
             }
         }
+    }
 
-        currentPlan = user.ToProfileResponse().Plan;
+    private async Task CreatePaymentLinkAsync(User user, string plan, bool isYearly, CancellationToken ct)
+    {
+        var pricingKey = plan.ToLowerInvariant() switch
+        {
+            PlanTierLimits.Pro when isYearly => PricingKeys.ProYearly,
+            PlanTierLimits.Pro => PricingKeys.ProMonthly,
+            PlanTierLimits.Studio when isYearly => PricingKeys.StudioYearly,
+            _ => PricingKeys.StudioMonthly
+        };
+
+        var expectedAmount = Config.GetValue<int>(pricingKey);
+        var currency = Config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
+
+        var code = await GenerateUniqueCodeAsync(Db, ct);
+        var payOSOrderCode = PayOSService.GenerateOrderCode();
+
+        while (await Db.PaymentIntents.AnyAsync(
+            i => i.PayOSOrderCode == payOSOrderCode && i.Status == PaymentIntentStatus.Pending,
+            ct))
+        {
+            payOSOrderCode = PayOSService.GenerateOrderCode();
+        }
+
+        paymentIntent = new PaymentIntent
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            Code = code,
+            PayOSOrderCode = payOSOrderCode,
+            Plan = plan,
+            Billing = isYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly,
+            Amount = expectedAmount,
+            Currency = currency,
+            Status = PaymentIntentStatus.Pending,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddHours(1)
+        };
+        Db.PaymentIntents.Add(paymentIntent);
+        await Db.SaveChangesAsync(ct);
+
+        var description = $"QSC-{code[^6..]}";
+        payOSResult = await PayOS.CreatePaymentLinkAsync(
+            payOSOrderCode,
+            expectedAmount,
+            description,
+            ct);
     }
 
     private static async Task<string> GenerateUniqueCodeAsync(AppDbContext db, CancellationToken ct)

@@ -14,6 +14,9 @@
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
     <div class="p2p-container">
+        @* Daily P2P upload quota banner — filled by send.js from GET /api/p2p/quota *@
+        <div id="p2ps-quota" class="p2p-quota-banner hidden" role="status" aria-live="polite"></div>
+
         <input type="file" name="file" id="p2ps-file-input" style="display:none" aria-label="Choose a file" onchange="p2pSend.onFileSelect(event)" />
 
         @* IDLE / DRAGGING *@
@@ -93,6 +96,7 @@
                 </svg>
                 <span id="p2ps-error-msg">The direct connection could not be established. Try again or <a href="/send" style="color:var(--db-color-accent);text-decoration:underline">use cloud upload</a> instead.</span>
             </div>
+            <button id="p2ps-ad-unlock-btn" class="db-btn db-btn--primary p2p-retry-btn hidden" data-ai-action="p2p.ad.unlock" type="button">Watch ad to unlock +1 upload</button>
             <button class="db-btn db-btn--primary p2p-retry-btn" onclick="p2pSend.reset()">Try again</button>
         </section>
     </div>

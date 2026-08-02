@@ -701,6 +701,25 @@ body::after,
     .account-branding-item { transition: none; }
 }
 
+/* --- P2P send quota banner --- */
+.p2p-quota-banner {
+    margin-bottom: var(--db-space-4);
+    padding: var(--db-space-3) var(--db-space-4);
+    border: 1px solid var(--db-color-border);
+    border-radius: var(--db-radius-md);
+    background: var(--db-color-surface);
+    color: var(--db-color-text);
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--db-space-2);
+}
+
+.p2p-quota-banner.hidden {
+    display: none;
+}
+
 /* --- Ad reward card (ad- namespace - global for HTMX responses) --- */
 .ad-reward-card {
     border: 1px solid var(--db-color-border);

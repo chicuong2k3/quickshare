@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuickShare.Data;
+using QuickShare.Data.Entities;
 using QuickShare.Infrastructure;
 using QuickShare.Infrastructure.Storage;
 
@@ -17,6 +22,33 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
         builder.ConfigureTestServices(services =>
         {
+            // Force an isolated InMemory database. Program.cs only picks InMemory
+            // when Type.GetType("Microsoft.EntityFrameworkCore.InMemoryDatabaseProvider, ...")
+            // succeeds at host-build time, which is unreliable inside
+            // WebApplicationFactory — so tests would otherwise silently hit the
+            // real Postgres (shared state bleeds across runs). A unique name per
+            // factory instance isolates every test class. RemoveAll is required so
+            // the Npgsql options from Program.cs are not left registered too
+            // (EF forbids two providers in one service provider).
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.RemoveAll<DbContextOptions>();
+            services.RemoveAll<AppDbContext>();
+            services.AddDbContext<AppDbContext>(opts =>
+                opts.UseInMemoryDatabase($"QuickShareTests-{Guid.NewGuid():N}"));
+
+            // Register the header-based test authentication scheme. It only
+            // authenticates when X-Test-UserId is present. Authenticate scheme
+            // becomes TestAuth so requests can be impersonated; challenges stay
+            // on the Cookie scheme so [Authorize] pages still redirect to /login
+            // and existing anonymous tests keep passing.
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthDefaults.Scheme;
+                    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultForbidScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                })
+                .AddScheme<TestAuthSchemeOptions, TestAuthHandler>(TestAuthDefaults.Scheme, _ => { });
+
             services.AddSingleton<IStorageProvider, LocalDiskStorageProviderStub>();
             RemoveHostedService<DeliveryCleanupService>(services);
             RemoveHostedService<ZombiePartSweeper>(services);
@@ -25,9 +57,56 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         });
     }
 
-    public HttpClient CreateAuthenticatedClient()
+    /// <summary>
+    /// Returns an anonymous client (existing tests rely on cookie redirects).
+    /// </summary>
+    public HttpClient CreateAuthenticatedClient() => CreateClient();
+
+    /// <summary>
+    /// Creates a client authenticated as the given user id (via X-Test-UserId header).
+    /// The user must be seeded with <see cref="SeedUserAsync"/> first.
+    /// </summary>
+    public HttpClient CreateAuthenticatedClient(string userId)
     {
-        return CreateClient();
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, userId);
+        return client;
+    }
+
+    /// <summary>
+    /// Creates a user (and its login row) directly in the InMemory DB so the
+    /// auth pipeline and GetUserAsync can resolve it.
+    /// </summary>
+    public async Task<User> SeedUserAsync(string userId, string plan = PlanTierLimits.Free)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var existing = await db.Users.FindAsync(Guid.Parse(userId));
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var user = new User
+        {
+            Id = Guid.Parse(userId),
+            Name = "Test User",
+            Email = "test@localhost",
+            Plan = plan
+        };
+        db.Users.Add(user);
+
+        db.UserLogins.Add(new UserLogin
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            Provider = TestAuthProvider.Value,
+            ProviderKey = userId
+        });
+
+        await db.SaveChangesAsync();
+        return user;
     }
 
     public async ValueTask InitializeAsync()

@@ -196,15 +196,26 @@ window.QuickShareAds = (function() {
         var container = document.getElementById('ad-reward-card');
         if (!container) return;
 
+        var p2pNote = '';
+        if (data.p2pUploadsUnlocked > 0) {
+            p2pNote = '<p class="ad-reward-card__description" style="color:var(--color-success)">+'
+                + data.p2pUploadsUnlocked + ' P2P upload unlocked today.</p>';
+        }
+
         container.innerHTML =
             '<div class="ad-reward-card__body">' +
             '<div class="ad-reward-card__title" style="color:var(--color-success)">+'
                 + data.quotaAddedMb + 'MB added!</div>' +
             '<p class="ad-reward-card__description">You have <strong>'
                 + data.adsRemainingToday + ' ads</strong> remaining today.</p>' +
+            p2pNote +
             '<a href="/pricing" class="ad-upgrade-link">'
                 + 'Upgrade to Pro for unlimited bandwidth</a>' +
             '</div>';
+
+        // Notify listeners (e.g. P2P send page) that a reward was granted so
+        // they can refresh quota / retry an upload.
+        window.dispatchEvent(new CustomEvent('quickshare:ad-rewarded', { detail: data }));
     }
 
     function showError(message) {
