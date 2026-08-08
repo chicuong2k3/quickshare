@@ -10,7 +10,6 @@ using QuickShare;
 using QuickShare.Features.Deliveries;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
-using QuickShare.Infrastructure.Quota;
 using QuickShare.Infrastructure.Caching;
 using ZiggyCreatures.Caching.Fusion;
 using QuickShare.Infrastructure.Storage;
@@ -172,7 +171,6 @@ builder.Services.AddHostedService<DeliveryExpiryJob>();
 builder.Services.AddHostedService<SubscriptionExpiryJob>();
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 
-builder.Services.AddScoped<DeliveryService>();
 builder.Services.AddScoped<PayOSService>();
 
 // ── FusionCache with kill-switch toggle ──
@@ -217,7 +215,6 @@ builder.Services.AddProblemDetails();
 // P2P WebRTC signaling
 builder.Services.AddSingleton<P2PConnectionManager>();
 
-builder.Services.AddScoped<QuotaEnforcer>();
 
 // ── Web (Blazor Static SSR + htmx) ──
 // In .NET 10 Static Server rendering is the default for AddRazorComponents().
