@@ -120,8 +120,8 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dpPath))
     .SetApplicationName("QuickShare");
 
-var useInMemoryDb = Type.GetType(
-    "Microsoft.EntityFrameworkCore.InMemoryDatabaseProvider, Microsoft.EntityFrameworkCore.InMemory") is not null;
+// Set by the test factories; keeps the app on Npgsql everywhere else (incl. dotnet-ef design time).
+var useInMemoryDb = builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
 
 if (useInMemoryDb)
 {
@@ -192,14 +192,18 @@ builder.Services.AddSingleton<CacheService>();
 
 builder.Host.UseWolverine(opts =>
 {
-    opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
+    // In-memory DB (tests) runs Wolverine without durable Postgres persistence.
+    if (!useInMemoryDb)
+    {
+        opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
 
-    // Single-instance app: Solo avoids Balanced-mode leader election and the
-    // wolverine_nodes agent registry, so no stale-node StopAgent timeouts on health checks.
-    opts.Durability.Mode = DurabilityMode.Solo;
-    opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
-    opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
-    opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
+        // Single-instance app: Solo avoids Balanced-mode leader election and the
+        // wolverine_nodes agent registry, so no stale-node StopAgent timeouts on health checks.
+        opts.Durability.Mode = DurabilityMode.Solo;
+        opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
+        opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
+        opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
+    }
 }, ExtensionDiscovery.ManualOnly);
 
 // ── API (FastEndpoints + Swagger) ──

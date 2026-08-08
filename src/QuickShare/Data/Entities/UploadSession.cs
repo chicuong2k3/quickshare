@@ -3,7 +3,7 @@ namespace QuickShare.Data.Entities;
 [DynamicSort]
 public record UploadSession : BaseAuditEntity
 {
-    public Guid SenderId { get; init; }
+    public Guid? SenderId { get; init; }
     public string FileName { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }

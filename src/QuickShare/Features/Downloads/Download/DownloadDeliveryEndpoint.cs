@@ -6,6 +6,9 @@ public sealed class DownloadDeliveryEndpoint : Endpoint<DownloadDeliveryRequest>
     {
         Get("/api/downloads/{ShareCode}");
         AllowAnonymous();
+        // The handler writes status/redirect directly to the response;
+        // without this FastEndpoints overwrites it with a default 204.
+        DontAutoSendResponse();
         Description(b => b.WithTags(ApiTags.Downloads));
         Summary(s =>
         {

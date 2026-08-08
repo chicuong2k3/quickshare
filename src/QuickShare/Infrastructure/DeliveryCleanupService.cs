@@ -49,19 +49,11 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             }
         }
 
-        var chunkRefs = await db.Chunks
-            .Where(c => expired.Select(d => d.Id).Contains(c.DeliveryId))
-            .Select(c => c.StorageRef)
-            .ToArrayAsync(ct);
-
-        if (chunkRefs.Length > 0)
-            await storage.DeleteChunksAsync(chunkRefs, ct);
-
         db.Deliveries.RemoveRange(expired);
         await db.SaveChangesAsync(ct);
 
-        logger.LogInformation("Cleaned {Count} expired deliveries (R2: {R2Count}, chunks: {Chunks})",
-            expired.Count, expired.Count(d => !string.IsNullOrEmpty(d.StoragePath)), chunkRefs.Length);
+        logger.LogInformation("Cleaned {Count} expired deliveries (R2: {R2Count})",
+            expired.Count, expired.Count(d => !string.IsNullOrEmpty(d.StoragePath)));
     }
 
     private async Task CleanupAbandonedSessionsAsync(CancellationToken ct)
@@ -91,19 +83,10 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             }
         }
 
-        var chunkRefs = await db.Chunks
-            .Where(c => abandoned.Select(s => s.Id).Contains(c.DeliveryId))
-            .Select(c => c.StorageRef)
-            .ToArrayAsync(ct);
-
-        if (chunkRefs.Length > 0)
-            await storage.DeleteChunksAsync(chunkRefs, ct);
-
-        db.Chunks.RemoveRange(db.Chunks.Where(c => abandoned.Select(s => s.Id).Contains(c.DeliveryId)));
         db.UploadSessions.RemoveRange(abandoned);
         await db.SaveChangesAsync(ct);
 
-        logger.LogInformation("Cleaned {Count} abandoned upload sessions (R2: {R2Count}, chunks: {Chunks})",
-            abandoned.Count, abandoned.Count(s => !string.IsNullOrEmpty(s.R2UploadId)), chunkRefs.Length);
+        logger.LogInformation("Cleaned {Count} abandoned upload sessions (R2: {R2Count})",
+            abandoned.Count, abandoned.Count(s => !string.IsNullOrEmpty(s.R2UploadId)));
     }
 }

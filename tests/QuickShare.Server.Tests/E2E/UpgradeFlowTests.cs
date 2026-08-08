@@ -47,10 +47,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/upgrade?plan=pro");
         var getHtml = await getResponse.Content.ReadAsStringAsync();
-        var tokenStart = getHtml.IndexOf("__RequestVerificationToken", StringComparison.Ordinal);
-        var valueStart = getHtml.IndexOf("value=\"", tokenStart, StringComparison.Ordinal) + 7;
-        var valueEnd = getHtml.IndexOf("\"", valueStart, StringComparison.Ordinal);
-        var token = getHtml.Substring(valueStart, valueEnd - valueStart);
+        var token = AntiforgeryHelper.ExtractToken(getHtml);
 
         var formContent = new FormUrlEncodedContent(new[]
         {
@@ -69,12 +66,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var getResponse = await client.GetAsync("/upgrade?plan=pro");
         var getHtml = await getResponse.Content.ReadAsStringAsync();
 
-        var tokenStart = getHtml.IndexOf("__RequestVerificationToken", StringComparison.Ordinal);
-        Assert.True(tokenStart >= 0, "Antiforgery token input not found in GET response");
-        var valueStart = getHtml.IndexOf("value=\"", tokenStart, StringComparison.Ordinal) + 7;
-        var valueEnd = getHtml.IndexOf("\"", valueStart, StringComparison.Ordinal);
-        var token = getHtml.Substring(valueStart, valueEnd - valueStart);
-        Assert.NotEmpty(token);
+        var token = AntiforgeryHelper.ExtractToken(getHtml);
 
         var formContent = new FormUrlEncodedContent(new[]
         {
@@ -92,10 +84,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/upgrade?plan=pro");
         var getHtml = await getResponse.Content.ReadAsStringAsync();
-        var tokenStart = getHtml.IndexOf("__RequestVerificationToken", StringComparison.Ordinal);
-        var valueStart = getHtml.IndexOf("value=\"", tokenStart, StringComparison.Ordinal) + 7;
-        var valueEnd = getHtml.IndexOf("\"", valueStart, StringComparison.Ordinal);
-        var token = getHtml.Substring(valueStart, valueEnd - valueStart);
+        var token = AntiforgeryHelper.ExtractToken(getHtml);
 
         var formContent = new FormUrlEncodedContent(new[]
         {

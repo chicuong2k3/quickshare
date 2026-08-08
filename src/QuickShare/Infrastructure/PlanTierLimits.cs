@@ -8,6 +8,7 @@ public static class PlanTierLimits
     public const string Free = "free";
     public const string Pro = "pro";
     public const string Studio = "studio";
+    // Not a purchasable plan — the tier applied to uploads without a signed-in user.
     public const string Anonymous = "anonymous";
 
     private const string ConfigPrefix = "Pricing:Limits";
@@ -123,6 +124,8 @@ public static class PlanTierLimits
         Free => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
         Pro => GetLong(Pro, MaxFileSizeKey, 21_474_836_480L),
         Studio => GetLong(Studio, MaxFileSizeKey, 107_374_182_400L),
+        // Anonymous stays small — the sign-up nudge for uploads without an account.
+        Anonymous => GetLong(Anonymous, MaxFileSizeKey, 104_857_600L),
         _ => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
     };
 

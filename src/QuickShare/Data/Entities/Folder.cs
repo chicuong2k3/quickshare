@@ -6,5 +6,5 @@ public record Folder : BaseAuditEntity
     public const string RootName = "/";
 
     public Guid? OwnerId { get; init; }
-    public string Name { get; init; } = RootName;
+    public string Name { get; set; } = RootName;
 }

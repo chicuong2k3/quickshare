@@ -5,7 +5,7 @@ using QuickShare.Infrastructure;
 
 namespace QuickShare.Features.Shares.P2P;
 
-public sealed record CreateP2PShareRequest(string FileName, long FileSize, string MimeType, bool? HasPin, string BaseUrl);
+public sealed record CreateP2PShareRequest(string FileName, long FileSize, string MimeType, string BaseUrl);
 
 public sealed record CreateP2PShareResponse(string ShareCode, string ShareLink);
 

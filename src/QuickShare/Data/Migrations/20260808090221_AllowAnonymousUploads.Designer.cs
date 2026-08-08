@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QuickShare.Data;
@@ -11,9 +12,11 @@ using QuickShare.Data;
 namespace QuickShare.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class TeleCloudDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808090221_AllowAnonymousUploads")]
+    partial class AllowAnonymousUploads
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,111 +24,6 @@ namespace QuickShare.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("QuickShare.Data.Entities.Chunk", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DeliveryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Index")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Sha256")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("StorageRef")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeliveryId", "Index")
-                        .IsUnique();
-
-                    b.ToTable("chunks", (string)null);
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.DailyAdTracking", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AdCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.PrimitiveCollection<string[]>("TokenHashes")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text[]")
-                        .HasDefaultValue(new string[0]);
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "Date")
-                        .IsUnique();
-
-                    b.ToTable("daily_ad_tracking", (string)null);
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.DailyP2PUsage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<int>("UnlockedUploads")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("UploadCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IpAddress", "Date")
-                        .IsUnique()
-                        .HasFilter("\"UserId\" IS NULL");
-
-                    b.HasIndex("UserId", "Date")
-                        .IsUnique()
-                        .HasFilter("\"UserId\" IS NOT NULL");
-
-                    b.ToTable("daily_p2p_usage", (string)null);
-                });
 
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
@@ -172,9 +70,6 @@ namespace QuickShare.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("OtpHash")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("SenderId")
@@ -324,30 +219,6 @@ namespace QuickShare.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("folders", (string)null);
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.Manifest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DeliveryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte[]>("EncryptedData")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeliveryId")
-                        .IsUnique();
-
-                    b.ToTable("manifests", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
@@ -512,36 +383,6 @@ namespace QuickShare.Migrations
                     b.ToTable("subscriptions", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Data.Entities.TempShare", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FileId");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("TempShares");
-                });
-
             modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -568,7 +409,7 @@ namespace QuickShare.Migrations
                     b.Property<string>("R2UploadId")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SenderId")
+                    b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
@@ -656,9 +497,6 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<long>("DailyBandwidthBonus")
-                        .HasColumnType("bigint");
-
                     b.Property<DateTime>("PeriodStart")
                         .HasColumnType("timestamp with time zone");
 
@@ -677,38 +515,6 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("user_usage", (string)null);
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.Chunk", b =>
-                {
-                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
-                        .WithMany()
-                        .HasForeignKey("DeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Delivery");
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.DailyAdTracking", b =>
-                {
-                    b.HasOne("QuickShare.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.DailyP2PUsage", b =>
-                {
-                    b.HasOne("QuickShare.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
@@ -739,17 +545,6 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("Folder");
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.Manifest", b =>
-                {
-                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
-                        .WithOne("Manifest")
-                        .HasForeignKey("QuickShare.Data.Entities.Manifest", "DeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Delivery");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
@@ -785,30 +580,12 @@ namespace QuickShare.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("QuickShare.Data.Entities.TempShare", b =>
-                {
-                    b.HasOne("QuickShare.Data.Entities.FileMetadata", "File")
-                        .WithMany()
-                        .HasForeignKey("FileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("QuickShare.Data.Entities.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId");
-
-                    b.Navigation("File");
-
-                    b.Navigation("Owner");
-                });
-
             modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>
@@ -831,11 +608,6 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
-                {
-                    b.Navigation("Manifest");
                 });
 #pragma warning restore 612, 618
         }

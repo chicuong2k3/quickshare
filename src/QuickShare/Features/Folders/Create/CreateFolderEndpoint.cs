@@ -5,6 +5,9 @@ public sealed class CreateFolderEndpoint : Endpoint<CreateFolderCommand, FolderI
     public override void Configure()
     {
         Post("/api/folders");
+        // SendResultOkAsync writes to the response directly; stop FastEndpoints
+        // from overwriting it with a default 204.
+        DontAutoSendResponse();
         Description(b => b.WithTags(ApiTags.Folders));
         Summary(s =>
         {

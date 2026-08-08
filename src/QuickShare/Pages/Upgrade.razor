@@ -256,7 +256,7 @@
         : "Dành cho nhà sáng tạo & chuyên gia";
     private string planSummary => selectedPlan == PlanTierLimits.Studio
         ? "500 GB dung lượng/tháng, không giới hạn chuyển, API, hỗ trợ riêng"
-        : "1 GB/tệp, 50 GB dung lượng/tháng, 100 lượt chuyển/tháng, bảo vệ mật khẩu, hỗ trợ ưu tiên";
+        : "5 GB/tệp, 50 GB dung lượng/tháng, 100 lượt chuyển/tháng, bảo vệ bằng mã truy cập, hỗ trợ ưu tiên";
     private string planMonthlyPrice => FormatPrice(
         selectedPlan == PlanTierLimits.Studio
             ? Config.GetValue<int>(PricingKeys.StudioMonthly, 200000)
@@ -276,7 +276,7 @@
 
     private string[] planFeatures => selectedPlan == PlanTierLimits.Studio
         ? new[] { "20 GB/tệp", "500 GB / tháng", "Không giới hạn chuyển", "Tùy chỉnh thương hiệu", "Truy cập API", "Hỗ trợ riêng" }
-        : new[] { "1 GB/tệp", "50 GB / tháng", "100 lượt chuyển/tháng", "Bảo vệ mật khẩu", "Hỗ trợ ưu tiên" };
+        : new[] { "5 GB/tệp", "50 GB / tháng", "100 lượt chuyển/tháng", "Bảo vệ bằng mã truy cập", "Hỗ trợ ưu tiên" };
 
     private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
     private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);

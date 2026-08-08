@@ -5,6 +5,9 @@ public sealed class DeleteFolderEndpoint : Endpoint<DeleteFolderCommand>
     public override void Configure()
     {
         Delete("/api/folders/{id}");
+        // SendResultNoContentAsync writes to the response directly; stop
+        // FastEndpoints from overwriting the error paths with a default 204.
+        DontAutoSendResponse();
         Description(b => b.WithTags(ApiTags.Folders));
         Summary(s =>
         {

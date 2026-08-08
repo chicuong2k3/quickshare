@@ -5,6 +5,9 @@ public sealed class MoveFileEndpoint : Endpoint<MoveFileCommand, FileItemRespons
     public override void Configure()
     {
         Patch("/api/files/{fileId}/folder");
+        // SendResultOkAsync writes to the response directly; stop FastEndpoints
+        // from overwriting it with a default 204.
+        DontAutoSendResponse();
         Description(b => b.WithTags(ApiTags.Files));
         Summary(s =>
         {

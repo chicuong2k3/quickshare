@@ -34,9 +34,9 @@ public sealed class MoveFileHandler
         var sourceFolderKey = file.FolderId.ToString();
         var targetFolderKey = command.TargetFolderId.ToString();
 
-        await db.Files
-            .Where(f => f.Id == command.FileId)
-            .ExecuteUpdateAsync(s => s.SetProperty(f => f.FolderId, command.TargetFolderId), ct);
+        // Tracked update (ExecuteUpdate is unsupported on the InMemory test provider).
+        file.FolderId = command.TargetFolderId;
+        await db.SaveChangesAsync(ct);
 
         await cache.RemoveAsync($"files:list:{userId}:root", ct);
         await cache.RemoveAsync($"files:list:{userId}:{sourceFolderKey}", ct);

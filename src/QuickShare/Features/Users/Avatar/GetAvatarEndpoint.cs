@@ -8,6 +8,9 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
     public override void Configure()
     {
         Get("/api/me/avatar");
+        // Writes HTML directly to the response; without this FastEndpoints
+        // overwrites the handwritten response with a default 204.
+        DontAutoSendResponse();
         Description(b => b.WithTags("Users"));
     }
 

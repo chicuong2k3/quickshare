@@ -86,7 +86,7 @@
   <data name="pricing_pro_feat_size" xml:space="preserve"><value>20 GB mỗi file</value></data>
   <data name="pricing_pro_feat_monthly" xml:space="preserve"><value>200 GB / tháng</value></data>
   <data name="pricing_pro_feat_expiry" xml:space="preserve"><value>Lưu 30 ngày</value></data>
-  <data name="pricing_pro_feat_password" xml:space="preserve"><value>Bảo vệ mật khẩu</value></data>
+  <data name="pricing_pro_feat_password" xml:space="preserve"><value>Bảo vệ bằng mã truy cập</value></data>
   <data name="pricing_pro_feat_noads" xml:space="preserve"><value>Không quảng cáo</value></data>
   <data name="pricing_studio_name" xml:space="preserve"><value>Studio</value></data>
   <data name="pricing_studio_desc" xml:space="preserve"><value>Cho đội nhóm &amp; doanh nghiệp</value></data>
@@ -377,7 +377,7 @@
   <data name="upgrade_feat_pro_1" xml:space="preserve"><value>1 GB/tệp</value></data>
   <data name="upgrade_feat_pro_2" xml:space="preserve"><value>50 GB / tháng</value></data>
   <data name="upgrade_feat_pro_3" xml:space="preserve"><value>100 lượt chuyển/tháng</value></data>
-  <data name="upgrade_feat_pro_4" xml:space="preserve"><value>Bảo vệ mật khẩu</value></data>
+  <data name="upgrade_feat_pro_4" xml:space="preserve"><value>Bảo vệ bằng mã truy cập</value></data>
   <data name="upgrade_feat_pro_5" xml:space="preserve"><value>Hỗ trợ ưu tiên</value></data>
   <data name="upgrade_feat_studio_1" xml:space="preserve"><value>20 GB/tệp</value></data>
   <data name="upgrade_feat_studio_2" xml:space="preserve"><value>500 GB / tháng</value></data>

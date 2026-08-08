@@ -52,17 +52,6 @@ public sealed class R2StorageProvider : IStorageProvider
         }
     }
 
-    // ── Local-disk (legacy, throws) ────────────────────────────────────────
-
-    public Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default)
-        => throw new NotSupportedException("R2StorageProvider does not support chunked storage. Use multipart upload methods.");
-
-    public Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default)
-        => throw new NotSupportedException("R2StorageProvider does not support chunked retrieval. Use GetPresignedDownloadUrlAsync.");
-
-    public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
-        => throw new NotSupportedException("R2StorageProvider does not support chunk deletion. Use DeleteObjectsAsync.");
-
     // ── R2 multipart upload ────────────────────────────────────────────────
 
     public async Task<R2InitResult> InitR2MultipartUploadAsync(
@@ -178,6 +167,19 @@ public sealed class R2StorageProvider : IStorageProvider
     }
 
     // ── R2 download ────────────────────────────────────────────────────────
+
+    public async Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
+    {
+        try
+        {
+            var metadata = await _s3.GetObjectMetadataAsync(_options.BucketName, objectKey, ct);
+            return metadata.ContentLength;
+        }
+        catch (AmazonS3Exception)
+        {
+            return -1;
+        }
+    }
 
     public Task<Uri> GetPresignedDownloadUrlAsync(
         string objectKey, TimeSpan expiry, CancellationToken ct = default)

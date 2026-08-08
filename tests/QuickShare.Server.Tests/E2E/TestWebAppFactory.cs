@@ -1,15 +1,16 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using QuickShare.Data;
 using QuickShare.Data.Entities;
+using QuickShare.Features.Payments.PayOS;
+using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure;
 using QuickShare.Infrastructure.Storage;
 
@@ -17,37 +18,46 @@ namespace QuickShare.Server.Tests.E2E;
 
 public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public const string TestUserProviderKey = "test-user-key";
+    public const string TestUserEmail = "test@quickshare.test";
+    public const string TestUserName = "Test User";
+
+    public Guid TestUserId { get; private set; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
 
+        builder.UseSetting("UseInMemoryDatabase", "true");
+        // FusionCache backs process-wide statics (StaticCache, PlanTierLimits._cache);
+        // parallel test factories would leak cached users/pages into each other.
+        builder.UseSetting("FusionCache:Enabled", "false");
+        builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
+        builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
+        builder.UseSetting("PayOS:ClientId", "test-payos-client");
+        builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
+        builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");
+
         builder.ConfigureTestServices(services =>
         {
-            // Force an isolated InMemory database. Program.cs only picks InMemory
-            // when Type.GetType("Microsoft.EntityFrameworkCore.InMemoryDatabaseProvider, ...")
-            // succeeds at host-build time, which is unreliable inside
-            // WebApplicationFactory — so tests would otherwise silently hit the
-            // real Postgres (shared state bleeds across runs). A unique name per
-            // factory instance isolates every test class. RemoveAll is required so
-            // the Npgsql options from Program.cs are not left registered too
-            // (EF forbids two providers in one service provider).
-            // EF Core 10 AddDbContext registers both DbContextOptions<T>
-            // and IDbContextOptionsConfiguration<T>. The latter is what the
-            // Npgsql registration from Program.cs survives in — RemoveAll of
-            // just the options leaves both providers registered and EF throws
-            // "Only a single database provider can be registered".
+            // Re-register the DbContext with a unique InMemory name so every factory
+            // (test class) gets an isolated store. RemoveAll of the options
+            // configuration is required — EF Core 10 registers both
+            // DbContextOptions<T> and IDbContextOptionsConfiguration<T>, and leaving
+            // the latter would keep the Program.cs registration alive.
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<DbContextOptions>();
             services.RemoveAll<AppDbContext>();
+            // Name hoisted outside the lambda — the options action runs per scope,
+            // so an inline Guid.NewGuid() would give every request its own empty DB.
+            var dbName = $"QuickShareTests-{Guid.NewGuid():N}";
             services.AddDbContext<AppDbContext>(opts =>
-                opts.UseInMemoryDatabase($"QuickShareTests-{Guid.NewGuid():N}"));
+                opts.UseInMemoryDatabase(dbName));
 
-            // Register the header-based test authentication scheme. It only
-            // authenticates when X-Test-UserId is present. Authenticate scheme
-            // becomes TestAuth so requests can be impersonated; challenges stay
-            // on the Cookie scheme so [Authorize] pages still redirect to /login
-            // and existing anonymous tests keep passing.
+            // Header-based test auth: authenticates only when X-Test-UserId is
+            // present; challenges stay on the Cookie scheme so anonymous flows and
+            // /api 401 behavior are unchanged.
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = TestAuthDefaults.Scheme;
@@ -57,21 +67,21 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
                 .AddScheme<TestAuthSchemeOptions, TestAuthHandler>(TestAuthDefaults.Scheme, _ => { });
 
             services.AddSingleton<IStorageProvider, LocalDiskStorageProviderStub>();
+            services.AddScoped<PayOSService, StubPayOSService>();
             RemoveHostedService<DeliveryCleanupService>(services);
             RemoveHostedService<ZombiePartSweeper>(services);
             RemoveHostedService<DeliveryExpiryJob>(services);
             RemoveHostedService<SubscriptionExpiryJob>(services);
+            RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
     }
 
-    /// <summary>
-    /// Returns an anonymous client (existing tests rely on cookie redirects).
-    /// </summary>
-    public HttpClient CreateAuthenticatedClient() => CreateClient();
+    /// <summary>Client authenticated as the default seeded test user.</summary>
+    public HttpClient CreateAuthenticatedClient() => CreateAuthenticatedClient(TestUserProviderKey);
 
     /// <summary>
-    /// Creates a client authenticated as the given user id (via X-Test-UserId header).
-    /// The user must be seeded with <see cref="SeedUserAsync"/> first.
+    /// Client authenticated as the given provider key (via X-Test-UserId header).
+    /// The user must exist — the default is seeded, others via <see cref="SeedUserAsync"/>.
     /// </summary>
     public HttpClient CreateAuthenticatedClient(string userId)
     {
@@ -98,8 +108,8 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         var user = new User
         {
             Id = Guid.Parse(userId),
-            Name = "Test User",
-            Email = "test@localhost",
+            Name = TestUserName,
+            Email = TestUserEmail,
             Plan = plan
         };
         db.Users.Add(user);
@@ -118,8 +128,18 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
     public async ValueTask InitializeAsync()
     {
-        using var scope = Services.CreateScope();
-        _ = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        using (var scope = Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var profile = await UserRegistrationService.RegisterAsync(
+                TestAuthProvider.Value, TestUserProviderKey, TestUserName, TestUserEmail,
+                null, db, CancellationToken.None);
+            TestUserId = profile.Id;
+        }
+
+        // Warm-up: first request pays JIT/Razor-compile cost so timing asserts measure steady state.
+        using var client = CreateClient();
+        await client.GetAsync("/pricing");
     }
 
     public override async ValueTask DisposeAsync()
@@ -135,16 +155,34 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     }
 }
 
+/// <summary>Replaces outbound PayOS API calls with an instant fake checkout link.</summary>
+internal sealed class StubPayOSService : PayOSService
+{
+    public StubPayOSService(Microsoft.Extensions.Configuration.IConfiguration config, Microsoft.Extensions.Logging.ILogger<PayOSService> logger)
+        : base(config, logger)
+    {
+    }
+
+    public override Task<PayOSPaymentResult> CreatePaymentLinkAsync(long orderCode, int amountVnd, string description, CancellationToken ct)
+        => Task.FromResult(new PayOSPaymentResult
+        {
+            Success = true,
+            CheckoutUrl = $"https://pay.stub.local/{orderCode}",
+            QrCode = "stub-qr",
+            PaymentLinkId = $"stub-link-{orderCode}",
+            Bin = "970422",
+            AccountNumber = "0000000000",
+            AccountName = "STUB ACCOUNT"
+        });
+}
+
 internal sealed class LocalDiskStorageProviderStub : IStorageProvider
 {
-    public Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default)
-        => Task.FromResult($"stub://{chunkId}");
+    /// <summary>Size reported by GetObjectSizeAsync; -1 (default) means "unknown", which skips the commit-time size check.</summary>
+    public long NextObjectSize { get; set; } = -1;
 
-    public Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default)
-        => Task.FromResult(Array.Empty<byte>());
-
-    public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
-        => Task.CompletedTask;
+    public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult(NextObjectSize);
 
     public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
         => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));

@@ -9,14 +9,26 @@ public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey
 
 public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
 {
+    // S3/R2 minimum part size (all parts except the last). Caps how many presigned
+    // part URLs a client can request for a declared file size.
+    internal const long MinPartBytes = 5 * 1024 * 1024;
+
+    internal static int MaxPartsFor(long fileSize)
+        => (int)Math.Min(10_000, (fileSize + MinPartBytes - 1) / MinPartBytes + 1);
+
     public async Task<Result<StartR2Response>> Handle(StartR2Command cmd, AppDbContext db, CancellationToken ct)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var plan = user?.Plan ?? PlanTierLimits.Anonymous;
 
-        var maxFileSize = PlanTierLimits.GetMaxFileSize(user.Plan);
+        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
         if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
             return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"File size {cmd.FileSize} exceeds {user.Plan} plan limit of {maxFileSize} bytes"));
+                $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
+
+        if (cmd.PartNumbers.Count > MaxPartsFor(cmd.FileSize))
+            return Result.Failure<StartR2Response>(new LightResults.Error(
+                $"Part count {cmd.PartNumbers.Count} exceeds what a {cmd.FileSize}-byte file can need"));
 
         var deliveryId = Guid.CreateVersion7();
 
@@ -43,11 +55,11 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
                 $"R2 part URL generation failed: {ex.Message}"));
         }
 
-        var maxExpiry = PlanTierLimits.GetMaxExpiry(user.Plan);
+        var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
         var session = new UploadSession
         {
             Id = deliveryId,
-            SenderId = user.Id,
+            SenderId = user?.Id,
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,

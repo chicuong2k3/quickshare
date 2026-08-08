@@ -14,7 +14,6 @@ public record Delivery : BaseAuditEntity
     public int DownloadCount { get; set; }
     public long EgressBytes { get; set; }
     public DateTime? ExpiresAt { get; set; }
-    public string? PasswordHash { get; set; }
     public string? OtpHash { get; set; }
     public string? BrandLogo { get; set; }
     public string? BrandMessage { get; set; }
@@ -22,7 +21,6 @@ public record Delivery : BaseAuditEntity
     public string Status { get; set; } = DeliveryStatus.Active;
     public string? StoragePath { get; set; }
     public User? Sender { get; init; }
-    public Manifest? Manifest { get; init; }
 }
 
 public static class DeliveryStatus

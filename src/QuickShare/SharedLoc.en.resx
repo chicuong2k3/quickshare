@@ -86,7 +86,7 @@
   <data name="pricing_pro_feat_size" xml:space="preserve"><value>20 GB per file</value></data>
   <data name="pricing_pro_feat_monthly" xml:space="preserve"><value>200 GB / month</value></data>
   <data name="pricing_pro_feat_expiry" xml:space="preserve"><value>30-day expiry</value></data>
-  <data name="pricing_pro_feat_password" xml:space="preserve"><value>Password protection</value></data>
+  <data name="pricing_pro_feat_password" xml:space="preserve"><value>Access-code protection</value></data>
   <data name="pricing_pro_feat_noads" xml:space="preserve"><value>No ads</value></data>
   <data name="pricing_studio_name" xml:space="preserve"><value>Studio</value></data>
   <data name="pricing_studio_desc" xml:space="preserve"><value>For teams &amp; enterprises</value></data>
@@ -377,7 +377,7 @@
   <data name="upgrade_feat_pro_1" xml:space="preserve"><value>1 GB/file</value></data>
   <data name="upgrade_feat_pro_2" xml:space="preserve"><value>50 GB / month</value></data>
   <data name="upgrade_feat_pro_3" xml:space="preserve"><value>100 transfers/month</value></data>
-  <data name="upgrade_feat_pro_4" xml:space="preserve"><value>Password protection</value></data>
+  <data name="upgrade_feat_pro_4" xml:space="preserve"><value>Access-code protection</value></data>
   <data name="upgrade_feat_pro_5" xml:space="preserve"><value>Priority support</value></data>
   <data name="upgrade_feat_studio_1" xml:space="preserve"><value>20 GB/file</value></data>
   <data name="upgrade_feat_studio_2" xml:space="preserve"><value>500 GB / month</value></data>

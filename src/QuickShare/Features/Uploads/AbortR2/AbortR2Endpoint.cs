@@ -5,6 +5,7 @@ public sealed class AbortR2Endpoint : Endpoint<AbortR2Request>
     public override void Configure()
     {
         Post("/api/uploads/abort-r2");
+        AllowAnonymous();
         Validator<AbortR2Validator>();
         Description(b => b.WithTags(ApiTags.Uploads));
         Summary(s =>
