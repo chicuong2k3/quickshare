@@ -23,14 +23,6 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task FilesPage_Authenticated_Returns200()
-    {
-        var client = _factory.CreateAuthenticatedClient();
-        var response = await client.GetAsync("/files");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
     public async Task DownloadPage_SeededDelivery_Returns200()
     {
         var shareCode = await SeedDeliveryAsync();

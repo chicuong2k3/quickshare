@@ -4,7 +4,6 @@ public static class RoutePaths
 {
     public const string Home = "/";
     public const string Send = "/send";
-    public const string Files = "/files";
     public const string Pricing = "/pricing";
     public const string Upgrade = "/upgrade";
     public const string Account = "/account";

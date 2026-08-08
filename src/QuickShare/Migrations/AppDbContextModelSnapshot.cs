@@ -194,78 +194,6 @@ namespace QuickShare.Migrations
                     b.ToTable("download_tracking", (string)null);
                 });
 
-            modelBuilder.Entity("QuickShare.Data.Entities.FileMetadata", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Filename")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("FolderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt")
-                        .IsDescending();
-
-                    b.HasIndex("Filename");
-
-                    b.HasIndex("FolderId");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("files", (string)null);
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.Folder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("folders", (string)null);
-                });
-
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -603,17 +531,6 @@ namespace QuickShare.Migrations
                         .HasForeignKey("DeliveryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("QuickShare.Data.Entities.FileMetadata", b =>
-                {
-                    b.HasOne("QuickShare.Data.Entities.Folder", "Folder")
-                        .WithMany()
-                        .HasForeignKey("FolderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Folder");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>

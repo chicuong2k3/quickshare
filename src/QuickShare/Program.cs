@@ -320,12 +320,6 @@ using (var scope = app.Services.CreateScope())
         await db.Database.EnsureCreatedAsync();
     }
 
-    if (!await db.Folders.AnyAsync(f => f.Name == Folder.RootName))
-    {
-        db.Folders.Add(new Folder { Id = Guid.CreateVersion7(), Name = Folder.RootName });
-        await db.SaveChangesAsync();
-    }
-
     if (hasR2)
     {
         var r2 = scope.ServiceProvider.GetRequiredService<R2StorageProvider>();

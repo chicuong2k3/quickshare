@@ -5,8 +5,6 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<FileMetadata> Files => Set<FileMetadata>();
-    public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserLogin> UserLogins => Set<UserLogin>();
     public DbSet<UserUsage> UserUsages => Set<UserUsage>();
@@ -21,31 +19,6 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Folder>(entity =>
-        {
-            entity.ToTable("folders");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Name).IsUnique();
-            entity.HasIndex(e => e.OwnerId);
-            entity.Property(e => e.Name).IsRequired();
-        });
-
-        modelBuilder.Entity<FileMetadata>(entity =>
-        {
-            entity.ToTable("files");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Filename).IsRequired();
-            entity.Property(e => e.ContentType).IsRequired();
-            entity.HasIndex(e => e.FolderId);
-            entity.HasIndex(e => e.Filename);
-            entity.HasIndex(e => e.CreatedAt).IsDescending();
-            entity.HasIndex(e => e.OwnerId);
-            entity.HasOne(e => e.Folder)
-                .WithMany()
-                .HasForeignKey(e => e.FolderId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("users");
