@@ -193,6 +193,10 @@ builder.Services.AddSingleton<CacheService>();
 builder.Host.UseWolverine(opts =>
 {
     opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
+
+    // Single-instance app: Solo avoids Balanced-mode leader election and the
+    // wolverine_nodes agent registry, so no stale-node StopAgent timeouts on health checks.
+    opts.Durability.Mode = DurabilityMode.Solo;
     opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
     opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
     opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
