@@ -32,6 +32,11 @@ public interface IStorageProvider
         string uploadId, string objectKey, CancellationToken ct = default);
 
     // ── R2 download + cleanup ──────────────────────────────────────────────
+
+    /// <summary>Actual stored size of an object in bytes, or -1 if it cannot be determined.</summary>
+    Task<long> GetObjectSizeAsync(
+        string objectKey, CancellationToken ct = default);
+
     Task<Uri> GetPresignedDownloadUrlAsync(
         string objectKey, TimeSpan expiry, CancellationToken ct = default);
 

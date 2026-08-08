@@ -146,6 +146,12 @@ internal sealed class StubPayOSService : PayOSService
 
 internal sealed class LocalDiskStorageProviderStub : IStorageProvider
 {
+    /// <summary>Size reported by GetObjectSizeAsync; -1 (default) means "unknown", which skips the commit-time size check.</summary>
+    public long NextObjectSize { get; set; } = -1;
+
+    public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult(NextObjectSize);
+
     public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
         => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));
 

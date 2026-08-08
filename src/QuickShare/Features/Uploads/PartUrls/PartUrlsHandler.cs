@@ -24,6 +24,9 @@ public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccess
         if (session is null || string.IsNullOrEmpty(session.StoragePath))
             return Result.Failure<PartUrlsResponse>(new LightResults.Error("No matching in-progress upload session"));
 
+        if (cmd.PartNumbers.Count > StartR2.StartR2Handler.MaxPartsFor(session.FileSize))
+            return Result.Failure<PartUrlsResponse>(new LightResults.Error("Part count exceeds what this upload can need"));
+
         IReadOnlyList<R2PartUrl> parts;
         try
         {

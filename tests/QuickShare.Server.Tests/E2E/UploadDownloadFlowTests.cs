@@ -280,6 +280,137 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task Commit_WrongUploadId_Returns400()
+    {
+        var client = CreateNoRedirectClient(authenticated: true);
+        var start = await (await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        })).Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var commit = await client.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = "forged-upload-id",
+            ObjectKey = start.ObjectKey,
+            FileName = TestFileName,
+            ContentType = TestContentType,
+            FileSize = TestFileSize,
+            Parts = [new R2PartEtag(1, "etag-1")],
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, commit.StatusCode);
+    }
+
+    [Fact]
+    public async Task Commit_OtherUsersSession_Returns400()
+    {
+        var authed = CreateNoRedirectClient(authenticated: true);
+        var start = await (await authed.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        })).Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var anonymous = CreateNoRedirectClient();
+        var commit = await anonymous.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            ObjectKey = start.ObjectKey,
+            FileName = TestFileName,
+            ContentType = TestContentType,
+            FileSize = TestFileSize,
+            Parts = [new R2PartEtag(1, "etag-1")],
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, commit.StatusCode);
+    }
+
+    [Fact]
+    public async Task Abort_OtherUsersSession_IsNoOp()
+    {
+        var authed = CreateNoRedirectClient(authenticated: true);
+        var start = await (await authed.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        })).Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var anonymous = CreateNoRedirectClient();
+        var abort = await anonymous.PostAsJsonAsync("/api/uploads/abort-r2", new
+        {
+            start.DeliveryId,
+            start.UploadId,
+            start.ObjectKey,
+        });
+        Assert.Equal(HttpStatusCode.OK, abort.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var session = await db.UploadSessions.FindAsync(start.DeliveryId);
+        Assert.NotNull(session);
+    }
+
+    [Fact]
+    public async Task StartUpload_PartCountExceedingDeclaredSize_Returns400()
+    {
+        var client = CreateNoRedirectClient();
+        var manyParts = Enumerable.Range(1, 50).ToArray();
+        var response = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize, // 1 KB declared, 50 parts requested
+            ContentType = TestContentType,
+            PartNumbers = manyParts,
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Commit_ActualSizeOverPlanLimit_Returns400()
+    {
+        var stub = (LocalDiskStorageProviderStub)_factory.Services.GetRequiredService<IStorageProvider>();
+        var client = CreateNoRedirectClient();
+        var start = await (await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        })).Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        stub.NextObjectSize = 104_857_600L * 3; // 300 MB actually stored vs 1 KB declared
+        try
+        {
+            var commit = await client.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+            {
+                DeliveryId = start.DeliveryId,
+                UploadId = start.UploadId,
+                ObjectKey = start.ObjectKey,
+                FileName = TestFileName,
+                ContentType = TestContentType,
+                FileSize = TestFileSize,
+                Parts = [new R2PartEtag(1, "etag-1")],
+            });
+            Assert.Equal(HttpStatusCode.BadRequest, commit.StatusCode);
+        }
+        finally
+        {
+            stub.NextObjectSize = -1;
+        }
+    }
+
+    [Fact]
     public async Task Download_UnknownShareCode_Returns404()
     {
         var client = CreateNoRedirectClient();

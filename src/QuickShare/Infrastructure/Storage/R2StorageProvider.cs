@@ -167,6 +167,19 @@ public sealed class R2StorageProvider : IStorageProvider
 
     // ── R2 download ────────────────────────────────────────────────────────
 
+    public async Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
+    {
+        try
+        {
+            var metadata = await _s3.GetObjectMetadataAsync(_options.BucketName, objectKey, ct);
+            return metadata.ContentLength;
+        }
+        catch (AmazonS3Exception)
+        {
+            return -1;
+        }
+    }
+
     public Task<Uri> GetPresignedDownloadUrlAsync(
         string objectKey, TimeSpan expiry, CancellationToken ct = default)
     {

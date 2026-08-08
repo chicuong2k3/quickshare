@@ -42,6 +42,9 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
     public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 multipart upload.");
 
+    public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult(-1L);
+
     public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support presigned URLs.");
 
