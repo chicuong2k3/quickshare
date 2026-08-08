@@ -1,5 +1,17 @@
 # Test Automation Summary — 2026-08-08 (branch `dev`)
 
+> Updated after full-coverage pass (`e8cc07c`): tier 1 now 102/102.
+> Added: `FolderFileApiTests` (folders CRUD, file move, avatar),
+> `DeliveryExtrasApiTests` (brand, report/takedown, password verify, abort-r2, P2P share API),
+> `PageCoverageTests` (/, /send, /files, /d/{code}, /p2p/d/{code}).
+> More prod bugs fixed: 5 endpoints (folders CRUD, file move, avatar) had every
+> response — including error statuses and bodies — replaced by an empty 204
+> (raw response writes vs FastEndpoints auto-response); ExecuteUpdateAsync
+> replaced with tracked updates in UpdateFolderHandler/MoveFileHandler.
+> Known untested: AccountProfile.razor still uses ExecuteUpdateAsync (works on
+> Postgres, would 500 under the in-memory test provider if ever covered);
+> PayOS webhook valid-signature path (needs real checksum signing).
+
 ## Generated Tests
 
 ### Tier 1 — In-process E2E (WebApplicationFactory, `tests/QuickShare.Server.Tests/E2E/`)
