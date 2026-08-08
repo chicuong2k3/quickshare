@@ -147,7 +147,10 @@
                 </div>
                 <h1 class="status-h1">Upload failed</h1>
                 <p class="status-p" id="upload-error-msg">An unknown error occurred.</p>
-                <button class="db-btn db-btn--primary" style="margin-top: 2.5rem" onclick="uploadPage.reset()">Try again</button>
+                <div style="margin-top: 2.5rem; display: flex; gap: 0.75rem; justify-content: center">
+                    <button id="upload-resume-btn" class="db-btn db-btn--primary hidden" onclick="uploadPage.resumeUpload()">Resume upload</button>
+                    <button class="db-btn" onclick="uploadPage.reset()">Start over</button>
+                </div>
             </section>
         </div>
 </PageWrapper>

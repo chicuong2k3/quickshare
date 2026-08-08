@@ -6,6 +6,7 @@
     var MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
     var PART_TARGET = 25 * 1024 * 1024;
     var CONCURRENT_PARTS = 4;
+    var PART_RETRY_ATTEMPTS = 3;
 
     var state = {
         phase: 'idle',
@@ -52,6 +53,7 @@
         }
         if (state.phase === 'error') {
             document.getElementById('upload-error-msg').textContent = state.error || 'An unknown error occurred.';
+            if (state._resumeCtx) show('upload-resume-btn'); else hide('upload-resume-btn');
         }
 
         // Expiry toggle UI
@@ -136,6 +138,14 @@
             reset();
         },
 
+        resumeUpload: function () {
+            var ctx = state._resumeCtx; if (!ctx) return;
+            state.phase = 'uploading'; state.error = '';
+            state._abortController = new AbortController(); state._startTime = Date.now();
+            render();
+            resumePendingParts(ctx).catch(function (e) { if (e.name === 'AbortError') return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+        },
+
         reset: function () { reset(); render(); }
     };
 
@@ -147,9 +157,11 @@
     function reset() {
         state.phase = 'idle'; state.progress = 0; state.filename = ''; state.link = ''; state.expiresAt = '';
         state.error = ''; state.copied = false; state.encryptionEnabled = true; state._encryptionUsed = false; state.otp = '';
-        state._abortController = null; state._deliveryId = null; state._uploadId = null;
+        state._abortController = null; state._deliveryId = null; state._uploadId = null; state._resumeCtx = null;
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
     }
+
+    function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
 
     function startUpload(file) {
         if (!file) return;
@@ -192,40 +204,98 @@
         if (!startResp.ok) { var errT = await startResp.text(); throw new Error(errT || 'Failed to start upload'); }
         var session = await startResp.json();
         state._deliveryId = session.deliveryId; state._uploadId = session.uploadId; state.objectKey = session.objectKey;
-        var partList = session.parts;
 
-        var completedParts = 0; var partEtags = [];
+        var ctx = {
+            fileName: file.name, contentType: file.type || 'application/octet-stream',
+            originalSize: originalSize, uploadBlob: uploadBlob, effectiveSize: effectiveSize,
+            totalParts: totalParts, partSize: Math.ceil(effectiveSize / totalParts),
+            partEtags: [], urlByPart: {},
+            deliveryId: session.deliveryId, uploadId: session.uploadId, objectKey: session.objectKey,
+            encryptionKeyStr: encryptionKeyStr
+        };
+        for (var u = 0; u < session.parts.length; u++) ctx.urlByPart[session.parts[u].partNumber] = session.parts[u].url;
+        state._resumeCtx = ctx;
 
-        function uploadOnePart(partInfo, idx) {
-            var partSize = Math.ceil(effectiveSize / totalParts);
-            var start = idx * partSize; var end = Math.min(start + partSize, effectiveSize);
-            return fetch(partInfo.url, { method: 'PUT', body: uploadBlob.slice(start, end), signal: signal }).then(function (resp) {
-                if (!resp.ok) return resp.text().then(function (t) { throw new Error('Part ' + partInfo.partNumber + ' failed: ' + t); });
-                var etag = resp.headers.get('ETag') || ''; etag = etag.replace(/^"(.*)"$/, '$1');
-                partEtags[idx] = { partNumber: partInfo.partNumber, etag: etag };
-                completedParts++; state.progress = Math.round((completedParts / totalParts) * 100);
-                var elapsed = (Date.now() - state._startTime) / 1000;
-                if (elapsed > 0) { var doneFrac = completedParts / totalParts; var uploadedSoFar = doneFrac * effectiveSize; var bps = uploadedSoFar / elapsed; state.speed = formatBytes(bps) + '/s'; var remaining = (effectiveSize - uploadedSoFar) / bps; state.eta = remaining < 60 ? Math.round(remaining) + 's' : Math.round(remaining / 60) + 'm'; }
-                render();
-            });
+        await uploadPartsAndCommit(ctx);
+    }
+
+    function completedCount(ctx) { var n = 0; for (var i = 0; i < ctx.totalParts; i++) if (ctx.partEtags[i]) n++; return n; }
+
+    function updateProgress(ctx) {
+        var done = completedCount(ctx);
+        state.progress = Math.round((done / ctx.totalParts) * 100);
+        var elapsed = (Date.now() - state._startTime) / 1000;
+        if (elapsed > 0 && done > 0) {
+            var uploadedSoFar = (done / ctx.totalParts) * ctx.effectiveSize;
+            state.uploadedBytes = uploadedSoFar;
+            var bps = uploadedSoFar / elapsed;
+            state.speed = formatBytes(bps) + '/s';
+            var remaining = (ctx.effectiveSize - uploadedSoFar) / bps;
+            state.eta = remaining < 60 ? Math.round(remaining) + 's' : Math.round(remaining / 60) + 'm';
         }
+        render();
+    }
 
-        for (var batchStart = 0; batchStart < totalParts; batchStart += CONCURRENT_PARTS) {
-            var batchEnd = Math.min(batchStart + CONCURRENT_PARTS, totalParts);
-            var batch = []; for (var bp = batchStart; bp < batchEnd; bp++) batch.push(uploadOnePart(partList[bp], bp));
+    async function freshPartUrls(ctx, partNums, signal) {
+        var resp = await fetch(apiBase() + '/api/uploads/part-urls', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, partNumbers: partNums }) });
+        if (!resp.ok) { var t = await resp.text(); throw new Error(t || 'Could not refresh upload URLs'); }
+        var data = await resp.json();
+        for (var i = 0; i < data.parts.length; i++) ctx.urlByPart[data.parts[i].partNumber] = data.parts[i].url;
+    }
+
+    async function uploadOnePart(ctx, partNumber, signal) {
+        var idx = partNumber - 1;
+        var start = idx * ctx.partSize; var end = Math.min(start + ctx.partSize, ctx.effectiveSize);
+        var lastError = null;
+        for (var attempt = 1; attempt <= PART_RETRY_ATTEMPTS; attempt++) {
+            try {
+                var resp = await fetch(ctx.urlByPart[partNumber], { method: 'PUT', body: ctx.uploadBlob.slice(start, end), signal: signal });
+                if (!resp.ok) throw new Error('Part ' + partNumber + ' failed with HTTP ' + resp.status);
+                var etag = (resp.headers.get('ETag') || '').replace(/^"(.*)"$/, '$1');
+                ctx.partEtags[idx] = { partNumber: partNumber, etag: etag };
+                updateProgress(ctx);
+                return;
+            } catch (e) {
+                if (e.name === 'AbortError') throw e;
+                lastError = e;
+                if (attempt < PART_RETRY_ATTEMPTS) {
+                    await sleep(1000 * Math.pow(2, attempt - 1));
+                    // Presigned URLs expire; get a fresh one before retrying. If the
+                    // refresh itself fails, retry with the old URL rather than give up.
+                    try { await freshPartUrls(ctx, [partNumber], signal); } catch (_) {}
+                }
+            }
+        }
+        throw lastError;
+    }
+
+    async function uploadPartsAndCommit(ctx) {
+        var signal = state._abortController.signal;
+        var pending = []; for (var p = 1; p <= ctx.totalParts; p++) if (!ctx.partEtags[p - 1]) pending.push(p);
+
+        for (var batchStart = 0; batchStart < pending.length; batchStart += CONCURRENT_PARTS) {
+            var batch = pending.slice(batchStart, batchStart + CONCURRENT_PARTS).map(function (pn) { return uploadOnePart(ctx, pn, signal); });
             var results = await Promise.allSettled(batch);
             for (var r = 0; r < results.length; r++) { if (results[r].status === 'rejected') throw results[r].reason; }
         }
 
-        var commitResp = await fetch(api + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: state._deliveryId, uploadId: state._uploadId, objectKey: state.objectKey, fileName: file.name, contentType: file.type || 'application/octet-stream', fileSize: originalSize, parts: partEtags, otp: state.otp || null }) });
+        var commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null }) });
         if (!commitResp.ok) { var cErr = await commitResp.text(); throw new Error(cErr || 'Failed to finalize upload'); }
         var result = await commitResp.json();
         state.link = result.shareLink;
-        if (encryptionKeyStr) state.link += '#key=' + encryptionKeyStr;
+        if (ctx.encryptionKeyStr) state.link += '#key=' + ctx.encryptionKeyStr;
         if (result.expiresAt) { state.expiresAt = result.expiresAt; }
+        state._resumeCtx = null;
         state.phase = 'success'; render();
         renderQR(state.link);
         window.uploadPage.copyLink();
+    }
+
+    async function resumePendingParts(ctx) {
+        var signal = state._abortController.signal;
+        var pending = []; for (var p = 1; p <= ctx.totalParts; p++) if (!ctx.partEtags[p - 1]) pending.push(p);
+        if (pending.length > 0) await freshPartUrls(ctx, pending, signal);
+        await uploadPartsAndCommit(ctx);
     }
 
     function renderQR(text) {

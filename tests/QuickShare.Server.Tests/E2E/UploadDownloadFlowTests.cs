@@ -156,6 +156,76 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task PartUrls_InProgressSession_ReturnsFreshUrls()
+    {
+        var client = CreateNoRedirectClient(authenticated: true);
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1, 2],
+        });
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var response = await client.PostAsJsonAsync("/api/uploads/part-urls", new
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            PartNumbers = new[] { 2 },
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"partNumber\":2", body);
+    }
+
+    [Fact]
+    public async Task PartUrls_CommittedSession_Returns404()
+    {
+        var client = CreateNoRedirectClient(authenticated: true);
+        var commit = await UploadFileAsync(client);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.ShareCode == commit.ShareCode);
+
+        var response = await client.PostAsJsonAsync("/api/uploads/part-urls", new
+        {
+            DeliveryId = delivery.Id,
+            UploadId = "stub-upload-id",
+            PartNumbers = new[] { 1 },
+        });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PartUrls_UnknownSession_Returns404()
+    {
+        var client = CreateNoRedirectClient(authenticated: true);
+        var response = await client.PostAsJsonAsync("/api/uploads/part-urls", new
+        {
+            DeliveryId = Guid.NewGuid(),
+            UploadId = "no-such-upload",
+            PartNumbers = new[] { 1 },
+        });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PartUrls_Unauthenticated_Returns401()
+    {
+        var client = CreateNoRedirectClient();
+        var response = await client.PostAsJsonAsync("/api/uploads/part-urls", new
+        {
+            DeliveryId = Guid.NewGuid(),
+            UploadId = "x",
+            PartNumbers = new[] { 1 },
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Download_UnknownShareCode_Returns404()
     {
         var client = CreateNoRedirectClient();
