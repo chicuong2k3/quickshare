@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, passwordVerifying: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -11,9 +11,8 @@ window.downloadApp = (function () {
             function removeAttr(id, name) { var el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
             function render() {
-                hide('download-phase-password'); hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file');
-                if (state.phase === 'password') show('download-phase-password');
-                else if (state.phase === 'otp') show('download-phase-otp');
+                hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file');
+                if (state.phase === 'otp') show('download-phase-otp');
                 else if (state.phase === 'ad') show('download-phase-ad');
                 else if (state.phase === 'file') {
                     show('download-phase-file');
@@ -35,29 +34,12 @@ window.downloadApp = (function () {
                 var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
                 state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
                 if (info.hasOtp) state.phase = 'otp';
-                else if (info.hasPassword) state.phase = 'password';
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
                 render(); fetchBranding();
             }
             function expiryLabel(e) { var r = new Date(e) - new Date(); if (r <= 0) return 'expired'; var m = Math.floor(r / 60000); if (m < 60) return 'expires in ' + m + ' min'; var h = Math.floor(m / 60); if (h < 24) return 'expires in ' + h + ' h'; var d = Math.floor(h / 24); return 'expires in ' + d + ' day' + (d === 1 ? '' : 's'); }
 
-            function verifyPassword() {
-                var input = document.getElementById('dl-password-input'); var pw = input ? input.value.trim() : ''; if (!pw) { show('dl-password-error'); text('dl-password-error', 'Please enter a password.'); return; }
-                hide('dl-password-error'); text('dl-password-btn-text', 'Verifying\u2026'); attr('dl-password-btn', 'disabled', 'disabled');
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
-                    .then(function (r) {
-                        return r.ok ? r.json().catch(function () { return {}; }) : r.json().then(function (b) { throw b; }).catch(function () { throw {}; });
-                    })
-                    .then(function (body) {
-                        var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
-                        if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); } else state.phase = 'file';
-                    })
-                    .catch(function (e) {
-                        show('dl-password-error'); text('dl-password-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || 'Incorrect password.');
-                    })
-                    .finally(function () { text('dl-password-btn-text', 'Unlock'); removeAttr('dl-password-btn', 'disabled'); render(); });
-            }
 
             function readOtp() {
                 var inputs = document.querySelectorAll('#dl-otp .db-otp__input');
@@ -94,8 +76,7 @@ window.downloadApp = (function () {
                     .then(function () {
                         state.verifiedOtp = otp;
                         var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
-                        if (info.hasPassword) state.phase = 'password';
-                        else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
+                        if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                         else state.phase = 'file';
                     })
                     .catch(function (e) {
@@ -127,5 +108,5 @@ window.downloadApp = (function () {
             async function decryptAndSave(url) { var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var keyB64 = keyMatch[1]; var base64 = keyB64.replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var response = await fetch(url); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var encryptedData = await response.arrayBuffer(); var nonce = encryptedData.slice(0, 12); var ciphertext = encryptedData.slice(12); var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); var blob = new Blob([decrypted]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = code; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-            return { verifyPassword: verifyPassword, verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
+            return { verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
         })();

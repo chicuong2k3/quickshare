@@ -28,26 +28,6 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
         }
     }
 
-    [Obsolete("Use R2 multipart upload instead.")]
-    public async Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default)
-    {
-        EnsureRootDirectory();
-        var filePath = GetChunkPath(chunkId);
-        await File.WriteAllBytesAsync(filePath, data, ct);
-        _logger.LogDebug("Stored chunk {ChunkId} ({Size} bytes)", chunkId, data.Length);
-        return chunkId.ToString("N");
-    }
-
-    [Obsolete("Use GetPresignedDownloadUrlAsync instead.")]
-    public async Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default)
-    {
-        EnsureRootDirectory();
-        var filePath = GetChunkPath(Guid.Parse(storageRef));
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Chunk not found: {storageRef}", filePath);
-        return await File.ReadAllBytesAsync(filePath, ct);
-    }
-
     [Obsolete("Use DeleteObjectsAsync instead.")]
     public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
     {

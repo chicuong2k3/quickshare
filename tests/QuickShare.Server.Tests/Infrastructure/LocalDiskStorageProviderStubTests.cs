@@ -55,12 +55,4 @@ public sealed class LocalDiskStorageProviderStubTests
             () => Provider.DeleteObjectsAsync("prefix/", TestContext.Current.CancellationToken));
     }
 
-    [Fact]
-    public void StoreChunkAsync_is_marked_obsolete()
-    {
-        var method = typeof(LocalDiskStorageProvider).GetMethod(nameof(LocalDiskStorageProvider.StoreChunkAsync));
-        Assert.NotNull(method);
-        var attr = method!.GetCustomAttributes(typeof(ObsoleteAttribute), false);
-        Assert.NotEmpty(attr);
-    }
 }

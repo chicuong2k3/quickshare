@@ -14,7 +14,6 @@ public record Delivery : BaseAuditEntity
     public int DownloadCount { get; set; }
     public long EgressBytes { get; set; }
     public DateTime? ExpiresAt { get; set; }
-    public string? PasswordHash { get; set; }
     public string? OtpHash { get; set; }
     public string? BrandLogo { get; set; }
     public string? BrandMessage { get; set; }

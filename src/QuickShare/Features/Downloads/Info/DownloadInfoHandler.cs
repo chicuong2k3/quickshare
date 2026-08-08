@@ -11,7 +11,6 @@ public record DownloadInfoResponse(
     DateTime? ExpiresAt,
     int DownloadCount,
     int MaxDownloads,
-    bool HasPassword,
     bool HasOtp,
     string SenderPlan
 );
@@ -43,7 +42,6 @@ public sealed class DownloadInfoHandler
             delivery.ExpiresAt,
             delivery.DownloadCount,
             delivery.MaxDownloads,
-            HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
             HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
             SenderPlan: senderPlan
         ));

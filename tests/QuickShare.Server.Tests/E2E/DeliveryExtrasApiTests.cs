@@ -97,19 +97,6 @@ public sealed class DeliveryExtrasApiTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ── Password verify (no password set ⇒ always valid) ──
-
-    [Fact]
-    public async Task VerifyPassword_DeliveryWithoutPassword_ReturnsValid()
-    {
-        var (_, shareCode) = await SeedDeliveryAsync(_ => { });
-        var client = _factory.CreateClient();
-        var response = await client.PostAsJsonAsync(
-            $"/api/deliveries/{shareCode}/verify", new { Password = "anything" });
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("true", await response.Content.ReadAsStringAsync());
-    }
-
     // ── Uploads: abort ──
 
     [Fact]

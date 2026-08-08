@@ -53,12 +53,6 @@ public sealed class R2StorageProvider : IStorageProvider
 
     // ── Local-disk (legacy, throws) ────────────────────────────────────────
 
-    public Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default)
-        => throw new NotSupportedException("R2StorageProvider does not support chunked storage. Use multipart upload methods.");
-
-    public Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default)
-        => throw new NotSupportedException("R2StorageProvider does not support chunked retrieval. Use GetPresignedDownloadUrlAsync.");
-
     public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
         => throw new NotSupportedException("R2StorageProvider does not support chunk deletion. Use DeleteObjectsAsync.");
 

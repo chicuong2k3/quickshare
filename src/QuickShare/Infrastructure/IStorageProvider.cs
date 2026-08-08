@@ -18,9 +18,7 @@ public sealed record CompletionResult(bool Success, string? ErrorMessage);
 
 public interface IStorageProvider
 {
-    // ── Local-disk (legacy, kept for backward compat) ──────────────────────
-    Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default);
-    Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default);
+    // ── Legacy chunk cleanup (DeliveryCleanupService still sweeps old chunks) ──
     Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default);
 
     // ── R2 multipart upload ────────────────────────────────────────────────

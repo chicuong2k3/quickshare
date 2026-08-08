@@ -145,12 +145,6 @@ internal sealed class StubPayOSService : PayOSService
 
 internal sealed class LocalDiskStorageProviderStub : IStorageProvider
 {
-    public Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default)
-        => Task.FromResult($"stub://{chunkId}");
-
-    public Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default)
-        => Task.FromResult(Array.Empty<byte>());
-
     public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
         => Task.CompletedTask;
 
