@@ -5,6 +5,7 @@
     <Project Path="src/QuickShare/QuickShare.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/QuickShare.Browser.Tests/QuickShare.Browser.Tests.csproj" />
     <Project Path="tests/QuickShare.Server.Tests/QuickShare.Server.Tests.csproj" />
   </Folder>
 </Solution>
