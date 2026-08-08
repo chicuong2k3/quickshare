@@ -13,11 +13,9 @@ public static class PlanTierLimits
 
     private const string ConfigPrefix = "Pricing:Limits";
     private const string MaxFileSizeKey = "MaxFileSizeBytes";
-    private const string MaxMonthlyBytesKey = "MaxMonthlyBytes";
     private const string MaxExpiryHoursKey = "MaxExpiryHours";
     private const string MaxExpiryDaysKey = "MaxExpiryDays";
     private const string MaxDownloadsKey = "MaxDownloads";
-    private const string MaxConcurrencyKey = "MaxConcurrency";
 
     private static readonly FusionCacheEntryOptions PlanLimitsOptions = new()
     {
@@ -60,18 +58,6 @@ public static class PlanTierLimits
         );
     }
 
-    public static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) GetMonthlyLimits(string plan)
-    {
-        plan = Normalize(plan);
-        if (!CacheEnabled) return DirectGetMonthlyLimits(plan);
-
-        return _cache!.GetOrSet<(long?, int?)>(
-            $"plan:monthlyLimits:{plan}",
-            (_, _) => DirectGetMonthlyLimits(plan),
-            PlanLimitsOptions
-        );
-    }
-
     public static int GetMaxDownloads(string plan)
     {
         plan = Normalize(plan);
@@ -80,18 +66,6 @@ public static class PlanTierLimits
         return _cache!.GetOrSet<int>(
             $"plan:maxDownloads:{plan}",
             (_, _) => DirectGetMaxDownloads(plan),
-            PlanLimitsOptions
-        );
-    }
-
-    public static int GetMaxConcurrency(string plan)
-    {
-        plan = Normalize(plan);
-        if (!CacheEnabled) return DirectGetMaxConcurrency(plan);
-
-        return _cache!.GetOrSet<int>(
-            $"plan:maxConcurrency:{plan}",
-            (_, _) => DirectGetMaxConcurrency(plan),
             PlanLimitsOptions
         );
     }
@@ -129,28 +103,12 @@ public static class PlanTierLimits
         _ => GetLong(Free, MaxFileSizeKey, 5_368_709_120L),
     };
 
-    private static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) DirectGetMonthlyLimits(string plan) => plan switch
-    {
-        Free => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
-        Pro => (GetLong(Pro, MaxMonthlyBytesKey, 214_748_364_800L), null),
-        Studio => (GetLong(Studio, MaxMonthlyBytesKey, 2_199_023_255_552L), null),
-        _ => (GetLong(Free, MaxMonthlyBytesKey, 16_106_127_360L), null),
-    };
-
     private static int DirectGetMaxDownloads(string plan) => plan switch
     {
         Free => GetInt(Free, MaxDownloadsKey, 10),
         Pro => GetInt(Pro, MaxDownloadsKey, 100),
         Studio => GetInt(Studio, MaxDownloadsKey, int.MaxValue),
         _ => GetInt(Free, MaxDownloadsKey, 10),
-    };
-
-    private static int DirectGetMaxConcurrency(string plan) => plan switch
-    {
-        Free => GetInt(Free, MaxConcurrencyKey, 2),
-        Pro => GetInt(Pro, MaxConcurrencyKey, 5),
-        Studio => GetInt(Studio, MaxConcurrencyKey, 10),
-        _ => GetInt(Free, MaxConcurrencyKey, 2),
     };
 
     // ── Config helpers ──
