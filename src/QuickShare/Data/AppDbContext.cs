@@ -36,7 +36,6 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Filename).IsRequired();
             entity.Property(e => e.ContentType).IsRequired();
-            entity.Property(e => e.FileReference).IsRequired();
             entity.HasIndex(e => e.FolderId);
             entity.HasIndex(e => e.Filename);
             entity.HasIndex(e => e.CreatedAt).IsDescending();

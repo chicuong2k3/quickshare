@@ -12,7 +12,6 @@ public record Delivery : BaseAuditEntity
     public string ShareCode { get; init; } = string.Empty;
     public int MaxDownloads { get; set; }
     public int DownloadCount { get; set; }
-    public long EgressBytes { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public string? OtpHash { get; set; }
     public string? BrandLogo { get; set; }

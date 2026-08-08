@@ -7,7 +7,6 @@ public sealed record FileItemResponse(
     long Size,
     Guid FolderId,
     string FolderName,
-    string[] Tags,
     DateTime CreatedAt,
     DateTime? UpdatedAt = null
 );

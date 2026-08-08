@@ -82,7 +82,6 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest>
             TotalBytes = req.FileSize,
             MaxDownloads = 0,
             DownloadCount = 0,
-            EgressBytes = 0,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             SenderId = isAuthenticated ? user!.Id : null
         };

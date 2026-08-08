@@ -121,9 +121,6 @@ namespace QuickShare.Migrations
                     b.Property<int>("DownloadCount")
                         .HasColumnType("integer");
 
-                    b.Property<long>("EgressBytes")
-                        .HasColumnType("bigint");
-
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -203,25 +200,12 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<long>("AccessHash")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ChannelId")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("DocumentId")
-                        .HasColumnType("bigint");
-
-                    b.Property<byte[]>("FileReference")
-                        .IsRequired()
-                        .HasColumnType("bytea");
 
                     b.Property<string>("Filename")
                         .IsRequired()
@@ -230,18 +214,11 @@ namespace QuickShare.Migrations
                     b.Property<Guid>("FolderId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MessageId")
-                        .HasColumnType("integer");
-
                     b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
-
-                    b.PrimitiveCollection<string[]>("Tags")
-                        .IsRequired()
-                        .HasColumnType("text[]");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
