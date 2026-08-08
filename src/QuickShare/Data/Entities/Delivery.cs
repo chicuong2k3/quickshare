@@ -21,5 +21,4 @@ public record Delivery : BaseAuditEntity
     public string Status { get; set; } = "Active";
     public string? StoragePath { get; set; }
     public User? Sender { get; init; }
-    public Manifest? Manifest { get; init; }
 }

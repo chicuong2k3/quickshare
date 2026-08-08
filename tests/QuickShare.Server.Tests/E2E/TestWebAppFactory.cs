@@ -29,6 +29,7 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     {
         builder.UseEnvironment("Development");
 
+        builder.UseSetting("UseInMemoryDatabase", "true");
         builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
         builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
@@ -145,9 +146,6 @@ internal sealed class StubPayOSService : PayOSService
 
 internal sealed class LocalDiskStorageProviderStub : IStorageProvider
 {
-    public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
-        => Task.CompletedTask;
-
     public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
         => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));
 

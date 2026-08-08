@@ -23,8 +23,8 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dpPath))
     .SetApplicationName("QuickShare");
 
-var useInMemoryDb = Type.GetType(
-    "Microsoft.EntityFrameworkCore.InMemoryDbContextOptionsExtensions, Microsoft.EntityFrameworkCore.InMemory") is not null;
+// Set by the test factories; keeps the app on Npgsql everywhere else (incl. dotnet-ef design time).
+var useInMemoryDb = builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
 
 if (useInMemoryDb)
 {

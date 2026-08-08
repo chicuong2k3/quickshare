@@ -7,13 +7,10 @@ public class AppDbContext : DbContext
 
     public DbSet<FileMetadata> Files => Set<FileMetadata>();
     public DbSet<Folder> Folders => Set<Folder>();
-    public DbSet<TempShare> TempShares => Set<TempShare>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserLogin> UserLogins => Set<UserLogin>();
     public DbSet<UserUsage> UserUsages => Set<UserUsage>();
     public DbSet<Delivery> Deliveries => Set<Delivery>();
-    public DbSet<Manifest> Manifests => Set<Manifest>();
-    public DbSet<Chunk> Chunks => Set<Chunk>();
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
@@ -96,30 +93,6 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<Manifest>(entity =>
-        {
-            entity.ToTable("manifests");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.EncryptedData).IsRequired();
-            entity.HasOne(e => e.Delivery)
-                .WithOne(d => d.Manifest)
-                .HasForeignKey<Manifest>(e => e.DeliveryId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Chunk>(entity =>
-        {
-            entity.ToTable("chunks");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.StorageRef).IsRequired();
-            entity.Property(e => e.Sha256).IsRequired();
-            entity.HasIndex(e => new { e.DeliveryId, e.Index }).IsUnique();
-            entity.HasOne(e => e.Delivery)
-                .WithMany()
-                .HasForeignKey(e => e.DeliveryId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UploadSession>(entity =>

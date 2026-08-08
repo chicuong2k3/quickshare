@@ -18,9 +18,6 @@ public sealed record CompletionResult(bool Success, string? ErrorMessage);
 
 public interface IStorageProvider
 {
-    // ── Legacy chunk cleanup (DeliveryCleanupService still sweeps old chunks) ──
-    Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default);
-
     // ── R2 multipart upload ────────────────────────────────────────────────
     Task<R2InitResult> InitR2MultipartUploadAsync(
         Guid deliveryId, string fileName, CancellationToken ct = default);

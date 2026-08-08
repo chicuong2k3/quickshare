@@ -28,23 +28,6 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
         }
     }
 
-    [Obsolete("Use DeleteObjectsAsync instead.")]
-    public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
-    {
-        EnsureRootDirectory();
-        foreach (var refId in storageRefs)
-        {
-            ct.ThrowIfCancellationRequested();
-            var filePath = GetChunkPath(Guid.Parse(refId));
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-                _logger.LogDebug("Deleted chunk {RefId}", refId);
-            }
-        }
-        return Task.CompletedTask;
-    }
-
     // ── R2 methods (not supported on local disk) ───────────────────────────
 
     public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
@@ -64,7 +47,4 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
 
     public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 delete.");
-
-    private string GetChunkPath(Guid chunkId) =>
-        Path.Combine(_rootPath, $"{chunkId:N}.chunk");
 }

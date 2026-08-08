@@ -51,11 +51,6 @@ public sealed class R2StorageProvider : IStorageProvider
         }
     }
 
-    // ── Local-disk (legacy, throws) ────────────────────────────────────────
-
-    public Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default)
-        => throw new NotSupportedException("R2StorageProvider does not support chunk deletion. Use DeleteObjectsAsync.");
-
     // ── R2 multipart upload ────────────────────────────────────────────────
 
     public async Task<R2InitResult> InitR2MultipartUploadAsync(
