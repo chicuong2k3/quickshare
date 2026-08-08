@@ -10,8 +10,27 @@ public record CommitR2Response(string ShareCode, string ShareLink);
 
 public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
 {
+    // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
+    private const long EncryptionOverheadSlack = 1024;
+
     public async Task<Result<CommitR2Response>> Handle(CommitR2Command cmd, AppDbContext db, CancellationToken ct)
     {
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var plan = user?.Plan ?? PlanTierLimits.Anonymous;
+
+        // The commit must match the session created by start-r2, for the same owner —
+        // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
+        var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);
+        if (session is null ||
+            session.Status != "InProgress" ||
+            session.R2UploadId != cmd.UploadId ||
+            session.StoragePath != cmd.ObjectKey ||
+            session.SenderId != user?.Id)
+        {
+            return Result.Failure<CommitR2Response>(new LightResults.Error(
+                "No matching in-progress upload session"));
+        }
+
         CompletionResult completionResult;
         try
         {
@@ -28,7 +47,23 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             return Result.Failure<CommitR2Response>(new LightResults.Error(
                 completionResult.ErrorMessage ?? "R2 commit returned failure"));
 
-        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
+        // Enforce the plan limit on what actually landed in storage, not the declared size —
+        // the declared size is client-controlled and part uploads are not size-constrained.
+        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
+        if (maxFileSize.HasValue)
+        {
+            var actualSize = await storage.GetObjectSizeAsync(cmd.ObjectKey, ct);
+            if (actualSize > maxFileSize.Value + EncryptionOverheadSlack)
+            {
+                try
+                {
+                    await storage.DeleteObjectsAsync(cmd.ObjectKey, ct);
+                }
+                catch { /* best-effort cleanup; the sweeper handles leftovers */ }
+                return Result.Failure<CommitR2Response>(new LightResults.Error(
+                    $"Uploaded size {actualSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
+            }
+        }
 
         var randomBytes = new byte[8];
         RandomNumberGenerator.Fill(randomBytes);
@@ -38,25 +73,22 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
         var delivery = new Delivery
         {
             Id = cmd.DeliveryId,
-            SenderId = user.Id,
-            FileName = cmd.FileName,
-            ContentType = cmd.ContentType,
-            FileSize = cmd.FileSize,
-            TotalBytes = cmd.FileSize,
+            SenderId = user?.Id,
+            // Metadata comes from the validated session, not the commit request.
+            FileName = session.FileName,
+            ContentType = session.ContentType,
+            FileSize = session.FileSize,
+            TotalBytes = session.FileSize,
             ChunkCount = cmd.Parts.Count,
             ShareCode = shareCode,
-            MaxDownloads = PlanTierLimits.GetMaxDownloads(user.Plan),
+            MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
-            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(user.Plan)),
+            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(plan)),
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null
         };
 
-        var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);
-        if (session is not null)
-        {
-            session.Status = "Committed";
-            session.R2UploadId = null;
-        }
+        session.Status = "Committed";
+        session.R2UploadId = null;
 
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);

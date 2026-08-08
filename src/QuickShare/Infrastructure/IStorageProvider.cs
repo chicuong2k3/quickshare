@@ -18,11 +18,6 @@ public sealed record CompletionResult(bool Success, string? ErrorMessage);
 
 public interface IStorageProvider
 {
-    // ── Local-disk (legacy, kept for backward compat) ──────────────────────
-    Task<string> StoreChunkAsync(Guid chunkId, byte[] data, CancellationToken ct = default);
-    Task<byte[]> GetChunkAsync(string storageRef, CancellationToken ct = default);
-    Task DeleteChunksAsync(string[] storageRefs, CancellationToken ct = default);
-
     // ── R2 multipart upload ────────────────────────────────────────────────
     Task<R2InitResult> InitR2MultipartUploadAsync(
         Guid deliveryId, string fileName, CancellationToken ct = default);
@@ -37,6 +32,11 @@ public interface IStorageProvider
         string uploadId, string objectKey, CancellationToken ct = default);
 
     // ── R2 download + cleanup ──────────────────────────────────────────────
+
+    /// <summary>Actual stored size of an object in bytes, or -1 if it cannot be determined.</summary>
+    Task<long> GetObjectSizeAsync(
+        string objectKey, CancellationToken ct = default);
+
     Task<Uri> GetPresignedDownloadUrlAsync(
         string objectKey, TimeSpan expiry, CancellationToken ct = default);
 

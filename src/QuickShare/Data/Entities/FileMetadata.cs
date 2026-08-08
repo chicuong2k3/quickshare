@@ -11,7 +11,7 @@ public record FileMetadata : BaseAuditEntity
     public long AccessHash { get; init; }
     public byte[] FileReference { get; init; } = [];
     public long DocumentId { get; init; }
-    public Guid FolderId { get; init; }
+    public Guid FolderId { get; set; }
     public Folder? Folder { get; init; }
     public Guid? OwnerId { get; init; }
     public string[] Tags { get; init; } = [];

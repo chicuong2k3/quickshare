@@ -7,6 +7,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     public override void Configure()
     {
         Post("/api/uploads/commit-r2");
+        AllowAnonymous();
         Validator<CommitR2Validator>();
         Description(b => b.WithTags("Uploads"));
         Summary(s =>
@@ -27,7 +28,10 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
         var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
-            await Send.CreatedAtAsync($"/api/downloads/{value.ShareCode}", value, cancellation: ct);
+        {
+            HttpContext.Response.Headers.Location = $"/api/downloads/{value.ShareCode}";
+            await Send.ResponseAsync(value, StatusCodes.Status201Created, ct);
+        }
         else if (result.IsFailure(out var error))
             ThrowError(error.Message, error.Message.Contains("R2") ? 502 : 400);
     }
