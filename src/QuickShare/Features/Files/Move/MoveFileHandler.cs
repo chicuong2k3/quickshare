@@ -35,9 +35,8 @@ public sealed class MoveFileHandler
             return Result.Success(file.ToFileItemResponse());
 
         // Move the file
-        await db.Files
-            .Where(f => f.Id == command.FileId)
-            .ExecuteUpdateAsync(s => s.SetProperty(f => f.FolderId, command.TargetFolderId), ct);
+        file.FolderId = command.TargetFolderId;
+        await db.SaveChangesAsync(ct);
 
         return Result.Success(file.ToFileItemResponse() with { FolderId = command.TargetFolderId, FolderName = targetFolder.Name });
     }
