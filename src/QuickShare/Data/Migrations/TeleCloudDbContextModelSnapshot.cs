@@ -406,7 +406,7 @@ namespace QuickShare.Migrations
                     b.Property<string>("R2UploadId")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SenderId")
+                    b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
@@ -582,8 +582,7 @@ namespace QuickShare.Migrations
                     b.HasOne("QuickShare.Data.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>

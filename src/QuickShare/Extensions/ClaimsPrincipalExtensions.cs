@@ -10,6 +10,22 @@ public static class ClaimsPrincipalExtensions
         return id is not null ? Guid.Parse(id) : throw new InvalidOperationException("Not authenticated");
     }
 
+    /// <summary>Like <see cref="GetUserAsync"/> but returns null for anonymous requests.</summary>
+    public static async Task<User?> GetUserOrDefaultAsync(this ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
+    {
+        var providerKey = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        var provider = principal.FindFirstValue(AuthConstants.ProviderClaimType);
+
+        if (string.IsNullOrEmpty(providerKey) || string.IsNullOrEmpty(provider))
+            return null;
+
+        var login = await db.UserLogins
+            .Include(ul => ul.User)
+            .FirstOrDefaultAsync(ul => ul.Provider == provider && ul.ProviderKey == providerKey, ct);
+
+        return login?.User;
+    }
+
     public static async Task<User> GetUserAsync(this ClaimsPrincipal principal, AppDbContext db, CancellationToken ct)
     {
         var providerKey = principal.FindFirstValue(ClaimTypes.NameIdentifier);

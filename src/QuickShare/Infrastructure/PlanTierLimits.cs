@@ -5,6 +5,9 @@ public static class PlanTierLimits
     public const string Free = "free";
     public const string Pro = "pro";
     public const string Studio = "studio";
+    // Not a purchasable plan — the tier applied to uploads without a signed-in user.
+    // Falls through to the default (most restrictive) branch of every limit switch.
+    public const string Anonymous = "anonymous";
 
     public static (long? MaxBytesPerMonth, int? MaxTransfersPerMonth) GetMonthlyLimits(string plan)
     {

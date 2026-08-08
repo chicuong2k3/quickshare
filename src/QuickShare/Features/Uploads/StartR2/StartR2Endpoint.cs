@@ -7,6 +7,7 @@ public sealed class StartR2Endpoint : Endpoint<StartR2Request, StartR2Response>
     public override void Configure()
     {
         Post("/api/uploads/start-r2");
+        AllowAnonymous();
         Validator<StartR2Validator>();
         Description(b => b.WithTags("Uploads"));
         Summary(s =>

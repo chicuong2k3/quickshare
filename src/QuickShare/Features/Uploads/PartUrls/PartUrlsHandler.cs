@@ -10,13 +10,14 @@ public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccess
 {
     public async Task<Result<PartUrlsResponse>> Handle(PartUrlsCommand cmd, AppDbContext db, CancellationToken ct)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var senderId = user?.Id;
 
         var session = await db.UploadSessions
             .AsNoTracking()
             .FirstOrDefaultAsync(s =>
                 s.Id == cmd.DeliveryId &&
-                s.SenderId == user.Id &&
+                s.SenderId == senderId &&
                 s.R2UploadId == cmd.UploadId &&
                 s.Status == "InProgress", ct);
 

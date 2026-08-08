@@ -5,6 +5,7 @@ public sealed class PartUrlsEndpoint : Endpoint<PartUrlsRequest, PartUrlsRespons
     public override void Configure()
     {
         Post("/api/uploads/part-urls");
+        AllowAnonymous();
         Validator<PartUrlsValidator>();
         Description(b => b.WithTags("Uploads"));
         Summary(s =>

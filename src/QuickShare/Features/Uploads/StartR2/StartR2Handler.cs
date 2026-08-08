@@ -11,12 +11,13 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
 {
     public async Task<Result<StartR2Response>> Handle(StartR2Command cmd, AppDbContext db, CancellationToken ct)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var plan = user?.Plan ?? PlanTierLimits.Anonymous;
 
-        var maxFileSize = PlanTierLimits.GetMaxFileSize(user.Plan);
+        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
         if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
             return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"File size {cmd.FileSize} exceeds {user.Plan} plan limit of {maxFileSize} bytes"));
+                $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
 
         var deliveryId = Guid.CreateVersion7();
 
@@ -43,11 +44,11 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
                 $"R2 part URL generation failed: {ex.Message}"));
         }
 
-        var maxExpiryDays = PlanTierLimits.GetMaxExpiryDays(user.Plan);
+        var maxExpiryDays = PlanTierLimits.GetMaxExpiryDays(plan);
         var session = new UploadSession
         {
             Id = deliveryId,
-            SenderId = user.Id,
+            SenderId = user?.Id,
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,

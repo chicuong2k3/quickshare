@@ -7,6 +7,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     public override void Configure()
     {
         Post("/api/uploads/commit-r2");
+        AllowAnonymous();
         Validator<CommitR2Validator>();
         Description(b => b.WithTags("Uploads"));
         Summary(s =>

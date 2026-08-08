@@ -113,17 +113,84 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task StartUpload_Unauthenticated_Returns401()
+    public async Task AnonymousUpload_FullFlow_Succeeds()
     {
         var client = CreateNoRedirectClient();
+
+        var commit = await UploadFileAsync(client);
+        Assert.NotEmpty(commit.ShareCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.ShareCode == commit.ShareCode);
+            Assert.Null(delivery.SenderId);
+        }
+
+        var download = await client.GetAsync($"/api/downloads/{commit.ShareCode}");
+        Assert.Equal(HttpStatusCode.Found, download.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnonymousUpload_ExceedingAnonymousLimit_Returns400()
+    {
+        var client = CreateNoRedirectClient();
+        var overAnonymousLimit = 104_857_600L + 1;
         var response = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = overAnonymousLimit,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnonymousUpload_PartUrls_WorkForOwnSession()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
         {
             FileName = TestFileName,
             FileSize = TestFileSize,
             ContentType = TestContentType,
             PartNumbers = [1],
         });
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var response = await client.PostAsJsonAsync("/api/uploads/part-urls", new
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            PartNumbers = new[] { 1 },
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AuthenticatedSession_PartUrls_NotVisibleToAnonymous()
+    {
+        var authed = CreateNoRedirectClient(authenticated: true);
+        var startResponse = await authed.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        });
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var anonymous = CreateNoRedirectClient();
+        var response = await anonymous.PostAsJsonAsync("/api/uploads/part-urls", new
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            PartNumbers = new[] { 1 },
+        });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -210,19 +277,6 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
             PartNumbers = new[] { 1 },
         });
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task PartUrls_Unauthenticated_Returns401()
-    {
-        var client = CreateNoRedirectClient();
-        var response = await client.PostAsJsonAsync("/api/uploads/part-urls", new
-        {
-            DeliveryId = Guid.NewGuid(),
-            UploadId = "x",
-            PartNumbers = new[] { 1 },
-        });
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

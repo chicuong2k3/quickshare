@@ -28,7 +28,8 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             return Result.Failure<CommitR2Response>(new LightResults.Error(
                 completionResult.ErrorMessage ?? "R2 commit returned failure"));
 
-        var user = await httpContextAccessor.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var plan = user?.Plan ?? PlanTierLimits.Anonymous;
 
         var randomBytes = new byte[8];
         RandomNumberGenerator.Fill(randomBytes);
@@ -38,16 +39,16 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
         var delivery = new Delivery
         {
             Id = cmd.DeliveryId,
-            SenderId = user.Id,
+            SenderId = user?.Id,
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,
             TotalBytes = cmd.FileSize,
             ChunkCount = cmd.Parts.Count,
             ShareCode = shareCode,
-            MaxDownloads = PlanTierLimits.GetMaxDownloads(user.Plan),
+            MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
-            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(user.Plan)),
+            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(plan)),
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null
         };
 
