@@ -53,6 +53,10 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
 
             services.AddAuthentication(TestAuthHandler.SchemeName)
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
+            // Stub R2 so upload flows work end-to-end in the browser; part PUTs go
+            // to http://stub.local/... which tests intercept with Playwright routing.
+            services.AddSingleton<IStorageProvider, BrowserStorageStub>();
         });
     }
 
@@ -98,6 +102,37 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
         if (descriptor is not null)
             services.Remove(descriptor);
     }
+}
+
+/// <summary>R2 stub for browser tests: part URLs point at http://stub.local so
+/// Playwright route interception can fulfill (or abort, to simulate network loss)
+/// the part PUTs; commit and download URL generation always succeed.</summary>
+internal sealed class BrowserStorageStub : IStorageProvider
+{
+    public const string PartUrlPrefix = "http://stub.local/part/";
+
+    public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult(-1L);
+
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+        => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));
+
+    public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<R2PartUrl>>(partNumbers
+            .Select(n => new R2PartUrl(n, new Uri($"{PartUrlPrefix}{n}")))
+            .ToList());
+
+    public Task<CompletionResult> CompleteR2MultipartUploadAsync(string uploadId, string objectKey, IReadOnlyList<R2PartEtag> parts, CancellationToken ct = default)
+        => Task.FromResult(new CompletionResult(true, null));
+
+    public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
+        => Task.FromResult(new Uri("http://stub.local/download"));
+
+    public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
+        => Task.CompletedTask;
 }
 
 internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>

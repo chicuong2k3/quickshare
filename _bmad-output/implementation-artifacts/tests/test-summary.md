@@ -1,34 +1,43 @@
-# Test Automation Summary — E2E coverage for GitHub issues #2–#9
+# Test Automation Summary — 2026-08-09 (branch `dev`)
 
-Date: 2026-08-09 · Framework: xUnit + `TestWebAppFactory` (in-process, R2/PayOS stubbed, EF InMemory)
-Result: **115/115 passing** (`dotnet test tests/QuickShare.Server.Tests`)
+Kết quả: **Server 125/125** (~23s) · **Browser 15/15** (~31s)
 
-## Generated Tests
+## Tier 1 — In-process E2E (`tests/QuickShare.Server.Tests/E2E/`, xUnit + TestWebAppFactory)
 
-### New files
-- [x] `tests/QuickShare.Server.Tests/E2E/LocalizationTests.cs` — issue #9: vi culture cookie renders Vietnamese (home + pricing), default renders English, no raw resource keys leak. Non-ASCII is HTML-entity-encoded by Razor, so assertions decode first; culture cookie sent via `HandleCookies=false` client (the default cookie container drops manual `Cookie` headers).
-- [x] `tests/QuickShare.Server.Tests/E2E/AccountProfileTests.cs` — issue #6: profile form round-trip through the full Htmxor protocol (`hxor-eventid` → `HXOR-Event-Handler-Id` header, `HX-XSRF-TOKEN` cookie → `RequestVerificationToken` header) + unauthenticated redirect to /login.
+Hạ tầng: **SQLite file per-factory** (thay InMemory) — relational thật nên `ExecuteUpdateAsync` và FK constraint chạy như production. `MigrationsAssembly` trỏ vào test assembly để skip Npgsql migrations; schema từ `EnsureCreated`.
 
-### Added to existing files
-- [x] `PaymentFlowTests.UpgradePost_WithoutWebhook_PlanStaysFree_IntentStaysPending` — issue #7 cancel path: no webhook → plan stays free, intent stays Pending.
-- [x] `UploadDownloadFlowTests.StartUpload_ProPlan_6GB_Succeeds` — issue #7: Pro user starts a 6GB upload (246×25MB parts) successfully.
-- [x] `DeliveryExtrasApiTests.SetBrand_ProUser_Succeeds_AndShowsOnBrandEndpoint` — issue #9: Pro user sets branding; anonymous GET of the brand endpoint returns it.
+- `UploadDownloadFlowTests` — upload→share→download, OTP, 410/403/404, plan limits (kể cả Pro 6GB), part-URL security
+- `UploadResumeTests` — session cũ >15 phút vẫn xin được part URL mới (backdate, không cần fake clock); `ZombiePartSweeper` chỉ quét session quá hạn (method `internal` + InternalsVisibleTo)
+- `PayOSWebhookSignatureTests` — **chữ ký HỢP LỆ** (ký bằng chính `CryptoProvider` của SDK → không thể lệch thuật toán): activate plan + complete intent; orderCode lạ → 200 ignored; sửa amount sau khi ký → 401
+- `PaymentFlowTests` — intent tạo đúng, chữ ký sai 401, activation, cancel path (không webhook → plan giữ free, intent Pending)
+- `AccountProfileTests` — rename qua Htmxor protocol (HXOR-Event-Handler-Id + HX-XSRF-TOKEN) **persist vào DB thật**; validation rỗng; redirect login
+- `LocalizationTests` — vi/en theo culture cookie, không lộ raw key
+- `DeliveryExtrasApiTests` — brand (free 403 / pro thành công), abort, P2P share API
+- `P2PQuotaAndAdTests`, `AuthFlowTests`, `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `PageCoverageTests`
 
-## Coverage vs issues
-| Issue | Automated (pre-existing + new) | Still manual-only |
-|---|---|---|
-| #2 anonymous upload | full API flow, 100MB cap, OTP | drag&drop, clipboard paste, QR |
-| #3 large upload/resume | part-URL refresh, abort, commit guards | real network loss/wifi toggle |
-| #4 download gates | OTP, 410 expiry, 403 limit, 404 | ad countdown UX; **Report endpoint** (feature currently absent from `src`) |
-| #5 P2P | share create, quotas, ad reward | real WebRTC transfer, NAT |
-| #6 login/account | auth 401s, logout, profile form round-trip, deliveries list | real Google OAuth |
-| #7 PayOS | intent creation, bad signature 401, activation, cancel path, Pro 6GB | real sandbox payment + webhook signature |
-| #8 files page | — (feature removed, issue closed) | — |
-| #9 branding/i18n | free 403, pro set+get brand, vi/en rendering, raw-key leak check | mobile devices, per-language layout |
+## Tier 2 — Browser (Playwright + Kestrel, `tests/QuickShare.Browser.Tests/`, chạy tuần tự — xem AssemblyInfo.cs)
 
-## Known limitations
-- Profile rename persistence can't be asserted: the page saves via `ExecuteUpdateAsync`, unsupported by the EF InMemory provider. The test covers the validation path (proves Htmxor dispatch + antiforgery + handler execution). Full persistence needs a SQLite in-memory test double.
+- `P2PTransferBrowserTests` — **WebRTC thật giữa 2 browser context**: sender tạo link, receiver nhận file qua RTCDataChannel, byte count khớp. Chỉ còn NAT/4G cần thiết bị thật
+- `UploadResumeBrowserTests` — **mất mạng + resume** (Playwright route abort/fulfill part PUT qua `BrowserStorageStub`): retries cạn → nút Resume → resume thành công; happy path; cancel giữa chừng về idle
+- `DownloadPageTests` — gate theo plan sender: Pro → file card thẳng, Free → ad countdown + skip, OTP sai/đúng, expired, not-found
+- `LanguageSwitchTests` — switcher vi↔en set cookie + reload, giữ qua navigation
+- `SmokeTests` — pages không JS error, HTMX swap không full reload, P2P tạo link
 
-## Next Steps
-- Swap the factory to SQLite in-memory if `ExecuteUpdateAsync` paths grow.
-- Playwright (`tests/QuickShare.Browser.Tests`) is the place for drag&drop/clipboard/WebRTC flows if those ever need automation.
+## Bug production tìm được nhờ test (đã fix)
+
+1. **`RawJson` bị Razor HTML-encode trong `<script>`** (`Download.razor`) → `JSON.parse` fail âm thầm → OTP gate và ad interstitial KHÔNG BAO GIỜ hiện. Fix: `MarkupString` (an toàn XSS — STJ encoder escape `<>&`).
+
+## Quyết định sản phẩm đã thực thi
+
+- **Feature Report đã xoá** (issue #4 cập nhật, bullet Report gỡ): `Features/Reports/`, UI trong `Download.razor`, JS trong `download.js`, tests.
+
+## Còn lại phải manual (checklist issues #2–#9 trước release)
+
+NAT/4G thật (P2P), mobile Safari/Chrome thật, PayOS sandbox tiền thật, Google OAuth màn hình thật, drag&drop/clipboard cảm quan.
+
+## Chạy
+
+```bash
+dotnet test tests/QuickShare.Server.Tests   # ~23s
+dotnet test tests/QuickShare.Browser.Tests  # ~31s (cần: playwright.ps1 install chromium 1 lần)
+```
