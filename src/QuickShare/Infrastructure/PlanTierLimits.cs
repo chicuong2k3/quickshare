@@ -13,7 +13,7 @@ public static class PlanTierLimits
     {
         return (plan ?? "").ToLowerInvariant() switch
         {
-            Free => (MaxBytesPerMonth: 2_147_483_648L, MaxTransfersPerMonth: null),   // 2 GB
+            Free => (MaxBytesPerMonth: 10_737_418_240L, MaxTransfersPerMonth: null),  // 10 GB
             Pro => (MaxBytesPerMonth: 53_687_091_200L, MaxTransfersPerMonth: null),   // 50 GB
             Studio => (MaxBytesPerMonth: 536_870_912_000L, MaxTransfersPerMonth: null), // 500 GB
             _ => (MaxBytesPerMonth: 2_147_483_648L, MaxTransfersPerMonth: null),
@@ -24,10 +24,10 @@ public static class PlanTierLimits
     {
         return (plan ?? "").ToLowerInvariant() switch
         {
-            Free => 104_857_600L,            // 100 MB
-            Pro => 2_147_483_648L,           // 2 GB
-            Studio => 21_474_836_480L,       // 20 GB
-            _ => 104_857_600L,
+            Free => 2_147_483_648L,          // 2 GB — WeTransfer free parity
+            Pro => 5_368_709_120L,           // 5 GB — matches the client-side MAX_FILE_BYTES cap
+            Studio => 21_474_836_480L,       // 20 GB (client currently caps at 5 GB)
+            _ => 104_857_600L,               // 100 MB — anonymous
         };
     }
 

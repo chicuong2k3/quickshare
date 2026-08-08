@@ -197,7 +197,7 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     public async Task StartUpload_ExceedingFreePlanLimit_Returns400()
     {
         var client = CreateNoRedirectClient(authenticated: true);
-        var overFreeLimit = 104_857_600L + 1;
+        var overFreeLimit = 2_147_483_648L + 1;
         var response = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
         {
             FileName = TestFileName,
