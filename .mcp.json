@@ -2,7 +2,11 @@
   "mcpServers": {
     "slnmap": {
       "command": "slnmap",
-      "args": ["serve", "--db", "C:/Users/nguye/Desktop/codes/TeleCloud/slnmap.db"]
+      "args": [
+        "serve",
+        "--db",
+        "C:/Users/nguye/Desktop/codes/TeleCloud/slnmap.db"
+      ]
     },
     "seq": {
       "command": "seq-mcp-server",
@@ -10,6 +14,30 @@
         "SEQ_SERVER_URL": "https://seq.codemagic.io.vn",
         "SEQ_API_KEY": "4FDtwKRi4qKMaBzdYN4J"
       }
+    },
+    "vs-debug": {
+      "type": "stdio",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".claude/vs-mcp-shim.ps1"
+      ]
+    },
+    "vs-semantic": {
+      "type": "stdio",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".claude/vs-mcp-shim.ps1",
+        "-Route",
+        "/mcp-semantic"
+      ]
     }
   }
 }
