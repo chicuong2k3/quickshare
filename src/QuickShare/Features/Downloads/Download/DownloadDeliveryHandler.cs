@@ -73,11 +73,16 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
 
         if (!hasRangeHeader)
         {
+            // Capture root-scoped services/values now: the request scope (and HttpContext)
+            // are disposed once the response completes, racing the background task.
+            var scopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+            var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await using var scope = httpContext.RequestServices.CreateAsyncScope();
+                    await using var scope = scopeFactory.CreateAsyncScope();
                     var updateDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
                     var entity = await updateDb.Deliveries.FindAsync([delivery.Id]);
@@ -89,7 +94,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                         {
                             Id = Guid.CreateVersion7(),
                             DeliveryId = delivery.Id,
-                            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "",
+                            IpAddress = remoteIp,
                             DownloadedAt = DateTime.UtcNow
                         });
 

@@ -8,7 +8,7 @@ namespace QuickShare.Features.Payments.PayOS;
 /// <summary>
 /// Creates and manages PayOS payment links for plan upgrades.
 /// </summary>
-public sealed class PayOSService
+public class PayOSService
 {
     private readonly PayOSClient _client;
     private readonly IConfiguration _config;
@@ -32,7 +32,7 @@ public sealed class PayOSService
     /// <summary>
     /// Creates a PayOS payment link and returns the checkout URL + QR code.
     /// </summary>
-    public async Task<PayOSPaymentResult> CreatePaymentLinkAsync(
+    public virtual async Task<PayOSPaymentResult> CreatePaymentLinkAsync(
         long orderCode,
         int amountVnd,
         string description,

@@ -24,7 +24,7 @@ builder.Services.AddDataProtection()
     .SetApplicationName("QuickShare");
 
 var useInMemoryDb = Type.GetType(
-    "Microsoft.EntityFrameworkCore.InMemoryDatabaseProvider, Microsoft.EntityFrameworkCore.InMemory") is not null;
+    "Microsoft.EntityFrameworkCore.InMemoryDbContextOptionsExtensions, Microsoft.EntityFrameworkCore.InMemory") is not null;
 
 if (useInMemoryDb)
 {
@@ -80,9 +80,13 @@ builder.Services.AddScoped<PayOSService>();
 
 builder.Host.UseWolverine(opts =>
 {
-    opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
-    opts.UseEntityFrameworkCoreTransactions();
-    opts.Policies.AutoApplyTransactions();
+    // In-memory DB (tests) runs Wolverine without durable Postgres persistence.
+    if (!useInMemoryDb)
+    {
+        opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
+        opts.UseEntityFrameworkCoreTransactions();
+        opts.Policies.AutoApplyTransactions();
+    }
 }, ExtensionDiscovery.ManualOnly);
 
 // ── API (FastEndpoints + Swagger) ──
