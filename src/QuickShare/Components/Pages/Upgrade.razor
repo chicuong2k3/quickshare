@@ -1,13 +1,14 @@
 @layout MainLayout
 @page "/upgrade"
 @attribute [Authorize]
+@using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.PayOS
 @using QuickShare.Features.Payments.Subscriptions
 @using QuickShare.Features.Users.Shared
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IConfiguration Config
-@inject PayOSService PayOS
+@inject CheckoutService Checkout
 
 <PageTitle>Nâng cấp lên @planDisplay — QuickShareCloud</PageTitle>
 
@@ -52,33 +53,7 @@
                  hx-select="#upgrade-body"
                  hx-swap="outerHTML"
                  aria-busy="true">
-            <div class="summary-card">
-                <div class="summary-card__head">
-                    <h2 class="db-h2">@planDisplay</h2>
-                    <p class="db-text-muted">@planDesc</p>
-                </div>
-                <div class="summary-card__price">
-                    @if (IsYearly)
-                    {
-                        <span class="price-amount">@planYearlyPrice</span>
-                        <span class="price-period db-text-muted">/ năm</span>
-                    }
-                    else
-                    {
-                        <span class="price-amount">@planMonthlyPrice</span>
-                        <span class="price-period db-text-muted">/ tháng</span>
-                    }
-                </div>
-                <div class="summary-card__features">
-                    @foreach (var feature in planFeatures)
-                    {
-                        <div class="feature">
-                            <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                            <span>@feature</span>
-                        </div>
-                    }
-                </div>
-            </div>
+            @SummaryCard
 
             <div class="payment">
                 <h2 class="db-h2">Hoàn tất nâng cấp</h2>
@@ -107,33 +82,7 @@
     {
         @* Full render: HTMX GET re-render or POST with data *@
         <section id="upgrade-body">
-            <div class="summary-card">
-                <div class="summary-card__head">
-                    <h2 class="db-h2">@planDisplay</h2>
-                    <p class="db-text-muted">@planDesc</p>
-                </div>
-                <div class="summary-card__price">
-                    @if (IsYearly)
-                    {
-                        <span class="price-amount">@planYearlyPrice</span>
-                        <span class="price-period db-text-muted">/ năm</span>
-                    }
-                    else
-                    {
-                        <span class="price-amount">@planMonthlyPrice</span>
-                        <span class="price-period db-text-muted">/ tháng</span>
-                    }
-                </div>
-                <div class="summary-card__features">
-                    @foreach (var feature in planFeatures)
-                    {
-                        <div class="feature">
-                            <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                            <span>@feature</span>
-                        </div>
-                    }
-                </div>
-            </div>
+            @SummaryCard
 
             <div class="payment" id="payment-section">
                 <h2 class="db-h2">Hoàn tất nâng cấp</h2>
@@ -146,7 +95,7 @@
                 @if (payOSResult is not null && payOSResult.Success)
                 {
                     <div class="payment-info">
-                        <h3 class="db-h3">Thanh toán <strong>@FormatPrice((int)paymentIntent!.Amount)</strong></h3>
+                        <h3 class="db-h3">Thanh toán <strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
                         <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
 
                         <div class="payos-checkout">
@@ -250,44 +199,50 @@
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
 
-    private string planDisplay => selectedPlan == PlanTierLimits.Studio ? "Studio" : "Pro";
-    private string planDesc => selectedPlan == PlanTierLimits.Studio
-        ? "Dành cho team & doanh nghiệp"
-        : "Dành cho nhà sáng tạo & chuyên gia";
-    private string planSummary => selectedPlan == PlanTierLimits.Studio
-        ? "500 GB dung lượng/tháng, không giới hạn chuyển, API, hỗ trợ riêng"
-        : "5 GB/tệp, 50 GB dung lượng/tháng, 100 lượt chuyển/tháng, bảo vệ bằng mã truy cập, hỗ trợ ưu tiên";
-    private string planMonthlyPrice => FormatPrice(
-        selectedPlan == PlanTierLimits.Studio
-            ? Config.GetValue<int>(PricingKeys.StudioMonthly, 200000)
-            : Config.GetValue<int>(PricingKeys.ProMonthly, 50000));
-    private string planYearlyPrice => FormatPrice(
-        selectedPlan == PlanTierLimits.Studio
-            ? Config.GetValue<int>(PricingKeys.StudioYearly, 2000000)
-            : Config.GetValue<int>(PricingKeys.ProYearly, 500000));
-
-    private string FormatPrice(int amount)
-    {
-        var currency = Config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
-        return currency == PricingKeys.DefaultCurrency
-            ? $"{amount:N0}₫"
-            : $"{currency}{amount}";
-    }
-
-    private string[] planFeatures => selectedPlan == PlanTierLimits.Studio
-        ? new[] { "20 GB/tệp", "500 GB / tháng", "Không giới hạn chuyển", "Tùy chỉnh thương hiệu", "Truy cập API", "Hỗ trợ riêng" }
-        : new[] { "5 GB/tệp", "50 GB / tháng", "100 lượt chuyển/tháng", "Bảo vệ bằng mã truy cập", "Hỗ trợ ưu tiên" };
+    private PlanInfo PlanData => PlanCatalog.Get(selectedPlan);
+    private string planDisplay => PlanData.Display;
+    private string planSummary => PlanData.Summary;
+    private string planMonthlyPrice => PlanCatalog.FormatPrice(
+        Config.GetValue(PlanData.MonthlyPricingKey, PlanData.MonthlyDefaultAmount),
+        Config[PricingKeys.Currency]);
+    private string planYearlyPrice => PlanCatalog.FormatPrice(
+        Config.GetValue(PlanData.YearlyPricingKey, PlanData.YearlyDefaultAmount),
+        Config[PricingKeys.Currency]);
 
     private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
     private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);
 
+    private RenderFragment SummaryCard => @<div class="summary-card">
+        <div class="summary-card__head">
+            <h2 class="db-h2">@PlanData.Display</h2>
+            <p class="db-text-muted">@PlanData.Description</p>
+        </div>
+        <div class="summary-card__price">
+            @if (IsYearly)
+            {
+                <span class="price-amount">@planYearlyPrice</span>
+                <span class="price-period db-text-muted">/ năm</span>
+            }
+            else
+            {
+                <span class="price-amount">@planMonthlyPrice</span>
+                <span class="price-period db-text-muted">/ tháng</span>
+            }
+        </div>
+        <div class="summary-card__features">
+            @foreach (var feature in PlanData.Features)
+            {
+                <div class="feature">
+                    <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span>@feature</span>
+                </div>
+            }
+        </div>
+    </div>;
+
     protected override async Task OnInitializedAsync()
     {
-        selectedPlan = Plan?.ToLowerInvariant() switch
-        {
-            PlanTierLimits.Studio => PlanTierLimits.Studio,
-            _ => PlanTierLimits.Pro
-        };
+        selectedPlan = PlanCatalog.Normalize(Plan);
 
         var ctx = HttpContextAccessor.HttpContext!;
         var isHtmxRequest = string.Equals(
@@ -307,9 +262,9 @@
         currentPlan = user.ToProfileResponse().Plan;
 
         // Handle PayOS redirect callback (orderCode in query string)
-        if (!isPost)
+        if (!isPost && shouldProcessCallback && TryGetPayOSOrderCode(ctx, out var orderCode))
         {
-            await TryFinalizePaymentFromCallbackAsync(user, ctx, ct);
+            await Checkout.TryFinalizeCallbackAsync(user, orderCode, ct);
         }
 
         // Auto-create payment on first load (HTMX GET) or on form submit / retry (POST).
@@ -322,138 +277,13 @@
                 var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
                 var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
                 var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
-                await CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
+                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
             }
             else if (isHtmxRequest)
             {
-                await CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
+                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
             }
         }
-    }
-
-    private async Task CreatePaymentLinkAsync(User user, string plan, bool isYearly, CancellationToken ct)
-    {
-        var pricingKey = plan.ToLowerInvariant() switch
-        {
-            PlanTierLimits.Pro when isYearly => PricingKeys.ProYearly,
-            PlanTierLimits.Pro => PricingKeys.ProMonthly,
-            PlanTierLimits.Studio when isYearly => PricingKeys.StudioYearly,
-            _ => PricingKeys.StudioMonthly
-        };
-
-        var expectedAmount = Config.GetValue<int>(pricingKey);
-        var currency = Config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
-
-        var code = await GenerateUniqueCodeAsync(Db, ct);
-        var payOSOrderCode = PayOSService.GenerateOrderCode();
-
-        while (await Db.PaymentIntents.AnyAsync(
-            i => i.PayOSOrderCode == payOSOrderCode && i.Status == PaymentIntentStatus.Pending,
-            ct))
-        {
-            payOSOrderCode = PayOSService.GenerateOrderCode();
-        }
-
-        paymentIntent = new PaymentIntent
-        {
-            Id = Guid.CreateVersion7(),
-            UserId = user.Id,
-            Code = code,
-            PayOSOrderCode = payOSOrderCode,
-            Plan = plan,
-            Billing = isYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly,
-            Amount = expectedAmount,
-            Currency = currency,
-            Status = PaymentIntentStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddHours(1)
-        };
-        Db.PaymentIntents.Add(paymentIntent);
-        await Db.SaveChangesAsync(ct);
-
-        var description = $"QSC-{code[^6..]}";
-        payOSResult = await PayOS.CreatePaymentLinkAsync(
-            payOSOrderCode,
-            expectedAmount,
-            description,
-            ct);
-    }
-
-    private static async Task<string> GenerateUniqueCodeAsync(AppDbContext db, CancellationToken ct)
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        const int randomLen = 6;
-        var random = Random.Shared;
-
-        while (true)
-        {
-            var code = "QSC-" + new string(Enumerable.Range(0, randomLen)
-                .Select(_ => chars[random.Next(chars.Length)])
-                .ToArray());
-
-            var exists = await db.PaymentIntents
-                .AnyAsync(i => i.Code == code && i.Status == PaymentIntentStatus.Pending, ct);
-
-            if (!exists)
-                return code;
-        }
-    }
-    private async Task TryFinalizePaymentFromCallbackAsync(User user, HttpContext ctx, CancellationToken ct)
-    {
-        if (!IsSuccessfulPayOSCallback(ctx))
-        {
-            return;
-        }
-
-        if (!TryGetPayOSOrderCode(ctx, out var orderCode))
-        {
-            return;
-        }
-
-        var intent = await Db.PaymentIntents
-            .Where(i => i.UserId == user.Id)
-            .Where(i => i.PayOSOrderCode == orderCode)
-            .Where(i => i.Status == PaymentIntentStatus.Pending)
-            .FirstOrDefaultAsync(ct);
-
-        if (intent is null)
-        {
-            return;
-        }
-
-        await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, Db, ct);
-
-        var invoiceId = orderCode.ToString();
-        var hasExistingPaymentEvent = await Db.PaymentEvents
-            .Where(x => x.UserId == user.Id)
-            .Where(x => x.EventType == PaymentEventTypes.Payment)
-            .Where(x => x.InvoiceId == invoiceId)
-            .AnyAsync(ct);
-
-        if (!hasExistingPaymentEvent)
-        {
-            Db.PaymentEvents.Add(new PaymentEvent
-            {
-                UserId = user.Id,
-                EventType = PaymentEventTypes.Payment,
-                Plan = intent.Plan,
-                PlanDisplay = intent.Plan switch
-                {
-                    PlanTierLimits.Studio => "Studio",
-                    PlanTierLimits.Pro => "Pro",
-                    _ => string.Empty
-                },
-                Billing = intent.Billing,
-                Amount = intent.Amount,
-                Currency = intent.Currency,
-                InvoiceId = invoiceId,
-                InvoiceUrl = string.Empty
-            });
-        }
-
-        intent.Status = PaymentIntentStatus.Completed;
-        intent.CompletedAt = DateTime.UtcNow;
-        await Db.SaveChangesAsync(ct);
     }
 
     private bool IsSuccessfulPayOSCallback(HttpContext ctx)

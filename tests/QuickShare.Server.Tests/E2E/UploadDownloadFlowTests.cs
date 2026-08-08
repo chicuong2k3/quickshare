@@ -8,6 +8,9 @@ using QuickShare.Data.Entities;
 using QuickShare.Features.Uploads.CommitR2;
 using QuickShare.Features.Uploads.StartR2;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
 
@@ -207,6 +210,30 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
             PartNumbers = [1],
         });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartUpload_ProPlan_6GB_Succeeds()
+    {
+        const long sixGb = 6L * 1024 * 1024 * 1024;
+        const long partSize = 25L * 1024 * 1024;
+        var partCount = (int)((sixGb + partSize - 1) / partSize);
+
+        var providerKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(providerKey, PlanTierLimits.Pro);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = "big-video.mp4",
+            FileSize = sixGb,
+            ContentType = "video/mp4",
+            PartNumbers = Enumerable.Range(1, partCount).ToArray(),
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var start = await response.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+        Assert.Equal(partCount, start.Parts.Count);
     }
 
     [Fact]

@@ -4,11 +4,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QuickShare.Data;
 using QuickShare.Data.Entities;
+using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
 
 /// <summary>
-/// Remaining delivery-related endpoints: branding, abuse reports,
+/// Remaining delivery-related endpoints: branding,
 /// password/OTP verify edge cases, and P2P share creation via API.
 /// </summary>
 public sealed class DeliveryExtrasApiTests : IClassFixture<TestWebAppFactory>
@@ -52,7 +56,9 @@ public sealed class DeliveryExtrasApiTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task SetBrand_NotOwnDelivery_Returns403()
     {
-        var (deliveryId, _) = await SeedDeliveryAsync(_ => { }, senderId: Guid.NewGuid());
+        // SQLite enforces the Sender FK, so the "other" sender must be a real user row.
+        var otherUser = await _factory.SeedUserAsync(Guid.CreateVersion7().ToString());
+        var (deliveryId, _) = await SeedDeliveryAsync(_ => { }, senderId: otherUser.Id);
 
         var client = _factory.CreateAuthenticatedClient();
         var response = await client.PutAsJsonAsync(
@@ -60,41 +66,25 @@ public sealed class DeliveryExtrasApiTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ── Report / takedown ──
-
     [Fact]
-    public async Task ReportDelivery_MarksTakedown()
+    public async Task SetBrand_ProUser_Succeeds_AndShowsOnBrandEndpoint()
     {
-        var (deliveryId, shareCode) = await SeedDeliveryAsync(_ => { });
+        var providerKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(providerKey, PlanTierLimits.Pro);
+        var (deliveryId, shareCode) = await SeedDeliveryAsync(_ => { }, senderId: proUser.Id);
 
-        var client = _factory.CreateClient();
-        var response = await client.PostAsJsonAsync(
-            $"/api/deliveries/{shareCode}/report", new { Reason = "abuse" });
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        var put = await client.PutAsJsonAsync(
+            $"/api/deliveries/{deliveryId}/brand",
+            new { Message = "pro brand message", Accent = "#ff6600" });
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == deliveryId);
-        Assert.Equal("Takedown", delivery.Status);
-    }
-
-    [Fact]
-    public async Task ReportDelivery_MissingReason_Returns400()
-    {
-        var (_, shareCode) = await SeedDeliveryAsync(_ => { });
-        var client = _factory.CreateClient();
-        var response = await client.PostAsJsonAsync(
-            $"/api/deliveries/{shareCode}/report", new { Reason = "" });
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ReportDelivery_UnknownCode_Returns404()
-    {
-        var client = _factory.CreateClient();
-        var response = await client.PostAsJsonAsync(
-            "/api/deliveries/no-such-code/report", new { Reason = "abuse" });
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var anonymous = _factory.CreateClient();
+        var get = await anonymous.GetAsync($"/api/deliveries/{shareCode}/brand");
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var body = await get.Content.ReadAsStringAsync();
+        Assert.Contains("pro brand message", body);
+        Assert.Contains("#ff6600", body);
     }
 
     // ── Uploads: abort ──

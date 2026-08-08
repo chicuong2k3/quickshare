@@ -1,6 +1,8 @@
 global using QuickShare.Data;
 global using QuickShare.Data.Entities;
 global using QuickShare.Infrastructure;
+global using QuickShare.Infrastructure.Constants;
+global using QuickShare.Infrastructure.Storage;
 global using Wolverine;
 global using Wolverine.EntityFrameworkCore;
 global using Wolverine.Postgresql;

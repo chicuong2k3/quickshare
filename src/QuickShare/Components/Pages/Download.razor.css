@@ -190,28 +190,7 @@
     color: var(--db-color-text-muted);
 }
 
-/* ─── Report abuse ─── */
-.report-form {
-    margin-top: var(--db-space-4);
-    border-radius: var(--db-radius-4);
-    background: color-mix(in srgb, var(--db-color-surface) 30%, transparent);
-    border: 1px solid color-mix(in srgb, var(--db-color-border) 30%, transparent);
-    padding: 1.25rem;
-    text-align: left;
-}
-
-.report-fields {
-    display: flex;
-    flex-direction: column;
-    gap: var(--db-space-3);
-}
-
-.report-done {
-    font-size: var(--db-text-xs);
-    color: var(--db-color-success);
-    text-align: center;
-}
-
+/* ponytail: .report-toggle kept — reused by the "Skip ad" button */
 .report-toggle {
     font-size: var(--db-text-xs);
     color: color-mix(in srgb, var(--db-color-text-muted) 60%, transparent);
@@ -225,51 +204,6 @@
 
 .report-toggle:hover {
     color: var(--db-color-text-muted);
-}
-
-.select {
-    width: 100%;
-    border-radius: var(--db-radius-3);
-    border: 1px solid var(--db-color-border);
-    background: var(--db-color-bg);
-    padding: 0.625rem 0.75rem;
-    font-size: var(--db-text-xs);
-    color: var(--db-color-text);
-    font-family: inherit;
-}
-
-.textarea {
-    width: 100%;
-    border-radius: var(--db-radius-3);
-    border: 1px solid var(--db-color-border);
-    background: var(--db-color-bg);
-    padding: 0.625rem 0.75rem;
-    font-size: var(--db-text-xs);
-    color: var(--db-color-text);
-    resize: none;
-    font-family: inherit;
-}
-
-.submit-btn {
-    width: 100%;
-    border-radius: var(--db-radius-3);
-    background: var(--db-color-error);
-    border: none;
-    padding: 0.625rem 1rem;
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-semibold);
-    color: var(--db-color-bg);
-    cursor: pointer;
-    font-family: inherit;
-    transition: opacity 0.15s;
-}
-
-.submit-btn:hover {
-    opacity: 0.9;
-}
-
-.submit-btn:disabled {
-    opacity: 0.5;
 }
 
 /* ─── Branding card ─── */

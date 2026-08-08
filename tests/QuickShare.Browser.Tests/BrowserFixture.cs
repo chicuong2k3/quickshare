@@ -16,6 +16,9 @@ using QuickShare.Data;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Browser.Tests;
 

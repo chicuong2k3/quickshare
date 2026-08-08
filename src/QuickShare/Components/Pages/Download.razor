@@ -142,25 +142,6 @@
                             </button>
                         </div>
 
-                        <div style="margin-top: 1.5rem; text-align: center">
-                            <button id="" type="button" class="report-toggle" onclick="downloadApp.toggleReport()">Report abuse</button>
-                            <div id="dl-report-form" class="report-form hidden">
-                                <p style="font-size: 0.75rem; font-weight: 500; color: var(--db-color-text); margin-bottom: 0.75rem">Report this file</p>
-                                <div class="report-fields">
-                                    <select id="dl-report-reason" class="select">
-                                        <option value="">Select a reason</option>
-                                        <option value="spam">Spam or unsolicited</option>
-                                        <option value="malware">Malware or harmful</option>
-                                        <option value="abuse">Abusive content</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                    <textarea id="dl-report-message" class="textarea" rows="2" placeholder="Optional details&hellip;"></textarea>
-                                    <button id="dl-report-submit" type="button" class="submit-btn" onclick="downloadApp.submitReport()" data-ai-action="download.report.submit">Submit report</button>
-                                    <p id="dl-report-done" class="report-done hidden">Report submitted. Thank you.</p>
-                                </div>
-                            </div>
-                        </div>
-
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
                         <QuickShare.Components.Shared.AdComponent />
                     </div>
@@ -292,7 +273,10 @@
         };
         return new MarkupString($"<svg class=\"\" style=\"width:1.75rem;height:1.75rem\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"{d}\"/></svg>");
     }
-    private static string RawJson(DownloadInfoDto? info) => info is null ? "{}" : JsonSerializer.Serialize(info, JsonOptions);
+    // MarkupString: a plain string gets HTML-encoded by Razor even inside <script>,
+    // which breaks JSON.parse in download.js (quotes become &quot;). The default
+    // System.Text.Json encoder escapes <, > and & so raw emission stays safe.
+    private static MarkupString RawJson(DownloadInfoDto? info) => new(info is null ? "{}" : JsonSerializer.Serialize(info, JsonOptions));
 
     private enum DownloadRenderState { Loading, Ready, Expired, NotFound, LimitReached, Error }
     private sealed class DownloadInfoDto

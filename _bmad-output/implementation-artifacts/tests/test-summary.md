@@ -1,44 +1,34 @@
-# Test Automation Summary — 2026-08-08 (branch `dev`)
+# Test Automation Summary — E2E coverage for GitHub issues #2–#9
 
-> Updated after full-coverage pass (`e8cc07c`): tier 1 now 102/102.
-> Added: `FolderFileApiTests` (folders CRUD, file move, avatar),
-> `DeliveryExtrasApiTests` (brand, report/takedown, password verify, abort-r2, P2P share API),
-> `PageCoverageTests` (/, /send, /files, /d/{code}, /p2p/d/{code}).
-> More prod bugs fixed: 5 endpoints (folders CRUD, file move, avatar) had every
-> response — including error statuses and bodies — replaced by an empty 204
-> (raw response writes vs FastEndpoints auto-response); ExecuteUpdateAsync
-> replaced with tracked updates in UpdateFolderHandler/MoveFileHandler.
-> Known untested: AccountProfile.razor still uses ExecuteUpdateAsync (works on
-> Postgres, would 500 under the in-memory test provider if ever covered);
-> PayOS webhook valid-signature path (needs real checksum signing).
+Date: 2026-08-09 · Framework: xUnit + `TestWebAppFactory` (in-process, R2/PayOS stubbed, EF InMemory)
+Result: **115/115 passing** (`dotnet test tests/QuickShare.Server.Tests`)
 
 ## Generated Tests
 
-### Tier 1 — In-process E2E (WebApplicationFactory, `tests/QuickShare.Server.Tests/E2E/`)
-- [x] `UploadDownloadFlowTests.cs` — full upload → share → download flow, OTP protection, expiry (410), download limit (403), unknown code (404), plan-size limit (400), auth (401), delivery listing, download counter
-- [x] `PaymentFlowTests.cs` — upgrade POST creates PaymentIntent (PayOS stubbed), webhook rejects invalid signature (401), subscription activation upgrades plan
-- [x] `AuthFlowTests.cs` — API 401s, logout redirect, login page, unknown OAuth provider 404
-- Infra: `TestWebAppFactory` — test-auth handler + seeded user, `StubPayOSService`, warm-up request, fixed in-memory EF detection
+### New files
+- [x] `tests/QuickShare.Server.Tests/E2E/LocalizationTests.cs` — issue #9: vi culture cookie renders Vietnamese (home + pricing), default renders English, no raw resource keys leak. Non-ASCII is HTML-entity-encoded by Razor, so assertions decode first; culture cookie sent via `HandleCookies=false` client (the default cookie container drops manual `Cookie` headers).
+- [x] `tests/QuickShare.Server.Tests/E2E/AccountProfileTests.cs` — issue #6: profile form round-trip through the full Htmxor protocol (`hxor-eventid` → `HXOR-Event-Handler-Id` header, `HX-XSRF-TOKEN` cookie → `RequestVerificationToken` header) + unauthenticated redirect to /login.
 
-### Tier 2 — Browser smoke (Playwright + Kestrel, `tests/QuickShare.Browser.Tests/`)
-- [x] `SmokeTests.cs` — public pages render without JS errors; HTMX lazy-load swaps upgrade skeleton without full reload; P2P send generates share link in real browser
-- Infra: `BrowserFixture` — `UseKestrel(0)` + headless Chromium; auth via extra HTTP header on browser context
-- One-time setup: `pwsh tests/QuickShare.Browser.Tests/bin/Debug/net10.0/playwright.ps1 install chromium`
+### Added to existing files
+- [x] `PaymentFlowTests.UpgradePost_WithoutWebhook_PlanStaysFree_IntentStaysPending` — issue #7 cancel path: no webhook → plan stays free, intent stays Pending.
+- [x] `UploadDownloadFlowTests.StartUpload_ProPlan_6GB_Succeeds` — issue #7: Pro user starts a 6GB upload (246×25MB parts) successfully.
+- [x] `DeliveryExtrasApiTests.SetBrand_ProUser_Succeeds_AndShowsOnBrandEndpoint` — issue #9: Pro user sets branding; anonymous GET of the brand endpoint returns it.
 
-## Real bugs found & fixed by these tests
-1. **CommitR2 returned 201 with empty body** (`CreatedAtAsync` misuse) — broke `upload.js` reading `result.shareLink`. Prod upload flow was broken.
-2. **Download endpoint statuses (404/410/403/302) overwritten with 204** by FastEndpoints auto-response → `DontAutoSendResponse()`.
-3. **Download counter silently never incremented** — background task used the request scope after disposal.
-4. Wolverine/in-memory detection: tests could not boot the host at all before (probe type name was wrong; Wolverine required Postgres).
+## Coverage vs issues
+| Issue | Automated (pre-existing + new) | Still manual-only |
+|---|---|---|
+| #2 anonymous upload | full API flow, 100MB cap, OTP | drag&drop, clipboard paste, QR |
+| #3 large upload/resume | part-URL refresh, abort, commit guards | real network loss/wifi toggle |
+| #4 download gates | OTP, 410 expiry, 403 limit, 404 | ad countdown UX; **Report endpoint** (feature currently absent from `src`) |
+| #5 P2P | share create, quotas, ad reward | real WebRTC transfer, NAT |
+| #6 login/account | auth 401s, logout, profile form round-trip, deliveries list | real Google OAuth |
+| #7 PayOS | intent creation, bad signature 401, activation, cancel path, Pro 6GB | real sandbox payment + webhook signature |
+| #8 files page | — (feature removed, issue closed) | — |
+| #9 branding/i18n | free 403, pro set+get brand, vi/en rendering, raw-key leak check | mobile devices, per-language layout |
 
-## Results
-- Tier 1: 74/74 passed (~9s)
-- Tier 2: 5/5 passed (~5s)
-
-## Commits
-- `d37ee5a` tier-1 tests + bug fixes
-- `1febec7` tier-2 Playwright smoke tests
+## Known limitations
+- Profile rename persistence can't be asserted: the page saves via `ExecuteUpdateAsync`, unsupported by the EF InMemory provider. The test covers the validation path (proves Htmxor dispatch + antiforgery + handler execution). Full persistence needs a SQLite in-memory test double.
 
 ## Next Steps
-- Add both projects to CI (`dotnet test tests/QuickShare.Server.Tests` + playwright install + `dotnet test tests/QuickShare.Browser.Tests`)
-- Optional: P2P two-context WebRTC transfer test; HTMX navigation coverage for /files
+- Swap the factory to SQLite in-memory if `ExecuteUpdateAsync` paths grow.
+- Playwright (`tests/QuickShare.Browser.Tests`) is the place for drag&drop/clipboard/WebRTC flows if those ever need automation.

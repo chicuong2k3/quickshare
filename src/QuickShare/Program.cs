@@ -10,7 +10,10 @@ using QuickShare;
 using QuickShare.Features.Deliveries;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
+using QuickShare.Features.Shares.P2P;
 using QuickShare.Infrastructure.Caching;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Middleware;
 using ZiggyCreatures.Caching.Fusion;
 using QuickShare.Infrastructure.Storage;
 using Npgsql;
@@ -172,6 +175,7 @@ builder.Services.AddHostedService<SubscriptionExpiryJob>();
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 
 builder.Services.AddScoped<PayOSService>();
+builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
 
 // ── FusionCache with kill-switch toggle ──
 var cacheSection = builder.Configuration.GetSection(CacheSettings.Section);

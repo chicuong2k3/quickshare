@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
 

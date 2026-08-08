@@ -6,6 +6,9 @@ using QuickShare.Data;
 using QuickShare.Data.Entities;
 using QuickShare.Features.Payments.Subscriptions;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
 
@@ -47,6 +50,35 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
         Assert.Equal("pro", intent.Plan);
         Assert.Equal("monthly", intent.Billing);
         Assert.True(intent.Amount > 0);
+    }
+
+    [Fact]
+    public async Task UpgradePost_WithoutWebhook_PlanStaysFree_IntentStaysPending()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var getResponse = await client.GetAsync("/upgrade?plan=pro");
+        var token = AntiforgeryHelper.ExtractToken(await getResponse.Content.ReadAsStringAsync());
+        var formContent = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("Plan", "pro"),
+            new KeyValuePair<string, string>("Billing", "monthly"),
+        });
+        var postResponse = await client.PostAsync("/upgrade?plan=pro", formContent);
+        Assert.Equal(HttpStatusCode.OK, postResponse.StatusCode);
+
+        // Cancel path: user never pays, no webhook ever arrives.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var freshUser = await db.Users.AsNoTracking().FirstAsync(u => u.Id == user.Id);
+        Assert.Equal(PlanTierLimits.Free, freshUser.Plan);
+        var intent = await db.PaymentIntents.AsNoTracking()
+            .FirstOrDefaultAsync(i => i.UserId == user.Id);
+        Assert.NotNull(intent);
+        Assert.Equal(PaymentIntentStatus.Pending, intent.Status);
     }
 
     [Fact]

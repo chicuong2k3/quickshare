@@ -64,7 +64,48 @@ protected override async Task OnInitializedAsync()
 
 - **One statement per line** — không gộp nhiều câu lệnh trên cùng một dòng. Mỗi câu lệnh phải nằm trên dòng riêng của nó.
 - **No magic strings** — không dùng hardcoded string/number literal trực tiếp. Phải dùng `const` hoặc `enum` (strongly typed).
-- **Isolation CSS/JS** — luôn dùng scoped CSS (`.razor.css`) và JS isolation (`.razor.js`) cho mỗi component thay vì nhồi hết vào global `wwwroot/`.
+- **CSS scoped, JS theo page** — CSS dùng scoped (`.razor.css`) cho mỗi component (trừ HTML trả về từ HTMX partial — xem mục HTMX ở trên, dùng global `app.css` với prefix). JS riêng của page đặt tại `wwwroot/js/<page>.js`, expose qua 1 object global (xem `download.js`).
+
+## Cấu trúc dự án
+
+```
+src/QuickShare/
+├── Program.cs                # composition root: DI, middleware pipeline, auth, Wolverine, FastEndpoints
+├── GlobalUsings.cs           # namespace dùng toàn cục (Data, Entities, Infrastructure.Constants, .Storage…)
+├── Components/
+│   ├── Layout/               # MainLayout, HtmxorLayout
+│   ├── Pages/                # Blazor SSR page (@page) — mỗi page: .razor + .razor.css
+│   └── Shared/               # component tái sử dụng (AdComponent, PageWrapper…)
+├── Data/
+│   ├── AppDbContext.cs
+│   ├── Entities/             # EF entities
+│   └── Migrations/
+├── Extensions/               # extension method (ClaimsPrincipal, IMessageBus, Result)
+├── Features/<Tên>/<Action>/  # vertical slice — TOÀN BỘ code của 1 feature nằm ở đây
+│   └── vd: Uploads/StartR2/ → StartR2Endpoint.cs, StartR2Handler.cs, StartR2Validator.cs
+├── Infrastructure/           # CHỈ chứa thứ dùng chung cho ≥2 feature
+│   ├── Constants/            # ApiTags, ErrorCodes, RoutePaths, PlanTierLimits… (no magic strings)
+│   ├── Caching/              # CacheService (FusionCache)
+│   ├── Jobs/                 # background job (cleanup, expiry, sweeper)
+│   ├── Middleware/           # exception handler, rate limiting, request logging, HTMX cache
+│   ├── Storage/              # IStorageProvider + R2StorageProvider / LocalDiskStorageProvider
+│   └── Errors.cs, QuickShareOptions.cs
+└── wwwroot/                  # css/app.css (global), js/<page>.js, lib/
+tests/QuickShare.Server.Tests/E2E/   # integration test qua TestWebAppFactory
+```
+
+## Recipe: thêm tính năng mới
+
+Làm theo thứ tự con người sẽ làm:
+
+1. **Đọc trước khi viết**: `Program.cs` (xem pipeline + DI đã có gì), 1 feature tương tự trong `Features/` để copy pattern — `Deliveries/Brand/` cho CRUD nhỏ, `Uploads/StartR2/` cho flow phức tạp — và entity liên quan trong `Data/Entities/`.
+2. **Cần entity mới?** Thêm class vào `Data/Entities/`, thêm `DbSet` vào `AppDbContext`, chạy `dotnet ef migrations add <Tên>` (output vào `Data/Migrations/`).
+3. **API endpoint**: tạo folder `Features/<Tên>/<Action>/` với tối đa 3 file: `<Action>Endpoint.cs` (FastEndpoints — auto-discover, KHÔNG cần đăng ký ở đâu), `<Action>Handler.cs` (Wolverine handler nhận command/query record — cũng auto-discover), `<Action>Validator.cs` (FluentValidation, chỉ khi có input). Tag endpoint bằng const trong `ApiTags`.
+4. **Hằng số**: route, error code, limit, header… vào `Infrastructure/Constants/` — không hardcode.
+5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này. JS riêng của page vào `wwwroot/js/<tên>.js` và expose qua 1 object global (xem `download.js`).
+6. **Service**: service chỉ 1 feature dùng → đặt ngay trong folder feature đó (vd `P2PQuotaService` nằm trong `Features/Shares/P2P/`). Chỉ khi ≥2 feature dùng chung mới đưa vào `Infrastructure/`. Đăng ký DI trong `Program.cs`.
+7. **Test**: thêm E2E test vào `tests/QuickShare.Server.Tests/E2E/`, dùng `TestWebAppFactory` (xem `DeliveryExtrasApiTests` làm mẫu seed data + client).
+8. **Xoá feature**: xoá folder `Features/<Tên>/` là endpoint + handler tự biến mất (auto-discovery), sau đó grep tên feature để dọn UI/JS/CSS/test còn tham chiếu.
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

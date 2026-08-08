@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
 

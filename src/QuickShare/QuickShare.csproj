@@ -48,4 +48,8 @@
   <Target Name="CopyScopedCss" AfterTargets="Build">
     <Copy SourceFiles="$(IntermediateOutputPath)scopedcss\bundle\QuickShare.styles.css" DestinationFolder="$(ProjectDir)wwwroot\css" />
   </Target>
+  <ItemGroup>
+    <InternalsVisibleTo Include="QuickShare.Server.Tests" />
+  </ItemGroup>
+
 </Project>

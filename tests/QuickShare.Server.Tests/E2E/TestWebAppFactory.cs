@@ -12,6 +12,8 @@ using QuickShare.Data.Entities;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
@@ -23,6 +25,8 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     public const string TestUserName = "Test User";
 
     public Guid TestUserId { get; private set; }
+
+    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"quickshare-tests-{Guid.NewGuid():N}.db");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -40,8 +44,10 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
         builder.ConfigureTestServices(services =>
         {
-            // Re-register the DbContext with a unique InMemory name so every factory
-            // (test class) gets an isolated store. RemoveAll of the options
+            // Re-register the DbContext with a per-factory SQLite file so every
+            // factory (test class) gets an isolated store. SQLite (unlike the
+            // InMemory provider) is relational, so ExecuteUpdate/ExecuteDelete and
+            // FK constraints behave like production. RemoveAll of the options
             // configuration is required — EF Core 10 registers both
             // DbContextOptions<T> and IDbContextOptionsConfiguration<T>, and leaving
             // the latter would keep the Program.cs registration alive.
@@ -49,11 +55,12 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<DbContextOptions>();
             services.RemoveAll<AppDbContext>();
-            // Name hoisted outside the lambda — the options action runs per scope,
-            // so an inline Guid.NewGuid() would give every request its own empty DB.
-            var dbName = $"QuickShareTests-{Guid.NewGuid():N}";
+            // MigrationsAssembly points at this (migration-less) test assembly so the
+            // Program.cs startup block sees no pending migrations (the checked-in
+            // migrations are Npgsql SQL); the schema comes from EnsureCreated instead.
             services.AddDbContext<AppDbContext>(opts =>
-                opts.UseInMemoryDatabase(dbName));
+                opts.UseSqlite($"Data Source={_dbPath}",
+                    sqlite => sqlite.MigrationsAssembly("QuickShare.Server.Tests")));
 
             // Header-based test auth: authenticates only when X-Test-UserId is
             // present; challenges stay on the Cookie scheme so anonymous flows and
@@ -131,6 +138,7 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         using (var scope = Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.EnsureCreatedAsync();
             var profile = await UserRegistrationService.RegisterAsync(
                 TestAuthProvider.Value, TestUserProviderKey, TestUserName, TestUserEmail,
                 null, db, CancellationToken.None);
@@ -145,6 +153,11 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
+        try
+        {
+            File.Delete(_dbPath);
+        }
+        catch (IOException) { }
     }
 
     private static void RemoveHostedService<T>(IServiceCollection services) where T : class, IHostedService
