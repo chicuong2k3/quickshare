@@ -1,4 +1,4 @@
-namespace QuickShare.Pages._Shared;
+namespace QuickShare.Components.Shared;
 
 public enum PageVariant
 {
