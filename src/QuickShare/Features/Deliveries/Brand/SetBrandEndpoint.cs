@@ -5,7 +5,7 @@ public sealed class SetBrandEndpoint : Endpoint<SetBrandRequest>
     public override void Configure()
     {
         Put("/api/deliveries/{DeliveryId}/brand");
-        Description(b => b.WithTags("Deliveries"));
+        Description(b => b.WithTags(ApiTags.Deliveries));
     }
 
     public override async Task HandleAsync(SetBrandRequest req, CancellationToken ct)

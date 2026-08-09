@@ -1,6 +1,3 @@
-using System.Security.Claims;
-using QuickShare.Extensions;
-
 namespace QuickShare.Features.Users.Avatar;
 
 public sealed class GetAvatarEndpoint : EndpointWithoutRequest
@@ -26,21 +23,23 @@ public sealed class GetAvatarEndpoint : EndpointWithoutRequest
 
             if (!string.IsNullOrEmpty(avatarUrl))
             {
-                var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? "");
-                html = $"<img class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" />";
+                var escapedAlt = System.Net.WebUtility.HtmlEncode(user.Name ?? string.Empty);
+                html = $"<img class=\"layout-avatar-img\" src=\"{avatarUrl}\" alt=\"{escapedAlt}\" />";
             }
             else
             {
-                html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">{GetInitials(user.Name)}</span>";
+                html = GetInitials(user.Name);
             }
         }
         catch
         {
-            html = $"<span class=\"db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn\">?</span>";
+            html = "?";
         }
 
         HttpContext.Response.StatusCode = 200;
-        HttpContext.Response.ContentType = "text/html";
+        HttpContext.Response.ContentType = MediaTypes.Html;
+        HttpContext.Response.Headers["Cache-Control"] = "private, max-age=3600";
+        HttpContext.Response.Headers["Vary"] = "Cookie";
         await HttpContext.Response.WriteAsync(html, ct);
     }
 

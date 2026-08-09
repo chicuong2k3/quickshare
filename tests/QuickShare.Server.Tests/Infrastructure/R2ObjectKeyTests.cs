@@ -39,7 +39,7 @@ public sealed class R2ObjectKeyTests
     [Fact]
     public void For_handles_empty_filename()
     {
-        var key = R2ObjectKey.For(UserId, DeliveryId, "");
+        var key = R2ObjectKey.For(UserId, DeliveryId, string.Empty);
         Assert.EndsWith("/", key);
     }
 

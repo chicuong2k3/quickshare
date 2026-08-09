@@ -1,20 +1,117 @@
+using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using FastEndpoints.Swagger;
-using System.Security.Claims;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
+using Npgsql;
+using Prometheus;
 using QuickShare;
-using QuickShare.Features.Deliveries;
 using QuickShare.Features.Payments.PayOS;
+using QuickShare.Features.Shares.P2P;
 using QuickShare.Features.Users.Shared;
-using QuickShare.Infrastructure.Quota;
-using QuickShare.Infrastructure.Storage;
+using QuickShare.Infrastructure.Caching;
+using QuickShare.Infrastructure.Jobs;
+using QuickShare.Infrastructure.Middleware;
+using Serilog;
+using Serilog.Enrichers.Span;
+using System.Globalization;
+using System.Net.Sockets;
+using System.Security.Claims;
+using Wolverine.ErrorHandling;
+using ZiggyCreatures.Caching.Fusion;
+
+
+// ── Load .env file (if present) for local development ──
+// Docker compose injects these as env vars; local `dotnet run` needs them loaded manually.
+// Walk up from the current directory to find .env (repo root may differ from project dir).
+static string? FindEnvFile()
+{
+    var dir = Directory.GetCurrentDirectory();
+    for (var i = 0; i < 6; i++)
+    {
+        var candidate = Path.Combine(dir, ".env");
+        if (File.Exists(candidate))
+            return candidate;
+        var parent = Directory.GetParent(dir);
+        if (parent is null)
+            break;
+        dir = parent.FullName;
+    }
+    return null;
+}
+
+
+// Convert UPPER_SNAKE_CASE to PascalCase (e.g. "ACCESS_KEY_ID" → "AccessKeyId")
+static string ToPascalCase(string snake)
+{
+    var parts = snake.Split('_', StringSplitOptions.RemoveEmptyEntries);
+    return string.Concat(parts.Select(p =>
+        char.ToUpperInvariant(p[0]) + p[1..].ToLowerInvariant()));
+}
+
+var envFilePath = FindEnvFile();
+if (envFilePath is not null)
+{
+    foreach (var line in File.ReadAllLines(envFilePath))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#'))
+            continue;
+        var eqIndex = trimmed.IndexOf('=');
+        if (eqIndex <= 0)
+            continue;
+        var key = trimmed[..eqIndex].Trim();
+        var value = trimmed[(eqIndex + 1)..].Trim();
+        if (string.IsNullOrEmpty(value))
+            continue;
+
+        Environment.SetEnvironmentVariable(key, value);
+
+        // Also set .NET-style __ variant so config binding works.
+        // .env uses R2_ACCESS_KEY_ID; .NET expects R2__AccessKeyId → R2:AccessKeyId.
+        var firstUnderscore = key.IndexOf('_');
+        if (firstUnderscore > 0)
+        {
+            var section = key[..firstUnderscore];
+            var propertySnake = key[(firstUnderscore + 1)..];
+            var dotnetKey = $"{section}__{ToPascalCase(propertySnake)}";
+            Environment.SetEnvironmentVariable(dotnetKey, value);
+        }
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection missing");
+builder.Host.UseSerilog((context, _, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.WithSpan();
+});
 
+const string DefaultConnectionName = "DefaultConnection";
+const string MissingConnectionStringError = "ConnectionStrings:DefaultConnection missing";
+const int DatabaseKeepAliveSeconds = 30;
+const int DatabaseRetryAttemptCount = 5;
+var databaseMaxRetryDelay = TimeSpan.FromSeconds(10);
+var databaseRetrySchedule = new[]
+{
+    TimeSpan.FromSeconds(2),
+    TimeSpan.FromSeconds(5),
+    TimeSpan.FromSeconds(15)
+};
+
+var configuredConnectionString = builder.Configuration.GetConnectionString(DefaultConnectionName)
+    ?? throw new InvalidOperationException(MissingConnectionStringError);
+var connectionBuilder = new NpgsqlConnectionStringBuilder(configuredConnectionString)
+{
+    KeepAlive = DatabaseKeepAliveSeconds,
+    TcpKeepAlive = true,
+    TcpKeepAliveTime = 30,
+    TcpKeepAliveInterval = 10,
+};
+var connectionString = connectionBuilder.ConnectionString;
 // Shared DataProtection keyring (same ApplicationName + KeyPath the two projects used before).
 var dpPath = builder.Configuration["DataProtection:KeyPath"]
     ?? Path.Combine(Path.GetTempPath(), "QuickShare", "keys");
@@ -34,7 +131,8 @@ if (useInMemoryDb)
 else
 {
     builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseNpgsql(connectionString)
+        opts.UseNpgsql(connectionString, npgsqlOptions =>
+                npgsqlOptions.EnableRetryOnFailure(DatabaseRetryAttemptCount, databaseMaxRetryDelay, null))
             .AddInterceptors(new AuditableEntityInterceptor()));
 }
 
@@ -74,9 +172,23 @@ builder.Services.AddHostedService<DeliveryExpiryJob>();
 builder.Services.AddHostedService<SubscriptionExpiryJob>();
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 
-builder.Services.AddScoped<DeliveryService>();
 builder.Services.AddScoped<PayOSService>();
+builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
 
+// ── FusionCache with kill-switch toggle ──
+var cacheSection = builder.Configuration.GetSection(CacheSettings.Section);
+builder.Services.Configure<CacheSettings>(cacheSection);
+var cacheSettings = cacheSection.Get<CacheSettings>() ?? new CacheSettings();
+
+builder.Services.AddFusionCache()
+    .WithDefaultEntryOptions(new FusionCacheEntryOptions
+    {
+        Duration = TimeSpan.FromMinutes(cacheSettings.DefaultDurationMinutes),
+        FailSafeMaxDuration = TimeSpan.FromHours(cacheSettings.FailSafeMaxDurationHours),
+        FailSafeThrottleDuration = TimeSpan.FromSeconds(cacheSettings.FailSafeThrottleDurationSeconds),
+    });
+
+builder.Services.AddSingleton<CacheService>();
 
 builder.Host.UseWolverine(opts =>
 {
@@ -84,8 +196,13 @@ builder.Host.UseWolverine(opts =>
     if (!useInMemoryDb)
     {
         opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
-        opts.UseEntityFrameworkCoreTransactions();
-        opts.Policies.AutoApplyTransactions();
+
+        // Single-instance app: Solo avoids Balanced-mode leader election and the
+        // wolverine_nodes agent registry, so no stale-node StopAgent timeouts on health checks.
+        opts.Durability.Mode = DurabilityMode.Solo;
+        opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
+        opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
+        opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
     }
 }, ExtensionDiscovery.ManualOnly);
 
@@ -100,14 +217,21 @@ builder.Services.AddProblemDetails();
 // P2P WebRTC signaling
 builder.Services.AddSingleton<P2PConnectionManager>();
 
-builder.Services.AddScoped<QuotaEnforcer>();
 
 // ── Web (Blazor Static SSR + htmx) ──
 // In .NET 10 Static Server rendering is the default for AddRazorComponents().
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Trust all proxies — safe behind Cloudflare Tunnel / Docker bridge
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddRazorComponents()
     .AddHtmx();
-builder.Services.AddAntiforgery();
 builder.Services.AddLocalization();
+builder.Services.AddAntiforgery();
 
 // ── Unified cookie auth + Google OAuth ──
 // A single AddAuthentication call serves both the API (401/403 on /api/*) and the
@@ -116,14 +240,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.Cookie.Name = AuthConstants.CookieName;
-        options.LoginPath = "/login";
-        options.LogoutPath = "/logout";
+        options.LoginPath = RoutePaths.Login;
+        options.LogoutPath = RoutePaths.Logout;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
         options.Events.OnRedirectToLogin = ctx =>
         {
             // API callers get a status code; browser page requests get the redirect.
-            if (ctx.Request.Path.StartsWithSegments("/api"))
+            if (ctx.Request.Path.StartsWithSegments(RoutePaths.Api))
             {
                 ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return Task.CompletedTask;
@@ -133,7 +257,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
         options.Events.OnRedirectToAccessDenied = ctx =>
         {
-            if (ctx.Request.Path.StartsWithSegments("/api"))
+            if (ctx.Request.Path.StartsWithSegments(RoutePaths.Api))
             {
                 ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return Task.CompletedTask;
@@ -173,7 +297,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+// ── Observability: health checks + Prometheus metrics ──
+var healthChecksBuilder = builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"]);
+
+if (hasR2)
+{
+    var r2HealthUri = new Uri($"https://{r2Options.AccountId}.r2.cloudflarestorage.com");
+    healthChecksBuilder.AddUrlGroup(r2HealthUri, name: "r2", tags: ["storage"]);
+}
 var app = builder.Build();
+
 
 using (var scope = app.Services.CreateScope())
 {
@@ -188,12 +322,6 @@ using (var scope = app.Services.CreateScope())
         await db.Database.EnsureCreatedAsync();
     }
 
-    if (!await db.Folders.AnyAsync(f => f.Name == "/"))
-    {
-        db.Folders.Add(new Folder { Id = Guid.CreateVersion7(), Name = "/" });
-        await db.SaveChangesAsync();
-    }
-
     if (hasR2)
     {
         var r2 = scope.ServiceProvider.GetRequiredService<R2StorageProvider>();
@@ -206,9 +334,22 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Wire static cache holder so static classes (PlanTierLimits) can use cache.
+var cacheService = app.Services.GetRequiredService<CacheService>();
+StaticCache.Initialize(cacheService);
+PlanTierLimits.InitializeCache(cacheService);
+
 app.UseExceptionHandler();
 
+// ── Observability endpoints (before auth — metrics are internal) ──
+app.UseHttpMetrics(); // capture HTTP-level metrics (duration, status code, etc.)
+app.MapHealthChecks("/health");
+app.MapMetrics();
 
+
+
+// Must be early — before auth, before static files.
+app.UseForwardedHeaders();
 if (app.Environment.IsDevelopment())
 {
     // Dev-mode: log full request/response for debugging.
@@ -217,6 +358,16 @@ if (app.Environment.IsDevelopment())
 
 // Serve wwwroot/ (and optimized static assets if a manifest is present).
 app.UseStaticFiles();
+
+// ── Localization (cookie-based culture, falls back to Accept-Language header) ──
+var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("vi") };
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures,
+    RequestCultureProviders = { new CookieRequestCultureProvider() }
+});
 
 app.UseMiddleware<RateLimitingMiddleware>();
 
@@ -254,7 +405,7 @@ app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpC
 });
 
 // Logout endpoint.
-app.MapGet("/logout", async (HttpContext context) =>
+app.MapGet(RoutePaths.Logout, async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     context.Response.Redirect("/?logout=1");

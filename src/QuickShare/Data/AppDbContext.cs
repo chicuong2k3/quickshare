@@ -5,8 +5,6 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<FileMetadata> Files => Set<FileMetadata>();
-    public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserLogin> UserLogins => Set<UserLogin>();
     public DbSet<UserUsage> UserUsages => Set<UserUsage>();
@@ -14,37 +12,13 @@ public class AppDbContext : DbContext
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
-    public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<DailyAdTracking> DailyAdTrackings => Set<DailyAdTracking>();
+    public DbSet<DailyP2PUsage> DailyP2PUsages => Set<DailyP2PUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Folder>(entity =>
-        {
-            entity.ToTable("folders");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Name).IsUnique();
-            entity.HasIndex(e => e.OwnerId);
-            entity.Property(e => e.Name).IsRequired();
-        });
-
-        modelBuilder.Entity<FileMetadata>(entity =>
-        {
-            entity.ToTable("files");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Filename).IsRequired();
-            entity.Property(e => e.ContentType).IsRequired();
-            entity.Property(e => e.FileReference).IsRequired();
-            entity.HasIndex(e => e.FolderId);
-            entity.HasIndex(e => e.Filename);
-            entity.HasIndex(e => e.CreatedAt).IsDescending();
-            entity.HasIndex(e => e.OwnerId);
-            entity.HasOne(e => e.Folder)
-                .WithMany()
-                .HasForeignKey(e => e.FolderId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("users");
@@ -139,8 +113,16 @@ public class AppDbContext : DbContext
             entity.ToTable("subscriptions");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Plan).IsRequired();
-            entity.Property(e => e.Status).IsRequired();
-            entity.Property(e => e.BillingPeriod).IsRequired();
+            entity.Property(e => e.Status)
+                .HasConversion(
+                    v => v.ToString().ToLowerInvariant(),
+                    v => Enum.Parse<SubscriptionStatus>(v, ignoreCase: true))
+                .IsRequired();
+            entity.Property(e => e.BillingPeriod)
+                .HasConversion(
+                    v => v.ToString().ToLowerInvariant(),
+                    v => Enum.Parse<BillingPeriod>(v, ignoreCase: true))
+                .IsRequired();
             entity.Property(e => e.CurrentPeriodStart).IsRequired();
             entity.Property(e => e.CurrentPeriodEnd).IsRequired();
             entity.HasIndex(e => e.UserId);
@@ -165,6 +147,42 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Status).IsRequired();
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.Status);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DailyAdTracking>(entity =>
+        {
+            entity.ToTable("daily_ad_tracking");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.Date }).IsUnique();
+            entity.Property(e => e.Date).IsRequired();
+            entity.Property(e => e.AdCount).IsRequired().HasDefaultValue(0);
+            entity.Property(e => e.TokenHashes).HasColumnType("text[]").HasDefaultValue(Array.Empty<string>());
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DailyP2PUsage>(entity =>
+        {
+            entity.ToTable("daily_p2p_usage");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Date).IsRequired();
+            entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.UploadCount).IsRequired().HasDefaultValue(0);
+            entity.Property(e => e.UnlockedUploads).IsRequired().HasDefaultValue(0);
+            // Authenticated: one row per user per day
+            entity.HasIndex(e => new { e.UserId, e.Date })
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NOT NULL");
+            // Anonymous: one row per IP per day
+            entity.HasIndex(e => new { e.IpAddress, e.Date })
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NULL");
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

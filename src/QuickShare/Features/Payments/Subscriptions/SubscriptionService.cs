@@ -1,4 +1,4 @@
-
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Payments.Subscriptions;
 
@@ -22,15 +22,17 @@ public static class SubscriptionService
             .OrderByDescending(s => s.CurrentPeriodEnd)
             .FirstOrDefaultAsync(ct);
 
+        var period = ParseBillingPeriod(billingPeriod);
+
         if (subscription is null)
         {
-            subscription = CreateSubscription(user.Id, plan, billingPeriod);
+            subscription = CreateSubscription(user.Id, plan, period);
             db.Subscriptions.Add(subscription);
         }
         else
         {
             subscription.Plan = plan;
-            subscription.BillingPeriod = billingPeriod;
+            subscription.BillingPeriod = period;
             subscription.Status = SubscriptionStatus.Active;
             subscription.CancelledAt = null;
             subscription.UpdatedAt = DateTime.UtcNow;
@@ -40,7 +42,7 @@ public static class SubscriptionService
                 ? subscription.CurrentPeriodEnd
                 : DateTime.UtcNow;
             subscription.CurrentPeriodStart = start;
-            subscription.CurrentPeriodEnd = AddBillingPeriod(start, billingPeriod);
+            subscription.CurrentPeriodEnd = AddBillingPeriod(start, period);
         }
 
         user.Plan = plan;
@@ -99,6 +101,13 @@ public static class SubscriptionService
         if (stale.Count > 0)
             await db.SaveChangesAsync(ct);
 
+        // Users downgraded to Free — evict their cached profile (plan display)
+        // and billing history so the billing page stops showing the old plan.
+        foreach (var sub in stale)
+        {
+            await UserCacheInvalidator.EvictAsync(db, sub.User.Id, ct);
+        }
+
         return stale.Count;
     }
 
@@ -107,13 +116,22 @@ public static class SubscriptionService
     /// </summary>
     public static async Task<Subscription?> GetCurrentAsync(User user, AppDbContext db, CancellationToken ct)
     {
-        return await db.Subscriptions
-            .Where(s => s.UserId == user.Id)
-            .OrderByDescending(s => s.CurrentPeriodEnd)
-            .FirstOrDefaultAsync(ct);
+        var cache = StaticCache.Instance;
+        return await cache.GetOrSetAsync(
+            $"billing:sub:{user.Id}",
+            async ct2 =>
+            {
+                return await db.Subscriptions
+                    .Where(s => s.UserId == user.Id)
+                    .OrderByDescending(s => s.CurrentPeriodEnd)
+                    .FirstOrDefaultAsync(ct2);
+            },
+            duration: TimeSpan.FromMinutes(2),
+            token: ct
+        );
     }
 
-    private static Subscription CreateSubscription(Guid userId, string plan, string billingPeriod)
+    private static Subscription CreateSubscription(Guid userId, string plan, BillingPeriod billingPeriod)
     {
         var now = DateTime.UtcNow;
         return new Subscription
@@ -127,12 +145,17 @@ public static class SubscriptionService
         };
     }
 
-    private static DateTime AddBillingPeriod(DateTime from, string billingPeriod)
+    private static DateTime AddBillingPeriod(DateTime from, BillingPeriod billingPeriod)
     {
-        return billingPeriod.ToLowerInvariant() switch
+        return billingPeriod switch
         {
-            "yearly" => from.AddDays(365),
+            BillingPeriod.Yearly => from.AddDays(365),
             _ => from.AddDays(30), // monthly default
         };
     }
+
+    private static BillingPeriod ParseBillingPeriod(string value) =>
+        Enum.TryParse<BillingPeriod>(value, ignoreCase: true, out var period)
+            ? period
+            : BillingPeriod.Monthly;
 }

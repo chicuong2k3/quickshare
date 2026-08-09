@@ -14,7 +14,9 @@ public sealed class VerifyOtpHandler
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
 
-        if (delivery is null || delivery.OtpHash is null)
+        if (delivery is null)
+            return Result.Failure<VerifyOtpResponse>(new LightResults.Error("Delivery not found."));
+        if (delivery.OtpHash is null)
             return Result.Success(new VerifyOtpResponse(true));
 
         return BCrypt.Net.BCrypt.Verify(cmd.Otp, delivery.OtpHash)

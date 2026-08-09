@@ -1,8 +1,5 @@
 using System.Diagnostics;
 using System.Net;
-using Microsoft.Extensions.DependencyInjection;
-using QuickShare.Data;
-using QuickShare.Data.Entities;
 
 namespace QuickShare.Server.Tests.E2E;
 
@@ -50,10 +47,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/upgrade?plan=pro");
         var getHtml = await getResponse.Content.ReadAsStringAsync();
-        var tokenStart = getHtml.IndexOf("__RequestVerificationToken", StringComparison.Ordinal);
-        var valueStart = getHtml.IndexOf("value=\"", tokenStart, StringComparison.Ordinal) + 7;
-        var valueEnd = getHtml.IndexOf("\"", valueStart, StringComparison.Ordinal);
-        var token = getHtml.Substring(valueStart, valueEnd - valueStart);
+        var token = AntiforgeryHelper.ExtractToken(getHtml);
 
         var formContent = new FormUrlEncodedContent(new[]
         {
@@ -72,12 +66,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var getResponse = await client.GetAsync("/upgrade?plan=pro");
         var getHtml = await getResponse.Content.ReadAsStringAsync();
 
-        var tokenStart = getHtml.IndexOf("__RequestVerificationToken", StringComparison.Ordinal);
-        Assert.True(tokenStart >= 0, "Antiforgery token input not found in GET response");
-        var valueStart = getHtml.IndexOf("value=\"", tokenStart, StringComparison.Ordinal) + 7;
-        var valueEnd = getHtml.IndexOf("\"", valueStart, StringComparison.Ordinal);
-        var token = getHtml.Substring(valueStart, valueEnd - valueStart);
-        Assert.NotEmpty(token);
+        var token = AntiforgeryHelper.ExtractToken(getHtml);
 
         var formContent = new FormUrlEncodedContent(new[]
         {
@@ -95,10 +84,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateAuthenticatedClient();
         var getResponse = await client.GetAsync("/upgrade?plan=pro");
         var getHtml = await getResponse.Content.ReadAsStringAsync();
-        var tokenStart = getHtml.IndexOf("__RequestVerificationToken", StringComparison.Ordinal);
-        var valueStart = getHtml.IndexOf("value=\"", tokenStart, StringComparison.Ordinal) + 7;
-        var valueEnd = getHtml.IndexOf("\"", valueStart, StringComparison.Ordinal);
-        var token = getHtml.Substring(valueStart, valueEnd - valueStart);
+        var token = AntiforgeryHelper.ExtractToken(getHtml);
 
         var formContent = new FormUrlEncodedContent(new[]
         {
@@ -114,5 +100,6 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         Assert.True(sw.ElapsedMilliseconds < 500,
             $"POST /upgrade took {sw.ElapsedMilliseconds}ms");
     }
+
 }
 

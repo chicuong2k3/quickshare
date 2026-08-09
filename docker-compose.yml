@@ -1,0 +1,72 @@
+# ── QuickShareCloud — Dev Stack ──
+# Server: Windows Server + Docker
+# Domain: quickshare.codemagic.io.vn (Cloudflare Tunnel)
+# Branch: dev  |  Image tag: dev
+
+services:
+  quickshare:
+    image: ghcr.io/chicuong2k3/quickshare:dev
+    container_name: quickshare
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - quickshare_keys:/app/keys
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
+      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
+      - Authentication__GitHub__ClientId=${GITHUB_CLIENT_ID:-}
+      - Authentication__GitHub__ClientSecret=${GITHUB_CLIENT_SECRET:-}
+      - Authentication__Facebook__AppId=${FACEBOOK_APP_ID:-}
+      - Authentication__Facebook__AppSecret=${FACEBOOK_APP_SECRET:-}
+      - Authentication__TikTok__ClientKey=${TIKTOK_CLIENT_KEY:-}
+      - Authentication__TikTok__ClientSecret=${TIKTOK_CLIENT_SECRET:-}
+      - R2__AccountId=${R2_ACCOUNT_ID:-}
+      - R2__BucketName=${R2_BUCKET_NAME:-}
+      - R2__AccessKeyId=${R2_ACCESS_KEY_ID:-}
+      - R2__AccessKeySecret=${R2_ACCESS_KEY_SECRET:-}
+      - PayOS__ClientId=${PAYOS_CLIENT_ID:-}
+      - PayOS__ApiKey=${PAYOS_API_KEY:-}
+      - PayOS__ChecksumKey=${PAYOS_CHECKSUM_KEY:-}
+      - PayOS__WebhookUrl=${PAYOS_WEBHOOK_URL:-}
+      - PayOS__ReturnUrl=https://quickshare.codemagic.io.vn/upgrade
+      - PayOS__CancelUrl=https://quickshare.codemagic.io.vn/upgrade
+      - Pricing__ProMonthly=${PRICING_PRO_MONTHLY:-2000}
+      - Pricing__ProYearly=${PRICING_PRO_YEARLY:-20000}
+      - Pricing__StudioMonthly=${PRICING_STUDIO_MONTHLY:-5000}
+      - Pricing__StudioYearly=${PRICING_STUDIO_YEARLY:-50000}
+      - Pricing__Currency=${PRICING_CURRENCY:-VND}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - cfnet
+
+  # cloudflared tunnel — connects to Cloudflare, routes to quickshare:8080
+  # Uncomment if cloudflared not running on host.
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: cloudflared
+  #   restart: unless-stopped
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+  #   depends_on:
+  #     quickshare:
+  #       condition: service_healthy
+  #   networks:
+  #     - cfnet
+
+volumes:
+  quickshare_keys:
+    driver: local
+
+networks:
+  cfnet:
+    external: true

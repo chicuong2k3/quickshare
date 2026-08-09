@@ -1,0 +1,126 @@
+/* ─── MainLayout — daub token layout ─── */
+
+.layout-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--db-color-bg);
+    color: var(--db-color-text);
+}
+
+/* ─── Navbar ─── */
+.layout-root ::deep .db-navbar {
+    border-bottom: 1px solid var(--db-color-border-subtle);
+    backdrop-filter: blur(8px);
+}
+
+/* ─── Brand ─── */
+.layout-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--db-radius-2);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+    flex-shrink: 0;
+}
+
+.layout-logo svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.layout-brand-word {
+    font-family: var(--db-font-heading);
+    font-weight: var(--db-weight-bold);
+    letter-spacing: -0.01em;
+}
+
+.layout-brand-cloud {
+    color: var(--db-color-text-muted);
+    font-weight: var(--db-weight-medium);
+}
+
+/* ─── Footer — mono readout, echoes the file-facts signature ─── */
+.layout-footer {
+    margin-top: auto;
+    padding: var(--db-space-6) var(--db-space-4);
+    border-top: 1px solid var(--db-color-border-subtle);
+}
+
+.layout-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--db-space-2);
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    letter-spacing: 0.04em;
+    color: var(--db-color-text-muted);
+}
+
+.layout-footer__mark {
+    color: var(--db-color-text-secondary);
+}
+
+.layout-footer__sep {
+    opacity: 0.4;
+}
+
+
+.layout-avatar-btn {
+    cursor: pointer;
+    font-size: var(--db-text-xs);
+    font-weight: var(--db-weight-semibold);
+    line-height: 1;
+    transition: box-shadow var(--db-transition);
+}
+
+.layout-avatar-skeleton {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-surface);
+    animation: layout-avatar-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes layout-avatar-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.layout-avatar-img {
+    object-fit: cover;
+}
+
+.layout-avatar-btn:hover {
+}
+
+.layout-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-1);
+    padding: var(--db-space-2) var(--db-space-3);
+}
+
+.layout-user-info__name {
+    font-size: var(--db-text-sm);
+    font-weight: var(--db-weight-semibold);
+    color: var(--db-color-text);
+    line-height: var(--db-leading-tight);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layout-user-info__email {
+    font-size: var(--db-text-xs);
+    color: var(--db-color-text-muted);
+    line-height: var(--db-leading-tight);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

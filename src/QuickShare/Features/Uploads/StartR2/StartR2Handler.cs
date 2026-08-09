@@ -55,7 +55,7 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
                 $"R2 part URL generation failed: {ex.Message}"));
         }
 
-        var maxExpiryDays = PlanTierLimits.GetMaxExpiryDays(plan);
+        var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
         var session = new UploadSession
         {
             Id = deliveryId,
@@ -63,8 +63,8 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,
-            Status = "InProgress",
-            ExpiresAt = DateTime.UtcNow.AddDays(maxExpiryDays),
+            Status = UploadSessionStatus.InProgress,
+            ExpiresAt = DateTime.UtcNow.Add(maxExpiry),
             R2UploadId = initResult.UploadId,
             StoragePath = initResult.ObjectKey
         };

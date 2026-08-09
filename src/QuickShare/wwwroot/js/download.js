@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, reportOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -21,7 +21,6 @@ window.downloadApp = (function () {
                     if (state.isEncrypted) show('dl-badge-encrypted'); else hide('dl-badge-encrypted');
                     if (state.zkOpen) show('dl-zk-panel'); else hide('dl-zk-panel');
                     text('dl-download-count', String(state.downloadCount)); text('dl-max-downloads', String(state.maxDownloads)); text('dl-expires-label', state.expiresLabel);
-                    if (state.reportOpen) show('dl-report-form'); else hide('dl-report-form');
                     if (state.downloading) { attr('dl-download-btn', 'disabled', 'disabled'); text('dl-download-text', 'Decrypting\u2026'); document.getElementById('dl-download-icon').outerHTML = '<span class="db-spinner db-spinner--sm"></span>'; }
                     else { removeAttr('dl-download-btn', 'disabled'); text('dl-download-text', 'Download'); }
                 }
@@ -91,15 +90,6 @@ window.downloadApp = (function () {
 
             function fetchBranding() { fetch(apiBase() + '/api/deliveries/' + shareCode() + '/brand').then(function (r) { if (r.ok) return r.json(); }).then(function (data) { if (data) { if (data.logo) state.brandLogo = data.logo; if (data.message) state.brandMessage = data.message; if (data.accent) state.brandAccent = data.accent; render(); } }).catch(function () {}); }
             function toggleZK() { state.zkOpen = !state.zkOpen; render(); }
-            function toggleReport() { state.reportOpen = !state.reportOpen; render(); }
-
-            function submitReport() { var reason = document.getElementById('dl-report-reason'); var msg = document.getElementById('dl-report-message'); if (!reason || !reason.value) return;
-                attr('dl-report-submit', 'disabled', 'disabled'); text('dl-report-submit', 'Sending\u2026');
-                fetch(apiBase() + '/api/deliveries/' + shareCode() + '/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reason.value, message: msg ? msg.value : '' }) })
-                    .then(function () { show('dl-report-done'); setTimeout(function () { state.reportOpen = false; hide('dl-report-done'); render(); }, 3000); })
-                    .catch(function () { if (window.DAUB) DAUB.toast('Failed to submit report.', 'error'); })
-                    .finally(function () { removeAttr('dl-report-submit', 'disabled'); text('dl-report-submit', 'Submit report'); }); }
-
             function handleDownload() { state.downloading = true; render(); var code = shareCode(); var url = apiBase() + '/api/downloads/' + code;
                 if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);
                 if (state.isEncrypted) { decryptAndSave(url)['catch'](function (e) { if (window.DAUB) DAUB.toast('Download failed: ' + e.message, 'error'); })['finally'](function () { state.downloading = false; render(); }); }
@@ -108,5 +98,5 @@ window.downloadApp = (function () {
             async function decryptAndSave(url) { var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var keyB64 = keyMatch[1]; var base64 = keyB64.replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var response = await fetch(url); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var encryptedData = await response.arrayBuffer(); var nonce = encryptedData.slice(0, 12); var ciphertext = encryptedData.slice(12); var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); var blob = new Blob([decrypted]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = code; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-            return { verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, toggleReport: toggleReport, submitReport: submitReport, handleDownload: handleDownload };
+            return { verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload };
         })();

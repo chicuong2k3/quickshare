@@ -1,0 +1,189 @@
+@* AdComponent.razor — self-contained rewarded ad component.
+   Resolves user plan and remaining ads internally via DB.
+   Renders nothing for anonymous users, consent CTA for no-consent,
+   skeleton on first render, full ad prompt on HTMX response.
+   Pro/Studio users: skeleton flashes briefly then clears. *@
+@using QuickShare.Infrastructure
+@using QuickShare.Extensions
+@using QuickShare.Infrastructure.Caching
+@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IAntiforgery Antiforgery
+@inject IConfiguration Config
+
+@* Anonymous: no ads *@
+@if (!_isAuthenticated)
+{
+    return;
+}
+
+@* No consent: show upgrade CTA *@
+@if (!HasAdConsent)
+{
+    <div id="ad-reward-card" class="ad-reward-card">
+        <div class="ad-reward-card__body">
+            <div class="ad-reward-card__title">@Loc["ad_no_consent_title"]</div>
+            <p class="ad-reward-card__description">@Loc["ad_no_consent_desc"]</p>
+            <p class="ad-reward-card__description" style="margin-top:0.5rem">
+                <a href="javascript:location.reload()" class="ad-upgrade-link">@Loc["ad_no_consent_refresh_link"]</a>
+            </p>
+        </div>
+    </div>
+    return;
+}
+
+@* Shell render — skeleton, hx-get to dedicated /ads/reward-prompt page *@
+@if (!IsHxRequest)
+{
+    <div id="ad-reward-card"
+         class="ad-reward-card"
+         hx-get="@AdConstants.RewardPromptRoute"
+         hx-trigger="load"
+         hx-target="#ad-reward-card"
+         hx-select="#ad-reward-card"
+         hx-swap="outerHTML">
+        <div class="ad-reward-card__skeleton">
+            <div class="db-skeleton db-skeleton--text" style="width:55%"></div>
+            <div class="db-skeleton db-skeleton--button" style="width:35%; height:2.5rem; margin-top:0.75rem"></div>
+        </div>
+    </div>
+    return;
+}
+
+@* HTMX response — _userPlan resolved, Pro users get empty clear-out *@
+@if (_userPlan != PlanTierLimits.Free)
+{
+    <div id="ad-reward-card"></div>
+    return;
+}
+
+@* Full reward prompt with AdMob JS init *@
+<div id="ad-reward-card" class="ad-reward-card">
+    <div class="ad-reward-card__body">
+        <div class="ad-reward-card__title">@Loc["ad_reward_title"]</div>
+        <p class="ad-reward-card__description">
+            @Loc["ad_remaining_prefix"] <strong>@RemainingAds @(RemainingAds == 1 ? Loc["ad_remaining_ad_singular"] : Loc["ad_remaining_ad_plural"])</strong> @Loc["ad_remaining_suffix"]
+            @Loc["ad_free_plan_note"]
+        </p>
+        <p id="ad-reward-error" class="ad-reward-card__description" style="color:var(--color-destructive);display:none"></p>
+        @if (RemainingAds > 0)
+        {
+            <button id="ad-reward-watch-btn"
+                    type="button"
+                    class="ad-reward-btn"
+                    data-ai-action="ad.reward.watch">
+                <svg style="width:1rem;height:1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                @Loc["ad_reward_watch_btn"]
+            </button>
+        }
+        else
+        {
+            <button id="ad-reward-watch-btn"
+                    type="button"
+                    class="ad-reward-btn"
+                    disabled
+                    data-ai-action="ad.reward.limit">
+                @Loc["ad_reward_limit_reached"]
+            </button>
+        }
+        @if (RemainingAds > 0 && _allowDevSimulation)
+        {
+            <button id="ad-reward-dev-btn"
+                    type="button"
+                    class="ad-reward-btn"
+                    data-ai-action="ad.reward.dev-simulate"
+                    style="margin-top:0.375rem;background:transparent;color:var(--db-color-text-muted);border:1px dashed var(--db-color-border)">
+                Simulate rewarded ad (dev only, Ads:DevSimulation=true)
+            </button>
+            <script>
+                (function () {
+                    var devBtn = document.getElementById('ad-reward-dev-btn');
+                    if (devBtn) devBtn.addEventListener('click', function () {
+                        // Server-side SSV is a dev placeholder that accepts any
+                        // non-empty token; this button exists so the rewarded-ad
+                        // unlock flow can be tested without an AdMob/GAM setup.
+                        QuickShareAds.verifyReward('dev-' + crypto.randomUUID(), 1);
+                    });
+                })();
+            </script>
+        }
+        <a href="/pricing" class="ad-upgrade-link">@Loc["ad_upgrade_link"]</a>
+    </div>
+
+    @{
+        var tokens = Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!);
+        var antiForgeryToken = tokens.RequestToken ?? string.Empty;
+    }
+    <script>
+        QuickShareAds.init({
+            adUnitId: 'ca-app-pub-3940256099942544/5224354917',
+            callbackUrl: '@AdConstants.RewardCallbackRoute',
+            antiForgeryToken: '@antiForgeryToken',
+            remainingAds: @RemainingAds
+        });
+    </script>
+</div>
+
+@code {
+
+    private bool HasAdConsent =>
+        HttpContextAccessor.HttpContext?.Request.Cookies[AdConstants.ConsentCookieName] == AdConstants.ConsentCookieValueGranted;
+
+    private bool _isAuthenticated;
+    private string? _userPlan;
+    private bool _allowDevSimulation;
+    private int RemainingAds { get; set; } = AdConstants.MaxDailyAds;
+    private bool IsHxRequest { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+
+        // Gated dev helper: enables testing the rewarded-ad unlock flow without
+        // an AdMob/GAM ad unit. NEVER enable in production (grants free
+        // bandwidth + P2P uploads on any token).
+        _allowDevSimulation = string.Equals(
+            Config["Ads:DevSimulation"], "true", StringComparison.OrdinalIgnoreCase);
+
+        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
+        IsHxRequest = hxHeader == "true";
+        if (!IsHxRequest) return; // Shell render — no DB calls
+        if (!_isAuthenticated) return;
+        if (!HasAdConsent) return;
+
+        // HTMX data fetch: resolve plan + remaining ads from DB
+        try
+        {
+            var principal = HttpContextAccessor.HttpContext!.User;
+            var dbUser = await principal.GetUserAsync(Db, CancellationToken.None);
+            if (dbUser is null) return;
+
+            _userPlan = dbUser.Plan;
+            if (_userPlan != PlanTierLimits.Free) return; // Pro/Studio — render nothing
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var completedToday = await StaticCache.Instance.GetOrSetAsync(
+                $"ads:daily:{dbUser.Id}:{today}",
+                async ct =>
+                {
+                    var tracking = await Db.DailyAdTrackings
+                        .FirstOrDefaultAsync(t => t.UserId == dbUser.Id && t.Date == today, ct);
+                    return tracking?.AdCount ?? 0;
+                },
+                TimeSpan.FromMinutes(1)
+            );
+
+            RemainingAds = Math.Max(0, AdConstants.MaxDailyAds - completedToday);
+        }
+        catch
+        {
+            _userPlan = PlanTierLimits.Free;
+            RemainingAds = AdConstants.MaxDailyAds;
+        }
+    }
+}

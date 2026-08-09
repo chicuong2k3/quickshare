@@ -1,0 +1,190 @@
+@layout MainLayout
+@page "/account/billing"
+@attribute [Authorize]
+@attribute [StreamRendering]
+@using QuickShare.Data
+@using QuickShare.Features.Payments
+@using QuickShare.Features.Payments.Subscriptions
+@using QuickShare.Infrastructure.Caching
+@using Microsoft.AspNetCore.Http
+@using Microsoft.Extensions.Localization
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IConfiguration Config
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["billing_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <span class="tag">@Loc["billing_h1"]</span>
+        <h1 class="db-h1">@Loc["billing_h1"]</h1>
+    </section>
+
+    <section class="billing-body">
+        @if (billing is null)
+        {
+            <div class="loading">
+                <p class="db-text-muted">@Loc["billing_loading"]</p>
+            </div>
+        }
+        else
+        {
+            <div class="summary-card">
+                <div class="summary-card__head">
+                    <h2 class="db-h2">@billing.PlanDisplay Plan</h2>
+                    <p class="db-text-muted">@planDescription</p>
+                </div>
+                <div class="summary-card__price">
+                    <span class="price-amount">@planPrice</span>
+                    <span class="price-period db-text-muted">@billingPeriodLabel</span>
+                </div>
+                <div class="summary-card__features">
+                    @foreach (var feature in planFeatures)
+                    {
+                        <div class="feature">
+                            <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            <span>@feature</span>
+                        </div>
+                    }
+                </div>
+
+                @if (billing.Plan == PlanTierLimits.Free)
+                {
+                    <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">@Loc["billing_btn_upgrade"]</a>
+                }
+                else
+                {
+                    @if (subscription?.Status == SubscriptionStatus.Cancelled)
+                    {
+                        <p class="db-text-warning" style="margin-top:1rem">
+                            @string.Format(Loc["billing_cancelled"], subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy"))
+                        </p>
+                        <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">@Loc["billing_btn_renew"]</a>
+                    }
+                    else
+                    {
+                        <div class="summary-card__actions">
+                            <a href="/pricing" class="db-btn db-btn--secondary">@Loc["billing_btn_change"]</a>
+                            <form method="post" style="display:inline">
+                                <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
+                                <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
+                                    @Loc["billing_btn_cancel"]
+                                </button>
+                            </form>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="history">
+                <h2 class="db-h2">@Loc["billing_history_title"]</h2>
+
+                @if (billing.Events.Count == 0)
+                {
+                    <p class="db-text-muted">@Loc["billing_history_empty"]</p>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var evt in billing.Events)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-item__dot @eventDotClass(evt.EventType)"></div>
+                                <div class="timeline-item__content">
+                                    <div class="timeline-item__label">@evt.EventLabel</div>
+                                    <div class="timeline-item__meta db-text-muted">
+                                        @evt.CreatedAt.ToString("MMM dd, yyyy")
+                                        @if (evt.Amount > 0)
+                                        {
+                                            <span>· @evt.Amount.ToString("F2") @evt.Currency</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(evt.InvoiceUrl))
+                                    {
+                                        <a href="@evt.InvoiceUrl" target="_blank" class="db-link">@Loc["billing_view_receipt"]</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+</PageWrapper>
+
+@code {
+    private const string SubscriptionActionCancel = "cancel";
+
+    private BillingHistoryResponse? billing;
+    private Subscription? subscription;
+
+    private string planPrice => (billing?.Plan, billingPeriod) switch
+    {
+        (PlanTierLimits.Pro, BillingPeriods.Monthly) => FormatPrice(Config.GetValue<int>(PricingKeys.ProMonthly, 9)),
+        (PlanTierLimits.Pro, BillingPeriods.Yearly) => FormatPrice(Config.GetValue<int>(PricingKeys.ProYearly, 77)),
+        (PlanTierLimits.Studio, BillingPeriods.Monthly) => FormatPrice(Config.GetValue<int>(PricingKeys.StudioMonthly, 29)),
+        (PlanTierLimits.Studio, BillingPeriods.Yearly) => FormatPrice(Config.GetValue<int>(PricingKeys.StudioYearly, 239)),
+        _ => "$0"
+    };
+
+    private string FormatPrice(int amount)
+    {
+        var currency = Config[PricingKeys.Currency] ?? "$";
+        return $"{currency}{amount}";
+    }
+
+    private string planDescription => billing?.Plan switch
+    {
+        PlanTierLimits.Pro => Loc["billing_pro_desc"],
+        PlanTierLimits.Studio => Loc["billing_studio_desc"],
+        _ => Loc["billing_free_desc"]
+    };
+
+    private string[] planFeatures => billing?.Plan switch
+    {
+        PlanTierLimits.Pro => Loc["billing_feat_pro"].Value.Split(" | "),
+        PlanTierLimits.Studio => Loc["billing_feat_studio"].Value.Split(" | "),
+        _ => Loc["billing_feat_free"].Value.Split(" | ")
+    };
+
+    private string billingPeriod => (subscription?.BillingPeriod ?? BillingPeriod.Monthly).ToString().ToLowerInvariant();
+
+    private string billingPeriodLabel => billing?.Plan == PlanTierLimits.Free ? Loc["billing_period_label"] : $"/ {billingPeriod}";
+
+    private string eventDotClass(string eventType) => eventType switch
+    {
+        PaymentEventTypes.SubscriptionCreated => "dot--created",
+        PaymentEventTypes.SubscriptionRenewed => "dot--renewed",
+        PaymentEventTypes.SubscriptionCancelled => "dot--cancelled",
+        PaymentEventTypes.SubscriptionExpired => "dot--expired",
+        _ => "dot--default"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ct = CancellationToken.None;
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+
+        if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(HttpContextAccessor.HttpContext.Request.Method))
+        {
+            var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
+            if (form["Action"] == SubscriptionActionCancel)
+            {
+                await SubscriptionService.CancelAsync(user, Db, ct);
+                await Db.SaveChangesAsync(ct);
+
+                // Plan row changed (kept active until CurrentPeriodEnd) and the
+                // PaymentEvent history gained an entry — evict cached copies so
+                // the billing page below renders the fresh state instantly.
+                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+            }
+        }
+
+        billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
+        subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
+    }
+}

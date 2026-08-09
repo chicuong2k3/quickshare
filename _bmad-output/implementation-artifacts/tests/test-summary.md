@@ -1,44 +1,43 @@
-# Test Automation Summary — 2026-08-08 (branch `dev`)
+# Test Automation Summary — 2026-08-09 (branch `dev`)
 
-> Updated after full-coverage pass (`e8cc07c`): tier 1 now 102/102.
-> Added: `FolderFileApiTests` (folders CRUD, file move, avatar),
-> `DeliveryExtrasApiTests` (brand, report/takedown, password verify, abort-r2, P2P share API),
-> `PageCoverageTests` (/, /send, /files, /d/{code}, /p2p/d/{code}).
-> More prod bugs fixed: 5 endpoints (folders CRUD, file move, avatar) had every
-> response — including error statuses and bodies — replaced by an empty 204
-> (raw response writes vs FastEndpoints auto-response); ExecuteUpdateAsync
-> replaced with tracked updates in UpdateFolderHandler/MoveFileHandler.
-> Known untested: AccountProfile.razor still uses ExecuteUpdateAsync (works on
-> Postgres, would 500 under the in-memory test provider if ever covered);
-> PayOS webhook valid-signature path (needs real checksum signing).
+Kết quả: **Server 125/125** (~23s) · **Browser 15/15** (~31s)
 
-## Generated Tests
+## Tier 1 — In-process E2E (`tests/QuickShare.Server.Tests/E2E/`, xUnit + TestWebAppFactory)
 
-### Tier 1 — In-process E2E (WebApplicationFactory, `tests/QuickShare.Server.Tests/E2E/`)
-- [x] `UploadDownloadFlowTests.cs` — full upload → share → download flow, OTP protection, expiry (410), download limit (403), unknown code (404), plan-size limit (400), auth (401), delivery listing, download counter
-- [x] `PaymentFlowTests.cs` — upgrade POST creates PaymentIntent (PayOS stubbed), webhook rejects invalid signature (401), subscription activation upgrades plan
-- [x] `AuthFlowTests.cs` — API 401s, logout redirect, login page, unknown OAuth provider 404
-- Infra: `TestWebAppFactory` — test-auth handler + seeded user, `StubPayOSService`, warm-up request, fixed in-memory EF detection
+Hạ tầng: **SQLite file per-factory** (thay InMemory) — relational thật nên `ExecuteUpdateAsync` và FK constraint chạy như production. `MigrationsAssembly` trỏ vào test assembly để skip Npgsql migrations; schema từ `EnsureCreated`.
 
-### Tier 2 — Browser smoke (Playwright + Kestrel, `tests/QuickShare.Browser.Tests/`)
-- [x] `SmokeTests.cs` — public pages render without JS errors; HTMX lazy-load swaps upgrade skeleton without full reload; P2P send generates share link in real browser
-- Infra: `BrowserFixture` — `UseKestrel(0)` + headless Chromium; auth via extra HTTP header on browser context
-- One-time setup: `pwsh tests/QuickShare.Browser.Tests/bin/Debug/net10.0/playwright.ps1 install chromium`
+- `UploadDownloadFlowTests` — upload→share→download, OTP, 410/403/404, plan limits (kể cả Pro 6GB), part-URL security
+- `UploadResumeTests` — session cũ >15 phút vẫn xin được part URL mới (backdate, không cần fake clock); `ZombiePartSweeper` chỉ quét session quá hạn (method `internal` + InternalsVisibleTo)
+- `PayOSWebhookSignatureTests` — **chữ ký HỢP LỆ** (ký bằng chính `CryptoProvider` của SDK → không thể lệch thuật toán): activate plan + complete intent; orderCode lạ → 200 ignored; sửa amount sau khi ký → 401
+- `PaymentFlowTests` — intent tạo đúng, chữ ký sai 401, activation, cancel path (không webhook → plan giữ free, intent Pending)
+- `AccountProfileTests` — rename qua Htmxor protocol (HXOR-Event-Handler-Id + HX-XSRF-TOKEN) **persist vào DB thật**; validation rỗng; redirect login
+- `LocalizationTests` — vi/en theo culture cookie, không lộ raw key
+- `DeliveryExtrasApiTests` — brand (free 403 / pro thành công), abort, P2P share API
+- `P2PQuotaAndAdTests`, `AuthFlowTests`, `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `PageCoverageTests`
 
-## Real bugs found & fixed by these tests
-1. **CommitR2 returned 201 with empty body** (`CreatedAtAsync` misuse) — broke `upload.js` reading `result.shareLink`. Prod upload flow was broken.
-2. **Download endpoint statuses (404/410/403/302) overwritten with 204** by FastEndpoints auto-response → `DontAutoSendResponse()`.
-3. **Download counter silently never incremented** — background task used the request scope after disposal.
-4. Wolverine/in-memory detection: tests could not boot the host at all before (probe type name was wrong; Wolverine required Postgres).
+## Tier 2 — Browser (Playwright + Kestrel, `tests/QuickShare.Browser.Tests/`, chạy tuần tự — xem AssemblyInfo.cs)
 
-## Results
-- Tier 1: 74/74 passed (~9s)
-- Tier 2: 5/5 passed (~5s)
+- `P2PTransferBrowserTests` — **WebRTC thật giữa 2 browser context**: sender tạo link, receiver nhận file qua RTCDataChannel, byte count khớp. Chỉ còn NAT/4G cần thiết bị thật
+- `UploadResumeBrowserTests` — **mất mạng + resume** (Playwright route abort/fulfill part PUT qua `BrowserStorageStub`): retries cạn → nút Resume → resume thành công; happy path; cancel giữa chừng về idle
+- `DownloadPageTests` — gate theo plan sender: Pro → file card thẳng, Free → ad countdown + skip, OTP sai/đúng, expired, not-found
+- `LanguageSwitchTests` — switcher vi↔en set cookie + reload, giữ qua navigation
+- `SmokeTests` — pages không JS error, HTMX swap không full reload, P2P tạo link
 
-## Commits
-- `d37ee5a` tier-1 tests + bug fixes
-- `1febec7` tier-2 Playwright smoke tests
+## Bug production tìm được nhờ test (đã fix)
 
-## Next Steps
-- Add both projects to CI (`dotnet test tests/QuickShare.Server.Tests` + playwright install + `dotnet test tests/QuickShare.Browser.Tests`)
-- Optional: P2P two-context WebRTC transfer test; HTMX navigation coverage for /files
+1. **`RawJson` bị Razor HTML-encode trong `<script>`** (`Download.razor`) → `JSON.parse` fail âm thầm → OTP gate và ad interstitial KHÔNG BAO GIỜ hiện. Fix: `MarkupString` (an toàn XSS — STJ encoder escape `<>&`).
+
+## Quyết định sản phẩm đã thực thi
+
+- **Feature Report đã xoá** (issue #4 cập nhật, bullet Report gỡ): `Features/Reports/`, UI trong `Download.razor`, JS trong `download.js`, tests.
+
+## Còn lại phải manual (checklist issues #2–#9 trước release)
+
+NAT/4G thật (P2P), mobile Safari/Chrome thật, PayOS sandbox tiền thật, Google OAuth màn hình thật, drag&drop/clipboard cảm quan.
+
+## Chạy
+
+```bash
+dotnet test tests/QuickShare.Server.Tests   # ~23s
+dotnet test tests/QuickShare.Browser.Tests  # ~31s (cần: playwright.ps1 install chromium 1 lần)
+```

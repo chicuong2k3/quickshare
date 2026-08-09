@@ -6,7 +6,7 @@ public sealed class VerifyOtpEndpoint : Endpoint<VerifyOtpRequest>
     {
         Post("/api/deliveries/{ShareCode}/verify-otp");
         AllowAnonymous();
-        Description(b => b.WithTags("Deliveries"));
+        Description(b => b.WithTags(ApiTags.Deliveries));
     }
 
     public override async Task HandleAsync(VerifyOtpRequest req, CancellationToken ct)
@@ -24,5 +24,5 @@ public sealed class VerifyOtpEndpoint : Endpoint<VerifyOtpRequest>
 
 public class VerifyOtpRequest
 {
-    public string Otp { get; set; } = "";
+    public string Otp { get; set; } = string.Empty;
 }

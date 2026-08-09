@@ -23,6 +23,7 @@
     <PackageReference Include="Microsoft.OpenApi" Version="3.9.0" />
     <PackageReference Include="payOS" Version="2.1.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     <PackageReference Include="WolverineFx" Version="5.*" />
     <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="5.*" />
@@ -33,9 +34,23 @@
     <!-- Web (Blazor SSR + htmx) dependencies -->
     <PackageReference Include="Htmxor" Version="1.0.0-beta.1.24" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+    <!-- Observability: Prometheus metrics + health checks + log enrichment -->
+    <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
+    <PackageReference Include="AspNetCore.HealthChecks.Npgsql" Version="9.0.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
+    <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.*" />
   </ItemGroup>
 
   <Target Name="CopyScopedCss" AfterTargets="Build">
     <Copy SourceFiles="$(IntermediateOutputPath)scopedcss\bundle\QuickShare.styles.css" DestinationFolder="$(ProjectDir)wwwroot\css" />
   </Target>
+  <ItemGroup>
+    <InternalsVisibleTo Include="QuickShare.Server.Tests" />
+  </ItemGroup>
+
 </Project>

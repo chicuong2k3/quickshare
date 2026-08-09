@@ -1,3 +1,4 @@
+using QuickShare.Infrastructure.Caching;
 using System.Security.Claims;
 
 namespace QuickShare.Extensions;
@@ -34,12 +35,21 @@ public static class ClaimsPrincipalExtensions
         if (string.IsNullOrEmpty(providerKey) || string.IsNullOrEmpty(provider))
             throw new InvalidOperationException("Missing auth claims");
 
-        var login = await db.UserLogins
-            .Include(ul => ul.User)
-            .FirstOrDefaultAsync(ul => ul.Provider == provider && ul.ProviderKey == providerKey, ct);
+        var cache = StaticCache.Instance;
+        return await cache.GetOrSetAsync(
+            UserCacheInvalidator.UserLoginKey(provider, providerKey),
+            async ct2 =>
+            {
+                var login = await db.UserLogins
+                    .Include(ul => ul.User)
+                    .FirstOrDefaultAsync(ul => ul.Provider == provider && ul.ProviderKey == providerKey, ct2);
 
-        return login?.User ?? throw new InvalidOperationException(
-            $"User not found for provider '{provider}' with key '{providerKey}'. " +
-            "The user must be registered via POST /api/users/register before accessing this endpoint.");
+                return login?.User ?? throw new InvalidOperationException(
+                    $"User not found for provider '{provider}' with key '{providerKey}'. " +
+                    "The user must be registered via POST /api/users/register before accessing this endpoint.");
+            },
+            duration: TimeSpan.FromMinutes(5),
+            token: ct
+        );
     }
 }

@@ -1,0 +1,314 @@
+@layout MainLayout
+@page "/upgrade"
+@attribute [Authorize]
+@using QuickShare.Features.Payments
+@using QuickShare.Features.Payments.PayOS
+@using QuickShare.Features.Payments.Subscriptions
+@using QuickShare.Features.Users.Shared
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IConfiguration Config
+@inject CheckoutService Checkout
+
+<PageTitle>Nâng cấp lên @planDisplay — QuickShareCloud</PageTitle>
+
+<script>
+	function renderPayOSQR(qrContent) {
+	    var el = document.getElementById("payos-qrcode");
+	    if (!el) return;
+	    el.innerHTML = "";
+	    if (!qrContent || !window.qrcode) {
+	        if (!window.qrcode) el.textContent = "QR library not loaded.";
+	        return;
+	    }
+	    var qr = window.qrcode(0, "M");
+	    qr.addData(qrContent);
+	    qr.make();
+	    var svg = qr.createSvgTag(5, 2);
+	    el.innerHTML = svg;
+	}
+</script>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <span class="tag">Nâng cấp</span>
+        <h1 class="db-h1">Nâng cấp lên @planDisplay</h1>
+        <p class="db-p db-text-muted">
+            @if (isFullyLoaded)
+            {
+                <text>Bạn đang ở gói <strong>@currentPlan</strong>. </text>
+            }
+            @planDisplay mang đến cho bạn @planSummary.
+        </p>
+    </section>
+
+    @if (!isFullyLoaded)
+    {
+        @* Shell skeleton: rendered in < 500ms, no DB calls *@
+        <section id="upgrade-body"
+                 hx-get="/upgrade?plan=@selectedPlan&billing=@(Billing ?? "")"
+                 hx-trigger="load"
+                 hx-target="#upgrade-body"
+                 hx-select="#upgrade-body"
+                 hx-swap="outerHTML"
+                 aria-busy="true">
+            @SummaryCard
+
+            <div class="payment">
+                <h2 class="db-h2">Hoàn tất nâng cấp</h2>
+                <p class="db-text-muted" style="margin-top: 0.5rem">
+                    Nâng cấp lên <strong>@planDisplay</strong>
+                    @(IsYearly ? " (hàng năm)" : " (hàng tháng)")
+                    &mdash; <strong>@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+                </p>
+
+                <div class="payment-option">
+                    <h3 class="db-h3">Chuyển khoản / Thẻ</h3>
+                    <p class="db-text-muted">Thanh toán qua PayOS (chuyển khoản, thẻ nội địa, Visa/Mastercard)</p>
+                    <form method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="Plan" value="@selectedPlan" />
+                        <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
+                        <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
+                            Thanh toán với PayOS
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    }
+    else
+    {
+        @* Full render: HTMX GET re-render or POST with data *@
+        <section id="upgrade-body">
+            @SummaryCard
+
+            <div class="payment" id="payment-section">
+                <h2 class="db-h2">Hoàn tất nâng cấp</h2>
+                <p class="db-text-muted" style="margin-top: 0.5rem">
+                    Nâng cấp lên <strong>@planDisplay</strong>
+                    @(IsYearly ? " (hàng năm)" : " (hàng tháng)")
+                    &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+                </p>
+
+                @if (payOSResult is not null && payOSResult.Success)
+                {
+                    <div class="payment-info">
+                        <h3 class="db-h3">Thanh toán <strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
+                        <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
+
+                        <div class="payos-checkout">
+                            <p class="db-text-muted" style="font-size:0.95rem;margin-bottom:0.75rem">
+                                Quét mã QR bằng ứng dụng ngân hàng, hoặc thanh toán trực tiếp bên dưới.
+                            </p>
+                            <div id="payos-qrcode" style="margin:0 auto 1rem;display:flex;justify-content:center"></div>
+
+                            <div class="payos-iframe-wrap">
+                                <iframe src="@payOSResult.CheckoutUrl"
+                                        title="Thanh toán PayOS"
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups"
+                                        loading="lazy"
+                                        class="payos-iframe"></iframe>
+                            </div>
+                        </div>
+
+                        <script>
+                            (function() {
+                                var qrContent = "@payOSResult.QrCode";
+                                var attempts = 0;
+                                var timer = setInterval(function() {
+                                    attempts++;
+                                    if (window.qrcode || attempts >= 50) {
+                                        clearInterval(timer);
+                                        renderPayOSQR(qrContent);
+                                    }
+                                }, 100);
+                            })();
+                        </script>
+
+                        <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
+                            Gói sẽ được kích hoạt tự động sau khi thanh toán thành công.
+                        </p>
+                    </div>
+                }
+                else if (payOSResult is not null)
+                {
+                    <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
+                        <p>Không thể tạo link thanh toán: @payOSResult.ErrorMessage</p>
+                        <form method="post" style="margin-top:1rem">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Plan" value="@selectedPlan" />
+                            <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
+                            <button type="submit" class="db-btn db-btn--primary">
+                                Thử lại
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    @* PaymentIntent created, PayOS call in progress (loading state) *@
+                    <div class="payment-info payment-info--loading">
+                        <p class="db-text-muted">Đang tạo link thanh toán...</p>
+                        <div class="db-spinner" style="margin:1rem auto"></div>
+                    </div>
+                }
+
+                <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
+                    Gói sẽ được nâng cấp ngay sau khi xác nhận thanh toán.
+                    Cần hỗ trợ? <a href="mailto:support@quicksharecloud.com" class="db-link">Liên hệ support</a>.
+                </p>
+            </div>
+        </section>
+    }
+
+</PageWrapper>
+
+
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Plan { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Billing { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = PayOSOrderCodeQueryKey)]
+    public long? PayOSOrderCode { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = PayOSCodeQueryKey)]
+    public string? PayOSCode { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = PayOSStatusQueryKey)]
+    public string? PayOSStatus { get; set; }
+    private const string PayOSOrderCodeQueryKey = "orderCode";
+    private const string PayOSCodeQueryKey = "code";
+    private const string PayOSStatusQueryKey = "status";
+    private const string PayOSSuccessCode = "00";
+    private const string PayOSPaidStatus = "PAID";
+
+    private string selectedPlan = PlanTierLimits.Pro;
+    private string currentPlan = PlanTierLimits.Free;
+    private bool isFullyLoaded;
+    private PaymentIntent? paymentIntent;
+    private PayOSPaymentResult? payOSResult;
+
+    private PlanInfo PlanData => PlanCatalog.Get(selectedPlan);
+    private string planDisplay => PlanData.Display;
+    private string planSummary => PlanData.Summary;
+    private string planMonthlyPrice => PlanCatalog.FormatPrice(
+        Config.GetValue(PlanData.MonthlyPricingKey, PlanData.MonthlyDefaultAmount),
+        Config[PricingKeys.Currency]);
+    private string planYearlyPrice => PlanCatalog.FormatPrice(
+        Config.GetValue(PlanData.YearlyPricingKey, PlanData.YearlyDefaultAmount),
+        Config[PricingKeys.Currency]);
+
+    private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
+    private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);
+
+    private RenderFragment SummaryCard => @<div class="summary-card">
+        <div class="summary-card__head">
+            <h2 class="db-h2">@PlanData.Display</h2>
+            <p class="db-text-muted">@PlanData.Description</p>
+        </div>
+        <div class="summary-card__price">
+            @if (IsYearly)
+            {
+                <span class="price-amount">@planYearlyPrice</span>
+                <span class="price-period db-text-muted">/ năm</span>
+            }
+            else
+            {
+                <span class="price-amount">@planMonthlyPrice</span>
+                <span class="price-period db-text-muted">/ tháng</span>
+            }
+        </div>
+        <div class="summary-card__features">
+            @foreach (var feature in PlanData.Features)
+            {
+                <div class="feature">
+                    <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span>@feature</span>
+                </div>
+            }
+        </div>
+    </div>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        selectedPlan = PlanCatalog.Normalize(Plan);
+
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+        var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
+        var shouldProcessCallback = IsSuccessfulPayOSCallback(ctx);
+
+        // Shell render for GET: return immediately, no DB calls.
+        if (!isHtmxRequest && !isPost && !shouldProcessCallback) return;
+
+        isFullyLoaded = true;
+
+        var ct = CancellationToken.None;
+        var user = await ctx.User.GetUserAsync(Db, ct);
+        currentPlan = user.ToProfileResponse().Plan;
+
+        // Handle PayOS redirect callback (orderCode in query string)
+        if (!isPost && shouldProcessCallback && TryGetPayOSOrderCode(ctx, out var orderCode))
+        {
+            await Checkout.TryFinalizeCallbackAsync(user, orderCode, ct);
+        }
+
+        // Auto-create payment on first load (HTMX GET) or on form submit / retry (POST).
+        // Skip if we just processed a successful callback (payment already complete).
+        if (!shouldProcessCallback)
+        {
+            if (isPost)
+            {
+                var form = await ctx.Request.ReadFormAsync();
+                var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
+                var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
+                var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
+                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
+            }
+            else if (isHtmxRequest)
+            {
+                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
+            }
+        }
+    }
+
+    private bool IsSuccessfulPayOSCallback(HttpContext ctx)
+    {
+        if (!TryGetPayOSOrderCode(ctx, out _))
+        {
+            return false;
+        }
+
+        var callbackCode = PayOSCode ?? ctx.Request.Query[PayOSCodeQueryKey].FirstOrDefault();
+        var callbackStatus = PayOSStatus ?? ctx.Request.Query[PayOSStatusQueryKey].FirstOrDefault();
+        var isSuccessCode = string.Equals(callbackCode, PayOSSuccessCode, StringComparison.OrdinalIgnoreCase);
+        var isPaidStatus = string.Equals(callbackStatus, PayOSPaidStatus, StringComparison.OrdinalIgnoreCase);
+        return isSuccessCode || isPaidStatus;
+    }
+
+    private bool TryGetPayOSOrderCode(HttpContext ctx, out long orderCode)
+    {
+        if (PayOSOrderCode.HasValue)
+        {
+            orderCode = PayOSOrderCode.Value;
+            return true;
+        }
+
+        var orderCodeRaw = ctx.Request.Query[PayOSOrderCodeQueryKey].FirstOrDefault();
+        return long.TryParse(orderCodeRaw, out orderCode);
+    }
+}

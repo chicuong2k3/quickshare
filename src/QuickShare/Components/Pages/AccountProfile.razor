@@ -1,0 +1,181 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/profile"
+@attribute [Authorize]
+@using QuickShare.Data
+@using QuickShare.Features.Users.Shared
+@using QuickShare.Infrastructure.Caching
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var apiBase = string.Empty;
+}
+
+<script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+
+<HtmxFragment>
+<div id="profile-card" class="db-card account-card">
+    <div class="db-card__body">
+        <div class="account-profile">
+            <div class="account-avatar-wrap" onclick="document.getElementById('avatarFileInput').click()">
+                @if (!string.IsNullOrEmpty(avatar))
+                {
+                    <img id="avatarPreview" class="account-avatar-img" src="@avatar" alt="@name" />
+                }
+                else
+                {
+                    <div id="avatarInitial" class="account-avatar-initial">@($"{(string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpper())}")</div>
+                    <img id="avatarPreview" class="hidden account-avatar-img" src="" alt="@name" />
+                }
+                <div class="account-avatar-overlay">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+            </div>
+            <h2 class="db-h2" style="margin-top: 1.25rem">@name</h2>
+            <p class="db-p db-text-muted" style="margin-top: 0.25rem">@email</p>
+            <span class="db-badge db-badge--updated" style="margin-top: 0.75rem">@provider · @plan</span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(formError))
+        {
+            <div class="db-alert db-alert--error" style="margin-top: 1.5rem" role="alert">@formError</div>
+        }
+
+        <form class="account-form" hx-post="/account/profile" hx-target="#profile-card" hx-select="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" hx-indicator="#profile-save-spinner" hx-disabled-elt="#name, #avatarFile, button[type=submit]" onpost="@HandleUpdateProfile">
+            <div class="account-form-inner">
+                <label class="db-field">
+                    <span class="db-label">@Loc["account_profile_name_label"]</span>
+                    <input id="name" name="name" type="text" required value="@name" class="db-field__input db-input" />
+                </label>
+                <div>
+                    <input id="avatarFileInput" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
+                </div>
+                <button type="submit" class="db-btn db-btn--primary account-save-btn" style="width: 100%" data-ai-action="profile.save.submit">
+                    <span class="btn-text">@Loc["account_profile_save_btn"]</span>
+                    <span id="profile-save-spinner" class="htmx-indicator account-btn-spinner"></span>
+                </button>
+            </div>
+        </form>
+
+        <div class="account-logout-row">
+            <a href="/logout" hx-boost="false" class="db-btn db-btn--ghost" style="width: 100%; display: flex; align-items: center; justify-content: center">@Loc["nav_logout"]</a>
+        </div>
+    </div>
+</div>
+</HtmxFragment>
+
+<script src="/js/account.js"></script>
+
+@code {
+    private const string ProfileUpdatedTrigger = "profileUpdated";
+
+    private string name = string.Empty;
+    private string email = string.Empty;
+    private string avatar = string.Empty;
+    private string plan = "free";
+    private string provider = "unknown";
+    private string? formError;
+
+    [SupplyParameterFromForm(Name = "name")]
+    private string? FormName { get; set; }
+
+    [SupplyParameterFromForm(Name = "avatar")]
+    private IFormFile? FormAvatar { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            var profile = user.ToProfileResponse();
+            name = profile.Name;
+            email = profile.Email;
+            avatar = profile.AvatarUrl;
+            plan = profile.Plan;
+        }
+        catch { }
+
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            provider = httpContext.User?.FindFirstValue(AuthConstants.ProviderClaimType) ?? "unknown";
+            formError = httpContext.Request.Query["error"].FirstOrDefault();
+        }
+    }
+
+    private async Task HandleUpdateProfile()
+    {
+        formError = null;
+        var newName = FormName?.Trim();
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            formError = Loc["account_profile_error_name_required"];
+            return;
+        }
+        string? avatarBase64 = null;
+        if (FormAvatar is { Length: > 0 })
+        {
+            if (FormAvatar.Length > 5 * 1024 * 1024)
+            {
+                formError = Loc["account_profile_error_image_size"];
+                return;
+            }
+            using var ms = new MemoryStream();
+            await FormAvatar.CopyToAsync(ms);
+            avatarBase64 = $"data:{FormAvatar.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+        }
+        try
+        {
+            var ct = CancellationToken.None;
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+            var userId = user.Id;
+
+            if (string.IsNullOrEmpty(avatarBase64))
+            {
+                await Db.Users
+                    .Where(u => u.Id == userId)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(u => u.Name, newName), ct);
+            }
+            else
+            {
+                await Db.Users
+                    .Where(u => u.Id == userId)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(u => u.Name, newName)
+                        .SetProperty(u => u.AvatarUrl, avatarBase64), ct);
+            }
+
+            var updatedUser = await Db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
+            avatar = updatedUser.AvatarUrl;
+
+            // ExecuteUpdateAsync bypasses the change tracker, so the cached User
+            // entity still holds the old Name/AvatarUrl. Evict it now or the
+            // avatar/name keep showing stale data until the 5-minute TTL expires.
+            await UserCacheInvalidator.EvictAsync(Db, userId, ct);
+        }
+        catch
+        {
+            formError = Loc["account_profile_error_update_failed"];
+            return;
+        }
+        name = newName;
+
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            var identity = httpContext.User.Identities.First();
+            var claims = identity.Claims.Where(c => c.Type != ClaimTypes.Name).ToList();
+            claims.Add(new Claim(ClaimTypes.Name, newName));
+            var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
+            await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
+
+            httpContext.Response.Headers[HtmxHeaders.Trigger] = ProfileUpdatedTrigger;
+        }
+    }
+}

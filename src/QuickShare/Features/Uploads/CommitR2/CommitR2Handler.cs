@@ -1,5 +1,5 @@
-using System.Security.Cryptography;
 using LightResults;
+using System.Security.Cryptography;
 
 
 namespace QuickShare.Features.Uploads.CommitR2;
@@ -83,7 +83,7 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             ShareCode = shareCode,
             MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
-            ExpiresAt = DateTime.UtcNow.AddDays(PlanTierLimits.GetMaxExpiryDays(plan)),
+            ExpiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(plan)),
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null
         };
 

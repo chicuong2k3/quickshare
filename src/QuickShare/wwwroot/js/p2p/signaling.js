@@ -5,9 +5,26 @@
 
     var MAX_RECONNECT_ATTEMPTS = 3;
     var RECONNECT_BACKOFF_MS = 1000;
+    var WS_PROTOCOL = {
+        http: 'ws:',
+        https: 'wss:'
+    };
+
+    function resolveWebSocketBaseUrl(apiBaseUrl) {
+        if (!apiBaseUrl) {
+            var protocol = window.location.protocol === 'https:' ? WS_PROTOCOL.https : WS_PROTOCOL.http;
+            return protocol + '//' + window.location.host;
+        }
+
+        if (/^wss?:/i.test(apiBaseUrl)) {
+            return apiBaseUrl;
+        }
+
+        return apiBaseUrl.replace(/^http:/, WS_PROTOCOL.http).replace(/^https:/, WS_PROTOCOL.https);
+    }
 
     function SignalingClient(apiBaseUrl, shareCode) {
-        this.apiBaseUrl = apiBaseUrl.replace(/\/+$/, '');
+        this.apiBaseUrl = (apiBaseUrl || '').replace(/\/+$/, '');
         this.shareCode = shareCode;
         this.ws = null;
         this.role = null;
@@ -28,8 +45,8 @@
         this.role = role;
         this._intentionalClose = false;
 
-        var wsBaseUrl = this.apiBaseUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
-        var url = wsBaseUrl + '/ws/connect/' + this.shareCode;
+        var wsBaseUrl = resolveWebSocketBaseUrl(this.apiBaseUrl);
+        var url = wsBaseUrl + '/ws/connect/' + encodeURIComponent(this.shareCode);
         var self = this;
 
         try {

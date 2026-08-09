@@ -5,6 +5,13 @@
 // is shown in a dynamic list below the QR code.
 (function () {
     'use strict';
+    var RECEIVER_CONNECT_TIMEOUT_MS = 20000;
+    // If no progress event arrives for this long while status is 'receiving',
+    // the receiver is gone (tab closed / network dropped). WebRTC state events
+    // alone can stay silent for a long time on a dead pipe, so this watchdog
+    // guarantees the sender eventually shows a disconnect instead of a frozen
+    // progress bar.
+    var RECEIVER_STALL_TIMEOUT_MS = 30000;
     function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
     function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
@@ -15,9 +22,84 @@
         var state = {
             phase: 'idle', progress: 0, shareCode: '', shareLink: '', error: '',
             _file: null, _intentionalStop: false,
-            _signaling: null, _receivers: {}, _receiverIndex: 0
+            _signaling: null, _receivers: {}, _receiverIndex: 0,
+            _quota: null
         };
         function setPhase(phase) { state.phase = phase; render(); }
+
+        // --- Daily P2P upload quota ---
+
+        function fetchQuota() {
+            var api = apiBase();
+            fetch(api + '/api/p2p/quota', { headers: { 'Accept': 'application/json' } })
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (data) {
+                    state._quota = data;
+                    renderQuota();
+                })
+                .catch(function () { /* banner stays hidden on network error */ });
+        }
+
+        function renderQuota() {
+            var el = document.getElementById('p2ps-quota');
+            if (!el || !state._quota) return;
+
+            if (state._quota.unlimited) {
+                el.classList.add('hidden');
+                return;
+            }
+
+            var remaining = state._quota.remaining;
+            var allowance = state._quota.allowance;
+            var unlocked = state._quota.unlocked || 0;
+            var suffix = unlocked > 0 ? ' (+' + unlocked + ' from ads)' : '';
+            var text = 'P2P uploads today: ' + remaining + ' of ' + allowance + ' left' + suffix;
+            if (remaining <= 0) {
+                text = 'Daily P2P upload limit reached (' + allowance + '/' + allowance + '). ';
+                text += state._quota.canUnlockWithAd
+                    ? 'Watch an ad to unlock +1 more upload, or upgrade to Pro.'
+                    : 'Sign in or upgrade to Pro for unlimited uploads.';
+            }
+
+            el.textContent = text;
+            el.classList.toggle('hidden', remaining > 0 && !(state._quota.canUnlockWithAd && unlocked === 0));
+            if (remaining <= 0) el.classList.remove('hidden');
+        }
+
+        function showAdUnlock() {
+            var btn = document.getElementById('p2ps-ad-unlock-btn');
+            if (!btn || !state._quota || !state._quota.canUnlockWithAd) return;
+            btn.classList.remove('hidden');
+        }
+
+        function hideAdUnlock() {
+            var btn = document.getElementById('p2ps-ad-unlock-btn');
+            if (btn) btn.classList.add('hidden');
+        }
+
+        function onAdRewarded() {
+            // Ad reward granted (bandwidth +1 P2P upload) — refresh quota and offer retry.
+            hideAdUnlock();
+            fetchQuota();
+            if (state.phase === 'failed' && state._file) {
+                setPhase('idle');
+                startWithFile(state._file);
+            }
+        }
+
+        function triggerAdUnlock() {
+            if (window.QuickShareAds && typeof window.QuickShareAds.showRewardedAd === 'function') {
+                window.QuickShareAds.showRewardedAd();
+                return;
+            }
+            // Fallback: scroll to the ad card so the user can click Watch Ad.
+            var card = document.getElementById('ad-reward-card');
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        window.addEventListener('quickshare:ad-rewarded', onAdRewarded);
+        var unlockBtn = document.getElementById('p2ps-ad-unlock-btn');
+        if (unlockBtn) unlockBtn.addEventListener('click', triggerAdUnlock);
 
         function render() {
             var sections = ['p2ps-idle', 'p2ps-creating', 'p2ps-waiting', 'p2ps-failed'];
@@ -41,11 +123,11 @@
             }
         }
 
-        function statusLabel(s) {
-            if (s === 'connecting') return 'Connecting\u2026';
-            if (s === 'receiving') return 'Receiving';
-            if (s === 'done') return 'Done';
-            return 'Disconnected';
+        function statusLabel(r) {
+            if (r.status === 'connecting') return 'Connecting\u2026';
+            if (r.status === 'receiving') return 'Receiving';
+            if (r.status === 'done') return 'Done';
+            return (r._wasReceiving ? 'Left mid-transfer' : 'Disconnected');
         }
 
         function renderReceivers() {
@@ -65,7 +147,7 @@
                 html += '<div class="p2p-receiver-entry" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border:1px solid var(--db-color-border);border-radius:var(--db-radius-2,8px);margin-bottom:0.5rem;background:var(--db-color-surface,var(--db-color-bg))">';
                 html += '<span style="font-weight:600;font-size:0.75rem;color:var(--db-color-text-muted);min-width:1.75rem">#' + r.index + '</span>';
                 html += '<span style="font-size:0.75rem;font-family:monospace;color:var(--db-color-text-muted);min-width:4rem">' + ids[i].slice(0, 6) + '\u2026</span>';
-                html += '<span class="' + statusClass + '" style="font-size:0.75rem;font-weight:500;padding:0.125rem 0.5rem;border-radius:999px;min-width:5.5rem;text-align:center">' + statusLabel(r.status) + '</span>';
+                html += '<span class="' + statusClass + '" style="font-size:0.75rem;font-weight:500;padding:0.125rem 0.5rem;border-radius:999px;min-width:5.5rem;text-align:center">' + statusLabel(r) + '</span>';
                 if (r.status === 'receiving') {
                     html += '<div style="flex:1;min-width:80px"><div style="height:4px;border-radius:2px;background:var(--db-color-border);overflow:hidden"><div style="height:100%;width:' + pct + '%;border-radius:2px;background:var(--db-color-accent);transition:width 0.3s ease"></div></div></div>';
                     html += '<span style="font-size:0.75rem;color:var(--db-color-text-muted);min-width:3rem;text-align:right">' + pct + '%</span>';
@@ -127,6 +209,7 @@
         function startWithFile(file) {
             state._file = file;
             setPhase('creating');
+            hideAdUnlock();
 
             var body = { FileName: file.name, FileSize: file.size, MimeType: file.type || 'application/octet-stream', BaseUrl: window.location.origin };
 
@@ -137,7 +220,13 @@
                 body: JSON.stringify(body)
             })
             .then(function (res) {
-                if (!res.ok) return res.text().then(function (t) { throw new Error(t || 'Failed to create share'); });
+                if (!res.ok) return res.text().then(function (t) {
+                    var parsed = null;
+                    try { parsed = JSON.parse(t); } catch (e) { /* not JSON */ }
+                    var err = new Error((parsed && parsed.message) || t || 'Failed to create share');
+                    err.quota = parsed;
+                    throw err;
+                });
                 return res.json();
             })
             .then(function (data) {
@@ -145,10 +234,16 @@
                 state.shareLink = data.shareLink || (window.location.origin + '/p2p/d/' + data.shareCode);
                 state.phase = 'waiting';
                 render();
+                fetchQuota();
                 connectSignaling();
             })
             .catch(function (err) {
                 state.error = err.message || 'Failed to create share link';
+                if (err.quota && err.quota.error === 'daily_p2p_upload_limit_reached') {
+                    state._quota = err.quota;
+                    renderQuota();
+                    showAdUnlock();
+                }
                 setPhase('failed');
             });
         }
@@ -164,10 +259,7 @@
             state._signaling.onRegistered = function () {};
             state._signaling.onPeerJoined = function (receiverId) { onPeerJoined(receiverId); };
             state._signaling.onPeerLeft = function (message, receiverId) {
-                var idx = -1;
-                for (var i = 0; i < state._receiverList.length; i++) { if (state._receiverList[i].id === receiverId) { idx = i; break; } }
-                if (idx >= 0) { state._receiverList.splice(idx, 1); render(); }
-                delete state._receivers[receiverId];
+                onReceiverLeft(receiverId);
             };
             state._signaling.onRelay = function (type, data, receiverId) {
                 if (type === 'answer') onAnswer(data, receiverId);
@@ -189,6 +281,17 @@
             if (state.phase === 'idle' || state.phase === 'failed') return;
             if (!window.P2P.PeerConnection) { state.error = 'P2P modules not loaded'; setPhase('failed'); return; }
 
+            // If ICE cannot connect (peers on different networks / NAT), give
+            // the receiver a while to establish the connection, then stop
+            // showing "Connecting\u2026" forever — the receiver shows its own
+            // clear error message.
+            setTimeout(function () {
+                var pulled = state._receivers[receiverId];
+                if (pulled && pulled.status === 'connecting' && !pulled.channel) {
+                    onReceiverLeft(receiverId);
+                }
+            }, RECEIVER_CONNECT_TIMEOUT_MS);
+
             state._receiverIndex++;
             state._receivers[receiverId] = {
                 index: state._receiverIndex,
@@ -206,7 +309,7 @@
 
             pc.onIceCandidate = function (c) {
                 if (state._signaling) {
-                    state._signaling.sendTo('ice', { candidate: c }, receiverId);
+                    state._signaling.sendTo('ice', c, receiverId);
                 }
             };
             pc.onConnectionState = function (s) {
@@ -222,6 +325,7 @@
             rcv.channel = channel;
             channel.onopen = function () { onChannelOpen(receiverId); };
             channel.onerror = function () { onReceiverLeft(receiverId); };
+            channel.onclose = function () { onReceiverLeft(receiverId); };
 
             pc.createOffer()
             .then(function (sdp) {
@@ -255,13 +359,18 @@
             rcv.sender = sender;
 
             sender.onProgress = function (sent, total) {
-                if (!state._receivers[receiverId]) return;
-                state._receivers[receiverId].progress = sent / total;
+                var r = state._receivers[receiverId];
+                if (!r) return;
+                r.progress = sent / total;
+                // Re-arm the stall watchdog on every progress event.
+                clearTimeout(r._stallTimer);
+                r._stallTimer = window.setTimeout(function () { onReceiverStalled(receiverId); }, RECEIVER_STALL_TIMEOUT_MS);
                 renderReceivers();
             };
             sender.onComplete = function () {
                 var r = state._receivers[receiverId];
                 if (!r) return;
+                clearTimeout(r._stallTimer);
                 r.status = 'done';
                 r.sender = null;
                 r.channel = null;
@@ -274,10 +383,19 @@
             sender.start();
         }
 
+        function onReceiverStalled(receiverId) {
+            var r = state._receivers[receiverId];
+            if (!r || r.status !== 'receiving') return;
+            onReceiverLeft(receiverId);
+        }
+
         function onReceiverLeft(receiverId) {
             if (!receiverId) return;
             var rcv = state._receivers[receiverId];
             if (!rcv || rcv.status === 'done' || rcv.status === 'disconnected') return;
+
+            rcv._wasReceiving = rcv.status === 'receiving';
+            clearTimeout(rcv._stallTimer);
 
             if (rcv.sender) { rcv.sender.cancel(); rcv.sender = null; }
             if (rcv.channel) { rcv.channel = null; }
@@ -343,6 +461,8 @@
             if (qrEl) qrEl.innerHTML = '';
             state.progress = 0;
             state.error = '';
+            hideAdUnlock();
+            fetchQuota();
             setPhase('idle');
         }
 
@@ -359,6 +479,9 @@
             if (state._signaling) { state._signaling.close(); state._signaling = null; }
         }
 
+        // Init: load quota banner once the page is ready
+        fetchQuota();
+
         // Expose public API
         return {
             onFileSelect: onFileSelect,
@@ -368,7 +491,8 @@
             copyLink: copyLink,
             cancel: cancel,
             cancelTransfer: cancelTransfer,
-            reset: reset
+            reset: reset,
+            fetchQuota: fetchQuota
         };
     })();
 })();

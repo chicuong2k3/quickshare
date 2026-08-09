@@ -19,10 +19,11 @@ All subscription management (cancel, re-activate, expire, downgrade) is handled 
 | Upgrade Page | `Pages/Upgrade.razor` | `<form method="post">` handler — creates `PaymentIntent` with `PayOSOrderCode`, calls `PayOSService` to create PayOS payment link. Renders QR + checkout URL. In-process (no API endpoint). |
 | PayOS Service | `Features/Payments/PayOS/PayOSService.cs` | `PayOSClient` wrapper — creates payment links via `POST /v2/payment-requests`, generates unique numeric `PayOSOrderCode` |
 | Webhook Handler | `Features/Payments/PayOS/PayOSWebhookEndpoint.cs` | `POST /api/payments/payos/webhook` — verifies HMAC-SHA256 signature via SDK, matches `PaymentIntent` by `PayOSOrderCode`, records `PaymentEvent`, delegates to `SubscriptionService` |
+| Webhook Registration | `Features/Payments/PayOS/PayOSWebhookRegistrationHostedService.cs` | Hosted service — auto-registers the webhook URL with PayOS at startup |
 | Billing History Service | `Features/Payments/BillingHistoryService.cs` | Shared billing-history query (used by SSR page directly) |
 | Subscription Service | `Features/Payments/Subscriptions/SubscriptionService.cs` | Static service: `HandlePaymentAsync`, `CancelAsync`, `ExpireStaleAsync`, `GetCurrentAsync` |
 | Billing Page | `Pages/AccountBilling.razor` | `<form method="post" Action=cancel>` — calls `SubscriptionService.CancelAsync()` directly. Loads subscription + billing history via services directly. |
-| Expiry Job | `BackgroundJobs/SubscriptionExpiryJob.cs` | Background service (15-min interval) expires stale subscriptions |
+| Expiry Job | `Infrastructure/SubscriptionExpiryJob.cs` | Background service (15-min interval) expires stale subscriptions |
 | PaymentIntent Model | `Data/Entities/PaymentIntent.cs` | Entity: `Code`, `PayOSOrderCode`, `UserId`, `Plan`, `Billing`, `Amount`, `Status`, `ExpiresAt` |
 | Subscription Model | `Data/Entities/Subscription.cs` | Entity: `UserId`, `Plan`, `Status`, `BillingPeriod`, `CurrentPeriodStart/End` |
 | PaymentEvent Model | `Data/Entities/PaymentEvent.cs` | Entity: `UserId`, `EventType`, `Plan`, `Amount`, `Currency`, `InvoiceId` |
@@ -427,12 +428,13 @@ Results are displayed in `/account/billing` as a chronological timeline with eve
 ```
 Features/Payments/
 ├── PayOS/
-│   ├── PayOSService.cs           # Payment link creation + order code generation
-│   └── PayOSWebhookEndpoint.cs   # POST /api/payments/payos/webhook
+│   ├── PayOSService.cs                    # Payment link creation + order code generation
+│   ├── PayOSWebhookEndpoint.cs            # POST /api/payments/payos/webhook
+│   └── PayOSWebhookRegistrationHostedService.cs  # Auto-registers webhook at startup
 ├── Subscriptions/
 │   └── SubscriptionService.cs    # HandlePayment, Cancel, Expire, GetCurrent
 ├── BillingHistoryService.cs       # Payment event query
-BackgroundJobs/
+Infrastructure/
 └── SubscriptionExpiryJob.cs       # 15-min expiry job
 Data/Entities/
 ├── PaymentIntent.cs               # Code, PayOSOrderCode, Plan, Billing, Status
@@ -441,6 +443,4 @@ Data/Entities/
 Pages/
 ├── Upgrade.razor                  # Plan selection + PayOS payment
 └── AccountBilling.razor           # Subscription status + billing history
-Constants/
-└── PlanTierLimits.cs              # Plan limit constants
 ```

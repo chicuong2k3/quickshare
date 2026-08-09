@@ -1,0 +1,216 @@
+.home-hero {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding-block: var(--db-space-7) var(--db-space-6);
+    text-align: center;
+}
+
+.home-tag {
+    display: inline-block;
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    font-weight: var(--db-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--db-color-accent);
+    margin-bottom: var(--db-space-3);
+}
+
+.home-accent {
+    color: var(--db-color-accent);
+}
+
+.home-hero__sub {
+    max-width: 34rem;
+    margin: var(--db-space-4) auto 0;
+    font-size: var(--db-text-base);
+}
+
+.home-hero__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-5);
+}
+
+.home-features {
+    max-width: 56rem;
+    margin: var(--db-space-6) auto 0;
+}
+
+.home-feature-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--db-radius-2);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+    margin-bottom: var(--db-space-3);
+}
+
+.home-feature-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.home-why {
+    max-width: 64rem;
+    margin: var(--db-space-7) auto 0;
+}
+
+.home-why__head {
+    text-align: center;
+}
+
+.home-why__sub {
+    max-width: 40rem;
+    margin: var(--db-space-3) auto 0;
+}
+
+.home-why__badges {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-4);
+}
+
+.home-why__badge {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--db-space-1);
+    padding: var(--db-space-3) var(--db-space-4);
+    border: 1px solid var(--db-color-border-subtle);
+    border-radius: var(--db-radius-2);
+    background: var(--db-color-surface);
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-secondary);
+    text-align: left;
+}
+
+.home-why__badge strong {
+    color: var(--db-color-text);
+}
+.home-why__card {
+    margin-top: var(--db-space-5);
+}
+
+.home-why__table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.home-why__caption {
+    caption-side: top;
+    text-align: left;
+    margin-bottom: var(--db-space-3);
+    color: var(--db-color-text-muted);
+    font-size: var(--db-text-sm);
+}
+
+.home-why__table th,
+.home-why__table td {
+    padding: var(--db-space-3);
+    border-bottom: 1px solid var(--db-color-border-subtle);
+    vertical-align: top;
+}
+
+.home-why__table thead th {
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted);
+    background: var(--db-color-surface);
+}
+
+.home-why__table tbody th {
+    width: 28%;
+    font-weight: var(--db-weight-semibold);
+}
+
+.home-why__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-5);
+}
+
+@media (max-width: 900px) {
+    .home-why__card {
+        overflow-x: auto;
+    }
+
+    .home-why__table {
+        min-width: 44rem;
+    }
+
+    .home-why__badges {
+        flex-direction: column;
+    }
+}
+.home-how {
+    max-width: 48rem;
+    margin: var(--db-space-7) auto 0;
+    text-align: center;
+}
+
+.home-how__title {
+    margin-bottom: var(--db-space-5);
+}
+
+.home-how__steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--db-space-4);
+}
+
+@media (max-width: 640px) {
+    .home-how__steps {
+        grid-template-columns: 1fr;
+    }
+
+    .home-hero__actions,
+    .home-why__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.home-step {
+    text-align: center;
+    padding: var(--db-space-4);
+}
+
+.home-step__num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 auto var(--db-space-3);
+    border-radius: var(--db-radius-full);
+    background: var(--db-color-surface);
+    color: var(--db-color-accent);
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-sm);
+    font-weight: var(--db-weight-bold);
+    border: 1px solid var(--db-color-border-subtle);
+}
+
+.home-cta {
+    max-width: 36rem;
+    margin: var(--db-space-7) auto 0;
+    text-align: center;
+}
+
+.home-cta__card {
+    padding: var(--db-space-6);
+}
+
+.home-cta__sub {
+    margin-top: var(--db-space-2);
+    margin-bottom: var(--db-space-4);
+}

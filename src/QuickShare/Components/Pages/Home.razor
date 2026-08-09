@@ -1,0 +1,163 @@
+@layout MainLayout
+@page "/"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["home_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <section class="home-hero">
+        <span class="home-tag">@Loc["home_tag"]</span>
+        <h1 class="db-h1">
+            @Loc["home_h1_send"] <span class="home-accent">@Loc["home_h1_anything"]</span>,
+            <br>@Loc["home_h1_zero"]
+        </h1>
+        <p class="db-p db-text-muted home-hero__sub">
+            @Loc["home_sub"]
+        </p>
+        <div class="home-hero__actions">
+            <a href="/send" class="db-btn db-btn--primary db-btn--lg">@Loc["home_btn_start"]</a>
+            <a href="/pricing" class="db-btn db-btn--ghost db-btn--lg">@Loc["home_btn_pricing"]</a>
+        </div>
+    </section>
+
+    <section class="home-why" aria-labelledby="why-use-app">
+        <div class="home-why__head">
+            <h2 id="why-use-app" class="db-h2">@Loc["home_why_title"]</h2>
+            <p class="db-text-muted home-why__sub">
+                @Loc["home_why_sub"]
+            </p>
+        </div>
+        <div class="home-why__badges" aria-label="Choose transfer mode">
+            <span class="home-why__badge">
+                @Loc["home_badge_cloud"]
+            </span>
+            <span class="home-why__badge">
+                @Loc["home_badge_p2p"]
+            </span>
+        </div>
+        <div class="db-card home-why__card">
+            <div class="db-card__body">
+                <table class="home-why__table">
+                    <caption class="home-why__caption">@Loc["home_table_caption"]</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">@Loc["home_table_what"]</th>
+                            <th scope="col">@Loc["home_table_cloud"]</th>
+                            <th scope="col">@Loc["home_table_p2p"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">@Loc["home_row1_label"]</th>
+                            <td>@Loc["home_row1_cloud"]</td>
+                            <td>@Loc["home_row1_p2p"]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">@Loc["home_row2_label"]</th>
+                            <td>@Loc["home_row2_cloud"]</td>
+                            <td>@Loc["home_row2_p2p"]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">@Loc["home_row3_label"]</th>
+                            <td>@Loc["home_row3_cloud"]</td>
+                            <td>@Loc["home_row3_p2p"]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">@Loc["home_row4_label"]</th>
+                            <td>@Loc["home_row4_cloud"]</td>
+                            <td>@Loc["home_row4_p2p"]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">@Loc["home_row5_label"]</th>
+                            <td>@Loc["home_row5_cloud"]</td>
+                            <td>@Loc["home_row5_p2p"]</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="home-why__actions">
+                    <a href="/send" class="db-btn db-btn--primary">@Loc["home_btn_send_now"]</a>
+                    <a href="/pricing" class="db-btn db-btn--ghost">@Loc["home_btn_pro_limits"]</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="home-features">
+        <div class="db-grid db-grid--3 db-gap-4">
+            <div class="db-card">
+                <div class="db-card__body">
+                    <div class="home-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </div>
+                    <h3 class="db-h3">@Loc["home_feat1_title"]</h3>
+                    <p class="db-text-muted">
+                        @Loc["home_feat1_desc"]
+                    </p>
+                </div>
+            </div>
+            <div class="db-card">
+                <div class="db-card__body">
+                    <div class="home-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <h3 class="db-h3">@Loc["home_feat2_title"]</h3>
+                    <p class="db-text-muted">
+                        @Loc["home_feat2_desc"]
+                    </p>
+                </div>
+            </div>
+            <div class="db-card">
+                <div class="db-card__body">
+                    <div class="home-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                    <h3 class="db-h3">@Loc["home_feat3_title"]</h3>
+                    <p class="db-text-muted">
+                        @Loc["home_feat3_desc"]
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-how">
+        <h2 class="db-h2 home-how__title">@Loc["home_how_title"]</h2>
+        <div class="home-how__steps">
+            <div class="home-step">
+                <span class="home-step__num">1</span>
+                <h3 class="db-h4">@Loc["home_step1_title"]</h3>
+                <p class="db-text-muted">@Loc["home_step1_desc"]</p>
+            </div>
+            <div class="home-step">
+                <span class="home-step__num">2</span>
+                <h3 class="db-h4">@Loc["home_step2_title"]</h3>
+                <p class="db-text-muted">@Loc["home_step2_desc"]</p>
+            </div>
+            <div class="home-step">
+                <span class="home-step__num">3</span>
+                <h3 class="db-h4">@Loc["home_step3_title"]</h3>
+                <p class="db-text-muted">@Loc["home_step3_desc"]</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-cta">
+        <div class="db-card home-cta__card">
+            <div class="db-card__body">
+                <h2 class="db-h2">@Loc["home_cta_title"]</h2>
+                <p class="db-text-muted home-cta__sub">@Loc["home_cta_sub"]</p>
+                <a href="/send" class="db-btn db-btn--primary db-btn--lg">@Loc["home_cta_btn"]</a>
+            </div>
+        </div>
+    </section>
+</PageWrapper>
+
+

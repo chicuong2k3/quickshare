@@ -1,12 +1,7 @@
 # Server Data
 
-This folder contains the DbContext and database-related infrastructure.
+This folder contains the DbContext (`AppDbContext`), entities, and database-related infrastructure.
 
-**Entity models have been moved to `QuickShare.Shared.Models`** to be shared between Server and Web projects.
+Entities live in `src/QuickShare/Data/Entities/` (namespace `QuickShare.Data.Entities`): `User`, `UserLogin`, `UserUsage`, `Delivery`, `UploadSession`, `Chunk`, `Manifest`, `Folder`, `FileMetadata`, `DownloadTracking`, `TempShare`, `PaymentIntent`, `PaymentEvent`, `Subscription`, plus shared DTOs like `ProfileResponse`.
 
-Import models using:
-```csharp
-using QuickShare.Shared.Models;
-```
-
-The global usings already include this, so no explicit import is needed in most files.
+The global usings (`global using QuickShare.Data;` and `global using QuickShare.Data.Entities;`) already cover both namespaces, so no explicit import is needed in most files.

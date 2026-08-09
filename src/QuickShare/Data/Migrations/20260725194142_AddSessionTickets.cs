@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -28,7 +27,7 @@ namespace QuickShare.Migrations
                 table: "deliveries",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: string.Empty);
 
             migrationBuilder.AddColumn<string>(
                 name: "StoragePath",

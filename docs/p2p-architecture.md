@@ -16,7 +16,7 @@ QuickShare supports **direct peer-to-peer file transfers** via WebRTC, bypassing
 | Connection Manager | `QuickShare` | `Middleware/P2PConnectionManager.cs` | Room lifecycle, sender/receiver WebSocket tracking, connection limits |
 | Signaling Middleware | `QuickShare` | `Middleware/P2PSignalingMiddleware.cs` | WebSocket endpoint `/ws/connect/{shareCode}` — register, relay offer/answer/ICE |
 | Server WebSocket Config | `QuickShare` | `Program.cs` | `UseWebSockets` + `P2PSignalingMiddleware` + `P2PConnectionManager` singleton |
-| Sender Page UI | `QuickShare` | `Pages/P2PTransfer.razor` | Sender page at `/p2p/send` — drag & drop, PIN toggle, share link generation |
+| Sender Page UI | `QuickShare` | `Pages/P2PTransfer.razor` | Sender page at `/p2p/send` — drag & drop, share link generation |
 | Sender Page JS | `QuickShare` | `wwwroot/js/p2p/send.js` | Coordinates file selection, share creation, SignalingClient + PeerConnection + FileSender |
 | Download Page UI | `QuickShare` | `Pages/P2PDownload.razor` | Receiver page at `/p2p/d/{ShareCode}` |
 | Download Page JS | `QuickShare` | `wwwroot/js/p2p/download.js` | Coordinates SignalingClient + PeerConnection + FileReceiver |
@@ -24,7 +24,6 @@ QuickShare supports **direct peer-to-peer file transfers** via WebRTC, bypassing
 | Peer Connection | `QuickShare` | `wwwroot/js/p2p/peerConnection.js` | RTCPeerConnection wrapper — offer, answer, ICE candidates, data channels |
 | File Sender | `QuickShare` | `wwwroot/js/p2p/fileTransfer.js` | Chunked file send over WebRTC data channel with backpressure |
 | File Receiver | `QuickShare` | `wwwroot/js/p2p/fileReceiver.js` | Chunked file receive — blob mode (<500MB) or StreamSaver (>500MB) |
-| Encryption | `QuickShare` | `wwwroot/js/p2p/encryption.js` | PIN-based AES-256-GCM via Web Crypto PBKDF2 |
 
 ---
 
@@ -148,7 +147,7 @@ Sender-side chunked upload over the data channel.
   [1 byte:  reserved]
   [N bytes: chunk data]
   ```
-- **Flow**: Send JSON metadata → read file in chunks → encrypt (if PIN) → prepend header → send over data channel
+- **Flow**: Send JSON metadata → read file in chunks → prepend 8-byte header → send over data channel
 
 ### 3.4 FileReceiver (`window.P2P.FileReceiver`)
 
@@ -159,15 +158,9 @@ Receiver-side chunked download from the data channel.
 - **Chunk reordering**: Each chunk self-identifies via header index — handles out-of-order arrival
 - **Header parsing**: Reads chunk index, final flag, and data length from 8-byte header
 
-### 3.5 Encryption (`window.P2P.encryption`)
+### 3.5 Transfer Security
 
-End-to-end encryption using Web Crypto API.
-
-- **Key derivation**: PBKDF2 with 600,000 iterations, SHA-256, 256-bit key
-- **Salt**: `PIN + shareCode` concatenation (ensures different keys per share even with same PIN)
-- **Cipher**: AES-256-GCM, 12-byte nonce with chunk counter in last 8 bytes (prevents nonce reuse)
-- **`encryptChunk(chunk, key, counter)`**: Encrypts a single chunk
-- **`decryptChunk(chunk, key, counter)`**: Decrypts a single chunk
+P2P transfers are **direct and unencrypted at the application layer** — PIN and client-side encryption were removed (commit `3062a69`). Chunks travel over the WebRTC data channel in plaintext. Transit is protected only by WebRTC's built-in DTLS; the signaling server never sees file bytes.
 
 ---
 
@@ -182,7 +175,7 @@ Sender                          Server
   │                                │
   │  POST /api/shares/p2p          │
   │  { fileName, fileSize,         │
-  │    mimeType, hasPin,           │
+  │    mimeType,                   │
   │    baseUrl }                   │
   │───────────────────────────────▶│
   │                                │── Generate shareCode (16 hex chars)
@@ -261,30 +254,14 @@ Sender Browser           Server (Signaling)              Receiver Browser
   │                         │                                │
   │  ╔══════════ Direct P2P Data Channel ═══════════╗        │
   │  ║  Sender reads file in 16KB chunks           ║        │
-  │  ║  Encrypts (if PIN) → header + chunk → DC    ║        │
+  │  ║  Prepends 8-byte header → sends raw chunk   ║        │
   │  ║══════════════════════════════════════════════╣        │
-  │  ║  Receiver parses header → decrypts → blob   ║        │
+  │  ║  Receiver parses header → reassembles blob  ║        │
   │  ╚══════════════════════════════════════════════╝        │
   │                         │                                │
   │                         │  File downloaded.              │
   │                         │  Server never saw the data.    │
   │                         │                                │
-```
-
-### 4.3 PIN-Protected Transfer (Optional)
-
-```
-Receiver Browser
-
-  Page shows PIN input
-  User enters PIN
-  ─────────────────
-  1. deriveKey(pin, salt = pin + shareCode)
-     → PBKDF2 600K iterations → AES-256-GCM key
-  2. Sender encrypts each chunk before sending:
-     encryptChunk(chunk, key, chunkIndex)
-  3. Receiver decrypts each chunk on arrival:
-     decryptChunk(chunk, key, chunkIndex)
 ```
 
 ### 4.4 Disconnect / Room Cleanup
@@ -311,7 +288,6 @@ The download page at `/p2p/d/{ShareCode}` renders one section at a time:
 |-------|-----------|---------|
 | **checking** | `p2pd-checking` | Page load — spinner + "Connecting to sender..." |
 | **waiting-sender** | `p2pd-waiting` | Receiver connected but sender offline |
-| **pin-required** | `p2pd-pin` | File has PIN, user must enter it |
 | **ready** | `p2pd-ready` | File metadata received, ready to download |
 | **connecting** | `p2pd-ready` (btn disabled) | WebRTC handshake in progress |
 | **transferring** | `p2pd-transfer` | Download in progress with progress bar |
@@ -320,7 +296,62 @@ The download page at `/p2p/d/{ShareCode}` renders one section at a time:
 
 ---
 
-## 6. Server Wiring
+## 6. Direct-Connect Only — No TURN, Bandwidth, & Error UX
+
+### No TURN relay (design decision)
+
+P2P uses **only STUN hole-punching** — no TURN server. The ICE servers in
+`wwwroot/js/p2p/peerConnection.js` are Google STUN endpoints only.
+
+Rationale: a TURN relay carries the **whole file through the server** (roughly
+2× the file in bandwidth once in + once out), which defeats the entire point of
+P2P — the server would consume bandwidth exactly as if it hosted the file, and
+this project already has a normal **R2 upload/download** path for that case.
+Self-hosting TURN on a low-bandwidth VPS is not worthwhile.
+
+**Bandwidth effect:**
+
+| Path | Server bandwidth cost |
+|------|----------------------|
+| P2P direct (STUN hole-punch, works same LAN/low-NAT) | **0** |
+| TURN relay (removed) | ~2× file — never used |
+| Normal server (R2) transfer | 0 egress (R2 egress free) |
+
+### When direct connection works
+
+Direct P2P connects when both devices can reach each other, i.e.:
+
+- on the **same Wi-Fi / LAN**, or **hotspot** (`192.168.x.x` shared network), or
+- joined to a **common mesh VPN** (Tailscale, ZeroTier) so both devices share a
+  virtual LAN IP that WebRTC can reach directly.
+
+### Error UX (already implemented)
+
+When ICE cannot connect (`connectionState` stuck, `failed`, `disconnected`), the
+UI must say **why** — not hang silently:
+
+- `wwwroot/js/p2p/download.js` — ICE-connect timeout (~12 s) + connection-state
+  failure both set an error message:
+
+```text
+Direct device-to-device transfer failed: the two devices are not on the same
+network (different Wi-Fi, or a NAT/firewall blocks the direct connection). To
+use a peer-to-peer, connect both devices to the same Wi-Fi or hotspot, or join
+a common mesh VPN (e.g. Tailscale, ZeroTier) and reopen this link; otherwise
+ask to use a normal server (R2) transfer instead.
+```
+
+  with a **Try again** button.
+- `wwwroot/js/p2p/send.js` — sender-side **20 s** receiver-connect timeout stops
+  showing `Connecting…` forever; receiver shows its own detailed message.
+- There is **no server-side fallback link** for P2P: a P2P share creates a
+  `Delivery` row with **no uploaded file** in `CreateP2PShareEndpoint`, so
+  `/d/{ShareCode}` has nothing to serve. When direct connect fails the user is
+  told to switch to a normal server transfer.
+
+---
+
+## 7. Server Wiring
 
 In `src/QuickShare/Program.cs`:
 
@@ -341,7 +372,7 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 ---
 
-## 7. Configuration
+## 8. Configuration
 
 | Config Key | Purpose | Default |
 |------------|---------|---------|
@@ -351,7 +382,7 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 
 ---
 
-## 8. Security Model
+## 9. Security Model
 
 | Concern | Protection |
 |---------|-----------|
@@ -359,13 +390,13 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 | **Eavesdropping** | WebRTC DTLS encrypts all data in transit |
 | **Unauthorized access** | Share code is 16-char hex (64-bit random) — unguessable |
 | **Share expiry** | Delivery record auto-expires after 7 days (checked on render) |
-| **Optional PIN protection** | AES-256-GCM with PBKDF2 (600K iterations) — even server can't decrypt |
+| **No app-layer encryption** | P2P data channel is plaintext; only WebRTC DTLS protects transit |
 | **Connection limit** | `MaxP2PConnections` prevents DoS via connection exhaustion |
 | **Room slot protection** | Only one sender per share code; unlimited parallel receivers |
 
 ---
 
-## 9. File Reference
+## 10. File Reference
 
 | File | Role |
 |------|------|
@@ -381,4 +412,4 @@ The middleware runs after WebSocket support is enabled. It inspects every reques
 | `src/QuickShare/wwwroot/js/p2p/peerConnection.js` | WebRTC RTCPeerConnection wrapper |
 | `src/QuickShare/wwwroot/js/p2p/fileTransfer.js` | Chunked file sender with backpressure |
 | `src/QuickShare/wwwroot/js/p2p/fileReceiver.js` | Chunked file receiver (blob + StreamSaver) |
-| `src/QuickShare/wwwroot/js/p2p/encryption.js` | PIN-based AES-256-GCM encryption |
+| `src/QuickShare/wwwroot/js/p2p/encryption.js` | Legacy PIN encryption module — no longer used (sender passes `null` key) |

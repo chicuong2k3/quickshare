@@ -1,0 +1,44 @@
+@* CookieConsent — fixed bottom banner for AdMob cookie consent.
+   Shows for all authenticated users in all regions. Hidden once consent cookie is set.
+   Uses HTMX POST to set consent server-side, hx-swap=delete to remove banner. *@
+@using QuickShare.Infrastructure
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var consent = HttpContextAccessor.HttpContext?.Request.Cookies[AdConstants.ConsentCookieName];
+    if (consent == AdConstants.ConsentCookieValueGranted || consent == AdConstants.ConsentCookieValueDenied)
+    {
+        return;
+    }
+}
+
+<div id="cookie-consent" class="cookie-consent" role="dialog" aria-labelledby="cookie-consent-title" aria-modal="false">
+    <div class="cookie-consent__inner">
+        <div class="cookie-consent__text">
+            <span id="cookie-consent-title" class="cookie-consent__title">@Loc["cookie_consent_title"]</span>
+            <p class="cookie-consent__desc">
+                @Loc["cookie_consent_desc"]
+                <a href="/pricing" class="cookie-consent__link">@Loc["cookie_consent_upgrade_link"]</a> @Loc["cookie_consent_noads"]
+            </p>
+        </div>
+        <div class="cookie-consent__actions">
+            <button class="db-btn db-btn--ghost db-btn--sm cookie-consent__btn"
+                    hx-post="@(RoutePaths.CookieConsent)?consent=@AdConstants.ConsentCookieValueDenied"
+                    hx-target="#cookie-consent"
+                    hx-swap="delete"
+                    type="button">
+                @Loc["cookie_consent_reject"]
+            </button>
+            <button class="db-btn db-btn--primary db-btn--sm cookie-consent__btn"
+                    hx-post="@(RoutePaths.CookieConsent)?consent=@AdConstants.ConsentCookieValueGranted"
+                    hx-target="#cookie-consent"
+                    hx-swap="delete"
+                    type="button">
+                @Loc["cookie_consent_accept"]
+            </button>
+        </div>
+    </div>
+</div>

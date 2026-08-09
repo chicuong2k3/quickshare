@@ -1,0 +1,7 @@
+@* AdReward.razor — dedicated HTMX target for rewarded ad prompt.
+   This page exists solely as the hx-get target for AdComponent skeletons.
+   Renders only the AdComponent; HTMX extracts #ad-reward-card from response. *@
+@page "/ads/reward-prompt"
+@layout HtmxorLayout
+
+<AdComponent />

@@ -1,18 +1,19 @@
-using System.Security.Claims;
-using System.Text.Encodings.Web;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using QuickShare.Data;
+using QuickShare.Data.Entities;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Jobs;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Server.Tests.E2E;
@@ -25,11 +26,16 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
     public Guid TestUserId { get; private set; }
 
+    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"quickshare-tests-{Guid.NewGuid():N}.db");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
 
         builder.UseSetting("UseInMemoryDatabase", "true");
+        // FusionCache backs process-wide statics (StaticCache, PlanTierLimits._cache);
+        // parallel test factories would leak cached users/pages into each other.
+        builder.UseSetting("FusionCache:Enabled", "false");
         builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
         builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
@@ -38,6 +44,35 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
         builder.ConfigureTestServices(services =>
         {
+            // Re-register the DbContext with a per-factory SQLite file so every
+            // factory (test class) gets an isolated store. SQLite (unlike the
+            // InMemory provider) is relational, so ExecuteUpdate/ExecuteDelete and
+            // FK constraints behave like production. RemoveAll of the options
+            // configuration is required — EF Core 10 registers both
+            // DbContextOptions<T> and IDbContextOptionsConfiguration<T>, and leaving
+            // the latter would keep the Program.cs registration alive.
+            services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.RemoveAll<DbContextOptions>();
+            services.RemoveAll<AppDbContext>();
+            // MigrationsAssembly points at this (migration-less) test assembly so the
+            // Program.cs startup block sees no pending migrations (the checked-in
+            // migrations are Npgsql SQL); the schema comes from EnsureCreated instead.
+            services.AddDbContext<AppDbContext>(opts =>
+                opts.UseSqlite($"Data Source={_dbPath}",
+                    sqlite => sqlite.MigrationsAssembly("QuickShare.Server.Tests")));
+
+            // Header-based test auth: authenticates only when X-Test-UserId is
+            // present; challenges stay on the Cookie scheme so anonymous flows and
+            // /api 401 behavior are unchanged.
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthDefaults.Scheme;
+                    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultForbidScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                })
+                .AddScheme<TestAuthSchemeOptions, TestAuthHandler>(TestAuthDefaults.Scheme, _ => { });
+
             services.AddSingleton<IStorageProvider, LocalDiskStorageProviderStub>();
             services.AddScoped<PayOSService, StubPayOSService>();
             RemoveHostedService<DeliveryCleanupService>(services);
@@ -45,33 +80,70 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             RemoveHostedService<DeliveryExpiryJob>(services);
             RemoveHostedService<SubscriptionExpiryJob>(services);
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
-
-            services.AddAuthentication(TestAuthHandler.SchemeName)
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
         });
     }
 
-    public HttpClient CreateAuthenticatedClient()
+    /// <summary>Client authenticated as the default seeded test user.</summary>
+    public HttpClient CreateAuthenticatedClient() => CreateAuthenticatedClient(TestUserProviderKey);
+
+    /// <summary>
+    /// Client authenticated as the given provider key (via X-Test-UserId header).
+    /// The user must exist — the default is seeded, others via <see cref="SeedUserAsync"/>.
+    /// </summary>
+    public HttpClient CreateAuthenticatedClient(string userId)
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Add(TestAuthHandler.AuthHeader, "1");
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, userId);
         return client;
+    }
+
+    /// <summary>
+    /// Creates a user (and its login row) directly in the InMemory DB so the
+    /// auth pipeline and GetUserAsync can resolve it.
+    /// </summary>
+    public async Task<User> SeedUserAsync(string userId, string plan = PlanTierLimits.Free)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var existing = await db.Users.FindAsync(Guid.Parse(userId));
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var user = new User
+        {
+            Id = Guid.Parse(userId),
+            Name = TestUserName,
+            Email = TestUserEmail,
+            Plan = plan
+        };
+        db.Users.Add(user);
+
+        db.UserLogins.Add(new UserLogin
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            Provider = TestAuthProvider.Value,
+            ProviderKey = userId
+        });
+
+        await db.SaveChangesAsync();
+        return user;
     }
 
     public async ValueTask InitializeAsync()
     {
-        using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await UserRegistrationService.RegisterAsync(
-            AuthConstants.GoogleProvider, TestUserProviderKey, TestUserName, TestUserEmail,
-            null, db, CancellationToken.None);
-
-        // Parallel test classes share the in-memory store and may double-register the
-        // test user; resolve the id with the same lookup the app's auth uses so it
-        // always matches the user requests run as.
-        var login = await db.UserLogins
-            .FirstAsync(l => l.Provider == AuthConstants.GoogleProvider && l.ProviderKey == TestUserProviderKey);
-        TestUserId = login.UserId;
+        using (var scope = Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.EnsureCreatedAsync();
+            var profile = await UserRegistrationService.RegisterAsync(
+                TestAuthProvider.Value, TestUserProviderKey, TestUserName, TestUserEmail,
+                null, db, CancellationToken.None);
+            TestUserId = profile.Id;
+        }
 
         // Warm-up: first request pays JIT/Razor-compile cost so timing asserts measure steady state.
         using var client = CreateClient();
@@ -81,6 +153,11 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
+        try
+        {
+            File.Delete(_dbPath);
+        }
+        catch (IOException) { }
     }
 
     private static void RemoveHostedService<T>(IServiceCollection services) where T : class, IHostedService
@@ -91,42 +168,10 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     }
 }
 
-/// <summary>
-/// Authenticates any request carrying the X-Test-Auth header as the seeded test user.
-/// Requests without the header stay anonymous, so both paths are testable.
-/// </summary>
-internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    public const string SchemeName = "TestAuth";
-    public const string AuthHeader = "X-Test-Auth";
-
-    public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
-        : base(options, logger, encoder)
-    {
-    }
-
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        if (!Request.Headers.ContainsKey(AuthHeader))
-            return Task.FromResult(AuthenticateResult.NoResult());
-
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, TestWebAppFactory.TestUserProviderKey),
-            new Claim(ClaimTypes.Name, TestWebAppFactory.TestUserName),
-            new Claim(ClaimTypes.Email, TestWebAppFactory.TestUserEmail),
-            new Claim(AuthConstants.ProviderClaimType, AuthConstants.GoogleProvider),
-        };
-        var identity = new ClaimsIdentity(claims, SchemeName);
-        var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName);
-        return Task.FromResult(AuthenticateResult.Success(ticket));
-    }
-}
-
 /// <summary>Replaces outbound PayOS API calls with an instant fake checkout link.</summary>
 internal sealed class StubPayOSService : PayOSService
 {
-    public StubPayOSService(Microsoft.Extensions.Configuration.IConfiguration config, ILogger<PayOSService> logger)
+    public StubPayOSService(Microsoft.Extensions.Configuration.IConfiguration config, Microsoft.Extensions.Logging.ILogger<PayOSService> logger)
         : base(config, logger)
     {
     }

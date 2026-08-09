@@ -9,7 +9,7 @@ public sealed class DownloadDeliveryEndpoint : Endpoint<DownloadDeliveryRequest>
         // The handler writes status/redirect directly to the response;
         // without this FastEndpoints overwrites it with a default 204.
         DontAutoSendResponse();
-        Description(b => b.WithTags("Downloads"));
+        Description(b => b.WithTags(ApiTags.Downloads));
         Summary(s =>
         {
             s.Summary = "Download a delivery";

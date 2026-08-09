@@ -10,15 +10,17 @@ The profile system displays and updates user identity (name, avatar). Users are 
 
 | Layer | File | Role |
 |-------|------|------|
-| Account Page (UI) | `Pages/Account.razor` | Profile card + delivery branding manager |
-| Account CSS | `Pages/Account.razor.css` | Scoped styles |
+| Account Page (UI) | `Pages/Account.razor` | `/account` — shell: profile card (HTMX lazy-loaded) + delivery branding manager |
+| Profile Card Page | `Pages/AccountProfile.razor` | `/account/profile` — name/avatar form (`hx-post`), DB access + cookie re-sign in code-behind |
+| Account CSS | `Pages/AccountProfile.razor.css` / `Pages/Account.razor.css` | Scoped styles |
 | Account JS | `wwwroot/js/account.js` | Avatar preview + branding CRUD |
-| Profile Form Handler | `Pages/Account.razor` (code-behind) | `<form method="post">` handler — validates + submits, re-signs cookie |
-| Cookie Re-sign | `Pages/Account.razor` | `ctx.SignInAsync()` after profile update |
+| Profile Form Handler | `Pages/AccountProfile.razor` (code-behind) | `HandleUpdateProfile()` — validates + submits, re-signs cookie |
+| Cookie Re-sign | `Pages/AccountProfile.razor` | `ctx.SignInAsync()` after profile update |
+| Nav Avatar | `Features/Users/Avatar/GetAvatarEndpoint.cs` | `GET /api/me/avatar` — avatar HTML for nav bar (HTMX) |
 | User Mapper | `Features/Users/Shared/UserMapper.cs` | Mapperly source-gen: `User` → `ProfileResponse` |
 | UserRegistrationService | `Features/Users/Shared/UserRegistrationService.cs` | DRY registration (all OAuth providers) |
 | User DB Helper | `Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` — user lookup |
-| Shared DTO | `Models/ProfileResponse.cs` | `ProfileResponse` DTO |
+| Shared DTO | `Data/Entities/ProfileResponse.cs` | `ProfileResponse` DTO |
 
 ---
 
@@ -29,16 +31,16 @@ Browser                  QuickShare (9000)            PostgreSQL
    │                         │                          │
    │  GET /account (cookie)  │                          │
    │────────────────────────▶│                          │
-   │                         │                          │
-   │  OnInitializedAsync():  │                          │
-   │  Inject IMessageBus     │                          │
-   │  or AppDbContext        │                          │
-   │  (in-process query)     │                          │
+   │◀─ Account.razor shell ──│  (instant, no DB calls)  │
+   │  profile card hx-get    │                          │
+   │  /account/profile       │                          │
+   │────────────────────────▶│                          │
+   │                         │  OnInitializedAsync():   │
+   │                         │  GetUserAsync() → DB     │
    │                         │── DB query ─────────────▶│
    │                         │◀── User row ─────────────│
    │                         │                          │
-   │◀─ Account.razor HTML ───│                          │
-   │   + profile data        │                          │
+   │◀─ profile card HTML ────│  (HTMX swap)             │
 ```
 
 User is resolved via `GetUserAsync()` which matches by `provider + providerKey` in `UserLogins` table.
@@ -50,7 +52,7 @@ User is resolved via `GetUserAsync()` which matches by `provider + providerKey` 
 ```
 Browser                  QuickShare (9000)            PostgreSQL
    │                         │                          │
-   │  POST /account          │                          │
+   │  POST /account/profile  │                          │
    │  (hx-post, hx-target=   │                          │
    │   "#profile-card")      │                          │
    │  multipart/form-data    │                          │
@@ -61,14 +63,15 @@ Browser                  QuickShare (9000)            PostgreSQL
    │  ├─ Validate avatar     │                          │
    │  │  (max 5MB, image/*)  │                          │
    │  ├─ If avatar upload:   │                          │
-   │  │  save to wwwroot/    │                          │
-   │  │  avatars/{guid}.ext  │                          │
-   │  ├─ IMessageBus or      │                          │
-   │  │  AppDbContext         │                          │
-   │  │  (in-process update) │── UPDATE users ─────────▶│
+   │  │  base64-encode →     │                          │
+   │  │  store as data URL   │                          │
+   │  │  in AvatarUrl column │                          │
+   │  ├─ AppDbContext        │                          │
+   │  │  (ExecuteUpdateAsync)│── UPDATE users ─────────▶│
    │  │                       │                          │
    │  ├─ Re-sign cookie:     │                          │
    │  │  ctx.SignInAsync()   │                          │
+   │  │  (Name claim only)   │                          │
    │  │                       │                          │
    │◀─ Updated #profile-card │                          │
    │   HTML (htmx swap)      │                          │
@@ -78,14 +81,14 @@ Browser                  QuickShare (9000)            PostgreSQL
 
 After updating the user's name or avatar, the auth cookie still carries the OLD claims. Re-signing ensures:
 1. The updated name appears in the nav bar immediately (without page refresh)
-2. Future requests carry the correct name/avatar_url claims
-3. `GetUserProfile` returns consistent data
+2. Future requests carry the correct name claim
+3. The `profileUpdated` HX-Trigger refreshes the nav avatar via `GET /api/me/avatar`
 
 ---
 
 ## 4. User Registration Flow
 
-Users are registered at **Google OAuth login time** by `OnCreatingTicket`, which calls `UserRegistrationService.RegisterAsync()` in-process. The same service is used by `POST /api/users/register` for any programmatic registration.
+Users are registered at **Google OAuth login time** by `OnCreatingTicket`, which calls `UserRegistrationService.RegisterAsync()` in-process. (The programmatic `POST /api/users/register` endpoint was removed — OAuth is the only registration path.)
 
 ```
 OnCreatingTicket                          UserRegistrationService
@@ -129,16 +132,16 @@ The right side of the Account page shows all deliveries and allows branding each
 
 | Constraint | Value | Enforced In |
 |-----------|-------|-------------|
-| Max file size | 5 MB | JS client-side + server-side validation |
+| Max file size | 5 MB | JS client-side + server-side validation (`HandleUpdateProfile`) |
 | Allowed types | `image/*` | `accept="image/*"` on `<input>` + JS validation |
-| Storage path | `wwwroot/avatars/{guid}.{ext}` | `HandleUpdateProfile()` |
-| URL format | `/avatars/{guid}.{ext}` | Saved to DB + cookie claim |
+| Storage | `users.AvatarUrl` column | `HandleUpdateProfile()` — base64 data URL (`data:{mime};base64,...`) |
+| URL format | Stored value used directly as `<img src>` | Saved to DB |
 
 ---
 
 ## 7. Auth Cookie Claims
 
-After Google OAuth login:
+After Google OAuth login (claims set by the OAuth pipeline + `OnCreatingTicket`):
 
 | Claim Type | Value | Source |
 |-----------|-------|--------|
@@ -146,27 +149,27 @@ After Google OAuth login:
 | `ClaimTypes.Name` | Google display name | OAuth callback |
 | `ClaimTypes.Email` | Google email | OAuth callback |
 | `provider` | `"google"` | `OnCreatingTicket` |
-| `avatar_url` | Google picture URL | `OnCreatingTicket` |
-| `plan` | User's plan tier | `UserRegistrationService.RegisterAsync()` |
+
+> No `avatar` or `plan` claims are stored. Avatar + plan are read from the DB on each request (`GetUserAsync()` → `ProfileResponse`); the nav avatar uses `GET /api/me/avatar`.
 
 After profile update (re-sign):
 
 | Claim Type | Updated To |
 |-----------|-----------|
 | `ClaimTypes.Name` | User-entered name |
-| `avatar_url` | `/avatars/{guid}.{ext}` (or null) |
 
 ---
 
-## 8. API Endpoints (delivery branding — called from JS)
+## 8. API Endpoints (branding + nav avatar — called from JS/HTMX)
 
-Profile data is loaded in-process via `AppDbContext` or `IMessageBus` in `Account.razor`. Profile mutations use `<form method="post">` handlers. No dedicated user profile API endpoints exist. The account page also uses these JS-called endpoints for delivery branding:
+Profile data is loaded in-process via `AppDbContext` or `IMessageBus` in `Account.razor` / `AccountProfile.razor`. Profile mutations use `hx-post` form handlers. The account page also uses these JS/HTMX-called endpoints for delivery branding and the nav avatar:
 
 | Method | Path | Auth | Handler | Consumer |
 |--------|------|------|---------|----------|
 | GET | `/api/deliveries` | Required | `ListDeliveriesEndpoint` | account.js |
-| GET | `/api/deliveries/{code}/brand` | Required | `GetBrandEndpoint` | account.js |
+| GET | `/api/deliveries/{code}/brand` | Required | `GetBrandEndpoint` | account.js, download.js |
 | PUT | `/api/deliveries/{id}/brand` | Required | `SetBrandEndpoint` | account.js |
+| GET | `/api/me/avatar` | Required | `GetAvatarEndpoint` | MainLayout nav (HTMX) |
 
 ---
 
@@ -174,12 +177,16 @@ Profile data is loaded in-process via `AppDbContext` or `IMessageBus` in `Accoun
 
 | File | Role |
 |------|------|
-| `src/QuickShare/Pages/Account.razor` | Profile UI + `<form method="post">` handler |
+| `src/QuickShare/Pages/Account.razor` | `/account` shell — HTMX profile card + branding manager |
+| `src/QuickShare/Pages/AccountProfile.razor` | `/account/profile` — name/avatar form (`hx-post`) + cookie re-sign |
 | `src/QuickShare/Pages/Account.razor.css` | Scoped styles |
+| `src/QuickShare/Pages/AccountProfile.razor.css` | Scoped styles |
 | `src/QuickShare/wwwroot/js/account.js` | Avatar preview + branding manager JS |
+| `src/QuickShare/Features/Users/Avatar/GetAvatarEndpoint.cs` | `GET /api/me/avatar` — nav avatar HTML |
 | `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY registration (all OAuth providers) |
 | `src/QuickShare/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |
 | `src/QuickShare/Extensions/ClaimsPrincipalExtensions.cs` | `GetUserAsync()` |
+| `src/QuickShare/Data/Entities/ProfileResponse.cs` | `ProfileResponse` DTO |
 | `src/QuickShare/Features/Deliveries/Brand/GetBrandEndpoint.cs` | `GET /api/deliveries/{code}/brand` |
 | `src/QuickShare/Features/Deliveries/Brand/SetBrandEndpoint.cs` | `PUT /api/deliveries/{id}/brand` |
 

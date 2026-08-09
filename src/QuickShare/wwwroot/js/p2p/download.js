@@ -5,14 +5,21 @@
         function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
         function hide(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
         function text(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+        var SIGNALING_CONNECT_TIMEOUT_MS = 15000;
+        var SIGNALING_CONNECT_TIMEOUT_MESSAGE = 'Could not reach signaling server. Check network and try again.';
+        var RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
+        var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = 'Sender did not respond in time. Please try again.';
+        var ICE_CONNECT_TIMEOUT_MS = 12000;
+        var ICE_CONNECT_TIMEOUT_MESSAGE = 'Direct connection failed \u2014 devices not on the same network (NAT/firewall). Connect both to the same Wi\u2011Fi or hotspot, then reopen this link.';
 
         window.p2pDownload = (function () {
             var state = {
                 phase: 'checking', progress: 0, fileName: '', fileSize: 0, mimeType: '',
-                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '/d/' + (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''),
+                shareCode: (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.shareCode || ''), error: '', fallbackUrl: '',
                 _receivedBytes: 0, _startTime: 0,
                 _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _intentionalStop: false,
-                _pendingOffer: null, _pendingIceCandidates: []
+                _pendingOffer: null, _pendingIceCandidates: [], _isRegistered: false, _connectTimeoutId: null,
+                _handshakeTimeoutId: null, _iceTimeoutId: null
             };
 
             function render() {
@@ -41,7 +48,7 @@
                 if (state.phase === 'complete') text('p2pd-complete-name', state.fileName);
                 if (state.phase === 'error') {
                     text('p2pd-error-msg', state.error || 'Connection failed');
-                    if (state.fallbackUrl) { show('p2pd-fallback'); document.getElementById('p2pd-fallback').href = state.fallbackUrl; }
+                    show('p2pd-retry');
                 }
             }
 
@@ -57,40 +64,131 @@
                 }
                 return l;
             }
+            function clearConnectTimeout() {
+                if (state._connectTimeoutId) {
+                    clearTimeout(state._connectTimeoutId);
+                    state._connectTimeoutId = null;
+                }
+            }
+
+            function armConnectTimeout() {
+                clearConnectTimeout();
+                state._connectTimeoutId = setTimeout(function () {
+                    if (state._isRegistered || state.phase !== 'checking') {
+                        return;
+                    }
+
+                    state.phase = 'error';
+                    state.error = SIGNALING_CONNECT_TIMEOUT_MESSAGE;
+                    render();
+                }, SIGNALING_CONNECT_TIMEOUT_MS);
+            }
+            function clearHandshakeTimeout() {
+                if (state._handshakeTimeoutId) {
+                    clearTimeout(state._handshakeTimeoutId);
+                    state._handshakeTimeoutId = null;
+                }
+            }
+
+            function armHandshakeTimeout() {
+                clearHandshakeTimeout();
+                state._handshakeTimeoutId = setTimeout(function () {
+                    if (state.phase !== 'connecting') {
+                        return;
+                    }
+
+                    state.phase = 'error';
+                    state.error = RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE;
+                    render();
+                }, RECEIVER_HANDSHAKE_TIMEOUT_MS);
+            }
+            function clearIceTimeout() {
+                if (state._iceTimeoutId) {
+                    clearTimeout(state._iceTimeoutId);
+                    state._iceTimeoutId = null;
+                }
+            }
+            function armIceTimeout() {
+                clearIceTimeout();
+                state._iceTimeoutId = setTimeout(function () {
+                    if (state.phase === 'connecting' && !state._dataChannel) {
+                        state.phase = 'error';
+                        state.error = ICE_CONNECT_TIMEOUT_MESSAGE;
+                        render();
+                    }
+                }, ICE_CONNECT_TIMEOUT_MS);
+            }
+
+
 
             function init() {
                 render();
                 var api = apiBase();
                 if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = 'Signaling client not loaded'; render(); return; }
                 state._signaling = new window.P2P.SignalingClient(api, state.shareCode);
-                state._signaling.onRegistered = function () {};
-                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; if (state.phase !== 'ready' && state.phase !== 'connecting' && state.phase !== 'transferring' && state.phase !== 'complete') { state.phase = 'ready'; } render(); };
-                state._signaling.onPeerJoined = function () { if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
-                state._signaling.onWaiting = function () { state.phase = 'waiting-sender'; render(); };
-                state._signaling.onRelay = function (type, data) {
-                    if (type === 'offer') {
-                        state._pendingOffer = data;
-                    } else if (type === 'ice' && data) {
-                        state._pendingIceCandidates.push(data);
+                state._signaling.onRegistered = function () {
+                    state._isRegistered = true;
+                    clearConnectTimeout();
+                    if (state.phase === 'checking') {
+                        state.phase = 'waiting-sender';
+                        render();
                     }
                 };
+                state._signaling.onFileMeta = function (meta) { state.fileName = meta.fileName; state.fileSize = meta.fileSize; state.mimeType = meta.mimeType; clearConnectTimeout(); if (state.phase !== 'ready' && state.phase !== 'connecting' && state.phase !== 'transferring' && state.phase !== 'complete') { state.phase = 'ready'; } render(); };
+                state._signaling.onPeerJoined = function () { clearConnectTimeout(); if (state.phase === 'waiting-sender' || state.phase === 'checking') { state.phase = 'ready'; render(); } };
+                state._signaling.onWaiting = function () { clearConnectTimeout(); state.phase = 'waiting-sender'; render(); };
+                state._signaling.onPeerLeft = function () {
+                    clearHandshakeTimeout();
+                    if (state.phase === 'connecting' || state.phase === 'ready' || state.phase === 'transferring') {
+                        state.phase = 'waiting-sender';
+                        render();
+                    }
+                };
+                state._signaling.onRelay = function (type, data) {
+                    if (type === 'offer') {
+                        if (state._peerConnection) {
+                            handleOffer(data);
+                        } else {
+                            state._pendingOffer = data;
+                        }
+                    } else if (type === 'ice' && data) {
+                        var candidate = data.candidate || data;
+                        if (state._peerConnection) {
+                            state._peerConnection.addIceCandidate(candidate);
+                        } else {
+                            state._pendingIceCandidates.push(candidate);
+                        }
+                    }
+                };
+                state._signaling.onError = function (message) {
+                    if (state._intentionalStop) {
+                        return;
+                    }
+
+                    clearConnectTimeout();
+                    clearHandshakeTimeout();
+                    state.phase = 'error';
+                    state.error = message || SIGNALING_CONNECT_TIMEOUT_MESSAGE;
+                };
+                armConnectTimeout();
                 state._signaling.connect('receiver');
             }
 
             function startDownload() {
-                state.phase = 'connecting'; render();
+                state.phase = 'connecting'; armHandshakeTimeout(); armIceTimeout(); render();
                 if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) { state.phase = 'error'; state.error = 'P2P modules not loaded'; render(); return; }
                 state._peerConnection = new window.P2P.PeerConnection();
-                state._peerConnection.onDataChannel = function (channel) { onDataChannel(channel); };
+                state._peerConnection.onDataChannel = function (channel) { clearIceTimeout(); onDataChannel(channel); };
                 state._peerConnection.onIceCandidate = function (c) { if (state._signaling) state._signaling.send('ice', c); };
-                state._peerConnection.onConnectionState = function (s) { if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) { state.phase = 'error'; state.error = 'Connection ' + s; render(); } };
+                state._peerConnection.onConnectionState = function (s) { if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) { clearIceTimeout(); clearHandshakeTimeout(); state.phase = 'error'; state.error = ICE_CONNECT_TIMEOUT_MESSAGE; render(); } };
                 // Process any offer/ICE that arrived before user clicked download
                 if (state._pendingOffer) {
                     handleOffer(state._pendingOffer);
                     state._pendingOffer = null;
                 }
                 for (var i = 0; i < state._pendingIceCandidates.length; i++) {
-                    state._peerConnection.addIceCandidate(state._pendingIceCandidates[i]);
+                    var pendingCandidate = state._pendingIceCandidates[i].candidate || state._pendingIceCandidates[i];
+                    state._peerConnection.addIceCandidate(pendingCandidate);
                 }
                 state._pendingIceCandidates = [];
             }
@@ -107,13 +205,14 @@
                 state._startTime = Date.now();
                 state._receiver.onFileInfo = function (info) { state.fileName = info.name; state.fileSize = info.size; state.mimeType = info.mime; };
                 state._receiver.onProgress = function (rec, tot) { state.progress = Math.round((rec / tot) * 100); state._receivedBytes = rec; render(); };
-                state._receiver.onComplete = function () { state.progress = 100; state.phase = 'complete'; render(); };
-                state._receiver.onError = function (msg) { state.phase = 'error'; state.error = msg; render(); };
+                state._receiver.onComplete = function () { clearHandshakeTimeout(); state.progress = 100; state.phase = 'complete'; render(); };
+                state._receiver.onError = function (msg) { clearHandshakeTimeout(); state.phase = 'error'; state.error = msg; render(); };
+                clearHandshakeTimeout();
                 state.phase = 'transferring'; state._receiver.start(); render();
             }
 
-            function cancelDownload() { state._intentionalStop = true; if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
-            function cleanup() { if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
+            function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); clearHandshakeTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
+            function cleanup() { clearConnectTimeout(); clearHandshakeTimeout(); clearIceTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
             return { startDownload: startDownload, cancelDownload: cancelDownload };

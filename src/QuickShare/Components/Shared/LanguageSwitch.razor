@@ -1,0 +1,20 @@
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+}
+
+
+<div class="lang-switch" data-ai-action="switch-language">
+    <select onchange="
+        var culture = this.value;
+        document.cookie = '.AspNetCore.Culture=c=' + culture + '|uic=' + culture + ';path=/;max-age=2592000';
+        location.reload();
+    " aria-label="@Loc["lang_switch_label"]">
+        <option value="en" selected="@(currentCulture == "en")">@Loc["lang_en"]</option>
+        <option value="vi" selected="@(currentCulture == "vi")">@Loc["lang_vi"]</option>
+    </select>
+</div>

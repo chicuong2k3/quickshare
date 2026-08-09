@@ -1,0 +1,30 @@
+{
+  "mcp": {
+    "vs-debug": {
+      "type": "local",
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".opencode/vs-mcp-shim.ps1"
+      ],
+      "enabled": true
+    },
+    "vs-semantic": {
+      "type": "local",
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".opencode/vs-mcp-shim.ps1",
+        "-Route",
+        "/mcp-semantic"
+      ],
+      "enabled": true
+    }
+  }
+}
