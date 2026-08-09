@@ -49,7 +49,7 @@ jobs:
 
     steps:
       - name: Pull and restart
-        shell: pwsh
+        shell: powershell
         run: |
           cd ${{ secrets.DEV_DEPLOY_PATH }}
           echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
