@@ -5,6 +5,7 @@
 @using QuickShare.Data
 @using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.Subscriptions
+@using QuickShare.Infrastructure.Caching
 @using Microsoft.AspNetCore.Http
 @using Microsoft.Extensions.Localization
 @inject AppDbContext Db
@@ -175,6 +176,11 @@
             {
                 await SubscriptionService.CancelAsync(user, Db, ct);
                 await Db.SaveChangesAsync(ct);
+
+                // Plan row changed (kept active until CurrentPeriodEnd) and the
+                // PaymentEvent history gained an entry — evict cached copies so
+                // the billing page below renders the fresh state instantly.
+                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
             }
         }
 

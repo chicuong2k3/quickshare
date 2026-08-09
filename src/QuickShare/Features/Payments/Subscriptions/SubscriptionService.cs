@@ -101,6 +101,13 @@ public static class SubscriptionService
         if (stale.Count > 0)
             await db.SaveChangesAsync(ct);
 
+        // Users downgraded to Free — evict their cached profile (plan display)
+        // and billing history so the billing page stops showing the old plan.
+        foreach (var sub in stale)
+        {
+            await UserCacheInvalidator.EvictAsync(db, sub.User.Id, ct);
+        }
+
         return stale.Count;
     }
 

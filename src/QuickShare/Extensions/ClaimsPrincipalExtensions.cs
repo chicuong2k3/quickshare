@@ -37,7 +37,7 @@ public static class ClaimsPrincipalExtensions
 
         var cache = StaticCache.Instance;
         return await cache.GetOrSetAsync(
-            $"user:login:{provider}:{providerKey}",
+            UserCacheInvalidator.UserLoginKey(provider, providerKey),
             async ct2 =>
             {
                 var login = await db.UserLogins

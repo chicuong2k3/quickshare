@@ -2,6 +2,7 @@ using PayOS;
 using PayOS.Exceptions;
 using PayOS.Models.Webhooks;
 using QuickShare.Features.Payments.Subscriptions;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Payments.PayOS;
 
@@ -138,6 +139,11 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
         intent.CompletedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);
+
+        // Evict cached user profile/plan/billing-history entries so the UI
+        // immediately reflects the new plan instead of the stale cached copy
+        // (the webhook user instance came from FindAsync, not GetUserAsync).
+        await UserCacheInvalidator.EvictAsync(db, user.Id, ct);
 
         logger.LogInformation(
             "PayOS payment processed: user={UserId} plan={Plan} billing={Billing} amount={Amount} {Currency} orderCode={OrderCode}",

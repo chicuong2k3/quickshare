@@ -1,5 +1,6 @@
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Payments.Subscriptions;
+using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Payments;
 
@@ -95,6 +96,10 @@ public sealed class CheckoutService(AppDbContext db, IConfiguration config, PayO
         intent.Status = PaymentIntentStatus.Completed;
         intent.CompletedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
+
+        // Evict the cached User entity (plan) and billing-history snapshot so the
+        // next page render shows the activated plan immediately.
+        await UserCacheInvalidator.EvictAsync(db, user.Id, ct);
     }
 
     private static async Task<string> GenerateUniqueCodeAsync(AppDbContext db, CancellationToken ct)

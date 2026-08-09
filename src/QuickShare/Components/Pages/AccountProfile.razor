@@ -4,6 +4,7 @@
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
+@using QuickShare.Infrastructure.Caching
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
@@ -152,6 +153,11 @@
 
             var updatedUser = await Db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
             avatar = updatedUser.AvatarUrl;
+
+            // ExecuteUpdateAsync bypasses the change tracker, so the cached User
+            // entity still holds the old Name/AvatarUrl. Evict it now or the
+            // avatar/name keep showing stale data until the 5-minute TTL expires.
+            await UserCacheInvalidator.EvictAsync(Db, userId, ct);
         }
         catch
         {
