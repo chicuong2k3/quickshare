@@ -26,8 +26,7 @@ flowchart LR
 
     REPO -->|"push branch dev"| ACTIONS
     ACTIONS -->|"build & push image"| GHCR
-    GHCR -->|"docker pull"| RUNNER
-    RUNNER -->|"docker compose up -d"| COMPOSE
+    ACTIONS -->|"build on runner + compose up -d"| COMPOSE
     COMPOSE --> CONTAINER
     CONTAINER -->|":8080"| CF
     CF --> USER
@@ -52,11 +51,10 @@ sequenceDiagram
     Runner->>Runner: setup-buildx + login ghcr (GITHUB_TOKEN)
     Runner->>GHCR: build & push quickshare:dev + quickshare:<sha>
     Runner->>Runner: deploy job (needs: build)
-    Runner->>Runner: docker login ghcr.io
+    Runner->>Runner: docker build -t ghcr.io/chicuong2k3/quickshare:dev . (in workspace)
     Runner->>Runner: cd ${{ secrets.DEV_DEPLOY_PATH }}
-    Runner->>Compose: docker compose pull quickshare
-    Compose->>GHCR: pull quickshare:dev
-    Compose->>App: docker compose up -d quickshare
+    Runner->>Compose: docker compose up -d --remove-orphans (no pull — local tag)
+    Compose->>App: recreate container when digest changes
     App->>App: migrate DB + create root folder "/"
     App-->>Runner: healthcheck HTTP :8080
 ```
@@ -65,8 +63,9 @@ sequenceDiagram
 
 | Component | Location / Value | Notes |
 |-----------|------------------|-------|
-| Workflow | `.github/workflows/deploy-dev.yml` | Triggers on push to `dev` branch or `workflow_dispatch` |
+| Workflow | `.github/workflows/deploy-dev.yml` | Triggers on push to `dev` branch or `workflow_dispatch`. Deploy job builds the image from the checked-out source (`docker build -t ghcr.io/chicuong2k3/quickshare:dev $GITHUB_WORKSPACE`) then `docker compose up -d`. |
 | Image | `ghcr.io/chicuong2k3/quickshare:dev` | Lowercase (ghcr requirement); also tagged `:<commit-sha>` |
+| Pull restriction | `GITHUB_TOKEN` cannot **pull** user-account (`ghcr.io/user/...`) container packages — write scope allows push only, pull returns `denied: denied`. That's why the deploy job never pulls; it builds locally on the runner instead. To pull on the server manually, `docker login ghcr.io` with a PAT (`read:packages`). |
 | Runner | `C:\actions-runner`, repo `chicuong2k3/quickshare` | Registered to `Default` pool; both `build` and `deploy` jobs run on `self-hosted` |
 | Deploy path | `C:\deploy\quickshare` | Secret `DEV_DEPLOY_PATH` points to this folder |
 | Compose | `C:\deploy\quickshare\docker-compose.yml` | Service `quickshare`, binds `127.0.0.1:8080` |
@@ -97,10 +96,14 @@ Container env var  →  IConfiguration (appsettings.json + env var override)
 
 ```powershell
 cd C:\deploy\quickshare
-docker compose pull quickshare
+# Build from the runner workspace (checkout of the dev branch):
+docker build -t ghcr.io/chicuong2k3/quickshare:dev <runner workspace path>
 docker compose up -d --remove-orphans quickshare
 docker compose logs -f quickshare
 ```
+
+> If you must pull from ghcr.io instead (PAT required, `read:packages`):
+> `echo $PAT | docker login ghcr.io -u chicuong2k3 --password-stdin` then `docker compose pull quickshare`.
 
 ## Verify workflow run
 
