@@ -14,7 +14,7 @@
         expiry: '24h', copied: false, pasteTip: false, draggingActive: false,
         encryptionEnabled: true, _encryptionUsed: false,
         otp: '',
-        _abortController: null, _deliveryId: null, _uploadId: null,
+        _abortController: null, _deliveryId: null, _uploadId: null, _cancelled: false,
         fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0
     };
 
@@ -132,18 +132,20 @@
 
         cancelUpload: function () {
             if (state._abortController) state._abortController.abort();
+            state._cancelled = true;
             if (state._deliveryId && state._uploadId) {
                 fetch(apiBase() + '/api/uploads/abort-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deliveryId: state._deliveryId, uploadId: state._uploadId }) }).catch(function () {});
             }
             reset();
+            render();
         },
 
         resumeUpload: function () {
             var ctx = state._resumeCtx; if (!ctx) return;
-            state.phase = 'uploading'; state.error = '';
+            state.phase = 'uploading'; state.error = ''; state._cancelled = false;
             state._abortController = new AbortController(); state._startTime = Date.now();
             render();
-            resumePendingParts(ctx).catch(function (e) { if (state._abortController?.signal.aborted) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+            resumePendingParts(ctx).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
         },
 
         reset: function () { reset(); render(); }
@@ -168,9 +170,9 @@
         if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = 'File exceeds the 5 GB upload limit.'; render(); return; }
         state.filename = file.name || 'pasted-image';
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
-        state.copied = false; state._encryptionUsed = false;
+        state.copied = false; state._encryptionUsed = false; state._cancelled = false;
         state.phase = 'uploading'; state._startTime = Date.now(); render();
-        doUpload(file).catch(function (e) { if (state._abortController?.signal.aborted) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+        doUpload(file).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
     }
 
     async function doUpload(file) {
