@@ -6,6 +6,12 @@
 (function () {
     'use strict';
     var RECEIVER_CONNECT_TIMEOUT_MS = 20000;
+    // If no progress event arrives for this long while status is 'receiving',
+    // the receiver is gone (tab closed / network dropped). WebRTC state events
+    // alone can stay silent for a long time on a dead pipe, so this watchdog
+    // guarantees the sender eventually shows a disconnect instead of a frozen
+    // progress bar.
+    var RECEIVER_STALL_TIMEOUT_MS = 30000;
     function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
     function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
@@ -117,11 +123,11 @@
             }
         }
 
-        function statusLabel(s) {
-            if (s === 'connecting') return 'Connecting\u2026';
-            if (s === 'receiving') return 'Receiving';
-            if (s === 'done') return 'Done';
-            return 'Disconnected';
+        function statusLabel(r) {
+            if (r.status === 'connecting') return 'Connecting\u2026';
+            if (r.status === 'receiving') return 'Receiving';
+            if (r.status === 'done') return 'Done';
+            return (r._wasReceiving ? 'Left mid-transfer' : 'Disconnected');
         }
 
         function renderReceivers() {
@@ -141,7 +147,7 @@
                 html += '<div class="p2p-receiver-entry" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border:1px solid var(--db-color-border);border-radius:var(--db-radius-2,8px);margin-bottom:0.5rem;background:var(--db-color-surface,var(--db-color-bg))">';
                 html += '<span style="font-weight:600;font-size:0.75rem;color:var(--db-color-text-muted);min-width:1.75rem">#' + r.index + '</span>';
                 html += '<span style="font-size:0.75rem;font-family:monospace;color:var(--db-color-text-muted);min-width:4rem">' + ids[i].slice(0, 6) + '\u2026</span>';
-                html += '<span class="' + statusClass + '" style="font-size:0.75rem;font-weight:500;padding:0.125rem 0.5rem;border-radius:999px;min-width:5.5rem;text-align:center">' + statusLabel(r.status) + '</span>';
+                html += '<span class="' + statusClass + '" style="font-size:0.75rem;font-weight:500;padding:0.125rem 0.5rem;border-radius:999px;min-width:5.5rem;text-align:center">' + statusLabel(r) + '</span>';
                 if (r.status === 'receiving') {
                     html += '<div style="flex:1;min-width:80px"><div style="height:4px;border-radius:2px;background:var(--db-color-border);overflow:hidden"><div style="height:100%;width:' + pct + '%;border-radius:2px;background:var(--db-color-accent);transition:width 0.3s ease"></div></div></div>';
                     html += '<span style="font-size:0.75rem;color:var(--db-color-text-muted);min-width:3rem;text-align:right">' + pct + '%</span>';
@@ -319,6 +325,7 @@
             rcv.channel = channel;
             channel.onopen = function () { onChannelOpen(receiverId); };
             channel.onerror = function () { onReceiverLeft(receiverId); };
+            channel.onclose = function () { onReceiverLeft(receiverId); };
 
             pc.createOffer()
             .then(function (sdp) {
@@ -352,13 +359,18 @@
             rcv.sender = sender;
 
             sender.onProgress = function (sent, total) {
-                if (!state._receivers[receiverId]) return;
-                state._receivers[receiverId].progress = sent / total;
+                var r = state._receivers[receiverId];
+                if (!r) return;
+                r.progress = sent / total;
+                // Re-arm the stall watchdog on every progress event.
+                clearTimeout(r._stallTimer);
+                r._stallTimer = window.setTimeout(function () { onReceiverStalled(receiverId); }, RECEIVER_STALL_TIMEOUT_MS);
                 renderReceivers();
             };
             sender.onComplete = function () {
                 var r = state._receivers[receiverId];
                 if (!r) return;
+                clearTimeout(r._stallTimer);
                 r.status = 'done';
                 r.sender = null;
                 r.channel = null;
@@ -371,10 +383,19 @@
             sender.start();
         }
 
+        function onReceiverStalled(receiverId) {
+            var r = state._receivers[receiverId];
+            if (!r || r.status !== 'receiving') return;
+            onReceiverLeft(receiverId);
+        }
+
         function onReceiverLeft(receiverId) {
             if (!receiverId) return;
             var rcv = state._receivers[receiverId];
             if (!rcv || rcv.status === 'done' || rcv.status === 'disconnected') return;
+
+            rcv._wasReceiving = rcv.status === 'receiving';
+            clearTimeout(rcv._stallTimer);
 
             if (rcv.sender) { rcv.sender.cancel(); rcv.sender = null; }
             if (rcv.channel) { rcv.channel = null; }

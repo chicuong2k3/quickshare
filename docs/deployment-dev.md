@@ -117,3 +117,8 @@ docker compose logs -f quickshare
 - Wrong Google OAuth → login does not work (other OAuth providers are optional).
 - R2 not configured → app falls back to local disk; uploads via R2 will fail.
 - Cloudflare tunnel runs in the `cfnet` network, routes `http://quickshare:8080` (quickshare is on the same `cfnet` network, so no host port is exposed publicly; `127.0.0.1:8080` binding is only for local host access).
+
+### P2P
+
+- P2P is ICE-direct only (STUN, no TURN). Cross-network transfers (two different 4G carriers, strict NAT on both sides) will always fail with the "Direct connection failed" message — that failure is the signal to add a TURN server (cost+bandwidth tradeoff; the R2 server path already exists as the fallback).
+- Rewarded-ad unlock (`Ads:DevSimulation=true` in the app `.env`) renders a "Simulate rewarded ad" button on the ad card so the daily-limit/unlock flow can be tested without an AdMob/GAM setup. Server-side SSV is a placeholder that accepts any non-empty token, so the dev button must NEVER be exposed in production (the real Google SSV check is TODO).

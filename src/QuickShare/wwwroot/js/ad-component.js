@@ -242,6 +242,7 @@ window.QuickShareAds = (function() {
     return {
         init: init,
         destroy: destroy,
-        showRewardedAd: showRewardedAd
+        showRewardedAd: showRewardedAd,
+        verifyReward: verifyReward
     };
 })();

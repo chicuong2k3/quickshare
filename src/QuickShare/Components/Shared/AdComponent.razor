@@ -13,6 +13,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IAntiforgery Antiforgery
+@inject IConfiguration Config
 
 @* Anonymous: no ads *@
 @if (!_isAuthenticated)
@@ -91,6 +92,27 @@
                 @Loc["ad_reward_limit_reached"]
             </button>
         }
+        @if (RemainingAds > 0 && _allowDevSimulation)
+        {
+            <button id="ad-reward-dev-btn"
+                    type="button"
+                    class="ad-reward-btn"
+                    data-ai-action="ad.reward.dev-simulate"
+                    style="margin-top:0.375rem;background:transparent;color:var(--db-color-text-muted);border:1px dashed var(--db-color-border)">
+                Simulate rewarded ad (dev only, Ads:DevSimulation=true)
+            </button>
+            <script>
+                (function () {
+                    var devBtn = document.getElementById('ad-reward-dev-btn');
+                    if (devBtn) devBtn.addEventListener('click', function () {
+                        // Server-side SSV is a dev placeholder that accepts any
+                        // non-empty token; this button exists so the rewarded-ad
+                        // unlock flow can be tested without an AdMob/GAM setup.
+                        QuickShareAds.verifyReward('dev-' + crypto.randomUUID(), 1);
+                    });
+                })();
+            </script>
+        }
         <a href="/pricing" class="ad-upgrade-link">@Loc["ad_upgrade_link"]</a>
     </div>
 
@@ -115,12 +137,19 @@
 
     private bool _isAuthenticated;
     private string? _userPlan;
+    private bool _allowDevSimulation;
     private int RemainingAds { get; set; } = AdConstants.MaxDailyAds;
     private bool IsHxRequest { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         _isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+
+        // Gated dev helper: enables testing the rewarded-ad unlock flow without
+        // an AdMob/GAM ad unit. NEVER enable in production (grants free
+        // bandwidth + P2P uploads on any token).
+        _allowDevSimulation = string.Equals(
+            Config["Ads:DevSimulation"], "true", StringComparison.OrdinalIgnoreCase);
 
         var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
         IsHxRequest = hxHeader == "true";
