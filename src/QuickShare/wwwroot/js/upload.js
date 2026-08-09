@@ -143,7 +143,7 @@
             state.phase = 'uploading'; state.error = '';
             state._abortController = new AbortController(); state._startTime = Date.now();
             render();
-            resumePendingParts(ctx).catch(function (e) { if (e.name === 'AbortError') return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+            resumePendingParts(ctx).catch(function (e) { if (state._abortController?.signal.aborted) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
         },
 
         reset: function () { reset(); render(); }
@@ -170,7 +170,7 @@
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false;
         state.phase = 'uploading'; state._startTime = Date.now(); render();
-        doUpload(file).catch(function (e) { if (e.name === 'AbortError') return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+        doUpload(file).catch(function (e) { if (state._abortController?.signal.aborted) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
     }
 
     async function doUpload(file) {
@@ -256,7 +256,7 @@
                 updateProgress(ctx);
                 return;
             } catch (e) {
-                if (e.name === 'AbortError') throw e;
+                if (signal.aborted) throw e;
                 lastError = e;
                 if (attempt < PART_RETRY_ATTEMPTS) {
                     await sleep(1000 * Math.pow(2, attempt - 1));
