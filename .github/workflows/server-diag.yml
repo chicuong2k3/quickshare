@@ -1,0 +1,25 @@
+name: Server Diag
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Container status
+        shell: powershell
+        run: |
+          cd ${{ secrets.DEV_DEPLOY_PATH }}
+          docker compose ps -a
+          docker images ghcr.io/chicuong2k3/quickshare --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedAt}}"
+      - name: Container logs
+        shell: powershell
+        run: |
+          cd ${{ secrets.DEV_DEPLOY_PATH }}
+          docker compose logs --tail 200 quickshare
+      - name: Local health probe
+        shell: powershell
+        run: |
+          try { $r = Invoke-WebRequest -Uri http://localhost:8080 -TimeoutSec 10 -UseBasicParsing; "LOCAL_PROBE status=$($r.StatusCode) len=$($r.Content.Length)" } catch { "LOCAL_PROBE FAIL: $($_.Exception.Message)" }
