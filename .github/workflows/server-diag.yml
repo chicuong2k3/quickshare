@@ -12,7 +12,7 @@ jobs:
       - name: Container + image status
         shell: powershell
         run: |
-          cd $env:DEV_DEPLOY_PATH
+          cd '${{ secrets.DEV_DEPLOY_PATH }}'
           docker compose ps
           docker image inspect --format '{{.CreatedAt}} {{.RepoTags}}' (docker image ls --format '{{.ID}}' | Select-Object -First 1)
 
