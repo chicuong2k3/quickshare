@@ -1,4 +1,3 @@
-using QuickShare.Infrastructure;
 using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Ads.RewardCallback;

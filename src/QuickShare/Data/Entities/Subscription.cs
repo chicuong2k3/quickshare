@@ -1,13 +1,22 @@
 namespace QuickShare.Data.Entities;
 
-public static class SubscriptionStatus
+public enum SubscriptionStatus
 {
-    public const string Active = "active";
-    public const string Cancelled = "cancelled";
-    public const string Expired = "expired";
+    Active,
+    Cancelled,
+    Expired
+}
 
-    public static bool IsTerminal(string status) =>
-        status is Expired;
+public enum BillingPeriod
+{
+    Monthly,
+    Yearly
+}
+
+public static class SubscriptionStatusExtensions
+{
+    public static bool IsTerminal(this SubscriptionStatus status) =>
+        status == SubscriptionStatus.Expired;
 }
 
 [DynamicSort]
@@ -15,8 +24,8 @@ public record Subscription : BaseAuditEntity
 {
     public Guid UserId { get; set; }
     public string Plan { get; set; } = PlanTierLimits.Free;
-    public string Status { get; set; } = SubscriptionStatus.Active;
-    public string BillingPeriod { get; set; } = "monthly";
+    public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
+    public BillingPeriod BillingPeriod { get; set; } = BillingPeriod.Monthly;
     public DateTime CurrentPeriodStart { get; set; }
     public DateTime CurrentPeriodEnd { get; set; }
     public DateTime? CancelledAt { get; set; }

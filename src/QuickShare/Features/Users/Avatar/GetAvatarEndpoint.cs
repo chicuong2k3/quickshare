@@ -1,6 +1,3 @@
-using System.Security.Claims;
-using QuickShare.Extensions;
-
 namespace QuickShare.Features.Users.Avatar;
 
 public sealed class GetAvatarEndpoint : EndpointWithoutRequest

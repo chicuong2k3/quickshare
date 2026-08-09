@@ -1,8 +1,6 @@
+using QuickShare.Infrastructure.Caching;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using QuickShare.Infrastructure;
-using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Ads.RewardCallback;
 
@@ -173,12 +171,22 @@ public sealed class RewardCallbackResult
         => new() { IsSuccess = false, Error = error };
 
     public static RewardCallbackResult Duplicate(int adCount, int remaining)
-        => new() { IsSuccess = true, QuotaAddedBytes = 0, QuotaNowBytes = 0, AdsRemainingToday = remaining,
-                   Error = "Duplicate reward token." };
+        => new()
+        {
+            IsSuccess = true,
+            QuotaAddedBytes = 0,
+            QuotaNowBytes = 0,
+            AdsRemainingToday = remaining,
+            Error = "Duplicate reward token."
+        };
 
     public static RewardCallbackResult DailyLimitReached()
-        => new() { IsSuccess = false, Error = "Daily ad limit reached.",
-                   AdsRemainingToday = 0 };
+        => new()
+        {
+            IsSuccess = false,
+            Error = "Daily ad limit reached.",
+            AdsRemainingToday = 0
+        };
 }
 
 internal sealed class SsvVerificationResult

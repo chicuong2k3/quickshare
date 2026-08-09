@@ -1,7 +1,3 @@
-using QuickShare.Data;
-using QuickShare.Data.Entities;
-using QuickShare.Infrastructure;
-
 namespace QuickShare.Features.Shares.P2P;
 
 /// <summary>

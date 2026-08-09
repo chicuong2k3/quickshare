@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
+using System.Diagnostics;
 
 namespace QuickShare.Infrastructure.Middleware;
 

@@ -10,7 +10,6 @@ public static class AdConstants
     public const string CssPrefix = "ad-";
     public const string RewardPromptRoute = "/ads/reward-prompt";
     public const string RewardCallbackRoute = "/api/ads/reward-callback";
-    public const string DevToolsDetectionScript = "/js/anti-devtools.js";
 
     public const string ConsentCookieName = "ad-consent";
     public const string ConsentCookieValueGranted = "granted";

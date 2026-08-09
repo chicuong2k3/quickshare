@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using System.Collections.Concurrent;
+using System.Security.Claims;
 
 namespace QuickShare.Infrastructure.Middleware;
 

@@ -1,6 +1,5 @@
 using PayOS;
 using PayOS.Exceptions;
-using PayOS.Models.Webhooks;
 
 namespace QuickShare.Features.Payments.PayOS;
 

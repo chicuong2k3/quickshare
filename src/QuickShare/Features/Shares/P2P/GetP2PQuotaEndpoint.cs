@@ -1,6 +1,3 @@
-using QuickShare.Extensions;
-using QuickShare.Infrastructure;
-
 namespace QuickShare.Features.Shares.P2P;
 
 public sealed class GetP2PQuotaEndpoint : EndpointWithoutRequest<GetP2PQuotaResponse>

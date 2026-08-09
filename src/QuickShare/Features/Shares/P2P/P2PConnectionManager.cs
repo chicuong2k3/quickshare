@@ -1,9 +1,8 @@
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 
 namespace QuickShare.Features.Shares.P2P;
 

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using LightResults;
 
 namespace QuickShare.Extensions;

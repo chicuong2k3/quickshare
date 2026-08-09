@@ -1,7 +1,4 @@
 using System.Security.Cryptography;
-using System.Text.Json;
-using QuickShare.Extensions;
-using QuickShare.Infrastructure;
 
 namespace QuickShare.Features.Shares.P2P;
 

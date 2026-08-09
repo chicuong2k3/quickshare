@@ -113,8 +113,16 @@ public class AppDbContext : DbContext
             entity.ToTable("subscriptions");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Plan).IsRequired();
-            entity.Property(e => e.Status).IsRequired();
-            entity.Property(e => e.BillingPeriod).IsRequired();
+            entity.Property(e => e.Status)
+                .HasConversion(
+                    v => v.ToString().ToLowerInvariant(),
+                    v => Enum.Parse<SubscriptionStatus>(v, ignoreCase: true))
+                .IsRequired();
+            entity.Property(e => e.BillingPeriod)
+                .HasConversion(
+                    v => v.ToString().ToLowerInvariant(),
+                    v => Enum.Parse<BillingPeriod>(v, ignoreCase: true))
+                .IsRequired();
             entity.Property(e => e.CurrentPeriodStart).IsRequired();
             entity.Property(e => e.CurrentPeriodEnd).IsRequired();
             entity.HasIndex(e => e.UserId);

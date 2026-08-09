@@ -1,5 +1,3 @@
-using QuickShare.Infrastructure;
-
 namespace QuickShare.Features.Ads.CookieConsent;
 
 public sealed class CookieConsentEndpoint : EndpointWithoutRequest
