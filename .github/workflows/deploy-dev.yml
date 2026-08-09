@@ -45,14 +45,21 @@ jobs:
   deploy:
     needs: build
     runs-on: self-hosted
-    timeout-minutes: 10
+    timeout-minutes: 45
 
     steps:
-      - name: Pull and restart
+      # GITHUB_TOKEN cannot PULL user-account ghcr.io packages (denied: denied),
+      # so instead of pulling, build the image on the runner from the checked-out
+      # source and tag it exactly as compose expects. `up -d` then recreates the
+      # container when the digest changes.
+      - name: Build image on runner
+        shell: powershell
+        run: |
+          docker build -t ghcr.io/chicuong2k3/quickshare:dev $env:GITHUB_WORKSPACE
+
+      - name: Restart container
         shell: powershell
         run: |
           cd ${{ secrets.DEV_DEPLOY_PATH }}
-          echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose pull quickshare
           docker compose up -d --remove-orphans quickshare
           docker image prune -f
