@@ -14,7 +14,7 @@ jobs:
         run: |
           cd '${{ secrets.DEV_DEPLOY_PATH }}'
           docker compose ps
-          docker image inspect --format '{{.CreatedAt}} {{.RepoTags}}' (docker image ls --format '{{.ID}}' | Select-Object -First 1)
+          docker compose images quickshare
 
       - name: Read DB connection from .env and query
         shell: powershell
