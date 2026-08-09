@@ -27,7 +27,7 @@ public static class PlanCatalog
         Display: "Studio",
         Description: "Dành cho team & doanh nghiệp",
         Summary: "500 GB dung lượng/tháng, không giới hạn chuyển, API, hỗ trợ riêng",
-        Features: new[] { "20 GB/tệp", "500 GB / tháng", "Không giới hạn chuyển", "Tùy chỉnh thương hiệu", "Truy cập API", "Hỗ trợ riêng" },
+        Features: new[] { "20 GB/tệp", "500 GB / tháng", "Không giới hạn chuyển", "Truy cập API", "Hỗ trợ riêng" },
         MonthlyPricingKey: PricingKeys.StudioMonthly,
         YearlyPricingKey: PricingKeys.StudioYearly,
         MonthlyDefaultAmount: 200000,

@@ -271,8 +271,8 @@
    so these rules also apply when the card is lazy-loaded into /account via HTMX
    (same component renders the partial, so b-* scope attributes are present).
 
-   Shared container (.account-card), the /account skeleton, and the branding
-   section stay in wwwroot/css/app.css. */
+   Shared container (.account-card) and the /account skeleton
+   stay in wwwroot/css/app.css. */
 
 /* Profile */
 .account-profile[b-79nvk20yxy] {
@@ -600,28 +600,6 @@
 
 .report-toggle:hover[b-t3fe010fww] {
     color: var(--db-color-text-muted);
-}
-
-/* ─── Branding card ─── */
-.branding[b-t3fe010fww] {
-    margin-bottom: var(--db-space-5);
-    border-radius: var(--db-radius-4);
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--db-color-border);
-}
-
-.branding-inner[b-t3fe010fww] {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-4);
-}
-
-.brand-logo[b-t3fe010fww] {
-    width: 3rem;
-    height: 3rem;
-    border-radius: var(--db-radius-3);
-    object-fit: cover;
-    border: 1px solid color-mix(in srgb, var(--db-color-border) 30%, transparent);
 }
 
 /* ─── Links ─── */

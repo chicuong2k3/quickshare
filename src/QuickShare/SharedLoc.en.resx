@@ -95,7 +95,6 @@
   <data name="pricing_studio_feat_size" xml:space="preserve"><value>100 GB per file</value></data>
   <data name="pricing_studio_feat_monthly" xml:space="preserve"><value>2 TB / month</value></data>
   <data name="pricing_studio_feat_expiry" xml:space="preserve"><value>90-day expiry</value></data>
-  <data name="pricing_studio_feat_branding" xml:space="preserve"><value>Custom branding</value></data>
   <data name="pricing_studio_feat_api" xml:space="preserve"><value>API access</value></data>
   <data name="pricing_card_badge" xml:space="preserve"><value>Most Popular</value></data>
   <data name="pricing_faq_title" xml:space="preserve"><value>Frequently Asked Questions</value></data>
@@ -135,7 +134,7 @@
   <data name="billing_view_receipt" xml:space="preserve"><value>View Receipt</value></data>
   <data name="billing_feat_free" xml:space="preserve"><value>5 GB per file | 15 GB / month | 2-hour expiry | Lossless quality | End-to-end encryption</value></data>
   <data name="billing_feat_pro" xml:space="preserve"><value>20 GB per file | 200 GB / month | 30-day expiry | Password protection | No ads | Priority support</value></data>
-  <data name="billing_feat_studio" xml:space="preserve"><value>100 GB per file | 2 TB / month | 90-day expiry | Custom branding | API access | Dedicated support</value></data>
+  <data name="billing_feat_studio" xml:space="preserve"><value>100 GB per file | 2 TB / month | 90-day expiry | API access | Dedicated support</value></data>
   <data name="login_page_title" xml:space="preserve"><value>Sign in — QuickShareCloud</value></data>
   <data name="login_title" xml:space="preserve"><value>Sign in to QuickShareCloud</value></data>
   <data name="login_subtitle" xml:space="preserve"><value>Choose a provider to continue</value></data>
@@ -144,10 +143,6 @@
   <data name="login_btn_facebook" xml:space="preserve"><value>Continue with Facebook</value></data>
   <data name="login_btn_tiktok" xml:space="preserve"><value>Continue with TikTok</value></data>
   <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
-  <data name="account_branding_title" xml:space="preserve"><value>Share Branding</value></data>
-  <data name="account_branding_desc" xml:space="preserve"><value>Customise how recipients see your shared files.</value></data>
-  <data name="account_branding_loading" xml:space="preserve"><value>Loading shared files…</value></data>
-  <data name="account_branding_empty" xml:space="preserve"><value>No shared files yet. Send a file first to brand it.</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Display name</value></data>
   <data name="account_profile_save_btn" xml:space="preserve"><value>Save changes</value></data>
   <data name="account_profile_error_name_required" xml:space="preserve"><value>Name is required</value></data>
@@ -382,7 +377,6 @@
   <data name="upgrade_feat_studio_1" xml:space="preserve"><value>20 GB/file</value></data>
   <data name="upgrade_feat_studio_2" xml:space="preserve"><value>500 GB / month</value></data>
   <data name="upgrade_feat_studio_3" xml:space="preserve"><value>Unlimited transfers</value></data>
-  <data name="upgrade_feat_studio_4" xml:space="preserve"><value>Custom branding</value></data>
   <data name="upgrade_feat_studio_5" xml:space="preserve"><value>API access</value></data>
   <data name="upgrade_feat_studio_6" xml:space="preserve"><value>Dedicated support</value></data>
 </root>

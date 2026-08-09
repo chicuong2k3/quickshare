@@ -7,8 +7,7 @@ public record ListDeliveriesQuery;
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
     string ShareCode, int DownloadCount, int MaxDownloads,
-    DateTime? ExpiresAt, DateTime CreatedAt,
-    bool HasBranding
+    DateTime? ExpiresAt, DateTime CreatedAt
 );
 
 public sealed class ListDeliveriesHandler
@@ -20,8 +19,7 @@ public sealed class ListDeliveriesHandler
         var items = await db.Deliveries
             .Where(d => d.SenderId == userId)
             .OrderByDescending(d => d.CreatedAt)
-            .Select(d => new DeliveryItem(d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode, d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt,
-                d.BrandLogo != null || d.BrandMessage != null || d.BrandAccent != null))
+            .Select(d => new DeliveryItem(d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode, d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt))
             .ToArrayAsync(ct);
         return Result.Success(items);
     }

@@ -99,15 +99,6 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("BrandAccent")
-                        .HasColumnType("text");
-
-                    b.Property<string>("BrandLogo")
-                        .HasColumnType("text");
-
-                    b.Property<string>("BrandMessage")
-                        .HasColumnType("text");
-
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 

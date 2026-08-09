@@ -95,7 +95,6 @@
   <data name="pricing_studio_feat_size" xml:space="preserve"><value>100 GB mỗi file</value></data>
   <data name="pricing_studio_feat_monthly" xml:space="preserve"><value>2 TB / tháng</value></data>
   <data name="pricing_studio_feat_expiry" xml:space="preserve"><value>Lưu 90 ngày</value></data>
-  <data name="pricing_studio_feat_branding" xml:space="preserve"><value>Thương hiệu tùy chỉnh</value></data>
   <data name="pricing_studio_feat_api" xml:space="preserve"><value>Truy cập API</value></data>
   <data name="pricing_card_badge" xml:space="preserve"><value>Phổ biến nhất</value></data>
   <data name="pricing_faq_title" xml:space="preserve"><value>Câu hỏi thường gặp</value></data>
@@ -135,7 +134,7 @@
   <data name="billing_view_receipt" xml:space="preserve"><value>Xem hóa đơn</value></data>
   <data name="billing_feat_free" xml:space="preserve"><value>5 GB mỗi file | 15 GB / tháng | Hết hạn sau 2 giờ | Chất lượng gốc | Mã hóa đầu cuối</value></data>
   <data name="billing_feat_pro" xml:space="preserve"><value>20 GB mỗi file | 200 GB / tháng | Lưu 30 ngày | Bảo vệ mật khẩu | Không quảng cáo | Hỗ trợ ưu tiên</value></data>
-  <data name="billing_feat_studio" xml:space="preserve"><value>100 GB mỗi file | 2 TB / tháng | Lưu 90 ngày | Thương hiệu tùy chỉnh | API | Hỗ trợ riêng</value></data>
+  <data name="billing_feat_studio" xml:space="preserve"><value>100 GB mỗi file | 2 TB / tháng | Lưu 90 ngày | API | Hỗ trợ riêng</value></data>
   <data name="login_page_title" xml:space="preserve"><value>Đăng nhập — QuickShareCloud</value></data>
   <data name="login_title" xml:space="preserve"><value>Đăng nhập QuickShareCloud</value></data>
   <data name="login_subtitle" xml:space="preserve"><value>Chọn nhà cung cấp để tiếp tục</value></data>
@@ -144,10 +143,6 @@
   <data name="login_btn_facebook" xml:space="preserve"><value>Tiếp tục với Facebook</value></data>
   <data name="login_btn_tiktok" xml:space="preserve"><value>Tiếp tục với TikTok</value></data>
   <data name="account_page_title" xml:space="preserve"><value>Tài khoản — QuickShareCloud</value></data>
-  <data name="account_branding_title" xml:space="preserve"><value>Thương hiệu chia sẻ</value></data>
-  <data name="account_branding_desc" xml:space="preserve"><value>Tùy chỉnh cách người nhận thấy file chia sẻ của bạn.</value></data>
-  <data name="account_branding_loading" xml:space="preserve"><value>Đang tải file đã chia sẻ…</value></data>
-  <data name="account_branding_empty" xml:space="preserve"><value>Chưa có file chia sẻ nào. Gửi file trước để tùy chỉnh thương hiệu.</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Tên hiển thị</value></data>
   <data name="account_profile_save_btn" xml:space="preserve"><value>Lưu thay đổi</value></data>
   <data name="account_profile_error_name_required" xml:space="preserve"><value>Tên không được để trống</value></data>
@@ -382,7 +377,6 @@
   <data name="upgrade_feat_studio_1" xml:space="preserve"><value>20 GB/tệp</value></data>
   <data name="upgrade_feat_studio_2" xml:space="preserve"><value>500 GB / tháng</value></data>
   <data name="upgrade_feat_studio_3" xml:space="preserve"><value>Không giới hạn chuyển</value></data>
-  <data name="upgrade_feat_studio_4" xml:space="preserve"><value>Tùy chỉnh thương hiệu</value></data>
   <data name="upgrade_feat_studio_5" xml:space="preserve"><value>Truy cập API</value></data>
   <data name="upgrade_feat_studio_6" xml:space="preserve"><value>Hỗ trợ riêng</value></data>
 </root>

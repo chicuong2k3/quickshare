@@ -3,8 +3,8 @@
    so these rules also apply when the card is lazy-loaded into /account via HTMX
    (same component renders the partial, so b-* scope attributes are present).
 
-   Shared container (.account-card), the /account skeleton, and the branding
-   section stay in wwwroot/css/app.css. */
+   Shared container (.account-card) and the /account skeleton
+   stay in wwwroot/css/app.css. */
 
 /* Profile */
 .account-profile {

@@ -14,9 +14,6 @@ public record Delivery : BaseAuditEntity
     public int DownloadCount { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public string? OtpHash { get; set; }
-    public string? BrandLogo { get; set; }
-    public string? BrandMessage { get; set; }
-    public string? BrandAccent { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string? StoragePath { get; set; }
     public User? Sender { get; init; }

@@ -1,4 +1,4 @@
-﻿@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @layout MainLayout
 @page "/account"
@@ -26,30 +26,6 @@
         </div>
     </div>
     </HtmxFragment>
-
-    @* Branding Card — JS lazy loaded *@
-    <div class="db-card" id="branding-card">
-        <div class="db-card__body">
-            <div class="account-section-head">
-                <div class="account-section-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="db-h3">@Loc["account_branding_title"]</h3>
-                    <p class="db-p db-text-muted">@Loc["account_branding_desc"]</p>
-                </div>
-            </div>
-            <div id="branding-loading" class="db-text-center" style="padding: 2.5rem 0">
-                <div class="db-spinner db-spinner--lg"></div>
-                <p class="db-p db-text-muted" style="margin-top: 0.75rem">@Loc["account_branding_loading"]</p>
-            </div>
-            <div id="branding-empty" class="account-branding-empty" style="display:none">@Loc["account_branding_empty"]</div>
-            <div id="branding-list" style="display:none"></div>
-        </div>
-    </div>
 </PageWrapper>
 
 <script src="/js/account.js"></script>
