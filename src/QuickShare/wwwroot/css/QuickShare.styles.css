@@ -70,17 +70,6 @@
     opacity: 0.4;
 }
 
-/* ─── Avatar Dropdown ─── */
-.layout-root[b-6672tfapg3]  .db-dropdown {
-    position: relative;
-}
-.layout-root[b-6672tfapg3]  .db-dropdown__content {
-    display: none;
-}
-
-.layout-root[b-6672tfapg3]  .db-dropdown.is-open .db-dropdown__content {
-    display: block;
-}
 
 .layout-avatar-btn[b-6672tfapg3] {
     cursor: pointer;
