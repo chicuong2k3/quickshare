@@ -1,0 +1,46 @@
+name: Server Diag (temp)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: self-hosted
+    timeout-minutes: 20
+
+    steps:
+      - name: Container + image status
+        shell: powershell
+        run: |
+          cd $env:DEV_DEPLOY_PATH
+          docker compose ps
+          docker image inspect --format '{{.CreatedAt}} {{.RepoTags}}' (docker image ls --format '{{.ID}}' | Select-Object -First 1)
+
+      - name: Read DB connection from .env and query
+        shell: powershell
+        run: |
+          $env:DEV_DEPLOY_PATH = '${{ secrets.DEV_DEPLOY_PATH }}'
+          $envContent = Get-Content (Join-Path $env:DEV_DEPLOY_PATH '.env')
+          $line = $envContent | Where-Object { $_ -match '^DB_CONNECTION_STRING=' } | Select-Object -First 1
+          if (-not $line) { throw 'DB_CONNECTION_STRING not found in .env' }
+          $conn = $line.Substring($line.IndexOf('=') + 1)
+          $connInfo = @()
+          $password = ''
+          foreach ($pair in $conn -split ';') {
+            $kv = $pair -split '=', 2
+            if ($kv.Count -lt 2) { continue }
+            switch ($kv[0].Trim()) {
+              'Host'     { $connInfo += 'host='   + $kv[1].Trim() }
+              'Port'     { $connInfo += 'port='   + $kv[1].Trim() }
+              'Database' { $connInfo += 'dbname=' + $kv[1].Trim() }
+              'Username' { $connInfo += 'user='   + $kv[1].Trim() }
+              'Password' { $password = $kv[1].Trim() }
+            }
+          }
+          $connArgs = ($connInfo -join ' ')
+          Write-Output "conninfo: $($connInfo -replace 'password=[^ ]+', 'password=****')"
+          docker run --rm -e "PGPASSWORD=$password" postgres:16-alpine psql "$connArgs" `
+            -c "SELECT id, plan, created_at FROM users ORDER BY created_at DESC LIMIT 15;" `
+            -c "SELECT id, user_id, plan, status, pay_order_code, amount, completed_at FROM payment_intents ORDER BY created_at DESC LIMIT 15;" `
+            -c "SELECT id, user_id, event_type, plan, billing, amount, invoice_id, created_at FROM payment_events ORDER BY created_at DESC LIMIT 15;" `
+            -c "SELECT u.email, u.plan, s.status, s.plan AS sub_plan, s.current_period_end FROM users u LEFT JOIN subscriptions s ON s.user_id = u.id ORDER BY u.created_at DESC LIMIT 15;"
