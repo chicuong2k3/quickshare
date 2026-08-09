@@ -40,7 +40,8 @@ jobs:
           $connArgs = ($connInfo -join ' ')
           Write-Output "conninfo: $($connInfo -replace 'password=[^ ]+', 'password=****')"
           docker run --rm -e "PGPASSWORD=$password" postgres:16-alpine psql "$connArgs" `
-            -c "SELECT id, plan, created_at FROM users ORDER BY created_at DESC LIMIT 15;" `
-            -c "SELECT id, user_id, plan, status, pay_order_code, amount, completed_at FROM payment_intents ORDER BY created_at DESC LIMIT 15;" `
-            -c "SELECT id, user_id, event_type, plan, billing, amount, invoice_id, created_at FROM payment_events ORDER BY created_at DESC LIMIT 15;" `
-            -c "SELECT u.email, u.plan, s.status, s.plan AS sub_plan, s.current_period_end FROM users u LEFT JOIN subscriptions s ON s.user_id = u.id ORDER BY u.created_at DESC LIMIT 15;"
+            -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_name IN ('Users','PaymentIntents','PaymentEvents','Subscriptions') ORDER BY table_name, ordinal_position;" `
+            -c "SELECT \"Id\", \"Plan\", \"CreatedAt\" FROM \"Users\" ORDER BY \"CreatedAt\" DESC LIMIT 15;" `
+            -c "SELECT \"Id\", \"UserId\", \"Plan\", \"Status\", \"PayOSOrderCode\", \"Amount\", \"CompletedAt\" FROM \"PaymentIntents\" ORDER BY \"CreatedAt\" DESC LIMIT 15;" `
+            -c "SELECT \"Id\", \"UserId\", \"EventType\", \"Plan\", \"Billing\", \"Amount\", \"InvoiceId\", \"CreatedAt\" FROM \"PaymentEvents\" ORDER BY \"CreatedAt\" DESC LIMIT 15;" `
+            -c "SELECT u.\"Email\", u.\"Plan\", s.\"Status\", s.\"Plan\" AS sub_plan, s.\"CurrentPeriodEnd\" FROM \"Users\" u LEFT JOIN \"Subscriptions\" s ON s.\"UserId\" = u.\"Id\" WHERE u.\"Plan\" IS DISTINCT FROM 'free' ORDER BY u.\"CreatedAt\" DESC LIMIT 15;"
