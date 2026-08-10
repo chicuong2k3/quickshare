@@ -134,8 +134,8 @@
     --db-surface-rgb: 250,244,234;
 
     /* === Component: Button — Kira ghost: generous padding, 1px border === */
-    --db-btn-py: 9px;
-    --db-btn-px: 20px;
+    --db-btn-py: 7px;
+    --db-btn-px: 14px;
     --db-btn-radius: var(--db-radius-2);
     --db-btn-font-size: var(--db-text-sm);
     --db-btn-font-weight: 400;
@@ -143,8 +143,8 @@
     --db-btn-color: var(--db-ink);
     --db-btn-border: 1px solid rgba(28,22,16,0.08);
     /* === Component: Field / Input === */
-    --db-field-py: 10px;
-    --db-field-px: 14px;
+    --db-field-py: 8px;
+    --db-field-px: 12px;
     --db-field-radius: var(--db-radius-2);
     --db-field-font-size: 0.9375rem;
     --db-field-bg: var(--db-white);
@@ -153,7 +153,7 @@
     --db-field-border-focus: 1px solid var(--db-terracotta);
 
     /* === Component: Card — Kira panel: #FAF4EA, subtle border === */
-    --db-card-padding: var(--db-space-6);
+    --db-card-padding: var(--db-space-5);
     --db-card-radius: var(--db-radius-3);
     --db-card-bg: var(--db-white);
     --db-card-border: 1px solid rgba(28,22,16,0.05);
@@ -175,14 +175,14 @@
 
     /* === Component: Modal === */
     --db-modal-radius: var(--db-radius-4);
-    --db-modal-padding: var(--db-space-6);
+    --db-modal-padding: var(--db-space-5);
     --db-modal-bg: var(--db-white);
     --db-modal-shadow: none;
     --db-modal-backdrop: rgba(40,32,24,0.32);
 
     /* === Component: Toast === */
     --db-toast-radius: var(--db-radius-2);
-    --db-toast-padding: var(--db-space-4);
+    --db-toast-padding: var(--db-space-3);
     --db-toast-shadow: none;
 
     /* === Component: Tabs === */
@@ -213,6 +213,49 @@
 
     /* === Component: Separator === */
     --db-separator-color: rgba(28,22,16,0.08);
+}
+
+/* ─── Compact density — shared across every DAUB theme ─── */
+[data-theme] {
+    --db-space-3: 10px;
+    --db-space-4: 14px;
+    --db-space-5: 20px;
+    --db-space-6: 24px;
+    --db-space-7: 32px;
+    --db-space-8: 40px;
+    --db-space-9: 64px;
+    --db-btn-py: 7px;
+    --db-btn-px: 14px;
+    --db-field-py: 8px;
+    --db-field-px: 12px;
+    --db-card-padding: 20px;
+    --db-modal-padding: 20px;
+    --db-toast-padding: 10px;
+}
+
+.db-btn--lg {
+    min-height: 44px;
+    padding: 8px 18px;
+}
+
+/* Keep controls compact without sacrificing touch access. */
+.db-btn {
+    min-height: 40px;
+}
+
+.db-btn--icon {
+    min-width: 40px;
+    padding: var(--db-space-2);
+}
+
+@media (max-width: 767px) {
+    .db-btn {
+        min-height: 44px;
+    }
+
+    .db-btn--icon {
+        min-width: 44px;
+    }
 }
 
 /* ─── Kira selection + scrollbar (light theme) ─── */
@@ -329,7 +372,7 @@ body::after,
 
 /* ─── Layout fixes: navbar, footer, page structure ─── */
 .db-navbar {
-    height: 3.5rem !important;
+    height: 3.25rem !important;
     background: transparent !important;
     border-bottom: 1px solid rgba(28,22,16,0.06) !important;
     box-shadow: none !important;
@@ -343,7 +386,7 @@ body::after,
 
 .layout-footer {
     margin-top: auto !important;
-    padding: var(--db-space-4) 0 !important;
+    padding: var(--db-space-3) 0 !important;
     text-align: center;
     font-size: var(--db-text-sm);
     color: var(--db-color-text-muted);
@@ -357,12 +400,12 @@ body::after,
     width: 100%;
     max-width: 72rem;
     margin: 0 auto;
-    padding: var(--db-space-6) var(--db-space-4);
+    padding: var(--db-space-5) var(--db-space-4);
     flex: 1;
 }
 
 .page--padded {
-    padding: var(--db-space-8) var(--db-space-4);
+    padding: var(--db-space-6) var(--db-space-4);
 }
 
 .page--centered {
@@ -385,12 +428,12 @@ body::after,
 }
 
 /* ─── Kira heading & paragraph margins — generous breathing room ─── */
-.db-h1, h1 { margin: 0 0 22px 0; }
-.db-h2, h2 { margin: 0 0 16px 0; }
-.db-h3, h3 { margin: 0 0 12px 0; }
-.db-h4, h4 { margin: 0 0 8px 0; }
-.db-p, p { margin: 0 0 16px 0; }
-.db-p.db-text-muted { margin-bottom: 28px; }
+.db-h1, h1 { margin: 0 0 var(--db-space-4) 0; }
+.db-h2, h2 { margin: 0 0 var(--db-space-3) 0; }
+.db-h3, h3 { margin: 0 0 var(--db-space-2) 0; }
+.db-h4, h4 { margin: 0 0 var(--db-space-2) 0; }
+.db-p, p { margin: 0 0 var(--db-space-3) 0; }
+.db-p.db-text-muted { margin-bottom: var(--db-space-5); }
 
 
 /* ─── Utilities ─── */

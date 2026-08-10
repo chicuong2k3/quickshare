@@ -140,8 +140,6 @@
   <data name="login_subtitle" xml:space="preserve"><value>Choose a provider to continue</value></data>
   <data name="login_btn_google" xml:space="preserve"><value>Continue with Google</value></data>
   <data name="login_btn_github" xml:space="preserve"><value>Continue with GitHub</value></data>
-  <data name="login_btn_facebook" xml:space="preserve"><value>Continue with Facebook</value></data>
-  <data name="login_btn_tiktok" xml:space="preserve"><value>Continue with TikTok</value></data>
   <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Display name</value></data>
   <data name="account_profile_save_btn" xml:space="preserve"><value>Save changes</value></data>

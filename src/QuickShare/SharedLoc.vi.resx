@@ -140,8 +140,7 @@
   <data name="login_subtitle" xml:space="preserve"><value>Chọn nhà cung cấp để tiếp tục</value></data>
   <data name="login_btn_google" xml:space="preserve"><value>Tiếp tục với Google</value></data>
   <data name="login_btn_github" xml:space="preserve"><value>Tiếp tục với GitHub</value></data>
-  <data name="login_btn_facebook" xml:space="preserve"><value>Tiếp tục với Facebook</value></data>
-  <data name="login_btn_tiktok" xml:space="preserve"><value>Tiếp tục với TikTok</value></data>
+  
   <data name="account_page_title" xml:space="preserve"><value>Tài khoản — QuickShareCloud</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Tên hiển thị</value></data>
   <data name="account_profile_save_btn" xml:space="preserve"><value>Lưu thay đổi</value></data>

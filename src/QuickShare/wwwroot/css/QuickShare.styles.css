@@ -679,7 +679,9 @@
 }
 
 .home-why[b-6aijcb865y] {
+    width: 100%;
     max-width: 64rem;
+    min-width: 0;
     margin: var(--db-space-7) auto 0;
 }
 
@@ -717,6 +719,8 @@
     color: var(--db-color-text);
 }
 .home-why__card[b-6aijcb865y] {
+    max-width: 100%;
+    min-width: 0;
     margin-top: var(--db-space-5);
 }
 
@@ -837,26 +841,120 @@
     margin-bottom: var(--db-space-4);
 }
 /* /Components/Pages/Login.razor.rz.scp.css */
-.card[b-9zhym3c65q] {
-    width: 100%;
-    max-width: 24rem;
-}
-.stack[b-9zhym3c65q] {
-    margin-top: 3rem;
-}
-.subtitle[b-9zhym3c65q] {
-    margin-top: 1rem;
-}
-.btn[b-9zhym3c65q] {
+.login-shell[b-9zhym3c65q] {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
     width: 100%;
+    min-height: 100%;
+    padding: var(--db-space-8) var(--db-space-4) var(--db-space-10);
 }
-.btn svg[b-9zhym3c65q] {
+
+.login-card[b-9zhym3c65q] {
+    width: 100%;
+    max-width: 28rem;
+    overflow: hidden;
+}
+
+.login-header[b-9zhym3c65q] {
+    padding: var(--db-space-8) var(--db-space-7) var(--db-space-5);
+    text-align: center;
+}
+
+.login-mark[b-9zhym3c65q] {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto var(--db-space-5);
+    border: 1px solid color-mix(in srgb, var(--db-color-accent) 35%, var(--db-color-border));
+    border-radius: var(--db-radius-3);
+    background: var(--db-color-accent-subtle);
+    color: var(--db-color-accent);
+}
+
+.login-mark svg[b-9zhym3c65q] {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.login-header .db-card__title[b-9zhym3c65q] {
+    margin: 0;
+}
+
+.login-subtitle[b-9zhym3c65q] {
+    max-width: 22rem;
+    margin: var(--db-space-3) auto 0;
+    color: var(--db-color-text-muted);
+}
+
+.login-body[b-9zhym3c65q] {
+    padding: 0 var(--db-space-7) var(--db-space-7);
+}
+
+.login-provider-list[b-9zhym3c65q] {
+    display: grid;
+    gap: var(--db-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.login-provider[b-9zhym3c65q] {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--db-space-2);
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem !important;
+    text-align: left;
+    text-decoration: none;
+}
+
+.login-provider__icon[b-9zhym3c65q] {
+    display: grid;
+    flex: 0 0 1.5rem;
+    place-items: center;
+}
+
+.login-provider__icon svg[b-9zhym3c65q] {
     width: 1.25rem;
     height: 1.25rem;
+}
+
+.login-provider--github[b-9zhym3c65q] {
+    border-color: color-mix(in srgb, #24292f 45%, var(--db-color-border)) !important;
+}
+
+.login-provider--github:hover[b-9zhym3c65q],
+.login-provider--github:active[b-9zhym3c65q] {
+    border-color: #24292f !important;
+}
+
+
+.login-provider:focus-visible[b-9zhym3c65q] {
+    outline: 3px solid color-mix(in srgb, var(--db-color-accent) 55%, transparent) !important;
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    .login-shell[b-9zhym3c65q] {
+        padding-inline: 0;
+    }
+
+    .login-card[b-9zhym3c65q] {
+        border-inline: 0;
+        border-radius: 0;
+    }
+
+    .login-header[b-9zhym3c65q] {
+        padding-inline: var(--db-space-5);
+    }
+
+    .login-body[b-9zhym3c65q] {
+        padding-inline: var(--db-space-5);
+    }
 }
 /* /Components/Pages/P2PDownload.razor.rz.scp.css */
 /* QuickShareCloud — P2P Download page (grunge-dark tokens) */

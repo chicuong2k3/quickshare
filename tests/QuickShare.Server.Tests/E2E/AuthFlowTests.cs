@@ -29,20 +29,26 @@ public sealed class AuthFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task LoginPage_ShowsGoogleSignIn()
+    public async Task LoginPage_ShowsOnlyGoogleAndGitHubSignIn()
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/login");
         var html = await response.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("google", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("github", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("facebook", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("tiktok", html, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task LoginChallenge_UnknownProvider_Returns404()
+    [Theory]
+    [InlineData("/login/facebook")]
+    [InlineData("/login/tiktok")]
+    public async Task LoginChallenge_UnknownProvider_Returns404(string url)
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var response = await client.GetAsync("/login/facebook");
+        var response = await client.GetAsync(url);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
 }
