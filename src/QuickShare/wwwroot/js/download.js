@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, brandLogo: '', brandMessage: '', brandAccent: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -16,8 +16,6 @@ window.downloadApp = (function () {
                 else if (state.phase === 'ad') show('download-phase-ad');
                 else if (state.phase === 'file') {
                     show('download-phase-file');
-                    if (state.brandLogo || state.brandMessage) { show('dl-branding'); if (state.brandLogo) { show('dl-brand-logo'); attr('dl-brand-logo', 'src', state.brandLogo); } else hide('dl-brand-logo'); text('dl-brand-message', state.brandMessage || 'Sent a file for you'); }
-                    else hide('dl-branding');
                     if (state.isEncrypted) show('dl-badge-encrypted'); else hide('dl-badge-encrypted');
                     if (state.zkOpen) show('dl-zk-panel'); else hide('dl-zk-panel');
                     text('dl-download-count', String(state.downloadCount)); text('dl-max-downloads', String(state.maxDownloads)); text('dl-expires-label', state.expiresLabel);
@@ -35,7 +33,7 @@ window.downloadApp = (function () {
                 if (info.hasOtp) state.phase = 'otp';
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
-                render(); fetchBranding();
+                render();
             }
             function expiryLabel(e) { var r = new Date(e) - new Date(); if (r <= 0) return 'expired'; var m = Math.floor(r / 60000); if (m < 60) return 'expires in ' + m + ' min'; var h = Math.floor(m / 60); if (h < 24) return 'expires in ' + h + ' h'; var d = Math.floor(h / 24); return 'expires in ' + d + ' day' + (d === 1 ? '' : 's'); }
 
@@ -88,7 +86,6 @@ window.downloadApp = (function () {
                 state.adTimer = setInterval(function () { state.adCountdown--; text('dl-ad-countdown', 'Continue in ' + state.adCountdown + 's'); if (state.adCountdown <= 0) { clearInterval(state.adTimer); state.adTimer = null; state.phase = 'file'; render(); } }, 1000); }
             function skipAd() { if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; } state.phase = 'file'; render(); }
 
-            function fetchBranding() { fetch(apiBase() + '/api/deliveries/' + shareCode() + '/brand').then(function (r) { if (r.ok) return r.json(); }).then(function (data) { if (data) { if (data.logo) state.brandLogo = data.logo; if (data.message) state.brandMessage = data.message; if (data.accent) state.brandAccent = data.accent; render(); } }).catch(function () {}); }
             function toggleZK() { state.zkOpen = !state.zkOpen; render(); }
             function handleDownload() { state.downloading = true; render(); var code = shareCode(); var url = apiBase() + '/api/downloads/' + code;
                 if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);

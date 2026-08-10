@@ -206,28 +206,6 @@
     color: var(--db-color-text-muted);
 }
 
-/* ─── Branding card ─── */
-.branding {
-    margin-bottom: var(--db-space-5);
-    border-radius: var(--db-radius-4);
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--db-color-border);
-}
-
-.branding-inner {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-4);
-}
-
-.brand-logo {
-    width: 3rem;
-    height: 3rem;
-    border-radius: var(--db-radius-3);
-    object-fit: cover;
-    border: 1px solid color-mix(in srgb, var(--db-color-border) 30%, transparent);
-}
-
 /* ─── Links ─── */
 .link {
     color: var(--db-color-accent);

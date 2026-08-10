@@ -20,10 +20,7 @@ services:
       - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
       - Authentication__GitHub__ClientId=${GITHUB_CLIENT_ID:-}
       - Authentication__GitHub__ClientSecret=${GITHUB_CLIENT_SECRET:-}
-      - Authentication__Facebook__AppId=${FACEBOOK_APP_ID:-}
-      - Authentication__Facebook__AppSecret=${FACEBOOK_APP_SECRET:-}
-      - Authentication__TikTok__ClientKey=${TIKTOK_CLIENT_KEY:-}
-      - Authentication__TikTok__ClientSecret=${TIKTOK_CLIENT_SECRET:-}
+      
       - R2__AccountId=${R2_ACCOUNT_ID:-}
       - R2__BucketName=${R2_BUCKET_NAME:-}
       - R2__AccessKeyId=${R2_ACCESS_KEY_ID:-}

@@ -57,7 +57,9 @@
 }
 
 .home-why {
+    width: 100%;
     max-width: 64rem;
+    min-width: 0;
     margin: var(--db-space-7) auto 0;
 }
 
@@ -95,6 +97,8 @@
     color: var(--db-color-text);
 }
 .home-why__card {
+    max-width: 100%;
+    min-width: 0;
     margin-top: var(--db-space-5);
 }
 

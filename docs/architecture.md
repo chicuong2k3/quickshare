@@ -135,7 +135,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload), OAuth badge, delivery branding manager, htmx form + lazy-load |
 | `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler |
 | `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade, PayOS payment — form creates PaymentIntent + calls PayOS API |
-| `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub, Facebook, TikTok |
+| `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub |
 | `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
 
 ### SSR Data Access Pattern
