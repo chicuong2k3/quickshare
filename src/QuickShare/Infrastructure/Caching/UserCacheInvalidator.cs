@@ -16,6 +16,7 @@ public static class UserCacheInvalidator
     public const string UserLoginKeyPrefix = "user:login:";
     public const string BillingHistoryKeyPrefix = "billing:history:";
     public const string UserPlanKeyPrefix = "user:plan:";
+    public const string SubscriptionKeyPrefix = "billing:sub:";
 
     public static string UserLoginKey(string provider, string providerKey) =>
         $"{UserLoginKeyPrefix}{provider}:{providerKey}";
@@ -46,7 +47,12 @@ public static class UserCacheInvalidator
 
         await cache.RemoveAsync(UserPlanKey(userId), ct);
         await cache.RemoveAsync(BillingHistoryKey(userId), ct);
+        await cache.RemoveAsync(SubscriptionKey(userId), ct);
     }
+
+    /// <summary>Key format used by SubscriptionService.GetCurrentAsync.</summary>
+    public static string SubscriptionKey(Guid userId) =>
+        $"{SubscriptionKeyPrefix}{userId}";
 
     public static string UserPlanKey(Guid userId) =>
         $"{UserPlanKeyPrefix}{userId}";

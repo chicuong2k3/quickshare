@@ -1,6 +1,5 @@
+using System.Text.Json.Nodes;
 using PayOS;
-using PayOS.Exceptions;
-using PayOS.Models.Webhooks;
 using QuickShare.Features.Payments.Subscriptions;
 using QuickShare.Infrastructure.Caching;
 
@@ -10,8 +9,14 @@ namespace QuickShare.Features.Payments.PayOS;
 /// Receives and verifies PayOS payment webhooks.
 /// POST /api/payments/payos/webhook
 /// </summary>
-public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
+public sealed class PayOSWebhookEndpoint : EndpointWithoutRequest
 {
+    private const string DataKey = "data";
+    private const string SignatureKey = "signature";
+    private const string OrderCodeKey = "orderCode";
+    private const string ReferenceKey = "reference";
+    private const string PaymentLinkIdKey = "paymentLinkId";
+
     public override void Configure()
     {
         Post("/api/payments/payos/webhook");
@@ -27,63 +32,57 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
         });
     }
 
-    public override async Task HandleAsync(PayOSWebhookData req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
         var config = Resolve<IConfiguration>();
         var logger = Resolve<ILogger<PayOSWebhookEndpoint>>();
 
-        // Build PayOS client
-        PayOSClient client;
+        // Verify the signature over the RAW `data` object exactly as PayOS sent it.
+        // Deserializing into a typed model first drops fields PayOS signed
+        // (counterAccount*, virtualAccount*, ...) and every real webhook then fails
+        // verification — which is why paid upgrades never activated.
+        JsonNode? root;
         try
         {
-            var clientId = config["PayOS:ClientId"]!;
-            var apiKey = config["PayOS:ApiKey"]!;
-            var checksumKey = config["PayOS:ChecksumKey"]!;
-            client = new PayOSClient(clientId, apiKey, checksumKey);
+            root = await JsonNode.ParseAsync(HttpContext.Request.Body, cancellationToken: ct);
         }
-        catch (Exception ex)
+        catch (System.Text.Json.JsonException ex)
         {
-            logger.LogError(ex, "PayOS client configuration failed");
+            logger.LogWarning(ex, "PayOS webhook: malformed JSON body");
+            ThrowError("Invalid webhook payload", 400);
+            return;
+        }
+
+        var data = root?[DataKey];
+        var signature = root?[SignatureKey]?.GetValue<string>();
+
+        if (data is null || string.IsNullOrEmpty(signature))
+        {
+            logger.LogWarning("PayOS webhook: missing data or signature");
+            ThrowError("Invalid webhook payload", 400);
+            return;
+        }
+
+        var checksumKey = config["PayOS:ChecksumKey"];
+        if (string.IsNullOrEmpty(checksumKey))
+        {
+            logger.LogError("PayOS:ChecksumKey is not configured");
             ThrowError("PayOS configuration error", 500);
             return;
         }
 
-        // Verify webhook signature
-        WebhookData verified;
-        try
-        {
-            var webhook = new Webhook
-            {
-                Code = req.Code,
-                Description = req.Description,
-                Success = req.Success,
-                Data = new WebhookData
-                {
-                    OrderCode = req.Data.OrderCode,
-                    Amount = req.Data.Amount,
-                    Description = req.Data.Description ?? string.Empty,
-                    AccountNumber = req.Data.AccountNumber ?? string.Empty,
-                    Reference = req.Data.Reference ?? string.Empty,
-                    TransactionDateTime = req.Data.TransactionDateTime ?? string.Empty,
-                    Currency = req.Data.Currency ?? "VND",
-                    PaymentLinkId = req.Data.PaymentLinkId ?? string.Empty,
-                    Code = req.Data.Code ?? string.Empty,
-                    Description2 = req.Data.Description2 ?? string.Empty
-                },
-                Signature = req.Signature
-            };
+        var client = new PayOSClient(config["PayOS:ClientId"]!, config["PayOS:ApiKey"]!, checksumKey);
+        var expected = client.Crypto.CreateSignatureFromObject(data, checksumKey);
 
-            verified = await client.Webhooks.VerifyAsync(webhook);
-        }
-        catch (WebhookException ex)
+        if (!string.Equals(expected, signature, StringComparison.OrdinalIgnoreCase))
         {
-            logger.LogWarning(ex, "PayOS webhook signature verification failed");
+            logger.LogWarning("PayOS webhook signature verification failed");
             ThrowError("Invalid webhook signature", 401);
             return;
         }
 
         var db = Resolve<AppDbContext>();
-        var orderCode = verified.OrderCode;
+        var orderCode = data[OrderCodeKey]?.GetValue<long>() ?? 0;
 
         // Look up PaymentIntent by PayOS order code
         var intent = await db.PaymentIntents
@@ -111,25 +110,32 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
             return;
         }
 
-        // Record payment event
-        var paymentEvent = new PaymentEvent
+        var invoiceId = data[ReferenceKey]?.GetValue<string>()
+            ?? data[PaymentLinkIdKey]?.GetValue<string>()
+            ?? orderCode.ToString();
+
+        // Record payment event (idempotent — PayOS retries webhooks)
+        var alreadyRecorded = await db.PaymentEvents
+            .Where(e => e.UserId == user.Id)
+            .Where(e => e.EventType == PaymentEventTypes.Payment)
+            .Where(e => e.InvoiceId == invoiceId)
+            .AnyAsync(ct);
+
+        if (!alreadyRecorded)
         {
-            UserId = user.Id,
-            EventType = PaymentEventTypes.Payment,
-            Plan = intent.Plan,
-            PlanDisplay = intent.Plan switch
+            db.PaymentEvents.Add(new PaymentEvent
             {
-                PlanTierLimits.Studio => "Studio",
-                PlanTierLimits.Pro => "Pro",
-                _ => string.Empty
-            },
-            Billing = intent.Billing,
-            Amount = intent.Amount,
-            Currency = intent.Currency,
-            InvoiceId = verified.Reference ?? verified.PaymentLinkId,
-            InvoiceUrl = string.Empty
-        };
-        db.PaymentEvents.Add(paymentEvent);
+                UserId = user.Id,
+                EventType = PaymentEventTypes.Payment,
+                Plan = intent.Plan,
+                PlanDisplay = PlanCatalog.Get(intent.Plan).Display,
+                Billing = intent.Billing,
+                Amount = intent.Amount,
+                Currency = intent.Currency,
+                InvoiceId = invoiceId,
+                InvoiceUrl = string.Empty
+            });
+        }
 
         // Activate subscription
         await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, db, ct);
@@ -151,31 +157,4 @@ public sealed class PayOSWebhookEndpoint : Endpoint<PayOSWebhookData>
 
         await Send.OkAsync(new { status = "processed" }, ct);
     }
-}
-
-/// <summary>
-/// Minimal model for PayOS webhook JSON body.
-/// Maps to PayOS's { code, desc, success, data, signature } structure.
-/// </summary>
-public sealed class PayOSWebhookData
-{
-    public string Code { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public bool Success { get; set; }
-    public PayOSWebhookDataPayload Data { get; set; } = new();
-    public string Signature { get; set; } = string.Empty;
-}
-
-public sealed class PayOSWebhookDataPayload
-{
-    public long OrderCode { get; set; }
-    public long Amount { get; set; }
-    public string? Description { get; set; }
-    public string? AccountNumber { get; set; }
-    public string? Reference { get; set; }
-    public string? TransactionDateTime { get; set; }
-    public string? Currency { get; set; }
-    public string? PaymentLinkId { get; set; }
-    public string? Code { get; set; }
-    public string? Description2 { get; set; }
 }

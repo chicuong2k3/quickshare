@@ -29,6 +29,13 @@
 	}
 </script>
 
+@if (isPollRequest)
+{
+    @* HTMX poll response — only #payment-status is selected out of this page. *@
+    @PaymentStatus
+}
+else
+{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
@@ -92,7 +99,11 @@
                     &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
                 </p>
 
-                @if (payOSResult is not null && payOSResult.Success)
+                @if (paymentCompleted)
+                {
+                    @PaymentStatus
+                }
+                else if (payOSResult is not null && payOSResult.Success)
                 {
                     <div class="payment-info">
                         <h3 class="db-h3">Thanh toán <strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
@@ -127,9 +138,7 @@
                             })();
                         </script>
 
-                        <p class="db-text-muted" style="margin-top:1rem;font-size:0.85rem">
-                            Gói sẽ được kích hoạt tự động sau khi thanh toán thành công.
-                        </p>
+                        @PaymentStatus
                     </div>
                 }
                 else if (payOSResult is not null)
@@ -164,6 +173,7 @@
     }
 
 </PageWrapper>
+}
 
 
 
@@ -192,12 +202,45 @@
     private const string PayOSStatusQueryKey = "status";
     private const string PayOSSuccessCode = "00";
     private const string PayOSPaidStatus = "PAID";
+    private const string PollQueryKey = "poll";
+    private const string PollQueryValue = "1";
+    private const string PollInterval = "every 3s";
+    private const string PaymentStatusId = "payment-status";
 
     private string selectedPlan = PlanTierLimits.Pro;
     private string currentPlan = PlanTierLimits.Free;
     private bool isFullyLoaded;
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
+    private bool isPollRequest;
+    private bool paymentCompleted;
+    private long pollOrderCode;
+
+    /// <summary>
+    /// Swapped in place by HTMX every few seconds while the payment is pending, so the
+    /// webhook result lands as a partial — no full page reload.
+    /// </summary>
+    private RenderFragment PaymentStatus => @<div id="@PaymentStatusId">
+        @if (paymentCompleted)
+        {
+            <div class="db-alert db-alert--success" style="margin-top:1rem;padding:1rem;border-radius:0.5rem">
+                <p><strong>Thanh toán thành công!</strong> Gói @planDisplay đã được kích hoạt.</p>
+                <a href="/account/billing" class="db-btn db-btn--primary" style="margin-top:1rem">Xem hoá đơn</a>
+            </div>
+        }
+        else
+        {
+            <p class="db-text-muted"
+               style="margin-top:1rem;font-size:0.85rem"
+               hx-get="/upgrade?plan=@selectedPlan&@(PayOSOrderCodeQueryKey)=@pollOrderCode&@(PollQueryKey)=@PollQueryValue"
+               hx-trigger="@PollInterval"
+               hx-target="#@PaymentStatusId"
+               hx-select="#@PaymentStatusId"
+               hx-swap="outerHTML">
+                Đang chờ xác nhận thanh toán — gói sẽ được kích hoạt tự động.
+            </p>
+        }
+    </div>;
 
     private PlanInfo PlanData => PlanCatalog.Get(selectedPlan);
     private string planDisplay => PlanData.Display;
@@ -251,6 +294,8 @@
             StringComparison.OrdinalIgnoreCase);
         var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
         var shouldProcessCallback = IsSuccessfulPayOSCallback(ctx);
+        isPollRequest = ctx.Request.Query[PollQueryKey] == PollQueryValue
+            && TryGetPayOSOrderCode(ctx, out pollOrderCode);
 
         // Shell render for GET: return immediately, no DB calls.
         if (!isHtmxRequest && !isPost && !shouldProcessCallback) return;
@@ -261,10 +306,20 @@
         var user = await ctx.User.GetUserAsync(Db, ct);
         currentPlan = user.ToProfileResponse().Plan;
 
+        // Poll: webhook status only — never creates another payment link.
+        if (isPollRequest)
+        {
+            paymentCompleted = await Checkout.IsCompletedAsync(user, pollOrderCode, ct);
+            return;
+        }
+
         // Handle PayOS redirect callback (orderCode in query string)
         if (!isPost && shouldProcessCallback && TryGetPayOSOrderCode(ctx, out var orderCode))
         {
             await Checkout.TryFinalizeCallbackAsync(user, orderCode, ct);
+            pollOrderCode = orderCode;
+            paymentCompleted = await Checkout.IsCompletedAsync(user, orderCode, ct);
+            currentPlan = user.ToProfileResponse().Plan;
         }
 
         // Auto-create payment on first load (HTMX GET) or on form submit / retry (POST).
@@ -283,6 +338,8 @@
             {
                 (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
             }
+
+            pollOrderCode = paymentIntent?.PayOSOrderCode ?? pollOrderCode;
         }
     }
 

@@ -1,7 +1,6 @@
 @layout MainLayout
 @page "/account/billing"
 @attribute [Authorize]
-@attribute [StreamRendering]
 @using QuickShare.Data
 @using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.Subscriptions
@@ -22,10 +21,16 @@
         <h1 class="db-h1">@Loc["billing_h1"]</h1>
     </section>
 
-    <section class="billing-body">
+    <section class="billing-body" id="billing-body"
+             hx-get="/account/billing"
+             hx-trigger="@(billing is null ? "load" : "none")"
+             hx-target="#billing-body"
+             hx-select="#billing-body"
+             hx-swap="outerHTML">
         @if (billing is null)
         {
-            <div class="loading">
+            @* Shell skeleton — rendered instantly, no DB calls. *@
+            <div class="loading" aria-busy="true">
                 <p class="db-text-muted">@Loc["billing_loading"]</p>
             </div>
         }
@@ -166,10 +171,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var ct = CancellationToken.None;
-        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+        var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
 
-        if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(HttpContextAccessor.HttpContext.Request.Method))
+        // Shell render: return immediately, no DB calls — HTMX fetches the data.
+        if (!isHtmxRequest && !isPost) return;
+
+        var ct = CancellationToken.None;
+        var user = await ctx.User.GetUserAsync(Db, ct);
+
+        if (isPost)
         {
             var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
             if (form["Action"] == SubscriptionActionCancel)

@@ -45,8 +45,19 @@ public static class SubscriptionService
             subscription.CurrentPeriodEnd = AddBillingPeriod(start, period);
         }
 
+        // ponytail: write the plan by row, not through the entity — callers pass the
+        // User from GetUserAsync, which is cached across requests and therefore
+        // detached from this DbContext (assigning to it would never be saved).
+        var now = DateTime.UtcNow;
+        await db.Users
+            .Where(u => u.Id == user.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(u => u.Plan, plan)
+                .SetProperty(u => u.UpdatedAt, now), ct);
+
+        // Keep the in-memory copy consistent for the current render.
         user.Plan = plan;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = now;
 
         return subscription;
     }
@@ -118,7 +129,7 @@ public static class SubscriptionService
     {
         var cache = StaticCache.Instance;
         return await cache.GetOrSetAsync(
-            $"billing:sub:{user.Id}",
+            UserCacheInvalidator.SubscriptionKey(user.Id),
             async ct2 =>
             {
                 return await db.Subscriptions

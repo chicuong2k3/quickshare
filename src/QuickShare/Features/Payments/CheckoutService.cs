@@ -54,6 +54,15 @@ public sealed class CheckoutService(AppDbContext db, IConfiguration config, PayO
         return (intent, result);
     }
 
+    /// <summary>True once the webhook (or the redirect callback) has completed this order.</summary>
+    public Task<bool> IsCompletedAsync(User user, long orderCode, CancellationToken ct) =>
+        db.PaymentIntents
+            .AsNoTracking()
+            .AnyAsync(i =>
+                i.UserId == user.Id &&
+                i.PayOSOrderCode == orderCode &&
+                i.Status == PaymentIntentStatus.Completed, ct);
+
     /// <summary>Completes the pending intent for a successful PayOS redirect. Safe to call twice.</summary>
     public async Task TryFinalizeCallbackAsync(User user, long orderCode, CancellationToken ct)
     {
