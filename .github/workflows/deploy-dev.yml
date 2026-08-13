@@ -13,6 +13,11 @@ jobs:
   build:
     runs-on: self-hosted
     timeout-minutes: 45
+    # A superseded image build is pure waste on a single self-hosted runner.
+    # Cancelling here is safe: nothing has been deployed yet.
+    concurrency:
+      group: deploy-dev-build
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
@@ -46,6 +51,13 @@ jobs:
     needs: build
     runs-on: self-hosted
     timeout-minutes: 45
+    # Never interrupt a deploy in flight — a cancel between `docker compose up`
+    # and the container coming back leaves the service down. Newer pushes queue.
+    # They cannot deploy stale code: their build cancels the superseded one, and
+    # a deploy whose build was cancelled never runs.
+    concurrency:
+      group: deploy-dev-deploy
+      cancel-in-progress: false
 
     steps:
       # GITHUB_TOKEN cannot PULL user-account ghcr.io packages (denied: denied),
