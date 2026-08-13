@@ -25,10 +25,33 @@ window.downloadApp = (function () {
                     if (state.isEncrypted) show('dl-badge-encrypted'); else hide('dl-badge-encrypted');
                     if (state.zkOpen) show('dl-zk-panel'); else hide('dl-zk-panel');
                     text('dl-download-count', String(state.downloadCount)); text('dl-max-downloads', String(state.maxDownloads)); text('dl-expires-label', state.expiresLabel);
-                    if (state.downloading) { attr('dl-download-btn', 'disabled', 'disabled'); text('dl-download-text', 'Decrypting\u2026'); document.getElementById('dl-download-icon').outerHTML = '<span class="db-spinner db-spinner--sm"></span>'; }
-                    else { removeAttr('dl-download-btn', 'disabled'); text('dl-download-text', 'Download'); }
+                    if (state.isEncrypted) show('dl-fact-key'); else hide('dl-fact-key');
+                    if (state.downloading) {
+                        attr('dl-download-btn', 'aria-disabled', 'true');
+                        text('dl-download-text', t('decrypting'));
+                        // Hide the icon rather than destroy it: outerHTML removed the
+                        // node permanently and the next render threw on null.
+                        var icon = document.getElementById('dl-download-icon');
+                        if (icon) icon.style.visibility = 'hidden';
+                    } else {
+                        removeAttr('dl-download-btn', 'aria-disabled');
+                        text('dl-download-text', t('download'));
+                        var icon2 = document.getElementById('dl-download-icon');
+                        if (icon2) icon2.style.visibility = '';
+                    }
                     maybeRenderTextPreview();
                 }
+            }
+
+            // Copy comes from the server so this file carries no English literals.
+            var T = (function () {
+                var el = document.getElementById('download-i18n');
+                try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
+            })();
+
+            function t(key, a, b) {
+                var v = T[key] || '';
+                return v.replace('{0}', a).replace('{1}', b);
             }
 
             function infoFromDom() {
@@ -36,18 +59,30 @@ window.downloadApp = (function () {
                 try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
             }
 
+            var initAttempts = 0;
+
             function init() {
                 var infoEl = document.getElementById('download-info-data');
-                if (!infoEl) { setTimeout(init, 50); return; }
+                // Bounded: the old loop rescheduled itself forever on a page that
+                // would never have the element.
+                if (!infoEl) { if (++initAttempts < 40) setTimeout(init, 50); return; }
                 var hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
                 var info = infoFromDom();
-                state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
+                state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : t('expiryNone');
                 if (info.hasOtp) state.phase = 'otp';
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
                 render();
             }
-            function expiryLabel(e) { var r = new Date(e) - new Date(); if (r <= 0) return 'expired'; var m = Math.floor(r / 60000); if (m < 60) return 'expires in ' + m + ' min'; var h = Math.floor(m / 60); if (h < 24) return 'expires in ' + h + ' h'; var d = Math.floor(h / 24); return 'expires in ' + d + ' day' + (d === 1 ? '' : 's'); }
+            function expiryLabel(e) {
+                var r = new Date(e) - new Date();
+                if (r <= 0) return t('expiryExpired');
+                var m = Math.floor(r / 60000);
+                if (m < 60) return t('expiryMin', m);
+                var h = Math.floor(m / 60);
+                if (h < 24) return t('expiryHour', h);
+                return t('expiryDay', Math.floor(h / 24));
+            }
 
 
             function readOtp() {
@@ -76,8 +111,8 @@ window.downloadApp = (function () {
 
             function verifyOtp() {
                 var otp = readOtp();
-                if (otp.length < 6) { show('dl-otp-error'); text('dl-otp-error', 'Please enter all 6 digits.'); return; }
-                hide('dl-otp-error'); text('dl-otp-btn-text', 'Verifying\u2026'); attr('dl-otp-btn', 'disabled', 'disabled');
+                if (otp.length < 6) { show('dl-otp-error'); text('dl-otp-error', t('otpIncomplete')); return; }
+                hide('dl-otp-error'); text('dl-otp-btn-text', t('otpVerifying')); attr('dl-otp-btn', 'disabled', 'disabled');
                 fetch(apiBase() + '/api/deliveries/' + shareCode() + '/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ otp: otp }) })
                     .then(function (r) {
                         return r.ok ? r.json().catch(function () { return {}; }) : r.json().then(function (b) { throw b; }).catch(function () { throw {}; });
@@ -89,13 +124,13 @@ window.downloadApp = (function () {
                         else state.phase = 'file';
                     })
                     .catch(function (e) {
-                        show('dl-otp-error'); text('dl-otp-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || 'Incorrect code.');
+                        show('dl-otp-error'); text('dl-otp-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || t('otpWrong'));
                     })
-                    .finally(function () { text('dl-otp-btn-text', 'Unlock'); removeAttr('dl-otp-btn', 'disabled'); render(); });
+                    .finally(function () { text('dl-otp-btn-text', t('otpUnlock')); removeAttr('dl-otp-btn', 'disabled'); render(); });
             }
 
-            function startAdTimer() { state.adCountdown = 5; text('dl-ad-countdown', 'Continue in 5s'); render();
-                state.adTimer = setInterval(function () { state.adCountdown--; text('dl-ad-countdown', 'Continue in ' + state.adCountdown + 's'); if (state.adCountdown <= 0) { clearInterval(state.adTimer); state.adTimer = null; state.phase = 'file'; render(); } }, 1000); }
+            function startAdTimer() { state.adCountdown = 5; text('dl-ad-countdown', t('adCountdown', 5)); render();
+                state.adTimer = setInterval(function () { state.adCountdown--; text('dl-ad-countdown', t('adCountdown', state.adCountdown)); if (state.adCountdown <= 0) { clearInterval(state.adTimer); state.adTimer = null; state.phase = 'file'; render(); } }, 1000); }
             function skipAd() { if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; } state.phase = 'file'; render(); }
 
             function toggleZK() { state.zkOpen = !state.zkOpen; render(); }
@@ -106,14 +141,22 @@ window.downloadApp = (function () {
                 return url;
             }
 
-            function handleDownload() {
-                // The preview already fetched (and paid for) the bytes — save those instead of
-                // spending a second download against the delivery's limit.
-                if (state.bytes) { saveBytes(state.bytes); return; }
+            // Returns false to cancel the anchor's own navigation, true to let it
+            // happen. With JS dead the anchor still delivers an unencrypted file.
+            function handleDownload(event) {
+                if (state.bytes) { saveBytes(state.bytes); return false; }
+                if (!state.isEncrypted && !state.verifiedOtp) return true;
+                if (event && event.preventDefault) event.preventDefault();
                 state.downloading = true; render();
-                var url = downloadUrl();
-                if (state.isEncrypted) { fetchBytes().then(saveBytes)['catch'](function (e) { if (window.DAUB) DAUB.toast('Download failed: ' + e.message, 'error'); })['finally'](function () { state.downloading = false; render(); }); }
-                else { state.downloading = false; window.location.href = url; }
+                if (state.isEncrypted) {
+                    fetchBytes().then(saveBytes)['catch'](function (e) {
+                        if (window.DAUB) DAUB.toast(t('downloadFailed') + ': ' + e.message, 'error');
+                    })['finally'](function () { state.downloading = false; render(); });
+                } else {
+                    state.downloading = false;
+                    window.location.href = downloadUrl();
+                }
+                return false;
             }
 
             function saveBytes(bytes) { var blob = new Blob([bytes]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = infoFromDom().fileName || shareCode(); document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
@@ -128,7 +171,7 @@ window.downloadApp = (function () {
 
                 state.previewStarted = true;
                 show('dl-text-preview');
-                text('dl-text-status', 'Loading preview…');
+                text('dl-text-status', t('previewLoading'));
 
                 fetchBytes().then(function (bytes) {
                     state.bytes = bytes;
@@ -147,7 +190,7 @@ window.downloadApp = (function () {
                 var truncated = truncate && lines.length > PREVIEW_LINE_LIMIT;
                 // textContent, never innerHTML — the snippet is untrusted user content.
                 body.textContent = truncated ? lines.slice(0, PREVIEW_LINE_LIMIT).join('\n') : state.fullText;
-                if (truncated) { show('dl-text-more'); text('dl-text-status', 'First ' + PREVIEW_LINE_LIMIT + ' of ' + lines.length + ' lines'); }
+                if (truncated) { show('dl-text-more'); text('dl-text-status', t('previewLines', PREVIEW_LINE_LIMIT, lines.length)); }
                 else { hide('dl-text-more'); text('dl-text-status', ''); }
             }
 
@@ -156,8 +199,8 @@ window.downloadApp = (function () {
             function copyText() {
                 if (!state.fullText || !navigator.clipboard) return;
                 navigator.clipboard.writeText(state.fullText).then(function () {
-                    text('dl-text-copy-label', 'Copied');
-                    setTimeout(function () { text('dl-text-copy-label', 'Copy'); }, 2000);
+                    text('dl-text-copy-label', t('copied'));
+                    setTimeout(function () { text('dl-text-copy-label', t('copy')); }, 2000);
                 });
             }
 

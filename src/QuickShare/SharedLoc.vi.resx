@@ -396,4 +396,53 @@
   <data name="deliveries_expires_minutes" xml:space="preserve"><value>Còn {0} phút</value></data>
   <data name="deliveries_expires_hours" xml:space="preserve"><value>Còn {0} giờ</value></data>
   <data name="deliveries_expires_days" xml:space="preserve"><value>Còn {0} ngày</value></data>
+  <data name="dl_title" xml:space="preserve"><value>Nhận file — QuickShareCloud</value></data>
+  <data name="dl_checking" xml:space="preserve"><value>Đang kiểm tra link…</value></data>
+  <data name="dl_otp_h2" xml:space="preserve"><value>Nhập mã bảo vệ</value></data>
+  <data name="dl_otp_sub" xml:space="preserve"><value>Hỏi người gửi mã 6 số để mở file này.</value></data>
+  <data name="dl_otp_unlock" xml:space="preserve"><value>Mở khoá</value></data>
+  <data name="dl_otp_verifying" xml:space="preserve"><value>Đang kiểm tra…</value></data>
+  <data name="dl_otp_incomplete" xml:space="preserve"><value>Vui lòng nhập đủ 6 số.</value></data>
+  <data name="dl_otp_wrong" xml:space="preserve"><value>Mã không đúng.</value></data>
+  <data name="dl_ad_title" xml:space="preserve"><value>Gửi bằng QuickShareCloud</value></data>
+  <data name="dl_ad_sub" xml:space="preserve"><value>Gửi file lớn, mã hoá đầu-cuối.</value></data>
+  <data name="dl_ad_upgrade" xml:space="preserve"><value>Xem gói</value></data>
+  <data name="dl_ad_countdown" xml:space="preserve"><value>Tiếp tục sau {0}s</value></data>
+  <data name="dl_ad_skip" xml:space="preserve"><value>Bỏ qua</value></data>
+  <data name="dl_spec_size" xml:space="preserve"><value>Dung lượng</value></data>
+  <data name="dl_spec_downloads_left" xml:space="preserve"><value>Lượt tải còn</value></data>
+  <data name="dl_spec_expires" xml:space="preserve"><value>Hết hạn</value></data>
+  <data name="dl_badge_encrypted" xml:space="preserve"><value>Mã hoá trong trình duyệt</value></data>
+  <data name="dl_badge_detail" xml:space="preserve"><value>Cơ chế</value></data>
+  <data name="dl_fact_key_title" xml:space="preserve"><value>Khoá chưa từng đi qua máy chủ</value></data>
+  <data name="dl_fact_key_body" xml:space="preserve"><value>Nó nằm ở phần link sau dấu #, mà trình duyệt không bao giờ gửi lên máy chủ. Chính trình duyệt của bạn giải mã file, ngay trên máy này.</value></data>
+  <data name="dl_fact_expiry_title" xml:space="preserve"><value>Link tự xoá</value></data>
+  <data name="dl_fact_expiry_body" xml:space="preserve"><value>File tự động bị xoá khi hết hạn. Không ai phải nhớ dọn nó.</value></data>
+  <data name="dl_fact_limit_title" xml:space="preserve"><value>Số lượt tải có giới hạn</value></data>
+  <data name="dl_fact_limit_body" xml:space="preserve"><value>Người gửi đặt giới hạn. Hết lượt là link ngừng hoạt động, kể cả khi người khác có link.</value></data>
+  <data name="dl_stats_downloads" xml:space="preserve"><value>lượt tải</value></data>
+  <data name="dl_stats_max" xml:space="preserve"><value>tối đa</value></data>
+  <data name="dl_preview_loading" xml:space="preserve"><value>Đang tải nội dung…</value></data>
+  <data name="dl_preview_lines" xml:space="preserve"><value>{0} dòng đầu trong {1}</value></data>
+  <data name="dl_preview_copy" xml:space="preserve"><value>Sao chép</value></data>
+  <data name="dl_preview_copied" xml:space="preserve"><value>Đã chép</value></data>
+  <data name="dl_preview_more" xml:space="preserve"><value>Xem toàn bộ</value></data>
+  <data name="dl_download" xml:space="preserve"><value>Tải về</value></data>
+  <data name="dl_decrypting" xml:space="preserve"><value>Đang giải mã…</value></data>
+  <data name="dl_download_failed" xml:space="preserve"><value>Tải thất bại</value></data>
+  <data name="dl_expired_h1" xml:space="preserve"><value>Link đã hết hạn</value></data>
+  <data name="dl_expired_sub" xml:space="preserve"><value>File được xoá tự động sau khi hết hạn. Hãy nhờ người gửi gửi lại.</value></data>
+  <data name="dl_notfound_h1" xml:space="preserve"><value>Link không tồn tại</value></data>
+  <data name="dl_notfound_sub" xml:space="preserve"><value>File có thể đã bị xoá, hoặc link bị sai.</value></data>
+  <data name="dl_limit_h1" xml:space="preserve"><value>Đã hết lượt tải</value></data>
+  <data name="dl_limit_sub" xml:space="preserve"><value>File này đã dùng hết lượt tải. Hãy nhờ người gửi gửi lại.</value></data>
+  <data name="dl_error_h1" xml:space="preserve"><value>Có lỗi xảy ra</value></data>
+  <data name="dl_error_sub" xml:space="preserve"><value>Không kết nối được dịch vụ tải. Vui lòng thử lại.</value></data>
+  <data name="dl_error_retry" xml:space="preserve"><value>Thử lại</value></data>
+  <data name="dl_send_a_file" xml:space="preserve"><value>Gửi file</value></data>
+  <data name="dl_expiry_none" xml:space="preserve"><value>không hết hạn</value></data>
+  <data name="dl_expiry_expired" xml:space="preserve"><value>đã hết hạn</value></data>
+  <data name="dl_expiry_min" xml:space="preserve"><value>hết hạn sau {0} phút</value></data>
+  <data name="dl_expiry_hour" xml:space="preserve"><value>hết hạn sau {0} giờ</value></data>
+  <data name="dl_expiry_day" xml:space="preserve"><value>hết hạn sau {0} ngày</value></data>
 </root>

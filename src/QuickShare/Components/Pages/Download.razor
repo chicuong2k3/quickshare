@@ -8,15 +8,17 @@
 @using System.Text.Json.Serialization
 @using QuickShare.Infrastructure
 @using QuickShare.Features.Downloads.Info
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
     var apiBase = string.Empty;
 }
 
-<PageTitle>Receive a file — QuickShareCloud</PageTitle>
+<PageTitle>@Loc["dl_title"]</PageTitle>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+<script id="download-i18n" type="application/json">@RawJson(Strings())</script>
 
 <PageWrapper id="download-app" Variant="PageVariant.Centered">
     @if (Info is not null)
@@ -30,20 +32,20 @@
                 case DownloadRenderState.Loading:
                     <div class="db-text-center" style="padding: 2.5rem 0">
                         <div class="db-spinner"></div>
-                        <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">Checking link&hellip;</p>
+                        <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">@Loc["dl_checking"]</p>
                     </div>
                     break;
 
                 case DownloadRenderState.Ready:
                     @* OTP Gate *@
-                    <div id="download-phase-otp" class="db-text-center hidden">
+                    <div id="download-phase-otp" class="db-text-center @PhaseClass(PhaseOtp)">
                         <div class="icon-box --lock">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                             </svg>
                         </div>
-                        <h2 class="db-h2" style="font-size: 1.125rem">Enter security code</h2>
-                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">Ask the sender for the 6-digit code to unlock this file.</p>
+                        <h2 class="db-h2" style="font-size: 1.125rem">@Loc["dl_otp_h2"]</h2>
+                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_otp_sub"]</p>
                         <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
                             <div id="dl-otp" class="db-otp" style="gap: 0.5rem">
                                 <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" />
@@ -55,29 +57,30 @@
                             </div>
                             <p id="dl-otp-error" class="error hidden"></p>
                             <button id="dl-otp-btn" type="button" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
-                                <span id="dl-otp-btn-text">Unlock</span>
+                                <span id="dl-otp-btn-text">@Loc["dl_otp_unlock"]</span>
                             </button>
                         </div>
                     </div>
 
                     @* Ad Interstitial *@
+                    @* Never server-rendered: an ad nobody can dismiss without JS must not stand between a recipient and their file. JS raises it. *@
                     <div id="download-phase-ad" class="db-text-center hidden" style="padding: 1.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M7 4v16 M17 4v16 M2 12h20 M2 8h20" />
                             </svg>
                         </div>
-                        <h3 class="db-h3" style="font-size: 1rem">Powered by QuickShareCloud</h3>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Send large files securely with end-to-end encryption. <a href="/pricing" class="link">Upgrade for more</a></p>
+                        <h3 class="db-h3" style="font-size: 1rem">@Loc["dl_ad_title"]</h3>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_ad_sub"] <a href="/pricing" class="link">@Loc["dl_ad_upgrade"]</a></p>
                         <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.75rem; color: var(--db-color-text-muted)">
                             <svg class="badge--sovereign" style="width: 0.875rem; height: 0.875rem" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                            <span id="dl-ad-countdown">Continue in 5s</span>
+                            <span id="dl-ad-countdown"></span>
                         </div>
-                        <button type="button" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">Skip ad</button>
+                        <button type="button" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">@Loc["dl_ad_skip"]</button>
                     </div>
 
                     @* File Card *@
-                    <div id="download-phase-file" class="hidden">
+                    <div id="download-phase-file" class="@PhaseClass(PhaseFile)">
 
                         <div class="file-row">
                             <div class="file-icon">@FileIcon(Info?.ContentType)</div>
@@ -86,9 +89,9 @@
                                    attribute is the only copy of a truncated name. *@
                                 <h1 class="file-name" title="@Info?.FileName">@Info?.FileName</h1>
                                 <dl class="file-specs">
-                                    <div><dt class="miura-spec">Size</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
-                                    <div><dt class="miura-spec">Downloads left</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
-                                    <div><dt class="miura-spec">Expires</dt><dd>@ExpiryLabel</dd></div>
+                                    <div><dt class="miura-spec">@Loc["dl_spec_size"]</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
+                                    <div><dt class="miura-spec">@Loc["dl_spec_downloads_left"]</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
+                                    <div><dt class="miura-spec">@Loc["dl_spec_expires"]</dt><dd>@ExpiryLabel</dd></div>
                                 </dl>
                             </div>
                         </div>
@@ -98,33 +101,34 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                                 </svg>
-                                End-to-end encrypted
+                                @Loc["dl_badge_encrypted"]
                             </div>
                             <button type="button" id="dl-zk-btn" class="badge --sovereign" onclick="downloadApp.toggleZK()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                                 </svg>
-                                Verified
+                                @Loc["dl_badge_detail"]
                             </button>
                         </div>
 
                         <div id="dl-zk-panel" class="zk-panel hidden">
-                            <div class="zk-row">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">File integrity confirmed</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File integrity verified via cryptographic attestation.</p></div>
+                            @* Only shown when the link actually carries a key. *@
+                            <div class="zk-row hidden" id="dl-fact-key">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_key_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_key_body"]</p></div>
                             </div>
                             <div class="zk-row">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">No tampering detected</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File has not been tampered with since upload.</p></div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_expiry_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_expiry_body"]</p></div>
                             </div>
                             <div class="zk-row">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">Hash integrity check passed</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">SHA-256 hash matches the original upload manifest.</p></div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h10"/></svg>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_limit_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_limit_body"]</p></div>
                             </div>
                             <div class="zk-stats">
-                                <span><span id="dl-download-count" style="font-weight: 500; color: var(--db-color-text)">0</span> downloads</span>
+                                <span><span id="dl-download-count" style="font-weight: 500; color: var(--db-color-text)">0</span> @Loc["dl_stats_downloads"]</span>
                                 <span>&middot;</span>
-                                <span><span id="dl-max-downloads" style="font-weight: 500; color: var(--db-color-text)">0</span> max</span>
+                                <span><span id="dl-max-downloads" style="font-weight: 500; color: var(--db-color-text)">0</span> @Loc["dl_stats_max"]</span>
                                 <span>&middot;</span>
                                 <span id="dl-expires-label"></span>
                             </div>
@@ -136,20 +140,20 @@
                             <div class="text-preview__bar">
                                 <span id="dl-text-status" class="text-preview__status"></span>
                                 <button type="button" id="dl-text-copy" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.copyText()">
-                                    <span id="dl-text-copy-label">Copy</span>
+                                    <span id="dl-text-copy-label">@Loc["dl_preview_copy"]</span>
                                 </button>
                             </div>
                             <pre id="dl-text-body" class="text-preview__body"></pre>
-                            <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">Show full text</button>
+                            <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
                         </div>
 
                         <div style="margin-top: 2rem">
-                            <button id="dl-download-btn" type="button" class="btn" onclick="downloadApp.handleDownload()" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
+                            <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
                                 <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
-                                <span id="dl-download-text">Download</span>
-                            </button>
+                                <span id="dl-download-text">@Loc["dl_download"]</span>
+                            </a>
                         </div>
 
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
@@ -164,9 +168,9 @@
                                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This shared file has expired</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Shared files are removed automatically after expiry. Ask the sender to re-send.</p>
-                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
@@ -177,24 +181,25 @@
                                 <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This link doesn&rsquo;t exist</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">The file may have been removed or the link is incorrect.</p>
-                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_notfound_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_notfound_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.LimitReached:
                     <div class="db-text-center" style="padding: 2.5rem 0">
-                        <h1 class="db-h1" style="font-size: 1.25rem">Download limit reached</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">This shared file has reached its download limit. Ask the sender to re-send.</p>
-                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                        <h1 class="db-h1" style="font-size: 1.25rem">@Loc["dl_limit_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_limit_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.Error:
                     <div class="db-text-center" style="padding: 2.5rem 0">
-                        <h1 class="db-h1" style="font-size: 1.25rem">Something went wrong</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">We couldn&rsquo;t reach the download service. Please try again.</p>
+                        <h1 class="db-h1" style="font-size: 1.25rem">@Loc["dl_error_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_error_sub"]</p>
+                        <a href="" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_error_retry"]</a>
                     </div>
                     break;
             }
@@ -206,7 +211,39 @@
 </PageWrapper>
 
 @code {
+    private const string PhaseOtp = "otp";
+    private const string PhaseFile = "file";
+
     [Parameter] public string ShareCode { get; set; } = string.Empty;
+
+    // The server renders the phase that works without JS. The ad phase never
+    // qualifies, so JS raises that one after the page is already usable.
+    private string InitialPhase => Info?.HasOtp == true ? PhaseOtp : PhaseFile;
+
+    private string PhaseClass(string phase) => InitialPhase == phase ? string.Empty : "hidden";
+
+    // download.js reads its copy from here rather than carrying English literals.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["otpIncomplete"] = Loc["dl_otp_incomplete"],
+        ["otpWrong"] = Loc["dl_otp_wrong"],
+        ["otpVerifying"] = Loc["dl_otp_verifying"],
+        ["otpUnlock"] = Loc["dl_otp_unlock"],
+        ["adCountdown"] = Loc["dl_ad_countdown"],
+        ["previewLoading"] = Loc["dl_preview_loading"],
+        ["previewLines"] = Loc["dl_preview_lines"],
+        ["copy"] = Loc["dl_preview_copy"],
+        ["copied"] = Loc["dl_preview_copied"],
+        ["download"] = Loc["dl_download"],
+        ["decrypting"] = Loc["dl_decrypting"],
+        ["downloadFailed"] = Loc["dl_download_failed"],
+        ["expiryNone"] = Loc["dl_expiry_none"],
+        ["expiryExpired"] = Loc["dl_expiry_expired"],
+        ["expiryMin"] = Loc["dl_expiry_min"],
+        ["expiryHour"] = Loc["dl_expiry_hour"],
+        ["expiryDay"] = Loc["dl_expiry_day"],
+        ["initialPhase"] = InitialPhase,
+    };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
     private string ExpiryLabel { get; set; } = string.Empty;
@@ -287,6 +324,8 @@
     // which breaks JSON.parse in download.js (quotes become &quot;). The default
     // System.Text.Json encoder escapes <, > and & so raw emission stays safe.
     private static MarkupString RawJson(DownloadInfoDto? info) => new(info is null ? "{}" : JsonSerializer.Serialize(info, JsonOptions));
+
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
     private enum DownloadRenderState { Loading, Ready, Expired, NotFound, LimitReached, Error }
     private sealed class DownloadInfoDto

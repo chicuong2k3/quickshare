@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="grunge-dark">
+@* lang follows the request culture; a hardcoded "en" mislabels every
+   Vietnamese page for screen readers and translation tools. *@
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="grunge-dark">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
