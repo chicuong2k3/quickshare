@@ -60,6 +60,16 @@ protected override async Task OnInitializedAsync()
 - **Page static** hoàn toàn (không async, không DB/API) không cần lazy-load.
 - `[StreamRendering]` chỉ chấp nhận khi không thể tách shell + partial (interdependency phức tạp). Kể cả vậy, vẫn ưu tiên lazy-load.
 
+## Design System
+
+`DESIGN.md` là nguồn chuẩn cho mọi thứ nhìn thấy được. Đọc nó trước khi viết CSS.
+
+- **Token `--db-*` là lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`). Đổi *giá trị*, **không bao giờ đổi tên** — ~322 lượt dùng class `db-*` trong markup phụ thuộc vào chúng.
+- **Vàng foil là fill, không bao giờ là màu chữ** (2.1:1 trên nền sheet). Chữ dùng `--db-color-accent-text`. Xanh valley = trạng thái đang hoạt động. Xám mountain = trạng thái nghỉ.
+- Radius = 0 ở tầng token. Hình học của tờ giấy là `skewX(-14deg)`, glyph bên trong counter-skew `skewX(14deg)`.
+- Kích thước chữ phải nằm trong tập đóng khai báo ở `DESIGN.md` (`typography.scale`). Ngoài danh sách đó là lỗi, không phải lựa chọn.
+- **Trang download phải chạy được khi không có JS**: server render sẵn phase dùng được, JS chỉ chuyển tiếp từ đó. Đừng bao giờ đưa `class="hidden"` trở lại phase mặc định — `DownloadNoScriptTests` sẽ chặn.
+
 ## Code Style
 
 - **One statement per line** — không gộp nhiều câu lệnh trên cùng một dòng. Mỗi câu lệnh phải nằm trên dòng riêng của nó.
@@ -102,15 +112,15 @@ Làm theo thứ tự con người sẽ làm:
 2. **Cần entity mới?** Thêm class vào `Data/Entities/`, thêm `DbSet` vào `AppDbContext`, chạy `dotnet ef migrations add <Tên>` (output vào `Data/Migrations/`).
 3. **API endpoint**: tạo folder `Features/<Tên>/<Action>/` với tối đa 3 file: `<Action>Endpoint.cs` (FastEndpoints — auto-discover, KHÔNG cần đăng ký ở đâu), `<Action>Handler.cs` (Wolverine handler nhận command/query record — cũng auto-discover), `<Action>Validator.cs` (FluentValidation, chỉ khi có input). Tag endpoint bằng const trong `ApiTags`.
 4. **Hằng số**: route, error code, limit, header… vào `Infrastructure/Constants/` — không hardcode.
-5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này. JS riêng của page vào `wwwroot/js/<tên>.js` và expose qua 1 object global (xem `download.js`).
+5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này và **hệ thị giác trong `DESIGN.md`** (xem mục Design System bên dưới). JS riêng của page vào `wwwroot/js/<tên>.js` và expose qua 1 object global (xem `download.js`). Chuỗi hiển thị cho người dùng vào `SharedLoc.{en,vi}.resx`, **không hardcode** — chuỗi mà JS cần thì truyền qua một block JSON trong page (xem `download-i18n`).
 6. **Service**: service chỉ 1 feature dùng → đặt ngay trong folder feature đó (vd `P2PQuotaService` nằm trong `Features/Shares/P2P/`). Chỉ khi ≥2 feature dùng chung mới đưa vào `Infrastructure/`. Đăng ký DI trong `Program.cs`.
-7. **Test**: thêm E2E test vào `tests/QuickShare.Server.Tests/E2E/`, dùng `TestWebAppFactory` (xem `DeliveryExtrasApiTests` làm mẫu seed data + client).
+7. **Test**: E2E phía server vào `tests/QuickShare.Server.Tests/E2E/`, dùng `TestWebAppFactory` (xem `DeliveryExtrasApiTests` làm mẫu seed data + client). Logic **chỉ tồn tại trong trình duyệt** (clipboard, sessionStorage, chuyển phase bằng JS) thì dùng `BrowserAppFixture` + Playwright (xem `PasteBrowserTests`) — nó chạy app như process thật và lái Chrome đã cài, không tải browser bundle.
 8. **Xoá feature**: xoá folder `Features/<Tên>/` là endpoint + handler tự biến mất (auto-discovery), sau đó grep tên feature để dọn UI/JS/CSS/test còn tham chiếu.
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **quickshare** (2112 symbols, 5008 relationships, 156 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **quickshare** (2372 symbols, 5698 relationships, 177 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

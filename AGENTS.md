@@ -96,7 +96,19 @@ protected override async Task OnInitializedAsync()
 - **One statement per line** — do not chain multiple statements on a single line. Each statement must be on its own line.
 - **`string.Empty`, never `""`** — always use `string.Empty` instead of `""` for empty strings. Exception: `""` is required where the language mandates a compile-time constant (`const` declarations, attribute arguments, default parameter values, `switch` `case` labels) — everywhere else use `string.Empty`.
 - **No magic strings / numbers** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed). Protocol identifiers, HTTP headers, route paths, config keys, entity statuses, roles, and wire formats MUST be centralized in `static class` string constants (e.g. `AuthConstants`, `PlanTierLimits`, `P2PProtocol`, `RoutePaths`).
-- **Isolation CSS** — always use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`).
+- **Isolation CSS** — use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`). **Exception:** markup returned inside an HTMX partial does not carry the requesting component's scope attribute, so anything rendered that way must be styled from `wwwroot/css/app.css` with a prefixed global class (`account-`, `files-`, …).
+- **User-facing strings live in `SharedLoc.{en,vi}.resx`** — never hardcode display copy in a page. Strings that JavaScript needs are handed to it as a JSON block rendered by the page (see `download-i18n`), so no `.js` file carries English literals.
+
+## Design System
+
+`DESIGN.md` is the source of record for everything visible. Read it before writing CSS.
+
+- **`--db-*` tokens are an override layer on the DAUB vendor stylesheet** (`https://daub.dev/daub.css`). Change *values*, **never names** — ~322 `db-*` class usages in markup depend on them.
+- **Foil gold is a fill and never a text colour** (2.1:1 on the sheet). Typographic uses take `--db-color-accent-text`. Valley blue marks the active cell; mountain gray is everything at rest.
+- Radius is zeroed at token level. The sheet's geometry is `skewX(-14deg)` with glyphs counter-skewed `skewX(14deg)`.
+- Font sizes must come from the closed set in `DESIGN.md` (`typography.scale`). Anything outside it is a defect, not a choice.
+- **The download page must work with no JavaScript**: the server renders a usable phase and JS only moves on from it. Never put `class="hidden"` back on the default phase — `DownloadNoScriptTests` will fail.
+- Browser-only logic (clipboard, sessionStorage, JS phase switching) is covered by `BrowserAppFixture` + Playwright (see `PasteBrowserTests`), which runs the app as a real process and drives the installed Chrome rather than downloading a browser bundle.
 
 ## HTMX Usage
 
@@ -153,7 +165,7 @@ protected override async Task OnInitializedAsync()
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **quickshare** (2112 symbols, 5008 relationships, 156 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **quickshare** (2372 symbols, 5698 relationships, 177 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
