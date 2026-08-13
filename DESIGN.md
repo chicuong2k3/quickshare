@@ -29,7 +29,13 @@ colors:
   dark-foil-ink: "#E8CB70"
   dark-ink: "#F2F1ED"
   dark-ink-soft: "#A5A49E"
+  # Third-party brand colours, allowed only on the control they belong to:
+  github-brand: "#24292f"        # GitHub provider button border only
+  foil-specular: "rgba(255,255,255,0.34)"  # the highlight pass across foil
 typography:
+  # The closed size set. Anything outside this list is a defect, not a choice.
+  # Small end steps in 1/16rem because mono spec labels live there.
+  scale: ["0.5625rem", "0.625rem", "0.6875rem", "0.75rem", "0.8125rem", "0.875rem", "0.9375rem", "1rem", "1.125rem", "1.25rem", "1.375rem", "2rem", "2.25rem", "3.25rem", "3.5rem"]
   display:
     fontFamily: "Outfit, system-ui, sans-serif"
     fontSize: "clamp(2.1rem, 7vw, 4.25rem)"

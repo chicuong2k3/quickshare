@@ -571,7 +571,7 @@ body::after,
 .db-navbar {
     height: 3.25rem !important;
     background: transparent !important;
-    border-bottom: 1px solid rgba(28,22,16,0.06) !important;
+    border-bottom: 1px solid var(--db-mountain) !important;
     box-shadow: none !important;
 }
 
@@ -587,7 +587,7 @@ body::after,
     text-align: center;
     font-size: var(--db-text-sm);
     color: var(--db-color-text-muted);
-    border-top: 1px solid rgba(28,22,16,0.06);
+    border-top: 1px solid var(--db-mountain);
 }
 
 /* Page content wrapper — center + constrain */
@@ -1142,5 +1142,55 @@ html, body {
 @media (max-width: 560px) {
     .miura-spec {
         letter-spacing: 0.1em;
+    }
+}
+
+/* ─── Deployment ─────────────────────────────────────────────────
+   The world is named for a sheet that opens in one pull, so the page
+   gets exactly one authored motion: the moment a packet is created
+   (upload success) or opened (the download file card). Both start life
+   as .hidden, so the keyframe fires the instant JS reveals them and
+   never on an already-visible element. Nothing else animates. ──── */
+@keyframes miura-deploy {
+    from {
+        opacity: 0;
+        transform: perspective(1400px) rotateX(-34deg) scaleY(0.76);
+    }
+    to {
+        opacity: 1;
+        transform: perspective(1400px) rotateX(0) scaleY(1);
+    }
+}
+
+@keyframes miura-deploy-cell {
+    from {
+        opacity: 0;
+        clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+    }
+    to {
+        opacity: 1;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+}
+
+#upload-success,
+#download-phase-file {
+    transform-origin: top center;
+    animation: miura-deploy 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* The share link and the file's spec block land after the sheet is flat,
+   the way a Miura panel settles last. */
+#upload-success .share-box,
+#download-phase-file .file-specs {
+    animation: miura-deploy-cell 460ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #upload-success,
+    #download-phase-file,
+    #upload-success .share-box,
+    #download-phase-file .file-specs {
+        animation: none;
     }
 }

@@ -82,14 +82,18 @@
 }
 
 /* ─── Plan cells ─── */
+/* The plans are panels of ONE sheet spanning the frame, divided by creases.
+   The thesis refuses centered cards on a soft ground, so the sheet breaks
+   out of the page gutter and runs edge to edge. */
 .cards {
     display: grid;
     gap: 0;
     background: transparent;
-    max-width: 72rem;
-    margin-inline: auto;
-    padding-bottom: var(--db-space-8);
-    border: 1px solid var(--db-mountain);
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-bottom: 0;
+    border-top: 1px solid var(--db-mountain);
+    border-bottom: 1px solid var(--db-mountain);
 }
 
 @media (min-width: 640px) {
@@ -104,12 +108,32 @@
         grid-template-columns: repeat(3, 1fr);
         align-items: stretch;
     }
+
+    .card {
+        padding: var(--db-space-8) clamp(var(--db-space-6), 4vw, var(--db-space-9));
+    }
+
+    .card:first-child {
+        border-left: none;
+    }
+}
+
+@media (max-width: 1023px) {
+    .card {
+        border-left: none;
+        border-top: 1px solid var(--db-mountain);
+    }
+
+    .card:first-child {
+        border-top: none;
+    }
 }
 
 /* One hairline between cells: the grid gap IS the crease. */
 .card {
     border: none;
-    outline: 1px solid var(--db-mountain);
+    /* The crease between panels, drawn once so panels share one line. */
+    border-left: 1px solid var(--db-mountain);
     /* A cell of the sheet: the ground reads through, and the bottom-left
        corner is clipped to a valley the way the board's cells are. */
     background:

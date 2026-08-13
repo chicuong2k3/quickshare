@@ -14,7 +14,7 @@
     var apiBase = string.Empty;
 }
 
-<PageTitle>Nhận file — QuickShareCloud</PageTitle>
+<PageTitle>Receive a file — QuickShareCloud</PageTitle>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
@@ -86,9 +86,9 @@
                                    attribute is the only copy of a truncated name. *@
                                 <h1 class="file-name" title="@Info?.FileName">@Info?.FileName</h1>
                                 <dl class="file-specs">
-                                    <div><dt class="miura-spec">Dung lượng</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
-                                    <div><dt class="miura-spec">Lượt tải còn</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
-                                    <div><dt class="miura-spec">Hết hạn</dt><dd>@ExpiryLabel</dd></div>
+                                    <div><dt class="miura-spec">Size</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
+                                    <div><dt class="miura-spec">Downloads left</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
+                                    <div><dt class="miura-spec">Expires</dt><dd>@ExpiryLabel</dd></div>
                                 </dl>
                             </div>
                         </div>
