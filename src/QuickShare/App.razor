@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 @* lang follows the request culture; a hardcoded "en" mislabels every
    Vietnamese page for screen readers and translation tools. *@
-<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="grunge-dark">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="grunge-light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
     <title>QuickShareCloud</title>
 
     <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#EFE6D6" />
+    <meta name="theme-color" content="#EFEEEA" />
     <base href="/" />
 
     @* Outfit (display + UI, set light and wide-tracked) + Azeret Mono (spec labels, codes, measurements) *@
@@ -22,7 +22,7 @@
         (function() {
             try {
                 var family = window.localStorage.getItem('db-family') || 'grunge';
-                var scheme = window.localStorage.getItem('db-scheme') || 'dark';
+                var scheme = window.localStorage.getItem('db-scheme') || 'light';
                 // Map family+scheme to theme variant
                 var familyMap = {
                     grunge: { dark: 'grunge-dark', light: 'grunge-light' },
@@ -32,7 +32,7 @@
                     ember: { dark: 'ember', light: 'ember-light' },
                     bone: { dark: 'bone-dark', light: 'bone' }
                 };
-                var theme = (familyMap[family] && familyMap[family][scheme]) || 'grunge-dark';
+                var theme = (familyMap[family] && familyMap[family][scheme]) || 'grunge-light';
                 document.documentElement.setAttribute('data-theme', theme);
             } catch (e) {}
         })();
@@ -52,12 +52,13 @@ DIRECTION CONTRACT · seed 46c7765a
 THESIS: Ciphertext is a folded sheet; the key in the link is the one pull that deploys it. The
 server holds a packet it cannot open. Refuses the category's centered white card on a soft ground.
 OWN-WORLD: Matte sheet stock, 60-degree crease lattice, hairline rules ending in mono spec labels,
-parallelogram cells with cut corners, zero radius. Foil gold marks the single deployable action;
+parallelogram cells with cut corners, zero radius. Foil gold marks the single deployable action,
+stamped on ink so it may be type;
 valley blue marks the active cell; mountain gray is everything at rest.
 STORY: A stranger from a chat sees a packet with real measurements on it, watches their own browser
 pull it open, and takes the file.
 FIRST VIEWPORT: Crease lattice full-bleed; the delivery as a folded packet with its true specs
-(bytes, parts, expiry, code) in mono along hairlines; the deploy action is a gold parallelogram tab.
+(bytes, parts, expiry, code) in mono along hairlines; the deploy action is a foil stamp on ink.
 FORM: Miura deployable sheet — user-pinned challenger; roll 46c7765a assigned index 5 (bearer ticket).
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->
@@ -65,11 +66,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
     <script src="https://daub.dev/daub.js"></script>
     <script>
-        // Set grunge theme family (defaults to dark scheme)
+        // Set grunge theme family (defaults to the light sheet)
         (function() {
             if (window.DAUB) {
                 var family = window.localStorage.getItem('db-family') || 'grunge';
-                var scheme = window.localStorage.getItem('db-scheme') || 'dark';
+                var scheme = window.localStorage.getItem('db-scheme') || 'light';
                 window.DAUB.setFamily(family);
                 window.DAUB.setScheme(scheme);
             }

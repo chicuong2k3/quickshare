@@ -77,7 +77,7 @@
     background:
         repeating-linear-gradient(60deg,
             transparent 0 47px,
-            rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+            var(--db-lattice) 47px 48px),
         var(--db-color-surface);
     padding: var(--db-space-9) var(--db-space-6);
     cursor: pointer;

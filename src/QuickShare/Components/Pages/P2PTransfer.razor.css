@@ -68,7 +68,7 @@
     padding: var(--db-space-7) var(--db-space-6);
     border: 1px solid var(--db-mountain);
     background:
-        repeating-linear-gradient(60deg, transparent 0 47px, rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+        repeating-linear-gradient(60deg, transparent 0 47px, var(--db-lattice) 47px 48px),
         var(--db-color-surface);
     cursor: pointer;
     display: flex;
