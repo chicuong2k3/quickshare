@@ -9,6 +9,8 @@
 
 <PageWrapper id="account-app" Variant="PageVariant.Account">
 
+    <AccountTabs Current="@RoutePaths.Account" />
+
     @* Profile Card — HTMX lazy loaded *@
     <HtmxFragment>
     <div id="profile-card" class="db-card account-card"

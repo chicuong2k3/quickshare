@@ -377,4 +377,21 @@
   <data name="upgrade_feat_studio_3" xml:space="preserve"><value>Unlimited transfers</value></data>
   <data name="upgrade_feat_studio_5" xml:space="preserve"><value>API access</value></data>
   <data name="upgrade_feat_studio_6" xml:space="preserve"><value>Dedicated support</value></data>
+  <data name="account_tab_profile" xml:space="preserve"><value>Profile</value></data>
+  <data name="account_tab_deliveries" xml:space="preserve"><value>Deliveries</value></data>
+  <data name="account_tab_billing" xml:space="preserve"><value>Subscription</value></data>
+  <data name="deliveries_title" xml:space="preserve"><value>Deliveries — QuickShareCloud</value></data>
+  <data name="deliveries_h1" xml:space="preserve"><value>Deliveries</value></data>
+  <data name="deliveries_lead" xml:space="preserve"><value>How many downloads each link has left before it stops working.</value></data>
+  <data name="deliveries_loading" xml:space="preserve"><value>Loading deliveries...</value></data>
+  <data name="deliveries_empty" xml:space="preserve"><value>Nothing here yet. Links you send show up on this page.</value></data>
+  <data name="deliveries_empty_free" xml:space="preserve"><value>Free links expire after 2 hours.</value></data>
+  <data name="deliveries_empty_cta" xml:space="preserve"><value>Send a file</value></data>
+  <data name="deliveries_downloads" xml:space="preserve"><value>{0} of {1} downloads used</value></data>
+  <data name="deliveries_exhausted" xml:space="preserve"><value>Download limit reached — this link no longer works.</value></data>
+  <data name="deliveries_expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="deliveries_no_expiry" xml:space="preserve"><value>No expiry</value></data>
+  <data name="deliveries_expires_minutes" xml:space="preserve"><value>{0} min left</value></data>
+  <data name="deliveries_expires_hours" xml:space="preserve"><value>{0} h left</value></data>
+  <data name="deliveries_expires_days" xml:space="preserve"><value>{0} d left</value></data>
 </root>

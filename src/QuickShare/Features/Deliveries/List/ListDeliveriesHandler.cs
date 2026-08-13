@@ -2,7 +2,7 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.List;
 
-public record ListDeliveriesQuery;
+public record ListDeliveriesQuery(string? Cursor = null, int Limit = DeliveryPaging.DefaultLimit);
 
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
@@ -10,17 +10,30 @@ public record DeliveryItem(
     DateTime? ExpiresAt, DateTime CreatedAt
 );
 
+public static class DeliveryPaging
+{
+    public const int DefaultLimit = 20;
+    public const int MaxLimit = 100;
+}
+
 public sealed class ListDeliveriesHandler
 {
-    public async Task<Result<DeliveryItem[]>> Handle(ListDeliveriesQuery _, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async Task<Result<CursorPage<DeliveryItem>>> Handle(
+        ListDeliveriesQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
     {
         var user = await http.HttpContext!.User.GetUserAsync(db, ct);
         var userId = user.Id;
-        var items = await db.Deliveries
+        var limit = Math.Clamp(query.Limit, 1, DeliveryPaging.MaxLimit);
+
+        // Not cached: this list changes on every download, and a stale count here is exactly
+        // the bug the page exists to avoid.
+        var page = await db.Deliveries
+            .AsNoTracking()
             .Where(d => d.SenderId == userId)
-            .OrderByDescending(d => d.CreatedAt)
-            .Select(d => new DeliveryItem(d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode, d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt))
-            .ToArrayAsync(ct);
-        return Result.Success(items);
+            .ToCursorPageAsync(query.Cursor, limit, d => new DeliveryItem(
+                d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode,
+                d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt), ct);
+
+        return Result.Success(page);
     }
 }

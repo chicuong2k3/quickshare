@@ -1,7 +1,7 @@
 namespace QuickShare.Data.Entities;
 
 [DynamicSort]
-public record BaseAuditEntity
+public record BaseAuditEntity : ICursorKeyed
 {
     public Guid Id { get; init; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;

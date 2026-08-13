@@ -8,6 +8,7 @@ public static class RoutePaths
     public const string Upgrade = "/upgrade";
     public const string Account = "/account";
     public const string AccountBilling = "/account/billing";
+    public const string AccountDeliveries = "/account/deliveries";
     public const string Login = "/login";
     public const string Logout = "/logout";
     public const string P2p = "/p2p";

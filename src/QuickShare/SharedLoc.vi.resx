@@ -378,4 +378,21 @@
   <data name="upgrade_feat_studio_3" xml:space="preserve"><value>Không giới hạn chuyển</value></data>
   <data name="upgrade_feat_studio_5" xml:space="preserve"><value>Truy cập API</value></data>
   <data name="upgrade_feat_studio_6" xml:space="preserve"><value>Hỗ trợ riêng</value></data>
+  <data name="account_tab_profile" xml:space="preserve"><value>Hồ sơ</value></data>
+  <data name="account_tab_deliveries" xml:space="preserve"><value>File đã gửi</value></data>
+  <data name="account_tab_billing" xml:space="preserve"><value>Gói đăng ký</value></data>
+  <data name="deliveries_title" xml:space="preserve"><value>File đã gửi — QuickShareCloud</value></data>
+  <data name="deliveries_h1" xml:space="preserve"><value>File đã gửi</value></data>
+  <data name="deliveries_lead" xml:space="preserve"><value>Mỗi link còn lại bao nhiêu lượt tải trước khi ngừng hoạt động.</value></data>
+  <data name="deliveries_loading" xml:space="preserve"><value>Đang tải danh sách...</value></data>
+  <data name="deliveries_empty" xml:space="preserve"><value>Chưa có gì ở đây. File bạn gửi sẽ xuất hiện tại trang này.</value></data>
+  <data name="deliveries_empty_free" xml:space="preserve"><value>Link gói Free hết hạn sau 2 giờ.</value></data>
+  <data name="deliveries_empty_cta" xml:space="preserve"><value>Gửi file</value></data>
+  <data name="deliveries_downloads" xml:space="preserve"><value>Đã dùng {0} / {1} lượt tải</value></data>
+  <data name="deliveries_exhausted" xml:space="preserve"><value>Đã hết lượt tải — link này không còn hoạt động.</value></data>
+  <data name="deliveries_expired" xml:space="preserve"><value>Đã hết hạn</value></data>
+  <data name="deliveries_no_expiry" xml:space="preserve"><value>Không hết hạn</value></data>
+  <data name="deliveries_expires_minutes" xml:space="preserve"><value>Còn {0} phút</value></data>
+  <data name="deliveries_expires_hours" xml:space="preserve"><value>Còn {0} giờ</value></data>
+  <data name="deliveries_expires_days" xml:space="preserve"><value>Còn {0} ngày</value></data>
 </root>

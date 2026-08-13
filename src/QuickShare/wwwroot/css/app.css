@@ -697,3 +697,105 @@ body::after,
 .ad-upgrade-link:hover {
     color: var(--db-color-accent-hover);
 }
+
+/* ─── Account: section tabs (shared, ships inside HTMX partials) ─── */
+.account-tabs {
+    display: flex;
+    gap: var(--db-space-3);
+    border-bottom: 1px solid var(--db-color-border);
+    margin-bottom: var(--db-space-6);
+    overflow-x: auto;
+}
+
+.account-tabs__item {
+    padding: var(--db-space-3) var(--db-space-4);
+    color: var(--db-color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.account-tabs__item:hover {
+    color: var(--db-color-text);
+}
+
+.account-tabs__item--active {
+    color: var(--db-color-accent-text);
+    border-bottom-color: var(--db-color-accent);
+    font-weight: 600;
+}
+
+/* ─── Account: deliveries (download gauge) ─── */
+.account-deliveries {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-4);
+}
+
+.account-delivery {
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-color-border);
+    border-radius: var(--db-radius-3);
+    padding: var(--db-space-4);
+}
+
+.account-delivery--spent {
+    opacity: 0.65;
+}
+
+.account-delivery__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--db-space-3);
+}
+
+.account-delivery__name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-delivery__expiry {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.account-delivery__gauge {
+    height: 6px;
+    border-radius: var(--db-radius-1);
+    background: var(--db-color-bg-alt);
+    margin: var(--db-space-3) 0;
+    overflow: hidden;
+}
+
+.account-delivery__gauge-fill {
+    display: block;
+    height: 100%;
+    background: var(--db-color-accent);
+    transition: width 0.3s ease;
+}
+
+.account-delivery--spent .account-delivery__gauge-fill {
+    background: var(--db-color-text-muted);
+}
+
+.account-delivery__meta {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.account-deliveries-more {
+    height: 1px;
+}
+
+.account-deliveries-empty {
+    text-align: center;
+    padding: var(--db-space-7) var(--db-space-4);
+}
+
+.account-deliveries-empty .db-btn {
+    margin-top: var(--db-space-5);
+}

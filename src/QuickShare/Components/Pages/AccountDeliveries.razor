@@ -1,0 +1,156 @@
+@layout MainLayout
+@page "/account/deliveries"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Deliveries.List
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMessageBus Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["deliveries_title"]</PageTitle>
+
+@if (isChunkRequest)
+{
+    @* Infinite-scroll append: only the chunk is selected out of this response. *@
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <span class="tag">@Loc["account_tab_deliveries"]</span>
+        <h1 class="db-h1">@Loc["deliveries_h1"]</h1>
+        <p class="db-p db-text-muted">@Loc["deliveries_lead"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountDeliveries" />
+
+    @if (!isLoaded)
+    {
+        @* Shell skeleton — rendered instantly, no DB calls. *@
+        <section id="deliveries-body"
+                 hx-get="@RoutePaths.AccountDeliveries"
+                 hx-trigger="load"
+                 hx-target="#deliveries-body"
+                 hx-select="#deliveries-body"
+                 hx-swap="outerHTML"
+                 aria-busy="true">
+            <p class="db-text-muted">@Loc["deliveries_loading"]</p>
+        </section>
+    }
+    else
+    {
+        <section id="deliveries-body">
+            @if (items.Count == 0)
+            {
+                <div class="account-deliveries-empty">
+                    <p class="db-p">@Loc["deliveries_empty"]</p>
+                    <p class="db-text-muted">@Loc["deliveries_empty_free"]</p>
+                    <a href="@RoutePaths.Send" class="db-btn db-btn--primary">@Loc["deliveries_empty_cta"]</a>
+                </div>
+            }
+            else
+            {
+                @Chunk
+            }
+        </section>
+    }
+
+</PageWrapper>
+}
+
+@code {
+    private const string CursorQueryKey = "cursor";
+    private const string ChunkClass = "deliveries-chunk";
+    private const int GaugeFullPercent = 100;
+    private const int MinutesPerHour = 60;
+    private const int HoursPerDay = 24;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = CursorQueryKey)]
+    public string? Cursor { get; set; }
+
+    private bool isLoaded;
+    private bool isChunkRequest;
+    private List<DeliveryItem> items = [];
+    private string? nextCursor;
+
+    /// <summary>Rows plus the sentinel that pulls the next page into view — appended to itself.</summary>
+    private RenderFragment Chunk => @<div class="@ChunkClass account-deliveries">
+        @foreach (var item in items)
+        {
+            var used = Math.Min(item.DownloadCount, item.MaxDownloads);
+            var percent = item.MaxDownloads > 0 ? used * GaugeFullPercent / item.MaxDownloads : GaugeFullPercent;
+            var exhausted = item.MaxDownloads > 0 && item.DownloadCount >= item.MaxDownloads;
+
+            <article class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
+                <div class="account-delivery__head">
+                    <span class="account-delivery__name" title="@item.FileName">@item.FileName</span>
+                    <span class="account-delivery__expiry db-text-muted">@ExpiryLabel(item.ExpiresAt)</span>
+                </div>
+                <div class="account-delivery__gauge" role="img"
+                     aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
+                    <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>
+                </div>
+                <p class="account-delivery__meta db-text-muted">
+                    @if (exhausted)
+                    {
+                        <span class="account-delivery__spent-note">@Loc["deliveries_exhausted"]</span>
+                    }
+                    else
+                    {
+                        @string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)
+                    }
+                </p>
+            </article>
+        }
+
+        @if (nextCursor is not null)
+        {
+            <div class="account-deliveries-more"
+                 hx-get="@($"{RoutePaths.AccountDeliveries}?{CursorQueryKey}={nextCursor}")"
+                 hx-trigger="revealed"
+                 hx-target="this"
+                 hx-select=".@ChunkClass"
+                 hx-swap="outerHTML"
+                 aria-busy="true"></div>
+        }
+    </div>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        // Shell render: return immediately, no DB calls.
+        if (!isHtmxRequest) return;
+
+        isLoaded = true;
+        isChunkRequest = !string.IsNullOrEmpty(Cursor);
+
+        var result = await Bus.InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(
+            new ListDeliveriesQuery(Cursor), CancellationToken.None);
+
+        if (result.IsSuccess(out var page))
+        {
+            items = page.Items;
+            nextCursor = page.NextCursor;
+        }
+    }
+
+    private string ExpiryLabel(DateTime? expiresAt)
+    {
+        if (expiresAt is null) return Loc["deliveries_no_expiry"];
+
+        var remaining = expiresAt.Value - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero) return Loc["deliveries_expired"];
+        if (remaining.TotalHours < 1) return string.Format(Loc["deliveries_expires_minutes"], (int)remaining.TotalMinutes + 1);
+        if (remaining.TotalHours < HoursPerDay) return string.Format(Loc["deliveries_expires_hours"], (int)remaining.TotalHours);
+        return string.Format(Loc["deliveries_expires_days"], (int)remaining.TotalDays);
+    }
+}

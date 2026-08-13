@@ -21,6 +21,8 @@
         <h1 class="db-h1">@Loc["billing_h1"]</h1>
     </section>
 
+    <AccountTabs Current="@RoutePaths.AccountBilling" />
+
     <section class="billing-body" id="billing-body"
              hx-get="/account/billing"
              hx-trigger="@(billing is null ? "load" : "none")"
