@@ -889,6 +889,10 @@ body::after,
     border-bottom: 1px solid var(--db-mountain);
     margin-bottom: var(--db-space-6);
     overflow-x: auto;
+    /* Required, not cosmetic: a non-visible overflow-x forces overflow-y to
+       compute to auto, and the items' -1px margin (which laps the tab's
+       underline over the container's border) then trips a vertical scrollbar. */
+    overflow-y: hidden;
 }
 
 .account-tabs__item {
