@@ -166,10 +166,17 @@ var quickShareConfig = builder.Configuration.GetSection(QuickShareOptions.Sectio
 builder.Services.Configure<QuickShareOptions>(quickShareConfig);
 var quickShareOptions = quickShareConfig.Get<QuickShareOptions>() ?? new QuickShareOptions();
 
+// ── Email (Brevo SMTP by default; any SMTP relay works via config) ──
+builder.Services.Configure<QuickShare.Infrastructure.Email.EmailOptions>(
+    builder.Configuration.GetSection(QuickShare.Infrastructure.Email.EmailOptions.Section));
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.EmailSender>();
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.UnsubscribeTokens>();
+
 builder.Services.AddHostedService<DeliveryCleanupService>();
 builder.Services.AddHostedService<ZombiePartSweeper>();
 builder.Services.AddHostedService<DeliveryExpiryJob>();
 builder.Services.AddHostedService<SubscriptionExpiryJob>();
+builder.Services.AddHostedService<DownloadNotificationJob>();
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 
 builder.Services.AddScoped<PayOSService>();

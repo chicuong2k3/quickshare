@@ -176,11 +176,16 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("Notified")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DeliveryId");
 
                     b.HasIndex("DownloadedAt");
+
+                    b.HasIndex("Notified");
 
                     b.ToTable("download_tracking", (string)null);
                 });
@@ -411,6 +416,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("EmailOnDownload")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()

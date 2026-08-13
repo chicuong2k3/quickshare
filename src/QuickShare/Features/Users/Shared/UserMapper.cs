@@ -6,5 +6,6 @@ namespace QuickShare.Features.Users.Shared;
 public static partial class UserMapper
 {
     [MapperIgnoreSource(nameof(User.UpdatedAt))]
+    [MapperIgnoreSource(nameof(User.EmailOnDownload))]
     public static partial ProfileResponse ToProfileResponse(this User source);
 }

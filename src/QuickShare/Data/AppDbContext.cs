@@ -88,6 +88,7 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.DeliveryId);
             entity.HasIndex(e => e.DownloadedAt);
+            entity.HasIndex(e => e.Notified);
             entity.HasOne<Delivery>()
                 .WithMany()
                 .HasForeignKey(e => e.DeliveryId)

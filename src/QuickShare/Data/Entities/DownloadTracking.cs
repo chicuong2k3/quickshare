@@ -7,4 +7,5 @@ public record DownloadTracking
     public Guid DeliveryId { get; init; }
     public string IpAddress { get; init; } = string.Empty;
     public DateTime DownloadedAt { get; init; }
+    public bool Notified { get; set; }
 }

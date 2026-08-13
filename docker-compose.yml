@@ -36,6 +36,13 @@ services:
       - Pricing__StudioMonthly=${PRICING_STUDIO_MONTHLY:-5000}
       - Pricing__StudioYearly=${PRICING_STUDIO_YEARLY:-50000}
       - Pricing__Currency=${PRICING_CURRENCY:-VND}
+      - Email__Host=${EMAIL_HOST:-}
+      - Email__Port=${EMAIL_PORT:-587}
+      - Email__User=${EMAIL_USER:-}
+      - Email__Password=${EMAIL_PASSWORD:-}
+      - Email__From=${EMAIL_FROM:-}
+      - Email__FromName=${EMAIL_FROM_NAME:-QuickShare}
+      - Email__BaseUrl=https://quickshare.codemagic.io.vn
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s

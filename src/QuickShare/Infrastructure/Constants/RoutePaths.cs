@@ -18,4 +18,5 @@ public static class RoutePaths
     public const string UpgradeStudio = "/upgrade?plan=studio";
     public const string CookieConsent = "/api/cookie-consent";
     public const string PayOSReturn = "/payments/payos/return";
+    public const string Unsubscribe = "/unsubscribe";
 }
