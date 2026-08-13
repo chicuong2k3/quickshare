@@ -11,6 +11,17 @@
     width: 100%;
     max-width: 28rem;
     overflow: hidden;
+    border: 1px solid var(--db-mountain);
+    background:
+        linear-gradient(225deg, var(--db-valley) 0 22px, transparent 22px) top right / auto no-repeat,
+        linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
+        var(--db-color-surface);
+}
+
+/* The shell holds the cell in the upper third, not adrift in dead ground. */
+.login-shell {
+    align-items: flex-start;
+    padding-top: var(--db-space-9);
 }
 
 .login-header {
@@ -24,15 +35,16 @@
     width: 3rem;
     height: 3rem;
     margin: 0 auto var(--db-space-5);
-    border: 1px solid color-mix(in srgb, var(--db-color-accent) 35%, var(--db-color-border));
-    border-radius: var(--db-radius-3);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    color: var(--db-color-text-secondary);
+    transform: skewX(-14deg);
 }
 
 .login-mark svg {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.375rem;
+    height: 1.375rem;
+    transform: skewX(14deg);
 }
 
 .login-header .db-card__title {
@@ -41,7 +53,11 @@
 
 .login-subtitle {
     max-width: 22rem;
-    margin: var(--db-space-3) auto 0;
+    margin: var(--db-space-4) auto 0;
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
 }
 
@@ -58,6 +74,10 @@
 }
 
 .login-provider {
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -91,8 +111,8 @@
 
 
 .login-provider:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--db-color-accent) 55%, transparent) !important;
-    outline-offset: 3px;
+    outline: 2px solid var(--db-valley-ink) !important;
+    outline-offset: 2px;
 }
 
 @media (max-width: 480px) {
@@ -102,7 +122,6 @@
 
     .login-card {
         border-inline: 0;
-        border-radius: 0;
     }
 
     .login-header {

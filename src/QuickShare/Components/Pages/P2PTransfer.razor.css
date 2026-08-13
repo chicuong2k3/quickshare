@@ -31,13 +31,15 @@
 }
 
 .p2p-headline {
-    font-family: var(--db-font-heading);
-    font-size: var(--db-text-2xl);
-    font-weight: var(--db-weight-bold);
-    line-height: var(--db-leading-tight);
-    letter-spacing: -0.025em;
+    font-family: var(--db-font-display);
+    font-size: 2rem;
+    font-weight: 200;
+    text-transform: uppercase;
+    line-height: 1.02;
+    letter-spacing: 0.06em;
     color: var(--db-color-text);
     margin: 0;
+    text-wrap: balance;
 }
 
 @media (min-width: 640px) {
@@ -47,15 +49,8 @@
 }
 
 .p2p-accent {
-    background: linear-gradient(
-        90deg,
-        var(--db-color-accent) 0%,
-        color-mix(in srgb, var(--db-color-accent) 50%, var(--db-color-text)) 50%,
-        var(--db-color-accent) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--db-color-text);
+    box-shadow: inset 0 -0.22em 0 var(--db-valley);
 }
 
 .p2p-sub {
@@ -71,9 +66,10 @@
     width: 100%;
     margin-top: var(--db-space-8);
     padding: var(--db-space-7) var(--db-space-6);
-    border: 2px dashed color-mix(in srgb, var(--db-color-border) 55%, transparent);
-    border-radius: var(--db-radius-4);
-    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    background:
+        repeating-linear-gradient(60deg, transparent 0 47px, rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+        var(--db-color-surface);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -84,14 +80,14 @@
 }
 
 .p2p-dropzone:hover {
-    border-color: color-mix(in srgb, var(--db-color-accent) 60%, transparent);
-    background: var(--db-color-accent-subtle);
+    border-color: var(--db-mountain-deep);
 }
 
 .p2p-dropzone.active {
-    border-color: var(--db-color-accent);
-    border-style: solid;
-    background: var(--db-color-accent-subtle);
+    border-color: var(--db-valley-ink);
+    background:
+        repeating-linear-gradient(60deg, transparent 0 47px, rgba(63, 97, 135, 0.14) 47px 48px),
+        var(--db-valley);
 }
 
 .p2p-dropzone-icon {
@@ -100,18 +96,21 @@
     height: 3.5rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-3);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
-    transition: background 0.2s ease;
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    color: var(--db-color-text-secondary);
+    transform: skewX(-14deg);
+    transition: border-color var(--db-transition), color var(--db-transition);
 }
 
-.p2p-dropzone:hover .p2p-dropzone-icon {
-    background: color-mix(in srgb, var(--db-color-accent) 15%, transparent);
+.p2p-dropzone-icon svg {
+    transform: skewX(14deg);
 }
 
+.p2p-dropzone:hover .p2p-dropzone-icon,
 .p2p-dropzone.active .p2p-dropzone-icon {
-    background: color-mix(in srgb, var(--db-color-accent) 20%, transparent);
+    border-color: var(--db-valley-ink);
+    color: var(--db-valley-ink);
 }
 
 .p2p-dropzone-icon svg {
@@ -160,7 +159,7 @@
     border-radius: var(--db-radius-3);
     margin: 0 auto var(--db-space-4);
     background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
+    color: var(--db-color-accent-text);
 }
 
 .p2p-pin-icon svg {
@@ -179,16 +178,21 @@
 
 /* ─── Status headings ─── */
 .p2p-status-h1 {
-    font-family: var(--db-font-heading);
-    font-size: var(--db-text-xl);
-    font-weight: var(--db-weight-semibold);
+    font-family: var(--db-font-display);
+    font-size: 1.25rem;
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--db-color-text);
     margin: 0;
     text-align: center;
 }
 
 .p2p-status-p {
-    font-size: var(--db-text-base);
+    font-family: var(--db-font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
     color: var(--db-color-text-muted);
     margin: 0;
     text-align: center;
@@ -206,9 +210,8 @@
     display: flex;
     justify-content: center;
     padding: var(--db-space-4);
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-3);
-    background: var(--db-color-bg);
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
 }
 
 .p2p-qr-frame ::deep svg {

@@ -5,215 +5,278 @@
    only cross-page primitives and utilities.
    ============================================================ */
 
-/* ─── Wire loaded fonts into daub's display/heading/body roles ─── */
-:root {
-    --db-font-display: "Sora", var(--db-font-ui);
-    --db-font-heading: "Sora", var(--db-font-ui);
-}
-
-/* ─── Kira light theme token overrides — exact match xoxokira.com CSS ─── */
+/* ─── MIURA · the sheet, the crease, the pull ───────────────────
+   Ciphertext is a folded sheet. The key in the link is the one pull
+   that deploys it. Gold marks what can be pulled; valley blue marks
+   what is active; mountain gray is everything at rest.
+   Token NAMES are DAUB's — only the values are ours, so every
+   db-* component and every scoped .razor.css re-skins from here.
+   ──────────────────────────────────────────────────────────────── */
 [data-theme="grunge-dark"] {
-    /* === Color Palette — Kira light: bg:#EFE6D6 accent:#7A5C34 text:#1C1712 === */
-    --db-cream: #EFE6D6;
-    --db-cream-dark: #E6DCC9;
-    --db-sand: #D4C9B4;
-    --db-terracotta: #7A5C34;
-    --db-clay: #6B4F2C;
-    --db-warm-gray: rgba(58,49,40,0.72);
-    --db-charcoal: #3A3128;
-    --db-ink: #1C1712;
-    --db-white: #FAF4EA;
-    --db-error: #A02828;
-    --db-success: #5C8A5C;
-    --db-warning: #C49A3C;
+    /* === Sheet materials === */
+    --db-sheet: #EFEEEA;
+    --db-sheet-raised: #F9F9F7;
+    --db-sheet-deep: #E3E2DC;
+    --db-mountain: #B9B6AE;
+    --db-mountain-deep: #8E8B83;
+    --db-valley: #CFE0F2;
+    --db-valley-ink: #3F6187;
+    --db-foil: #D4AF37;
+    --db-foil-deep: #B8952A;
+    --db-foil-ink: #6B5518;
+    --db-ink: #0A0A0A;
+    --db-ink-soft: #55524B;
+
+    /* === Legacy palette names, remapped so nothing dangles === */
+    --db-cream: var(--db-sheet);
+    --db-cream-dark: var(--db-sheet-deep);
+    --db-sand: var(--db-mountain);
+    --db-terracotta: var(--db-foil);
+    --db-clay: var(--db-foil-deep);
+    --db-warm-gray: #55524B;
+    --db-charcoal: #2B2924;
+    --db-white: var(--db-sheet-raised);
+    --db-error: #A4322A;
+    --db-success: #4F7A5B;
+    --db-warning: var(--db-foil-deep);
 
     /* === RGB channels === */
-    --db-shadow-rgb: 28,23,18;
-    --db-glow-rgb: 250,244,234;
-    --db-accent-rgb: 122,92,52;
-    --db-clay-rgb: 107,79,44;
-    --db-success-rgb: 92,138,92;
-    --db-warning-rgb: 196,154,60;
-    --db-error-rgb: 160,40,40;
-    --db-sand-rgb: 212,201,180;
-    --db-white-rgb: 250,244,234;
+    --db-shadow-rgb: 10,10,10;
+    --db-glow-rgb: 247,246,243;
+    --db-accent-rgb: 212,175,55;
+    --db-clay-rgb: 184,149,42;
+    --db-success-rgb: 79,122,91;
+    --db-warning-rgb: 184,149,42;
+    --db-error-rgb: 164,50,42;
+    --db-sand-rgb: 185,182,174;
+    --db-white-rgb: 249,249,247;
 
     /* === Derived accents === */
-    --db-accent-dark: #6B4F2C;
-    --db-accent-light: #8C6E44;
-    --db-accent-hover: #8C6E44;
-    --db-accent-pressed: #5E4424;
-    --db-success-dark: #4A7A4A;
-    --db-overlay-bg: rgba(40,32,24,0.32);
+    --db-accent-dark: var(--db-foil-deep);
+    --db-accent-light: #E3C566;
+    --db-accent-hover: #E3C566;
+    --db-accent-pressed: #9E7F1F;
+    --db-success-dark: #3E6449;
+    --db-overlay-bg: rgba(10,10,10,0.42);
 
-    /* === Text on accent === */
-    --db-terracotta-text: #7A5C34;
-    --db-success-text: #5C8A5C;
+    /* Gold is a FILL, never a text colour — 2.1:1 on sheet.
+       Anything typographic uses the deep bronze instead (6.1:1). */
+    --db-terracotta-text: var(--db-foil-ink);
+    --db-success-text: #3E6449;
 
-    /* === Texture — none === */
+    /* === Material === */
     --db-texture-opacity: 0;
     --db-noise: 0;
+    --db-grain-sheet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
+    --db-grain-foil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.75' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23f)' opacity='0.16'/%3E%3C/svg%3E");
     --db-border-roughness: 0px;
-    /* === Typography — Kira: Outfit for EVERYTHING (UI = body = same font) === */
+
+    /* === Typography === */
     --db-font-ui: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --db-font-body: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-heading: "Playfair Display", "Sora", Georgia, serif;
-    --db-font-display: "Playfair Display", "Sora", Georgia, serif;
+    --db-font-heading: "Outfit", system-ui, sans-serif;
+    --db-font-display: "Outfit", system-ui, sans-serif;
+    --db-font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* === Radius — Kira values: 8px sm, 12px md, 16px lg === */
+    /* === Geometry — a crease has no radius === */
     --db-radius-0: 0px;
-    --db-radius-1: 4px;
-    --db-radius-2: 8px;
-    --db-radius-3: 12px;
-    --db-radius-4: 16px;
-    --db-radius-5: 20px;
-    --db-radius-full: 9999px;
+    --db-radius-1: 0px;
+    --db-radius-2: 0px;
+    --db-radius-3: 0px;
+    --db-radius-4: 0px;
+    --db-radius-5: 0px;
+    --db-radius-full: 0px;
+    --db-crease-angle: 60deg;
+    --db-crease-skew: -14deg;
 
-    /* === Shadows — ALL NONE === */
-    --db-shadow-1: none;
-    --db-shadow-2: none;
-    --db-shadow-3: none;
+    /* === Shadows — a foil tab lifts off the sheet === */
+    --db-shadow-1: 0 1px 2px rgba(10,10,10,0.06);
+    --db-shadow-2: 0 2px 8px rgba(10,10,10,0.10);
+    --db-shadow-3: 0 6px 20px rgba(10,10,10,0.14);
     --db-shadow-inset: none;
     --db-shadow-ring: none;
 
-    /* === Focus — border-only, no ring (Kira behavior) === */
-    --db-focus-ring: none;
-    --db-focus-ring-color: transparent;
-    --db-focus-ring-width: 0px;
+    /* === Focus — the valley crease, visible === */
+    --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
+    --db-focus-ring-color: var(--db-valley-ink);
+    --db-focus-ring-width: 2px;
 
-    /* === Interactive — NO scale, NO brightness on hover === */
+    /* === Interactive === */
     --db-hover-brightness: 1;
     --db-hover-scale: 1;
     --db-active-scale: 1;
-    --db-disabled-opacity: 0.4;
+    --db-disabled-opacity: 0.38;
 
-    /* === Transitions — color/bg only, 150ms (exact Kira) === */
-    --db-transition: 150ms ease;
-    --db-transition-fast: 100ms ease;
-    --db-transition-slow: 300ms ease;
-    --db-transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    /* === Transitions — rigid linkage: one motion, everything moves === */
+    --db-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    --db-transition-fast: 140ms cubic-bezier(0.16, 1, 0.3, 1);
+    --db-transition-slow: 460ms cubic-bezier(0.16, 1, 0.3, 1);
+    --db-transition-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* === Text emboss — none === */
     --db-text-emboss: none;
     --db-text-emboss-subtle: none;
-    --db-on-accent: #FAF4EA;
+    --db-on-accent: var(--db-ink);
 
-    /* === Semantic tokens === */
-    --db-color-bg: var(--db-cream);
-    --db-color-bg-alt: var(--db-cream-dark);
-    --db-color-surface: var(--db-white);
+    /* === Semantic === */
+    --db-color-bg: var(--db-sheet);
+    --db-color-bg-alt: var(--db-sheet-deep);
+    --db-color-surface: var(--db-sheet-raised);
+    --db-color-surface-2: var(--db-sheet-deep);
     --db-color-text: var(--db-ink);
     --db-color-text-secondary: var(--db-charcoal);
-    --db-color-text-muted: var(--db-warm-gray);
-    --db-color-border: var(--db-sand);
-    --db-color-accent: var(--db-terracotta);
+    --db-color-text-muted: var(--db-ink-soft);
+    --db-color-border: var(--db-mountain);
+    --db-color-accent: var(--db-foil);
     --db-color-accent-hover: var(--db-accent-hover);
-    --db-color-accent-text: var(--db-terracotta-text);
+    --db-color-accent-text: var(--db-foil-ink);
     --db-color-success: var(--db-success);
     --db-color-warning: var(--db-warning);
     --db-color-error: var(--db-error);
     --db-color-overlay: var(--db-overlay-bg);
 
-    /* === RGB semantic channels === */
-    --db-color-bg-rgb: 239,230,214;
-    --db-color-text-rgb: 28,23,18;
-    --db-color-surface-rgb: 250,244,234;
-    --db-color-accent-rgb: 122,92,52;
-    --db-color-border-rgb: 212,201,180;
+    --db-color-bg-rgb: 239,238,234;
+    --db-color-text-rgb: 10,10,10;
+    --db-color-surface-rgb: 249,249,247;
+    --db-color-accent-rgb: 212,175,55;
+    --db-color-border-rgb: 185,182,174;
 
-    /* === Expanded semantic tokens === */
-    --db-color-surface-raised: #FFFBF5;
-    --db-color-text-inverse: #FAF4EA;
-    --db-color-accent-active: #5E4424;
-    --db-color-accent-subtle: rgba(122,92,52,0.1);
-    --db-color-border-strong: #B8AC98;
-    --db-color-border-subtle: rgba(28,22,16,0.08);
-    --db-color-error-subtle: rgba(160,40,40,0.08);
-    --db-color-success-subtle: rgba(92,138,92,0.08);
-    --db-color-warning-subtle: rgba(196,154,60,0.08);
-    --db-surface-rgb: 250,244,234;
+    --db-color-surface-raised: #FFFFFF;
+    --db-color-text-inverse: var(--db-sheet-raised);
+    --db-color-accent-active: var(--db-accent-pressed);
+    --db-color-accent-subtle: rgba(212,175,55,0.14);
+    --db-color-border-strong: var(--db-mountain-deep);
+    --db-color-border-subtle: rgba(10,10,10,0.10);
+    --db-color-error-subtle: rgba(164,50,42,0.08);
+    --db-color-success-subtle: rgba(79,122,91,0.08);
+    --db-color-warning-subtle: rgba(184,149,42,0.10);
+    --db-surface-rgb: 249,249,247;
 
-    /* === Component: Button — Kira ghost: generous padding, 1px border === */
-    --db-btn-py: 7px;
-    --db-btn-px: 14px;
-    --db-btn-radius: var(--db-radius-2);
+    /* === Button === */
+    --db-btn-py: 9px;
+    --db-btn-px: 20px;
+    --db-btn-radius: 0px;
     --db-btn-font-size: var(--db-text-sm);
-    --db-btn-font-weight: 400;
+    --db-btn-font-weight: 500;
     --db-btn-bg: transparent;
     --db-btn-color: var(--db-ink);
-    --db-btn-border: 1px solid rgba(28,22,16,0.08);
-    /* === Component: Field / Input === */
-    --db-field-py: 8px;
-    --db-field-px: 12px;
-    --db-field-radius: var(--db-radius-2);
-    --db-field-font-size: 0.9375rem;
-    --db-field-bg: var(--db-white);
-    --db-field-color: var(--db-ink);
-    --db-field-border: 1px solid rgba(28,22,16,0.12);
-    --db-field-border-focus: 1px solid var(--db-terracotta);
+    --db-btn-border: 1px solid var(--db-mountain);
 
-    /* === Component: Card — Kira panel: #FAF4EA, subtle border === */
-    --db-card-padding: var(--db-space-5);
-    --db-card-radius: var(--db-radius-3);
-    --db-card-bg: var(--db-white);
-    --db-card-border: 1px solid rgba(28,22,16,0.05);
+    /* === Field === */
+    --db-field-py: 9px;
+    --db-field-px: 12px;
+    --db-field-radius: 0px;
+    --db-field-font-size: 0.9375rem;
+    --db-field-bg: var(--db-sheet-raised);
+    --db-field-color: var(--db-ink);
+    --db-field-border: 1px solid var(--db-mountain);
+    --db-field-border-focus: 1px solid var(--db-valley-ink);
+
+    /* === Card — a cell of the sheet, corner cut === */
+    --db-card-padding: var(--db-space-6);
+    --db-card-radius: 0px;
+    --db-card-bg: var(--db-sheet-raised);
+    --db-card-border: 1px solid var(--db-mountain);
     --db-card-shadow: none;
     --db-card-shadow-hover: none;
 
-    /* === Component: Navbar — transparent === */
+    /* === Navbar === */
     --db-navbar-height: 3.75rem;
     --db-navbar-bg: transparent;
-    --db-navbar-border: 1px solid rgba(28,22,16,0.06);
+    --db-navbar-border: 1px solid var(--db-mountain);
     --db-navbar-shadow: none;
 
-    /* === Component: Badge === */
+    /* === Badge === */
     --db-badge-py: 3px;
     --db-badge-px: 10px;
-    --db-badge-radius: var(--db-radius-2);
+    --db-badge-radius: 0px;
     --db-badge-font-size: 0.6875rem;
     --db-badge-font-weight: 500;
 
-    /* === Component: Modal === */
-    --db-modal-radius: var(--db-radius-4);
-    --db-modal-padding: var(--db-space-5);
-    --db-modal-bg: var(--db-white);
-    --db-modal-shadow: none;
-    --db-modal-backdrop: rgba(40,32,24,0.32);
+    /* === Modal === */
+    --db-modal-radius: 0px;
+    --db-modal-padding: var(--db-space-6);
+    --db-modal-bg: var(--db-sheet-raised);
+    --db-modal-shadow: var(--db-shadow-3);
+    --db-modal-backdrop: rgba(10,10,10,0.42);
 
-    /* === Component: Toast === */
-    --db-toast-radius: var(--db-radius-2);
+    /* === Toast === */
+    --db-toast-radius: 0px;
     --db-toast-padding: var(--db-space-3);
-    --db-toast-shadow: none;
+    --db-toast-shadow: var(--db-shadow-2);
 
-    /* === Component: Tabs === */
+    /* === Tabs === */
     --db-tabs-border: 1px solid transparent;
-    --db-tabs-border-active: 1px solid var(--db-terracotta);
+    --db-tabs-border-active: 1px solid var(--db-foil);
     --db-tabs-font-size: var(--db-text-sm);
-    --db-tabs-font-weight: 400;
+    --db-tabs-font-weight: 500;
 
-    /* === Component: Table === */
-    --db-table-border: 1px solid rgba(28,22,16,0.06);
+    /* === Table === */
+    --db-table-border: 1px solid var(--db-color-border-subtle);
 
-    /* === Component: Dropdown === */
-    --db-dropdown-radius: var(--db-radius-2);
-    --db-dropdown-bg: var(--db-white);
-    --db-dropdown-shadow: none;
+    /* === Dropdown === */
+    --db-dropdown-radius: 0px;
+    --db-dropdown-bg: var(--db-sheet-raised);
+    --db-dropdown-shadow: var(--db-shadow-2);
 
-    /* === Component: Switch === */
-    --db-switch-bg: rgba(28,22,16,0.08);
-    --db-switch-bg-on: var(--db-terracotta);
+    /* === Switch === */
+    --db-switch-bg: var(--db-mountain);
+    --db-switch-bg-on: var(--db-foil);
 
-    /* === Component: Progress === */
-    --db-progress-bg: rgba(28,22,16,0.06);
-    --db-progress-fill: var(--db-terracotta);
+    /* === Progress — parts landing on the sheet === */
+    --db-progress-bg: var(--db-sheet-deep);
+    --db-progress-fill: var(--db-foil);
 
-    /* === Component: Alert === */
-    --db-alert-radius: var(--db-radius-2);
+    /* === Alert === */
+    --db-alert-radius: 0px;
     --db-alert-padding: var(--db-space-4);
 
-    /* === Component: Separator === */
-    --db-separator-color: rgba(28,22,16,0.08);
+    /* === Separator === */
+    --db-separator-color: var(--db-mountain);
 }
+
+/* ─── Dark: the packet in shadow. Same sheet, lit from one side. ───
+   Use scene: a recipient opening a link at night in a chat app, and
+   senders who keep the tab open in a dim room. ─────────────────── */
+[data-theme="grunge-light"],
+[data-theme="dark"] {
+    --db-sheet: #16171A;
+    --db-sheet-raised: #1D1F23;
+    --db-sheet-deep: #101113;
+    --db-mountain: #3A3D43;
+    --db-mountain-deep: #575B62;
+    --db-valley: #24384F;
+    --db-valley-ink: #8FB6E0;
+    --db-foil: #E0BC4A;
+    --db-foil-deep: #C79F2E;
+    --db-foil-ink: #E8CB70;
+    --db-ink: #F2F1ED;
+    --db-ink-soft: #A5A49E;
+
+    --db-charcoal: #D8D7D2;
+    --db-warm-gray: #A5A49E;
+    --db-white: var(--db-sheet-raised);
+    --db-error: #E0685C;
+    --db-success: #7FB08C;
+
+    --db-shadow-rgb: 0,0,0;
+    --db-glow-rgb: 242,241,237;
+    --db-color-text-rgb: 242,241,237;
+    --db-color-bg-rgb: 22,23,26;
+    --db-color-surface-rgb: 29,31,35;
+    --db-color-border-rgb: 58,61,67;
+
+    --db-color-surface-raised: #24262B;
+    --db-color-text-inverse: var(--db-ink);
+    --db-color-accent-text: var(--db-foil-ink);
+    --db-color-border-subtle: rgba(242,241,237,0.12);
+    --db-color-accent-subtle: rgba(224,188,74,0.16);
+    --db-on-accent: #16171A;
+    --db-overlay-bg: rgba(0,0,0,0.62);
+    --db-modal-backdrop: rgba(0,0,0,0.62);
+    --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
+    --db-focus-ring-color: var(--db-valley-ink);
+}
+
 
 /* ─── Compact density — shared across every DAUB theme ─── */
 [data-theme] {
@@ -258,66 +321,200 @@
     }
 }
 
-/* ─── Kira selection + scrollbar (light theme) ─── */
+/* ─── The sheet itself: a 60° crease lattice under everything ─── */
+body {
+    background-color: var(--db-color-bg);
+    background-image:
+        repeating-linear-gradient(60deg,
+            transparent 0 63px,
+            rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
+        repeating-linear-gradient(-60deg,
+            transparent 0 63px,
+            rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
+        var(--db-grain-sheet);
+    background-attachment: fixed;
+}
+
+@media (max-width: 767px) {
+    body {
+        background-image:
+            repeating-linear-gradient(60deg,
+                transparent 0 43px,
+                rgba(var(--db-color-text-rgb), 0.09) 43px 44px),
+            repeating-linear-gradient(-60deg,
+                transparent 0 43px,
+                rgba(var(--db-color-text-rgb), 0.09) 43px 44px);
+    }
+}
+
 ::selection {
-    background: rgba(122,92,52,0.85);
-    color: #EFE6D6;
+    background: var(--db-valley-ink);
+    color: var(--db-sheet-raised);
 }
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(122,92,52,0.4) rgba(239,230,214,0.7);
+    scrollbar-color: var(--db-mountain-deep) transparent;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(239,230,214,0.7); }
-::-webkit-scrollbar-thumb {
-    background-color: rgba(122,92,52,0.4);
-    border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(122,92,52,0.75);
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: var(--db-mountain-deep); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--db-ink-soft); }
+
+/* ─── Focus: the valley crease, always visible ───────────────────
+   The previous theme suppressed every ring with outline:none, which
+   left keyboard users with a colour change and nothing else. ──── */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--db-valley-ink);
+    outline-offset: 2px;
 }
 
-/* ─── Kira focus: border-only, no outline/ring ─── */
-input:focus, input:focus-visible,
-select:focus, select:focus-visible,
-textarea:focus, textarea:focus-visible {
-    outline: none !important;
-    border-color: var(--db-terracotta) !important;
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    border-color: var(--db-valley-ink);
 }
 
-/* ─── Kill ALL DAUB button effects: no gradient, no shadow, no transform ─── */
+/* ─── Spec label: mono, tracked, small. Carries REAL measurements —
+   byte counts, part counts, share codes, hashes, expiry. Never
+   decorative serials. ──────────────────────────────────────────── */
+.miura-spec {
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--db-ink-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A hairline rule that ends in its own spec label. */
+.miura-rule {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-3);
+    width: 100%;
+}
+
+.miura-rule::before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--db-mountain);
+}
+
+/* Display voice: light, wide, uppercase — engineering lettering. */
+.miura-display {
+    font-family: var(--db-font-display);
+    font-weight: 200;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    line-height: 0.98;
+    text-wrap: balance;
+}
+
+/* A cut cell: the sheet's parallelogram, corner folded to valley. */
+.miura-cell {
+    position: relative;
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    background-image: linear-gradient(225deg, var(--db-valley) 0 18px, transparent 18px);
+    background-repeat: no-repeat;
+    background-position: top right;
+}
+
+/* ─── Buttons: the pull tab ─────────────────────────────────────
+   Primary is foil — it is the one thing on the surface that can be
+   pulled. Gold is a fill and never a text colour (2.1:1 on sheet). */
 .db-btn, .db-btn:hover, .db-btn:focus, .db-btn:active,
 .db-btn--primary, .db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active,
 .db-btn--secondary, .db-btn--secondary:hover, .db-btn--secondary:focus, .db-btn--secondary:active,
 .db-btn--ghost, .db-btn--ghost:hover, .db-btn--ghost:focus, .db-btn--ghost:active {
-    outline: none !important;
     box-shadow: none !important;
     transform: none !important;
     background-image: none !important;
+    border-radius: 0 !important;
 }
 
-/* Primary button: solid accent bg, no gradient hover */
-.db-btn--primary { background: var(--db-color-accent) !important; color: var(--db-on-accent) !important; }
-.db-btn--primary:hover { background: var(--db-color-accent-hover) !important; }
-.db-btn--primary:active { background: var(--db-color-accent-active) !important; }
+.db-btn {
+    font-family: var(--db-font-ui);
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    transition: background-color var(--db-transition), color var(--db-transition), border-color var(--db-transition);
+}
 
-/* Secondary button: transparent, subtle border */
-.db-btn--secondary { background: transparent !important; color: var(--db-color-text) !important; border: 1px solid rgba(28,22,16,0.12) !important; }
-.db-btn--secondary:hover { background: rgba(28,22,16,0.04) !important; }
-.db-btn--secondary:active { background: rgba(28,22,16,0.08) !important; }
+.db-btn--primary {
+    background:
+        var(--db-grain-foil),
+        linear-gradient(102deg, rgba(255,255,255,0.34) 0 14%, rgba(255,255,255,0) 34% 62%, rgba(255,255,255,0.22) 82% 100%),
+        var(--db-foil) !important;
+    color: var(--db-ink) !important;
+    border: 1px solid var(--db-foil-deep) !important;
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+    padding-left: calc(var(--db-btn-px) + 12px);
+    padding-right: calc(var(--db-btn-px) + 12px);
+}
 
-/* Ghost button: transparent with subtle border (Kira outline style) */
-.db-btn--ghost { background: transparent !important; border: 1px solid rgba(28,22,16,0.12) !important; color: var(--db-color-text) !important; }
-.db-btn--ghost:hover { background: rgba(28,22,16,0.04) !important; }
-.db-btn--ghost:active { background: rgba(28,22,16,0.08) !important; }
+@media (max-width: 560px) {
+    /* clip-path is not width-aware: below this the cut edge starts eating
+       the label and overhanging its container, so the tab squares off. */
+    .db-btn--primary {
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+        padding-left: var(--db-btn-px);
+        padding-right: calc(var(--db-btn-px) + 6px);
+    }
+}
 
-/* ─── Kill grunge thicker borders ─── */
+.db-btn--primary:hover { background: var(--db-accent-hover) !important; }
+.db-btn--primary:active { background: var(--db-accent-pressed) !important; }
+
+/* clip-path eats the outline, so focus is drawn as an inset crease. */
+.db-btn--primary:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--db-valley-ink) !important;
+}
+
+/* The board's secondary carries a trailing valley cell with an arrow in it.
+   The arrow needs per-button markup this pass cannot add, and the cell alone
+   reads as an unexplained sliver — so the secondary stays a plain hairline
+   cell until the arrow can ship with it. */
+.db-btn--secondary,
+.db-btn--ghost {
+    background: transparent !important;
+    color: var(--db-color-text) !important;
+    border: 1px solid var(--db-mountain) !important;
+}
+
+.db-btn--secondary:hover,
+.db-btn--ghost:hover {
+    background: var(--db-valley) !important;
+    background-color: var(--db-valley) !important;
+    border-color: var(--db-valley-ink) !important;
+}
+
+.db-btn--secondary:active,
+.db-btn--ghost:active {
+    background: var(--db-sheet-deep) !important;
+    background-color: var(--db-sheet-deep) !important;
+}
+
 [data-theme^="grunge"] .db-btn { border-width: 1px !important; }
 
-/* ─── Card: flat only ─── */
-.db-card, .db-card:hover { outline: none !important; box-shadow: none !important; }
+/* ─── Cards: flat cells of one sheet, never stacked or rounded ─── */
+.db-card, .db-card:hover {
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: 1px solid var(--db-mountain);
+}
+
+/* ─── Inputs read as measured cells ─── */
+.db-input, .db-field, input[type="text"], input[type="email"], input[type="password"], textarea, select {
+    border-radius: 0 !important;
+}
 
 /* ─── Kill DAUB per-element texture pseudo-elements ─── */
 .db-card::after,
@@ -459,18 +656,7 @@ body::after,
 }
 
 /* ─── Type: display headline with a single accent word ─── */
-.qs-display {
-    font-family: var(--db-font-heading);
-    font-weight: var(--db-weight-bold);
-    line-height: var(--db-leading-tight);
-    letter-spacing: -0.02em;
-    color: var(--db-color-text);
-    margin: 0;
-}
 
-.qs-accent {
-    color: var(--db-color-accent);
-}
 
 /* ─── Signature: the mono "readout" — file facts as a terminal line ─── */
 .qs-readout {
@@ -579,14 +765,13 @@ body::after,
 .account-skeleton-avatar {
     width: 5rem;
     height: 5rem;
-    border-radius: var(--db-radius-4);
     background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
     animation: account-skeleton-pulse 1.5s ease-in-out infinite;
 }
 
 .account-skeleton-line {
     height: 1rem;
-    border-radius: 0.25rem;
     background: var(--db-color-surface);
     animation: account-skeleton-pulse 1.5s ease-in-out infinite;
 }
@@ -604,7 +789,6 @@ body::after,
 .account-skeleton-badge {
     width: 8rem;
     height: 1.5rem;
-    border-radius: var(--db-radius-full);
 }
 
 @keyframes account-skeleton-pulse {
@@ -701,29 +885,35 @@ body::after,
 /* ─── Account: section tabs (shared, ships inside HTMX partials) ─── */
 .account-tabs {
     display: flex;
-    gap: var(--db-space-3);
-    border-bottom: 1px solid var(--db-color-border);
+    gap: 0;
+    border-bottom: 1px solid var(--db-mountain);
     margin-bottom: var(--db-space-6);
     overflow-x: auto;
 }
 
 .account-tabs__item {
-    padding: var(--db-space-3) var(--db-space-4);
+    padding: var(--db-space-3) var(--db-space-5);
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
     text-decoration: none;
     white-space: nowrap;
-    border-bottom: 2px solid transparent;
+    border-bottom: 1px solid transparent;
     margin-bottom: -1px;
 }
 
 .account-tabs__item:hover {
     color: var(--db-color-text);
+    border-bottom-color: var(--db-mountain-deep);
 }
 
+/* The open cell, same valley the nav uses. */
 .account-tabs__item--active {
-    color: var(--db-color-accent-text);
-    border-bottom-color: var(--db-color-accent);
-    font-weight: 600;
+    color: var(--db-color-text);
+    background: var(--db-valley);
+    border-bottom-color: var(--db-valley-ink);
 }
 
 /* ─── Account: deliveries (download gauge) ─── */
@@ -733,11 +923,13 @@ body::after,
     gap: var(--db-space-4);
 }
 
+/* Each delivery is a cell of the sheet with a folded corner. */
 .account-delivery {
-    background: var(--db-color-surface);
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-3);
-    padding: var(--db-space-4);
+    background:
+        linear-gradient(225deg, var(--db-valley) 0 16px, transparent 16px) top right / auto no-repeat,
+        var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    padding: var(--db-space-5);
 }
 
 .account-delivery--spent {
@@ -752,21 +944,27 @@ body::after,
 }
 
 .account-delivery__name {
-    font-weight: 600;
+    font-family: var(--db-font-display);
+    font-weight: 300;
+    font-size: 0.9375rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .account-delivery__expiry {
-    font-size: 0.85rem;
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--db-color-text-muted);
     white-space: nowrap;
 }
 
 .account-delivery__gauge {
     height: 6px;
-    border-radius: var(--db-radius-1);
-    background: var(--db-color-bg-alt);
+    border: 1px solid var(--db-mountain);
+    background: var(--db-sheet-deep);
     margin: var(--db-space-3) 0;
     overflow: hidden;
 }
@@ -774,8 +972,8 @@ body::after,
 .account-delivery__gauge-fill {
     display: block;
     height: 100%;
-    background: var(--db-color-accent);
-    transition: width 0.3s ease;
+    background: var(--db-foil);
+    transition: width var(--db-transition-slow);
 }
 
 .account-delivery--spent .account-delivery__gauge-fill {
@@ -783,7 +981,10 @@ body::after,
 }
 
 .account-delivery__meta {
-    font-size: 0.85rem;
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
     margin: 0;
 }
 
@@ -798,4 +999,148 @@ body::after,
 
 .account-deliveries-empty .db-btn {
     margin-top: var(--db-space-5);
+}
+
+/* ─── /tools SEO landing pages ───
+   Global, not scoped: the page supplies the article body as a RenderFragment,
+   so it carries the page's scope id, not ToolsLanding's. */
+.tools-landing {
+    max-width: 44rem;
+    margin: 0 auto;
+}
+
+.tools-landing__lede {
+    margin-top: var(--db-space-3);
+    font-size: var(--db-text-base);
+}
+
+.tools-landing__box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--db-space-2);
+    margin: var(--db-space-6) 0;
+    padding: var(--db-space-6);
+    border: 1px solid var(--db-mountain);
+    background:
+        repeating-linear-gradient(60deg, transparent 0 47px, rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+        var(--db-color-surface);
+    text-decoration: none;
+    color: var(--db-color-text);
+    text-align: center;
+}
+
+.tools-landing__box:hover {
+    border-color: var(--db-color-accent);
+}
+
+.tools-landing__kbd {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--db-color-border);
+    border-radius: var(--db-radius-sm);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875rem;
+}
+
+.tools-landing__box-hint {
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted);
+}
+
+.tools-landing__body h2 {
+    margin-top: var(--db-space-6);
+}
+
+.tools-landing__body p,
+.tools-landing__body li {
+    margin-top: var(--db-space-3);
+    color: var(--db-color-text-muted);
+    line-height: 1.65;
+}
+
+.tools-landing__body ul {
+    padding-left: 1.25rem;
+    list-style: disc;
+}
+
+/* ─── Heading voice: engineering lettering everywhere ───────────
+   DAUB's own h1/h2/h3 still carried the old magazine register. ── */
+.db-h1, .db-h2, .db-h3, .db-h4 {
+    font-family: var(--db-font-display);
+    font-weight: 200;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1.05;
+    text-wrap: balance;
+}
+
+.db-h3, .db-h4 {
+    font-weight: 300;
+    letter-spacing: 0.1em;
+}
+
+/* ─── OTP cells: one glyph per cell, measured ─── */
+.db-otp__input {
+    transform: skewX(-14deg);
+    width: 2.75rem;
+    height: 3.25rem;
+    border: 1px solid var(--db-mountain) !important;
+    border-radius: 0 !important;
+    background: var(--db-color-surface) !important;
+    font-family: var(--db-font-mono) !important;
+    font-size: 1.125rem;
+    text-align: center;
+    color: var(--db-color-text) !important;
+}
+
+.db-otp__input:focus-visible {
+    outline: 2px solid var(--db-valley-ink);
+    outline-offset: 2px;
+    border-color: var(--db-valley-ink) !important;
+    background: var(--db-valley) !important;
+}
+
+/* ─── The language select is a control, so it wears the world ─── */
+.db-navbar select,
+.db-navbar .db-select,
+select {
+    appearance: none;
+    /* A drawn chevron, in the world's line weight. Without it the control
+       stops reading as a control. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230A0A0A' stroke-width='1.2'/%3E%3C/svg%3E");
+    background-position: right 10px center;
+    background-size: 10px 7px;
+    background-repeat: no-repeat;
+    padding-right: 28px;
+    border: 1px solid var(--db-mountain);
+    border-radius: 0;
+    background: transparent;
+    color: var(--db-color-text);
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 8px;
+}
+
+/* ─── Cookie consent reads as a footnote on the sheet ─── */
+.cookie-consent__title {
+    font-family: var(--db-font-mono) !important;
+    font-size: 0.6875rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+/* ─── Nothing may set the document wider than the viewport ─── */
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+@media (max-width: 560px) {
+    .miura-spec {
+        letter-spacing: 0.1em;
+    }
 }

@@ -4,14 +4,43 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: var(--db-color-bg);
+    min-width: 0;
     color: var(--db-color-text);
+    /* The sheet: a 60-degree crease lattice under every page. Painted on
+       the root rather than body, which DAUB's base sheet already claims. */
+    background-color: var(--db-color-bg);
+    background-image:
+        repeating-linear-gradient(60deg, transparent 0 63px, rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
+        repeating-linear-gradient(-60deg, transparent 0 63px, rgba(var(--db-color-text-rgb), 0.10) 63px 64px);
+    background-attachment: fixed;
 }
 
 /* ─── Navbar ─── */
 .layout-root ::deep .db-navbar {
-    border-bottom: 1px solid var(--db-color-border-subtle);
-    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--db-mountain);
+    background: transparent;
+}
+
+/* Nav items read as engineering labels; the active one takes the valley cell. */
+.layout-root ::deep .db-nav-menu__item {
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 6px 10px;
+    border-radius: 0;
+    border-bottom: 1px solid transparent;
+}
+
+.layout-root ::deep .db-nav-menu__item:hover {
+    border-bottom-color: var(--db-mountain-deep);
+}
+
+.layout-root ::deep .db-nav-menu__item--active {
+    background: var(--db-valley);
+    border-bottom-color: var(--db-valley-ink);
+    color: var(--db-color-text);
 }
 
 /* ─── Brand ─── */
@@ -21,54 +50,99 @@
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: var(--db-radius-2);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
+    color: var(--db-ink);
     flex-shrink: 0;
 }
 
 .layout-logo svg {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.layout-brand-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1;
 }
 
 .layout-brand-word {
-    font-family: var(--db-font-heading);
-    font-weight: var(--db-weight-bold);
-    letter-spacing: -0.01em;
+    font-family: var(--db-font-display);
+    font-weight: 300;
+    font-size: 0.9375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
 }
 
 .layout-brand-cloud {
     color: var(--db-color-text-muted);
-    font-weight: var(--db-weight-medium);
+    font-weight: 200;
 }
 
-/* ─── Footer — mono readout, echoes the file-facts signature ─── */
+/* Wayfinding, not ornament: the route the visitor is actually on. */
+.layout-brand-path {
+    font-size: 0.5625rem;
+    letter-spacing: 0.2em;
+    color: var(--db-mountain-deep);
+}
+
+/* ─── Footer ─ a hairline rule that ends in its own label ─── */
 .layout-footer {
     margin-top: auto;
-    padding: var(--db-space-6) var(--db-space-4);
-    border-top: 1px solid var(--db-color-border-subtle);
+    padding: var(--db-space-7) var(--db-space-5) var(--db-space-6);
+    border-top: 1px solid var(--db-mountain);
 }
 
 .layout-footer__inner {
     display: flex;
+    flex-direction: column;
+    gap: var(--db-space-4);
+    max-width: 72rem;
+    margin: 0 auto;
+}
+
+.layout-footer__head {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--db-space-2);
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    letter-spacing: 0.04em;
-    color: var(--db-color-text-muted);
+    gap: var(--db-space-4);
 }
 
 .layout-footer__mark {
-    color: var(--db-color-text-secondary);
+    font-family: var(--db-font-display);
+    font-weight: 200;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--db-color-text);
+    white-space: nowrap;
 }
 
-.layout-footer__sep {
-    opacity: 0.4;
+.layout-footer__rule {
+    flex: 1;
+    min-width: 0;
 }
 
+.layout-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--db-space-5);
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.layout-footer__links a {
+    color: var(--db-color-text-muted);
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+}
+
+.layout-footer__links a:hover {
+    color: var(--db-color-text);
+    border-bottom-color: var(--db-foil);
+}
 
 .layout-avatar-btn {
     cursor: pointer;
@@ -82,7 +156,6 @@
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: var(--db-radius-full);
     background: var(--db-color-surface);
     animation: layout-avatar-pulse 1.5s ease-in-out infinite;
 }
@@ -94,9 +167,6 @@
 
 .layout-avatar-img {
     object-fit: cover;
-}
-
-.layout-avatar-btn:hover {
 }
 
 .layout-user-info {
@@ -123,4 +193,38 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* ─── Nav must never set the document's scroll width ─── */
+.layout-root ::deep .db-navbar {
+    flex-wrap: nowrap;
+    gap: var(--db-space-3);
+}
+
+.layout-root ::deep .db-navbar__brand,
+.layout-root ::deep .db-navbar__actions {
+    min-width: 0;
+}
+
+@media (max-width: 560px) {
+    .layout-brand-word {
+        letter-spacing: 0.08em;
+        font-size: 0.8125rem;
+    }
+
+    .layout-brand-cloud {
+        display: none;
+    }
+
+    .layout-brand-path {
+        letter-spacing: 0.14em;
+    }
+
+    .layout-footer__head {
+        flex-wrap: wrap;
+    }
+
+    .layout-footer__links {
+        gap: var(--db-space-3);
+    }
 }

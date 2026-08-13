@@ -25,7 +25,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-full);
     background: color-mix(in srgb, var(--db-color-bg) 55%, transparent);
     color: var(--db-color-text);
     opacity: 0;
@@ -39,8 +38,8 @@
 .account-avatar-img {
     width: 5rem;
     height: 5rem;
-    border-radius: var(--db-radius-full);
     object-fit: cover;
+    border: 1px solid var(--db-mountain);
 }
 
 .account-avatar-initial {
@@ -49,11 +48,12 @@
     height: 5rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--db-radius-full);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    color: var(--db-color-text);
+    font-family: var(--db-font-mono);
     font-size: var(--db-text-xl);
-    font-weight: var(--db-weight-bold);
+    font-weight: 300;
 }
 
 .account-form {
@@ -88,7 +88,7 @@
     display: block;
     width: 1.125rem;
     height: 1.125rem;
-    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
     border-top-color: currentColor;
     border-radius: 50%;
     animation: account-btn-spin 0.6s linear infinite;

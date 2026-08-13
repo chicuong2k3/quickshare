@@ -13,13 +13,14 @@
 
 .tag {
     display: inline-block;
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-semibold);
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--db-radius-full);
-    border: 1px solid var(--db-color-accent);
-    color: var(--db-color-accent);
-    background: var(--db-color-accent-subtle);
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--db-valley-ink);
+    color: var(--db-valley-ink);
+    background: var(--db-valley);
 }
 
 .hero p {
@@ -29,13 +30,15 @@
 }
 
 /* ─── Summary card ─── */
+/* The cell being pulled: foil corner, hairline everywhere else. */
 .summary-card {
     max-width: 32rem;
     margin-inline: auto;
-    border: 1px solid var(--db-color-accent);
-    border-radius: var(--db-radius-3);
-    background: var(--db-color-surface);
-    padding: var(--db-space-6);
+    border: 1px solid var(--db-mountain);
+    background:
+        linear-gradient(225deg, var(--db-foil) 0 28px, transparent 28px) top right / auto no-repeat,
+        var(--db-color-surface);
+    padding: var(--db-space-7);
 }
 
 .summary-card__head {
@@ -45,18 +48,23 @@
 .summary-card__price {
     margin-bottom: var(--db-space-5);
     padding-bottom: var(--db-space-5);
-    border-bottom: 1px solid var(--db-color-border);
+    border-bottom: 1px solid var(--db-mountain);
 }
 
 .summary-card__price .price-amount {
-    font-family: var(--db-font-heading);
-    font-size: 2.5rem;
-    font-weight: var(--db-weight-bold);
+    font-family: var(--db-font-mono);
+    font-size: 2.25rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
     color: var(--db-color-text);
 }
 
 .summary-card__price .price-period {
-    font-size: var(--db-text-sm);
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
 }
 
@@ -74,11 +82,11 @@
 }
 
 .feature__icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1rem;
+    height: 1rem;
     flex-shrink: 0;
-    margin-top: 0.125rem;
-    color: var(--db-color-accent);
+    margin-top: 0.2rem;
+    color: var(--db-valley-ink);
 }
 
 /* ─── Payment section ─── */
@@ -87,13 +95,12 @@
     margin-inline: auto;
     margin-top: var(--db-space-8);
     padding-top: var(--db-space-8);
-    border-top: 1px solid var(--db-color-border);
+    border-top: 1px solid var(--db-mountain);
     text-align: center;
 }
 
 .payment-option {
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-3);
+    border: 1px solid var(--db-mountain);
     padding: var(--db-space-5);
     background: var(--db-color-surface);
     margin-top: var(--db-space-5);
@@ -103,8 +110,7 @@
 .payment-info {
     margin-top: var(--db-space-5);
     padding: var(--db-space-6);
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-3);
+    border: 1px solid var(--db-mountain);
     background: var(--db-color-surface);
     text-align: center;
 }
@@ -121,7 +127,7 @@
     margin: var(--db-space-5) 0;
     padding: var(--db-space-4);
     background: var(--db-color-bg);
-    border-radius: var(--db-radius-3);
+    border: 1px solid var(--db-mountain);
 }
 
 .payos-iframe-wrap {
@@ -129,9 +135,8 @@
     width: 100%;
     max-width: 30rem;
     margin-inline: auto;
-    border-radius: var(--db-radius-3);
     overflow: hidden;
-    border: 1px solid var(--db-color-border);
+    border: 1px solid var(--db-mountain);
 }
 
 .payos-iframe {

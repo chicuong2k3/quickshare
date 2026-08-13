@@ -8,10 +8,11 @@
 
 /* ─── Summary card ─── */
 .summary-card {
-    background: var(--db-color-surface);
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-4);
-    padding: var(--db-space-5);
+    background:
+        linear-gradient(225deg, var(--db-valley) 0 22px, transparent 22px) top right / auto no-repeat,
+        var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    padding: var(--db-space-6);
 }
 
 .summary-card__head {
@@ -25,14 +26,19 @@
 }
 
 .price-amount {
-    font-family: var(--db-font-heading);
-    font-size: var(--db-text-2xl);
-    font-weight: var(--db-weight-bold);
+    font-family: var(--db-font-mono);
+    font-size: 2rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
     color: var(--db-color-text);
 }
 
 .price-period {
-    font-size: var(--db-text-sm);
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
 }
 
@@ -53,9 +59,9 @@
 }
 
 .feature__icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: var(--db-color-success);
+    width: 1rem;
+    height: 1rem;
+    color: var(--db-valley-ink);
     flex-shrink: 0;
 }
 
@@ -81,19 +87,20 @@
     display: flex;
     gap: var(--db-space-4);
     padding: var(--db-space-4) 0;
-    border-bottom: 1px solid var(--db-color-border-subtle);
+    border-bottom: 1px solid var(--db-mountain);
 }
 
 .timeline-item:last-child {
     border-bottom: none;
 }
 
+/* A crease marker, not a dot: same parallelogram as every other cell. */
 .timeline-item__dot {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 50%;
-    margin-top: 0.375rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin-top: 0.45rem;
     flex-shrink: 0;
+    transform: skewX(-14deg);
 }
 
 .dot--created {
@@ -101,7 +108,7 @@
 }
 
 .dot--renewed {
-    background: var(--db-color-accent);
+    background: var(--db-foil);
 }
 
 .dot--cancelled {
@@ -122,13 +129,17 @@
 }
 
 .timeline-item__label {
-    font-weight: var(--db-weight-medium);
+    font-weight: 400;
     color: var(--db-color-text);
 }
 
 .timeline-item__meta {
-    font-size: var(--db-text-sm);
-    margin-top: 0.25rem;
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    color: var(--db-color-text-muted);
+    margin-top: 0.3rem;
 }
 
 .loading {

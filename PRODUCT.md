@@ -30,18 +30,21 @@ QuickShareCloud gửi file kích thước bất kỳ (chunked, mã hóa đầu�
 ## Capabilities and Constraints
 
 - HTMX lazy-load là kiến trúc mặc định — shell render < 100 ms, data fill sau; layout `MainLayout` phải kế thừa `LayoutComponentBase`, HTMX partial dùng `hxmLayout`; **mỗi `hx-get` phải kèm `hx-select`** (không có Direct Routing trong .NET 10).
-- Thread: 2 theme — light + dark (âm theming hai hệ token), kế thừa Playfair Display (heading) + Outfit (body) — user đã xác nhận giữ.
-- Brand maintained: logo icon màu xanh navy `#1A1A2E`/`#4F6CF7` class cũ; daub/grunge tokens Legacy — thay thế bằng hệ token mới.
-- Font thay bằng Playfair/Outfit: giữ nguyên.
+- Thread: 2 theme — light + dark, bắt buộc cả hai; mọi token phải có cặp giá trị.
+- Token `--db-*` là **lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`). Giữ nguyên tên token để ~322 lượt dùng class `db-*` trong markup không phải sửa. Đổi giá trị, không đổi tên.
+- Hệ token grunge/kem cũ đã bị thay (2026-08-13). Chi tiết hệ hiện hành: `DESIGN.md`.
 
 ## Brand Commitments
 
 - Tên: **QuickShareCloud**; tagline: "send files, not friction".
-- Font: **Playfair Display** (display) + **Outfit** (UI) — user xác nhận giữ.
-- Iconography: hiện tại dùng SVG inline – giữ phong cách.
+- Font: **Outfit** (display + UI, đặt ở weight nhẹ, chữ hoa, tracking rộng) + **Azeret Mono** (nhãn spec, mã, hash, dung lượng, số đếm, giá).
+  Playfair Display **đã bỏ** (2026-08-13, user quyết): serif tương phản cao đánh nhau trực diện với thế giới thị giác bản vẽ kỹ thuật.
+- Luật màu: vàng foil là **fill, không bao giờ là màu chữ** (2.1:1 trên nền sheet) — mọi dùng cho chữ lấy đồng đậm `--db-color-accent-text`. Xanh valley = trạng thái đang hoạt động. Xám mountain = mọi thứ ở trạng thái nghỉ.
+- Iconography: SVG inline, vẽ tay, một độ dày nét — không emoji, không glyph unicode thay icon.
 
 ## Existing Evidence
 
+- **`DESIGN.md`** — hệ thị giác hiện hành (thế giới "Miura deployable sheet", seed `46c7765a`), viết từ code đã dựng. Đây là nguồn chuẩn cho mọi trang mới.
 - UX/design token cũ: `_bmad-output/planning-artifacts/` (UEx + PRD + architecture spine) — là anti-reference cho redesign.
 - Mã hiện tại: `src/QuickShare/` — toàn bộ giao diện.
 

@@ -14,14 +14,19 @@
 <div class="layout-root">
     <nav class="db-navbar">
         <a class="db-navbar__brand" href="/">
+            @* Mark: one crease cell folded — mountain solid, valley open. *@
             <span class="layout-logo" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round">
+                    <path d="M2 8 L10 4 L22 9 L14 13 Z" />
+                    <path d="M2 8 L10 12 L22 9" />
+                    <path d="M10 4 L10 12" stroke-dasharray="2 2" />
+                    <path d="M2 8 L6 18 L14 21 L14 13" />
                 </svg>
             </span>
-            <span class="layout-brand-word">QuickShare<span class="layout-brand-cloud">Cloud</span></span>
+            <span class="layout-brand-stack">
+                <span class="layout-brand-word">QuickShare<span class="layout-brand-cloud">Cloud</span></span>
+                <span class="layout-brand-path miura-spec">@CurrentSpec(path)</span>
+            </span>
         </a>
         <div class="db-navbar__nav">
             <div class="db-nav-menu">
@@ -76,14 +81,30 @@
 
     <footer class="layout-footer">
         <div class="layout-footer__inner">
-            <span class="layout-footer__mark">QuickShareCloud</span>
-            <span class="layout-footer__sep" aria-hidden="true">&middot;</span>
-            <span class="layout-footer__note">send files, not friction</span>
+            <div class="layout-footer__head">
+                <span class="layout-footer__mark">QuickShareCloud</span>
+                <span class="miura-rule layout-footer__rule"><span class="miura-spec">SEND FILES, NOT FRICTION</span></span>
+            </div>
+            @* Crawlable links — orphan landing pages do not get indexed. *@
+            <nav class="layout-footer__links" aria-label="Tools">
+                <a href="@RoutePaths.ToolsOnlineClipboard">Online clipboard</a>
+                <a href="@RoutePaths.ToolsShareText">Share text</a>
+                <a href="@RoutePaths.ToolsSendImagesUncompressed">Gửi ảnh không nén</a>
+            </nav>
         </div>
     </footer>
 </div>
 
 @code {
+    private const string RootSpec = "INDEX";
+
     private static string NavActive(bool isActive) =>
         isActive ? "db-nav-menu__item--active" : string.Empty;
+
+    // The nav's mono tag is wayfinding, not decoration: it names where the
+    // visitor actually is, which the old chrome never showed.
+    private static string CurrentSpec(string path) =>
+        string.IsNullOrEmpty(path) || path == "/"
+            ? RootSpec
+            : path.Trim('/').ToUpperInvariant();
 }

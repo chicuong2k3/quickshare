@@ -1,31 +1,51 @@
-/* QuickShareCloud — Pricing page (grunge-dark tokens) */
+/* ─── Pricing · three cells of one sheet ─────────────────────────
+   Plans are cells in the same lattice, not floating cards. The
+   recommended cell is marked by a foil corner — the sheet's own
+   way of saying "pull here" — not by a thicker border. ───────── */
 
 .hero {
     text-align: center;
-    padding-block: var(--db-space-8) var(--db-space-8);
+    padding-block: var(--db-space-9) var(--db-space-8);
     max-width: 48rem;
     margin-inline: auto;
 }
 
-.hero ::deep .db-h1 {
-    margin-top: var(--db-space-3);
-}
-
-.tag {
-    display: inline-block;
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-semibold);
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--db-radius-full);
-    border: 1px solid var(--db-color-accent);
-    color: var(--db-color-accent);
-    background: var(--db-color-accent-subtle);
-}
-
 .hero p {
-    margin-top: var(--db-space-4);
+    margin-top: var(--db-space-5);
     max-width: 36rem;
     margin-inline: auto;
+    color: var(--db-color-text-secondary);
+}
+/* Hairline rules flanking the spec line — the world's signature device. */
+.hero p {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--db-space-4);
+}
+
+.hero p::before,
+.hero p::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    max-width: 6rem;
+    background: var(--db-mountain);
+}
+
+
+/* Kept for the yearly-saving marker inside the toggle, which is a
+   fact about the price and not an eyebrow. */
+.tag {
+    display: inline-block;
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--db-valley-ink);
+    background: var(--db-valley);
+    color: var(--db-valley-ink);
 }
 
 /* ─── Billing toggle ─── */
@@ -37,25 +57,45 @@
 
 .toggle-group {
     display: inline-flex;
-    gap: var(--db-space-2);
-    padding: 0.25rem;
-    border-radius: var(--db-radius-2);
-    border: 1px solid var(--db-color-border);
-    background: var(--db-color-bg);
+    padding: 0;
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
 }
 
-/* ─── Pricing cards ─── */
+/* A selected option is an open cell, not a pull tab: foil stays
+   reserved for the actions that actually deploy something. */
+.toggle-group ::deep .db-btn--primary {
+    background: var(--db-valley) !important;
+    border-color: var(--db-valley-ink) !important;
+    color: var(--db-color-text) !important;
+    clip-path: none;
+    padding-inline: var(--db-space-6);
+}
+
+.toggle-group ::deep .db-btn {
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+.toggle-group ::deep .db-btn + .db-btn {
+    border-left: 1px solid var(--db-mountain) !important;
+}
+
+/* ─── Plan cells ─── */
 .cards {
     display: grid;
-    gap: var(--db-space-5);
+    gap: 0;
+    background: transparent;
     max-width: 72rem;
     margin-inline: auto;
     padding-bottom: var(--db-space-8);
+    border: 1px solid var(--db-mountain);
 }
 
 @media (min-width: 640px) {
     .cards {
         grid-template-columns: repeat(2, 1fr);
+        padding-bottom: 0;
     }
 }
 
@@ -66,38 +106,54 @@
     }
 }
 
+/* One hairline between cells: the grid gap IS the crease. */
 .card {
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-4);
-    background: var(--db-color-surface);
-    padding: var(--db-space-5);
+    border: none;
+    outline: 1px solid var(--db-mountain);
+    /* A cell of the sheet: the ground reads through, and the bottom-left
+       corner is clipped to a valley the way the board's cells are. */
+    background:
+        linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
+        transparent;
+    padding: var(--db-space-7) var(--db-space-6);
     display: flex;
     flex-direction: column;
-    transition: border-color 0.2s;
+    transition: background-color var(--db-transition);
 }
 
 .card:hover {
-    border-color: color-mix(in srgb, var(--db-color-text) 30%, transparent);
+    background:
+        linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
+        var(--db-sheet-raised);
 }
 
+/* The recommended cell: folded corner in foil, and it alone. */
 .card--popular {
-    border: 2px solid var(--db-color-accent);
     position: relative;
+    background:
+        linear-gradient(225deg, var(--db-foil) 0 28px, transparent 28px) top right / auto no-repeat,
+        linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
+        var(--db-sheet-raised);
 }
 
 .card__badge {
-    position: absolute;
-    top: -0.75rem;
-    left: 50%;
-    translate: -50% 0;
-    display: inline-block;
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-bold);
-    padding: 0.25rem 1rem;
-    border-radius: var(--db-radius-full);
-    background: var(--db-color-accent);
-    color: var(--db-color-bg);
+    display: block;
+    min-height: 1rem;
+    font-family: var(--db-font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--db-color-accent-text);
+    margin-bottom: var(--db-space-3);
     white-space: nowrap;
+}
+
+/* Cells without a badge keep the same first baseline. */
+.card:not(.card--popular) .card__head::before {
+    content: "";
+    display: block;
+    min-height: 1rem;
+    margin-bottom: var(--db-space-3);
 }
 
 .card__head {
@@ -105,19 +161,27 @@
 }
 
 .card__price {
-    margin-bottom: var(--db-space-5);
+    margin-bottom: var(--db-space-6);
+    padding-bottom: var(--db-space-5);
+    border-bottom: 1px solid var(--db-mountain);
 }
 
+/* Money is a measurement: mono, tabular, aligned. */
 .card__price .price-amount {
-    font-family: var(--db-font-heading);
-    font-size: 3rem;
-    font-weight: var(--db-weight-bold);
+    font-family: var(--db-font-mono);
+    font-size: 2.25rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
     color: var(--db-color-text);
 }
 
 .card__price .price-period {
-    margin-top: 0.25rem;
-    font-size: var(--db-text-sm);
+    margin-top: var(--db-space-2);
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
 }
 
@@ -128,50 +192,63 @@
 .features {
     margin-top: var(--db-space-5);
     padding-top: var(--db-space-5);
-    border-top: 1px solid var(--db-color-border);
+    border-top: 1px solid var(--db-color-border-subtle);
     flex: 1;
 }
 
 .feature {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--db-space-3);
-    margin-bottom: var(--db-space-4);
-    font-size: var(--db-text-sm);
+    padding-bottom: var(--db-space-3);
+    margin-bottom: var(--db-space-3);
+    border-bottom: 1px solid var(--db-color-border-subtle);
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
     color: var(--db-color-text-secondary);
 }
 
-.feature__icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-    color: var(--db-color-accent);
+.feature:last-child {
+    border-bottom: none;
 }
 
-/* ─── FAQ ─── */
+/* A crease marker, not a stock circle-check. */
+.feature__icon {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex-shrink: 0;
+    background: var(--db-valley-ink);
+    transform: skewX(-14deg);
+}
+
+.feature__icon svg {
+    display: none;
+}
+
+/* ─── FAQ — hairline rows, no boxes ─── */
 .faq {
     width: 100%;
     max-width: 48rem;
     margin-inline: auto;
-    margin-top: var(--db-space-8);
+    margin-top: var(--db-space-9);
 }
 
 .faq__head {
     text-align: center;
-    margin-bottom: var(--db-space-8);
+    margin-bottom: var(--db-space-7);
 }
 
 .faq details {
     width: 100%;
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-2);
-    margin-bottom: var(--db-space-4);
-    transition: border-color 0.2s;
+    border: none;
+    border-top: 1px solid var(--db-mountain);
+    margin-bottom: 0;
 }
 
-.faq details:hover {
-    border-color: color-mix(in srgb, var(--db-color-text) 20%, transparent);
+.faq details:last-of-type {
+    border-bottom: 1px solid var(--db-mountain);
 }
 
 .faq summary {
@@ -179,17 +256,24 @@
     cursor: pointer;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem;
-    font-weight: var(--db-weight-semibold);
+    gap: var(--db-space-4);
+    padding: var(--db-space-5) var(--db-space-2);
+    font-family: var(--db-font-ui);
+    font-weight: 400;
     color: var(--db-color-text);
 }
 
+.faq summary:hover {
+    background: var(--db-sheet-raised);
+}
+
 .faq summary .faq-chevron {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1rem;
+    height: 1rem;
     flex-shrink: 0;
     margin-left: auto;
-    transition: rotate 250ms ease;
+    color: var(--db-color-text-muted);
+    transition: rotate var(--db-transition);
 }
 
 .faq details[open] summary .faq-chevron {
@@ -197,65 +281,70 @@
 }
 
 .faq .faq-answer {
-    padding: 0 1.25rem 1.25rem;
-    border-top: 1px solid var(--db-color-border);
+    padding: 0 var(--db-space-2);
     font-size: var(--db-text-sm);
     line-height: 1.7;
+    color: var(--db-color-text-secondary);
     overflow: hidden;
     max-height: 0;
     opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-top-width: 0;
-    transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease, border-top-width 0.35s ease;
+    transition: max-height var(--db-transition-slow), opacity var(--db-transition), padding var(--db-transition-slow);
 }
 
 .faq details[open] .faq-answer {
     max-height: 24rem;
     opacity: 1;
-    padding: 1rem 1.25rem 1.25rem;
-    border-top-width: 1px;
+    padding: 0 var(--db-space-2) var(--db-space-6);
 }
 
-/* ─── CTA ─── */
+/* ─── Closing cell ─── */
 .cta {
     max-width: 48rem;
     margin-inline: auto;
-    margin-top: var(--db-space-8);
+    margin-top: var(--db-space-9);
     text-align: center;
-    border-radius: var(--db-radius-4);
-    border: 1px solid color-mix(in srgb, var(--db-color-accent) 20%, transparent);
-    background: linear-gradient(135deg, color-mix(in srgb, var(--db-color-accent) 10%, transparent), color-mix(in srgb, var(--db-color-accent) 5%, transparent));
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
     padding: var(--db-space-8);
 }
 
 .cta__title {
-    font-family: var(--db-font-heading);
-    font-size: var(--db-text-xl);
-    font-weight: var(--db-weight-bold);
-}
-
-/* ─── Reduced motion ─── */
-@media (prefers-reduced-motion: reduce) {
-    .card,
-    .faq details,
-    .faq .faq-chevron,
-    .faq .faq-answer,
-    .cta {
-        transition: none !important;
-        animation: none !important;
-    }
+    font-family: var(--db-font-display);
+    font-size: 1.375rem;
+    font-weight: 200;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .cta ::deep .db-btn {
-    margin-top: var(--db-space-5);
+    margin-top: var(--db-space-6);
 }
 
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
     .card,
     .faq details,
-    .faq .faq-chevron {
-        transition: none;
+    .faq summary,
+    .faq .faq-chevron,
+    .faq .faq-answer {
+        transition: none !important;
+    }
+}
+
+/* Below the three-column layout the cell must read as figure against the
+   lattice: an opaque sheet, not a translucent one. */
+@media (max-width: 767px) {
+    .card,
+    .card:hover {
+        background:
+            linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
+            var(--db-sheet-raised);
+    }
+
+    .card--popular {
+        background:
+            linear-gradient(225deg, var(--db-foil) 0 28px, transparent 28px) top right / auto no-repeat,
+            linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
+            var(--db-sheet-raised);
     }
 }

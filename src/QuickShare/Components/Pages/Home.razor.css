@@ -1,37 +1,69 @@
 .home-hero {
-    max-width: 42rem;
+    max-width: 46rem;
     margin: 0 auto;
-    padding-block: var(--db-space-7) var(--db-space-6);
+    padding-block: var(--db-space-9) var(--db-space-7);
     text-align: center;
 }
 
-.home-tag {
-    display: inline-block;
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-medium);
-    letter-spacing: 0.08em;
+/* Engineering lettering: light, wide, uppercase. */
+.home-h1 {
+    font-family: var(--db-font-display);
+    font-weight: 200;
+    font-size: clamp(2.1rem, 7vw, 4.25rem);
     text-transform: uppercase;
-    color: var(--db-color-accent);
-    margin-bottom: var(--db-space-3);
+    letter-spacing: 0.05em;
+    line-height: 1.0;
+    text-wrap: balance;
+    margin: 0;
 }
 
+/* Emphasis is a valley crease under the word. Gold is never text:
+   it reads 2.1:1 on the sheet and is reserved for what can be pulled. */
 .home-accent {
-    color: var(--db-color-accent);
+    color: var(--db-color-text);
+    box-shadow: inset 0 -0.22em 0 var(--db-valley);
 }
 
 .home-hero__sub {
-    max-width: 34rem;
-    margin: var(--db-space-4) auto 0;
+    max-width: 36rem;
+    margin: var(--db-space-6) auto 0;
     font-size: var(--db-text-base);
+    color: var(--db-color-text-secondary);
+    text-wrap: pretty;
 }
 
-.home-hero__actions {
+.home-hero__paste {
+    margin-top: var(--db-space-6);
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+/* Hairline rules flanking the spec line — the world's signature device. */
+.home-hero__paste {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--db-space-3);
-    margin-top: var(--db-space-5);
+    gap: var(--db-space-4);
+}
+
+.home-hero__paste::before,
+.home-hero__paste::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    max-width: 6rem;
+    background: var(--db-mountain);
+}
+
+
+.home-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--db-space-4);
+    margin-top: var(--db-space-7);
 }
 
 .home-features {
@@ -45,15 +77,17 @@
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
-    border-radius: var(--db-radius-2);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
-    margin-bottom: var(--db-space-3);
+    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    color: var(--db-color-text-secondary);
+    margin-bottom: var(--db-space-4);
+    transform: skewX(-14deg);
 }
 
 .home-feature-icon svg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    transform: skewX(14deg);
 }
 
 .home-why {
@@ -100,6 +134,7 @@
     max-width: 100%;
     min-width: 0;
     margin-top: var(--db-space-5);
+    overflow-x: auto;
 }
 
 .home-why__table {
@@ -111,9 +146,12 @@
 .home-why__caption {
     caption-side: top;
     text-align: left;
-    margin-bottom: var(--db-space-3);
+    margin-bottom: var(--db-space-4);
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
-    font-size: var(--db-text-sm);
 }
 
 .home-why__table th,
@@ -124,9 +162,13 @@
 }
 
 .home-why__table thead th {
-    font-size: var(--db-text-sm);
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--db-color-text-muted);
-    background: var(--db-color-surface);
+    background: transparent;
+    border-bottom: 1px solid var(--db-mountain);
 }
 
 .home-why__table tbody th {
@@ -143,10 +185,6 @@
 }
 
 @media (max-width: 900px) {
-    .home-why__card {
-        overflow-x: auto;
-    }
-
     .home-why__table {
         min-width: 44rem;
     }
@@ -195,13 +233,14 @@
     width: 2.25rem;
     height: 2.25rem;
     margin: 0 auto var(--db-space-3);
-    border-radius: var(--db-radius-full);
     background: var(--db-color-surface);
-    color: var(--db-color-accent);
+    /* Bronze, not foil: gold is a fill and fails contrast as text. */
+    color: var(--db-color-accent-text);
     font-family: var(--db-font-mono);
     font-size: var(--db-text-sm);
-    font-weight: var(--db-weight-bold);
-    border: 1px solid var(--db-color-border-subtle);
+    font-weight: 500;
+    border: 1px solid var(--db-mountain);
+    transform: skewX(-14deg);
 }
 
 .home-cta {
