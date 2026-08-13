@@ -117,10 +117,20 @@ Làm theo thứ tự con người sẽ làm:
 7. **Test**: E2E phía server vào `tests/QuickShare.Server.Tests/E2E/`, dùng `TestWebAppFactory` (xem `DeliveryExtrasApiTests` làm mẫu seed data + client). Logic **chỉ tồn tại trong trình duyệt** (clipboard, sessionStorage, chuyển phase bằng JS) thì dùng `BrowserAppFixture` + Playwright (xem `PasteBrowserTests`) — nó chạy app như process thật và lái Chrome đã cài, không tải browser bundle.
 8. **Xoá feature**: xoá folder `Features/<Tên>/` là endpoint + handler tự biến mất (auto-discovery), sau đó grep tên feature để dọn UI/JS/CSS/test còn tham chiếu.
 
+## Giữ index GitNexus
+
+Reindex bằng:
+
+```bash
+npx gitnexus analyze --skip-agents-md
+```
+
+`--skip-agents-md` giữ cho block bên dưới không bị ghi đè. Số đếm symbol/edge **không ổn định** — chạy lại cùng một commit đã cho 2324, 2349, 2372 — nên chúng đã được bỏ khỏi tài liệu: chúng gây churn git mỗi lần index mà không đổi cách ai đó viết code. (`--no-stats` có trong `--help` nhưng không có tác dụng.)
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **quickshare** (2372 symbols, 5698 relationships, 177 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **quickshare**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

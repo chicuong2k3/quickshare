@@ -162,10 +162,20 @@ protected override async Task OnInitializedAsync()
 
 @RTK.md
 
+## Keeping the GitNexus index fresh
+
+Reindex with:
+
+```bash
+npx gitnexus analyze --skip-agents-md
+```
+
+`--skip-agents-md` stops the generated block below from being rewritten. Symbol and edge counts are **not stable** — re-running against the same commit produced 2324, 2349 and 2372 — so they have been removed from these files: they churn git on every index without changing how anyone writes code. (`--no-stats` is documented in `--help` but has no effect.)
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **quickshare** (2372 symbols, 5698 relationships, 177 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **quickshare**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
