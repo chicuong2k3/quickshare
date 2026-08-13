@@ -817,6 +817,109 @@ body::after,
     display: none;
 }
 
+/* --- P2P receiver list (p2p- namespace — markup is built in send.js, so
+       scoped .razor.css never reaches it) --- */
+.p2p-receiver-list {
+    display: none;
+    width: 100%;
+    max-width: 34rem;
+    margin-top: var(--db-space-5);
+}
+
+.p2p-receiver-heading {
+    font-family: var(--db-font-ui);
+    font-size: var(--db-text-sm);
+    font-weight: var(--db-weight-semibold);
+    margin: 0 0 var(--db-space-3) 0;
+    color: var(--db-color-text-secondary);
+}
+
+.p2p-receiver-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-3);
+    padding: var(--db-space-3);
+    border: 1px solid var(--db-color-border);
+    margin-bottom: var(--db-space-2);
+    background: var(--db-color-surface);
+}
+
+.p2p-receiver-index {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    color: var(--db-color-text-muted);
+    min-width: 1.75rem;
+}
+
+.p2p-receiver-id {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    color: var(--db-color-text-muted);
+    min-width: 4rem;
+}
+
+.p2p-receiver-status {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.125rem 0.5rem;
+    min-width: 8.5rem;
+    text-align: center;
+    border: 1px solid var(--db-color-border);
+}
+
+.p2p-receiver-status--receiving {
+    border-color: var(--db-color-success);
+    color: var(--db-color-success);
+}
+
+.p2p-receiver-status--done {
+    background: var(--db-color-success-subtle);
+    border-color: var(--db-color-success);
+    color: var(--db-color-success);
+}
+
+.p2p-receiver-status--disconnected,
+.p2p-receiver-status--different-network {
+    background: var(--db-color-error-subtle);
+    border-color: var(--db-color-error);
+    color: var(--db-color-error);
+}
+
+.p2p-receiver-progress {
+    flex: 1;
+    min-width: 5rem;
+    height: 4px;
+    background: var(--db-color-border);
+    overflow: hidden;
+}
+
+.p2p-receiver-progress-fill {
+    height: 100%;
+    background: var(--db-color-accent);
+    transition: width 0.3s ease;
+}
+
+.p2p-receiver-pct,
+.p2p-receiver-size {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-xs);
+    color: var(--db-color-text-muted);
+    min-width: 3rem;
+    text-align: right;
+}
+
+.p2p-receiver-size {
+    margin-left: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .p2p-receiver-progress-fill {
+        transition: none;
+    }
+}
+
 /* --- Ad reward card (ad- namespace - global for HTMX responses) --- */
 .ad-reward-card {
     border: 1px solid var(--db-color-border);

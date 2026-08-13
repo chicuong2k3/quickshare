@@ -15,6 +15,105 @@
         { urls: 'stun:stun4.l.google.com:19302' }
     ];
 
+    // Network preflight. A server-reflexive (srflx) candidate carries the public
+    // IPv4 address a peer is seen as from the internet. Two devices behind the
+    // same NAT report the same one, so a mismatch means a direct connection is
+    // impossible and the UI can say so up front instead of waiting out an ICE
+    // timeout. Inconclusive (no srflx candidate) is never treated as a failure.
+    var PROBE_TIMEOUT_MS = 5000;
+    var IPV4_PATTERN = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+    var CANDIDATE_TYPE_FIELD = 'typ';
+    var CANDIDATE_TYPE_SRFLX = 'srflx';
+    var CANDIDATE_ADDRESS_INDEX = 4;
+    var PROBE_CHANNEL_LABEL = 'netprobe';
+    var NETWORK_RESULT = {
+        same: 'same',
+        different: 'different',
+        unknown: 'unknown'
+    };
+
+    function extractPublicIpv4(candidateLine) {
+        var parts = (candidateLine || '').split(' ');
+        var typeIndex = parts.indexOf(CANDIDATE_TYPE_FIELD);
+        if (typeIndex < 0 || parts[typeIndex + 1] !== CANDIDATE_TYPE_SRFLX) {
+            return null;
+        }
+
+        var address = parts[CANDIDATE_ADDRESS_INDEX];
+        // IPv6 is skipped on purpose: two devices on one LAN still get distinct
+        // global IPv6 addresses, so it cannot separate same from different network.
+        if (!address || !IPV4_PATTERN.test(address)) {
+            return null;
+        }
+
+        return address;
+    }
+
+    // Resolves to the public IPv4 string, or null when it cannot be determined
+    // (STUN blocked, IPv6-only, timeout). Never rejects.
+    function probePublicAddress(timeoutMs) {
+        return new Promise(function (resolve) {
+            var pc = null;
+            var settled = false;
+            var timer = null;
+
+            function finish(address) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                if (timer) {
+                    clearTimeout(timer);
+                }
+                if (pc) {
+                    try {
+                        pc.close();
+                    } catch (e) {
+                        // Already closed.
+                    }
+                }
+                resolve(address || null);
+            }
+
+            try {
+                pc = new RTCPeerConnection({ iceServers: resolveIceServers() });
+            } catch (e) {
+                finish(null);
+                return;
+            }
+
+            pc.onicecandidate = function (event) {
+                if (!event.candidate) {
+                    finish(null); // Gathering finished with no usable srflx candidate.
+                    return;
+                }
+                var address = extractPublicIpv4(event.candidate.candidate);
+                if (address) {
+                    finish(address);
+                }
+            };
+
+            timer = setTimeout(function () { finish(null); }, timeoutMs || PROBE_TIMEOUT_MS);
+
+            try {
+                pc.createDataChannel(PROBE_CHANNEL_LABEL);
+                pc.createOffer()
+                    .then(function (offer) { return pc.setLocalDescription(offer); })
+                    .catch(function () { finish(null); });
+            } catch (e) {
+                finish(null);
+            }
+        });
+    }
+
+    function compareNetwork(localAddress, remoteAddress) {
+        if (!localAddress || !remoteAddress) {
+            return NETWORK_RESULT.unknown;
+        }
+
+        return localAddress === remoteAddress ? NETWORK_RESULT.same : NETWORK_RESULT.different;
+    }
+
     function PeerConnection() {
         this.pc = null;
         this.pendingCandidates = [];
@@ -157,4 +256,7 @@
 
     window.P2P = window.P2P || {};
     window.P2P.PeerConnection = PeerConnection;
+    window.P2P.probePublicAddress = probePublicAddress;
+    window.P2P.compareNetwork = compareNetwork;
+    window.P2P.NETWORK_RESULT = NETWORK_RESULT;
 })();

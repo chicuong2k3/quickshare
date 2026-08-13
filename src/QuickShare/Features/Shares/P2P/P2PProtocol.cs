@@ -11,6 +11,13 @@ public static class P2PProtocol
     public const string TypeOffer = "offer";
     public const string TypeAnswer = "answer";
     public const string TypeIce = "ice";
+
+    /// <summary>
+    /// Public-address exchange used to detect up front whether both peers sit
+    /// behind the same NAT. Relayed like offer/answer/ice; the server does not
+    /// inspect the payload.
+    /// </summary>
+    public const string TypeNetProbe = "netprobe";
     public const string TypeError = "error";
     public const string TypeRegistered = "registered";
     public const string TypePeerJoined = "peer-joined";

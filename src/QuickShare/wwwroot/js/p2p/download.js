@@ -11,6 +11,19 @@
         var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = 'Sender did not respond in time. Please try again.';
         var ICE_CONNECT_TIMEOUT_MS = 12000;
         var ICE_CONNECT_TIMEOUT_MESSAGE = 'Direct connection failed \u2014 devices not on the same network (NAT/firewall). Connect both to the same Wi\u2011Fi or hotspot, then reopen this link.';
+        var DIFFERENT_NETWORK_MESSAGE = 'These devices are on different networks, so a direct transfer is not possible. Connect both to the same Wi\u2011Fi or hotspot, then reopen this link.';
+        var SENDER_LEFT_MESSAGE = 'The sender disconnected before the transfer finished. Ask them to reopen the P2P Send tab, then try again.';
+        var RELAY_TYPE = {
+            offer: 'offer',
+            ice: 'ice',
+            answer: 'answer',
+            netProbe: 'netprobe'
+        };
+        // No progress for this long while transferring means the sender is gone
+        // without a clean close (network dropped, device slept). WebRTC state
+        // events can stay silent on a dead pipe, so this watchdog guarantees the
+        // receiver stops showing a frozen progress bar.
+        var TRANSFER_STALL_TIMEOUT_MS = 30000;
 
         window.p2pDownload = (function () {
             var state = {
@@ -19,7 +32,8 @@
                 _receivedBytes: 0, _startTime: 0,
                 _signaling: null, _peerConnection: null, _dataChannel: null, _receiver: null, _intentionalStop: false,
                 _pendingOffer: null, _pendingIceCandidates: [], _isRegistered: false, _connectTimeoutId: null,
-                _handshakeTimeoutId: null, _iceTimeoutId: null
+                _handshakeTimeoutId: null, _iceTimeoutId: null, _stallTimeoutId: null,
+                _localAddress: null, _remoteAddress: null, _networkResult: null, _blocked: false
             };
 
             function render() {
@@ -102,6 +116,75 @@
                     render();
                 }, RECEIVER_HANDSHAKE_TIMEOUT_MS);
             }
+            function clearStallTimeout() {
+                if (state._stallTimeoutId) {
+                    clearTimeout(state._stallTimeoutId);
+                    state._stallTimeoutId = null;
+                }
+            }
+
+            function armStallTimeout() {
+                clearStallTimeout();
+                state._stallTimeoutId = setTimeout(function () {
+                    if (state.phase !== 'transferring') {
+                        return;
+                    }
+
+                    failTransfer(SENDER_LEFT_MESSAGE);
+                }, TRANSFER_STALL_TIMEOUT_MS);
+            }
+
+            function failTransfer(message) {
+                clearHandshakeTimeout();
+                clearIceTimeout();
+                clearStallTimeout();
+                if (state._receiver) {
+                    state._receiver.cancel();
+                    state._receiver = null;
+                }
+                if (state._peerConnection) {
+                    state._peerConnection.close();
+                    state._peerConnection = null;
+                }
+                state._dataChannel = null;
+                state.phase = 'error';
+                state.error = message;
+                render();
+            }
+
+            // --- Network preflight ---
+
+            // Probe the public address, tell the peer, and compare as soon as both
+            // sides are known. A confirmed mismatch fails immediately instead of
+            // making the user click Download and wait out the ICE timeout.
+            function startNetworkProbe() {
+                if (!window.P2P || typeof window.P2P.probePublicAddress !== 'function') {
+                    return;
+                }
+
+                window.P2P.probePublicAddress().then(function (address) {
+                    state._localAddress = address;
+                    if (address && state._signaling) {
+                        state._signaling.send(RELAY_TYPE.netProbe, { address: address });
+                    }
+                    evaluateNetwork();
+                });
+            }
+
+            function evaluateNetwork() {
+                if (state._blocked) {
+                    return;
+                }
+
+                state._networkResult = window.P2P.compareNetwork(state._localAddress, state._remoteAddress);
+                if (state._networkResult !== window.P2P.NETWORK_RESULT.different) {
+                    return;
+                }
+
+                state._blocked = true;
+                failTransfer(DIFFERENT_NETWORK_MESSAGE);
+            }
+
             function clearIceTimeout() {
                 if (state._iceTimeoutId) {
                     clearTimeout(state._iceTimeoutId);
@@ -139,19 +222,31 @@
                 state._signaling.onWaiting = function () { clearConnectTimeout(); state.phase = 'waiting-sender'; render(); };
                 state._signaling.onPeerLeft = function () {
                     clearHandshakeTimeout();
-                    if (state.phase === 'connecting' || state.phase === 'ready' || state.phase === 'transferring') {
+                    // A sender that leaves mid-transfer is a failure, not a fresh
+                    // wait: the file is incomplete and reopening the link cannot
+                    // resume it. Only pre-transfer phases fall back to waiting.
+                    if (state.phase === 'transferring') {
+                        failTransfer(SENDER_LEFT_MESSAGE);
+                        return;
+                    }
+                    if (state.phase === 'connecting' || state.phase === 'ready') {
                         state.phase = 'waiting-sender';
                         render();
                     }
                 };
                 state._signaling.onRelay = function (type, data) {
-                    if (type === 'offer') {
+                    if (type === RELAY_TYPE.netProbe) {
+                        state._remoteAddress = (data && data.address) || null;
+                        evaluateNetwork();
+                        return;
+                    }
+                    if (type === RELAY_TYPE.offer) {
                         if (state._peerConnection) {
                             handleOffer(data);
                         } else {
                             state._pendingOffer = data;
                         }
-                    } else if (type === 'ice' && data) {
+                    } else if (type === RELAY_TYPE.ice && data) {
                         var candidate = data.candidate || data;
                         if (state._peerConnection) {
                             state._peerConnection.addIceCandidate(candidate);
@@ -172,15 +267,30 @@
                 };
                 armConnectTimeout();
                 state._signaling.connect('receiver');
+                startNetworkProbe();
             }
 
             function startDownload() {
+                if (state._blocked) {
+                    return;
+                }
                 state.phase = 'connecting'; armHandshakeTimeout(); armIceTimeout(); render();
                 if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) { state.phase = 'error'; state.error = 'P2P modules not loaded'; render(); return; }
                 state._peerConnection = new window.P2P.PeerConnection();
                 state._peerConnection.onDataChannel = function (channel) { clearIceTimeout(); onDataChannel(channel); };
-                state._peerConnection.onIceCandidate = function (c) { if (state._signaling) state._signaling.send('ice', c); };
-                state._peerConnection.onConnectionState = function (s) { if ((s === 'failed' || s === 'disconnected') && (state.phase === 'transferring' || state.phase === 'connecting')) { clearIceTimeout(); clearHandshakeTimeout(); state.phase = 'error'; state.error = ICE_CONNECT_TIMEOUT_MESSAGE; render(); } };
+                state._peerConnection.onIceCandidate = function (c) { if (state._signaling) state._signaling.send(RELAY_TYPE.ice, c); };
+                state._peerConnection.onConnectionState = function (s) {
+                    if (s !== 'failed' && s !== 'disconnected') {
+                        return;
+                    }
+                    // Dropping during transfer means the peer went away; dropping
+                    // while still connecting means ICE never got through.
+                    if (state.phase === 'transferring') {
+                        failTransfer(SENDER_LEFT_MESSAGE);
+                    } else if (state.phase === 'connecting') {
+                        failTransfer(ICE_CONNECT_TIMEOUT_MESSAGE);
+                    }
+                };
                 // Process any offer/ICE that arrived before user clicked download
                 if (state._pendingOffer) {
                     handleOffer(state._pendingOffer);
@@ -196,7 +306,7 @@
             function handleOffer(data) {
                 var sdp = data.sdp || data;
                 if (sdp && typeof sdp === 'object' && sdp.sdp) sdp = sdp.sdp;
-                state._peerConnection.createAnswer(sdp).then(function (answerSdp) { state._signaling.send('answer', { sdp: answerSdp }); }).catch(function () { state.phase = 'error'; state.error = 'Failed to handle WebRTC offer'; render(); });
+                state._peerConnection.createAnswer(sdp).then(function (answerSdp) { state._signaling.send(RELAY_TYPE.answer, { sdp: answerSdp }); }).catch(function () { state.phase = 'error'; state.error = 'Failed to handle WebRTC offer'; render(); });
             }
 
             function onDataChannel(channel) {
@@ -204,15 +314,15 @@
                 state._receiver = new window.P2P.FileReceiver(channel, null);
                 state._startTime = Date.now();
                 state._receiver.onFileInfo = function (info) { state.fileName = info.name; state.fileSize = info.size; state.mimeType = info.mime; };
-                state._receiver.onProgress = function (rec, tot) { state.progress = Math.round((rec / tot) * 100); state._receivedBytes = rec; render(); };
-                state._receiver.onComplete = function () { clearHandshakeTimeout(); state.progress = 100; state.phase = 'complete'; render(); };
-                state._receiver.onError = function (msg) { clearHandshakeTimeout(); state.phase = 'error'; state.error = msg; render(); };
+                state._receiver.onProgress = function (rec, tot) { state.progress = Math.round((rec / tot) * 100); state._receivedBytes = rec; armStallTimeout(); render(); };
+                state._receiver.onComplete = function () { clearHandshakeTimeout(); clearStallTimeout(); state.progress = 100; state.phase = 'complete'; render(); };
+                state._receiver.onError = function (msg) { failTransfer(msg); };
                 clearHandshakeTimeout();
-                state.phase = 'transferring'; state._receiver.start(); render();
+                state.phase = 'transferring'; armStallTimeout(); state._receiver.start(); render();
             }
 
-            function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); clearHandshakeTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
-            function cleanup() { clearConnectTimeout(); clearHandshakeTimeout(); clearIceTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
+            function cancelDownload() { state._intentionalStop = true; clearConnectTimeout(); clearHandshakeTimeout(); clearStallTimeout(); if (state._receiver) state._receiver.cancel(); cleanup(); state.phase = 'checking'; state._intentionalStop = false; render(); }
+            function cleanup() { clearConnectTimeout(); clearHandshakeTimeout(); clearIceTimeout(); clearStallTimeout(); if (state._signaling) { state._signaling.close(); state._signaling = null; } if (state._peerConnection) { state._peerConnection.close(); state._peerConnection = null; } if (state._receiver) { state._receiver.cancel(); state._receiver = null; } state._dataChannel = null; }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
             return { startDownload: startDownload, cancelDownload: cancelDownload };

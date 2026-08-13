@@ -148,6 +148,7 @@
             case 'offer':
             case 'answer':
             case 'ice':
+            case 'netprobe':
                 if (this.onRelay) this.onRelay(data.type, data.data, data.receiverId);
                 break;
         }

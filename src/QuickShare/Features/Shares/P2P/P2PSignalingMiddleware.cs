@@ -160,6 +160,7 @@ public sealed class P2PSignalingMiddleware
                 case P2PProtocol.TypeOffer:
                 case P2PProtocol.TypeAnswer:
                 case P2PProtocol.TypeIce:
+                case P2PProtocol.TypeNetProbe:
                     await HandleRelayAsync(shareCode, ws, type, root, ct);
                     break;
 

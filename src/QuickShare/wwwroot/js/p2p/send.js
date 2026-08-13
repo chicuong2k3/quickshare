@@ -12,6 +12,19 @@
     // guarantees the sender eventually shows a disconnect instead of a frozen
     // progress bar.
     var RECEIVER_STALL_TIMEOUT_MS = 30000;
+    var RELAY_TYPE = {
+        offer: 'offer',
+        answer: 'answer',
+        ice: 'ice',
+        netProbe: 'netprobe'
+    };
+    var RECEIVER_STATUS = {
+        connecting: 'connecting',
+        receiving: 'receiving',
+        done: 'done',
+        disconnected: 'disconnected',
+        differentNetwork: 'different-network'
+    };
     function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
     function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
@@ -23,7 +36,7 @@
             phase: 'idle', progress: 0, shareCode: '', shareLink: '', error: '',
             _file: null, _intentionalStop: false,
             _signaling: null, _receivers: {}, _receiverIndex: 0,
-            _quota: null
+            _quota: null, _localAddress: null, _addressProbe: null
         };
         function setPhase(phase) { state.phase = phase; render(); }
 
@@ -124,9 +137,10 @@
         }
 
         function statusLabel(r) {
-            if (r.status === 'connecting') return 'Connecting\u2026';
-            if (r.status === 'receiving') return 'Receiving';
-            if (r.status === 'done') return 'Done';
+            if (r.status === RECEIVER_STATUS.connecting) return 'Connecting\u2026';
+            if (r.status === RECEIVER_STATUS.receiving) return 'Receiving';
+            if (r.status === RECEIVER_STATUS.done) return 'Done';
+            if (r.status === RECEIVER_STATUS.differentNetwork) return 'Different network';
             return (r._wasReceiving ? 'Left mid-transfer' : 'Disconnected');
         }
 
@@ -136,24 +150,26 @@
             if (!container || !itemsEl) return;
 
             var ids = Object.keys(state._receivers);
-            if (ids.length === 0) { container.style.display = 'none'; return; }
+            // The stylesheet keeps the list hidden until a receiver exists, so the
+            // visible state must be set explicitly \u2014 clearing the inline style
+            // would fall back to the stylesheet's display:none.
+            container.style.display = ids.length === 0 ? 'none' : 'block';
+            if (ids.length === 0) return;
 
-            container.style.display = '';
             var html = '';
             for (var i = 0; i < ids.length; i++) {
                 var r = state._receivers[ids[i]];
                 var pct = Math.round(r.progress * 100);
-                var statusClass = 'rstatus-' + r.status;
-                html += '<div class="p2p-receiver-entry" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border:1px solid var(--db-color-border);border-radius:var(--db-radius-2,8px);margin-bottom:0.5rem;background:var(--db-color-surface,var(--db-color-bg))">';
-                html += '<span style="font-weight:600;font-size:0.75rem;color:var(--db-color-text-muted);min-width:1.75rem">#' + r.index + '</span>';
-                html += '<span style="font-size:0.75rem;font-family:monospace;color:var(--db-color-text-muted);min-width:4rem">' + ids[i].slice(0, 6) + '\u2026</span>';
-                html += '<span class="' + statusClass + '" style="font-size:0.75rem;font-weight:500;padding:0.125rem 0.5rem;border-radius:999px;min-width:5.5rem;text-align:center">' + statusLabel(r) + '</span>';
-                if (r.status === 'receiving') {
-                    html += '<div style="flex:1;min-width:80px"><div style="height:4px;border-radius:2px;background:var(--db-color-border);overflow:hidden"><div style="height:100%;width:' + pct + '%;border-radius:2px;background:var(--db-color-accent);transition:width 0.3s ease"></div></div></div>';
-                    html += '<span style="font-size:0.75rem;color:var(--db-color-text-muted);min-width:3rem;text-align:right">' + pct + '%</span>';
+                html += '<div class="p2p-receiver-entry">';
+                html += '<span class="p2p-receiver-index">#' + r.index + '</span>';
+                html += '<span class="p2p-receiver-id">' + ids[i].slice(0, 6) + '\u2026</span>';
+                html += '<span class="p2p-receiver-status p2p-receiver-status--' + r.status + '">' + statusLabel(r) + '</span>';
+                if (r.status === RECEIVER_STATUS.receiving) {
+                    html += '<div class="p2p-receiver-progress"><div class="p2p-receiver-progress-fill" style="width:' + pct + '%"></div></div>';
+                    html += '<span class="p2p-receiver-pct">' + pct + '%</span>';
                 }
-                if (r.status === 'done') {
-                    html += '<span style="font-size:0.75rem;color:var(--db-color-text-muted);margin-left:auto">' + formatBytes(state._file ? state._file.size : 0) + '</span>';
+                if (r.status === RECEIVER_STATUS.done) {
+                    html += '<span class="p2p-receiver-size">' + formatBytes(state._file ? state._file.size : 0) + '</span>';
                 }
                 html += '</div>';
             }
@@ -262,8 +278,9 @@
                 onReceiverLeft(receiverId);
             };
             state._signaling.onRelay = function (type, data, receiverId) {
-                if (type === 'answer') onAnswer(data, receiverId);
-                else if (type === 'ice' && data && receiverId) {
+                if (type === RELAY_TYPE.answer) onAnswer(data, receiverId);
+                else if (type === RELAY_TYPE.netProbe) onReceiverNetProbe(data, receiverId);
+                else if (type === RELAY_TYPE.ice && data && receiverId) {
                     var rcv = state._receivers[receiverId];
                     if (rcv && rcv.pc) rcv.pc.addIceCandidate(data);
                 }
@@ -275,6 +292,55 @@
             };
             state._signaling.connect('sender', fileMeta);
         }
+        // --- Network preflight ---
+
+        // Resolve this device's public IPv4 once and reuse it for every receiver.
+        // Resolves to null when it cannot be determined (STUN blocked, IPv6-only),
+        // in which case the comparison stays inconclusive and nothing is blocked.
+        function localAddress() {
+            if (state._addressProbe) {
+                return state._addressProbe;
+            }
+
+            if (!window.P2P || typeof window.P2P.probePublicAddress !== 'function') {
+                state._addressProbe = Promise.resolve(null);
+                return state._addressProbe;
+            }
+
+            state._addressProbe = window.P2P.probePublicAddress().then(function (address) {
+                state._localAddress = address;
+                return address;
+            });
+            return state._addressProbe;
+        }
+
+        // The receiver announces its public address; answer with ours so both
+        // sides reach the same verdict, and mark a confirmed mismatch as such
+        // rather than leaving the entry on "Connecting…" until it times out.
+        function onReceiverNetProbe(data, receiverId) {
+            var remoteAddress = (data && data.address) || null;
+
+            localAddress().then(function (address) {
+                if (address && state._signaling) {
+                    state._signaling.sendTo(RELAY_TYPE.netProbe, { address: address }, receiverId);
+                }
+
+                var result = window.P2P.compareNetwork(address, remoteAddress);
+                if (result !== window.P2P.NETWORK_RESULT.different) {
+                    return;
+                }
+
+                var rcv = state._receivers[receiverId];
+                if (!rcv || rcv.status === RECEIVER_STATUS.done) {
+                    return;
+                }
+
+                closeReceiver(rcv);
+                rcv.status = RECEIVER_STATUS.differentNetwork;
+                renderReceivers();
+            });
+        }
+
         // --- WebRTC ---
 
         function onPeerJoined(receiverId) {
@@ -287,7 +353,7 @@
             // clear error message.
             setTimeout(function () {
                 var pulled = state._receivers[receiverId];
-                if (pulled && pulled.status === 'connecting' && !pulled.channel) {
+                if (pulled && pulled.status === RECEIVER_STATUS.connecting && !pulled.channel) {
                     onReceiverLeft(receiverId);
                 }
             }, RECEIVER_CONNECT_TIMEOUT_MS);
@@ -295,7 +361,7 @@
             state._receiverIndex++;
             state._receivers[receiverId] = {
                 index: state._receiverIndex,
-                status: 'connecting',
+                status: RECEIVER_STATUS.connecting,
                 progress: 0,
                 pc: null,
                 channel: null,
@@ -309,7 +375,7 @@
 
             pc.onIceCandidate = function (c) {
                 if (state._signaling) {
-                    state._signaling.sendTo('ice', c, receiverId);
+                    state._signaling.sendTo(RELAY_TYPE.ice, c, receiverId);
                 }
             };
             pc.onConnectionState = function (s) {
@@ -330,7 +396,7 @@
             pc.createOffer()
             .then(function (sdp) {
                 if (state._signaling) {
-                    state._signaling.sendTo('offer', { sdp: sdp }, receiverId);
+                    state._signaling.sendTo(RELAY_TYPE.offer, { sdp: sdp }, receiverId);
                 }
             })
             .catch(function () {
@@ -351,7 +417,7 @@
 
             var rcv = state._receivers[receiverId];
             if (!rcv) return;
-            rcv.status = 'receiving';
+            rcv.status = RECEIVER_STATUS.receiving;
             renderReceivers();
 
             var channel = rcv.channel;
@@ -371,7 +437,7 @@
                 var r = state._receivers[receiverId];
                 if (!r) return;
                 clearTimeout(r._stallTimer);
-                r.status = 'done';
+                r.status = RECEIVER_STATUS.done;
                 r.sender = null;
                 r.channel = null;
                 renderReceivers();
@@ -385,23 +451,37 @@
 
         function onReceiverStalled(receiverId) {
             var r = state._receivers[receiverId];
-            if (!r || r.status !== 'receiving') return;
+            if (!r || r.status !== RECEIVER_STATUS.receiving) return;
             onReceiverLeft(receiverId);
+        }
+
+        function closeReceiver(rcv) {
+            clearTimeout(rcv._stallTimer);
+            if (rcv.sender) {
+                rcv.sender.cancel();
+                rcv.sender = null;
+            }
+            rcv.channel = null;
+            if (rcv.pc) {
+                rcv.pc.close();
+                rcv.pc = null;
+            }
         }
 
         function onReceiverLeft(receiverId) {
             if (!receiverId) return;
             var rcv = state._receivers[receiverId];
-            if (!rcv || rcv.status === 'done' || rcv.status === 'disconnected') return;
+            if (!rcv) return;
+            if (rcv.status === RECEIVER_STATUS.done
+                || rcv.status === RECEIVER_STATUS.disconnected
+                || rcv.status === RECEIVER_STATUS.differentNetwork) {
+                return;
+            }
 
-            rcv._wasReceiving = rcv.status === 'receiving';
-            clearTimeout(rcv._stallTimer);
+            rcv._wasReceiving = rcv.status === RECEIVER_STATUS.receiving;
+            closeReceiver(rcv);
 
-            if (rcv.sender) { rcv.sender.cancel(); rcv.sender = null; }
-            if (rcv.channel) { rcv.channel = null; }
-            if (rcv.pc) { rcv.pc.close(); rcv.pc = null; }
-
-            rcv.status = 'disconnected';
+            rcv.status = RECEIVER_STATUS.disconnected;
             renderReceivers();
         }
 
@@ -472,9 +552,11 @@
                 var r = state._receivers[recvIds[i]];
                 if (r.sender) r.sender.cancel();
                 if (r.pc) r.pc.close();
+                clearTimeout(r._stallTimer);
             }
             state._receivers = {};
             state._receiverIndex = 0;
+            renderReceivers();
 
             if (state._signaling) { state._signaling.close(); state._signaling = null; }
         }
