@@ -12,23 +12,6 @@
 
 <PageTitle>Nâng cấp lên @planDisplay — QuickShareCloud</PageTitle>
 
-<script>
-	function renderPayOSQR(qrContent) {
-	    var el = document.getElementById("payos-qrcode");
-	    if (!el) return;
-	    el.innerHTML = "";
-	    if (!qrContent || !window.qrcode) {
-	        if (!window.qrcode) el.textContent = "QR library not loaded.";
-	        return;
-	    }
-	    var qr = window.qrcode(0, "M");
-	    qr.addData(qrContent);
-	    qr.make();
-	    var svg = qr.createSvgTag(5, 2);
-	    el.innerHTML = svg;
-	}
-</script>
-
 @if (isPollRequest)
 {
     @* HTMX poll response — only #payment-status is selected out of this page. *@
@@ -109,34 +92,16 @@ else
                         <h3 class="db-h3">Thanh toán <strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
                         <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
 
+                        @* Mã QR + thông tin chuyển khoản đã có sẵn trong khung PayOS bên dưới. *@
                         <div class="payos-checkout">
-                            <p class="db-text-muted" style="font-size:0.95rem;margin-bottom:0.75rem">
-                                Quét mã QR bằng ứng dụng ngân hàng, hoặc thanh toán trực tiếp bên dưới.
-                            </p>
-                            <div id="payos-qrcode" style="margin:0 auto 1rem;display:flex;justify-content:center"></div>
-
                             <div class="payos-iframe-wrap">
                                 <iframe src="@payOSResult.CheckoutUrl"
                                         title="Thanh toán PayOS"
-                                        sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups"
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                                         loading="lazy"
                                         class="payos-iframe"></iframe>
                             </div>
                         </div>
-
-                        <script>
-                            (function() {
-                                var qrContent = "@payOSResult.QrCode";
-                                var attempts = 0;
-                                var timer = setInterval(function() {
-                                    attempts++;
-                                    if (window.qrcode || attempts >= 50) {
-                                        clearInterval(timer);
-                                        renderPayOSQR(qrContent);
-                                    }
-                                }, 100);
-                            })();
-                        </script>
 
                         @PaymentStatus
                     </div>
@@ -190,18 +155,7 @@ else
     [SupplyParameterFromQuery(Name = PayOSOrderCodeQueryKey)]
     public long? PayOSOrderCode { get; set; }
 
-    [Parameter]
-    [SupplyParameterFromQuery(Name = PayOSCodeQueryKey)]
-    public string? PayOSCode { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery(Name = PayOSStatusQueryKey)]
-    public string? PayOSStatus { get; set; }
     private const string PayOSOrderCodeQueryKey = "orderCode";
-    private const string PayOSCodeQueryKey = "code";
-    private const string PayOSStatusQueryKey = "status";
-    private const string PayOSSuccessCode = "00";
-    private const string PayOSPaidStatus = "PAID";
     private const string PollQueryKey = "poll";
     private const string PollQueryValue = "1";
     private const string PollInterval = "every 3s";
@@ -293,12 +247,11 @@ else
             HtmxHeaders.RequestValue,
             StringComparison.OrdinalIgnoreCase);
         var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
-        var shouldProcessCallback = IsSuccessfulPayOSCallback(ctx);
         isPollRequest = ctx.Request.Query[PollQueryKey] == PollQueryValue
             && TryGetPayOSOrderCode(ctx, out pollOrderCode);
 
         // Shell render for GET: return immediately, no DB calls.
-        if (!isHtmxRequest && !isPost && !shouldProcessCallback) return;
+        if (!isHtmxRequest && !isPost) return;
 
         isFullyLoaded = true;
 
@@ -310,51 +263,29 @@ else
         if (isPollRequest)
         {
             paymentCompleted = await Checkout.IsCompletedAsync(user, pollOrderCode, ct);
+            if (paymentCompleted)
+            {
+                // Gói đã kích hoạt — nhảy thẳng sang trang hoá đơn (HTMX điều hướng trang cha).
+                ctx.Response.Headers[HtmxHeaders.Redirect] = RoutePaths.AccountBilling;
+            }
             return;
         }
 
-        // Handle PayOS redirect callback (orderCode in query string)
-        if (!isPost && shouldProcessCallback && TryGetPayOSOrderCode(ctx, out var orderCode))
-        {
-            await Checkout.TryFinalizeCallbackAsync(user, orderCode, ct);
-            pollOrderCode = orderCode;
-            paymentCompleted = await Checkout.IsCompletedAsync(user, orderCode, ct);
-            currentPlan = user.ToProfileResponse().Plan;
-        }
-
         // Auto-create payment on first load (HTMX GET) or on form submit / retry (POST).
-        // Skip if we just processed a successful callback (payment already complete).
-        if (!shouldProcessCallback)
+        if (isPost)
         {
-            if (isPost)
-            {
-                var form = await ctx.Request.ReadFormAsync();
-                var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
-                var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
-                var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
-                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
-            }
-            else if (isHtmxRequest)
-            {
-                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
-            }
-
-            pollOrderCode = paymentIntent?.PayOSOrderCode ?? pollOrderCode;
+            var form = await ctx.Request.ReadFormAsync();
+            var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
+            var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
+            var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
+            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
         }
-    }
-
-    private bool IsSuccessfulPayOSCallback(HttpContext ctx)
-    {
-        if (!TryGetPayOSOrderCode(ctx, out _))
+        else if (isHtmxRequest)
         {
-            return false;
+            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
         }
 
-        var callbackCode = PayOSCode ?? ctx.Request.Query[PayOSCodeQueryKey].FirstOrDefault();
-        var callbackStatus = PayOSStatus ?? ctx.Request.Query[PayOSStatusQueryKey].FirstOrDefault();
-        var isSuccessCode = string.Equals(callbackCode, PayOSSuccessCode, StringComparison.OrdinalIgnoreCase);
-        var isPaidStatus = string.Equals(callbackStatus, PayOSPaidStatus, StringComparison.OrdinalIgnoreCase);
-        return isSuccessCode || isPaidStatus;
+        pollOrderCode = paymentIntent?.PayOSOrderCode ?? pollOrderCode;
     }
 
     private bool TryGetPayOSOrderCode(HttpContext ctx, out long orderCode)

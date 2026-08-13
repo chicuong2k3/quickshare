@@ -29,8 +29,8 @@ services:
       - PayOS__ApiKey=${PAYOS_API_KEY:-}
       - PayOS__ChecksumKey=${PAYOS_CHECKSUM_KEY:-}
       - PayOS__WebhookUrl=${PAYOS_WEBHOOK_URL:-}
-      - PayOS__ReturnUrl=https://quickshare.codemagic.io.vn/upgrade
-      - PayOS__CancelUrl=https://quickshare.codemagic.io.vn/upgrade
+      - PayOS__ReturnUrl=https://quickshare.codemagic.io.vn/payments/payos/return
+      - PayOS__CancelUrl=https://quickshare.codemagic.io.vn/payments/payos/return
       - Pricing__ProMonthly=${PRICING_PRO_MONTHLY:-2000}
       - Pricing__ProYearly=${PRICING_PRO_YEARLY:-20000}
       - Pricing__StudioMonthly=${PRICING_STUDIO_MONTHLY:-5000}

@@ -63,18 +63,35 @@ public sealed class CheckoutService(AppDbContext db, IConfiguration config, PayO
                 i.PayOSOrderCode == orderCode &&
                 i.Status == PaymentIntentStatus.Completed, ct);
 
-    /// <summary>Completes the pending intent for a successful PayOS redirect. Safe to call twice.</summary>
-    public async Task TryFinalizeCallbackAsync(User user, long orderCode, CancellationToken ct)
+    /// <summary>
+    /// Completes the pending intent for an order PayOS confirms as paid. Safe to call twice,
+    /// and independent of who is browsing — the PayOS return URL is loaded inside an iframe
+    /// where our auth cookie may not travel, so the intent itself identifies the user.
+    /// </summary>
+    public async Task<bool> FinalizeByOrderCodeAsync(long orderCode, CancellationToken ct)
     {
         var intent = await db.PaymentIntents
-            .Where(i => i.UserId == user.Id)
             .Where(i => i.PayOSOrderCode == orderCode)
             .Where(i => i.Status == PaymentIntentStatus.Pending)
             .FirstOrDefaultAsync(ct);
 
         if (intent is null)
         {
-            return;
+            // Already completed by the webhook (or unknown order) — treat a completed one as success.
+            return await db.PaymentIntents
+                .AsNoTracking()
+                .AnyAsync(i => i.PayOSOrderCode == orderCode && i.Status == PaymentIntentStatus.Completed, ct);
+        }
+
+        if (!await payOS.IsPaidAsync(orderCode, ct))
+        {
+            return false;
+        }
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == intent.UserId, ct);
+        if (user is null)
+        {
+            return false;
         }
 
         await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, db, ct);
@@ -109,6 +126,7 @@ public sealed class CheckoutService(AppDbContext db, IConfiguration config, PayO
         // Evict the cached User entity (plan) and billing-history snapshot so the
         // next page render shows the activated plan immediately.
         await UserCacheInvalidator.EvictAsync(db, user.Id, ct);
+        return true;
     }
 
     private static async Task<string> GenerateUniqueCodeAsync(AppDbContext db, CancellationToken ct)

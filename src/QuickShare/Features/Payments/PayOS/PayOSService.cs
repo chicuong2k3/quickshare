@@ -38,8 +38,10 @@ public class PayOSService
         string description,
         CancellationToken ct)
     {
-        var returnUrl = _config["PayOS:ReturnUrl"] ?? "https://quicksharecloud.com/upgrade";
-        var cancelUrl = _config["PayOS:CancelUrl"] ?? "https://quicksharecloud.com/upgrade";
+        // Only the origin of the configured URLs is used: PayOS navigates the checkout
+        // iframe to these, so they must always land on the standalone return page.
+        var returnUrl = ToReturnPage(_config["PayOS:ReturnUrl"]);
+        var cancelUrl = ToReturnPage(_config["PayOS:CancelUrl"]);
 
         // Description limited to ~9 chars for non-linked bank accounts
         var truncatedDesc = description.Length > 9
@@ -103,6 +105,37 @@ public class PayOSService
                 Success = false,
                 ErrorMessage = $"PayOS error: {ex.Message}"
             };
+        }
+    }
+
+    private const string DefaultOrigin = "https://quicksharecloud.com";
+
+    private static string ToReturnPage(string? configured)
+    {
+        var origin = Uri.TryCreate(configured, UriKind.Absolute, out var uri)
+            ? uri.GetLeftPart(UriPartial.Authority)
+            : DefaultOrigin;
+        return origin + RoutePaths.PayOSReturn;
+    }
+
+    /// <summary>
+    /// Asks PayOS whether the order is actually paid. This is the trust boundary for the
+    /// browser return URL — the query string alone must never activate a subscription.
+    /// </summary>
+    public virtual async Task<bool> IsPaidAsync(long orderCode, CancellationToken ct)
+    {
+        try
+        {
+            var link = await _client.PaymentRequests.GetAsync(orderCode, new RequestOptions
+            {
+                CancellationToken = ct
+            });
+            return link.Status == PaymentLinkStatus.Paid;
+        }
+        catch (PayOSException ex)
+        {
+            _logger.LogError(ex, "PayOS lookup failed for orderCode={OrderCode}", orderCode);
+            return false;
         }
     }
 

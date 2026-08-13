@@ -82,6 +82,51 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task PayOSReturn_ActivatesPlan_OnlyWhenPayOSConfirmsPaid()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var getHtml = await (await client.GetAsync("/upgrade?plan=pro")).Content.ReadAsStringAsync();
+        var formContent = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("__RequestVerificationToken", AntiforgeryHelper.ExtractToken(getHtml)),
+            new KeyValuePair<string, string>("Plan", "pro"),
+            new KeyValuePair<string, string>("Billing", "monthly"),
+        });
+        await client.PostAsync("/upgrade?plan=pro", formContent);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var orderCode = (await db.PaymentIntents.AsNoTracking().FirstAsync(i => i.UserId == user.Id)).PayOSOrderCode;
+
+        // PayOS says "not paid" — a forged return URL must not upgrade anyone.
+        var unpaid = await client.GetAsync($"/payments/payos/return?orderCode={orderCode}");
+        Assert.Equal(HttpStatusCode.OK, unpaid.StatusCode);
+        Assert.Equal(PlanTierLimits.Free, (await db.Users.AsNoTracking().FirstAsync(u => u.Id == user.Id)).Plan);
+
+        // PayOS confirms payment — plan activates without any webhook.
+        lock (StubPayOSService.PaidOrderCodes)
+        {
+            StubPayOSService.PaidOrderCodes.Add(orderCode);
+        }
+        var paid = await client.GetAsync($"/payments/payos/return?orderCode={orderCode}");
+        Assert.Equal(HttpStatusCode.OK, paid.StatusCode);
+
+        Assert.Equal(PlanTierLimits.Pro, (await db.Users.AsNoTracking().FirstAsync(u => u.Id == user.Id)).Plan);
+        Assert.Equal(
+            PaymentIntentStatus.Completed,
+            (await db.PaymentIntents.AsNoTracking().FirstAsync(i => i.UserId == user.Id)).Status);
+
+        // The page's HTMX poll must now bounce the user to the billing page.
+        var poll = new HttpRequestMessage(HttpMethod.Get, $"/upgrade?plan=pro&orderCode={orderCode}&poll=1");
+        poll.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
+        var pollResponse = await client.SendAsync(poll);
+        Assert.Equal(RoutePaths.AccountBilling, pollResponse.Headers.GetValues(HtmxHeaders.Redirect).Single());
+    }
+
+    [Fact]
     public async Task Webhook_InvalidSignature_Returns401()
     {
         var client = _factory.CreateClient();

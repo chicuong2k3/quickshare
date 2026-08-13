@@ -187,6 +187,17 @@ internal sealed class StubPayOSService : PayOSService
             AccountNumber = "0000000000",
             AccountName = "STUB ACCOUNT"
         });
+
+    /// <summary>Order codes the stubbed PayOS API reports as paid.</summary>
+    public static readonly HashSet<long> PaidOrderCodes = [];
+
+    public override Task<bool> IsPaidAsync(long orderCode, CancellationToken ct)
+    {
+        lock (PaidOrderCodes)
+        {
+            return Task.FromResult(PaidOrderCodes.Contains(orderCode));
+        }
+    }
 }
 
 internal sealed class LocalDiskStorageProviderStub : IStorageProvider
