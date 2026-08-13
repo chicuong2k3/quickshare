@@ -32,6 +32,12 @@ colors:
   # Third-party brand colours, allowed only on the control they belong to:
   github-brand: "#24292f"        # GitHub provider button border only
   foil-specular: "rgba(255,255,255,0.34)"  # the highlight pass across foil
+  stamp: "#0A0A0A"                         # the primary action's ground (light theme)
+  stamp-rule: "rgba(212,175,55,0.55)"      # its inner blind-stamp hairline
+  lattice: "rgba(10,10,10,0.10)"           # the crease line, per theme
+  dark-stamp: "#050505"                    # deeper than the dark sheet, so it still separates
+  dark-stamp-rule: "rgba(224,188,74,0.60)"
+  dark-lattice: "rgba(242,241,237,0.07)"
 typography:
   # The closed size set. Anything outside this list is a defect, not a choice.
   # Small end steps in 1/16rem because mono spec labels live there.
@@ -87,18 +93,21 @@ spacing:
   "8": "40px"
   "9": "64px"
 components:
+  # A foil stamp, not a slab of gold. See "The Stamp" below.
   button-primary:
-    backgroundColor: "{colors.foil}"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.stamp}"
+    textColor: "{colors.foil}"
     typography: "{typography.label}"
     rounded: "{rounded.none}"
     padding: "7px 26px"
+    innerRule: "inset 0 0 0 5px {colors.stamp}, inset 0 0 0 6px {colors.stamp-rule}"
   button-primary-hover:
-    backgroundColor: "#E3C566"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.stamp}"
+    textColor: "#E3C566"
+    innerRule: "the rule brightens to {colors.foil}"
   button-primary-active:
-    backgroundColor: "#9E7F1F"
-    textColor: "{colors.ink}"
+    backgroundColor: "#000000"
+    textColor: "{colors.foil-deep}"
   button-secondary:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
@@ -165,7 +174,7 @@ The system's discipline is in what it refuses. Zero radius everywhere, at token 
 **Key Characteristics:**
 - Zero border-radius, enforced at the token layer — a crease has no radius
 - 60-degree crease lattice as full-bleed page ground, fixed-attachment
-- `skewX(-14deg)` parallelograms with counter-skewed glyphs for every icon cell
+- `skewX(-14deg)` parallelograms with counter-skewed glyphs for every icon cell (the primary action is the exception: it is a stamped rectangle)
 - Hairline (1px) rules that terminate in monospace spec labels
 - Foil gold is a fill and never a text colour; deep bronze carries typographic accent
 - Mono labels carry real measurements only — never decorative serials
@@ -198,11 +207,15 @@ The palette is a paper palette: warm neutral stock, one cool crease shadow, one 
 - **Error Oxide** (`{colors.error}`) and **Field Green** (`{colors.success}`): terminal upload states and validation messages only, always as a 1px border plus an 8% subtle fill, never as a solid block.
 
 ### Dark Theme
-The dark theme (`[data-theme="grunge-light"], [data-theme="dark"]`) is the same packet lit from one side, not an inversion. Stock goes to `{colors.dark-sheet}`; mountain hairlines become `{colors.dark-mountain}`; the valley darkens to `{colors.dark-valley}` while its ink brightens to `{colors.dark-valley-ink}` so the active cell still reads. Foil brightens; **and here the law flips** — in dark, `--db-color-accent-text` points at `{colors.dark-foil-ink}`, a pale gold that *is* legible as text on near-black. Both themes are required; a surface that only works in one is not finished.
+The dark theme is `[data-theme="grunge-dark"], [data-theme="dark"]`; the light sheet is `[data-theme="grunge-light"], [data-theme="light"]`, and it is the default. The names were inverted at one point — the sheet lived under `grunge-dark` — so DAUB's own light/dark toggle produced the opposite scheme; do not reintroduce that. Each theme block carries the **full** shared token layer (typography, geometry, shadows, focus, transitions, semantics, components) after its own raw palette. A block that redefines only raw colours half-applies: the semantic layer falls back to DAUB's defaults and the page renders as an unreadable hybrid.
+
+The dark theme is the same packet lit from one side, not an inversion. Stock goes to `{colors.dark-sheet}`; mountain hairlines become `{colors.dark-mountain}`; the valley darkens to `{colors.dark-valley}` while its ink brightens to `{colors.dark-valley-ink}` so the active cell still reads. Foil brightens; **and here the law flips** — in dark, `--db-color-accent-text` points at `{colors.dark-foil-ink}`, a pale gold that *is* legible as text on near-black. Both themes are required; a surface that only works in one is not finished.
 
 ### Named Rules
 
-**The Foil-Is-A-Fill Rule.** Gold is a fill and never a text colour. It measures 2.1:1 on the light sheet. Any accent that must be read as type uses `--db-color-accent-text` (deep bronze on light, pale gold on dark). If you catch yourself writing `color: var(--db-foil)`, you have made a contrast bug.
+**The Foil-Is-A-Fill Rule.** Gold is a fill and never a text colour *on the sheet*, where it measures 2.1:1. Any accent read as type against paper uses `--db-color-accent-text` (deep bronze on light, pale gold on dark). The single exception is the stamp: on `--db-stamp` ink, foil measures 8:1 and is the label. `color: var(--db-foil)` is a contrast bug everywhere except inside a stamped surface.
+
+**The Stamp.** The primary action is the darkest object on the sheet — an ink ground carrying a foil label and an inner hairline rule, the blind-stamp border a foiled card has. Its hierarchy comes from value, not from hue, so it holds at any size and needs no shine. It is a rectangle: an earlier parallelogram lost its border on the cut edges, forced a second silhouette below 560px, and ate the focus outline. Hover brightens the rule and the label rather than repainting the ground; a `background` shorthand on hover wipes the material and is the mistake this rule exists to prevent.
 
 **The One Pull Rule.** At most one foil element per viewport, and it must be the thing that actually deploys the packet — download, upload, upgrade. A selected toggle is not a pull; it takes valley. Pricing's billing-period switch explicitly overrides `db-btn--primary` back to valley for exactly this reason.
 

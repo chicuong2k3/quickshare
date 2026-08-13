@@ -66,6 +66,8 @@
    reserved for the actions that actually deploy something. */
 .toggle-group ::deep .db-btn--primary {
     background: var(--db-valley) !important;
+    /* Cancel the foil stamp: a selected option is a state, not an action. */
+    box-shadow: none !important;
     border-color: var(--db-valley-ink) !important;
     color: var(--db-color-text) !important;
     clip-path: none;

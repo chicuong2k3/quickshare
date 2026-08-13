@@ -12,7 +12,8 @@
    Token NAMES are DAUB's — only the values are ours, so every
    db-* component and every scoped .razor.css re-skins from here.
    ──────────────────────────────────────────────────────────────── */
-[data-theme="grunge-dark"] {
+[data-theme="grunge-light"],
+[data-theme="light"] {
     /* === Sheet materials === */
     --db-sheet: #EFEEEA;
     --db-sheet-raised: #F9F9F7;
@@ -26,6 +27,11 @@
     --db-foil-ink: #6B5518;
     --db-ink: #0A0A0A;
     --db-ink-soft: #55524B;
+    /* The stamped tab. Deliberately NOT --db-ink: that token flips to
+       near-white in the dark theme, which would put gold on white at 1.9:1. */
+    --db-stamp: #0A0A0A;
+    --db-stamp-rule: rgba(212,175,55,0.55);
+    --db-lattice: rgba(10,10,10,0.10);
 
     /* === Legacy palette names, remapped so nothing dangles === */
     --db-cream: var(--db-sheet);
@@ -237,7 +243,7 @@
 /* ─── Dark: the packet in shadow. Same sheet, lit from one side. ───
    Use scene: a recipient opening a link at night in a chat app, and
    senders who keep the tab open in a dim room. ─────────────────── */
-[data-theme="grunge-light"],
+[data-theme="grunge-dark"],
 [data-theme="dark"] {
     --db-sheet: #16171A;
     --db-sheet-raised: #1D1F23;
@@ -251,6 +257,10 @@
     --db-foil-ink: #E8CB70;
     --db-ink: #F2F1ED;
     --db-ink-soft: #A5A49E;
+    /* Deeper than the dark sheet, so the stamp still separates from it. */
+    --db-stamp: #050505;
+    --db-stamp-rule: rgba(224,188,74,0.60);
+    --db-lattice: rgba(242,241,237,0.07);
 
     --db-charcoal: #D8D7D2;
     --db-warm-gray: #A5A49E;
@@ -275,6 +285,176 @@
     --db-modal-backdrop: rgba(0,0,0,0.62);
     --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
     --db-focus-ring-color: var(--db-valley-ink);
+
+    /* === Typography === */
+    --db-font-ui: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --db-font-body: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --db-font-heading: "Outfit", system-ui, sans-serif;
+    --db-font-display: "Outfit", system-ui, sans-serif;
+    --db-font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* === Geometry — a crease has no radius === */
+    --db-radius-0: 0px;
+    --db-radius-1: 0px;
+    --db-radius-2: 0px;
+    --db-radius-3: 0px;
+    --db-radius-4: 0px;
+    --db-radius-5: 0px;
+    --db-radius-full: 0px;
+    --db-crease-angle: 60deg;
+    --db-crease-skew: -14deg;
+
+    /* === Shadows — a foil tab lifts off the sheet === */
+    --db-shadow-1: 0 1px 2px rgba(10,10,10,0.06);
+    --db-shadow-2: 0 2px 8px rgba(10,10,10,0.10);
+    --db-shadow-3: 0 6px 20px rgba(10,10,10,0.14);
+    --db-shadow-inset: none;
+    --db-shadow-ring: none;
+
+    /* === Focus — the valley crease, visible === */
+    --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
+    --db-focus-ring-color: var(--db-valley-ink);
+    --db-focus-ring-width: 2px;
+
+    /* === Interactive === */
+    --db-hover-brightness: 1;
+    --db-hover-scale: 1;
+    --db-active-scale: 1;
+    --db-disabled-opacity: 0.38;
+
+    /* === Transitions — rigid linkage: one motion, everything moves === */
+    --db-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    --db-transition-fast: 140ms cubic-bezier(0.16, 1, 0.3, 1);
+    --db-transition-slow: 460ms cubic-bezier(0.16, 1, 0.3, 1);
+    --db-transition-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --db-text-emboss: none;
+    --db-text-emboss-subtle: none;
+    --db-on-accent: var(--db-ink);
+
+    /* === Semantic === */
+    --db-color-bg: var(--db-sheet);
+    --db-color-bg-alt: var(--db-sheet-deep);
+    --db-color-surface: var(--db-sheet-raised);
+    --db-color-surface-2: var(--db-sheet-deep);
+    --db-color-text: var(--db-ink);
+    --db-color-text-secondary: var(--db-charcoal);
+    --db-color-text-muted: var(--db-ink-soft);
+    --db-color-border: var(--db-mountain);
+    --db-color-accent: var(--db-foil);
+    --db-color-accent-hover: var(--db-accent-hover);
+    --db-color-accent-text: var(--db-foil-ink);
+    --db-color-success: var(--db-success);
+    --db-color-warning: var(--db-warning);
+    --db-color-error: var(--db-error);
+    --db-color-overlay: var(--db-overlay-bg);
+
+    --db-color-bg-rgb: 239,238,234;
+    --db-color-text-rgb: 10,10,10;
+    --db-color-surface-rgb: 249,249,247;
+    --db-color-accent-rgb: 212,175,55;
+    --db-color-border-rgb: 185,182,174;
+
+    --db-color-surface-raised: #FFFFFF;
+    --db-color-text-inverse: var(--db-sheet-raised);
+    --db-color-accent-active: var(--db-accent-pressed);
+    --db-color-accent-subtle: rgba(212,175,55,0.14);
+    --db-color-border-strong: var(--db-mountain-deep);
+    --db-color-border-subtle: rgba(10,10,10,0.10);
+    --db-color-error-subtle: rgba(164,50,42,0.08);
+    --db-color-success-subtle: rgba(79,122,91,0.08);
+    --db-color-warning-subtle: rgba(184,149,42,0.10);
+    --db-surface-rgb: 249,249,247;
+
+    /* === Button === */
+    --db-btn-py: 9px;
+    --db-btn-px: 20px;
+    --db-btn-radius: 0px;
+    --db-btn-font-size: var(--db-text-sm);
+    --db-btn-font-weight: 500;
+    --db-btn-bg: transparent;
+    --db-btn-color: var(--db-ink);
+    --db-btn-border: 1px solid var(--db-mountain);
+
+    /* === Field === */
+    --db-field-py: 9px;
+    --db-field-px: 12px;
+    --db-field-radius: 0px;
+    --db-field-font-size: 0.9375rem;
+    --db-field-bg: var(--db-sheet-raised);
+    --db-field-color: var(--db-ink);
+    --db-field-border: 1px solid var(--db-mountain);
+    --db-field-border-focus: 1px solid var(--db-valley-ink);
+
+    /* === Card — a cell of the sheet, corner cut === */
+    --db-card-padding: var(--db-space-6);
+    --db-card-radius: 0px;
+    --db-card-bg: var(--db-sheet-raised);
+    --db-card-border: 1px solid var(--db-mountain);
+    --db-card-shadow: none;
+    --db-card-shadow-hover: none;
+
+    /* === Navbar === */
+    --db-navbar-height: 3.75rem;
+    --db-navbar-bg: transparent;
+    --db-navbar-border: 1px solid var(--db-mountain);
+    --db-navbar-shadow: none;
+
+    /* === Badge === */
+    --db-badge-py: 3px;
+    --db-badge-px: 10px;
+    --db-badge-radius: 0px;
+    --db-badge-font-size: 0.6875rem;
+    --db-badge-font-weight: 500;
+
+    /* === Modal === */
+    --db-modal-radius: 0px;
+    --db-modal-padding: var(--db-space-6);
+    --db-modal-bg: var(--db-sheet-raised);
+    --db-modal-shadow: var(--db-shadow-3);
+    --db-modal-backdrop: rgba(10,10,10,0.42);
+
+    /* === Toast === */
+    --db-toast-radius: 0px;
+    --db-toast-padding: var(--db-space-3);
+    --db-toast-shadow: var(--db-shadow-2);
+
+    /* === Tabs === */
+    --db-tabs-border: 1px solid transparent;
+    --db-tabs-border-active: 1px solid var(--db-foil);
+    --db-tabs-font-size: var(--db-text-sm);
+    --db-tabs-font-weight: 500;
+
+    /* === Table === */
+    --db-table-border: 1px solid var(--db-color-border-subtle);
+
+    /* === Dropdown === */
+    --db-dropdown-radius: 0px;
+    --db-dropdown-bg: var(--db-sheet-raised);
+    --db-dropdown-shadow: var(--db-shadow-2);
+
+    /* === Switch === */
+    --db-switch-bg: var(--db-mountain);
+    --db-switch-bg-on: var(--db-foil);
+
+    /* === Progress — parts landing on the sheet === */
+    --db-progress-bg: var(--db-sheet-deep);
+    --db-progress-fill: var(--db-foil);
+
+    /* === Alert === */
+    --db-alert-radius: 0px;
+    --db-alert-padding: var(--db-space-4);
+
+    /* === Separator === */
+    --db-separator-color: var(--db-mountain);
+
+    /* Dark-specific overrides sit last so they win over the shared layer. */
+    --db-color-surface-raised: #24262B;
+    --db-color-border-subtle: rgba(242,241,237,0.12);
+    --db-color-accent-subtle: rgba(224,188,74,0.16);
+    --db-on-accent: #16171A;
+    --db-overlay-bg: rgba(0,0,0,0.62);
+    --db-modal-backdrop: rgba(0,0,0,0.62);
 }
 
 
@@ -327,10 +507,10 @@ body {
     background-image:
         repeating-linear-gradient(60deg,
             transparent 0 63px,
-            rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
+            var(--db-lattice) 63px 64px),
         repeating-linear-gradient(-60deg,
             transparent 0 63px,
-            rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
+            var(--db-lattice) 63px 64px),
         var(--db-grain-sheet);
     background-attachment: fixed;
 }
@@ -340,10 +520,10 @@ body {
         background-image:
             repeating-linear-gradient(60deg,
                 transparent 0 43px,
-                rgba(var(--db-color-text-rgb), 0.09) 43px 44px),
+                var(--db-lattice) 43px 44px),
             repeating-linear-gradient(-60deg,
                 transparent 0 43px,
-                rgba(var(--db-color-text-rgb), 0.09) 43px 44px);
+                var(--db-lattice) 43px 44px);
     }
 }
 
@@ -428,12 +608,16 @@ textarea:focus-visible {
    Primary is foil — it is the one thing on the surface that can be
    pulled. Gold is a fill and never a text colour (2.1:1 on sheet). */
 .db-btn, .db-btn:hover, .db-btn:focus, .db-btn:active,
-.db-btn--primary, .db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active,
 .db-btn--secondary, .db-btn--secondary:hover, .db-btn--secondary:focus, .db-btn--secondary:active,
 .db-btn--ghost, .db-btn--ghost:hover, .db-btn--ghost:focus, .db-btn--ghost:active {
     box-shadow: none !important;
     transform: none !important;
     background-image: none !important;
+    border-radius: 0 !important;
+}
+
+.db-btn--primary, .db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active {
+    transform: none !important;
     border-radius: 0 !important;
 }
 
@@ -446,35 +630,58 @@ textarea:focus-visible {
     transition: background-color var(--db-transition), color var(--db-transition), border-color var(--db-transition);
 }
 
+/* ─── Primary: a foil stamp, not a slab of gold ──────────────────
+   The action is the darkest object on a pale sheet, which is where its
+   hierarchy comes from, and gold moves from fill to stamp — the one
+   place it may be type, because it reads 8:1 on ink. The inner hairline
+   is the blind-stamp border a real foiled card carries.
+   No clip-path: it took the border with it on the cut edges and forced a
+   second silhouette below 560px. ─────────────────────────────────── */
 .db-btn--primary {
-    background:
-        var(--db-grain-foil),
-        linear-gradient(102deg, rgba(255,255,255,0.34) 0 14%, rgba(255,255,255,0) 34% 62%, rgba(255,255,255,0.22) 82% 100%),
-        var(--db-foil) !important;
-    color: var(--db-ink) !important;
-    border: 1px solid var(--db-foil-deep) !important;
-    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-    padding-left: calc(var(--db-btn-px) + 12px);
-    padding-right: calc(var(--db-btn-px) + 12px);
+    background-color: var(--db-stamp) !important;
+    background-image: none !important;
+    color: var(--db-foil) !important;
+    border: none !important;
+    box-shadow:
+        inset 0 0 0 5px var(--db-stamp),
+        inset 0 0 0 6px var(--db-stamp-rule) !important;
+    padding-left: calc(var(--db-btn-px) + 6px);
+    padding-right: calc(var(--db-btn-px) + 6px);
+    transition: background-color var(--db-transition), box-shadow var(--db-transition);
 }
 
-@media (max-width: 560px) {
-    /* clip-path is not width-aware: below this the cut edge starts eating
-       the label and overhanging its container, so the tab squares off. */
-    .db-btn--primary {
-        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-        padding-left: var(--db-btn-px);
-        padding-right: calc(var(--db-btn-px) + 6px);
-    }
+.db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active {
+    transform: none !important;
+    border-radius: 0 !important;
 }
 
-.db-btn--primary:hover { background: var(--db-accent-hover) !important; }
-.db-btn--primary:active { background: var(--db-accent-pressed) !important; }
+.db-btn {
+    font-family: var(--db-font-ui);
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    transition: background-color var(--db-transition), color var(--db-transition), border-color var(--db-transition);
+}
 
-/* clip-path eats the outline, so focus is drawn as an inset crease. */
+/* Hover brightens the stamp's rule and label — the old rule replaced the
+   whole background shorthand, which wiped the material on contact. */
+.db-btn--primary:hover {
+    color: var(--db-accent-light) !important;
+    box-shadow:
+        inset 0 0 0 5px var(--db-stamp),
+        inset 0 0 0 6px var(--db-foil) !important;
+}
+
+.db-btn--primary:active {
+    background-color: #000 !important;
+    color: var(--db-foil-deep) !important;
+}
+
+/* No clip-path now, so a real outline works and the inset hack can go. */
 .db-btn--primary:focus-visible {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--db-valley-ink) !important;
+    outline: 2px solid var(--db-valley);
+    outline-offset: 2px;
 }
 
 /* The board's secondary carries a trailing valley cell with an arrow in it.
@@ -1130,7 +1337,7 @@ body::after,
     padding: var(--db-space-6);
     border: 1px solid var(--db-mountain);
     background:
-        repeating-linear-gradient(60deg, transparent 0 47px, rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+        repeating-linear-gradient(60deg, transparent 0 47px, var(--db-lattice) 47px 48px),
         var(--db-color-surface);
     text-decoration: none;
     color: var(--db-color-text);

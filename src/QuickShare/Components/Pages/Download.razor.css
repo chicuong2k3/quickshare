@@ -80,39 +80,51 @@
     color: var(--db-color-error);
 }
 
-/* ─── The pull tab ───────────────────────────────────────────── */
+/* ─── The pull tab: the same foil stamp as every primary action ─── */
 .btn {
     display: flex;
     width: 100%;
     align-items: center;
     justify-content: center;
     gap: var(--db-space-3);
-    background: var(--db-foil);
-    border: 1px solid var(--db-foil-deep);
-    padding: 0.9rem 2rem;
+    background: var(--db-stamp);
+    border: none;
+    box-shadow:
+        inset 0 0 0 6px var(--db-stamp),
+        inset 0 0 0 7px var(--db-stamp-rule);
+    padding: 1rem 2rem;
     font-family: var(--db-font-ui);
     font-size: 0.8125rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: var(--db-ink);
+    color: var(--db-foil);
     cursor: pointer;
-    clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-    transition: background-color var(--db-transition);
+    text-decoration: none;
+    transition: background-color var(--db-transition), box-shadow var(--db-transition), color var(--db-transition);
 }
 
-.btn:hover { background: var(--db-accent-hover); }
-.btn:active { background: var(--db-accent-pressed); }
+.btn:hover {
+    color: var(--db-accent-light);
+    box-shadow:
+        inset 0 0 0 6px var(--db-stamp),
+        inset 0 0 0 7px var(--db-foil);
+}
 
-/* clip-path clips the outline, so focus reads as an inset crease. */
+.btn:active {
+    background: #000;
+    color: var(--db-foil-deep);
+}
+
 .btn:focus-visible {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--db-valley-ink);
+    outline: 2px solid var(--db-valley);
+    outline-offset: 2px;
 }
 
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled="true"] {
     background: var(--db-sheet-deep);
-    border-color: var(--db-mountain);
+    box-shadow: inset 0 0 0 1px var(--db-mountain);
     color: var(--db-color-text-muted);
     cursor: not-allowed;
 }

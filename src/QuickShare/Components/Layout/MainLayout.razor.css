@@ -10,8 +10,8 @@
        the root rather than body, which DAUB's base sheet already claims. */
     background-color: var(--db-color-bg);
     background-image:
-        repeating-linear-gradient(60deg, transparent 0 63px, rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
-        repeating-linear-gradient(-60deg, transparent 0 63px, rgba(var(--db-color-text-rgb), 0.10) 63px 64px);
+        repeating-linear-gradient(60deg, transparent 0 63px, var(--db-lattice) 63px 64px),
+        repeating-linear-gradient(-60deg, transparent 0 63px, var(--db-lattice) 63px 64px);
     background-attachment: fixed;
 }
 

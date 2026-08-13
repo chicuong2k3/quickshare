@@ -11,8 +11,8 @@
        the root rather than body, which DAUB's base sheet already claims. */
     background-color: var(--db-color-bg);
     background-image:
-        repeating-linear-gradient(60deg, transparent 0 63px, rgba(var(--db-color-text-rgb), 0.10) 63px 64px),
-        repeating-linear-gradient(-60deg, transparent 0 63px, rgba(var(--db-color-text-rgb), 0.10) 63px 64px);
+        repeating-linear-gradient(60deg, transparent 0 63px, var(--db-lattice) 63px 64px),
+        repeating-linear-gradient(-60deg, transparent 0 63px, var(--db-lattice) 63px 64px);
     background-attachment: fixed;
 }
 
@@ -591,39 +591,51 @@
     color: var(--db-color-error);
 }
 
-/* ─── The pull tab ───────────────────────────────────────────── */
+/* ─── The pull tab: the same foil stamp as every primary action ─── */
 .btn[b-t3fe010fww] {
     display: flex;
     width: 100%;
     align-items: center;
     justify-content: center;
     gap: var(--db-space-3);
-    background: var(--db-foil);
-    border: 1px solid var(--db-foil-deep);
-    padding: 0.9rem 2rem;
+    background: var(--db-stamp);
+    border: none;
+    box-shadow:
+        inset 0 0 0 6px var(--db-stamp),
+        inset 0 0 0 7px var(--db-stamp-rule);
+    padding: 1rem 2rem;
     font-family: var(--db-font-ui);
     font-size: 0.8125rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: var(--db-ink);
+    color: var(--db-foil);
     cursor: pointer;
-    clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-    transition: background-color var(--db-transition);
+    text-decoration: none;
+    transition: background-color var(--db-transition), box-shadow var(--db-transition), color var(--db-transition);
 }
 
-.btn:hover[b-t3fe010fww] { background: var(--db-accent-hover); }
-.btn:active[b-t3fe010fww] { background: var(--db-accent-pressed); }
+.btn:hover[b-t3fe010fww] {
+    color: var(--db-accent-light);
+    box-shadow:
+        inset 0 0 0 6px var(--db-stamp),
+        inset 0 0 0 7px var(--db-foil);
+}
 
-/* clip-path clips the outline, so focus reads as an inset crease. */
+.btn:active[b-t3fe010fww] {
+    background: #000;
+    color: var(--db-foil-deep);
+}
+
 .btn:focus-visible[b-t3fe010fww] {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--db-valley-ink);
+    outline: 2px solid var(--db-valley);
+    outline-offset: 2px;
 }
 
-.btn:disabled[b-t3fe010fww] {
+.btn:disabled[b-t3fe010fww],
+.btn[aria-disabled="true"][b-t3fe010fww] {
     background: var(--db-sheet-deep);
-    border-color: var(--db-mountain);
+    box-shadow: inset 0 0 0 1px var(--db-mountain);
     color: var(--db-color-text-muted);
     cursor: not-allowed;
 }
@@ -1492,7 +1504,7 @@
     padding: var(--db-space-7) var(--db-space-6);
     border: 1px solid var(--db-mountain);
     background:
-        repeating-linear-gradient(60deg, transparent 0 47px, rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+        repeating-linear-gradient(60deg, transparent 0 47px, var(--db-lattice) 47px 48px),
         var(--db-color-surface);
     cursor: pointer;
     display: flex;
@@ -1811,6 +1823,8 @@
    reserved for the actions that actually deploy something. */
 .toggle-group[b-5f9au0akcv]  .db-btn--primary {
     background: var(--db-valley) !important;
+    /* Cancel the foil stamp: a selected option is a state, not an action. */
+    box-shadow: none !important;
     border-color: var(--db-valley-ink) !important;
     color: var(--db-color-text) !important;
     clip-path: none;
@@ -2352,7 +2366,7 @@
     background:
         repeating-linear-gradient(60deg,
             transparent 0 47px,
-            rgba(var(--db-color-text-rgb), 0.06) 47px 48px),
+            var(--db-lattice) 47px 48px),
         var(--db-color-surface);
     padding: var(--db-space-9) var(--db-space-6);
     cursor: pointer;
