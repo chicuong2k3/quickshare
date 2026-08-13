@@ -14,3 +14,8 @@ appsettings.*.json
 .impeccable/shots*/
 .impeccable/worlds/
 .impeccable/questions/
+
+# BMad scratch that should not be versioned alongside the committed
+# planning artifacts in the same trees.
+_bmad-output/party-mode/memories/installed/
+_bmad-output/planning-artifacts/growth-features-implementation-plan.md
