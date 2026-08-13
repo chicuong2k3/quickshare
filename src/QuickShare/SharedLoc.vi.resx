@@ -22,6 +22,7 @@
   <data name="home_h1_zero" xml:space="preserve"><value>không phiền phức</value></data>
   <data name="home_sub" xml:space="preserve"><value>Chia sẻ file mã hóa tự động xóa. Người nhận không cần tạo tài khoản. File tự hủy.</value></data>
   <data name="home_btn_start" xml:space="preserve"><value>Bắt đầu gửi</value></data>
+  <data name="home_paste_hint" xml:space="preserve"><value>Hoặc bấm Ctrl+V — dán ảnh chụp màn hình hoặc văn bản là có link ngay.</value></data>
   <data name="home_btn_pricing" xml:space="preserve"><value>Xem bảng giá</value></data>
   <data name="home_why_title" xml:space="preserve"><value>Tại sao dùng ứng dụng này</value></data>
   <data name="home_why_sub" xml:space="preserve"><value>Hai chế độ rõ ràng: Cloud Send để gửi link dùng bất cứ lúc nào, và P2P để chuyển file trực tiếp giữa các thiết bị.</value></data>

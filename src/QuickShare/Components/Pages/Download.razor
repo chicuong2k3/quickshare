@@ -14,7 +14,7 @@
     var apiBase = string.Empty;
 }
 
-<PageTitle>Download â€” QuickShareCloud</PageTitle>
+<PageTitle>Nhận file — QuickShareCloud</PageTitle>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
@@ -81,9 +81,15 @@
 
                         <div class="file-row">
                             <div class="file-icon">@FileIcon(Info?.ContentType)</div>
-                            <div style="min-width: 0; flex: 1">
-                                <h1 class="db-h1" style="font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" title="@Info?.FileName">@Info?.FileName</h1>
-                                <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@FormatBytes(Info?.FileSize ?? 0) &middot; @ExpiryLabel</p>
+                            <div class="file-meta">
+                                @* Full name wraps: on touch there is no hover, so a title
+                                   attribute is the only copy of a truncated name. *@
+                                <h1 class="file-name" title="@Info?.FileName">@Info?.FileName</h1>
+                                <dl class="file-specs">
+                                    <div><dt class="miura-spec">Dung lượng</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
+                                    <div><dt class="miura-spec">Lượt tải còn</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
+                                    <div><dt class="miura-spec">Hết hạn</dt><dd>@ExpiryLabel</dd></div>
+                                </dl>
                             </div>
                         </div>
 
@@ -122,6 +128,19 @@
                                 <span>&middot;</span>
                                 <span id="dl-expires-label"></span>
                             </div>
+                        </div>
+
+                        @* Text snippets render inline — pastebin-lite. Filled by download.js via
+                           textContent only; never innerHTML. *@
+                        <div id="dl-text-preview" class="text-preview hidden">
+                            <div class="text-preview__bar">
+                                <span id="dl-text-status" class="text-preview__status"></span>
+                                <button type="button" id="dl-text-copy" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.copyText()">
+                                    <span id="dl-text-copy-label">Copy</span>
+                                </button>
+                            </div>
+                            <pre id="dl-text-body" class="text-preview__body"></pre>
+                            <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">Show full text</button>
                         </div>
 
                         <div style="margin-top: 2rem">

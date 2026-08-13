@@ -8,3 +8,9 @@ appsettings.*.json
 
 # Secrets — NEVER commit
 .env
+
+# Impeccable working artifacts — screenshots and reference boards are
+# regenerable; DESIGN.md and critique snapshots are not.
+.impeccable/shots*/
+.impeccable/worlds/
+.impeccable/questions/

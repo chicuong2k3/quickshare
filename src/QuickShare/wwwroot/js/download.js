@@ -1,6 +1,12 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '' };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
+
+            // Text snippets are shown inline instead of forcing a download (issue #13).
+            var TEXT_MIME_PREFIX = 'text/plain';
+            var PREVIEW_MAX_BYTES = 1024 * 1024;
+            var INLINE_FULL_BYTES = 10 * 1024;
+            var PREVIEW_LINE_LIMIT = 50;
 
             function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
             function shareCode() { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
@@ -21,14 +27,20 @@ window.downloadApp = (function () {
                     text('dl-download-count', String(state.downloadCount)); text('dl-max-downloads', String(state.maxDownloads)); text('dl-expires-label', state.expiresLabel);
                     if (state.downloading) { attr('dl-download-btn', 'disabled', 'disabled'); text('dl-download-text', 'Decrypting\u2026'); document.getElementById('dl-download-icon').outerHTML = '<span class="db-spinner db-spinner--sm"></span>'; }
                     else { removeAttr('dl-download-btn', 'disabled'); text('dl-download-text', 'Download'); }
+                    maybeRenderTextPreview();
                 }
+            }
+
+            function infoFromDom() {
+                var el = document.getElementById('download-info-data');
+                try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
             }
 
             function init() {
                 var infoEl = document.getElementById('download-info-data');
                 if (!infoEl) { setTimeout(init, 50); return; }
                 var hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
-                var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
+                var info = infoFromDom();
                 state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : 'no expiry';
                 if (info.hasOtp) state.phase = 'otp';
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
@@ -72,7 +84,7 @@ window.downloadApp = (function () {
                     })
                     .then(function () {
                         state.verifiedOtp = otp;
-                        var infoEl = document.getElementById('download-info-data'); var info = {}; try { info = JSON.parse(infoEl.textContent || '{}'); } catch (_) {}
+                        var info = infoFromDom();
                         if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                         else state.phase = 'file';
                     })
@@ -87,13 +99,68 @@ window.downloadApp = (function () {
             function skipAd() { if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; } state.phase = 'file'; render(); }
 
             function toggleZK() { state.zkOpen = !state.zkOpen; render(); }
-            function handleDownload() { state.downloading = true; render(); var code = shareCode(); var url = apiBase() + '/api/downloads/' + code;
-                if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);
-                if (state.isEncrypted) { decryptAndSave(url)['catch'](function (e) { if (window.DAUB) DAUB.toast('Download failed: ' + e.message, 'error'); })['finally'](function () { state.downloading = false; render(); }); }
-                else { state.downloading = false; window.location.href = url; } }
 
-            async function decryptAndSave(url) { var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var keyB64 = keyMatch[1]; var base64 = keyB64.replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var response = await fetch(url); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var encryptedData = await response.arrayBuffer(); var nonce = encryptedData.slice(0, 12); var ciphertext = encryptedData.slice(12); var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); var blob = new Blob([decrypted]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = code; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
+            function downloadUrl() {
+                var url = apiBase() + '/api/downloads/' + shareCode();
+                if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);
+                return url;
+            }
+
+            function handleDownload() {
+                // The preview already fetched (and paid for) the bytes — save those instead of
+                // spending a second download against the delivery's limit.
+                if (state.bytes) { saveBytes(state.bytes); return; }
+                state.downloading = true; render();
+                var url = downloadUrl();
+                if (state.isEncrypted) { fetchBytes().then(saveBytes)['catch'](function (e) { if (window.DAUB) DAUB.toast('Download failed: ' + e.message, 'error'); })['finally'](function () { state.downloading = false; render(); }); }
+                else { state.downloading = false; window.location.href = url; }
+            }
+
+            function saveBytes(bytes) { var blob = new Blob([bytes]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = infoFromDom().fileName || shareCode(); document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
+
+            async function fetchBytes() { var response = await fetch(downloadUrl()); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var data = await response.arrayBuffer(); if (!state.isEncrypted) return data; var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var base64 = keyMatch[1].replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var nonce = data.slice(0, 12); var ciphertext = data.slice(12); return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); }
+
+            function maybeRenderTextPreview() {
+                if (state.previewStarted) return;
+                var i = infoFromDom();
+                if (!i.contentType || i.contentType.indexOf(TEXT_MIME_PREFIX) !== 0) return;
+                if (!i.fileSize || i.fileSize > PREVIEW_MAX_BYTES) return;
+
+                state.previewStarted = true;
+                show('dl-text-preview');
+                text('dl-text-status', 'Loading preview…');
+
+                fetchBytes().then(function (bytes) {
+                    state.bytes = bytes;
+                    state.fullText = new TextDecoder().decode(bytes);
+                    renderText(i.fileSize > INLINE_FULL_BYTES);
+                })['catch'](function () {
+                    // Preview is a nicety — fall back to the plain download button.
+                    hide('dl-text-preview');
+                });
+            }
+
+            function renderText(truncate) {
+                var body = document.getElementById('dl-text-body');
+                if (!body) return;
+                var lines = state.fullText.split('\n');
+                var truncated = truncate && lines.length > PREVIEW_LINE_LIMIT;
+                // textContent, never innerHTML — the snippet is untrusted user content.
+                body.textContent = truncated ? lines.slice(0, PREVIEW_LINE_LIMIT).join('\n') : state.fullText;
+                if (truncated) { show('dl-text-more'); text('dl-text-status', 'First ' + PREVIEW_LINE_LIMIT + ' of ' + lines.length + ' lines'); }
+                else { hide('dl-text-more'); text('dl-text-status', ''); }
+            }
+
+            function showFullText() { renderText(false); }
+
+            function copyText() {
+                if (!state.fullText || !navigator.clipboard) return;
+                navigator.clipboard.writeText(state.fullText).then(function () {
+                    text('dl-text-copy-label', 'Copied');
+                    setTimeout(function () { text('dl-text-copy-label', 'Copy'); }, 2000);
+                });
+            }
 
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-            return { verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload };
+            return { verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText };
         })();

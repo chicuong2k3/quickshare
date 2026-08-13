@@ -7,8 +7,8 @@
 
 <PageWrapper Variant="PageVariant.Padded">
     <section class="home-hero">
-        <span class="home-tag">@Loc["home_tag"]</span>
-        <h1 class="db-h1">
+        @* No eyebrow above the heading — the heading carries its own weight. *@
+        <h1 class="db-h1 home-h1">
             @Loc["home_h1_send"] <span class="home-accent">@Loc["home_h1_anything"]</span>,
             <br>@Loc["home_h1_zero"]
         </h1>
@@ -19,6 +19,7 @@
             <a href="/send" class="db-btn db-btn--primary db-btn--lg">@Loc["home_btn_start"]</a>
             <a href="/pricing" class="db-btn db-btn--ghost db-btn--lg">@Loc["home_btn_pricing"]</a>
         </div>
+        <p class="db-text-muted home-hero__paste">@Loc["home_paste_hint"]</p>
     </section>
 
     <section class="home-why" aria-labelledby="why-use-app">
@@ -159,5 +160,7 @@
         </div>
     </section>
 </PageWrapper>
+
+<script src="/js/paste-anywhere.js"></script>
 
 

@@ -1,0 +1,33 @@
+@* Shared shell for the static /tools SEO pages. No async work, no DB — the
+   HTMX lazy-load rule's static-page exception applies (CLAUDE.md). *@
+
+<PageTitle>@Heading</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Description" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="tools-landing">
+        <h1 class="db-h1">@Heading</h1>
+        <p class="db-p db-text-muted tools-landing__lede">@Lede</p>
+
+        <a href="@RoutePaths.Send" class="tools-landing__box">
+            <span class="tools-landing__kbd">Ctrl</span> + <span class="tools-landing__kbd">V</span>
+            <span class="tools-landing__box-hint">@PasteHint</span>
+        </a>
+
+        <div class="tools-landing__body">
+            @Body
+        </div>
+    </article>
+</PageWrapper>
+
+<script src="/js/paste-anywhere.js"></script>
+
+@code {
+    [Parameter, EditorRequired] public string Heading { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Lede { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string PasteHint { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public RenderFragment? Body { get; set; }
+}

@@ -7,6 +7,8 @@
     var PART_TARGET = 25 * 1024 * 1024;
     var CONCURRENT_PARTS = 4;
     var PART_RETRY_ATTEMPTS = 3;
+    var SOURCE_WEB = 'web';
+    var SOURCE_PASTE = 'paste';
 
     var state = {
         phase: 'idle',
@@ -15,7 +17,8 @@
         encryptionEnabled: true, _encryptionUsed: false,
         otp: '',
         _abortController: null, _deliveryId: null, _uploadId: null, _cancelled: false,
-        fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0
+        fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0,
+        source: SOURCE_WEB
     };
 
     function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
@@ -161,13 +164,15 @@
         state.error = ''; state.copied = false; state.encryptionEnabled = true; state._encryptionUsed = false; state.otp = '';
         state._abortController = null; state._deliveryId = null; state._uploadId = null; state._resumeCtx = null;
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
+        state.source = SOURCE_WEB;
     }
 
     function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
 
-    function startUpload(file) {
+    function startUpload(file, source) {
         if (!file) return;
         if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = 'File exceeds the 5 GB upload limit.'; render(); return; }
+        state.source = source || SOURCE_WEB;
         state.filename = file.name || 'pasted-image';
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false; state._cancelled = false;
@@ -281,7 +286,7 @@
             for (var r = 0; r < results.length; r++) { if (results[r].status === 'rejected') throw results[r].reason; }
         }
 
-        var commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null }) });
+        var commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source }) });
         if (!commitResp.ok) { var cErr = await commitResp.text(); throw new Error(cErr || 'Failed to finalize upload'); }
         var result = await commitResp.json();
         state.link = result.shareLink;
@@ -312,12 +317,28 @@
         } catch(e) { el.textContent = 'QR unavailable.'; }
     }
 
+    function flashPasteTip() {
+        state.pasteTip = true; render();
+        setTimeout(function () { state.pasteTip = false; render(); }, 2000);
+    }
+
     document.addEventListener('paste', function (e) {
         if (state.phase === 'uploading') return;
-        var items = e.clipboardData && e.clipboardData.items; if (!items) return;
-        for (var i = 0; i < items.length; i++) { if (items[i].kind === 'file' && items[i].type && items[i].type.indexOf('image/') === 0) { e.preventDefault(); startUpload(items[i].getAsFile()); return; } }
-        state.pasteTip = true; render(); setTimeout(function () { state.pasteTip = false; render(); }, 2000);
+        if (!window.qsPaste || window.qsPaste.isEditable(e.target)) return;
+        var file = window.qsPaste.fileFromClipboard(e);
+        if (!file) { flashPasteTip(); return; }
+        e.preventDefault();
+        startUpload(file, SOURCE_PASTE);
     });
 
+    // Pasted on the homepage or a /tools page → the file was stashed before the redirect here.
+    function consumePasteHandoff() {
+        if (!window.qsPaste) return;
+        var file = window.qsPaste.takeStashed();
+        if (file) { startUpload(file, SOURCE_PASTE); return; }
+        if (window.location.hash === '#paste') flashPasteTip();
+    }
+
     render();
+    consumePasteHandoff();
 })();

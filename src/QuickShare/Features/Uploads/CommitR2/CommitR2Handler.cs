@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Source);
 
 public record CommitR2Response(string ShareCode, string ShareLink);
 
@@ -84,7 +84,8 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
             ExpiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(plan)),
-            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null
+            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null,
+            Source = DeliverySources.Normalize(cmd.Source)
         };
 
         session.Status = "Committed";

@@ -22,6 +22,7 @@
   <data name="home_h1_zero" xml:space="preserve"><value>zero friction</value></data>
   <data name="home_sub" xml:space="preserve"><value>Encrypted file sharing with auto-expiry. No accounts needed for recipients. Files delete themselves.</value></data>
   <data name="home_btn_start" xml:space="preserve"><value>Start sending</value></data>
+  <data name="home_paste_hint" xml:space="preserve"><value>Or just press Ctrl+V — paste a screenshot or text and get a link.</value></data>
   <data name="home_btn_pricing" xml:space="preserve"><value>View pricing</value></data>
   <data name="home_why_title" xml:space="preserve"><value>Why use this app</value></data>
   <data name="home_why_sub" xml:space="preserve"><value>Two clear modes: Cloud Send for share-anytime links, and P2P transfer for instant device-to-device delivery.</value></data>
