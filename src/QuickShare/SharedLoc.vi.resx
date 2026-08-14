@@ -444,4 +444,6 @@
   <data name="dl_expiry_day" xml:space="preserve"><value>hết hạn sau {0} ngày</value></data>
   <data name="dl_expiry_countdown" xml:space="preserve"><value>hết hạn sau {0}</value></data>
   <data name="dl_expiry_download_now" xml:space="preserve"><value>Tải ngay</value></data>
+  <data name="footer_terms" xml:space="preserve"><value>Điều khoản dịch vụ</value></data>
+  <data name="footer_privacy" xml:space="preserve"><value>Chính sách quyền riêng tư</value></data>
 </root>

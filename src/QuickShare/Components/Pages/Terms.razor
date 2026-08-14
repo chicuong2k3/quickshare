@@ -1,0 +1,71 @@
+@layout MainLayout
+@page "/terms"
+@using System.Globalization
+
+@* Static legal page — no async work, no DB; the HTMX lazy-load rule's
+   static-page exception applies (CLAUDE.md). Prose is culture-switched
+   markup, not resx: page-length legal text does not fit per-string
+   resources (same precedent as the /tools landing pages). *@
+
+<PageTitle>@(IsVi ? "Điều khoản dịch vụ" : "Terms of Service")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "Điều khoản dịch vụ của QuickShareCloud." : "QuickShareCloud Terms of Service.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        @if (IsVi)
+        {
+            <h1 class="db-h1">Điều khoản dịch vụ</h1>
+            <p class="db-p db-text-muted legal__version">Phiên bản @DocVersion — cập nhật @DocDate. Bản tiếng Việt và tiếng Anh có giá trị như nhau; nếu có khác biệt, bản tiếng Việt được ưu tiên với người dùng tại Việt Nam.</p>
+
+            <h2 class="db-h2">1. Dịch vụ</h2>
+            <p class="db-p">QuickShareCloud ("dịch vụ") cho phép bạn tải tệp lên và chia sẻ qua liên kết có thời hạn, hoặc truyền tệp trực tiếp trình duyệt-tới-trình duyệt (P2P). Liên kết chia sẻ hết hạn theo gói của người gửi; sau khi hết hạn, tệp bị xoá khỏi hệ thống.</p>
+
+            <h2 class="db-h2">2. Tài khoản và chấm dứt</h2>
+            <p class="db-p">Bạn đăng nhập bằng tài khoản Google hoặc GitHub. Bạn chịu trách nhiệm cho hoạt động diễn ra dưới tài khoản của mình. Chúng tôi có thể tạm ngưng hoặc chấm dứt tài khoản vi phạm mục 3, có gian lận thanh toán, hoặc theo yêu cầu pháp luật. Bạn có thể ngừng dùng dịch vụ bất kỳ lúc nào và yêu cầu xoá dữ liệu (xem Chính sách quyền riêng tư).</p>
+
+            <h2 class="db-h2">3. Sử dụng được chấp nhận</h2>
+            <p class="db-p">Không dùng dịch vụ để lưu trữ hoặc phát tán: nội dung vi phạm bản quyền, phần mềm độc hại, nội dung xâm hại trẻ em, nội dung bất hợp pháp theo pháp luật Việt Nam hoặc nơi bạn cư trú, hoặc để tấn công hạ tầng của chúng tôi (kể cả vượt giới hạn tần suất). Báo cáo vi phạm hoặc yêu cầu gỡ nội dung theo bản quyền: <a class="db-link" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a>. Chúng tôi gỡ nội dung vi phạm khi được xác minh.</p>
+
+            <h2 class="db-h2">4. Gói trả phí, thanh toán và hoàn tiền</h2>
+            <p class="db-p">Gói Pro và Studio thanh toán qua PayOS bằng VND, theo tháng hoặc năm. Gói tự hủy khi hết chu kỳ nếu bạn hủy trước đó; hủy không hoàn lại phần chu kỳ chưa dùng. Nếu dịch vụ lỗi khiến bạn bị trừ tiền mà không nhận được gói, liên hệ trong 7 ngày để được hoàn tiền toàn bộ khoản đó.</p>
+
+            <h2 class="db-h2">5. Giới hạn trách nhiệm</h2>
+            <p class="db-p">Dịch vụ cung cấp "nguyên trạng". Trong phạm vi pháp luật cho phép, chúng tôi không chịu trách nhiệm cho thiệt hại gián tiếp, mất dữ liệu do tệp hết hạn theo thiết kế, hoặc gián đoạn ngoài kiểm soát hợp lý. Tổng trách nhiệm của chúng tôi không vượt quá số tiền bạn đã trả trong 12 tháng gần nhất.</p>
+
+            <h2 class="db-h2">6. Thay đổi điều khoản</h2>
+            <p class="db-p">Chúng tôi có thể cập nhật điều khoản; phiên bản và ngày cập nhật ghi ở đầu trang. Thay đổi quan trọng sẽ được thông báo trên trang này trước khi có hiệu lực. Tiếp tục dùng dịch vụ sau đó nghĩa là bạn chấp nhận bản mới.</p>
+        }
+        else
+        {
+            <h1 class="db-h1">Terms of Service</h1>
+            <p class="db-p db-text-muted legal__version">Version @DocVersion — last updated @DocDate. The Vietnamese and English versions carry equal weight; for users in Vietnam the Vietnamese text prevails on any conflict.</p>
+
+            <h2 class="db-h2">1. The service</h2>
+            <p class="db-p">QuickShareCloud ("the service") lets you upload files and share them via expiring links, or transfer files browser-to-browser (P2P). Share links expire according to the sender's plan; after expiry the files are deleted from our systems.</p>
+
+            <h2 class="db-h2">2. Accounts and termination</h2>
+            <p class="db-p">You sign in with a Google or GitHub account and are responsible for activity under it. We may suspend or terminate accounts that violate section 3, commit payment fraud, or where the law requires it. You may stop using the service at any time and request deletion of your data (see the Privacy Policy).</p>
+
+            <h2 class="db-h2">3. Acceptable use</h2>
+            <p class="db-p">Do not use the service to store or distribute copyright-infringing content, malware, child sexual abuse material, content illegal under Vietnamese law or the law of your residence, or to attack our infrastructure (including circumventing rate limits). Report abuse or request a copyright takedown at <a class="db-link" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a>. Verified infringing content is removed.</p>
+
+            <h2 class="db-h2">4. Paid plans, payment, refunds</h2>
+            <p class="db-p">Pro and Studio plans are billed through PayOS in VND, monthly or yearly. A cancelled plan runs to the end of its paid period; cancellation does not refund the unused remainder. If a service fault charges you without delivering the plan, contact us within 7 days for a full refund of that charge.</p>
+
+            <h2 class="db-h2">5. Limitation of liability</h2>
+            <p class="db-p">The service is provided "as is". To the extent the law allows, we are not liable for indirect damages, for data loss caused by files expiring as designed, or for outages beyond our reasonable control. Our total liability is capped at what you paid us in the last 12 months.</p>
+
+            <h2 class="db-h2">6. Changes to these terms</h2>
+            <p class="db-p">We may update these terms; the version and date appear at the top of this page. Material changes are announced on this page before they take effect. Continued use after that constitutes acceptance.</p>
+        }
+    </article>
+</PageWrapper>
+
+@code {
+    private const string DocVersion = "1.0";
+    private const string DocDate = "2026-08-14";
+
+    private static bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+}

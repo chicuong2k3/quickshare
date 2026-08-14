@@ -23,9 +23,13 @@ public sealed class PageLoadTests : IClassFixture<TestWebAppFactory>
     [InlineData("/pricing")]
     [InlineData("/p2p/send")]
     [InlineData("/login")]
+    [InlineData("/terms")]
+    [InlineData("/privacy")]
     public async Task PublicPage_Returns200_Under200ms(string url)
     {
         var client = _factory.CreateClient();
+        await client.GetAsync(url); // warmup: JIT + render pipeline, not what we measure
+
         var sw = Stopwatch.StartNew();
         var response = await client.GetAsync(url);
         sw.Stop();
@@ -61,6 +65,8 @@ public sealed class PageLoadTests : IClassFixture<TestWebAppFactory>
     public async Task AuthenticatedPage_Returns200_Under200ms(string url)
     {
         var client = _factory.CreateAuthenticatedClient();
+        await client.GetAsync(url); // warmup: JIT + render pipeline, not what we measure
+
         var sw = Stopwatch.StartNew();
         var response = await client.GetAsync(url);
         sw.Stop();
@@ -76,6 +82,22 @@ public sealed class PageLoadTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/pricing?billing=yearly");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/terms", "Terms of Service", "Điều khoản dịch vụ")]
+    [InlineData("/privacy", "Privacy Policy", "Chính sách quyền riêng tư")]
+    public async Task LegalPage_RendersInBothCultures(string url, string enHeading, string viHeading)
+    {
+        var client = _factory.CreateClient();
+
+        var en = await (await client.GetAsync(url)).Content.ReadAsStringAsync();
+        Assert.Contains(enHeading, en);
+
+        var viRequest = new HttpRequestMessage(HttpMethod.Get, url);
+        viRequest.Headers.Add("Cookie", ".AspNetCore.Culture=c%3Dvi%7Cuic%3Dvi");
+        var vi = await (await client.SendAsync(viRequest)).Content.ReadAsStringAsync();
+        Assert.Contains(viHeading, vi);
     }
 
     [Theory]
