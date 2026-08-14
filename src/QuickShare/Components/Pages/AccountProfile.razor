@@ -11,6 +11,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
 
 @{
     var apiBase = string.Empty;
@@ -89,6 +90,17 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // This route is an HTMX partial for /account — a direct browser hit
+        // would render the bare card without any layout. Send it to the shell.
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
