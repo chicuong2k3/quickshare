@@ -34,6 +34,12 @@ public interface IStorageProvider
     Task AbortR2MultipartUploadAsync(
         string uploadId, string objectKey, CancellationToken ct = default);
 
+    // ── R2 small-object upload (avatars, etc.) ─────────────────────────────
+
+    /// <summary>Uploads a single object (stream) to the bucket — used for small files like avatars.</summary>
+    Task UploadObjectAsync(
+        string objectKey, Stream content, string contentType, CancellationToken ct = default);
+
     // ── R2 download + cleanup ──────────────────────────────────────────────
 
     /// <summary>Actual stored size of an object in bytes, or -1 if it cannot be determined.</summary>

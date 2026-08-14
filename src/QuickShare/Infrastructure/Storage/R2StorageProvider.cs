@@ -165,6 +165,30 @@ public sealed class R2StorageProvider : IStorageProvider, IDisposable
         }
     }
 
+    // ── R2 small-object upload (avatars, etc.) ─────────────────────────────
+
+    public async Task UploadObjectAsync(
+        string objectKey, Stream content, string contentType, CancellationToken ct = default)
+    {
+        try
+        {
+            var request = new PutObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectKey,
+                InputStream = content,
+                ContentType = contentType,
+            };
+
+            await _s3.PutObjectAsync(request, ct);
+            _logger.LogDebug("Uploaded R2 object: Key={Key}", objectKey);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            throw R2StorageException.FromAmazonS3(ex, $"UploadObjectAsync({objectKey})");
+        }
+    }
+
     // ── R2 download ────────────────────────────────────────────────────────
 
     public async Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)

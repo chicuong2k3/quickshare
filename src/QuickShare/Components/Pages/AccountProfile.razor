@@ -5,13 +5,17 @@
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
 @using QuickShare.Infrastructure.Caching
+@using QuickShare.Infrastructure.Storage
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.Options
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager Nav
+@inject IStorageProvider Storage
+@inject IOptions<R2Options> R2Opt
 
 @{
     var apiBase = string.Empty;
@@ -75,6 +79,17 @@
 @code {
     private const string ProfileUpdatedTrigger = "profileUpdated";
 
+    private const long MaxAvatarBytes = 5 * 1024 * 1024;
+
+    private static readonly IReadOnlyDictionary<string, string> AvatarExtensions = new Dictionary<string, string>
+    {
+        ["image/jpeg"] = ".jpg",
+        ["image/png"] = ".png",
+        ["image/webp"] = ".webp",
+        ["image/gif"] = ".gif",
+        ["image/svg+xml"] = ".svg",
+    };
+
     private string name = string.Empty;
     private string email = string.Empty;
     private string avatar = string.Empty;
@@ -129,25 +144,37 @@
             formError = Loc["account_profile_error_name_required"];
             return;
         }
-        string? avatarBase64 = null;
-        if (FormAvatar is { Length: > 0 })
-        {
-            if (FormAvatar.Length > 5 * 1024 * 1024)
-            {
-                formError = Loc["account_profile_error_image_size"];
-                return;
-            }
-            using var ms = new MemoryStream();
-            await FormAvatar.CopyToAsync(ms);
-            avatarBase64 = $"data:{FormAvatar.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
-        }
+
         try
         {
             var ct = CancellationToken.None;
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
             var userId = user.Id;
 
-            if (string.IsNullOrEmpty(avatarBase64))
+            string? avatarUrl = null;
+            if (FormAvatar is { Length: > 0 })
+            {
+                if (FormAvatar.Length > MaxAvatarBytes)
+                {
+                    formError = Loc["account_profile_error_image_size"];
+                    return;
+                }
+
+                var publicBaseUrl = R2Opt.Value.PublicBaseUrl;
+                if (string.IsNullOrWhiteSpace(publicBaseUrl))
+                {
+                    formError = Loc["account_profile_error_update_failed"];
+                    return;
+                }
+
+                var extension = AvatarExtensions.GetValueOrDefault(FormAvatar.ContentType, ".png");
+                var objectKey = R2ObjectKey.ForAvatar(userId, extension);
+                await using var stream = FormAvatar.OpenReadStream();
+                await Storage.UploadObjectAsync(objectKey, stream, FormAvatar.ContentType, ct);
+                avatarUrl = $"{publicBaseUrl.TrimEnd('/')}/{objectKey}";
+            }
+
+            if (avatarUrl is null)
             {
                 await Db.Users
                     .Where(u => u.Id == userId)
@@ -160,7 +187,7 @@
                     .Where(u => u.Id == userId)
                     .ExecuteUpdateAsync(setters => setters
                         .SetProperty(u => u.Name, newName)
-                        .SetProperty(u => u.AvatarUrl, avatarBase64), ct);
+                        .SetProperty(u => u.AvatarUrl, avatarUrl), ct);
             }
 
             var updatedUser = await Db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
