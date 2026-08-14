@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- CA1848/CA1873: LoggerMessage-delegate perf rules — noise at this scale -->
+    <!-- CA1716 ("Shared" namespace keyword clash): library-author rule, app is not a consumed library -->
+    <NoWarn>$(NoWarn);CA1848;CA1873;CA1716</NoWarn>
+  </PropertyGroup>
+</Project>

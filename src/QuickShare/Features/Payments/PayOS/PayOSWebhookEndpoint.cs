@@ -112,7 +112,7 @@ public sealed class PayOSWebhookEndpoint : EndpointWithoutRequest
 
         var invoiceId = data[ReferenceKey]?.GetValue<string>()
             ?? data[PaymentLinkIdKey]?.GetValue<string>()
-            ?? orderCode.ToString();
+            ?? orderCode.ToString(CultureInfo.InvariantCulture);
 
         // Record payment event (idempotent — PayOS retries webhooks)
         var alreadyRecorded = await db.PaymentEvents

@@ -110,7 +110,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
             MaxDownloads = 10,
             StoragePath = $"stub/{shareCode}",
             ExpiresAt = DateTime.UtcNow.AddDays(3),
-            OtpHash = hasOtp ? BCrypt.Net.BCrypt.HashString("123456") : null,
+            OtpHash = hasOtp ? BCrypt.Net.BCrypt.HashPassword("123456") : null,
         });
         await db.SaveChangesAsync();
         return shareCode;

@@ -122,7 +122,7 @@ public sealed class DownloadNotificationJob(
 
         var lines = new StringBuilder();
         foreach (var (fileName, count) in downloadsByFile)
-            lines.Append($"<li><strong>{WebUtility.HtmlEncode(fileName)}</strong> — {count} lượt tải</li>");
+            lines.Append(CultureInfo.InvariantCulture, $"<li><strong>{WebUtility.HtmlEncode(fileName)}</strong> — {count} lượt tải</li>");
 
         return $"""
             <div style="font-family:system-ui,sans-serif;font-size:15px;color:#1f2937">

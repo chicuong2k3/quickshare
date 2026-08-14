@@ -188,7 +188,7 @@
 
         if (isPost)
         {
-            var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
+            var form = await ctx.Request.ReadFormAsync(ct);
             if (form["Action"] == SubscriptionActionCancel)
             {
                 await SubscriptionService.CancelAsync(user, Db, ct);

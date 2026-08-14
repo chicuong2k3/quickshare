@@ -86,7 +86,7 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
             ExpiresAt = expiresAt,
-            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null,
+            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             Source = DeliverySources.Normalize(cmd.Source)
         };
 

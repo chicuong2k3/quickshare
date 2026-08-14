@@ -305,14 +305,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 
 // ── Observability: health checks + Prometheus metrics ──
-var healthChecksBuilder = builder.Services.AddHealthChecks()
+// ponytail: R2 reachability is verified at startup via EnsureBucketExistsAsync;
+// the old AddUrlGroup check did an unauthenticated GET that R2 always rejects,
+// so /health was permanently 503. Add an authenticated R2 check with #89 if needed.
+builder.Services.AddHealthChecks()
     .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"]);
-
-if (hasR2)
-{
-    var r2HealthUri = new Uri($"https://{r2Options.AccountId}.r2.cloudflarestorage.com");
-    healthChecksBuilder.AddUrlGroup(r2HealthUri, name: "r2", tags: ["storage"]);
-}
 var app = builder.Build();
 
 

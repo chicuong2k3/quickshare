@@ -5,9 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace QuickShare.Infrastructure.Storage;
 
-public sealed class R2StorageProvider : IStorageProvider
+public sealed class R2StorageProvider : IStorageProvider, IDisposable
 {
-    private readonly IAmazonS3 _s3;
+    private readonly AmazonS3Client _s3;
     private readonly R2Options _options;
     private readonly ILogger<R2StorageProvider> _logger;
     private bool _bucketVerified;

@@ -280,7 +280,7 @@
             if (!result.IsSuccess(out var value))
             {
                 result.IsFailure(out var error);
-                var msg = error.Message ?? string.Empty;
+                var msg = error?.Message ?? string.Empty;
                 if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.Expired;
                 else if (msg.Contains("limit", StringComparison.OrdinalIgnoreCase))
