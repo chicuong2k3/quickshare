@@ -25,7 +25,7 @@ As a sender, I want my deliveries to expire automatically (24 h or 7 d by plan) 
 
 ## Implementation Flow
 
-1. **Expiry set at commit** — `CommitR2Handler`: `ExpiresAt = UtcNow + GetMaxExpiry(plan)` (24h default; sender opted 7d only when plan allows via `PlanTierLimits`). `AuditableEntityInterceptor` auto-fills `CreatedAt`/`UpdatedAt` (never set manually).
+1. **Expiry set at commit** — `CommitR2Handler`: `ExpiresAt = UtcNow + GetMaxExpiry(plan)` (fixed per plan — Free/Anonymous 24h, Pro 30d, Studio 90d; no user choice; overridable by admin via `Pricing:Limits` config). `AuditableEntityInterceptor` auto-fills `CreatedAt`/`UpdatedAt` (never set manually).
 2. **Soft expiry (reads + range/streams)** — `DownloadDeliveryHandler`: `ExpiresAt < UtcNow` → **410** (Info handler returns `DeliveryExpired` → same code). `DownloadInfoHandler.GetAsync`: expired → `DeliveryExpiredException`. Client renders Expired state with filename + expiry; no broken stream.
 3. **Journal expiry sweep** — `DeliveryExpiryJob` (singleton hosted service, runs every **5 minutes**): marks Journal/Manifest deliveries `MetadataExpired = true` when `ExpiresAt <= Now`.
 4. **Hard cleanup** — `DeliveryCleanupService` (singleton, interval `QuickShareOptions.CleanupIntervalMinutes`, default **60** min):

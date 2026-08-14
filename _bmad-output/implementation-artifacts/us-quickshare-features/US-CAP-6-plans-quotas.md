@@ -30,7 +30,7 @@ As a user, I want my plan to cap per-file size, monthly transfer volume, and del
    - `StartR2Handler`: `GetMaxFileSize(plan)` — declared size over → `PlanLimitExceededException` → 402 (uploads); `MaxPartsFor = min(10_000, ceil(FileSize/MinPartBytes)+1)` guard.
    - `CommitR2Handler`: re-check **actual** object size via `GetObjectSizeAsync` (not declared parts) → over → delete object + fail.
    - `MaxDownloads = GetMaxDownloads(plan)` → `DownloadCount >= MaxDownloads` → 403.
-   - `GetMaxExpiry(plan)` → `ExpiresAt` clamp (24h default / 7d allowed).
+   - `GetMaxExpiry(plan)` → `ExpiresAt` clamp (fixed per plan: Free/Anonymous 24h, Pro 30d, Studio 90d — no user choice).
 3. **Effective plan on the wire** — `IsPlanTier(plan)` helper normalizes (Free = community tier); `HasUnlimitedDownloads` for Pro/Studio.
 4. **Recipient-facing cap feedback** — Download page renders plan-aware messaging: anonymous recipients always have the default limits; Free recipients hitting GlobalMaxFiles / ads daily cap → blocked + upgrade CTA (see CAP-4 ad gate; `PlanTierLimits.UploadTimeoutMinutes` guards deltas).
 5. **P2P quota hand-off** — CAP-7 creates the 1:1 per-guest quota entry (free tier `PerkOwnerLimits` storage ceiling) so P2P recipients don't consume cloud bandwidth.
