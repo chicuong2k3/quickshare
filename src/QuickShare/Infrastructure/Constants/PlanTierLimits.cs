@@ -87,10 +87,10 @@ public static class PlanTierLimits
 
     private static TimeSpan DirectGetMaxExpiry(string plan) => plan switch
     {
-        Free => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
+        Free => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 24.0)),
         Pro => TimeSpan.FromDays(GetInt(Pro, MaxExpiryDaysKey, 30)),
         Studio => TimeSpan.FromDays(GetInt(Studio, MaxExpiryDaysKey, 90)),
-        _ => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 2.0)),
+        _ => TimeSpan.FromHours(GetDouble(Free, MaxExpiryHoursKey, 24.0)),
     };
 
     private static long? DirectGetMaxFileSize(string plan) => plan switch

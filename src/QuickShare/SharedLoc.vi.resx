@@ -181,10 +181,7 @@
   <data name="upload_dropzone_sub" xml:space="preserve"><value>hoặc Ctrl+V để dán, hoặc nhấp để duyệt</value></data>
   <data name="upload_otp_label" xml:space="preserve"><value>Mã bảo mật (tùy chọn)</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mã này để tải file</value></data>
-  <data name="upload_expiry_label" xml:space="preserve"><value>Hết hạn sau</value></data>
-  <data name="upload_expiry_aria" xml:space="preserve"><value>Thời gian hết hạn</value></data>
-  <data name="upload_expiry_24h" xml:space="preserve"><value>24 giờ</value></data>
-  <data name="upload_expiry_7d" xml:space="preserve"><value>7 ngày</value></data>
+  <data name="upload_expiry_label" xml:space="preserve"><value>Hết hạn: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>Không tìm thấy ảnh trong clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Đã mã hóa</value></data>
   <data name="upload_cancel" xml:space="preserve"><value>Hủy</value></data>

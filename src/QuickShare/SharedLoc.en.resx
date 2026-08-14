@@ -180,10 +180,7 @@
   <data name="upload_dropzone_sub" xml:space="preserve"><value>or Ctrl+V to paste, or click to browse</value></data>
   <data name="upload_otp_label" xml:space="preserve"><value>Security code (optional)</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>If set, recipients must enter this code to download</value></data>
-  <data name="upload_expiry_label" xml:space="preserve"><value>Expires in</value></data>
-  <data name="upload_expiry_aria" xml:space="preserve"><value>Expiry duration</value></data>
-  <data name="upload_expiry_24h" xml:space="preserve"><value>24 hours</value></data>
-  <data name="upload_expiry_7d" xml:space="preserve"><value>7 days</value></data>
+  <data name="upload_expiry_label" xml:space="preserve"><value>Expires: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>No image found in clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Encrypted</value></data>
   <data name="upload_cancel" xml:space="preserve"><value>Cancel</value></data>

@@ -3,6 +3,17 @@
 (function () {
     'use strict';
 
+    // Copy comes from the server so this file carries no English literals.
+    var T = (function () {
+        var el = document.getElementById('upload-i18n');
+        try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
+    })();
+
+    function t(key, a, b) {
+        var v = T[key] || '';
+        return v.replace('{0}', a).replace('{1}', b);
+    }
+
     var MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
     var PART_TARGET = 25 * 1024 * 1024;
     var CONCURRENT_PARTS = 4;
@@ -13,7 +24,7 @@
     var state = {
         phase: 'idle',
         progress: 0, filename: '', link: '', expiresAt: '', error: '',
-        expiry: '24h', copied: false, pasteTip: false, draggingActive: false,
+        copied: false, pasteTip: false, draggingActive: false,
         encryptionEnabled: true, _encryptionUsed: false,
         otp: '',
         _abortController: null, _deliveryId: null, _uploadId: null, _cancelled: false,
@@ -59,26 +70,15 @@
             if (state._resumeCtx) show('upload-resume-btn'); else hide('upload-resume-btn');
         }
 
-        // Expiry toggle UI
-        var btn24 = document.getElementById('upload-expiry-24h');
-        var btn7d = document.getElementById('upload-expiry-7d');
-        if (state.expiry === '24h') {
-            if (btn24) { btn24.classList.add('expiry-btn--on'); btn24.classList.remove('expiry-btn--off'); btn24.setAttribute('aria-checked','true'); }
-            if (btn7d) { btn7d.classList.add('expiry-btn--off'); btn7d.classList.remove('expiry-btn--on'); btn7d.setAttribute('aria-checked','false'); }
-        } else {
-            if (btn7d) { btn7d.classList.add('expiry-btn--on'); btn7d.classList.remove('expiry-btn--off'); btn7d.setAttribute('aria-checked','true'); }
-            if (btn24) { btn24.classList.add('expiry-btn--off'); btn24.classList.remove('expiry-btn--on'); btn24.setAttribute('aria-checked','false'); }
-        }
-
         // Paste tip
         if (state.pasteTip) show('upload-paste-tip'); else hide('upload-paste-tip');
 
-        // Expiry label
+        // Expiry label — date comes from the server (result.expiresAt), not a client choice.
         var expLabel = document.getElementById('upload-expiry-label');
         if (expLabel && state.expiresAt) {
             try {
                 var d = new Date(state.expiresAt);
-                if (!isNaN(d.getTime())) expLabel.textContent = 'Expires: ' + d.toLocaleString(undefined, { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                if (!isNaN(d.getTime())) expLabel.textContent = t('expiryLabel', d.toLocaleString(undefined, { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }));
             } catch(_) {}
         }
     }
@@ -97,7 +97,6 @@
     }
 
     window.uploadPage = {
-        selectExpiry: function (v) { state.expiry = v; render(); },
         otpInput: function (event, idx) {
             var val = event.target.value.replace(/\D/g, '');
             event.target.value = val;

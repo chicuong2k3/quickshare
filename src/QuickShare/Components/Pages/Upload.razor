@@ -3,6 +3,8 @@
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@using System.Text.Json
+@using System.Text.Json.Serialization
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
@@ -13,6 +15,7 @@
 
 <PageWrapper Variant="PageVariant.Fill">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+    <script id="upload-i18n" type="application/json">@RawJson(Strings())</script>
         <div class="container">
             <input type="file" name="file" class="sr-only" aria-label="@Loc["upload_file_input_label"]" onchange="uploadPage.onFileInput(event)" />
 
@@ -67,19 +70,6 @@
                             <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
                         </div>
                         <span class="otp-hint">@Loc["upload_otp_hint"]</span>
-                    </div>
-                </div>
-
-                @* Expiry selector *@
-                <div class="expiry-row">
-                    <span class="expiry-label">@Loc["upload_expiry_label"]</span>
-                    <div class="expiry-group" role="radiogroup" aria-label="@Loc["upload_expiry_aria"]">
-                        <button type="button" role="radio" id="upload-expiry-24h"
-                                class="expiry-btn expiry-btn--on"
-                                onclick="uploadPage.selectExpiry('24h')">@Loc["upload_expiry_24h"]</button>
-                        <button type="button" role="radio" id="upload-expiry-7d"
-                                class="expiry-btn expiry-btn--off"
-                                onclick="uploadPage.selectExpiry('7d')">@Loc["upload_expiry_7d"]</button>
                     </div>
                 </div>
 
@@ -163,4 +153,19 @@
 
 <script src="/js/paste-anywhere.js"></script>
 <script src="/js/upload.js"></script>
+
+@code {
+    // upload.js reads its copy from here rather than carrying English literals.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["expiryLabel"] = Loc["upload_expiry_label"],
+    };
+
+    // MarkupString: a plain string gets HTML-encoded by Razor even inside <script>,
+    // which breaks JSON.parse in upload.js (quotes become &quot;). The default
+    // System.Text.Json encoder escapes <, > and & so raw emission stays safe.
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+}
 
