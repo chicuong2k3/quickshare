@@ -91,8 +91,11 @@
                                 <dl class="file-specs">
                                     <div><dt class="miura-spec">@Loc["dl_spec_size"]</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
                                     <div><dt class="miura-spec">@Loc["dl_spec_downloads_left"]</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
-                                    <div><dt class="miura-spec">@Loc["dl_spec_expires"]</dt><dd>@ExpiryLabel</dd></div>
+                                    <div><dt class="miura-spec">@Loc["dl_spec_expires"]</dt><dd id="dl-spec-expires">@ExpiryLabel</dd></div>
                                 </dl>
+                                @* Urgent-expiry nudge — hidden by default, shown by download.js
+                                   when the link is under one hour. *@
+                                <a id="dl-expiry-nudge" href="/api/downloads/@ShareCode" class="dl-expiry-nudge hidden" data-ai-action="download.file.download">@Loc["dl_expiry_download_now"]</a>
                             </div>
                         </div>
 
@@ -158,6 +161,21 @@
 
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
                         <QuickShare.Components.Shared.AdComponent />
+                    </div>
+
+                    @* Expired phase — hidden by default; download.js swaps to it when the
+                       countdown reaches zero. Server always renders a usable phase. *@
+                    <div id="download-phase-expired" class="hidden">
+                        <div class="db-text-center" style="padding: 2.5rem 0">
+                            <div class="icon-box --muted">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                                </svg>
+                            </div>
+                            <div class="db-h1" role="heading" aria-level="1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</div>
+                            <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                            <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                        </div>
                     </div>
                     break;
 
@@ -242,6 +260,8 @@
         ["expiryMin"] = Loc["dl_expiry_min"],
         ["expiryHour"] = Loc["dl_expiry_hour"],
         ["expiryDay"] = Loc["dl_expiry_day"],
+        ["expiryCountdown"] = Loc["dl_expiry_countdown"],
+        ["expiryDownloadNow"] = Loc["dl_expiry_download_now"],
         ["initialPhase"] = InitialPhase,
     };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
@@ -281,7 +301,7 @@
                 HasOtp = value.HasOtp,
                 SenderPlan = value.SenderPlan
             };
-            ExpiryLabel = Info.ExpiresAt.HasValue ? $"expires {ExpiryCountdown(Info.ExpiresAt.Value)}" : "no expiry";
+            ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = DownloadRenderState.Ready;
         }
         catch { RenderState = DownloadRenderState.Error; }
@@ -298,13 +318,13 @@
         var size = bytes / Math.Pow(1024, magnitude);
         return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
     }
-    private static string ExpiryCountdown(DateTime expiresAt)
+    private string ExpiryCountdown(DateTime expiresAt)
     {
         var remaining = expiresAt - DateTime.UtcNow;
-        if (remaining <= TimeSpan.Zero) return "expired";
-        if (remaining.TotalHours < 1) return $"in {(int)remaining.TotalMinutes} min";
-        if (remaining.TotalHours < 24) return $"in {(int)remaining.TotalHours} h";
-        return $"in {(int)remaining.TotalDays} day{((int)remaining.TotalDays == 1 ? string.Empty : "s")}";
+        if (remaining <= TimeSpan.Zero) return Loc["dl_expiry_expired"];
+        if (remaining.TotalHours < 1) return Loc["dl_expiry_min", (int)remaining.TotalMinutes];
+        if (remaining.TotalHours < 24) return Loc["dl_expiry_hour", (int)remaining.TotalHours];
+        return Loc["dl_expiry_day", (int)remaining.TotalDays];
     }
     private static MarkupString FileIcon(string? contentType)
     {

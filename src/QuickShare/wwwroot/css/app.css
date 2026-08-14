@@ -1508,3 +1508,35 @@ html, body {
         animation: none;
     }
 }
+
+/* ─── Expiry countdown threshold styling (issue #113) ────────────
+   download.js swaps .dl-expiry--{subtle|warn|urgent} onto the expiry
+   cells each tick. Subtle is the resting state and needs no color. ─ */
+#dl-spec-expires,
+#dl-expires-label {
+    font-variant-numeric: tabular-nums;
+}
+
+.dl-expiry--warn {
+    color: var(--db-color-warning);
+}
+
+.dl-expiry--urgent {
+    color: var(--db-color-error);
+    font-weight: 500;
+}
+
+.dl-expiry-nudge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-1);
+    margin-top: var(--db-space-2);
+    font-size: var(--db-text-sm);
+    color: var(--db-color-error);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.dl-expiry-nudge:hover {
+    color: var(--db-color-accent-text);
+}

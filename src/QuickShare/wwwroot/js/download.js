@@ -1,6 +1,6 @@
 window.downloadApp = (function () {
             'use strict';
-            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
+            var state = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
 
             // Text snippets are shown inline instead of forcing a download (issue #13).
             var TEXT_MIME_PREFIX = 'text/plain';
@@ -17,14 +17,16 @@ window.downloadApp = (function () {
             function removeAttr(id, name) { var el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
             function render() {
-                hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file');
+                hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file'); hide('download-phase-expired');
                 if (state.phase === 'otp') show('download-phase-otp');
                 else if (state.phase === 'ad') show('download-phase-ad');
+                else if (state.phase === 'expired') show('download-phase-expired');
                 else if (state.phase === 'file') {
                     show('download-phase-file');
                     if (state.isEncrypted) show('dl-badge-encrypted'); else hide('dl-badge-encrypted');
                     if (state.zkOpen) show('dl-zk-panel'); else hide('dl-zk-panel');
-                    text('dl-download-count', String(state.downloadCount)); text('dl-max-downloads', String(state.maxDownloads)); text('dl-expires-label', state.expiresLabel);
+                    text('dl-download-count', String(state.downloadCount)); text('dl-max-downloads', String(state.maxDownloads));
+                    if (state.expiresAt) tickExpiry(); else { text('dl-spec-expires', state.expiresLabel); text('dl-expires-label', state.expiresLabel); }
                     if (state.isEncrypted) show('dl-fact-key'); else hide('dl-fact-key');
                     if (state.downloading) {
                         attr('dl-download-btn', 'aria-disabled', 'true');
@@ -68,20 +70,71 @@ window.downloadApp = (function () {
                 if (!infoEl) { if (++initAttempts < 40) setTimeout(init, 50); return; }
                 var hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
                 var info = infoFromDom();
-                state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresLabel = info.expiresAt ? expiryLabel(info.expiresAt) : t('expiryNone');
+                state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresAt = info.expiresAt ? new Date(info.expiresAt) : null; state.expiresLabel = state.expiresAt ? formatExpiry().label : t('expiryNone');
                 if (info.hasOtp) state.phase = 'otp';
                 else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
+                if (state.expiresAt) startExpiryTimer();
                 render();
             }
-            function expiryLabel(e) {
-                var r = new Date(e) - new Date();
-                if (r <= 0) return t('expiryExpired');
-                var m = Math.floor(r / 60000);
-                if (m < 60) return t('expiryMin', m);
-                var h = Math.floor(m / 60);
-                if (h < 24) return t('expiryHour', h);
-                return t('expiryDay', Math.floor(h / 24));
+            function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+            // Live expiry countdown (issue #113). Server renders a static label;
+            // this only refines it — with JS dead the anchor still delivers.
+            function formatExpiry() {
+                if (!state.expiresAt) return { expired: false, label: t('expiryNone'), level: 'subtle' };
+                var r = state.expiresAt - new Date();
+                if (r <= 0) return { expired: true, label: t('expiryExpired'), level: 'urgent' };
+                var totalSec = Math.floor(r / 1000);
+                var h = Math.floor(totalSec / 3600);
+                var clock = h + ':' + pad2(Math.floor(totalSec / 60) % 60) + ':' + pad2(totalSec % 60);
+                if (h < 1) return { expired: false, label: t('expiryCountdown', clock), level: 'urgent' };
+                if (h < 24) return { expired: false, label: t('expiryCountdown', clock), level: 'warn' };
+                return { expired: false, label: t('expiryDay', Math.floor(h / 24)), level: 'subtle' };
+            }
+
+            function applyExpiryClass(level) {
+                var ids = ['dl-spec-expires', 'dl-expires-label'];
+                for (var i = 0; i < ids.length; i++) {
+                    var el = document.getElementById(ids[i]);
+                    if (!el) continue;
+                    el.classList.remove('dl-expiry--subtle', 'dl-expiry--warn', 'dl-expiry--urgent');
+                    if (level) el.classList.add('dl-expiry--' + level);
+                }
+            }
+
+            function setNudge(showNudge) {
+                var el = document.getElementById('dl-expiry-nudge');
+                if (!el) return;
+                if (showNudge) el.classList.remove('hidden'); else el.classList.add('hidden');
+            }
+
+            function tickExpiry() {
+                if (!state.expiresAt) return;
+                var r = state.expiresAt - new Date();
+                if (r <= 0) {
+                    if (state.expiryTimer) { clearInterval(state.expiryTimer); state.expiryTimer = null; }
+                    if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; }
+                    state.expiryLevel = 'urgent';
+                    state.expiresLabel = t('expiryExpired');
+                    state.phase = 'expired';
+                    render();
+                    return;
+                }
+                var f = formatExpiry();
+                state.expiryLevel = f.level;
+                state.expiresLabel = f.label;
+                if (state.phase !== 'file') return;
+                text('dl-spec-expires', f.label);
+                text('dl-expires-label', f.label);
+                applyExpiryClass(f.level);
+                setNudge(f.level === 'urgent');
+                if (f.level === 'urgent') attr('dl-spec-expires', 'aria-live', 'polite'); else removeAttr('dl-spec-expires', 'aria-live');
+            }
+
+            function startExpiryTimer() {
+                tickExpiry();
+                state.expiryTimer = setInterval(tickExpiry, 1000);
             }
 
 

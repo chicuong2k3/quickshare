@@ -444,4 +444,6 @@
   <data name="dl_expiry_min" xml:space="preserve"><value>expires in {0} min</value></data>
   <data name="dl_expiry_hour" xml:space="preserve"><value>expires in {0} h</value></data>
   <data name="dl_expiry_day" xml:space="preserve"><value>expires in {0} d</value></data>
+  <data name="dl_expiry_countdown" xml:space="preserve"><value>expires in {0}</value></data>
+  <data name="dl_expiry_download_now" xml:space="preserve"><value>Download now</value></data>
 </root>
