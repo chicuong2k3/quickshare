@@ -227,4 +227,13 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
 
     public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
         => Task.CompletedTask;
+
+    public Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<string>>([]);
+
+    public Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<R2MultipartInfo>>([]);
 }

@@ -14,6 +14,9 @@ public sealed record R2PartEtag(int PartNumber, string ETag);
 /// <summary>Outcome of completing an R2 multipart upload.</summary>
 public sealed record CompletionResult(bool Success, string? ErrorMessage);
 
+/// <summary>An in-flight multipart upload, as listed from the bucket.</summary>
+public sealed record R2MultipartInfo(string UploadId, string ObjectKey, DateTime Initiated);
+
 // ── Storage provider contract ──────────────────────────────────────────────
 
 public interface IStorageProvider
@@ -42,4 +45,18 @@ public interface IStorageProvider
 
     Task DeleteObjectsAsync(
         string prefix, CancellationToken ct = default);
+
+    /// <summary>Deletes exactly one object by its full key (no prefix expansion).</summary>
+    Task DeleteObjectAsync(
+        string objectKey, CancellationToken ct = default);
+
+    // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
+
+    /// <summary>Keys under <paramref name="prefix"/> last modified before <paramref name="olderThan"/>.</summary>
+    Task<IReadOnlyList<string>> ListObjectsAsync(
+        string prefix, DateTime olderThan, CancellationToken ct = default);
+
+    /// <summary>In-flight multipart uploads under <paramref name="prefix"/> initiated before <paramref name="olderThan"/>.</summary>
+    Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(
+        string prefix, DateTime olderThan, CancellationToken ct = default);
 }

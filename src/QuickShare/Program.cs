@@ -178,6 +178,11 @@ builder.Services.AddHostedService<DeliveryExpiryJob>();
 builder.Services.AddHostedService<SubscriptionExpiryJob>();
 builder.Services.AddHostedService<DownloadNotificationJob>();
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
+if (hasR2)
+{
+    // Orphan sweep lists/deletes R2 objects — meaningless (and throwing) on local disk.
+    builder.Services.AddHostedService<OrphanSweepJob>();
+}
 
 builder.Services.AddScoped<PayOSService>();
 builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
