@@ -788,48 +788,9 @@ body::after,
     min-height: 100vh !important;
 }
 
-.layout-footer {
-    margin-top: auto !important;
-    padding: var(--db-space-3) 0 !important;
-    text-align: center;
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-muted);
-    border-top: 1px solid var(--db-mountain);
-}
+/* Footer spacing lives in MainLayout.razor.css — no global override. */
 
-/* Page content wrapper — center + constrain */
-.page {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: var(--db-space-5) var(--db-space-4);
-    flex: 1;
-}
-
-.page--padded {
-    padding: var(--db-space-6) var(--db-space-4);
-}
-
-.page--centered {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: 32rem;
-}
-
-.page--fill {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 42rem;
-}
-
-.page--account {
-    max-width: 32rem;
-}
+/* Page shell sizing/spacing lives in PageWrapper.razor.css — single source. */
 
 /* ─── Kira heading & paragraph margins — generous breathing room ─── */
 .db-h1, h1 { margin: 0 0 var(--db-space-4) 0; }
@@ -1507,4 +1468,36 @@ html, body {
     #download-phase-file .file-specs {
         animation: none;
     }
+}
+
+/* ─── Expiry countdown threshold styling (issue #113) ────────────
+   download.js swaps .dl-expiry--{subtle|warn|urgent} onto the expiry
+   cells each tick. Subtle is the resting state and needs no color. ─ */
+#dl-spec-expires,
+#dl-expires-label {
+    font-variant-numeric: tabular-nums;
+}
+
+.dl-expiry--warn {
+    color: var(--db-color-warning);
+}
+
+.dl-expiry--urgent {
+    color: var(--db-color-error);
+    font-weight: 500;
+}
+
+.dl-expiry-nudge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-1);
+    margin-top: var(--db-space-2);
+    font-size: var(--db-text-sm);
+    color: var(--db-color-error);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.dl-expiry-nudge:hover {
+    color: var(--db-color-accent-text);
 }

@@ -28,7 +28,7 @@ public sealed class CookieConsentEndpoint : EndpointWithoutRequest
                 Secure = false
             });
 
-            await Send.OkAsync(ct);
+            await Send.OkAsync(cancellation: ct);
         }
     }
 

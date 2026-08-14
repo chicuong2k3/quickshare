@@ -6,6 +6,9 @@ appsettings.*.json
 .vs/
 .gitnexus
 
+# OpenCode session continuation state - transient, regenerable
+.omo/
+
 # Secrets — NEVER commit
 .env
 

@@ -1,3 +1,4 @@
+global using System.Globalization;
 global using FastEndpoints;
 global using FluentValidation;
 global using Microsoft.EntityFrameworkCore;

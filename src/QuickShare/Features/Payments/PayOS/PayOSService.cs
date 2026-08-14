@@ -8,7 +8,7 @@ namespace QuickShare.Features.Payments.PayOS;
 /// <summary>
 /// Creates and manages PayOS payment links for plan upgrades.
 /// </summary>
-public class PayOSService
+public class PayOSService : IDisposable
 {
     private readonly PayOSClient _client;
     private readonly IConfiguration _config;
@@ -149,6 +149,12 @@ public class PayOSService
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var random = Random.Shared.Next(100, 999);
         return (timestamp * 1000) + random;
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

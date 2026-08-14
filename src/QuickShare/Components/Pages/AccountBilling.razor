@@ -17,7 +17,6 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <span class="tag">@Loc["billing_h1"]</span>
         <h1 class="db-h1">@Loc["billing_h1"]</h1>
     </section>
 
@@ -188,7 +187,7 @@
 
         if (isPost)
         {
-            var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
+            var form = await ctx.Request.ReadFormAsync(ct);
             if (form["Action"] == SubscriptionActionCancel)
             {
                 await SubscriptionService.CancelAsync(user, Db, ct);

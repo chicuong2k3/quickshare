@@ -28,7 +28,7 @@
             );
         }
     }
-    var currentPlanRank = GetPlanRank(currentUserPlan);
+    var currentPlanRank = GetPlanRank(currentUserPlan ?? PlanTierLimits.Free);
 
     var currency = Config[PricingKeys.Currency] ?? "$";
     var proMonthly = FormatPrice(Config.GetValue<int>(PricingKeys.ProMonthly, 9), currency);

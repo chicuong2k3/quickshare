@@ -5,7 +5,7 @@ namespace QuickShare.Infrastructure.Middleware;
 
 public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken ct)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         logger.LogError(exception, "Unhandled exception occurred");
 
@@ -21,7 +21,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 
         httpContext.Response.StatusCode = problem.Status.Value;
         httpContext.Response.ContentType = MediaTypes.ProblemJson;
-        await httpContext.Response.WriteAsJsonAsync(problem, ct);
+        await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
 
         return true;
     }

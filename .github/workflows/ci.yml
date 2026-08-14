@@ -5,6 +5,7 @@ on:
     branches: [master, dev]
   pull_request:
     branches: [master, dev]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -23,6 +24,9 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -warnaserror:CS8300
 
+      - name: Format check
+        run: dotnet format --no-restore --verify-no-changes
+
       - name: Server tests (integration/regression)
         run: dotnet test tests/QuickShare.Server.Tests --no-build --logger "trx" --results-directory TestResults
 
@@ -38,3 +42,112 @@ jobs:
         with:
           name: test-results
           path: TestResults
+
+  # ── Dev deploy: only after tests pass (no red deploy) ──
+  build:
+    needs: test
+    if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+    runs-on: self-hosted
+    timeout-minutes: 45
+    # A superseded image build is pure waste on a single self-hosted runner.
+    # Cancelling here is safe: nothing has been deployed yet.
+    concurrency:
+      group: deploy-dev-build
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/chicuong2k3/quickshare:dev
+            ghcr.io/chicuong2k3/quickshare:${{ github.sha }}
+          cache-from: type=gha,scope=quickshare-dev
+          cache-to: type=gha,mode=min,scope=quickshare-dev
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    timeout-minutes: 45
+    # Never interrupt a deploy in flight — a cancel between `docker compose up`
+    # and the container coming back leaves the service down. Newer pushes queue.
+    # They cannot deploy stale code: their build cancels the superseded one, and
+    # a deploy whose build was cancelled never runs.
+    concurrency:
+      group: deploy-dev-deploy
+      cancel-in-progress: false
+
+    steps:
+      # GITHUB_TOKEN cannot PULL user-account ghcr.io packages (denied: denied),
+      # so instead of pulling, build the image on the runner from the checked-out
+      # source and tag it exactly as compose expects. `up -d` then recreates the
+      # container when the digest changes.
+      - name: Build image on runner
+        shell: powershell
+        run: |
+          docker build -t ghcr.io/chicuong2k3/quickshare:dev $env:GITHUB_WORKSPACE
+
+      - name: Restart container
+        shell: powershell
+        run: |
+          cd ${{ secrets.DEV_DEPLOY_PATH }}
+          docker compose up -d --remove-orphans quickshare
+          docker image prune -f
+
+      - name: Smoke check /health
+        shell: powershell
+        run: |
+          $ok = $false
+          foreach ($i in 1..12) {
+            try {
+              $r = Invoke-WebRequest -Uri http://127.0.0.1:8080/health -UseBasicParsing -TimeoutSec 5
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch {}
+            Start-Sleep -Seconds 5
+          }
+          if (-not $ok) {
+            Write-Error "/health did not go green within 60s"
+            exit 1
+          }
+          Write-Host "/health green"
+
+  # ── Release tagging: semver patch bump + GitHub release on master ──
+  release:
+    needs: test
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create semver tag + release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo v0.0.0)
+          IFS=. read -r maj min pat <<< "${latest#v}"
+          next="v$maj.$min.$((pat+1))"
+          echo "Tagging $next (previous: $latest)"
+          gh release create "$next" --generate-notes --target "$GITHUB_SHA"

@@ -48,7 +48,7 @@ public sealed partial class AccountProfileTests : IClassFixture<TestWebAppFactor
             .Select(c => c.Split(';')[0])
             .ToList();
         var xsrfToken = setCookies
-            .First(c => c.StartsWith($"{XsrfCookieName}="))[(XsrfCookieName.Length + 1)..];
+            .First(c => c.StartsWith($"{XsrfCookieName}=", StringComparison.Ordinal))[(XsrfCookieName.Length + 1)..];
 
         var form = new MultipartFormDataContent
         {

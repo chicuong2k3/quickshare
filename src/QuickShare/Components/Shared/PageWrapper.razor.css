@@ -1,7 +1,12 @@
+/* Single source of truth for page shells — the old duplicate .page block in
+   app.css fought these rules and left pages with 0 top padding. */
 .page {
     display: flex;
     flex-direction: column;
     flex: 1;
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
     /* Without this a wide descendant (the comparison table) sizes the whole
        flex chain to max-content and every page overflows on mobile. */
     min-width: 0;
@@ -10,11 +15,13 @@
 .page--centered {
     align-items: center;
     justify-content: center;
-    padding: 0 var(--db-space-4) var(--db-space-7);
+    max-width: 32rem;
+    padding: var(--db-space-6) var(--db-space-4) var(--db-space-7);
 }
 
 .page--padded {
-    padding-block: 0 var(--db-space-8);
+    /* DESIGN.md: Padded = full width with 24px block padding. */
+    padding-block: var(--db-space-6) var(--db-space-8);
     padding-inline: var(--db-space-4);
 }
 
@@ -24,11 +31,13 @@
     align-items: flex-start;
     justify-content: center;
     gap: var(--db-space-5);
-    padding: 0 var(--db-space-4) var(--db-space-7);
+    max-width: 32rem;
+    padding: var(--db-space-6) var(--db-space-4) var(--db-space-7);
 }
 
 .page--fill {
     align-items: center;
     justify-content: center;
-    padding: 0 var(--db-space-4) var(--db-space-7);
+    max-width: 42rem;
+    padding: var(--db-space-6) var(--db-space-4) var(--db-space-7);
 }

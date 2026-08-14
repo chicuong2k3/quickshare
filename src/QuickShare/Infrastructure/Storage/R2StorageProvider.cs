@@ -5,9 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace QuickShare.Infrastructure.Storage;
 
-public sealed class R2StorageProvider : IStorageProvider
+public sealed class R2StorageProvider : IStorageProvider, IDisposable
 {
-    private readonly IAmazonS3 _s3;
+    private readonly AmazonS3Client _s3;
     private readonly R2Options _options;
     private readonly ILogger<R2StorageProvider> _logger;
     private bool _bucketVerified;
@@ -245,6 +245,103 @@ public sealed class R2StorageProvider : IStorageProvider
         catch (AmazonS3Exception ex)
         {
             throw R2StorageException.FromAmazonS3(ex, $"DeleteObjectsAsync({prefix})");
+        }
+    }
+
+    public async Task DeleteObjectAsync(
+        string objectKey, CancellationToken ct = default)
+    {
+        try
+        {
+            await _s3.DeleteObjectAsync(_options.BucketName, objectKey, ct);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            throw R2StorageException.FromAmazonS3(ex, $"DeleteObjectAsync({objectKey})");
+        }
+    }
+
+    // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
+
+    // S3/R2 timestamps are UTC; some SDK versions surface them as Unspecified or Local.
+    private static DateTime AsUtc(DateTime value) =>
+        value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
+
+    public async Task<IReadOnlyList<string>> ListObjectsAsync(
+        string prefix, DateTime olderThan, CancellationToken ct = default)
+    {
+        const int maxKeys = 1000;
+
+        try
+        {
+            var keys = new List<string>();
+            string? continuationToken = null;
+
+            do
+            {
+                var response = await _s3.ListObjectsV2Async(new ListObjectsV2Request
+                {
+                    BucketName = _options.BucketName,
+                    Prefix = prefix,
+                    MaxKeys = maxKeys,
+                    ContinuationToken = continuationToken,
+                }, ct);
+
+                keys.AddRange((response.S3Objects ?? [])
+                    .Where(o => o.Key is not null && o.LastModified.HasValue && AsUtc(o.LastModified.Value) < olderThan)
+                    .Select(o => o.Key));
+
+                continuationToken = response.NextContinuationToken;
+            } while (continuationToken is not null);
+
+            return keys;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            throw R2StorageException.FromAmazonS3(ex, $"ListObjectsAsync({prefix})");
+        }
+    }
+
+    public async Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(
+        string prefix, DateTime olderThan, CancellationToken ct = default)
+    {
+        try
+        {
+            var uploads = new List<R2MultipartInfo>();
+            string? keyMarker = null;
+            string? uploadIdMarker = null;
+
+            ListMultipartUploadsResponse response;
+            do
+            {
+                response = await _s3.ListMultipartUploadsAsync(new ListMultipartUploadsRequest
+                {
+                    BucketName = _options.BucketName,
+                    Prefix = prefix,
+                    KeyMarker = keyMarker,
+                    UploadIdMarker = uploadIdMarker,
+                }, ct);
+
+                uploads.AddRange((response.MultipartUploads ?? [])
+                    // Key filter repeated client-side: R2's S3 compat has had gaps around
+                    // ListMultipartUploads Prefix handling — never trust it alone.
+                    .Where(u => u.UploadId is not null && u.Key is not null
+                                && u.Key.StartsWith(prefix, StringComparison.Ordinal)
+                                && u.Initiated.HasValue && AsUtc(u.Initiated.Value) < olderThan)
+                    .Select(u => new R2MultipartInfo(u.UploadId, u.Key, AsUtc(u.Initiated!.Value))));
+
+                keyMarker = response.NextKeyMarker;
+                uploadIdMarker = response.NextUploadIdMarker;
+                // Null markers with IsTruncated would re-fetch page 1 forever.
+            } while (response.IsTruncated == true && (keyMarker is not null || uploadIdMarker is not null));
+
+            return uploads;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            throw R2StorageException.FromAmazonS3(ex, $"ListMultipartUploadsAsync({prefix})");
         }
     }
 

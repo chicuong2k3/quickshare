@@ -49,4 +49,13 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
 
     public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 delete.");
+
+    public Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 delete.");
+
+    public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 object listing.");
+
+    public Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 multipart listing.");
 }

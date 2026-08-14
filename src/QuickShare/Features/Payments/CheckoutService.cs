@@ -96,7 +96,7 @@ public sealed class CheckoutService(AppDbContext db, IConfiguration config, PayO
 
         await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, db, ct);
 
-        var invoiceId = orderCode.ToString();
+        var invoiceId = orderCode.ToString(CultureInfo.InvariantCulture);
         var hasExistingPaymentEvent = await db.PaymentEvents
             .Where(x => x.UserId == user.Id)
             .Where(x => x.EventType == PaymentEventTypes.Payment)

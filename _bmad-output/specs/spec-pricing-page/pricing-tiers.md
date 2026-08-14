@@ -75,7 +75,7 @@ Additional features: Custom branding, API access, dedicated support.
       "Free": {
         "MaxFileSizeBytes": 5368709120,
         "MaxMonthlyBytes": 16106127360,
-        "MaxExpiryHours": 2.0,
+        "MaxExpiryHours": 24.0,
         "MaxDownloads": 10,
         "MaxConcurrency": 2
       },

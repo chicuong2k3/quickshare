@@ -6,7 +6,7 @@ namespace QuickShare.Features.Uploads.CommitR2;
 
 public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Source);
 
-public record CommitR2Response(string ShareCode, string ShareLink);
+public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
 public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
 {
@@ -70,6 +70,8 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
         var shareCode = Convert.ToBase64String(randomBytes)
             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
 
+        var expiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(plan));
+
         var delivery = new Delivery
         {
             Id = cmd.DeliveryId,
@@ -83,8 +85,8 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             ShareCode = shareCode,
             MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
-            ExpiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(plan)),
-            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashString(cmd.Otp) : null,
+            ExpiresAt = expiresAt,
+            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             Source = DeliverySources.Normalize(cmd.Source)
         };
 
@@ -95,6 +97,6 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
         await db.SaveChangesAsync(ct);
 
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
-        return Result.Success(new CommitR2Response(shareCode, $"{baseUrl}/d/{shareCode}"));
+        return Result.Success(new CommitR2Response(shareCode, $"{baseUrl}/d/{shareCode}", expiresAt));
     }
 }

@@ -5,6 +5,8 @@
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@using System.Text.Json
+@using System.Text.Json.Serialization
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
@@ -70,19 +72,6 @@
                             <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
                         </div>
                         <span class="otp-hint">@Loc["upload_otp_hint"]</span>
-                    </div>
-                </div>
-
-                @* Expiry selector *@
-                <div class="expiry-row">
-                    <span class="expiry-label">@Loc["upload_expiry_label"]</span>
-                    <div class="expiry-group" role="radiogroup" aria-label="@Loc["upload_expiry_aria"]">
-                        <button type="button" role="radio" id="upload-expiry-24h"
-                                class="expiry-btn expiry-btn--on"
-                                onclick="uploadPage.selectExpiry('24h')">@Loc["upload_expiry_24h"]</button>
-                        <button type="button" role="radio" id="upload-expiry-7d"
-                                class="expiry-btn expiry-btn--off"
-                                onclick="uploadPage.selectExpiry('7d')">@Loc["upload_expiry_7d"]</button>
                     </div>
                 </div>
 
@@ -168,15 +157,11 @@
 <script src="/js/upload.js"></script>
 
 @code {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
-
-    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
-
     // upload.js reads its copy from here rather than carrying English literals.
     private Dictionary<string, string> Strings() => new()
     {
         ["errorUnknown"] = Loc["upload_error_unknown"],
-        ["expiresLabel"] = Loc["upload_expires_label"],
+        ["expiryLabel"] = Loc["upload_expiry_label"],
         ["starting"] = Loc["upload_starting"],
         ["failed"] = Loc["upload_failed"],
         ["sizeExceeded"] = Loc["upload_size_exceeded"],
@@ -188,5 +173,12 @@
         ["qrAria"] = Loc["upload_qr_aria"],
         ["qrUnavailable"] = Loc["upload_qr_unavailable"],
     };
+
+    // MarkupString: a plain string gets HTML-encoded by Razor even inside <script>,
+    // which breaks JSON.parse in upload.js (quotes become &quot;). The default
+    // System.Text.Json encoder escapes <, > and & so raw emission stays safe.
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 }
 
