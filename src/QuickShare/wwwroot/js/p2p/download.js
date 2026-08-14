@@ -1,18 +1,27 @@
 (function () {
         'use strict';
+        // UI copy is rendered by the page into a JSON block — no English literals here.
+        var T = (function () {
+            var el = document.getElementById('p2p-download-i18n');
+            try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
+        })();
+        function t(key, a, b) {
+            var v = T[key] || '';
+            return v.replace('{0}', a).replace('{1}', b);
+        }
         function apiBase() { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
         function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
         function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
         function hide(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
         function text(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
         var SIGNALING_CONNECT_TIMEOUT_MS = 15000;
-        var SIGNALING_CONNECT_TIMEOUT_MESSAGE = 'Could not reach signaling server. Check network and try again.';
+        var SIGNALING_CONNECT_TIMEOUT_MESSAGE = t('signalingTimeout');
         var RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
-        var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = 'Sender did not respond in time. Please try again.';
+        var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = t('handshakeTimeout');
         var ICE_CONNECT_TIMEOUT_MS = 12000;
-        var ICE_CONNECT_TIMEOUT_MESSAGE = 'Direct connection failed \u2014 devices not on the same network (NAT/firewall). Connect both to the same Wi\u2011Fi or hotspot, then reopen this link.';
-        var DIFFERENT_NETWORK_MESSAGE = 'These devices are on different networks, so a direct transfer is not possible. Connect both to the same Wi\u2011Fi or hotspot, then reopen this link.';
-        var SENDER_LEFT_MESSAGE = 'The sender disconnected before the transfer finished. Ask them to reopen the P2P Send tab, then try again.';
+        var ICE_CONNECT_TIMEOUT_MESSAGE = t('iceTimeout');
+        var DIFFERENT_NETWORK_MESSAGE = t('diffNetwork');
+        var SENDER_LEFT_MESSAGE = t('senderLeft');
         var RELAY_TYPE = {
             offer: 'offer',
             ice: 'ice',
@@ -50,8 +59,8 @@
                     text('p2pd-filesize', formatBytes(state.fileSize));
                     var btn = document.getElementById('p2pd-dl-btn');
                     var btnTxt = document.getElementById('p2pd-dl-text');
-                    if (state.phase === 'connecting') { if (btn) btn.disabled = true; if (btnTxt) btnTxt.textContent = 'Connecting\u2026'; }
-                    else { if (btn) btn.disabled = false; if (btnTxt) btnTxt.textContent = 'Download directly'; }
+                    if (state.phase === 'connecting') { if (btn) btn.disabled = true; if (btnTxt) btnTxt.textContent = t('connecting'); }
+                    else { if (btn) btn.disabled = false; if (btnTxt) btnTxt.textContent = t('downloadBtn'); }
                 }
                 if (state.phase === 'transferring') {
                     text('p2pd-transfer-name', state.fileName);
@@ -61,13 +70,13 @@
                 }
                 if (state.phase === 'complete') text('p2pd-complete-name', state.fileName);
                 if (state.phase === 'error') {
-                    text('p2pd-error-msg', state.error || 'Connection failed');
+                    text('p2pd-error-msg', state.error || t('connFailed'));
                     show('p2pd-retry');
                 }
             }
 
             function progressLabel() {
-                if (state.progress === 0) return 'Starting...';
+                if (state.progress === 0) return t('starting');
                 var l = state.progress + '%';
                 if (state._receivedBytes && state.fileSize) l += ' \u00b7 ' + formatBytes(state._receivedBytes) + ' / ' + formatBytes(state.fileSize);
                 var elapsed = (Date.now() - state._startTime) / 1000;
@@ -207,7 +216,7 @@
             function init() {
                 render();
                 var api = apiBase();
-                if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = 'Signaling client not loaded'; render(); return; }
+                if (!window.P2P || !window.P2P.SignalingClient) { state.phase = 'error'; state.error = t('signalingNotLoaded'); render(); return; }
                 state._signaling = new window.P2P.SignalingClient(api, state.shareCode);
                 state._signaling.onRegistered = function () {
                     state._isRegistered = true;
@@ -263,7 +272,8 @@
                     clearConnectTimeout();
                     clearHandshakeTimeout();
                     state.phase = 'error';
-                    state.error = message || SIGNALING_CONNECT_TIMEOUT_MESSAGE;
+                    state.error = t('connFailed');
+                    console.warn('P2P signaling error:', message);
                 };
                 armConnectTimeout();
                 state._signaling.connect('receiver');
@@ -275,7 +285,7 @@
                     return;
                 }
                 state.phase = 'connecting'; armHandshakeTimeout(); armIceTimeout(); render();
-                if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) { state.phase = 'error'; state.error = 'P2P modules not loaded'; render(); return; }
+                if (!window.P2P.PeerConnection || !window.P2P.FileReceiver) { state.phase = 'error'; state.error = t('modulesNotLoaded'); render(); return; }
                 state._peerConnection = new window.P2P.PeerConnection();
                 state._peerConnection.onDataChannel = function (channel) { clearIceTimeout(); onDataChannel(channel); };
                 state._peerConnection.onIceCandidate = function (c) { if (state._signaling) state._signaling.send(RELAY_TYPE.ice, c); };
@@ -306,7 +316,7 @@
             function handleOffer(data) {
                 var sdp = data.sdp || data;
                 if (sdp && typeof sdp === 'object' && sdp.sdp) sdp = sdp.sdp;
-                state._peerConnection.createAnswer(sdp).then(function (answerSdp) { state._signaling.send(RELAY_TYPE.answer, { sdp: answerSdp }); }).catch(function () { state.phase = 'error'; state.error = 'Failed to handle WebRTC offer'; render(); });
+                state._peerConnection.createAnswer(sdp).then(function (answerSdp) { state._signaling.send(RELAY_TYPE.answer, { sdp: answerSdp }); }).catch(function () { state.phase = 'error'; state.error = t('offerFailed'); render(); });
             }
 
             function onDataChannel(channel) {
@@ -316,7 +326,7 @@
                 state._receiver.onFileInfo = function (info) { state.fileName = info.name; state.fileSize = info.size; state.mimeType = info.mime; };
                 state._receiver.onProgress = function (rec, tot) { state.progress = Math.round((rec / tot) * 100); state._receivedBytes = rec; armStallTimeout(); render(); };
                 state._receiver.onComplete = function () { clearHandshakeTimeout(); clearStallTimeout(); state.progress = 100; state.phase = 'complete'; render(); };
-                state._receiver.onError = function (msg) { failTransfer(msg); };
+                state._receiver.onError = function (msg) { console.warn('P2P receive error:', msg); failTransfer(t('transferFailed')); };
                 clearHandshakeTimeout();
                 state.phase = 'transferring'; armStallTimeout(); state._receiver.start(); render();
             }

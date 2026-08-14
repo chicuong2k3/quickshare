@@ -1,33 +1,25 @@
 @layout MainLayout
 @page "/tools/online-clipboard"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
-<ToolsLanding Heading="Online clipboard — paste and share in one step"
-              Description="Paste a screenshot or a block of text and get a shareable, auto-expiring link. No account, no install, end-to-end encrypted."
-              Lede="Copy something on one machine, paste it here, open the link on the other. Nothing to install, nothing to sign up for."
-              PasteHint="Paste anywhere on this page to start">
+<ToolsLanding Heading="@Loc["tools_clipboard_heading"]"
+              Description="@Loc["tools_clipboard_desc"]"
+              Lede="@Loc["tools_clipboard_lede"]"
+              PasteHint="@Loc["tools_clipboard_pastehint"]">
     <Body>
-        <h2 class="db-h2">What it does</h2>
-        <p>
-            An online clipboard moves text and images between devices that do not share a
-            clipboard — a work laptop and a personal phone, a remote desktop and the machine
-            in front of you, a colleague on the other side of a chat window. Press Ctrl+V here
-            and the content is uploaded, encrypted in your browser, and turned into a link you
-            can send anywhere.
-        </p>
+        <h2 class="db-h2">@Loc["tools_clipboard_what_title"]</h2>
+        <p>@Loc["tools_clipboard_what_body"]</p>
 
-        <h2 class="db-h2">Why this one</h2>
+        <h2 class="db-h2">@Loc["tools_clipboard_why_title"]</h2>
         <ul>
-            <li><strong>Encrypted in the browser.</strong> The key lives in the link fragment and never reaches our servers.</li>
-            <li><strong>It expires.</strong> Links auto-delete, so an old paste cannot leak months later.</li>
-            <li><strong>Text reads inline.</strong> Small snippets render on the download page with a copy button — no file to open.</li>
-            <li><strong>No account.</strong> Paste, copy the link, done.</li>
+            <li>@Loc["tools_clipboard_why_1"]</li>
+            <li>@Loc["tools_clipboard_why_2"]</li>
+            <li>@Loc["tools_clipboard_why_3"]</li>
+            <li>@Loc["tools_clipboard_why_4"]</li>
         </ul>
 
-        <h2 class="db-h2">Good for</h2>
-        <p>
-            Sending a stack trace to someone without mangling it in chat. Getting a screenshot
-            off a locked-down work machine. Moving a config snippet, an SSH key you are about
-            to rotate, or a wall of log output that a messaging app would truncate.
-        </p>
+        <h2 class="db-h2">@Loc["tools_clipboard_good_title"]</h2>
+        <p>@Loc["tools_clipboard_good_body"]</p>
     </Body>
 </ToolsLanding>

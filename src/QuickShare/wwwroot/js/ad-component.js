@@ -8,10 +8,16 @@ window.QuickShareAds = (function() {
         callbackUrl: null,
         antiForgeryToken: null,
         remainingAds: 0,
+        i18n: {},
         adInstance: null,
         sdkLoaded: false,
         rewardGranted: false
     };
+
+    function t(key, a, b) {
+        var v = state.i18n[key] || '';
+        return v.replace('{0}', a).replace('{1}', b);
+    }
 
     /**
      * Check if user has granted ad consent cookie.
@@ -36,6 +42,7 @@ window.QuickShareAds = (function() {
         state.callbackUrl = config.callbackUrl;
         state.antiForgeryToken = config.antiForgeryToken;
         state.remainingAds = config.remainingAds;
+        state.i18n = config.i18n || {};
         state.rewardGranted = false;
         if (!hasConsent()) {
             console.warn('QuickShareAds: ad consent not granted');
@@ -61,7 +68,7 @@ window.QuickShareAds = (function() {
 
         if (state.remainingAds <= 0) {
             btn.disabled = true;
-            btn.textContent = 'Limit reached';
+            btn.textContent = t('limitReached');
         }
     }
 
@@ -71,7 +78,7 @@ window.QuickShareAds = (function() {
     function showRewardedAd() {
         if (state.rewardGranted) return;
         if (!hasConsent()) {
-            showError('Ad consent required. Please accept cookies to watch ads.');
+            showError(t('consentRequired'));
             return;
         }
 
@@ -82,7 +89,7 @@ window.QuickShareAds = (function() {
         var btn = document.getElementById('ad-reward-watch-btn');
         if (btn) {
             btn.disabled = true;
-            btn.textContent = 'Loading ad\u2026';
+            btn.textContent = t('loading');
         }
 
         loadAdMobSdk()
@@ -93,7 +100,7 @@ window.QuickShareAds = (function() {
             })
             .catch(function(err) {
                 console.warn('QuickShareAds: ad load failed', err);
-                showError('Ads unavailable right now. Try again later.');
+                showError(t('unavailable'));
             });
     }
 
@@ -143,7 +150,7 @@ window.QuickShareAds = (function() {
                     var btn = document.getElementById('ad-reward-watch-btn');
                     if (btn && !state.rewardGranted) {
                         btn.disabled = false;
-                        btn.textContent = 'Watch Ad for +100MB';
+                        btn.textContent = t('watchBtn');
                     }
                 };
 
@@ -168,7 +175,7 @@ window.QuickShareAds = (function() {
         var btn = document.getElementById('ad-reward-watch-btn');
         if (btn) {
             btn.disabled = true;
-            btn.textContent = 'Verifying\u2026';
+            btn.textContent = t('verifying');
         }
 
         fetch(state.callbackUrl, {
@@ -184,11 +191,11 @@ window.QuickShareAds = (function() {
             if (data.success) {
                 showSuccess(data);
             } else {
-                showError(data.error || 'Reward verification failed.');
+                showError(data.error || t('verifyFailed'));
             }
         })
         .catch(function() {
-            showError('Could not verify reward. Please try again.');
+            showError(t('verifyError'));
         });
     }
 
@@ -198,19 +205,21 @@ window.QuickShareAds = (function() {
 
         var p2pNote = '';
         if (data.p2pUploadsUnlocked > 0) {
-            p2pNote = '<p class="ad-reward-card__description" style="color:var(--color-success)">+'
-                + data.p2pUploadsUnlocked + ' P2P upload unlocked today.</p>';
+            p2pNote = '<p class="ad-reward-card__description" style="color:var(--color-success)">'
+                + t('p2pUnlocked', data.p2pUploadsUnlocked) + '</p>';
         }
 
         container.innerHTML =
             '<div class="ad-reward-card__body">' +
-            '<div class="ad-reward-card__title" style="color:var(--color-success)">+'
-                + data.quotaAddedMb + 'MB added!</div>' +
-            '<p class="ad-reward-card__description">You have <strong>'
-                + data.adsRemainingToday + ' ads</strong> remaining today.</p>' +
+            '<div class="ad-reward-card__title" style="color:var(--color-success)">'
+                + t('added', data.quotaAddedMb) + '</div>' +
+            '<p class="ad-reward-card__description">'
+                + t('remainingPrefix') + ' <strong>' + data.adsRemainingToday + ' '
+                + (data.adsRemainingToday === 1 ? t('remainingSingular') : t('remainingPlural'))
+                + '</strong> ' + t('remainingSuffix') + '</p>' +
             p2pNote +
             '<a href="/pricing" class="ad-upgrade-link">'
-                + 'Upgrade to Pro for unlimited bandwidth</a>' +
+                + t('upgradeLink') + '</a>' +
             '</div>';
 
         // Notify listeners (e.g. P2P send page) that a reward was granted so
@@ -222,7 +231,7 @@ window.QuickShareAds = (function() {
         var btn = document.getElementById('ad-reward-watch-btn');
         if (btn) {
             btn.disabled = false;
-            btn.textContent = 'Try again';
+            btn.textContent = t('tryAgain');
         }
         var error = document.getElementById('ad-reward-error');
         if (error) {

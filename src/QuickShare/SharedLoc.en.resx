@@ -12,6 +12,50 @@
   <data name="nav_account" xml:space="preserve"><value>Account</value></data>
   <data name="nav_login" xml:space="preserve"><value>Sign in</value></data>
   <data name="nav_logout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="nav_menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="nav_user_menu" xml:space="preserve"><value>User menu</value></data>
+  <data name="nav_tools_footer_label" xml:space="preserve"><value>Tools</value></data>
+  <data name="nav_tools_clipboard" xml:space="preserve"><value>Online clipboard</value></data>
+  <data name="nav_tools_sharetext" xml:space="preserve"><value>Share text</value></data>
+  <data name="nav_tools_images" xml:space="preserve"><value>Send images uncompressed</value></data>
+  <data name="tools_clipboard_heading" xml:space="preserve"><value>Online clipboard — paste and share in one step</value></data>
+  <data name="tools_clipboard_desc" xml:space="preserve"><value>Paste a screenshot or a block of text and get a shareable, auto-expiring link. No account, no install, end-to-end encrypted.</value></data>
+  <data name="tools_clipboard_lede" xml:space="preserve"><value>Copy something on one machine, paste it here, open the link on the other. Nothing to install, nothing to sign up for.</value></data>
+  <data name="tools_clipboard_pastehint" xml:space="preserve"><value>Paste anywhere on this page to start</value></data>
+  <data name="tools_sharetext_heading" xml:space="preserve"><value>Share text with a link — no account needed</value></data>
+  <data name="tools_sharetext_desc" xml:space="preserve"><value>Paste text, get a link. The snippet renders inline for the reader, is encrypted in your browser, and expires on its own.</value></data>
+  <data name="tools_sharetext_lede" xml:space="preserve"><value>Paste a snippet, send the link. Whoever opens it reads the text on the page — they do not have to download a file.</value></data>
+  <data name="tools_sharetext_pastehint" xml:space="preserve"><value>Paste your text anywhere on this page</value></data>
+  <data name="tools_images_heading" xml:space="preserve"><value>Send uncompressed images — original quality preserved</value></data>
+  <data name="tools_images_desc" xml:space="preserve"><value>Paste or pick an image, get a share link. The file stays original — no compression like Zalo or Messenger.</value></data>
+  <data name="tools_images_lede" xml:space="preserve"><value>Zalo, Messenger and Facebook all compress images before sending. Here the original file goes through untouched — the receiver gets exactly the bytes you sent.</value></data>
+  <data name="tools_images_pastehint" xml:space="preserve"><value>Press Ctrl+V to paste a screenshot you just took</value></data>
+  <data name="tools_sharetext_how_title" xml:space="preserve"><value>How it works</value></data>
+  <data name="tools_sharetext_how_body" xml:space="preserve"><value>Press Ctrl+V. The text becomes a small .txt file, encrypted in your browser before it leaves the machine, and you get a share link. Anything under 10 KB renders straight into the page for the reader, with a copy button. Larger snippets show the first 50 lines and expand on request.</value></data>
+  <data name="tools_sharetext_why_title" xml:space="preserve"><value>Why not just paste it in chat</value></data>
+  <data name="tools_sharetext_why_1" xml:space="preserve"><value>Chat apps wrap long lines, eat indentation, and truncate walls of output.</value></data>
+  <data name="tools_sharetext_why_2" xml:space="preserve"><value>A link expires; a chat message sits in someone's history forever.</value></data>
+  <data name="tools_sharetext_why_3" xml:space="preserve"><value>The content is encrypted in your browser — the server stores bytes it cannot read.</value></data>
+  <data name="tools_sharetext_uses_title" xml:space="preserve"><value>Typical uses</value></data>
+  <data name="tools_sharetext_uses_body" xml:space="preserve"><value>Error logs and stack traces, a config file someone needs to copy verbatim, meeting notes, a long URL list, or any text that is too big for a message box and too small to deserve a document.</value></data>
+  <data name="tools_clipboard_what_title" xml:space="preserve"><value>What it does</value></data>
+  <data name="tools_clipboard_what_body" xml:space="preserve"><value>An online clipboard moves text and images between devices that do not share a clipboard — a work laptop and a personal phone, a remote desktop and the machine in front of you, a colleague on the other side of a chat window. Press Ctrl+V here and the content is uploaded, encrypted in your browser, and turned into a link you can send anywhere.</value></data>
+  <data name="tools_clipboard_why_title" xml:space="preserve"><value>Why this one</value></data>
+  <data name="tools_clipboard_why_1" xml:space="preserve"><value>Encrypted in the browser. The key lives in the link fragment and never reaches our servers.</value></data>
+  <data name="tools_clipboard_why_2" xml:space="preserve"><value>It expires. Links auto-delete, so an old paste cannot leak months later.</value></data>
+  <data name="tools_clipboard_why_3" xml:space="preserve"><value>Text reads inline. Small snippets render on the download page with a copy button — no file to open.</value></data>
+  <data name="tools_clipboard_why_4" xml:space="preserve"><value>No account. Paste, copy the link, done.</value></data>
+  <data name="tools_clipboard_good_title" xml:space="preserve"><value>Good for</value></data>
+  <data name="tools_clipboard_good_body" xml:space="preserve"><value>Sending a stack trace to someone without mangling it in chat. Getting a screenshot off a locked-down work machine. Moving a config snippet, an SSH key you are about to rotate, or a wall of log output that a messaging app would truncate.</value></data>
+  <data name="tools_images_why_title" xml:space="preserve"><value>Why images sent through chat go blurry</value></data>
+  <data name="tools_images_why_body" xml:space="preserve"><value>Messaging apps compress images to save bandwidth: they lower resolution, degrade JPEG quality, and strip EXIF data. Screenshots with text show it most — blurry glyphs, jagged edges. With photos of documents, drawings, or camera shots, what is lost can never be recovered.</value></data>
+  <data name="tools_images_how_title" xml:space="preserve"><value>How this works here</value></data>
+  <data name="tools_images_how_body" xml:space="preserve"><value>Paste an image (Ctrl+V) or drag a file onto the send page. The file is encrypted right in the browser, then uploaded directly — no compression step. The receiver opens the link and downloads the exact original file — same size, same quality, EXIF intact if the image has it.</value></data>
+  <data name="tools_images_diff_title" xml:space="preserve"><value>What is different</value></data>
+  <data name="tools_images_diff_1" xml:space="preserve"><value>No compression, no format conversion. PNG stays PNG, RAW stays RAW.</value></data>
+  <data name="tools_images_diff_2" xml:space="preserve"><value>End-to-end encryption. The key lives in the link; the server cannot read the content.</value></data>
+  <data name="tools_images_diff_3" xml:space="preserve"><value>Links auto-expire. Images do not linger on the internet indefinitely.</value></data>
+  <data name="tools_images_diff_4" xml:space="preserve"><value>No account needed. Paste, copy the link, send.</value></data>
   <data name="btn_get_started" xml:space="preserve"><value>Get Started</value></data>
   <data name="btn_start_free_trial" xml:space="preserve"><value>Start Free Trial</value></data>
   <data name="btn_upgrade" xml:space="preserve"><value>Upgrade</value></data>
@@ -136,6 +180,11 @@
   <data name="billing_feat_free" xml:space="preserve"><value>5 GB per file | 15 GB / month | 2-hour expiry | Lossless quality | End-to-end encryption</value></data>
   <data name="billing_feat_pro" xml:space="preserve"><value>20 GB per file | 200 GB / month | 30-day expiry | Password protection | No ads | Priority support</value></data>
   <data name="billing_feat_studio" xml:space="preserve"><value>100 GB per file | 2 TB / month | 90-day expiry | API access | Dedicated support</value></data>
+  <data name="billing_plan_suffix" xml:space="preserve"><value>Plan</value></data>
+  <data name="billing_evt_created" xml:space="preserve"><value>Subscription created — {0} {1}</value></data>
+  <data name="billing_evt_renewed" xml:space="preserve"><value>Subscription renewed — {0} {1}</value></data>
+  <data name="billing_evt_cancelled" xml:space="preserve"><value>Subscription cancelled</value></data>
+  <data name="billing_evt_expired" xml:space="preserve"><value>Subscription expired</value></data>
   <data name="login_page_title" xml:space="preserve"><value>Sign in — QuickShareCloud</value></data>
   <data name="login_title" xml:space="preserve"><value>Sign in to QuickShareCloud</value></data>
   <data name="login_subtitle" xml:space="preserve"><value>Choose a provider to continue</value></data>
@@ -166,6 +215,17 @@
   <data name="ad_reward_watch_btn" xml:space="preserve"><value>Watch Ad for +100MB</value></data>
   <data name="ad_reward_limit_reached" xml:space="preserve"><value>Limit reached</value></data>
   <data name="ad_upgrade_link" xml:space="preserve"><value>Upgrade to Pro for unlimited bandwidth</value></data>
+  <data name="ad_loading" xml:space="preserve"><value>Loading ad…</value></data>
+  <data name="ad_verifying" xml:space="preserve"><value>Verifying…</value></data>
+  <data name="ad_try_again" xml:space="preserve"><value>Try again</value></data>
+  <data name="ad_unavailable" xml:space="preserve"><value>Ads unavailable right now. Try again later.</value></data>
+  <data name="ad_consent_required" xml:space="preserve"><value>Ad consent required. Please accept cookies to watch ads.</value></data>
+  <data name="ad_verification_failed" xml:space="preserve"><value>Reward verification failed.</value></data>
+  <data name="ad_verify_error" xml:space="preserve"><value>Could not verify reward. Please try again.</value></data>
+  <data name="ad_reward_added" xml:space="preserve"><value>+{0} MB added!</value></data>
+  <data name="ad_ads_remaining" xml:space="preserve"><value>You have {0} ads remaining today.</value></data>
+  <data name="ad_p2p_unlocked" xml:space="preserve"><value>+{0} P2P upload unlocked today.</value></data>
+  <data name="ad_dev_simulate" xml:space="preserve"><value>Simulate rewarded ad (dev only, Ads:DevSimulation=true)</value></data>
   <!-- Upload page -->
   <data name="upload_title" xml:space="preserve"><value>QuickShareCloud — send a file in seconds</value></data>
   <data name="upload_file_input_label" xml:space="preserve"><value>Choose a file to upload</value></data>
@@ -197,6 +257,18 @@
   <data name="upload_error_title" xml:space="preserve"><value>Upload failed</value></data>
   <data name="upload_error_unknown" xml:space="preserve"><value>An unknown error occurred.</value></data>
   <data name="upload_try_again" xml:space="preserve"><value>Try again</value></data>
+  <data name="upload_expires_label" xml:space="preserve"><value>Expires: </value></data>
+  <data name="upload_starting" xml:space="preserve"><value>Starting...</value></data>
+  <data name="upload_failed" xml:space="preserve"><value>Upload failed</value></data>
+  <data name="upload_size_exceeded" xml:space="preserve"><value>File exceeds the 5 GB upload limit.</value></data>
+  <data name="upload_start_failed" xml:space="preserve"><value>Failed to start upload</value></data>
+  <data name="upload_url_refresh_failed" xml:space="preserve"><value>Could not refresh upload URLs</value></data>
+  <data name="upload_part_failed" xml:space="preserve"><value>Part {0} failed with HTTP {1}</value></data>
+  <data name="upload_finalize_failed" xml:space="preserve"><value>Failed to finalize upload</value></data>
+  <data name="upload_qr_not_loaded" xml:space="preserve"><value>QR library not loaded.</value></data>
+  <data name="upload_qr_unavailable" xml:space="preserve"><value>QR unavailable.</value></data>
+  <data name="upload_qr_aria" xml:space="preserve"><value>QR code</value></data>
+  <data name="upload_resume" xml:space="preserve"><value>Resume upload</value></data>
   <!-- Download page -->
   <data name="download_title" xml:space="preserve"><value>Download — QuickShareCloud</value></data>
   <data name="download_checking_link" xml:space="preserve"><value>Checking link…</value></data>
@@ -303,6 +375,7 @@
   <data name="files_modal_delete_btn" xml:space="preserve"><value>Delete folder</value></data>
   <data name="files_deleting" xml:space="preserve"><value>Deleting…</value></data>
   <!-- P2P Send page -->
+  <data name="p2p_send_title" xml:space="preserve"><value>P2P file transfer — QuickShareCloud</value></data>
   <data name="p2p_send_choose_file_aria" xml:space="preserve"><value>Choose a file</value></data>
   <data name="p2p_send_headline_send" xml:space="preserve"><value>Send</value></data>
   <data name="p2p_send_headline_direct" xml:space="preserve"><value>direct</value></data>
@@ -326,7 +399,27 @@
   <data name="p2p_send_error_part2" xml:space="preserve"><value> instead.</value></data>
   <data name="p2p_send_watch_ad" xml:space="preserve"><value>Watch ad to unlock +1 upload</value></data>
   <data name="p2p_send_try_again" xml:space="preserve"><value>Try again</value></data>
+  <data name="p2p_send_quota_left" xml:space="preserve"><value>P2P uploads today: {0} of {1} left</value></data>
+  <data name="p2p_send_quota_from_ads" xml:space="preserve"><value> (+{0} from ads)</value></data>
+  <data name="p2p_send_quota_limit_reached" xml:space="preserve"><value>Daily P2P upload limit reached ({0}/{1}). </value></data>
+  <data name="p2p_send_quota_unlock_ad" xml:space="preserve"><value>Watch an ad to unlock +1 more upload, or upgrade to Pro.</value></data>
+  <data name="p2p_send_quota_upgrade" xml:space="preserve"><value>Sign in or upgrade to Pro for unlimited uploads.</value></data>
+  <data name="p2p_send_status_connecting" xml:space="preserve"><value>Connecting…</value></data>
+  <data name="p2p_send_status_receiving" xml:space="preserve"><value>Receiving</value></data>
+  <data name="p2p_send_status_done" xml:space="preserve"><value>Done</value></data>
+  <data name="p2p_send_status_different_network" xml:space="preserve"><value>Different network</value></data>
+  <data name="p2p_send_status_left_mid" xml:space="preserve"><value>Left mid-transfer</value></data>
+  <data name="p2p_send_status_disconnected" xml:space="preserve"><value>Disconnected</value></data>
+  <data name="p2p_send_transfer_failed" xml:space="preserve"><value>Transfer failed. Please try again.</value></data>
+  <data name="p2p_send_create_failed" xml:space="preserve"><value>Failed to create share</value></data>
+  <data name="p2p_send_create_link_failed" xml:space="preserve"><value>Failed to create share link</value></data>
+  <data name="p2p_send_module_not_loaded" xml:space="preserve"><value>P2P modules not loaded</value></data>
+  <data name="p2p_send_sender_module_not_loaded" xml:space="preserve"><value>File sender module not loaded</value></data>
+  <data name="p2p_send_qr_not_loaded" xml:space="preserve"><value>QR library not loaded.</value></data>
+  <data name="p2p_send_qr_unavailable" xml:space="preserve"><value>QR unavailable.</value></data>
+  <data name="p2p_send_qr_aria" xml:space="preserve"><value>QR code for share link</value></data>
   <!-- P2P Download page -->
+  <data name="p2p_download_title" xml:space="preserve"><value>P2P download — QuickShareCloud</value></data>
   <data name="p2p_download_connecting" xml:space="preserve"><value>Connecting to sender…</value></data>
   <data name="p2p_download_download_btn" xml:space="preserve"><value>Download directly</value></data>
   <data name="p2p_download_p2p_note" xml:space="preserve"><value>Direct peer-to-peer transfer · straight device to device</value></data>
@@ -337,6 +430,17 @@
   <data name="p2p_download_waiting_note" xml:space="preserve"><value>Sender must keep the P2P Send tab open. If sender selected a new file, this old link will stay waiting — ask for the latest link.</value></data>
   <data name="p2p_download_error_title" xml:space="preserve"><value>Connection unavailable</value></data>
   <data name="p2p_download_try_again" xml:space="preserve"><value>Try again</value></data>
+  <data name="p2p_download_signaling_timeout" xml:space="preserve"><value>Could not reach signaling server. Check network and try again.</value></data>
+  <data name="p2p_download_handshake_timeout" xml:space="preserve"><value>Sender did not respond in time. Please try again.</value></data>
+  <data name="p2p_download_ice_timeout" xml:space="preserve"><value>Direct connection failed — devices not on the same network (NAT/firewall). Connect both to the same Wi-Fi or hotspot, then reopen this link.</value></data>
+  <data name="p2p_download_diff_network" xml:space="preserve"><value>These devices are on different networks, so a direct transfer is not possible. Connect both to the same Wi-Fi or hotspot, then reopen this link.</value></data>
+  <data name="p2p_download_sender_left" xml:space="preserve"><value>The sender disconnected before the transfer finished. Ask them to reopen the P2P Send tab, then try again.</value></data>
+  <data name="p2p_download_conn_failed" xml:space="preserve"><value>Connection failed</value></data>
+  <data name="p2p_download_starting" xml:space="preserve"><value>Starting...</value></data>
+  <data name="p2p_download_signaling_not_loaded" xml:space="preserve"><value>Signaling client not loaded</value></data>
+  <data name="p2p_download_modules_not_loaded" xml:space="preserve"><value>P2P modules not loaded</value></data>
+  <data name="p2p_download_offer_failed" xml:space="preserve"><value>Failed to handle WebRTC offer</value></data>
+  <data name="p2p_download_transfer_failed" xml:space="preserve"><value>Transfer failed</value></data>
   <!-- Upgrade page -->
   <data name="upgrade_page_title" xml:space="preserve"><value>Upgrade to {0} — QuickShareCloud</value></data>
   <data name="upgrade_tag" xml:space="preserve"><value>Upgrade</value></data>
@@ -378,6 +482,10 @@
   <data name="upgrade_feat_studio_3" xml:space="preserve"><value>Unlimited transfers</value></data>
   <data name="upgrade_feat_studio_5" xml:space="preserve"><value>API access</value></data>
   <data name="upgrade_feat_studio_6" xml:space="preserve"><value>Dedicated support</value></data>
+  <data name="upgrade_payment_success" xml:space="preserve"><value>Payment successful! Your {0} plan has been activated.</value></data>
+  <data name="upgrade_waiting_confirmation" xml:space="preserve"><value>Waiting for payment confirmation — your plan will be activated automatically.</value></data>
+  <data name="payos_return_paid" xml:space="preserve"><value>Payment successful. Your plan is being activated…</value></data>
+  <data name="payos_return_pending" xml:space="preserve"><value>Payment confirmation not received yet. You can close this frame and try again.</value></data>
   <data name="account_tab_profile" xml:space="preserve"><value>Profile</value></data>
   <data name="account_tab_deliveries" xml:space="preserve"><value>Deliveries</value></data>
   <data name="account_tab_billing" xml:space="preserve"><value>Subscription</value></data>

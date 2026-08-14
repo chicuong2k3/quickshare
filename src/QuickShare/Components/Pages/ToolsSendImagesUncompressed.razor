@@ -1,32 +1,25 @@
 @layout MainLayout
 @page "/tools/gui-anh-khong-nen"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
-<ToolsLanding Heading="Gửi ảnh không nén — giữ nguyên chất lượng gốc"
-              Description="Dán hoặc chọn ảnh, nhận link chia sẻ. Ảnh giữ nguyên file gốc, không bị nén như khi gửi qua Zalo hay Messenger."
-              Lede="Zalo, Messenger, Facebook đều nén ảnh trước khi gửi. Ở đây file gốc đi nguyên vẹn — nhận về đúng byte đã gửi."
-              PasteHint="Bấm Ctrl+V để dán ảnh vừa chụp màn hình">
+<ToolsLanding Heading="@Loc["tools_images_heading"]"
+              Description="@Loc["tools_images_desc"]"
+              Lede="@Loc["tools_images_lede"]"
+              PasteHint="@Loc["tools_images_pastehint"]">
     <Body>
-        <h2 class="db-h2">Vì sao ảnh gửi qua chat bị mờ</h2>
-        <p>
-            Các ứng dụng nhắn tin nén ảnh để tiết kiệm băng thông: giảm độ phân giải, hạ chất
-            lượng JPEG, xoá dữ liệu EXIF. Ảnh chụp màn hình có chữ là thấy rõ nhất — chữ nhoè,
-            viền răng cưa. Với ảnh chụp giấy tờ, bản vẽ, hay ảnh chụp máy ảnh, phần mất đi
-            không lấy lại được.
-        </p>
+        <h2 class="db-h2">@Loc["tools_images_why_title"]</h2>
+        <p>@Loc["tools_images_why_body"]</p>
 
-        <h2 class="db-h2">Cách làm ở đây</h2>
-        <p>
-            Dán ảnh (Ctrl+V) hoặc kéo thả file vào trang gửi. File được mã hoá ngay trên trình
-            duyệt rồi tải thẳng lên, không qua bước nén nào. Người nhận mở link và tải về đúng
-            file gốc — cùng kích thước, cùng chất lượng, còn nguyên EXIF nếu ảnh có.
-        </p>
+        <h2 class="db-h2">@Loc["tools_images_how_title"]</h2>
+        <p>@Loc["tools_images_how_body"]</p>
 
-        <h2 class="db-h2">Điểm khác biệt</h2>
+        <h2 class="db-h2">@Loc["tools_images_diff_title"]</h2>
         <ul>
-            <li><strong>Không nén, không đổi định dạng.</strong> PNG vẫn là PNG, RAW vẫn là RAW.</li>
-            <li><strong>Mã hoá đầu-cuối.</strong> Khoá nằm trong link, máy chủ không đọc được nội dung.</li>
-            <li><strong>Link tự hết hạn.</strong> Ảnh không nằm lại trên mạng vô thời hạn.</li>
-            <li><strong>Không cần tài khoản.</strong> Dán, copy link, gửi.</li>
+            <li>@Loc["tools_images_diff_1"]</li>
+            <li>@Loc["tools_images_diff_2"]</li>
+            <li>@Loc["tools_images_diff_3"]</li>
+            <li>@Loc["tools_images_diff_4"]</li>
         </ul>
     </Body>
 </ToolsLanding>

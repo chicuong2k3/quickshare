@@ -1,7 +1,11 @@
 @layout MainLayout
 @using QuickShare.Infrastructure
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using Microsoft.Extensions.Localization
 @page "/p2p/d/{ShareCode}"
 @inject IConfiguration Config
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @code {
     [Parameter]
@@ -14,9 +18,10 @@
     var shareCode = ShareCode;
 }
 
-<PageTitle>QuickShareCloud â€” P2P download</PageTitle>
+<PageTitle>@Loc["p2p_download_title"]</PageTitle>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase", shareCode: "@shareCode" };</script>
+<script id="p2p-download-i18n" type="application/json">@RawJson(Strings())</script>
 
 <PageWrapper Variant="PageVariant.Centered">
     <div class="card db-card">
@@ -25,7 +30,7 @@
             @* CHECKING *@
             <section id="p2pd-checking" class="section">
                 <div class="db-spinner"></div>
-                <p class="db-p" style="margin-top: 1.25rem">Connecting to sender&hellip;</p>
+                <p class="db-p" style="margin-top: 1.25rem">@Loc["p2p_download_connecting"]</p>
             </section>
 
 
@@ -44,10 +49,10 @@
                 </div>
                 <div style="margin-top: 2.5rem">
                     <button id="p2pd-dl-btn" class="db-btn db-btn--primary" style="width: 100%" onclick="p2pDownload.startDownload()" data-ai-action="p2p.receive.download">
-                        <span id="p2pd-dl-text">Download directly</span>
+                        <span id="p2pd-dl-text">@Loc["p2p_download_download_btn"]</span>
                     </button>
                 </div>
-                <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--db-color-text-muted); text-align: center">Direct peer-to-peer transfer &middot; straight device to device</p>
+                <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--db-color-text-muted); text-align: center">@Loc["p2p_download_p2p_note"]</p>
             </section>
 
             @* TRANSFERRING *@
@@ -56,7 +61,7 @@
                 <h1 id="p2pd-transfer-name" class="db-h2" style="margin-top: 1.5rem; font-size: 1.25rem"></h1>
                 <p class="db-p" id="p2pd-transfer-progress" style="margin-top: 0.75rem"></p>
                 <div class="progress"><div id="p2pd-progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div></div>
-                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pDownload.cancelDownload()">Cancel</button>
+                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pDownload.cancelDownload()">@Loc["p2p_download_cancel"]</button>
             </section>
 
             @* COMPLETE *@
@@ -66,16 +71,16 @@
                         <polyline points="20 6 9 17 4 12" />
                     </svg>
                 </div>
-                <h1 class="db-h2" style="font-size: 1.25rem">Download complete</h1>
+                <h1 class="db-h2" style="font-size: 1.25rem">@Loc["p2p_download_complete"]</h1>
                 <p class="db-p" id="p2pd-complete-name" style="margin-top: 0.5rem"></p>
-                <a href="/" class="db-btn db-btn--primary" style="margin-top: 2rem">Send a file</a>
+                <a href="/" class="db-btn db-btn--primary" style="margin-top: 2rem">@Loc["p2p_download_send_file"]</a>
             </section>
 
             @* WAITING *@
             <section id="p2pd-waiting" class="section hidden">
                 <div class="db-spinner"></div>
-                <h1 class="db-h2" style="margin-top: 1.5rem; font-size: 1.25rem">Waiting for sender</h1>
-                <p class="db-p" style="margin-top: 0.5rem">Sender must keep the P2P Send tab open. If sender selected a new file, this old link will stay waiting &mdash; ask for the latest link.</p>
+                <h1 class="db-h2" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["p2p_download_waiting"]</h1>
+                <p class="db-p" style="margin-top: 0.5rem">@Loc["p2p_download_waiting_note"]</p>
             </section>
 
             @* ERROR *@
@@ -85,9 +90,9 @@
                         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                 </div>
-                <h1 class="db-h2" style="font-size: 1.25rem">Connection unavailable</h1>
+                <h1 class="db-h2" style="font-size: 1.25rem">@Loc["p2p_download_error_title"]</h1>
                 <p class="db-p" id="p2pd-error-msg" style="margin-top: 0.5rem"></p>
-                <button type="button" id="p2pd-retry" class="db-btn db-btn--primary hidden" style="margin-top: 2rem" onclick="window.location.reload()">Try again</button>
+                <button type="button" id="p2pd-retry" class="db-btn db-btn--primary hidden" style="margin-top: 2rem" onclick="window.location.reload()">@Loc["p2p_download_try_again"]</button>
             </section>
 
         </div>
@@ -104,5 +109,29 @@
 <script src="/js/p2p/fileReceiver.js"></script>
 <script src="/js/p2p/encryption.js"></script>
 <script src="/js/p2p/download.js"></script>
+
+@code {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+    // download.js reads its copy from this JSON block — no English literals in JS.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["connecting"] = Loc["p2p_download_connecting"],
+        ["downloadBtn"] = Loc["p2p_download_download_btn"],
+        ["signalingTimeout"] = Loc["p2p_download_signaling_timeout"],
+        ["handshakeTimeout"] = Loc["p2p_download_handshake_timeout"],
+        ["iceTimeout"] = Loc["p2p_download_ice_timeout"],
+        ["diffNetwork"] = Loc["p2p_download_diff_network"],
+        ["senderLeft"] = Loc["p2p_download_sender_left"],
+        ["connFailed"] = Loc["p2p_download_conn_failed"],
+        ["starting"] = Loc["p2p_download_starting"],
+        ["signalingNotLoaded"] = Loc["p2p_download_signaling_not_loaded"],
+        ["modulesNotLoaded"] = Loc["p2p_download_modules_not_loaded"],
+        ["offerFailed"] = Loc["p2p_download_offer_failed"],
+        ["transferFailed"] = Loc["p2p_download_transfer_failed"],
+    };
+
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+}
 
 

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Localization;
+
 namespace QuickShare.Features.Payments.PayOS;
 
 /// <summary>
@@ -6,11 +8,9 @@ namespace QuickShare.Features.Payments.PayOS;
 /// the whole app inside the iframe. The parent page picks up the result via its poll.
 /// GET /payments/payos/return
 /// </summary>
-public sealed class PayOSReturnEndpoint(CheckoutService checkout) : EndpointWithoutRequest
+public sealed class PayOSReturnEndpoint(CheckoutService checkout, IStringLocalizer<SharedLoc> loc) : EndpointWithoutRequest
 {
     private const string OrderCodeQueryKey = "orderCode";
-    private const string PaidMessage = "Thanh toán thành công. Gói của bạn đang được kích hoạt…";
-    private const string PendingMessage = "Chưa nhận được xác nhận thanh toán. Bạn có thể đóng khung này và thử lại.";
 
     public override void Configure()
     {
@@ -24,7 +24,8 @@ public sealed class PayOSReturnEndpoint(CheckoutService checkout) : EndpointWith
         var paid = long.TryParse(Query<string>(OrderCodeQueryKey, isRequired: false), out var orderCode)
             && await checkout.FinalizeByOrderCodeAsync(orderCode, ct);
 
-        var message = paid ? PaidMessage : PendingMessage;
+        var message = paid ? loc["payos_return_paid"].Value : loc["payos_return_pending"].Value;
+
         await Send.StringAsync(
             $"""
             <!doctype html><meta charset="utf-8"><title>PayOS</title>

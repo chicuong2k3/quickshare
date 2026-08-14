@@ -9,8 +9,9 @@
 @inject AppDbContext Db
 @inject IConfiguration Config
 @inject CheckoutService Checkout
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
-<PageTitle>Nâng cấp lên @planDisplay — QuickShareCloud</PageTitle>
+<PageTitle>@string.Format(Loc["upgrade_page_title"], planDisplay)</PageTitle>
 
 @if (isPollRequest)
 {
@@ -23,13 +24,13 @@ else
 
     <section class="hero">
         @* No eyebrow above the heading. *@
-        <h1 class="db-h1">Nâng cấp lên @planDisplay</h1>
+        <h1 class="db-h1">@string.Format(Loc["upgrade_h1"], planDisplay)</h1>
         <p class="db-p db-text-muted">
             @if (isFullyLoaded)
             {
-                <text>Bạn đang ở gói <strong>@currentPlan</strong>. </text>
+                <text>@Loc["upgrade_current_plan"]<strong>@currentPlan</strong>@Loc["upgrade_current_plan_suffix"] </text>
             }
-            @planDisplay mang đến cho bạn @planSummary.
+            @string.Format(Loc["upgrade_plan_brings"], planDisplay, planSummary)
         </p>
     </section>
 
@@ -46,22 +47,20 @@ else
             @SummaryCard
 
             <div class="payment">
-                <h2 class="db-h2">Hoàn tất nâng cấp</h2>
+                <h2 class="db-h2">@Loc["upgrade_complete_title"]</h2>
                 <p class="db-text-muted" style="margin-top: 0.5rem">
-                    Nâng cấp lên <strong>@planDisplay</strong>
-                    @(IsYearly ? " (hàng năm)" : " (hàng tháng)")
-                    &mdash; <strong>@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+                    @((MarkupString)string.Format(Loc["upgrade_complete_desc"], $"<strong>{planDisplay}</strong>", IsYearly ? Loc["upgrade_billing_yearly_label"] : Loc["upgrade_billing_monthly_label"], $"<strong>{(IsYearly ? planYearlyPrice : planMonthlyPrice)}</strong>"))
                 </p>
 
                 <div class="payment-option">
-                    <h3 class="db-h3">Chuyển khoản / Thẻ</h3>
-                    <p class="db-text-muted">Thanh toán qua PayOS (chuyển khoản, thẻ nội địa, Visa/Mastercard)</p>
+                    <h3 class="db-h3">@Loc["upgrade_payment_method_title"]</h3>
+                    <p class="db-text-muted">@Loc["upgrade_payment_method_desc"]</p>
                     <form method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="Plan" value="@selectedPlan" />
                         <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                         <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                            Thanh toán với PayOS
+                            @Loc["upgrade_pay_now_btn"]
                         </button>
                     </form>
                 </div>
@@ -75,11 +74,9 @@ else
             @SummaryCard
 
             <div class="payment" id="payment-section">
-                <h2 class="db-h2">Hoàn tất nâng cấp</h2>
+                <h2 class="db-h2">@Loc["upgrade_complete_title"]</h2>
                 <p class="db-text-muted" style="margin-top: 0.5rem">
-                    Nâng cấp lên <strong>@planDisplay</strong>
-                    @(IsYearly ? " (hàng năm)" : " (hàng tháng)")
-                    &mdash; <strong id="price-label">@(IsYearly ? planYearlyPrice : planMonthlyPrice)</strong>
+                    @((MarkupString)string.Format(Loc["upgrade_complete_desc"], $"<strong>{planDisplay}</strong>", IsYearly ? Loc["upgrade_billing_yearly_label"] : Loc["upgrade_billing_monthly_label"], $"<strong>{(IsYearly ? planYearlyPrice : planMonthlyPrice)}</strong>"))
                 </p>
 
                 @if (paymentCompleted)
@@ -89,14 +86,14 @@ else
                 else if (payOSResult is not null && payOSResult.Success)
                 {
                     <div class="payment-info">
-                        <h3 class="db-h3">Thanh toán <strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
-                        <p class="db-text-muted" style="margin-top:0.5rem">PayOS hỗ trợ chuyển khoản ngân hàng, thẻ nội địa, Visa/Mastercard.</p>
+                        <h3 class="db-h3">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
+                        <p class="db-text-muted" style="margin-top:0.5rem">@Loc["upgrade_payos_support"]</p>
 
                         @* Mã QR + thông tin chuyển khoản đã có sẵn trong khung PayOS bên dưới. *@
                         <div class="payos-checkout">
                             <div class="payos-iframe-wrap">
                                 <iframe src="@payOSResult.CheckoutUrl"
-                                        title="Thanh toán PayOS"
+                                        title="@Loc["upgrade_payos_iframe_title"]"
                                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                                         loading="lazy"
                                         class="payos-iframe"></iframe>
@@ -109,13 +106,13 @@ else
                 else if (payOSResult is not null)
                 {
                     <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
-                        <p>Không thể tạo link thanh toán: @payOSResult.ErrorMessage</p>
+                        <p>@string.Format(Loc["upgrade_payment_error"], payOSResult.ErrorMessage)</p>
                         <form method="post" style="margin-top:1rem">
                             <AntiforgeryToken />
                             <input type="hidden" name="Plan" value="@selectedPlan" />
                             <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                             <button type="submit" class="db-btn db-btn--primary">
-                                Thử lại
+                                @Loc["upgrade_retry"]
                             </button>
                         </form>
                     </div>
@@ -124,14 +121,14 @@ else
                 {
                     @* PaymentIntent created, PayOS call in progress (loading state) *@
                     <div class="payment-info payment-info--loading">
-                        <p class="db-text-muted">Đang tạo link thanh toán...</p>
+                        <p class="db-text-muted">@Loc["upgrade_creating_link"]</p>
                         <div class="db-spinner" style="margin:1rem auto"></div>
                     </div>
                 }
 
                 <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
-                    Gói sẽ được nâng cấp ngay sau khi xác nhận thanh toán.
-                    Cần hỗ trợ? <a href="mailto:support@quicksharecloud.com" class="db-link">Liên hệ support</a>.
+                    @Loc["upgrade_auto_upgrade_note"]
+                    @Loc["upgrade_need_help"] <a href="mailto:support@quicksharecloud.com" class="db-link">@Loc["upgrade_contact_support"]</a>.
                 </p>
             </div>
         </section>
@@ -178,8 +175,8 @@ else
         @if (paymentCompleted)
         {
             <div class="db-alert db-alert--success" style="margin-top:1rem;padding:1rem;border-radius:0.5rem">
-                <p><strong>Thanh toán thành công!</strong> Gói @planDisplay đã được kích hoạt.</p>
-                <a href="/account/billing" class="db-btn db-btn--primary" style="margin-top:1rem">Xem hoá đơn</a>
+                <p><strong>@string.Format(Loc["upgrade_payment_success"], planDisplay)</strong></p>
+                <a href="/account/billing" class="db-btn db-btn--primary" style="margin-top:1rem">@Loc["billing_view_receipt"]</a>
             </div>
         }
         else
@@ -191,14 +188,18 @@ else
                hx-target="#@PaymentStatusId"
                hx-select="#@PaymentStatusId"
                hx-swap="outerHTML">
-                Đang chờ xác nhận thanh toán — gói sẽ được kích hoạt tự động.
+                @Loc["upgrade_waiting_confirmation"]
             </p>
         }
     </div>;
 
     private PlanInfo PlanData => PlanCatalog.Get(selectedPlan);
+    private string planKey => selectedPlan == PlanTierLimits.Studio ? "studio" : "pro";
     private string planDisplay => PlanData.Display;
-    private string planSummary => PlanData.Summary;
+    private string planSummary => Loc[$"upgrade_plan_summary_{planKey}"].Value;
+    private string[] planFeatureKeys => selectedPlan == PlanTierLimits.Studio
+        ? new[] { "upgrade_feat_studio_1", "upgrade_feat_studio_2", "upgrade_feat_studio_3", "upgrade_feat_studio_5", "upgrade_feat_studio_6" }
+        : new[] { "upgrade_feat_pro_1", "upgrade_feat_pro_2", "upgrade_feat_pro_3", "upgrade_feat_pro_4", "upgrade_feat_pro_5" };
     private string planMonthlyPrice => PlanCatalog.FormatPrice(
         Config.GetValue(PlanData.MonthlyPricingKey, PlanData.MonthlyDefaultAmount),
         Config[PricingKeys.Currency]);
@@ -212,26 +213,26 @@ else
     private RenderFragment SummaryCard => @<div class="summary-card">
         <div class="summary-card__head">
             <h2 class="db-h2">@PlanData.Display</h2>
-            <p class="db-text-muted">@PlanData.Description</p>
+            <p class="db-text-muted">@Loc[$"upgrade_plan_desc_{planKey}"]</p>
         </div>
         <div class="summary-card__price">
             @if (IsYearly)
             {
                 <span class="price-amount">@planYearlyPrice</span>
-                <span class="price-period db-text-muted">/ năm</span>
+                <span class="price-period db-text-muted">@Loc["upgrade_period_yearly"]</span>
             }
             else
             {
                 <span class="price-amount">@planMonthlyPrice</span>
-                <span class="price-period db-text-muted">/ tháng</span>
+                <span class="price-period db-text-muted">@Loc["upgrade_period_monthly"]</span>
             }
         </div>
         <div class="summary-card__features">
-            @foreach (var feature in PlanData.Features)
+            @foreach (var featureKey in planFeatureKeys)
             {
                 <div class="feature">
                     <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                    <span>@feature</span>
+                    <span>@Loc[featureKey]</span>
                 </div>
             }
         </div>

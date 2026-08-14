@@ -1,31 +1,24 @@
 @layout MainLayout
 @page "/tools/share-text"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
-<ToolsLanding Heading="Share text with a link — no account needed"
-              Description="Paste text, get a link. The snippet renders inline for the reader, is encrypted in your browser, and expires on its own."
-              Lede="Paste a snippet, send the link. Whoever opens it reads the text on the page — they do not have to download a file."
-              PasteHint="Paste your text anywhere on this page">
+<ToolsLanding Heading="@Loc["tools_sharetext_heading"]"
+              Description="@Loc["tools_sharetext_desc"]"
+              Lede="@Loc["tools_sharetext_lede"]"
+              PasteHint="@Loc["tools_sharetext_pastehint"]">
     <Body>
-        <h2 class="db-h2">How it works</h2>
-        <p>
-            Press Ctrl+V. The text becomes a small <code>.txt</code> file, encrypted in your
-            browser before it leaves the machine, and you get a share link. Anything under
-            10&nbsp;KB renders straight into the page for the reader, with a copy button.
-            Larger snippets show the first 50 lines and expand on request.
-        </p>
+        <h2 class="db-h2">@Loc["tools_sharetext_how_title"]</h2>
+        <p>@Loc["tools_sharetext_how_body"]</p>
 
-        <h2 class="db-h2">Why not just paste it in chat</h2>
+        <h2 class="db-h2">@Loc["tools_sharetext_why_title"]</h2>
         <ul>
-            <li>Chat apps wrap long lines, eat indentation, and truncate walls of output.</li>
-            <li>A link expires; a chat message sits in someone's history forever.</li>
-            <li>The content is encrypted in your browser — the server stores bytes it cannot read.</li>
+            <li>@Loc["tools_sharetext_why_1"]</li>
+            <li>@Loc["tools_sharetext_why_2"]</li>
+            <li>@Loc["tools_sharetext_why_3"]</li>
         </ul>
 
-        <h2 class="db-h2">Typical uses</h2>
-        <p>
-            Error logs and stack traces, a config file someone needs to copy verbatim,
-            meeting notes, a long URL list, or any text that is too big for a message box
-            and too small to deserve a document.
-        </p>
+        <h2 class="db-h2">@Loc["tools_sharetext_uses_title"]</h2>
+        <p>@Loc["tools_sharetext_uses_body"]</p>
     </Body>
 </ToolsLanding>

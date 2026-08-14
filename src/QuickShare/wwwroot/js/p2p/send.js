@@ -31,6 +31,16 @@
     function hide(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
     function text(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
 
+    // UI copy is rendered by the page into a JSON block — no English literals here.
+    var T = (function () {
+        var el = document.getElementById('p2p-send-i18n');
+        try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
+    })();
+    function t(key, a, b) {
+        var v = T[key] || '';
+        return v.replace('{0}', a).replace('{1}', b);
+    }
+
     window.p2pSend = (function () {
         var state = {
             phase: 'idle', progress: 0, shareCode: '', shareLink: '', error: '',
@@ -65,13 +75,13 @@
             var remaining = state._quota.remaining;
             var allowance = state._quota.allowance;
             var unlocked = state._quota.unlocked || 0;
-            var suffix = unlocked > 0 ? ' (+' + unlocked + ' from ads)' : '';
-            var text = 'P2P uploads today: ' + remaining + ' of ' + allowance + ' left' + suffix;
+            var suffix = unlocked > 0 ? t('quotaFromAds', unlocked) : '';
+            var text = t('quotaLeft', remaining, allowance) + suffix;
             if (remaining <= 0) {
-                text = 'Daily P2P upload limit reached (' + allowance + '/' + allowance + '). ';
+                text = t('quotaLimitReached', allowance, allowance);
                 text += state._quota.canUnlockWithAd
-                    ? 'Watch an ad to unlock +1 more upload, or upgrade to Pro.'
-                    : 'Sign in or upgrade to Pro for unlimited uploads.';
+                    ? t('quotaUnlockAd')
+                    : t('quotaUpgrade');
             }
 
             el.textContent = text;
@@ -132,16 +142,16 @@
                 renderQR(state.shareLink);
             }
             if (state.phase === 'failed') {
-                text('p2ps-error-msg', state.error || 'Transfer failed. Please try again.');
+                text('p2ps-error-msg', state.error || t('transferFailed'));
             }
         }
 
         function statusLabel(r) {
-            if (r.status === RECEIVER_STATUS.connecting) return 'Connecting\u2026';
-            if (r.status === RECEIVER_STATUS.receiving) return 'Receiving';
-            if (r.status === RECEIVER_STATUS.done) return 'Done';
-            if (r.status === RECEIVER_STATUS.differentNetwork) return 'Different network';
-            return (r._wasReceiving ? 'Left mid-transfer' : 'Disconnected');
+            if (r.status === RECEIVER_STATUS.connecting) return t('statusConnecting');
+            if (r.status === RECEIVER_STATUS.receiving) return t('statusReceiving');
+            if (r.status === RECEIVER_STATUS.done) return t('statusDone');
+            if (r.status === RECEIVER_STATUS.differentNetwork) return t('statusDifferentNetwork');
+            return (r._wasReceiving ? t('statusLeftMid') : t('statusDisconnected'));
         }
 
         function renderReceivers() {
@@ -236,10 +246,10 @@
                 body: JSON.stringify(body)
             })
             .then(function (res) {
-                if (!res.ok) return res.text().then(function (t) {
+                if (!res.ok) return res.text().then(function (raw) {
                     var parsed = null;
-                    try { parsed = JSON.parse(t); } catch (e) { /* not JSON */ }
-                    var err = new Error((parsed && parsed.message) || t || 'Failed to create share');
+                    try { parsed = JSON.parse(raw); } catch (e) { /* not JSON */ }
+                    var err = new Error((parsed && parsed.message) || raw || t('createFailed'));
                     err.quota = parsed;
                     throw err;
                 });
@@ -254,7 +264,7 @@
                 connectSignaling();
             })
             .catch(function (err) {
-                state.error = err.message || 'Failed to create share link';
+                state.error = err.message || t('createLinkFailed');
                 if (err.quota && err.quota.error === 'daily_p2p_upload_limit_reached') {
                     state._quota = err.quota;
                     renderQuota();
@@ -345,7 +355,7 @@
 
         function onPeerJoined(receiverId) {
             if (state.phase === 'idle' || state.phase === 'failed') return;
-            if (!window.P2P.PeerConnection) { state.error = 'P2P modules not loaded'; setPhase('failed'); return; }
+            if (!window.P2P.PeerConnection) { state.error = t('moduleNotLoaded'); setPhase('failed'); return; }
 
             // If ICE cannot connect (peers on different networks / NAT), give
             // the receiver a while to establish the connection, then stop
@@ -413,7 +423,7 @@
         }
 
         function onChannelOpen(receiverId) {
-            if (!window.P2P.FileSender) { state.error = 'File sender module not loaded'; setPhase('failed'); return; }
+            if (!window.P2P.FileSender) { state.error = t('senderModuleNotLoaded'); setPhase('failed'); return; }
 
             var rcv = state._receivers[receiverId];
             if (!rcv) return;
@@ -509,7 +519,7 @@
             if (!el) return;
             el.innerHTML = '';
             if (!text || !window.qrcode) {
-                if (!window.qrcode) el.textContent = 'QR library not loaded.';
+                if (!window.qrcode) el.textContent = t('qrNotLoaded');
                 return;
             }
             try {
@@ -519,7 +529,7 @@
                 var moduleCount = qr.getModuleCount();
                 var cell = 6;
                 var dim = moduleCount * cell;
-                var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim + '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="QR code for share link" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
+                var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim + '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + t('qrAria') + '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
                 for (var r = 0; r < moduleCount; r++) {
                     for (var c = 0; c < moduleCount; c++) {
                         if (qr.isDark(r, c)) parts.push('<rect x="' + (c * cell) + '" y="' + (r * cell) + '" width="' + cell + '" height="' + cell + '" fill="#0f172a"/>');
@@ -528,7 +538,7 @@
                 parts.push('</svg>');
                 el.innerHTML = parts.join('');
             } catch (e) {
-                el.textContent = 'QR unavailable.';
+                el.textContent = t('qrUnavailable');
             }
         }
 

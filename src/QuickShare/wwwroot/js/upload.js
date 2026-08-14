@@ -21,6 +21,17 @@
         source: SOURCE_WEB
     };
 
+    // Locale strings come from the razor-rendered #upload-i18n block, never literals.
+    var T = (function () {
+        var el = document.getElementById('upload-i18n');
+        try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
+    })();
+
+    function t(key, a, b) {
+        var v = T[key] || '';
+        return v.replace('{0}', a).replace('{1}', b);
+    }
+
     function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
     function hide(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
 
@@ -55,7 +66,7 @@
             show('upload-success-encrypt-badge');
         }
         if (state.phase === 'error') {
-            document.getElementById('upload-error-msg').textContent = state.error || 'An unknown error occurred.';
+            document.getElementById('upload-error-msg').textContent = state.error || t('errorUnknown');
             if (state._resumeCtx) show('upload-resume-btn'); else hide('upload-resume-btn');
         }
 
@@ -78,7 +89,7 @@
         if (expLabel && state.expiresAt) {
             try {
                 var d = new Date(state.expiresAt);
-                if (!isNaN(d.getTime())) expLabel.textContent = 'Expires: ' + d.toLocaleString(undefined, { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                if (!isNaN(d.getTime())) expLabel.textContent = t('expiresLabel') + d.toLocaleString(undefined, { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
             } catch(_) {}
         }
     }
@@ -88,7 +99,7 @@
     function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
 
     function progressLabel() {
-        if (state.progress === 0) return 'Starting...';
+        if (state.progress === 0) return t('starting');
         var l = state.progress + '%';
         if (state.uploadedBytes && state.fileSize) l += ' \u00b7 ' + formatBytes(state.uploadedBytes) + ' / ' + formatBytes(state.fileSize);
         if (state.speed) l += ' \u00b7 ' + state.speed;
@@ -148,7 +159,7 @@
             state.phase = 'uploading'; state.error = ''; state._cancelled = false;
             state._abortController = new AbortController(); state._startTime = Date.now();
             render();
-            resumePendingParts(ctx).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+            resumePendingParts(ctx).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = e.message || t('failed'); render(); });
         },
 
         reset: function () { reset(); render(); }
@@ -171,13 +182,13 @@
 
     function startUpload(file, source) {
         if (!file) return;
-        if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = 'File exceeds the 5 GB upload limit.'; render(); return; }
+        if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = t('sizeExceeded'); render(); return; }
         state.source = source || SOURCE_WEB;
         state.filename = file.name || 'pasted-image';
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false; state._cancelled = false;
         state.phase = 'uploading'; state._startTime = Date.now(); render();
-        doUpload(file).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = e.message || 'Upload failed'; render(); });
+        doUpload(file).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = e.message || t('failed'); render(); });
     }
 
     async function doUpload(file) {
@@ -208,7 +219,7 @@
         state._abortController = new AbortController(); var signal = state._abortController.signal;
 
         var startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: file.name, fileSize: originalSize, contentType: file.type || 'application/octet-stream', partNumbers: partNumbers }) });
-        if (!startResp.ok) { var errT = await startResp.text(); throw new Error(errT || 'Failed to start upload'); }
+        if (!startResp.ok) { var errT = await startResp.text(); throw new Error(errT || t('startFailed')); }
         var session = await startResp.json();
         state._deliveryId = session.deliveryId; state._uploadId = session.uploadId; state.objectKey = session.objectKey;
 
@@ -245,7 +256,7 @@
 
     async function freshPartUrls(ctx, partNums, signal) {
         var resp = await fetch(apiBase() + '/api/uploads/part-urls', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, partNumbers: partNums }) });
-        if (!resp.ok) { var t = await resp.text(); throw new Error(t || 'Could not refresh upload URLs'); }
+        if (!resp.ok) { var errText = await resp.text(); throw new Error(errText || t('urlRefreshFailed')); }
         var data = await resp.json();
         for (var i = 0; i < data.parts.length; i++) ctx.urlByPart[data.parts[i].partNumber] = data.parts[i].url;
     }
@@ -257,7 +268,7 @@
         for (var attempt = 1; attempt <= PART_RETRY_ATTEMPTS; attempt++) {
             try {
                 var resp = await fetch(ctx.urlByPart[partNumber], { method: 'PUT', body: ctx.uploadBlob.slice(start, end), signal: signal });
-                if (!resp.ok) throw new Error('Part ' + partNumber + ' failed with HTTP ' + resp.status);
+                if (!resp.ok) throw new Error(t('partFailed', partNumber, resp.status));
                 var etag = (resp.headers.get('ETag') || '').replace(/^"(.*)"$/, '$1');
                 ctx.partEtags[idx] = { partNumber: partNumber, etag: etag };
                 updateProgress(ctx);
@@ -287,7 +298,7 @@
         }
 
         var commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source }) });
-        if (!commitResp.ok) { var cErr = await commitResp.text(); throw new Error(cErr || 'Failed to finalize upload'); }
+        if (!commitResp.ok) { var cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         var result = await commitResp.json();
         state.link = result.shareLink;
         if (ctx.encryptionKeyStr) state.link += '#key=' + ctx.encryptionKeyStr;
@@ -307,14 +318,14 @@
 
     function renderQR(text) {
         var el = document.getElementById('qrcode'); if (!el) return; el.innerHTML = '';
-        if (!text || !window.qrcode) { if (!window.qrcode) el.textContent = 'QR library not loaded.'; return; }
+        if (!text || !window.qrcode) { if (!window.qrcode) el.textContent = t('qrNotLoaded'); return; }
         try {
             var qr = window.qrcode(0, 'M'); qr.addData(text); qr.make();
             var moduleCount = qr.getModuleCount(); var cell = 6; var dim = moduleCount * cell;
-            var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="'+dim+'" height="'+dim+'" viewBox="0 0 '+dim+' '+dim+'" role="img" aria-label="QR code" style="image-rendering:pixelated"><rect width="'+dim+'" height="'+dim+'" fill="#fff"/>'];
+            var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="'+dim+'" height="'+dim+'" viewBox="0 0 '+dim+' '+dim+'" role="img" aria-label="'+t('qrAria')+'" style="image-rendering:pixelated"><rect width="'+dim+'" height="'+dim+'" fill="#fff"/>'];
             for (var r = 0; r < moduleCount; r++) for (var c = 0; c < moduleCount; c++) if (qr.isDark(r, c)) parts.push('<rect x="'+(c*cell)+'" y="'+(r*cell)+'" width="'+cell+'" height="'+cell+'" fill="#0f172a"/>');
             parts.push('</svg>'); el.innerHTML = parts.join('');
-        } catch(e) { el.textContent = 'QR unavailable.'; }
+        } catch(e) { el.textContent = t('qrUnavailable'); }
     }
 
     function flashPasteTip() {

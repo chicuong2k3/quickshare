@@ -40,7 +40,7 @@
         {
             <div class="summary-card">
                 <div class="summary-card__head">
-                    <h2 class="db-h2">@billing.PlanDisplay Plan</h2>
+                    <h2 class="db-h2">@billing.PlanDisplay @Loc["billing_plan_suffix"]</h2>
                     <p class="db-text-muted">@planDescription</p>
                 </div>
                 <div class="summary-card__price">
@@ -201,7 +201,7 @@
             }
         }
 
-        billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
+        billing = await BillingHistoryService.GetForUserAsync(user, Db, Loc, ct);
         subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
     }
 }

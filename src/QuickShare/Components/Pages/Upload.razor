@@ -1,5 +1,7 @@
 @layout MainLayout
 @page "/send"
+@using System.Text.Json
+@using System.Text.Json.Serialization
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
@@ -13,6 +15,7 @@
 
 <PageWrapper Variant="PageVariant.Fill">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+    <script id="upload-i18n" type="application/json">@RawJson(Strings())</script>
         <div class="container">
             <input type="file" name="file" class="sr-only" aria-label="@Loc["upload_file_input_label"]" onchange="uploadPage.onFileInput(event)" />
 
@@ -149,7 +152,7 @@
                 <h1 class="status-h1">@Loc["upload_error_title"]</h1>
                 <p class="status-p" id="upload-error-msg">@Loc["upload_error_unknown"]</p>
                 <div style="margin-top: 2.5rem; display: flex; gap: 0.75rem; justify-content: center">
-                    <button id="upload-resume-btn" class="db-btn db-btn--primary hidden" onclick="uploadPage.resumeUpload()">Resume upload</button>
+                    <button id="upload-resume-btn" class="db-btn db-btn--primary hidden" onclick="uploadPage.resumeUpload()">@Loc["upload_resume"]</button>
                     <button class="db-btn" onclick="uploadPage.reset()">@Loc["upload_try_again"]</button>
                 </div>
             </section>
@@ -163,4 +166,27 @@
 
 <script src="/js/paste-anywhere.js"></script>
 <script src="/js/upload.js"></script>
+
+@code {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+
+    // upload.js reads its copy from here rather than carrying English literals.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["errorUnknown"] = Loc["upload_error_unknown"],
+        ["expiresLabel"] = Loc["upload_expires_label"],
+        ["starting"] = Loc["upload_starting"],
+        ["failed"] = Loc["upload_failed"],
+        ["sizeExceeded"] = Loc["upload_size_exceeded"],
+        ["startFailed"] = Loc["upload_start_failed"],
+        ["urlRefreshFailed"] = Loc["upload_url_refresh_failed"],
+        ["partFailed"] = Loc["upload_part_failed"],
+        ["finalizeFailed"] = Loc["upload_finalize_failed"],
+        ["qrNotLoaded"] = Loc["upload_qr_not_loaded"],
+        ["qrAria"] = Loc["upload_qr_aria"],
+        ["qrUnavailable"] = Loc["upload_qr_unavailable"],
+    };
+}
 
