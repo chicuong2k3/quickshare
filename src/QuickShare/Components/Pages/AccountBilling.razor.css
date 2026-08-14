@@ -58,11 +58,14 @@
     color: var(--db-color-text-secondary);
 }
 
+/* A crease marker, not a stock circle-check (DESIGN.md zero-radius law). */
 .feature__icon {
-    width: 1rem;
-    height: 1rem;
-    color: var(--db-valley-ink);
+    width: 0.5rem;
+    height: 0.5rem;
     flex-shrink: 0;
+    background: var(--db-valley-ink);
+    color: transparent;
+    transform: skewX(-14deg);
 }
 
 /* ─── Actions ─── */
