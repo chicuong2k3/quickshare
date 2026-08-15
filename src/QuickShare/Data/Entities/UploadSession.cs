@@ -16,4 +16,5 @@ public record UploadSession : BaseAuditEntity
 public static class UploadSessionStatus
 {
     public const string InProgress = "InProgress";
+    public const string Committed = "Committed";
 }
