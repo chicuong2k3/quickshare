@@ -555,6 +555,40 @@ namespace QuickShare.Migrations
                     b.ToTable("subscriptions", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.TempUpload", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TempPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("temp_uploads", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
                     b.Property<Guid>("Id")

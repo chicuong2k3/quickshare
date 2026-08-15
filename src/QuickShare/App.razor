@@ -12,6 +12,9 @@
     <meta name="theme-color" content="#EFEEEA" />
     <base href="/" />
 
+    @* PWA (issue #14): installable shell + Android Web Share Target *@
+    <link rel="manifest" href="/manifest.webmanifest" />
+
     @* Outfit (display + UI, set light and wide-tracked) + Azeret Mono (spec labels, codes, measurements) *@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -80,5 +83,14 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <script src="/js/ad-component.js" asp-append-version="true"></script>
     <script src="/lib/qrcode/qrcode.min.js"></script>
     <script defer src="/lib/alpinejs/cdn.min.js" asp-append-version="true"></script>
+    <script>
+        // PWA (issue #14): progressive enhancement — a SW failure must never
+        // break the page.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () { });
+            });
+        }
+    </script>
 </body>
 </html>

@@ -459,6 +459,26 @@
         if (window.location.hash === '#paste') flashPasteTip();
     }
 
+    // Android/Chrome Share Target (issue #14): the server stashed the shared
+    // file and redirected to /send?shared={id}. Fetch it and run the normal
+    // upload flow — progress + resume stay intact.
+    function consumeShareTarget(): void {
+        const m = window.location.search.match(/[?&]shared=([0-9a-f-]+)/i);
+        if (!m) return;
+        const id = m[1];
+        fetch(apiBase() + '/api/share-target/' + id)
+            .then(function (r) {
+                if (!r.ok) throw new Error('share-target missing or expired');
+                const cd = r.headers.get('Content-Disposition') || '';
+                const nameMatch = cd.match(/filename\*=UTF-8''([^;]+)/);
+                const fileName = nameMatch ? decodeURIComponent(nameMatch[1]) : 'shared-file';
+                return r.blob().then(function (blob) { return new File([blob], fileName); });
+            })
+            .then(function (file) { startUpload(file, 'share-target'); })
+            .catch(function () { /* expired or gone; stay on the idle screen */ });
+    }
+
     render();
     consumePasteHandoff();
+    consumeShareTarget();
 })();
