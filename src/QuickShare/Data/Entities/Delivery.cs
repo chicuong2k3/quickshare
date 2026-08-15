@@ -4,6 +4,9 @@ namespace QuickShare.Data.Entities;
 public record Delivery : BaseAuditEntity
 {
     public Guid? SenderId { get; init; }
+    public string? SenderEmail { get; set; }
+    public bool SenderEmailConfirmed { get; set; }
+    public bool SenderEmailConsent { get; set; }
     public string FileName { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }

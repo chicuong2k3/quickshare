@@ -4,6 +4,7 @@ namespace QuickShare.Data.Entities;
 public record UploadSession : BaseAuditEntity
 {
     public Guid? SenderId { get; init; }
+    public string? SenderEmail { get; init; }
     public string FileName { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }

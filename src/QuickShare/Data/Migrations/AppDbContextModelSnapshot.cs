@@ -128,6 +128,15 @@ namespace QuickShare.Migrations
                     b.Property<string>("OtpHash")
                         .HasColumnType("text");
 
+                    b.Property<string>("SenderEmail")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("SenderEmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SenderEmailConsent")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid");
 
@@ -411,6 +420,9 @@ namespace QuickShare.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<string>("R2UploadId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SenderEmail")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("SenderId")
