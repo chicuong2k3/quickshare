@@ -54,6 +54,10 @@ browser download needed.
 | Analytics | `AnalyticsTrackingTests` |
 | Sender email (confirm/unsubscribe/rate-limit) | `SenderEmailConfirmTests`, `SenderEmailUnsubscribeTests`, `SenderEmailRateLimiterTests`, `SenderEmailTokensTests` |
 | Feature flags | `FeatureFlagServiceTests`, `AdminFlagsApiTests` |
+| Security headers + robots | `SecurityHeadersTests` |
+| OTP brute-force lockout | `OtpLockoutTests` |
+| New-device login tracking | `DeviceTrackerTests` |
+| Abuse/DMCA reports + admin | `AbuseReportTests` |
 | Localization vi/en | `LocalizationTests`, `LanguageSwitchTests` |
 | HTMX lazy-load / cache / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `PageCoverageTests` |
 | Quick Paste | `QuickPasteTests`, `PasteBrowserTests` |

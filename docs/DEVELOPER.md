@@ -16,7 +16,7 @@ Start here. Read top-to-bottom once (~15 min), then follow the pointers. This is
 src/QuickShare/                 # monolith (FastEndpoints API + Blazor Static SSR)
   Features/<Feature>/           # vertical slice: endpoint + handler + DTOs in one folder
     Uploads/  Deliveries/  Downloads/  Shares/  Payments/  Users/  Analytics/
-    Notifications/  Ads/  Admin/  ClientErrors/
+    Notifications/  Ads/  Admin/  ClientErrors/  Reports/
   Data/                         # AppDbContext, Entities/, Migrations/, AuditableEntityInterceptor
   Infrastructure/               # Storage/, Email/, Jobs/, FeatureFlags/, Telemetry/,
                                 # Caching/, Middleware/, Constants/
@@ -95,6 +95,14 @@ rules:
   `DownloadNoScriptTests` will fail.
 - **Dev auto-signin** middleware lives in `Program.cs` — local auth is automatic.
 - **Analytics are anonymous** — never store email/user-id/raw IP in events (`AnalyticsService`).
+- **Security middleware** (order in `Program.cs`): `RateLimitingMiddleware` (per-IP/user, 429),
+  `RobotsNoIndexMiddleware` (X-Robots-Tag on `/d/*` + `/api/downloads/*`, issue #121),
+  `SecurityHeadersMiddleware` (config-driven CSP/HSTS; `SecurityHeaders:Enabled` kill switch for tests, issue #82).
+- **OTP lockout** (#148): `OtpLockoutService` counts failures per delivery — 5 fails → 423 + Retry-After
+  (15min → 1h → 24h escalating). **Turnstile** (#175): optional `Turnstile:SiteKey/SecretKey` config;
+  unconfigured = challenge skipped. **Device alerts** (#149): `DeviceTrackerService` fingerprints
+  UA+IP (SHA-256), alerts on first sighting; `/account/devices` manages known devices.
+  **Abuse reports** (#53): anonymous POST `/api/deliveries/{code}/report` → admin `/admin/reports` (suspend/resolve).
 
 ## 8. Where the work is
 

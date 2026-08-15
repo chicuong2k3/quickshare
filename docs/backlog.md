@@ -59,8 +59,12 @@ verified directly.
 
 ## 4. Tier 2 — Existing risk (cheap, bleeding slowly)
 
-All **open**: #121 (noindex/nofollow), #82 (security headers + CSP), #148 (account lockout),
-#149 (new-device alert), #175 (download CAPTCHA), #53 (report abuse + DMCA).
+All **done** (08-16): #121 (noindex/nofollow — X-Robots-Tag + robots meta on /d/*),
+#82 (security headers + CSP — config-driven SecurityHeadersMiddleware),
+#148 (account lockout — 5 fails → 15min/1h/24h escalating, 423 + Retry-After),
+#149 (new-device alert — UA+IP-hash fingerprint, alert email, /account/devices management),
+#175 (download CAPTCHA — Cloudflare Turnstile after repeated OTP failures),
+#53 (report abuse + DMCA — anonymous report on /d/*, admin inbox, suspend, /abuse policy page).
 
 ## 5. Tier 3 — Growth + monetization levers
 
@@ -109,6 +113,6 @@ Where a design/spec/plan already exists, read it before implementing.
 ## 11. Review checklist
 
 - [ ] Tier 1: implement `#52` rate limiting → Tier 1 fully done
-- [ ] Tier 2: pick off all 6 (each is a cheap afternoon)
+- [x] Tier 2: all 6 done 08-16 (see section 4)
 - [ ] Tier 3: decide the one growth lever to ship next
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
