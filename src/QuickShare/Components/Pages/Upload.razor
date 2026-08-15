@@ -118,6 +118,16 @@
                     <span class="otp-hint">@Loc["upload_password_hint"]</span>
                 </div>
 
+                @* Burn-after-download (issue #12) — single-use link *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-burn" />
+                        <span>@Loc["upload_burn_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_burn_hint"]</span>
+                </div>
+
+
 
                 @* Sender note (issue #137) — optional, plain text, rendered escaped on /d *@
                 <div class="sender-email-wrap">

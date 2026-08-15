@@ -36,6 +36,10 @@ public sealed class CommitR2Validator : Validator<CommitR2Request>
             .Must(p => p is null || p.Length <= Delivery.PasswordMaxLength)
             .WithMessage($"Password must be at most {Delivery.PasswordMaxLength} characters.");
 
+        RuleFor(x => x.Sha256)
+            .Must(s => s is null || (s.Trim().Length == 64 && s.Trim().All(c => char.IsAsciiHexDigit(c))))
+            .WithMessage("Sha256 must be a 64-character hex digest.");
+
         RuleFor(x => x.ExpiryHours)
             .Must(h => h is null || h > 0)
             .WithMessage("ExpiryHours must be positive.");

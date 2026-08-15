@@ -7,7 +7,8 @@ public record ListDeliveriesQuery(string? Cursor = null, int Limit = DeliveryPag
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
     string ShareCode, int DownloadCount, int MaxDownloads,
-    DateTime? ExpiresAt, DateTime CreatedAt, string Status, DateTime? DeliverAt
+    DateTime? ExpiresAt, DateTime CreatedAt, string Status, DateTime? DeliverAt,
+    bool HideDownloadStats
 );
 
 public static class DeliveryPaging
@@ -32,7 +33,7 @@ public sealed class ListDeliveriesHandler
             .Where(d => d.SenderId == userId)
             .ToCursorPageAsync(query.Cursor, limit, d => new DeliveryItem(
                 d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode,
-                d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt), ct);
+                d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats), ct);
 
         return Result.Success(page);
     }

@@ -9,11 +9,13 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
 {
     private static readonly TimeSpan FullDownloadTtl = TimeSpan.FromDays(7);
     private static readonly TimeSpan RangeRequestTtl = TimeSpan.FromHours(1);
+    private const int BurnGraceMinutes = 10;
 
     public async Task HandleAsync(DownloadDeliveryQuery query, AppDbContext db, OtpLockoutService lockout, CancellationToken ct)
     {
         var httpContext = httpContextAccessor.HttpContext!;
         var response = httpContext.Response;
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
 
         var delivery = await db.Deliveries
             .AsNoTracking()
@@ -89,8 +91,15 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
 
         if (delivery.DownloadCount >= delivery.MaxDownloads)
         {
-            response.StatusCode = 403;
-            return;
+            // Burn-after-download grace (issue #12): a network drop mid-transfer must not
+            // burn the single download — the same IP may retry within a short window.
+            var withinBurnGrace = delivery.MaxDownloads == 1
+                && await IsWithinBurnGraceAsync(db, delivery.Id, remoteIp, ct);
+            if (!withinBurnGrace)
+            {
+                response.StatusCode = 403;
+                return;
+            }
         }
         if (string.IsNullOrEmpty(delivery.StoragePath))
         {
@@ -126,7 +135,6 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             // Capture root-scoped services/values now: the request scope (and HttpContext)
             // are disposed once the response completes, racing the background task.
             var scopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
-            var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "";
             var analyticsContext = AnalyticsService.CaptureContext(httpContext);
 
             _ = Task.Run(async () =>
@@ -140,6 +148,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                     if (entity is not null)
                     {
                         entity.DownloadCount++;
+                        entity.FirstDownloadedAt ??= DateTime.UtcNow;
 
                         updateDb.DownloadTrackings.Add(new DownloadTracking
                         {
@@ -163,5 +172,20 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                 catch { /* counter update failure shouldn't break the download */ }
             }, CancellationToken.None);
         }
+    }
+
+    /// <summary>
+    /// True when this delivery has a download record from the same IP within the
+    /// burn-after-download grace window — i.e. the recipient is retrying a
+    /// download that already started, not consuming a fresh one.
+    /// </summary>
+    private static async Task<bool> IsWithinBurnGraceAsync(AppDbContext db, Guid deliveryId, string remoteIp, CancellationToken ct)
+    {
+        var cutoff = DateTime.UtcNow.AddMinutes(-BurnGraceMinutes);
+        return await db.DownloadTrackings
+            .AsNoTracking()
+            .AnyAsync(t => t.DeliveryId == deliveryId
+                && t.IpAddress == remoteIp
+                && t.DownloadedAt >= cutoff, ct);
     }
 }

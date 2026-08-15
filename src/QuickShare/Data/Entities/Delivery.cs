@@ -23,6 +23,9 @@ public record Delivery : BaseAuditEntity
     public string? OtpHash { get; set; }
     public string? PasswordHash { get; set; }
     public string? Message { get; set; }
+    public string? Sha256 { get; set; }
+    public DateTime? FirstDownloadedAt { get; set; }
+    public bool HideDownloadStats { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }

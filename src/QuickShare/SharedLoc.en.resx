@@ -701,4 +701,19 @@
   <data name="admin_reports_suspend" xml:space="preserve"><value>Suspend delivery</value></data>
   <data name="admin_reports_confirm_resolve" xml:space="preserve"><value>Resolve without action?</value></data>
   <data name="admin_reports_confirm_suspend" xml:space="preserve"><value>Suspend this delivery? The file becomes undownloadable.</value></data>
+  <data name="dl_badge_burn" xml:space="preserve"><value>Single-use</value></data>
+  <data name="dl_burn_warning" xml:space="preserve"><value>This link can only be opened once — make sure you're ready to save the file.</value></data>
+  <data name="dl_stats_downloaded" xml:space="preserve"><value>Downloaded {0} times</value></data>
+  <data name="dl_stats_first" xml:space="preserve"><value>first download {0}</value></data>
+  <data name="dl_stats_just_now" xml:space="preserve"><value>just now</value></data>
+  <data name="dl_stats_seconds_ago" xml:space="preserve"><value>{0}s ago</value></data>
+  <data name="dl_stats_minutes_ago" xml:space="preserve"><value>{0}m ago</value></data>
+  <data name="dl_stats_hours_ago" xml:space="preserve"><value>{0}h ago</value></data>
+  <data name="dl_stats_days_ago" xml:space="preserve"><value>{0}d ago</value></data>
+  <data name="dl_sha_copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="upload_burn_label" xml:space="preserve"><value>Self-destruct after 1 download</value></data>
+  <data name="upload_burn_hint" xml:space="preserve"><value>The link works once, then expires. Best for sensitive files.</value></data>
+  <data name="deliveries_extend" xml:space="preserve"><value>Extend 7d</value></data>
+  <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
+  <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
 </root>

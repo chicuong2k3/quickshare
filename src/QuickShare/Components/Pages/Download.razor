@@ -136,6 +136,13 @@
                                 </svg>
                                 @Loc["dl_badge_encrypted"]
                             </div>
+                            @if (Info?.BurnAfterDownload == true)
+                            {
+                                <div class="badge --burn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-3 2-5 3-6 1 1 3 2 4 3 0-2-1-4-2-6z"/></svg>
+                                    @Loc["dl_badge_burn"]
+                                </div>
+                            }
                             <button type="button" id="dl-zk-btn" class="badge --sovereign" onclick="downloadApp.toggleZK()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
@@ -192,6 +199,39 @@
                         @* Inline media preview (issue #21) — filled by download.js. Only
                            ungated, unencrypted media reaches this element. *@
                         <div id="dl-media-preview" class="dl-media hidden" style="margin-top: 1.5rem"></div>
+
+                        @* Aggregate download stats (issue #64) — count only, no sender identity. *@
+                        @if (Info?.HideDownloadStats != true && (Info?.DownloadCount ?? 0) > 0)
+                        {
+                            <p class="db-p db-text-muted" style="margin-top: 1rem; font-size: 0.8125rem">
+                                @Loc["dl_stats_downloaded", Info!.DownloadCount]
+                                @if (Info.FirstDownloadedAt is { } first)
+                                {
+                                    <text>·</text> @Loc["dl_stats_first", FirstDownloadLabel(first)]
+                                }
+                            </p>
+                        }
+
+                        @* Burn-after-download warning (issue #12) — shown before the download button. *@
+                        @if (Info?.BurnAfterDownload == true)
+                        {
+                            <p class="dl-burn-warning" style="margin-top: 1rem; font-size: 0.875rem; color: var(--db-color-accent-text)">@Loc["dl_burn_warning"]</p>
+                        }
+
+                        @* SHA-256 checksum (issue #66) — copy button, no client JS required to render. *@
+                        @if (!string.IsNullOrEmpty(Info?.Sha256))
+                        {
+                            <div class="dl-sha" style="margin-top: 1rem; font-size: 0.8125rem">
+                                <span class="db-label" style="display:block; margin-bottom: 0.25rem">SHA-256</span>
+                                <div style="display:flex; gap: 0.5rem; align-items: flex-start">
+                                    <code class="dl-sha__value" style="word-break: break-all; flex: 1">@Info.Sha256</code>
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.copySha256()" data-ai-action="download.sha.copy">
+                                        <span id="dl-sha-copy-label">@Loc["dl_sha_copy"]</span>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
 
                         <div style="margin-top: 2rem">
                             <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
@@ -373,6 +413,7 @@
         ["previewLines"] = Loc["dl_preview_lines"],
         ["copy"] = Loc["dl_preview_copy"],
         ["copied"] = Loc["dl_preview_copied"],
+        ["copySha"] = Loc["dl_sha_copy"],
         ["download"] = Loc["dl_download"],
         ["decrypting"] = Loc["dl_decrypting"],
         ["downloadFailed"] = Loc["dl_download_failed"],
@@ -452,7 +493,11 @@
                 HasOtp = value.HasOtp,
                 HasPassword = value.HasPassword,
                 SenderPlan = value.SenderPlan,
-                Message = value.Message
+                Message = value.Message,
+                Sha256 = value.Sha256,
+                FirstDownloadedAt = value.FirstDownloadedAt,
+                HideDownloadStats = value.HideDownloadStats,
+                BurnAfterDownload = value.BurnAfterDownload
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -478,6 +523,15 @@
         if (remaining.TotalHours < 1) return Loc["dl_expiry_min", (int)remaining.TotalMinutes];
         if (remaining.TotalHours < 24) return Loc["dl_expiry_hour", (int)remaining.TotalHours];
         return Loc["dl_expiry_day", (int)remaining.TotalDays];
+    }
+    private string FirstDownloadLabel(DateTime firstDownloadedAt)
+    {
+        var elapsed = DateTime.UtcNow - firstDownloadedAt;
+        if (elapsed <= TimeSpan.Zero) return Loc["dl_stats_just_now"];
+        if (elapsed.TotalMinutes < 1) return Loc["dl_stats_seconds_ago", (int)elapsed.TotalSeconds];
+        if (elapsed.TotalHours < 1) return Loc["dl_stats_minutes_ago", (int)elapsed.TotalMinutes];
+        if (elapsed.TotalDays < 1) return Loc["dl_stats_hours_ago", (int)elapsed.TotalHours];
+        return Loc["dl_stats_days_ago", (int)elapsed.TotalDays];
     }
     private static MarkupString FileIcon(string? contentType)
     {
@@ -508,6 +562,10 @@
         public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
         public bool HasOtp { get; set; } public bool HasPassword { get; set; } public string SenderPlan { get; set; } = string.Empty;
         public string? Message { get; set; }
+        public string? Sha256 { get; set; }
+        public DateTime? FirstDownloadedAt { get; set; }
+        public bool HideDownloadStats { get; set; }
+        public bool BurnAfterDownload { get; set; }
     }
 }
 

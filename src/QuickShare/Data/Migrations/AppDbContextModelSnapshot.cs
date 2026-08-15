@@ -214,6 +214,12 @@ namespace QuickShare.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime?>("FirstDownloadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HideDownloadStats")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("MaxDownloads")
                         .HasColumnType("integer");
 
@@ -237,6 +243,9 @@ namespace QuickShare.Migrations
 
                     b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Sha256")
+                        .HasColumnType("text");
 
                     b.Property<string>("ShareCode")
                         .IsRequired()

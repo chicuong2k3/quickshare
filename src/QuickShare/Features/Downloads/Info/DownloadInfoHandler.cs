@@ -17,7 +17,11 @@ public record DownloadInfoResponse(
     bool HasOtp,
     bool HasPassword,
     string SenderPlan,
-    string? Message
+    string? Message,
+    string? Sha256,
+    DateTime? FirstDownloadedAt,
+    bool HideDownloadStats,
+    bool BurnAfterDownload
 );
 
 public sealed class DownloadInfoHandler
@@ -59,7 +63,11 @@ public sealed class DownloadInfoHandler
                     HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
                     HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
                     SenderPlan: senderPlan,
-                    Message: delivery.Message
+                    Message: delivery.Message,
+                    Sha256: delivery.Sha256,
+                    FirstDownloadedAt: delivery.FirstDownloadedAt,
+                    HideDownloadStats: delivery.HideDownloadStats,
+                    BurnAfterDownload: delivery.MaxDownloads == 1
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

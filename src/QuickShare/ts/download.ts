@@ -421,6 +421,15 @@ window.downloadApp = (function (): DownloadPage {
         });
     }
 
+    function copySha256() {
+        const value = document.getElementById('dl-sha-value');
+        if (!value || !navigator.clipboard) return;
+        navigator.clipboard.writeText((value.textContent || '').trim()).then(function () {
+            text('dl-sha-copy-label', t('copied'));
+            setTimeout(function () { text('dl-sha-copy-label', t('copySha')); }, 2000);
+        });
+    }
+
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText };
+    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText, copySha256: copySha256 };
 })();

@@ -20,4 +20,8 @@ public static class ErrorCodes
     public const string ExpiryInvalid = "expiry_invalid";
     public const string ExpiryTooLong = "expiry_too_long";
     public const string PasswordTooLong = "password_too_long";
+    public const string Sha256Invalid = "sha256_invalid";
+    public const string ExtendNotAllowed = "extend_not_allowed";
+    public const string ExtendTooEarly = "extend_too_early";
+    public const string ExtendTooLate = "extend_too_late";
 }

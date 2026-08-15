@@ -69,6 +69,27 @@ else
             if (r.ok) btn.closest('article').remove();
         });
     };
+    window.extendDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/extend', { method: 'POST' }).then(function (r) {
+            if (r.ok) return r.json();
+            return r.json().then(function (b) { throw b; });
+        }).then(function (data) {
+            var label = btn.closest('article').querySelector('.account-delivery__expiry');
+            if (label && data.expiresAt) label.textContent = data.expiresAt;
+        }).catch(function () { /* leave the stale label; user can retry */ })
+          .finally(function () { btn.disabled = false; });
+    };
+    window.toggleDeliveryStats = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        fetch('/api/deliveries/' + id + '/download-stats', { method: 'PATCH' }).then(function (r) {
+            if (r.ok) return r.json();
+            return r.json().then(function (b) { throw b; });
+        }).then(function (data) {
+            btn.textContent = data.hidden ? btn.getAttribute('data-show-label') : btn.getAttribute('data-hide-label');
+        }).catch(function () { /* leave the label as-is */ });
+    };
 </script>
 
 @code {
@@ -128,6 +149,16 @@ else
                                 data-confirm="@Loc["deliveries_cancel_confirm"]"
                                 onclick="cancelDelivery(this)">@Loc["deliveries_cancel"]</button>
                     }
+                    @if (item.Status != DeliveryStatus.Scheduled && !exhausted)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__extend"
+                                onclick="extendDelivery(this)" data-ai-action="delivery.extend">@Loc["deliveries_extend"]</button>
+                    }
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            onclick="toggleDeliveryStats(this)" data-ai-action="delivery.toggleStats"
+                            data-hide-label="@Loc["deliveries_hide_stats"]" data-show-label="@Loc["deliveries_show_stats"]">
+                        @(item.HideDownloadStats ? Loc["deliveries_show_stats"] : Loc["deliveries_hide_stats"])
+                    </button>
                 </p>
             </article>
         }

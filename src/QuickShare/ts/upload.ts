@@ -64,6 +64,8 @@
         deliverAt: string | null;
         message: string;
         password: string;
+        sha256: string;
+        burnAfterDownload: boolean;
         expiryHours: number | null;
         _resumeCtx: UploadContext | null;
         objectKey: string;
@@ -80,6 +82,8 @@
         deliverAt: null,
         message: '',
         password: '',
+        sha256: '',
+        burnAfterDownload: false,
         expiryHours: null,
         _resumeCtx: null, objectKey: ''
     };
@@ -292,6 +296,7 @@
         state.deliverAt = deliverAtInput && deliverAtInput.value ? new Date(deliverAtInput.value).toISOString() : null;
         state.message = (document.getElementById('upload-message') as HTMLTextAreaElement | null)?.value.trim() ?? '';
         state.password = (document.getElementById('upload-password') as HTMLInputElement | null)?.value ?? '';
+        state.burnAfterDownload = (document.getElementById('upload-burn') as HTMLInputElement | null)?.checked ?? false;
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
         const expiryDays = document.getElementById('upload-expiry-days') as HTMLInputElement | null;
         if (expirySelect) state.expiryHours = parseFloat(expirySelect.value) || null;
@@ -308,12 +313,13 @@
         let uploadBlob: Blob = file;
         let encryptionKeyStr: string | null = null;
         const originalSize = file.size;
+        const fileData = await file.arrayBuffer();
+        state.sha256 = await sha256Hex(fileData);
 
         if (state.encryptionEnabled) {
             const keyInfo = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
             const raw = await crypto.subtle.exportKey('raw', keyInfo);
             const rawKey = new Uint8Array(raw);
-            const fileData = await file.arrayBuffer();
             const nonce = crypto.getRandomValues(new Uint8Array(12));
             const encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, keyInfo, fileData);
             const combined = new Uint8Array(nonce.length + encryptedBuf.byteLength);
@@ -347,6 +353,14 @@
         state._resumeCtx = ctx;
 
         await uploadPartsAndCommit(ctx);
+    }
+
+    async function sha256Hex(buffer: ArrayBuffer): Promise<string> {
+        const digest = await crypto.subtle.digest('SHA-256', buffer);
+        const bytes = new Uint8Array(digest);
+        let hex = '';
+        for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');
+        return hex;
     }
 
     function completedCount(ctx: UploadContext): number { let n = 0; for (let i = 0; i < ctx.totalParts; i++) if (ctx.partEtags[i]) n++; return n; }
@@ -409,7 +423,7 @@
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

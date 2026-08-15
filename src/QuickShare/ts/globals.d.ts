@@ -189,6 +189,7 @@ interface DownloadPage {
     handleDownload(event?: Event): boolean | void;
     showFullText(): void;
     copyText(): void;
+    copySha256(): void;
 }
 
 interface P2pSendPage {

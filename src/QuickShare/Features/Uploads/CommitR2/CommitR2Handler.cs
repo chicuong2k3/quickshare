@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload);
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
@@ -119,6 +119,10 @@ public sealed class CommitR2Handler(
         if (password is not null && System.Text.Encoding.UTF8.GetByteCount(password) > Delivery.PasswordMaxLength)
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.PasswordTooLong));
 
+        var sha256 = NormalizeSha256(cmd.Sha256);
+        if (sha256 is not null && (sha256.Length != 64 || sha256.Any(c => !char.IsAsciiHexDigit(c))))
+            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.Sha256Invalid));
+
         var randomBytes = new byte[8];
         RandomNumberGenerator.Fill(randomBytes);
         var shareCode = Convert.ToBase64String(randomBytes)
@@ -149,7 +153,7 @@ public sealed class CommitR2Handler(
             TotalBytes = session.FileSize,
             ChunkCount = cmd.Parts.Count,
             ShareCode = shareCode,
-            MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
+            MaxDownloads = cmd.BurnAfterDownload ? 1 : PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
             ExpiresAt = expiresAt,
             DeliverAt = cmd.DeliverAt,
@@ -157,6 +161,7 @@ public sealed class CommitR2Handler(
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             PasswordHash = password is not null ? BCrypt.Net.BCrypt.HashPassword(password) : null,
             Message = message,
+            Sha256 = sha256,
             Source = DeliverySources.Normalize(cmd.Source)
         };
 
@@ -223,6 +228,18 @@ public sealed class CommitR2Handler(
             return null;
 
         return password.Trim();
+    }
+
+    /// <summary>
+    /// Lowercases and trims the client-computed SHA-256 of the plaintext file
+    /// (computed before client-side encryption). Null when absent.
+    /// </summary>
+    private static string? NormalizeSha256(string? sha256)
+    {
+        if (string.IsNullOrWhiteSpace(sha256))
+            return null;
+
+        return sha256.Trim().ToLowerInvariant();
     }
 
     /// <summary>

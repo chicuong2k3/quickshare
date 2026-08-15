@@ -48,6 +48,7 @@ browser download needed.
 | Upload / download / plan limits | `UploadDownloadFlowTests`, `UploadResumeTests`, `MonthlyQuotaTests`, `UploadResumeBrowserTests` |
 | Download page gates (OTP, ad, expiry) | `DownloadPageTests`, `DownloadNoScriptTests` |
 | Delivery extras (brand, abort, P2P share) | `DeliveryExtrasApiTests`, `DeliveryActivationJobTests` |
+| Trust/retention extras (burn, SHA-256, extend, stats) | `DeliveryTrustExtrasTests` |
 | Auth | `AuthFlowTests` |
 | Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountDeliveriesTests`, `UpgradeFlowTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
