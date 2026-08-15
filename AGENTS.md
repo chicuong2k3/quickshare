@@ -274,14 +274,50 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` â€” the `stats.
 
 <!-- gitnexus:end -->
 
-## Issue Completion — Docs Update Rule (MANDATORY)
+## Issue Completion ï¿½ Docs Update Rule (MANDATORY)
 
 After EVERY issue implementation is complete (before closing the issue / before pushing), update ALL related documentation in this order:
 
-1. **docs/*.md architecture/feature docs** — if the issue touches a documented flow (e.g. send-architecture.md, payment-architecture.md, p2p-architecture.md, login-architecture.md), update the doc to reflect the new behavior. If no existing doc covers the changed area, create one.
-2. **docs/superpowers/specs/ and docs/superpowers/plans/** — the brainstorming spec + implementation plan produced by the workflow are the record of the change; make sure they are committed alongside the code.
-3. **_bmad-output/ artifacts** — if a BMad workflow (specs, architecture, brainstorming) produced artifacts relevant to the issue's area, update the affected artifact(s) or note the change in them.
-4. **DESIGN.md / design-system docs** — only if the issue changed visible UI (new fields, components, tokens). Record what changed and why.
-5. **AGENTS.md conventions** — if the issue introduced a new pattern/constraint future work must follow, add it here.
+1. **docs/*.md architecture/feature docs** ï¿½ if the issue touches a documented flow (e.g. send-architecture.md, payment-architecture.md, p2p-architecture.md, login-architecture.md), update the doc to reflect the new behavior. If no existing doc covers the changed area, create one.
+2. **docs/superpowers/specs/ and docs/superpowers/plans/** ï¿½ the brainstorming spec + implementation plan produced by the workflow are the record of the change; make sure they are committed alongside the code.
+3. **_bmad-output/ artifacts** ï¿½ if a BMad workflow (specs, architecture, brainstorming) produced artifacts relevant to the issue's area, update the affected artifact(s) or note the change in them.
+4. **DESIGN.md / design-system docs** ï¿½ only if the issue changed visible UI (new fields, components, tokens). Record what changed and why.
+5. **AGENTS.md conventions** ï¿½ if the issue introduced a new pattern/constraint future work must follow, add it here.
 
 The update happens in the SAME commit series as the implementation (docs commit may be separate, but must land before the issue is marked done). Skipping docs = the issue is NOT complete.
+
+## Feature Issue Testing Rule (MANDATORY)
+
+Every feature issue MUST carry a **Manual Test Checklist** â€” it is the definition of done for that feature. No checklist = the issue is incomplete and MUST NOT be marked done.
+
+### Option A â€” Checklist inside the feature issue (DEFAULT)
+
+Write a `## Manual Test Checklist` section in the feature issue body BEFORE implementation starts:
+
+```markdown
+## Manual Test Checklist
+- [ ] Step 1: <action> â†’ <expected result>
+- [ ] Step 2: <action> â†’ <expected result>
+```
+
+Rules:
+- One checkbox per scenario. Each step states BOTH the action and the expected result.
+- Cover: happy path, validation errors, empty states, permission boundaries (guest/free/paid), and the no-JS / HTMX-partial path where relevant (see `DownloadNoScriptTests`).
+- The checklist is written at issue creation time, not after implementation â€” it drives the work, it does not document it.
+
+### Option B â€” Separate manual-test issue (LARGE / CRITICAL features only)
+
+For features touching **auth, billing, payments, P2P**, or spanning **3+ modules**, create a linked manual-test issue in addition to the checklist:
+
+- Title: `[Manual Test] <Feature title>`
+- Body: the full step-by-step checklist (same format as Option A) plus environment notes (browser, account tier, seed data).
+- The feature issue links TO the manual-test issue; the manual-test issue is closed by the tester after the feature ships.
+
+### PR / Implementation obligations
+
+When implementing a feature issue, the agent MUST:
+
+1. Follow the checklist scenario by scenario while building â€” each step is a test the code must satisfy.
+2. In the closing PR description, add a `## Manual Test Evidence` section: check off each step from the issue checklist and record the result (screenshots for UI changes, API response for backend changes, or a written pass/fail note).
+3. Run the existing automated suite covering the touched area (unit/integration tests, `BrowserAppFixture` + Playwright) BEFORE closing â€” manual steps never replace automated coverage, they complement it.
+4. A feature issue is NOT complete until every checklist item is checked with evidence. Skipping the checklist = the issue is NOT done.
