@@ -357,7 +357,7 @@ Pro/Studio senders can set a **"Deliver at"** time — the file uploads to R2 im
 ### Flow
 1. **Upload** — `Upload.razor` shows a `Deliver at` datetime input only when `plan is Pro or Studio`. `upload.ts` sends `deliverAt` (ISO) on `commit-r2`.
 2. **Commit** — `CommitR2Handler` gates scheduling to Pro/Studio (rejects *before* touching R2 so no orphan is left), validates `DeliverAt > now`, sets `Status = Scheduled`, `DeliverAt`, and `ExpiresAt = DeliverAt + maxExpiry` (the expiry window starts at activation, not upload).
-3. **Activation** — `DeliveryActivationJob` (BackgroundService, 1-min interval) flips `Scheduled → Active` when `DeliverAt <= now`.
+3. **Activation** — `DeliveryActivationJob` (Hangfire recurring job `delivery-activation`, every minute) flips `Scheduled → Active` when `DeliverAt <= now`.
 4. **Access** — `DownloadDeliveryHandler` returns `423 Locked` while `Status == Scheduled && DeliverAt > now`. The info endpoint returns `DeliverAt`/`Status` so `/d/{code}` renders a countdown (server-rendered label + JS tick). Access is time-based on `DeliverAt`, so the link is reachable exactly at T even before the job tick lands.
 5. **Cancel** — `DELETE /api/deliveries/{Id}` (sender-only, `Status == Scheduled`) removes the delivery + its R2 object; surfaced as a "Cancel" button on `/account/deliveries`.
 

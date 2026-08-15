@@ -78,10 +78,6 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
             services.AddSingleton<IStorageProvider, LocalDiskStorageProviderStub>();
             services.AddScoped<PayOSService, StubPayOSService>();
-            RemoveHostedService<DeliveryCleanupService>(services);
-            RemoveHostedService<ZombiePartSweeper>(services);
-            RemoveHostedService<DeliveryExpiryJob>(services);
-            RemoveHostedService<SubscriptionExpiryJob>(services);
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
     }

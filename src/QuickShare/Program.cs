@@ -1,4 +1,6 @@
 using FastEndpoints.Swagger;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -192,18 +194,9 @@ builder.Services.AddSingleton<QuickShare.Infrastructure.Email.UnsubscribeTokens>
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailTokens>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailRateLimiter>();
 
-builder.Services.AddHostedService<DeliveryCleanupService>();
-builder.Services.AddHostedService<ZombiePartSweeper>();
-builder.Services.AddHostedService<DeliveryExpiryJob>();
-builder.Services.AddHostedService<DeliveryActivationJob>();
-builder.Services.AddHostedService<SubscriptionExpiryJob>();
-builder.Services.AddHostedService<DownloadNotificationJob>();
+// Maintenance jobs now run as Hangfire recurring jobs (see HangfireJobs.Register) —
+// only the one-shot PayOS webhook registration stays as a hosted service.
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
-if (hasR2)
-{
-    // Orphan sweep lists/deletes R2 objects — meaningless (and throwing) on local disk.
-    builder.Services.AddHostedService<OrphanSweepJob>();
-}
 
 builder.Services.AddScoped<PayOSService>();
 builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
@@ -262,6 +255,27 @@ builder.Host.UseWolverine(opts =>
         opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
     }
 }, ExtensionDiscovery.ManualOnly);
+
+// ── Hangfire background jobs — recurring maintenance + dashboard ──
+if (!useInMemoryDb)
+{
+    builder.Services.AddHangfire(config => config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+    builder.Services.AddHangfireServer();
+    builder.Services.AddSingleton<DeliveryActivationJob>();
+    builder.Services.AddSingleton<DeliveryExpiryJob>();
+    builder.Services.AddSingleton<SubscriptionExpiryJob>();
+    builder.Services.AddSingleton<ZombiePartSweeper>();
+    builder.Services.AddSingleton<DeliveryCleanupService>();
+    builder.Services.AddSingleton<DownloadNotificationJob>();
+    if (hasR2)
+    {
+        builder.Services.AddSingleton<OrphanSweepJob>();
+    }
+}
 
 // ── API (FastEndpoints + Swagger) ──
 builder.Services.AddFastEndpoints();
@@ -424,6 +438,11 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+if (!useInMemoryDb)
+{
+    HangfireJobs.Register(app.Services, hasR2);
+}
+
 // Wire static cache holder so static classes (PlanTierLimits) can use cache.
 var cacheService = app.Services.GetRequiredService<CacheService>();
 StaticCache.Initialize(cacheService);
@@ -465,6 +484,14 @@ app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSecond
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+if (!useInMemoryDb)
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = [new AdminDashboardAuthorizationFilter()]
+    });
+}
 
 app.UseMiddleware<RobotsNoIndexMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();

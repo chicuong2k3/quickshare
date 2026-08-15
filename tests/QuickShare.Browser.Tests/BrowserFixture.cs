@@ -52,10 +52,6 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
 
         builder.ConfigureTestServices(services =>
         {
-            RemoveHostedService<DeliveryCleanupService>(services);
-            RemoveHostedService<ZombiePartSweeper>(services);
-            RemoveHostedService<DeliveryExpiryJob>(services);
-            RemoveHostedService<SubscriptionExpiryJob>(services);
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
 
             services.AddAuthentication(TestAuthHandler.SchemeName)

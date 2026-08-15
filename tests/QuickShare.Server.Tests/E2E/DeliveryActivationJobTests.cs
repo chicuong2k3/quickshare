@@ -49,7 +49,7 @@ public sealed class DeliveryActivationJobTests : IClassFixture<TestWebAppFactory
         }
 
         var job = new DeliveryActivationJob(scopeFactory, NullLogger<DeliveryActivationJob>.Instance);
-        await job.ActivateDeliveriesAsync(CancellationToken.None);
+        await job.ActivateDeliveriesAsync();
 
         await using (var verifyScope = scopeFactory.CreateAsyncScope())
         {

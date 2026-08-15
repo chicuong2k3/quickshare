@@ -288,7 +288,7 @@ Effects:
 
 (Unchanged — same as Ko-fi era.)
 
-Runs every 15 minutes on a `BackgroundService`.
+Runs every 15 minutes as a Hangfire recurring job (`subscription-expiry`).
 
 ```
 SubscriptionExpiryJob

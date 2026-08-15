@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Hangfire;
 using Microsoft.Extensions.Options;
 using QuickShare.Infrastructure.Email;
 
@@ -14,37 +15,18 @@ public sealed class DownloadNotificationJob(
     EmailSender emailSender,
     UnsubscribeTokens unsubscribeTokens,
     IOptions<EmailOptions> emailOptions,
-    ILogger<DownloadNotificationJob> logger) : BackgroundService
+    ILogger<DownloadNotificationJob> logger)
 {
     private const int BatchSize = 500;
     private const string Subject = "File của bạn vừa được tải";
 
     private readonly EmailOptions _options = emailOptions.Value;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    [AutomaticRetry(Attempts = 0)]
+    public async Task NotifyAsync()
     {
-        if (!emailSender.IsConfigured)
-        {
-            logger.LogInformation("DownloadNotificationJob disabled — Email section not configured");
-            return;
-        }
-
-        var interval = TimeSpan.FromMinutes(_options.DigestIntervalMinutes);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(interval, stoppingToken);
-                await NotifyAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { logger.LogError(ex, "DownloadNotificationJob cycle failed"); }
-        }
-    }
-
-    private async Task NotifyAsync(CancellationToken ct)
-    {
+        var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 

@@ -38,6 +38,8 @@
     <PackageReference Include="WolverineFx" Version="5.*" />
     <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="5.*" />
     <PackageReference Include="WolverineFx.Postgresql" Version="5.*" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.*" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.21.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <!-- Pin Relational to the same version as Microsoft.EntityFrameworkCore. The relational
          providers (Npgsql 10.0.0, WolverineFx 5.x) float Relational at an older patch (10.0.2),

@@ -83,7 +83,7 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
     {
         var (job, storage) = await ArrangeAsync(deleteMode: false);
 
-        await job.SweepAsync(CancellationToken.None);
+        await job.SweepAsync();
 
         Assert.Empty(storage.DeletedKeys);
         Assert.Equal([OrphanUploadId], storage.AbortedUploadIds);
@@ -94,7 +94,7 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
     {
         var (job, storage) = await ArrangeAsync(deleteMode: true);
 
-        await job.SweepAsync(CancellationToken.None);
+        await job.SweepAsync();
 
         Assert.Equal([OrphanKey], storage.DeletedKeys);
         Assert.DoesNotContain(LinkedKey, storage.DeletedKeys);
@@ -109,7 +109,7 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
         var (job, storage) = await ArrangeAsync(deleteMode: false);
         var before = DateTime.UtcNow;
 
-        await job.SweepAsync(CancellationToken.None);
+        await job.SweepAsync();
 
         Assert.Equal(R2ObjectKey.UploadsPrefix, storage.ListedObjectPrefix);
         Assert.Equal(R2ObjectKey.UploadsPrefix, storage.ListedUploadPrefix);
@@ -126,7 +126,7 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
     {
         var (job, storage) = await ArrangeAsync(deleteMode: true, maxDeletes: 0);
 
-        await job.SweepAsync(CancellationToken.None);
+        await job.SweepAsync();
 
         Assert.Empty(storage.DeletedKeys);
     }

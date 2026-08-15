@@ -1,30 +1,15 @@
-
-
+using Hangfire;
 using QuickShare.Infrastructure.Telemetry;
-
 
 namespace QuickShare.Infrastructure.Jobs;
 
-public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<DeliveryExpiryJob> logger) : BackgroundService
+public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<DeliveryExpiryJob> logger)
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(5);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    [AutomaticRetry(Attempts = 0)]
+    public async Task ExpireDeliveriesAsync()
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(Interval, stoppingToken);
-                await ExpireDeliveriesAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { logger.LogError(ex, "DeliveryExpiryJob cycle failed"); }
-        }
-    }
-
-    private async Task ExpireDeliveriesAsync(CancellationToken ct)
-    {
+        var ct = CancellationToken.None;
         using var activity = ActivitySources.Source.StartActivity(ActivitySources.DeliveryExpiryActivity);
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

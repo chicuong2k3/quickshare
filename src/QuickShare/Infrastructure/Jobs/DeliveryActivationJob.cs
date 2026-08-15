@@ -1,27 +1,17 @@
+using Hangfire;
 using QuickShare.Infrastructure.Telemetry;
 
 namespace QuickShare.Infrastructure.Jobs;
 
-public sealed class DeliveryActivationJob(IServiceScopeFactory scopeFactory, ILogger<DeliveryActivationJob> logger) : BackgroundService
+public sealed class DeliveryActivationJob(IServiceScopeFactory scopeFactory, ILogger<DeliveryActivationJob> logger)
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    // Never overlap — preserve the sequential semantics of the old BackgroundService loop.
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    // A failed poll is retried on the next cron tick, not retried in-place.
+    [AutomaticRetry(Attempts = 0)]
+    public async Task ActivateDeliveriesAsync()
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(Interval, stoppingToken);
-                await ActivateDeliveriesAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { logger.LogError(ex, "DeliveryActivationJob cycle failed"); }
-        }
-    }
-
-    internal async Task ActivateDeliveriesAsync(CancellationToken ct)
-    {
+        var ct = CancellationToken.None;
         using var activity = ActivitySources.Source.StartActivity(ActivitySources.DeliveryActivationActivity);
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

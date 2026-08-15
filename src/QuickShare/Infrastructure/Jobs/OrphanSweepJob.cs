@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.Extensions.Options;
 
 namespace QuickShare.Infrastructure.Jobs;
@@ -12,36 +13,15 @@ public sealed class OrphanSweepJob(
     IServiceScopeFactory scopeFactory,
     IStorageProvider storage,
     IOptions<QuickShareOptions> options,
-    ILogger<OrphanSweepJob> logger) : BackgroundService
+    ILogger<OrphanSweepJob> logger)
 {
-    // First sweep soon after boot — a 24h delay-first loop would never run on
-    // hosts that redeploy daily.
-    private static readonly TimeSpan InitialDelay = TimeSpan.FromMinutes(15);
     private const int MaxLoggedKeysPerCycle = 100;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    [AutomaticRetry(Attempts = 0)]
+    public async Task SweepAsync()
     {
-        // Clamp: 0/negative config would spin a tight loop or make Task.Delay throw.
-        var interval = TimeSpan.FromHours(Math.Max(1, options.Value.OrphanSweepIntervalHours));
-        var delay = InitialDelay;
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(delay, stoppingToken);
-                await SweepAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
-            catch (Exception ex) { logger.LogError(ex, "OrphanSweepJob cycle failed"); }
-
-            delay = interval;
-        }
-    }
-
-    // internal: invoked directly by E2E tests (the timer loop is untestable).
-    internal async Task SweepAsync(CancellationToken ct)
-    {
+        var ct = CancellationToken.None;
         var opts = options.Value;
         var now = DateTime.UtcNow;
         var deleteMode = opts.OrphanSweepDelete;
@@ -101,10 +81,6 @@ public sealed class OrphanSweepJob(
                 deletedCount++;
                 logger.LogInformation("OrphanSweep deleted R2 object {Key}", key);
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "OrphanSweep failed to delete R2 object {Key}", key);
@@ -127,10 +103,6 @@ public sealed class OrphanSweepJob(
                 abortedCount++;
                 logger.LogInformation("OrphanSweep aborted multipart upload {UploadId} ({Key}, initiated {Initiated})",
                     upload.UploadId, upload.ObjectKey, upload.Initiated);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                throw;
             }
             catch (Exception ex)
             {

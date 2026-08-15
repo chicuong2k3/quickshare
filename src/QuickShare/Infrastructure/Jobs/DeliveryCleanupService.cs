@@ -1,29 +1,20 @@
-using Microsoft.Extensions.Options;
-
+using Hangfire;
 
 namespace QuickShare.Infrastructure.Jobs;
 
-public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IStorageProvider storage, IOptions<QuickShareOptions> options, ILogger<DeliveryCleanupService> logger) : BackgroundService
+public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<DeliveryCleanupService> logger)
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    [AutomaticRetry(Attempts = 0)]
+    public async Task CleanupAsync()
     {
-        var interval = TimeSpan.FromMinutes(options.Value.CleanupIntervalMinutes);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(interval, stoppingToken);
-                await CleanupExpiredDeliveriesAsync(stoppingToken);
-                await CleanupAbandonedSessionsAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { logger.LogError(ex, "Cleanup cycle failed"); }
-        }
+        await CleanupExpiredDeliveriesAsync();
+        await CleanupAbandonedSessionsAsync();
     }
 
-    private async Task CleanupExpiredDeliveriesAsync(CancellationToken ct)
+    private async Task CleanupExpiredDeliveriesAsync()
     {
+        var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;
@@ -56,8 +47,9 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             expired.Count, expired.Count(d => !string.IsNullOrEmpty(d.StoragePath)));
     }
 
-    private async Task CleanupAbandonedSessionsAsync(CancellationToken ct)
+    private async Task CleanupAbandonedSessionsAsync()
     {
+        var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;

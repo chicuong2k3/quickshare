@@ -161,6 +161,13 @@ protected override async Task OnInitializedAsync()
 - **Invalidation:** Every mutation handler MUST invalidate affected cache keys after `SaveChangesAsync`. Use `cache.RemoveAsync(key, ct)`.
 - **Kill switch:** Set `"FusionCache": { "Enabled": false }` in appsettings to bypass all caching (for testing/local dev).
 
+### Background Jobs (Hangfire)
+
+- **Recurring maintenance jobs use Hangfire, not hand-rolled `BackgroundService` loops.** Register them in `Infrastructure/Jobs/HangfireJobs.cs` with a stable job ID + cron. Each job class exposes one public entry method annotated `[DisableConcurrentExecution(timeoutInSeconds: 0)]` and `[AutomaticRetry(Attempts = 0)]`.
+- **The Hangfire dashboard (`/hangfire`) MUST stay behind `AdminDashboardAuthorizationFilter`** — it is not under the ASP.NET Core auth pipeline. Do not remove or weaken the filter.
+- **Wolverine stays as the request/response mediator + transactional outbox.** Hangfire handles recurring/poll jobs only; do not move request/response dispatch onto Hangfire.
+- **Gate all Hangfire wiring on `!useInMemoryDb`** so the in-memory/SQLite test factories never boot a Hangfire server or Postgres storage.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

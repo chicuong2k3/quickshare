@@ -4,7 +4,7 @@
 
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
-| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Wolverine, EF Core, Npgsql, Htmxor, DAUB |
+| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Wolverine, Hangfire, EF Core, Npgsql, Htmxor, DAUB |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 
@@ -114,12 +114,12 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | **PostgreSQL** | Users, logins, files metadata, folders, deliveries, usage tracking. EF Core + Npgsql |
 | **Cloudflare R2** (`R2StorageProvider.cs`) | S3-compatible file blob storage, presigned URLs, multipart upload |
 | **Local Disk** (`LocalDiskStorageProvider.cs`) | Fallback/development disk storage |
-| **Wolverine** | Message bus + transactional outbox for background job reliability |
+| **Wolverine** | Message bus + transactional outbox (request/response mediator with durable Postgres inbox/outbox) |
 | **FastEndpoints** | REPR-pattern (Request-Endpoint-Response) minimal API framework |
 | **FastEndpoints Swagger** | OpenAPI/Swagger document generation at `/swagger` |
 | **QuotaEnforcer** | Per-plan limits: file size caps, monthly upload quota, transfer counts |
 | **DataProtection** | `PersistKeysToFileSystem` with `SetApplicationName("QuickShare")` — single app, no cross-process key sharing needed |
-| **Background Jobs** | 4 hosted services: `DeliveryCleanupService`, `ZombiePartSweeper`, `DeliveryExpiryJob`, `SubscriptionExpiryJob` |
+| **Hangfire** | Background jobs: 7 recurring maintenance jobs with dashboard at `/hangfire` (admin-gated via `AdminDashboardAuthorizationFilter`). Postgres storage. Replaces the hand-rolled `BackgroundService` loops. |
 | **Backup / Restore** | `ops/backup/*.sh` + `.github/workflows/backup.yml` (daily) + `restore-drill.yml` (quarterly). `pg_dump` → `age` encrypt → R2 versioned bucket, 30-day retention. See [backup-restore-runbook.md](backup-restore-runbook.md). |
 | **TrialService** | 14-day free trial tracking |
 | **GlobalExceptionHandler** | Centralized `ProblemDetails` error responses |
@@ -375,7 +375,7 @@ Subsequent requests:
 
 ```
 src/QuickShare/
-├── Infrastructure/       # IStorageProvider, LocalDiskStorageProvider, Storage/ (R2), PlanTierLimits, AuthConstants, background jobs (DeliveryExpiryJob, ZombiePartSweeper, SubscriptionExpiryJob)
+├── Infrastructure/       # IStorageProvider, LocalDiskStorageProvider, Storage/ (R2), PlanTierLimits, AuthConstants, Jobs/ (Hangfire recurring jobs + dashboard auth)
 ├── Components/            # Layout/ (MainLayout, HtmxorLayout)
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor, Entities/
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
