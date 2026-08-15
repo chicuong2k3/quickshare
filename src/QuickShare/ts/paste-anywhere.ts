@@ -9,16 +9,17 @@ window.qsPaste = (function () {
     // sessionStorage caps out around 5MB of characters; a data URL inflates ~4/3.
     var MAX_HANDOFF_CHARS = 4 * 1024 * 1024;
 
-    function stamp() { return new Date().toISOString().replace(/[:.]/g, '-'); }
+    function stamp(): string { return new Date().toISOString().replace(/[:.]/g, '-'); }
 
-    function isEditable(target) {
+    function isEditable(target: EventTarget | null): boolean {
         if (!target) return false;
-        var tag = (target.tagName || '').toLowerCase();
-        return tag === 'input' || tag === 'textarea' || target.isContentEditable === true;
+        var el = target as HTMLElement;
+        var tag = (el.tagName || '').toLowerCase();
+        return tag === 'input' || tag === 'textarea' || el.isContentEditable === true;
     }
 
     // Returns a File built from the clipboard, or null when there is nothing uploadable.
-    function fileFromClipboard(event) {
+    function fileFromClipboard(event: ClipboardEvent): File | null {
         var data = event.clipboardData;
         if (!data) return null;
 
@@ -39,13 +40,16 @@ window.qsPaste = (function () {
         return null;
     }
 
-    function stash(file) {
-        return new Promise(function (resolve) {
+    function stash(file: File): Promise<boolean> {
+        return new Promise<boolean>(function (resolve) {
             var reader = new FileReader();
             reader.onload = function () {
                 try {
                     var payload = JSON.stringify({ name: file.name, type: file.type, dataUrl: reader.result });
-                    if (payload.length > MAX_HANDOFF_CHARS) { resolve(false); return; }
+                    if (payload.length > MAX_HANDOFF_CHARS) {
+                        resolve(false);
+                        return;
+                    }
                     sessionStorage.setItem(HANDOFF_KEY, payload);
                     resolve(true);
                 } catch (_) { resolve(false); }
@@ -56,8 +60,8 @@ window.qsPaste = (function () {
     }
 
     // Consumed once by upload.js on /send.
-    function takeStashed() {
-        var raw = null;
+    function takeStashed(): File | null {
+        var raw: string | null = null;
         try {
             raw = sessionStorage.getItem(HANDOFF_KEY);
             sessionStorage.removeItem(HANDOFF_KEY);
@@ -74,7 +78,7 @@ window.qsPaste = (function () {
         } catch (_) { return null; }
     }
 
-    document.addEventListener('paste', function (event) {
+    document.addEventListener('paste', function (event: ClipboardEvent) {
         // /send handles its own paste — no handoff needed there.
         if (window.uploadPage) return;
         if (isEditable(event.target)) return;

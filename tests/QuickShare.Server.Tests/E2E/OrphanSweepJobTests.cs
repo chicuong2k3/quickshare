@@ -183,6 +183,9 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
         public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
             => Task.FromResult(-1L);
 
+        public Task UploadObjectAsync(string objectKey, Stream content, string contentType, CancellationToken ct = default)
+            => throw new NotSupportedException();
+
         public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
             => throw new NotSupportedException();
     }

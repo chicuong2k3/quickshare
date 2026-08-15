@@ -11,6 +11,15 @@ COPY src/QuickShare.Querying.Generators/QuickShare.Querying.Generators.csproj sr
 # Parallel restore floods the pipe and trips "no data received for 60000ms" timeouts.
 RUN dotnet restore src/QuickShare/QuickShare.csproj --disable-parallel -p:RestoreRetryCount=6
 
+# Node.js for the TypeScript build (BuildTypeScript MSBuild target runs before publish)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends nodejs npm && \
+    rm -rf /var/lib/apt/lists/*
+
+# TypeScript toolchain — cached layer, only rebuilds when package files change
+COPY src/QuickShare/package.json src/QuickShare/package-lock.json src/QuickShare/
+RUN cd src/QuickShare && npm ci --no-audit --no-fund
+
 # Build + Publish
 COPY . .
 RUN dotnet publish src/QuickShare/QuickShare.csproj -c Release -o /app --no-restore

@@ -8,7 +8,7 @@
     var KEY_LENGTH = 256;
     var NONCE_LENGTH = 12;
 
-    async function deriveKey(pin, salt) {
+    async function deriveKey(pin: string, salt: string): Promise<CryptoKey> {
         var enc = new TextEncoder();
         var keyMaterial = await crypto.subtle.importKey(
             'raw',
@@ -32,7 +32,7 @@
         );
     }
 
-    async function encryptChunk(chunk, key, counter) {
+    async function encryptChunk(chunk: ArrayBuffer | Uint8Array, key: CryptoKey, counter: number): Promise<ArrayBuffer> {
         var nonce = new Uint8Array(NONCE_LENGTH);
         var view = new DataView(nonce.buffer);
         view.setBigUint64(4, BigInt(counter), false); // Big-endian, last 8 bytes
@@ -40,13 +40,13 @@
         var encrypted = await crypto.subtle.encrypt(
             { name: 'AES-GCM', iv: nonce },
             key,
-            chunk
+            chunk as BufferSource
         );
 
         return encrypted;
     }
 
-    async function decryptChunk(chunk, key, counter) {
+    async function decryptChunk(chunk: ArrayBuffer | Uint8Array, key: CryptoKey, counter: number): Promise<ArrayBuffer> {
         var nonce = new Uint8Array(NONCE_LENGTH);
         var view = new DataView(nonce.buffer);
         view.setBigUint64(4, BigInt(counter), false);
@@ -54,26 +54,26 @@
         var decrypted = await crypto.subtle.decrypt(
             { name: 'AES-GCM', iv: nonce },
             key,
-            chunk
+            chunk as BufferSource
         );
 
         return decrypted;
     }
 
-    function generateSalt() {
+    function generateSalt(): string {
         var salt = new Uint8Array(SALT_LENGTH);
         crypto.getRandomValues(salt);
         return Array.from(salt, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
-    async function hashPin(pin, salt) {
+    async function hashPin(pin: string, salt: string): Promise<string> {
         var enc = new TextEncoder();
         var data = enc.encode(pin + '|' + salt);
         var hash = await crypto.subtle.digest('SHA-256', data);
         return Array.from(new Uint8Array(hash), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
-    window.P2P = window.P2P || {};
+    window.P2P = window.P2P || ({} as P2PNamespace);
     window.P2P.encryption = {
         deriveKey: deriveKey,
         encryptChunk: encryptChunk,

@@ -47,6 +47,15 @@
     <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.*" />
   </ItemGroup>
 
+  <!-- TypeScript build: npm ci once (when toolchain missing), then tsc.
+       Runs on every dotnet build/publish — CI and the Docker image both get
+       fresh JS from the ts/ sources. Generated wwwroot/js is NOT committed. -->
+  <Target Name="BuildTypeScript" BeforeTargets="Build" Condition="'$(BuildingProject)' == 'true'">
+    <Exec Command="npm ci" WorkingDirectory="$(ProjectDir)" Condition="!Exists('$(ProjectDir)node_modules\.bin\tsc.cmd') And '$(OS)' == 'Windows_NT'" />
+    <Exec Command="npm ci" WorkingDirectory="$(ProjectDir)" Condition="!Exists('$(ProjectDir)node_modules\.bin\tsc') And '$(OS)' != 'Windows_NT'" />
+    <Exec Command="npm run tsc" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
   <Target Name="CopyScopedCss" AfterTargets="Build">
     <Copy SourceFiles="$(IntermediateOutputPath)scopedcss\bundle\QuickShare.styles.css" DestinationFolder="$(ProjectDir)wwwroot\css" />
   </Target>

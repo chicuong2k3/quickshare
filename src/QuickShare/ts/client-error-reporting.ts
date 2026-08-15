@@ -3,7 +3,16 @@
 (function () {
     'use strict';
 
-    function report(data) {
+    interface ClientErrorReportPayload {
+        message: string;
+        stack: string;
+        source: string;
+        line: number;
+        column: number;
+        href: string;
+    }
+
+    function report(data: ClientErrorReportPayload): void {
         try {
             var body = JSON.stringify(data);
             if (navigator.sendBeacon) {
@@ -14,14 +23,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: body,
                     keepalive: true
-                }).catch(function () { });
+                }).catch(function () { /* Best effort; never recurse into the reporter. */ });
             }
         } catch (err) {
             // Never recurse into the reporter.
         }
     }
 
-    window.addEventListener('error', function (e) {
+    window.addEventListener('error', function (e: ErrorEvent) {
         report({
             message: e.message || 'Unknown error',
             stack: e.error && e.error.stack ? e.error.stack : '',
@@ -32,7 +41,7 @@
         });
     });
 
-    window.addEventListener('unhandledrejection', function (e) {
+    window.addEventListener('unhandledrejection', function (e: PromiseRejectionEvent) {
         var r = e.reason;
         report({
             message: 'Unhandled promise rejection: ' + (r && r.message ? r.message : String(r)),

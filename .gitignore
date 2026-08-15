@@ -27,3 +27,12 @@ _bmad-output/planning-artifacts/growth-features-implementation-plan.md
 # Tracking it meant the committed copy silently drifted from its sources;
 # dotnet publish regenerates it, and the Docker image builds from publish.
 src/QuickShare/wwwroot/css/QuickShare.styles.css
+
+# TypeScript toolchain — deps and generated JS are built, not committed.
+# The BuildTypeScript MSBuild target runs npm ci + tsc on every dotnet build
+# (CI, Docker, local), so wwwroot/js regenerates from the ts/ sources.
+node_modules/
+src/QuickShare/wwwroot/js/**
+
+# Test artifacts — blame-hang dumps, sequence XML, coverage
+tests/**/TestResults/

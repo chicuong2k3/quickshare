@@ -18,6 +18,14 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # TypeScript build (BuildTypeScript MSBuild target) needs node + npm deps
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: src/QuickShare/package-lock.json
+
       - name: Restore
         run: dotnet restore
 
