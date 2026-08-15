@@ -1,0 +1,49 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Daily 02:00 UTC. Postgres + R2 must be reachable from the runner.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    # Self-hosted: the runner shares the server network with the app, so it can
+    # reach PostgreSQL the same way the container does. GitHub-hosted runners
+    # cannot (DB is firewalled). See docs/backup-restore-runbook.md.
+    runs-on: self-hosted
+    timeout-minutes: 30
+    # A superseded backup is harmless, but two concurrent dumps to the same
+    # bucket only double cost with no value. Cancel the stale run.
+    concurrency:
+      group: quickshare-backup
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build backup image
+        shell: bash
+        run: docker build -t quickshare-backup ops/backup
+
+      - name: Run backup
+        shell: bash
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.BACKUP_DB_CONNECTION_STRING }}
+          BACKUP_AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+          BACKUP_R2_ACCOUNT_ID: ${{ secrets.BACKUP_R2_ACCOUNT_ID }}
+          BACKUP_R2_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
+          BACKUP_R2_ACCESS_KEY_SECRET: ${{ secrets.BACKUP_R2_ACCESS_KEY_SECRET }}
+          BACKUP_R2_BUCKET: ${{ secrets.BACKUP_R2_BUCKET }}
+          BACKUP_RETENTION_DAYS: ${{ secrets.BACKUP_RETENTION_DAYS || '30' }}
+        run: |
+          docker run --rm \
+            -e DB_CONNECTION_STRING \
+            -e BACKUP_AGE_PUBLIC_KEY \
+            -e BACKUP_R2_ACCOUNT_ID \
+            -e BACKUP_R2_ACCESS_KEY_ID \
+            -e BACKUP_R2_ACCESS_KEY_SECRET \
+            -e BACKUP_R2_BUCKET \
+            -e BACKUP_RETENTION_DAYS \
+            quickshare-backup backup

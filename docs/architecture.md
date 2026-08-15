@@ -113,6 +113,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | **QuotaEnforcer** | Per-plan limits: file size caps, monthly upload quota, transfer counts |
 | **DataProtection** | `PersistKeysToFileSystem` with `SetApplicationName("QuickShare")` — single app, no cross-process key sharing needed |
 | **Background Jobs** | 4 hosted services: `DeliveryCleanupService`, `ZombiePartSweeper`, `DeliveryExpiryJob`, `SubscriptionExpiryJob` |
+| **Backup / Restore** | `ops/backup/*.sh` + `.github/workflows/backup.yml` (daily) + `restore-drill.yml` (quarterly). `pg_dump` → `age` encrypt → R2 versioned bucket, 30-day retention. See [backup-restore-runbook.md](backup-restore-runbook.md). |
 | **TrialService** | 14-day free trial tracking |
 | **GlobalExceptionHandler** | Centralized `ProblemDetails` error responses |
 | **RequestLoggingMiddleware** | Structured inbound request logging |

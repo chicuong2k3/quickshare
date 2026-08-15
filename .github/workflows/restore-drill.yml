@@ -1,0 +1,55 @@
+name: Restore Drill
+
+on:
+  schedule:
+    # Quarterly restore drill: 03:00 UTC on the 1st of Jan/Apr/Jul/Oct.
+    # Validates that backups actually restore (a backup you've never restored
+    # is a hope, not a backup). See docs/backup-restore-runbook.md.
+    - cron: '0 3 1 1,4,7,10 *'
+  workflow_dispatch:
+    inputs:
+      backup_file:
+        description: 'Specific backup object key to restore (empty = latest)'
+        required: false
+        type: string
+
+jobs:
+  restore-drill:
+    runs-on: self-hosted
+    timeout-minutes: 45
+    # Never interrupt a drill — a half-restored staging DB is worse than none.
+    concurrency:
+      group: quickshare-restore-drill
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build backup image
+        shell: bash
+        run: docker build -t quickshare-backup ops/backup
+
+      - name: Restore into staging DB
+        shell: bash
+        env:
+          RESTORE_DB_CONNECTION_STRING: ${{ secrets.STAGING_DB_CONNECTION_STRING }}
+          BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          BACKUP_R2_ACCOUNT_ID: ${{ secrets.BACKUP_R2_ACCOUNT_ID }}
+          BACKUP_R2_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
+          BACKUP_R2_ACCESS_KEY_SECRET: ${{ secrets.BACKUP_R2_ACCESS_KEY_SECRET }}
+          BACKUP_R2_BUCKET: ${{ secrets.BACKUP_R2_BUCKET }}
+          BACKUP_FILE: ${{ inputs.backup_file }}
+          # Smoke gate: `users` must exist and hold at least one row post-restore.
+          RESTORE_VERIFY_QUERY: 'SELECT count(*) FROM users'
+        run: |
+          docker run --rm \
+            -e RESTORE_DB_CONNECTION_STRING \
+            -e BACKUP_AGE_PRIVATE_KEY \
+            -e BACKUP_R2_ACCOUNT_ID \
+            -e BACKUP_R2_ACCESS_KEY_ID \
+            -e BACKUP_R2_ACCESS_KEY_SECRET \
+            -e BACKUP_R2_BUCKET \
+            -e BACKUP_FILE \
+            -e RESTORE_VERIFY_QUERY \
+            quickshare-backup restore
