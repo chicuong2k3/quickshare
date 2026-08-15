@@ -343,3 +343,23 @@ All upload endpoints use FastEndpoints with the standard cookie auth (no explici
 | `src/QuickShare/Data/Entities/Chunk.cs` | Chunk entity (deprecated — R2 handles chunking) |
 | `src/QuickShare/Data/Entities/Manifest.cs` | Manifest entity (deprecated — R2 is single object) |
 | `src/QuickShare/Infrastructure/PlanTierLimits.cs` | Per-plan limits |
+
+---
+
+## 12. Scheduled Send (issue #69)
+
+Pro/Studio senders can set a **"Deliver at"** time — the file uploads to R2 immediately, but the link stays dormant (`Status = "Scheduled"`) until `DeliverAt`, then a background job activates it. No re-upload.
+
+### Data model
+- `Delivery.DeliverAt` (`DateTime?`) — activation time; `null` = immediate.
+- `Delivery.Status` gains `"Scheduled"` (existing `Active` / `Expired`).
+
+### Flow
+1. **Upload** — `Upload.razor` shows a `Deliver at` datetime input only when `plan is Pro or Studio`. `upload.ts` sends `deliverAt` (ISO) on `commit-r2`.
+2. **Commit** — `CommitR2Handler` gates scheduling to Pro/Studio (rejects *before* touching R2 so no orphan is left), validates `DeliverAt > now`, sets `Status = Scheduled`, `DeliverAt`, and `ExpiresAt = DeliverAt + maxExpiry` (the expiry window starts at activation, not upload).
+3. **Activation** — `DeliveryActivationJob` (BackgroundService, 1-min interval) flips `Scheduled → Active` when `DeliverAt <= now`.
+4. **Access** — `DownloadDeliveryHandler` returns `423 Locked` while `Status == Scheduled && DeliverAt > now`. The info endpoint returns `DeliverAt`/`Status` so `/d/{code}` renders a countdown (server-rendered label + JS tick). Access is time-based on `DeliverAt`, so the link is reachable exactly at T even before the job tick lands.
+5. **Cancel** — `DELETE /api/deliveries/{Id}` (sender-only, `Status == Scheduled`) removes the delivery + its R2 object; surfaced as a "Cancel" button on `/account/deliveries`.
+
+### Observability
+`DeliveryExpiryJob` and `DeliveryActivationJob` both open a root span (`ActivitySources`) so background runs are traceable in Tempo — a background job has no HTTP request to anchor a trace on.

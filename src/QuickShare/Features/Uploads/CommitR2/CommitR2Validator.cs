@@ -23,5 +23,9 @@ public sealed class CommitR2Validator : Validator<CommitR2Request>
         RuleFor(x => x.Parts)
             .NotEmpty()
             .WithMessage("At least one part is required.");
+
+        RuleFor(x => x.DeliverAt)
+            .Must(d => d is null || d.Value > DateTime.UtcNow)
+            .WithMessage("DeliverAt must be in the future.");
     }
 }

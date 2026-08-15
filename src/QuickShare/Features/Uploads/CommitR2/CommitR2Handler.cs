@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Source);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Source, DateTime? DeliverAt);
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
@@ -32,6 +32,16 @@ public sealed class CommitR2Handler(
         var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
         var plan = user?.Plan ?? PlanTierLimits.Anonymous;
         var quota = user is null ? null : new QuotaService(db);
+
+        // Scheduled send — Pro/Studio only. Reject before touching R2 so a disallowed
+        // schedule never leaves an orphaned object behind.
+        if (cmd.DeliverAt.HasValue)
+        {
+            if (plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.SchedulingRequiresPaidPlan));
+            if (cmd.DeliverAt.Value <= DateTime.UtcNow)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.DeliverAtMustBeFuture));
+        }
 
         // The commit must match the session created by start-r2, for the same owner —
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
@@ -104,7 +114,7 @@ public sealed class CommitR2Handler(
         var shareCode = Convert.ToBase64String(randomBytes)
             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
 
-        var expiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(plan));
+        var expiresAt = (cmd.DeliverAt ?? DateTime.UtcNow).Add(PlanTierLimits.GetMaxExpiry(plan));
 
         var delivery = new Delivery
         {
@@ -122,6 +132,8 @@ public sealed class CommitR2Handler(
             MaxDownloads = PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = cmd.ObjectKey,
             ExpiresAt = expiresAt,
+            DeliverAt = cmd.DeliverAt,
+            Status = cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             Source = DeliverySources.Normalize(cmd.Source)
         };

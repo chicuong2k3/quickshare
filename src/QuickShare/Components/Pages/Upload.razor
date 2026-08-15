@@ -15,10 +15,10 @@
     // The idle subtext is auth-aware: anonymous visitors see the sign-up nudge,
     // signed-in users see their plan's per-file limit (mirrors the Pricing page).
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var plan = PlanTierLimits.Free;
     string idleSubtext;
     if (isAuthenticated)
     {
-        var plan = PlanTierLimits.Free;
         var userIdClaim = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (Guid.TryParse(userIdClaim, out var userId))
         {
@@ -44,6 +44,8 @@
     {
         idleSubtext = Loc["upload_idle_sub_limit"];
     }
+
+    var canSchedule = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
 }
 
 <PageTitle>@Loc["upload_title"]</PageTitle>
@@ -115,6 +117,15 @@
                         <label for="upload-sender-email" class="otp-label">@Loc["upload_sender_email_label"]</label>
                         <input type="email" id="upload-sender-email" class="sender-email-input" inputmode="email" autocomplete="email" placeholder="@Loc["upload_sender_email_placeholder"]" />
                         <span class="otp-hint">@Loc["upload_sender_email_hint"]</span>
+                    </div>
+                }
+
+                @if (canSchedule)
+                {
+                    <div class="sender-email-wrap">
+                        <label for="upload-deliver-at" class="otp-label">@Loc["upload_deliver_at_label"]</label>
+                        <input type="datetime-local" id="upload-deliver-at" class="sender-email-input" />
+                        <span class="otp-hint">@Loc["upload_deliver_at_hint"]</span>
                     </div>
                 }
 

@@ -179,6 +179,22 @@
                     </div>
                     break;
 
+                case DownloadRenderState.Scheduled:
+                    <div class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_scheduled_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">
+                            @Loc["dl_scheduled_sub", ScheduledLabel]
+                            <span id="dl-scheduled-countdown" style="display:block;margin-top:0.25rem;font-weight:500"></span>
+                        </p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
                 case DownloadRenderState.Expired:
                     <div class="db-text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
@@ -262,11 +278,14 @@
         ["expiryDay"] = Loc["dl_expiry_day"],
         ["expiryCountdown"] = Loc["dl_expiry_countdown"],
         ["expiryDownloadNow"] = Loc["dl_expiry_download_now"],
+        ["scheduledCountdown"] = Loc["dl_scheduled_countdown"],
         ["initialPhase"] = InitialPhase,
     };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
     private string ExpiryLabel { get; set; } = string.Empty;
+    private bool IsScheduled => Info?.Status == DeliveryStatus.Scheduled && Info.DeliverAt > DateTime.UtcNow;
+    private string ScheduledLabel => Info?.DeliverAt is { } d ? d.ToLocalTime().ToString("f") : string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -296,13 +315,15 @@
                 ContentType = value.ContentType,
                 FileSize = value.FileSize,
                 ExpiresAt = value.ExpiresAt,
+                DeliverAt = value.DeliverAt,
+                Status = value.Status,
                 DownloadCount = value.DownloadCount,
                 MaxDownloads = value.MaxDownloads,
                 HasOtp = value.HasOtp,
                 SenderPlan = value.SenderPlan
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
-            RenderState = DownloadRenderState.Ready;
+            RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
         }
         catch { RenderState = DownloadRenderState.Error; }
     }
@@ -347,11 +368,12 @@
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Expired, NotFound, LimitReached, Error }
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, NotFound, LimitReached, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }
-        public DateTime? ExpiresAt { get; set; } public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
+        public DateTime? ExpiresAt { get; set; } public DateTime? DeliverAt { get; set; } public string Status { get; set; } = string.Empty;
+        public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
         public bool HasOtp { get; set; } public string SenderPlan { get; set; } = string.Empty;
     }
 }

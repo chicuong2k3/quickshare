@@ -12,13 +12,15 @@ window.downloadApp = (function (): DownloadPage {
         expiresAt: Date | null;
         expiryTimer: ReturnType<typeof setInterval> | null;
         expiryLevel: string;
+        scheduledAt: Date | null;
+        scheduledTimer: ReturnType<typeof setInterval> | null;
         downloadCount: number;
         maxDownloads: number;
         expiresLabel: string;
         previewStarted: boolean;
         fullText: string | null;
         bytes: ArrayBuffer | null;
-    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
+    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
     const TEXT_MIME_PREFIX = 'text/plain';
@@ -89,6 +91,11 @@ window.downloadApp = (function (): DownloadPage {
         const hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
         const info = infoFromDom();
         state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresAt = info.expiresAt ? new Date(info.expiresAt) : null; state.expiresLabel = state.expiresAt ? formatExpiry().label : t('expiryNone');
+        state.scheduledAt = info.deliverAt ? new Date(info.deliverAt) : null;
+        if (info.status === 'Scheduled' && state.scheduledAt && state.scheduledAt.getTime() > Date.now()) {
+            startScheduledCountdown();
+            return;
+        }
         if (info.hasOtp) state.phase = 'otp';
         else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
         else state.phase = 'file';
@@ -153,6 +160,31 @@ window.downloadApp = (function (): DownloadPage {
     function startExpiryTimer() {
         tickExpiry();
         state.expiryTimer = setInterval(tickExpiry, 1000);
+    }
+
+    // Live scheduled-delivery countdown (issue #69). The server renders the
+    // "scheduled" panel; this ticks the countdown and reloads at activation
+    // time so the download flow appears without a manual refresh.
+    function startScheduledCountdown() {
+        tickScheduled();
+        state.scheduledTimer = setInterval(tickScheduled, 1000);
+    }
+
+    function tickScheduled() {
+        if (!state.scheduledAt) return;
+        const r = state.scheduledAt.getTime() - Date.now();
+        if (r <= 0) {
+            if (state.scheduledTimer) { clearInterval(state.scheduledTimer); state.scheduledTimer = null; }
+            window.location.reload();
+            return;
+        }
+        const totalSec = Math.floor(r / 1000);
+        const d = Math.floor(totalSec / 86400);
+        const h = Math.floor((totalSec % 86400) / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        const label = d > 0 ? (d + 'd ' + h + 'h') : (h + ':' + pad2(m) + ':' + pad2(s));
+        text('dl-scheduled-countdown', t('scheduledCountdown', label));
     }
 
 

@@ -243,6 +243,8 @@
   <data name="upload_dropzone_sub" xml:space="preserve"><value>or Ctrl+V to paste, or click to browse</value></data>
   <data name="upload_otp_label" xml:space="preserve"><value>Security code (optional)</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>If set, recipients must enter this code to download</value></data>
+  <data name="upload_deliver_at_label" xml:space="preserve"><value>Deliver at</value></data>
+  <data name="upload_deliver_at_hint" xml:space="preserve"><value>The link becomes active at this time.</value></data>
   <data name="upload_expiry_label" xml:space="preserve"><value>Expires: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>No image found in clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Encrypted</value></data>
@@ -499,6 +501,9 @@
   <data name="deliveries_downloads" xml:space="preserve"><value>{0} of {1} downloads used</value></data>
   <data name="deliveries_exhausted" xml:space="preserve"><value>Download limit reached — this link no longer works.</value></data>
   <data name="deliveries_expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="deliveries_scheduled" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="deliveries_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="deliveries_cancel_confirm" xml:space="preserve"><value>Cancel this scheduled delivery?</value></data>
   <data name="deliveries_no_expiry" xml:space="preserve"><value>No expiry</value></data>
   <data name="deliveries_expires_minutes" xml:space="preserve"><value>{0} min left</value></data>
   <data name="deliveries_expires_hours" xml:space="preserve"><value>{0} h left</value></data>
@@ -543,6 +548,9 @@
   <data name="dl_notfound_sub" xml:space="preserve"><value>The file may have been removed, or the link is incorrect.</value></data>
   <data name="dl_limit_h1" xml:space="preserve"><value>Download limit reached</value></data>
   <data name="dl_limit_sub" xml:space="preserve"><value>This file has reached its download limit. Ask the sender to re-send.</value></data>
+  <data name="dl_scheduled_h1" xml:space="preserve"><value>This link is scheduled</value></data>
+  <data name="dl_scheduled_sub" xml:space="preserve"><value>This link becomes active at {0}.</value></data>
+  <data name="dl_scheduled_countdown" xml:space="preserve"><value>Activates in {0}</value></data>
   <data name="dl_error_h1" xml:space="preserve"><value>Something went wrong</value></data>
   <data name="dl_error_sub" xml:space="preserve"><value>We couldn’t reach the download service. Please try again.</value></data>
   <data name="dl_error_retry" xml:space="preserve"><value>Try again</value></data>

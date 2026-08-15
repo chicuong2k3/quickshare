@@ -60,6 +60,17 @@ else
 </PageWrapper>
 }
 
+<script>
+    window.cancelDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var msg = btn.getAttribute('data-confirm');
+        if (msg && !window.confirm(msg)) return;
+        fetch('/api/deliveries/' + id, { method: 'DELETE' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+        });
+    };
+</script>
+
 @code {
     private const string CursorQueryKey = "cursor";
     private const string ChunkClass = "deliveries-chunk";
@@ -84,10 +95,19 @@ else
             var percent = item.MaxDownloads > 0 ? used * GaugeFullPercent / item.MaxDownloads : GaugeFullPercent;
             var exhausted = item.MaxDownloads > 0 && item.DownloadCount >= item.MaxDownloads;
 
-            <article class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
+            <article id="delivery-@item.Id" class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
                 <div class="account-delivery__head">
                     <span class="account-delivery__name" title="@item.FileName">@item.FileName</span>
-                    <span class="account-delivery__expiry db-text-muted">@ExpiryLabel(item.ExpiresAt)</span>
+                    <span class="account-delivery__expiry db-text-muted">
+                        @if (item.Status == DeliveryStatus.Scheduled)
+                        {
+                            @Loc["deliveries_scheduled"] <text>·</text> @item.DeliverAt?.ToLocalTime().ToString("g")
+                        }
+                        else
+                        {
+                            @ExpiryLabel(item.ExpiresAt)
+                        }
+                    </span>
                 </div>
                 <div class="account-delivery__gauge" role="img"
                      aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
@@ -101,6 +121,12 @@ else
                     else
                     {
                         @string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)
+                    }
+                    @if (item.Status == DeliveryStatus.Scheduled)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__cancel"
+                                data-confirm="@Loc["deliveries_cancel_confirm"]"
+                                onclick="cancelDelivery(this)">@Loc["deliveries_cancel"]</button>
                     }
                 </p>
             </article>

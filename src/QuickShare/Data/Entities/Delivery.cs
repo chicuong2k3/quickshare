@@ -16,6 +16,7 @@ public record Delivery : BaseAuditEntity
     public int MaxDownloads { get; set; }
     public int DownloadCount { get; set; }
     public DateTime? ExpiresAt { get; set; }
+    public DateTime? DeliverAt { get; set; }
     public string? OtpHash { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;
@@ -26,5 +27,6 @@ public record Delivery : BaseAuditEntity
 public static class DeliveryStatus
 {
     public const string Active = "Active";
+    public const string Scheduled = "Scheduled";
     public const string Expired = "Expired";
 }

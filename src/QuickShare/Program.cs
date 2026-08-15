@@ -182,6 +182,7 @@ builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailRateLim
 builder.Services.AddHostedService<DeliveryCleanupService>();
 builder.Services.AddHostedService<ZombiePartSweeper>();
 builder.Services.AddHostedService<DeliveryExpiryJob>();
+builder.Services.AddHostedService<DeliveryActivationJob>();
 builder.Services.AddHostedService<SubscriptionExpiryJob>();
 builder.Services.AddHostedService<DownloadNotificationJob>();
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();

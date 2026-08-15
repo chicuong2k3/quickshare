@@ -61,6 +61,7 @@
         _startTime: number;
         source: string;
         senderEmail: string;
+        deliverAt: string | null;
         _resumeCtx: UploadContext | null;
         objectKey: string;
     } = {
@@ -73,6 +74,7 @@
         fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0,
         source: SOURCE_WEB,
         senderEmail: '',
+        deliverAt: null,
         _resumeCtx: null, objectKey: ''
     };
 
@@ -254,6 +256,7 @@
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
         state.source = SOURCE_WEB;
         state.senderEmail = '';
+        state.deliverAt = null;
         const senderEmailEl = document.getElementById('upload-sender-email') as HTMLInputElement | null;
         if (senderEmailEl)
             senderEmailEl.value = '';
@@ -266,6 +269,8 @@
         if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = t('sizeExceeded'); render(); return; }
         state.source = source || SOURCE_WEB;
         state.senderEmail = (document.getElementById('upload-sender-email') as HTMLInputElement | null)?.value.trim() ?? '';
+        const deliverAtInput = document.getElementById('upload-deliver-at') as HTMLInputElement | null;
+        state.deliverAt = deliverAtInput && deliverAtInput.value ? new Date(deliverAtInput.value).toISOString() : null;
         state.filename = file.name || 'pasted-image';
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false; state._cancelled = false;
@@ -379,7 +384,7 @@
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source, deliverAt: state.deliverAt }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

@@ -7,4 +7,8 @@ public static class ErrorCodes
     public const string DeliveryExpired = "delivery_expired";
     public const string DownloadLimitReached = "download_limit_reached";
     public const string MonthlyQuotaExceeded = "monthly_quota_exceeded";
+    public const string SchedulingRequiresPaidPlan = "scheduling_requires_paid_plan";
+    public const string DeliverAtMustBeFuture = "deliver_at_must_be_future";
+    public const string DeliveryNotActive = "delivery_not_active";
+    public const string DeliveryNotScheduled = "delivery_not_scheduled";
 }

@@ -244,6 +244,8 @@
   <data name="upload_dropzone_sub" xml:space="preserve"><value>hoặc Ctrl+V để dán, hoặc nhấp để duyệt</value></data>
   <data name="upload_otp_label" xml:space="preserve"><value>Mã bảo mật (tùy chọn)</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mã này để tải file</value></data>
+  <data name="upload_deliver_at_label" xml:space="preserve"><value>Thời gian gửi</value></data>
+  <data name="upload_deliver_at_hint" xml:space="preserve"><value>Liên kết sẽ kích hoạt vào thời điểm này.</value></data>
   <data name="upload_expiry_label" xml:space="preserve"><value>Hết hạn: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>Không tìm thấy ảnh trong clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Đã mã hóa</value></data>
@@ -500,6 +502,9 @@
   <data name="deliveries_downloads" xml:space="preserve"><value>Đã dùng {0} / {1} lượt tải</value></data>
   <data name="deliveries_exhausted" xml:space="preserve"><value>Đã hết lượt tải — link này không còn hoạt động.</value></data>
   <data name="deliveries_expired" xml:space="preserve"><value>Đã hết hạn</value></data>
+  <data name="deliveries_scheduled" xml:space="preserve"><value>Đã hẹn giờ</value></data>
+  <data name="deliveries_cancel" xml:space="preserve"><value>Huỷ</value></data>
+  <data name="deliveries_cancel_confirm" xml:space="preserve"><value>Huỷ gửi đã hẹn giờ này?</value></data>
   <data name="deliveries_no_expiry" xml:space="preserve"><value>Không hết hạn</value></data>
   <data name="deliveries_expires_minutes" xml:space="preserve"><value>Còn {0} phút</value></data>
   <data name="deliveries_expires_hours" xml:space="preserve"><value>Còn {0} giờ</value></data>
@@ -544,6 +549,9 @@
   <data name="dl_notfound_sub" xml:space="preserve"><value>File có thể đã bị xoá, hoặc link bị sai.</value></data>
   <data name="dl_limit_h1" xml:space="preserve"><value>Đã hết lượt tải</value></data>
   <data name="dl_limit_sub" xml:space="preserve"><value>File này đã dùng hết lượt tải. Hãy nhờ người gửi gửi lại.</value></data>
+  <data name="dl_scheduled_h1" xml:space="preserve"><value>Liên kết này được hẹn giờ</value></data>
+  <data name="dl_scheduled_sub" xml:space="preserve"><value>Liên kết này sẽ kích hoạt lúc {0}.</value></data>
+  <data name="dl_scheduled_countdown" xml:space="preserve"><value>Kích hoạt sau {0}</value></data>
   <data name="dl_error_h1" xml:space="preserve"><value>Có lỗi xảy ra</value></data>
   <data name="dl_error_sub" xml:space="preserve"><value>Không kết nối được dịch vụ tải. Vui lòng thử lại.</value></data>
   <data name="dl_error_retry" xml:space="preserve"><value>Thử lại</value></data>

@@ -109,6 +109,9 @@ namespace QuickShare.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeliverAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("DownloadCount")
                         .HasColumnType("integer");
 

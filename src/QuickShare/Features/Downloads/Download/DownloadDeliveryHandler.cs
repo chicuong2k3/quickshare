@@ -24,6 +24,12 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             return;
         }
 
+        if (delivery.Status == DeliveryStatus.Scheduled && delivery.DeliverAt > DateTime.UtcNow)
+        {
+            response.StatusCode = StatusCodes.Status423Locked;
+            return;
+        }
+
         if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
         {
             response.StatusCode = 410;
