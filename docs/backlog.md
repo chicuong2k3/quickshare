@@ -37,6 +37,11 @@ Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded i
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
 verified directly.
 
+> ⚠️ Stale as of 2026-08-16: `#52` (rate limiting) is **committed and wired** in
+> `Program.cs`, and the whole Tier 2 batch (#53, #82, #121, #148, #149, #175) is
+> **implemented but uncommitted** in the working tree. Current implemented-and-testable
+> list: [`docs/TESTABLE.md`](TESTABLE.md).
+
 ## 3. Tier 1 — Foundation (do-first)
 
 | # | Item | Status |
