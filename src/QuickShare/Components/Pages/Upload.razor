@@ -108,6 +108,16 @@
                     </div>
                 </div>
 
+                @* Optional sender email — anonymous only: signed-in users already have email on their account. *@
+                @if (!isAuthenticated)
+                {
+                    <div class="sender-email-wrap">
+                        <label for="upload-sender-email" class="otp-label">@Loc["upload_sender_email_label"]</label>
+                        <input type="email" id="upload-sender-email" class="sender-email-input" inputmode="email" autocomplete="email" placeholder="@Loc["upload_sender_email_placeholder"]" />
+                        <span class="otp-hint">@Loc["upload_sender_email_hint"]</span>
+                    </div>
+                }
+
                 <div id="upload-paste-tip" class="hidden ">@Loc["upload_paste_no_image"]</div>
             </section>
 

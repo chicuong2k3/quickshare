@@ -364,3 +364,21 @@
         transition: none;
     }
 }
+
+.sender-email-wrap {
+    margin-top: 1.25rem;
+    max-width: 24rem;
+    margin-inline: auto;
+    text-align: left;
+}
+
+.sender-email-input {
+    width: 100%;
+    margin-top: 0.375rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--db-color-border, #d1d5db);
+    background: var(--db-color-surface, #ffffff);
+    color: var(--db-color-text, #111827);
+    font-size: 0.875rem;
+}

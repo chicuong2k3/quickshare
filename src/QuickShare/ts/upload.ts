@@ -60,6 +60,7 @@
         eta: string;
         _startTime: number;
         source: string;
+        senderEmail: string;
         _resumeCtx: UploadContext | null;
         objectKey: string;
     } = {
@@ -71,6 +72,7 @@
         _abortController: null, _deliveryId: null, _uploadId: null, _cancelled: false,
         fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0,
         source: SOURCE_WEB,
+        senderEmail: '',
         _resumeCtx: null, objectKey: ''
     };
 
@@ -251,6 +253,10 @@
         state._abortController = null; state._deliveryId = null; state._uploadId = null; state._resumeCtx = null;
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
         state.source = SOURCE_WEB;
+        state.senderEmail = '';
+        var senderEmailEl = document.getElementById('upload-sender-email') as HTMLInputElement | null;
+        if (senderEmailEl)
+            senderEmailEl.value = '';
     }
 
     function sleep(ms: number): Promise<void> { return new Promise<void>(function (res) { setTimeout(res, ms); }); }
@@ -259,6 +265,7 @@
         if (!file) return;
         if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = t('sizeExceeded'); render(); return; }
         state.source = source || SOURCE_WEB;
+        state.senderEmail = (document.getElementById('upload-sender-email') as HTMLInputElement | null)?.value.trim() ?? '';
         state.filename = file.name || 'pasted-image';
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false; state._cancelled = false;
@@ -293,7 +300,7 @@
 
         state._abortController = new AbortController(); var signal = state._abortController!.signal;
 
-        var startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: file.name, fileSize: originalSize, contentType: file.type || 'application/octet-stream', partNumbers: partNumbers }) });
+        var startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: file.name, fileSize: originalSize, contentType: file.type || 'application/octet-stream', partNumbers: partNumbers, senderEmail: state.senderEmail || null }) });
         if (!startResp.ok) { var errT = await startResp.text(); throw new Error(errT || t('startFailed')); }
         var session = await startResp.json();
         state._deliveryId = session.deliveryId; state._uploadId = session.uploadId; state.objectKey = session.objectKey;

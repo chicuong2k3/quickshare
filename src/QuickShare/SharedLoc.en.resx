@@ -569,4 +569,7 @@
   <data name="admin_flags_off" xml:space="preserve"><value>Off</value></data>
   <data name="admin_flags_rollout_label" xml:space="preserve"><value>Rollout percentage</value></data>
   <data name="admin_flags_save_btn" xml:space="preserve"><value>Save</value></data>
+  <data name="upload_sender_email_label" xml:space="preserve"><value>Email me the link + updates</value></data>
+  <data name="upload_sender_email_placeholder" xml:space="preserve"><value>you@example.com</value></data>
+  <data name="upload_sender_email_hint" xml:space="preserve"><value>Optional — get your share link and download updates by email. Unsubscribe anytime.</value></data>
 </root>

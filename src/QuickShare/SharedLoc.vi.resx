@@ -570,4 +570,7 @@
   <data name="admin_flags_off" xml:space="preserve"><value>Tắt</value></data>
   <data name="admin_flags_rollout_label" xml:space="preserve"><value>Tỷ lệ rollout (%)</value></data>
   <data name="admin_flags_save_btn" xml:space="preserve"><value>Lưu</value></data>
+  <data name="upload_sender_email_label" xml:space="preserve"><value>Gửi link và cập nhật qua email cho tôi</value></data>
+  <data name="upload_sender_email_placeholder" xml:space="preserve"><value>ban@example.com</value></data>
+  <data name="upload_sender_email_hint" xml:space="preserve"><value>Tuỳ chọn — nhận link chia sẻ và thông báo khi file được tải. Huỷ bất cứ lúc nào.</value></data>
 </root>
