@@ -39,6 +39,11 @@
     <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="5.*" />
     <PackageReference Include="WolverineFx.Postgresql" Version="5.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <!-- Pin Relational to the same version as Microsoft.EntityFrameworkCore. The relational
+         providers (Npgsql 10.0.0, WolverineFx 5.x) float Relational at an older patch (10.0.2),
+         so without this the Browser.Tests resolve core 10.0.10 against Relational 10.0.2 and the
+         app fails at startup with "Could not load ... Microsoft.EntityFrameworkCore.Relational, Version=10.0.10.0". -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
 
     <!-- Web (Blazor SSR + htmx) dependencies -->

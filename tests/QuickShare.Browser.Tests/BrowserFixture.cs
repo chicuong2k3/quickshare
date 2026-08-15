@@ -37,6 +37,9 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
     {
         builder.UseEnvironment("Development");
         builder.UseSetting("UseInMemoryDatabase", "true");
+        // Unique store per fixture: the default InMemory root is shared process-wide, so a
+        // fixed name would leak the per-IP anonymous P2P quota (3/day) across test classes.
+        builder.UseSetting("InMemoryDatabaseName", $"QuickShareTests-{Guid.NewGuid():N}");
         builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
         builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
