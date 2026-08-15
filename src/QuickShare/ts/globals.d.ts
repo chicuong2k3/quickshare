@@ -172,6 +172,7 @@ interface UploadPage {
     onFileInput(e: Event): void;
     triggerFileInput(): void;
     copyLink(): void;
+    shareLink(): void;
     cancelUpload(): void;
     resumeUpload(): void;
     reset(): void;

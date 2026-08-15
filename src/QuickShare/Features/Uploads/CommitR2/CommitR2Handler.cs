@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Message, string? Source, DateTime? DeliverAt);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours);
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
@@ -120,7 +120,17 @@ public sealed class CommitR2Handler(
         var shareCode = Convert.ToBase64String(randomBytes)
             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
 
-        var expiresAt = (cmd.DeliverAt ?? DateTime.UtcNow).Add(PlanTierLimits.GetMaxExpiry(plan));
+        var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
+        if (cmd.ExpiryHours is { } requestedHours)
+        {
+            if (requestedHours <= 0)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ExpiryInvalid));
+
+            if (TimeSpan.FromHours(requestedHours) > maxExpiry)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ExpiryTooLong));
+        }
+
+        var expiresAt = ResolveExpiry(cmd, plan);
 
         var delivery = new Delivery
         {
@@ -171,6 +181,17 @@ public sealed class CommitR2Handler(
             shareLink += $"?{ReferralPolicy.QueryParam}={user.ReferralCode}";
 
         return Result.Success(new CommitR2Response(shareCode, shareLink, expiresAt));
+    }
+
+    private static DateTime ResolveExpiry(CommitR2Command cmd, string plan)
+    {
+        var max = PlanTierLimits.GetMaxExpiry(plan);
+        var start = cmd.DeliverAt ?? DateTime.UtcNow;
+
+        if (cmd.ExpiryHours is { } requestedHours)
+            return start.Add(TimeSpan.FromHours(requestedHours));
+
+        return start.Add(max);
     }
 
     /// <summary>

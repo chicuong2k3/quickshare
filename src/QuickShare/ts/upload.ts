@@ -62,6 +62,8 @@
         source: string;
         senderEmail: string;
         deliverAt: string | null;
+        message: string;
+        expiryHours: number | null;
         _resumeCtx: UploadContext | null;
         objectKey: string;
     } = {
@@ -75,6 +77,8 @@
         source: SOURCE_WEB,
         senderEmail: '',
         deliverAt: null,
+        message: '',
+        expiryHours: null,
         _resumeCtx: null, objectKey: ''
     };
 
@@ -223,6 +227,17 @@
             } else { copyFallback(); }
         },
 
+        // Native share sheet (issue #38): Zalo/WhatsApp/Telegram/email on mobile,
+        // copy-link fallback where Web Share API is unavailable.
+        shareLink: function () {
+            if (!state.link) return;
+            if (navigator.share) {
+                navigator.share({ title: t('shareTitle'), text: t('shareText'), url: state.link }).catch(function () { /* user dismissed the sheet */ });
+            } else {
+                window.uploadPage!.copyLink();
+            }
+        },
+
         cancelUpload: function () {
             if (state._abortController) state._abortController.abort();
             state._cancelled = true;
@@ -257,6 +272,8 @@
         state.source = SOURCE_WEB;
         state.senderEmail = '';
         state.deliverAt = null;
+        state.message = '';
+        state.expiryHours = null;
         const senderEmailEl = document.getElementById('upload-sender-email') as HTMLInputElement | null;
         if (senderEmailEl)
             senderEmailEl.value = '';
@@ -271,6 +288,11 @@
         state.senderEmail = (document.getElementById('upload-sender-email') as HTMLInputElement | null)?.value.trim() ?? '';
         const deliverAtInput = document.getElementById('upload-deliver-at') as HTMLInputElement | null;
         state.deliverAt = deliverAtInput && deliverAtInput.value ? new Date(deliverAtInput.value).toISOString() : null;
+        state.message = (document.getElementById('upload-message') as HTMLTextAreaElement | null)?.value.trim() ?? '';
+        const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
+        const expiryDays = document.getElementById('upload-expiry-days') as HTMLInputElement | null;
+        if (expirySelect) state.expiryHours = parseFloat(expirySelect.value) || null;
+        else if (expiryDays) state.expiryHours = (parseFloat(expiryDays.value) || 0) * 24;
         state.filename = file.name || 'pasted-image';
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false; state._cancelled = false;
@@ -384,7 +406,7 @@
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source, deliverAt: state.deliverAt }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

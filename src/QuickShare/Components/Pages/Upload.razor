@@ -46,6 +46,7 @@
     }
 
     var canSchedule = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+    maxExpiryDays = (int)Math.Max(1, Math.Round(PlanTierLimits.GetMaxExpiry(plan ?? PlanTierLimits.Free).TotalDays));
 }
 
 <PageTitle>@Loc["upload_title"]</PageTitle>
@@ -110,6 +111,32 @@
                     </div>
                 </div>
 
+                @* Sender note (issue #137) — optional, plain text, rendered escaped on /d *@
+                <div class="sender-email-wrap">
+                    <label for="upload-message" class="otp-label">@Loc["upload_message_label"]</label>
+                    <textarea id="upload-message" class="sender-email-input" rows="2" maxlength="@Delivery.MessageMaxLength" placeholder="@Loc["upload_message_placeholder"]"></textarea>
+                    <span class="otp-hint">@Loc["upload_message_hint"]</span>
+                </div>
+
+                @* Expiry options (issue #22) — options rendered per plan; server clamps to plan max *@
+                <div class="sender-email-wrap">
+                    <label for="upload-expiry" class="otp-label">@Loc["upload_expiry_label"]</label>
+                    @if (canSchedule)
+                    {
+                        <input type="number" id="upload-expiry-days" class="sender-email-input" min="1" max="@maxExpiryDays" value="@maxExpiryDays" inputmode="numeric" aria-label="@Loc["upload_expiry_label"]" />
+                        <span class="otp-hint">@Loc["upload_expiry_days_hint", maxExpiryDays]</span>
+                    }
+                    else
+                    {
+                        <select id="upload-expiry" class="sender-email-input">
+                            <option value="2">@Loc["upload_expiry_2h"]</option>
+                            <option value="24" selected>@Loc["upload_expiry_24h"]</option>
+                            <option value="168">@Loc["upload_expiry_7d"]</option>
+                        </select>
+                        <span class="otp-hint">@Loc["upload_expiry_hint"]</span>
+                    }
+                </div>
+
                 @* Optional sender email — anonymous only: signed-in users already have email on their account. *@
                 @if (!isAuthenticated)
                 {
@@ -165,6 +192,7 @@
                     <label for="share-link" class="share-label">@Loc["upload_share_link_label"]</label>
                     <div class="share-row">
                         <input id="share-link" type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
+                        <button type="button" id="upload-share-btn" aria-label="@Loc["upload_share_aria"]" class="db-btn" onclick="uploadPage.shareLink()" data-ai-action="upload.share.sheet">@Loc["upload_share_btn"]</button>
                         <button type="button" aria-label="@Loc["upload_copy_link_aria"]" class="db-btn db-btn--primary" id="upload-copy-btn" onclick="uploadPage.copyLink()">
                             <span id="upload-copy-text">@Loc["upload_copy_link"]</span>
                             <span id="upload-copied-text" class="hidden">@Loc["upload_copied"]</span>
@@ -211,6 +239,8 @@
 <script src="/js/upload.js"></script>
 
 @code {
+    private int maxExpiryDays = 30;
+
     // upload.js reads its copy from here rather than carrying English literals.
     private Dictionary<string, string> Strings() => new()
     {
@@ -226,6 +256,8 @@
         ["qrNotLoaded"] = Loc["upload_qr_not_loaded"],
         ["qrAria"] = Loc["upload_qr_aria"],
         ["qrUnavailable"] = Loc["upload_qr_unavailable"],
+        ["shareTitle"] = Loc["upload_share_title"],
+        ["shareText"] = Loc["upload_share_text"],
     };
 
     // MarkupString: a plain string gets HTML-encoded by Razor even inside <script>,

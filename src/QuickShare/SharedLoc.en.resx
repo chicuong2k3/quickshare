@@ -626,6 +626,19 @@
   <data name="trial_option_desc" xml:space="preserve"><value>No card required. Full Pro features for a week.</value></data>
   <data name="trial_option_btn" xml:space="preserve"><value>Start 7-day free trial</value></data>
   <data name="trial_option_error" xml:space="preserve"><value>Trial unavailable for this account.</value></data>
+  <data name="upload_message_label" xml:space="preserve"><value>Note for the recipient (optional)</value></data>
+  <data name="upload_message_placeholder" xml:space="preserve"><value>e.g. Hi! Here's the file — due Friday.</value></data>
+  <data name="upload_message_hint" xml:space="preserve"><value>Shown on the download page. Editable until the first download.</value></data>
+  <data name="upload_expiry_label" xml:space="preserve"><value>Link expires in</value></data>
+  <data name="upload_expiry_2h" xml:space="preserve"><value>2 hours (quick share)</value></data>
+  <data name="upload_expiry_24h" xml:space="preserve"><value>24 hours</value></data>
+  <data name="upload_expiry_7d" xml:space="preserve"><value>7 days</value></data>
+  <data name="upload_expiry_hint" xml:space="preserve"><value>Free links live up to 7 days. Pro: pick any duration.</value></data>
+  <data name="upload_expiry_days_hint" xml:space="preserve"><value>Days (1–{0})</value></data>
+  <data name="upload_share_btn" xml:space="preserve"><value>Share</value></data>
+  <data name="upload_share_aria" xml:space="preserve"><value>Share the link via the system share sheet</value></data>
+  <data name="upload_share_title" xml:space="preserve"><value>QuickShare — file for you</value></data>
+  <data name="upload_share_text" xml:space="preserve"><value>Here's a file I shared with QuickShare</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Report abuse / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Known devices</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Devices that have signed in to your account. Remove any you don't recognize.</value></data>

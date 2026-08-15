@@ -627,6 +627,19 @@
   <data name="trial_option_desc" xml:space="preserve"><value>Không cần thẻ. Đầy đủ tính năng Pro trong một tuần.</value></data>
   <data name="trial_option_btn" xml:space="preserve"><value>Bắt đầu dùng thử 7 ngày</value></data>
   <data name="trial_option_error" xml:space="preserve"><value>Tài khoản này không thể dùng thử.</value></data>
+  <data name="upload_message_label" xml:space="preserve"><value>Lời nhắn cho người nhận (tùy chọn)</value></data>
+  <data name="upload_message_placeholder" xml:space="preserve"><value>VD: Chào bạn! Đây là file — hạn chót thứ Sáu.</value></data>
+  <data name="upload_message_hint" xml:space="preserve"><value>Hiện trên trang tải file. Sửa được cho đến khi file được tải lần đầu.</value></data>
+  <data name="upload_expiry_label" xml:space="preserve"><value>Link hết hạn sau</value></data>
+  <data name="upload_expiry_2h" xml:space="preserve"><value>2 giờ (chia sẻ nhanh)</value></data>
+  <data name="upload_expiry_24h" xml:space="preserve"><value>24 giờ</value></data>
+  <data name="upload_expiry_7d" xml:space="preserve"><value>7 ngày</value></data>
+  <data name="upload_expiry_hint" xml:space="preserve"><value>Link miễn phí tồn tại tối đa 7 ngày. Pro: chọn tùy ý.</value></data>
+  <data name="upload_expiry_days_hint" xml:space="preserve"><value>Ngày (1–{0})</value></data>
+  <data name="upload_share_btn" xml:space="preserve"><value>Chia sẻ</value></data>
+  <data name="upload_share_aria" xml:space="preserve"><value>Chia sẻ link qua bảng chia sẻ hệ thống</value></data>
+  <data name="upload_share_title" xml:space="preserve"><value>QuickShare — file cho bạn</value></data>
+  <data name="upload_share_text" xml:space="preserve"><value>Đây là file tôi chia sẻ qua QuickShare</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Báo cáo lạm dụng / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Thiết bị đã biết</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Các thiết bị đã đăng nhập vào tài khoản. Gỡ bỏ thiết bị bạn không nhận ra.</value></data>
