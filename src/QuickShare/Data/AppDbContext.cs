@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<DailyAdTracking> DailyAdTrackings => Set<DailyAdTracking>();
     public DbSet<DailyP2PUsage> DailyP2PUsages => Set<DailyP2PUsage>();
+    public DbSet<FeatureFlagOverride> FeatureFlagOverrides => Set<FeatureFlagOverride>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -188,6 +189,14 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FeatureFlagOverride>(entity =>
+        {
+            entity.ToTable("feature_flag_overrides");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Key).IsRequired().HasMaxLength(64);
+            entity.HasIndex(e => e.Key).IsUnique();
         });
 
     }

@@ -14,6 +14,7 @@ public static class TestAuthDefaults
 {
     public const string Scheme = "TestAuth";
     public const string UserIdHeader = "X-Test-UserId";
+    public const string EmailHeader = "X-Test-Email";
 }
 
 public sealed class TestAuthSchemeOptions : AuthenticationSchemeOptions
@@ -44,12 +45,18 @@ public sealed class TestAuthHandler : AuthenticationHandler<TestAuthSchemeOption
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        var email = Request.Headers[TestAuthDefaults.EmailHeader].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            email = "test@localhost";
+        }
+
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
             new Claim(AuthConstants.ProviderClaimType, TestAuthProvider.Value),
             new Claim(ClaimTypes.Name, "Test User"),
-            new Claim(ClaimTypes.Email, "test@localhost")
+            new Claim(ClaimTypes.Email, email)
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);

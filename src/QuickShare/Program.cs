@@ -12,6 +12,7 @@ using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Shares.P2P;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Caching;
+using QuickShare.Infrastructure.FeatureFlags;
 using QuickShare.Infrastructure.Jobs;
 using QuickShare.Infrastructure.Middleware;
 using Serilog;
@@ -201,6 +202,11 @@ builder.Services.AddFusionCache()
     });
 
 builder.Services.AddSingleton<CacheService>();
+
+// ── Feature flags + admin gate ──
+builder.Services.Configure<FeatureFlagSettings>(builder.Configuration.GetSection(FeatureFlagSettings.Section));
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
+builder.Services.AddScoped<IFeatureFlagService, FeatureFlagService>();
 
 builder.Host.UseWolverine(opts =>
 {

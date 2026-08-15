@@ -1501,3 +1501,112 @@ html, body {
 .dl-expiry-nudge:hover {
     color: var(--db-color-accent-text);
 }
+
+/* ─── Admin: feature flags (shared for HTMX lazy-load) ─── */
+.admin-flags-heading {
+    margin-bottom: var(--db-space-4);
+}
+
+.admin-flags-card {
+    width: 100%;
+    max-width: 44rem;
+}
+
+.admin-flags-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--db-text-sm);
+}
+
+.admin-flags-table th {
+    text-align: left;
+    padding: var(--db-space-3) var(--db-space-3);
+    border-bottom: 1px solid var(--db-color-border);
+    color: var(--db-color-text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-flag-row td {
+    padding: var(--db-space-3);
+    border-bottom: 1px solid var(--db-color-border);
+    vertical-align: middle;
+}
+
+.admin-flag-row:last-child td {
+    border-bottom: none;
+}
+
+.admin-flag-key {
+    display: block;
+    font-weight: 600;
+    color: var(--db-color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-flag-desc {
+    display: block;
+    margin-top: var(--db-space-1);
+    color: var(--db-color-text-muted);
+}
+
+.admin-flag-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.admin-flag-toggle input[type="checkbox"] {
+    accent-color: var(--db-color-accent);
+}
+
+.admin-flag-percent {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-1);
+    color: var(--db-color-text);
+    white-space: nowrap;
+}
+
+.admin-flag-percent input[type="number"] {
+    width: 4.5rem;
+    padding: var(--db-space-1) var(--db-space-2);
+    border: 1px solid var(--db-color-border);
+    border-radius: var(--db-radius-sm);
+    background: var(--db-color-surface);
+    color: var(--db-color-text);
+    font-size: var(--db-text-sm);
+}
+
+.admin-flag-form {
+    display: inline-flex;
+    align-items: center;
+}
+
+.admin-flag-save-btn {
+    padding: var(--db-space-1) var(--db-space-3);
+    font-size: var(--db-text-sm);
+}
+
+/* Skeleton */
+.admin-skeleton-line {
+    height: 1.5rem;
+    background: var(--db-color-surface);
+    border-radius: var(--db-radius-sm);
+    animation: admin-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.admin-skeleton-row {
+    margin-bottom: var(--db-space-4);
+}
+
+.admin-skeleton-row:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes admin-skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+}

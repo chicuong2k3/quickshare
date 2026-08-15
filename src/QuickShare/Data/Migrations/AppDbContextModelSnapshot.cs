@@ -194,6 +194,37 @@ namespace QuickShare.Migrations
                     b.ToTable("download_tracking", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.FeatureFlagOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("RolloutPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("feature_flag_overrides", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
                 {
                     b.Property<Guid>("Id")

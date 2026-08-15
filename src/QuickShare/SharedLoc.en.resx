@@ -553,4 +553,17 @@
   <data name="dl_expiry_download_now" xml:space="preserve"><value>Download now</value></data>
   <data name="footer_terms" xml:space="preserve"><value>Terms of Service</value></data>
   <data name="footer_privacy" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="admin_flags_page_title" xml:space="preserve"><value>Feature flags — QuickShareCloud</value></data>
+  <data name="admin_flags_title" xml:space="preserve"><value>Feature flags</value></data>
+  <data name="admin_flags_subtitle" xml:space="preserve"><value>Roll out features safely. Changes apply immediately.</value></data>
+  <data name="admin_flags_forbidden" xml:space="preserve"><value>Only admins can manage feature flags.</value></data>
+  <data name="admin_flags_empty" xml:space="preserve"><value>No feature flags are configured.</value></data>
+  <data name="admin_flags_col_key" xml:space="preserve"><value>Flag</value></data>
+  <data name="admin_flags_col_enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="admin_flags_col_rollout" xml:space="preserve"><value>Rollout</value></data>
+  <data name="admin_flags_col_actions" xml:space="preserve"><value>Save</value></data>
+  <data name="admin_flags_on" xml:space="preserve"><value>On</value></data>
+  <data name="admin_flags_off" xml:space="preserve"><value>Off</value></data>
+  <data name="admin_flags_rollout_label" xml:space="preserve"><value>Rollout percentage</value></data>
+  <data name="admin_flags_save_btn" xml:space="preserve"><value>Save</value></data>
 </root>

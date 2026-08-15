@@ -41,6 +41,9 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
         builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
         builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");
+        // The default seeded test user ("test@quickshare.test") is an admin, so the
+        // feature-flag admin surface is exercisable from E2E tests.
+        builder.UseSetting("Admin:Emails:0", TestUserEmail);
 
         builder.ConfigureTestServices(services =>
         {
@@ -89,11 +92,13 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     /// <summary>
     /// Client authenticated as the given provider key (via X-Test-UserId header).
     /// The user must exist — the default is seeded, others via <see cref="SeedUserAsync"/>.
+    /// The email claim defaults to the seeded user's email (admin in the test config).
     /// </summary>
     public HttpClient CreateAuthenticatedClient(string userId)
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, userId);
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.EmailHeader, TestUserEmail);
         return client;
     }
 
