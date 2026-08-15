@@ -10,6 +10,8 @@ public sealed class PartUrlsValidator : Validator<PartUrlsRequest>
 
         RuleFor(x => x.PartNumbers)
             .NotEmpty()
-            .WithMessage("At least one part number is required.");
+            .WithMessage("At least one part number is required.")
+            .Must(parts => parts.All(p => p is >= 1 and <= StartR2.StartR2Handler.MaxPartNumber))
+            .WithMessage($"Part numbers must be between 1 and {StartR2.StartR2Handler.MaxPartNumber}.");
     }
 }

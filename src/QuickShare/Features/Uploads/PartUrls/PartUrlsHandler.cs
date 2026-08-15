@@ -27,15 +27,9 @@ public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccess
         if (cmd.PartNumbers.Count > StartR2.StartR2Handler.MaxPartsFor(session.FileSize))
             return Result.Failure<PartUrlsResponse>(new LightResults.Error("Part count exceeds what this upload can need"));
 
-        IReadOnlyList<R2PartUrl> parts;
-        try
-        {
-            parts = await storage.GenerateUploadPartUrlsAsync(cmd.UploadId, session.StoragePath, cmd.PartNumbers, ct);
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure<PartUrlsResponse>(new LightResults.Error($"R2 part URL generation failed: {ex.Message}"));
-        }
+        // Presigned URL generation is local (no network) — an exception here is a bug
+        // and must surface to the global exception handler, not be masked as an R2 failure.
+        var parts = await storage.GenerateUploadPartUrlsAsync(cmd.UploadId, session.StoragePath, cmd.PartNumbers, ct);
 
         return Result.Success(new PartUrlsResponse(parts));
     }
