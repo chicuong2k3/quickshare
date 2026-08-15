@@ -473,6 +473,38 @@ namespace QuickShare.Migrations
                     b.ToTable("payment_intents", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.ReferralEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReferredUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReferrerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReferredUserId")
+                        .IsUnique();
+
+                    b.HasIndex("ReferrerUserId");
+
+                    b.ToTable("referral_events", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Subscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -584,6 +616,9 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("BonusQuotaBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -601,6 +636,12 @@ namespace QuickShare.Migrations
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("ReferralCode")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ReferredByUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

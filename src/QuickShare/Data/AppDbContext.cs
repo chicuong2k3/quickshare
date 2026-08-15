@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<OtpLockout> OtpLockouts => Set<OtpLockout>();
     public DbSet<AbuseReport> AbuseReports => Set<AbuseReport>();
     public DbSet<UserDevice> UserDevices => Set<UserDevice>();
+    public DbSet<ReferralEvent> ReferralEvents => Set<ReferralEvent>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
     public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -134,6 +135,15 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ReferralEvent>(entity =>
+        {
+            entity.ToTable("referral_events");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ReferrerUserId);
+            entity.HasIndex(e => e.ReferredUserId).IsUnique();
+            entity.Property(e => e.Type).IsRequired();
         });
 
         modelBuilder.Entity<PaymentEvent>(entity =>

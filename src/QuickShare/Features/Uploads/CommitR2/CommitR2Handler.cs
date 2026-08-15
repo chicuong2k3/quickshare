@@ -1,6 +1,7 @@
 using LightResults;
 using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
+using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Constants;
 using QuickShare.Infrastructure.Email;
 using System.Security.Cryptography;
@@ -150,6 +151,9 @@ public sealed class CommitR2Handler(
         if (quota is not null)
             await quota.RecordAsync(user!.Id, plan, actualSize, ct);
 
+        if (user is not null)
+            await ReferralService.ReleaseOnFirstUploadAsync(user, db, ct);
+
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);
 
@@ -162,7 +166,11 @@ public sealed class CommitR2Handler(
         }
 
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
-        return Result.Success(new CommitR2Response(shareCode, $"{baseUrl}/d/{shareCode}", expiresAt));
+        var shareLink = $"{baseUrl}/d/{shareCode}";
+        if (!string.IsNullOrEmpty(user?.ReferralCode))
+            shareLink += $"?{ReferralPolicy.QueryParam}={user.ReferralCode}";
+
+        return Result.Success(new CommitR2Response(shareCode, shareLink, expiresAt));
     }
 
     /// <summary>

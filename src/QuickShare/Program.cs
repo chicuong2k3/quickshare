@@ -355,6 +355,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 // Register in-process (no HTTP roundtrip) via the shared registration service.
                 var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
                 var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
+                var referralCode = ctx.HttpContext.Request.Cookies[ReferralPolicy.CookieName];
                 var profile = await UserRegistrationService.RegisterAsync(
                     AuthConstants.GoogleProvider,
                     subject,
@@ -363,7 +364,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                     avatar,
                     db,
                     ctx.HttpContext.RequestAborted,
-                    analytics);
+                    analytics,
+                    referralCode);
 
                 // New-device login alert (issue #149): fingerprint UA + IP, email on first sighting.
                 var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();

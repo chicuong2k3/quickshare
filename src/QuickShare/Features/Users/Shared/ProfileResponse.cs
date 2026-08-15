@@ -6,5 +6,7 @@ public sealed record ProfileResponse(
     string Email,
     string AvatarUrl,
     string Plan,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string? ReferralCode,
+    long BonusQuotaBytes
 );

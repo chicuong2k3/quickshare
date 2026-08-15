@@ -15,7 +15,8 @@ public static class UserRegistrationService
         string? avatarUrl,
         AppDbContext db,
         CancellationToken ct,
-        AnalyticsService? analytics = null)
+        AnalyticsService? analytics = null,
+        string? referralCode = null)
     {
         var existing = await db.UserLogins
             .Include(l => l.User)
@@ -39,7 +40,8 @@ public static class UserRegistrationService
             Name = name,
             Email = email,
             AvatarUrl = avatarUrl ?? string.Empty,
-            Plan = PlanTierLimits.Free
+            Plan = PlanTierLimits.Free,
+            ReferralCode = await ReferralService.GenerateCodeAsync(db, ct)
         };
         db.Users.Add(user);
 
@@ -61,6 +63,9 @@ public static class UserRegistrationService
             TransferCount = 0
         });
 
+        await db.SaveChangesAsync(ct);
+
+        await ReferralService.ClaimAsync(db, user.Id, referralCode, ct);
         await db.SaveChangesAsync(ct);
 
         if (analytics is not null)

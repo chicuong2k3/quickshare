@@ -13,19 +13,21 @@ public sealed class QuotaService(AppDbContext db)
     /// </summary>
     public async Task<QuotaCheckResult> CheckAsync(Guid userId, string plan, long size, CancellationToken ct)
     {
-        var quota = PlanTierLimits.GetMonthlyQuota(plan);
-        if (quota is null)
+        var planQuota = PlanTierLimits.GetMonthlyQuota(plan);
+        if (planQuota is null)
             return QuotaCheckResult.Unlimited();
+
+        var quota = planQuota.Value + await BonusAsync(userId, ct);
 
         var usage = await db.UserUsages
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.UserId == userId && u.PeriodStart == CurrentMonthStartUtc(), ct);
 
         var used = usage?.TotalBytesUploaded ?? 0;
-        if (size > quota.Value - used)
-            return QuotaCheckResult.Exceeded(used, quota.Value);
+        if (size > quota - used)
+            return QuotaCheckResult.Exceeded(used, quota);
 
-        return QuotaCheckResult.Allowed(used, quota.Value);
+        return QuotaCheckResult.Allowed(used, quota);
     }
 
     /// <summary>
@@ -35,13 +37,25 @@ public sealed class QuotaService(AppDbContext db)
     /// </summary>
     public async Task RecordAsync(Guid userId, string plan, long size, CancellationToken ct)
     {
-        var quota = PlanTierLimits.GetMonthlyQuota(plan);
-        if (quota is null)
+        var planQuota = PlanTierLimits.GetMonthlyQuota(plan);
+        if (planQuota is null)
             return;
 
         var usage = await GetOrCreateAsync(userId, ct);
         usage.TotalBytesUploaded += size;
         usage.TransferCount++;
+    }
+
+    /// <summary>Permanent referral bonus (issue #15), on top of the plan quota.</summary>
+    private async Task<long> BonusAsync(Guid userId, CancellationToken ct)
+    {
+        var bonus = await db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => (long?)u.BonusQuotaBytes)
+            .FirstOrDefaultAsync(ct);
+
+        return bonus ?? 0;
     }
 
     private async Task<UserUsage> GetOrCreateAsync(Guid userId, CancellationToken ct)

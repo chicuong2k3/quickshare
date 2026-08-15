@@ -385,7 +385,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-
+        // Referral attribution (issue #15): visiting a link tagged ?r= records
+        // the referrer in a 30-day cookie; signup later consumes it.
+        var httpContext = HttpContextAccessor.HttpContext!;
+        var refCode = httpContext.Request.Query[ReferralPolicy.QueryParam].FirstOrDefault();
+        if (!string.IsNullOrEmpty(refCode))
+        {
+            httpContext.Response.Cookies.Append(ReferralPolicy.CookieName, refCode, new CookieOptions
+            {
+                MaxAge = TimeSpan.FromDays(ReferralPolicy.CookieDays),
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax
+            });
+        }
 
         try
         {
