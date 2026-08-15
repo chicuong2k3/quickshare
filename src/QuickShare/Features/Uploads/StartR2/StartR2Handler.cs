@@ -1,4 +1,5 @@
 using LightResults;
+using QuickShare.Features.Uploads.Shared;
 
 
 namespace QuickShare.Features.Uploads.StartR2;
@@ -7,14 +8,19 @@ public record StartR2Command(string FileName, long FileSize, string ContentType,
 
 public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
 
-public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+public sealed class StartR2Handler(
+    IStorageProvider storage,
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<StartR2Handler> logger)
 {
     // S3/R2 minimum part size (all parts except the last). Caps how many presigned
     // part URLs a client can request for a declared file size.
     internal const long MinPartBytes = 5 * 1024 * 1024;
 
+    internal const int MaxPartNumber = 10_000;
+
     internal static int MaxPartsFor(long fileSize)
-        => (int)Math.Min(10_000, (fileSize + MinPartBytes - 1) / MinPartBytes + 1);
+        => (int)Math.Min(MaxPartNumber, (fileSize + MinPartBytes - 1) / MinPartBytes + 1);
 
     public async Task<Result<StartR2Response>> Handle(StartR2Command cmd, AppDbContext db, CancellationToken ct)
     {
@@ -26,10 +32,6 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
             return Result.Failure<StartR2Response>(new LightResults.Error(
                 $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
 
-        if (cmd.PartNumbers.Count > MaxPartsFor(cmd.FileSize))
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"Part count {cmd.PartNumbers.Count} exceeds what a {cmd.FileSize}-byte file can need"));
-
         var deliveryId = Guid.CreateVersion7();
 
         R2InitResult initResult;
@@ -37,23 +39,16 @@ public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccesso
         {
             initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, ct);
         }
-        catch (Exception ex)
+        catch (R2StorageException ex)
         {
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"R2 init failed: {ex.Message}"));
+            logger.LogError(ex, "R2 init failed for delivery {DeliveryId}", deliveryId);
+            return Result.Failure<StartR2Response>(new LightResults.Error(UploadErrors.R2Upstream + "init failed"));
         }
 
-        IReadOnlyList<R2PartUrl> partUrls;
-        try
-        {
-            partUrls = await storage.GenerateUploadPartUrlsAsync(
-                initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, ct);
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"R2 part URL generation failed: {ex.Message}"));
-        }
+        // Presigned URL generation is local (no network) — an exception here is a bug
+        // and must surface to the global exception handler, not be masked as an R2 failure.
+        var partUrls = await storage.GenerateUploadPartUrlsAsync(
+            initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, ct);
 
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
         var session = new UploadSession
