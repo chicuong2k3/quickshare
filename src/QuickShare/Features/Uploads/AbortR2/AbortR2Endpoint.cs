@@ -1,3 +1,5 @@
+using QuickShare.Features.Uploads.Shared;
+
 namespace QuickShare.Features.Uploads.AbortR2;
 
 public sealed class AbortR2Endpoint : Endpoint<AbortR2Request>
@@ -25,7 +27,7 @@ public sealed class AbortR2Endpoint : Endpoint<AbortR2Request>
         if (result.IsSuccess())
             await Send.OkAsync(cancellation: ct);
         else if (result.IsFailure(out var error))
-            ThrowError(error.Message, error.Message.Contains("R2") ? 502 : 400);
+            ThrowError(error.Message, error.Message.StartsWith(UploadErrors.R2Upstream, StringComparison.Ordinal) ? 502 : 400);
     }
 }
 

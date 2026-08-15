@@ -1,11 +1,15 @@
 using LightResults;
+using QuickShare.Features.Uploads.Shared;
 
 
 namespace QuickShare.Features.Uploads.AbortR2;
 
 public record AbortR2Command(Guid DeliveryId, string UploadId, string ObjectKey);
 
-public sealed class AbortR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+public sealed class AbortR2Handler(
+    IStorageProvider storage,
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<AbortR2Handler> logger)
 {
     public async Task<Result> Handle(AbortR2Command cmd, AppDbContext db, CancellationToken ct)
     {
@@ -28,9 +32,10 @@ public sealed class AbortR2Handler(IStorageProvider storage, IHttpContextAccesso
         {
             await storage.AbortR2MultipartUploadAsync(cmd.UploadId, session.StoragePath, ct);
         }
-        catch (Exception ex)
+        catch (R2StorageException ex)
         {
-            return Result.Failure(new LightResults.Error($"R2 abort failed: {ex.Message}"));
+            logger.LogError(ex, "R2 abort failed for delivery {DeliveryId}", cmd.DeliveryId);
+            return Result.Failure(new LightResults.Error(UploadErrors.R2Upstream + "abort failed"));
         }
 
         db.UploadSessions.Remove(session);
