@@ -172,6 +172,7 @@ builder.Services.Configure<QuickShare.Infrastructure.Email.EmailOptions>(
     builder.Configuration.GetSection(QuickShare.Infrastructure.Email.EmailOptions.Section));
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.EmailSender>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.UnsubscribeTokens>();
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailTokens>();
 
 builder.Services.AddHostedService<DeliveryCleanupService>();
 builder.Services.AddHostedService<ZombiePartSweeper>();
