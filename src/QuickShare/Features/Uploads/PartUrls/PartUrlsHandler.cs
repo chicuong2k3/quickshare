@@ -19,7 +19,7 @@ public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccess
                 s.Id == cmd.DeliveryId &&
                 s.SenderId == senderId &&
                 s.R2UploadId == cmd.UploadId &&
-                s.Status == "InProgress", ct);
+                s.Status == UploadSessionStatus.InProgress, ct);
 
         if (session is null || string.IsNullOrEmpty(session.StoragePath))
             return Result.Failure<PartUrlsResponse>(new LightResults.Error("No matching in-progress upload session"));

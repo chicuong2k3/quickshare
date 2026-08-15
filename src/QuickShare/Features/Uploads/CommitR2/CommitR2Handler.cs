@@ -26,7 +26,7 @@ public sealed class CommitR2Handler(
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
         var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);
         if (session is null ||
-            session.Status != "InProgress" ||
+            session.Status != UploadSessionStatus.InProgress ||
             session.R2UploadId != cmd.UploadId ||
             session.StoragePath != cmd.ObjectKey ||
             session.SenderId != user?.Id)
@@ -94,7 +94,7 @@ public sealed class CommitR2Handler(
             Source = DeliverySources.Normalize(cmd.Source)
         };
 
-        session.Status = "Committed";
+        session.Status = UploadSessionStatus.Committed;
         session.R2UploadId = null;
 
         db.Deliveries.Add(delivery);

@@ -20,7 +20,7 @@ public sealed class AbortR2Handler(
         // Mismatch is a silent no-op: abort is best-effort and this avoids probing.
         var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);
         if (session is null ||
-            session.Status != "InProgress" ||
+            session.Status != UploadSessionStatus.InProgress ||
             session.R2UploadId != cmd.UploadId ||
             session.SenderId != user?.Id ||
             string.IsNullOrEmpty(session.StoragePath))
