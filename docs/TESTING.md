@@ -9,6 +9,7 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 |---|---|
 | Which features exist / matter? | `docs/backlog.md` — tiered feature inventory |
 | What can I test right now (implemented)? | `docs/TESTABLE.md` — implemented + testable snapshot |
+| **What order do I test everything in?** | **`docs/test-runbook.md` — ordered manual checklist (risk-first: money → core → security → ops)** |
 | What to test for one issue? | The issue's `## Manual Test Checklist` section |
 | What to re-test after a change? | Regression matrix below |
 

@@ -11,9 +11,9 @@ backlog item, not implemented — see [`docs/backlog.md`](backlog.md).
 | ✅ committed | merged to git `HEAD` — test from a clean checkout |
 | ⚠️ working-tree | implemented locally but **NOT committed** (uncommitted diff in your checkout) |
 
-> ⚠️ The whole **Security & Trust batch** (section 4) currently sits uncommitted in the
-> working tree. It builds clean (0 warnings) and has its own E2E tests, but it is not yet
-> merged. Test it against the current checkout; it is **not** on `main`.
+> The whole **Security & Trust batch** (section 4) is committed to `dev` as of 2026-08-16
+> (commits `fab6003` + `d702fcf`). It builds clean and ships its own E2E tests. The
+> ordered manual checklist lives in [`docs/test-runbook.md`](test-runbook.md).
 
 ## 0. Run the app
 
@@ -65,10 +65,11 @@ dotnet test tests/QuickShare.Browser.Tests   # Playwright on installed Chrome (~
 | HTMX lazy-load shell + cache | core | open any page → skeleton instant, data fills | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests` |
 | Global API rate limiting | #52 | hammer `/api` → 429 + `Retry-After` | — |
 
-## 4. Security & Trust batch — ⚠️ working-tree (implemented, NOT committed)
+## 4. Security & Trust batch — ✅ committed
 
-Everything here maps to Tier 2 backlog items and was built together. Build passes; each
-area ships its own E2E test.
+Everything here maps to Tier 2 backlog items and was built together (issues #53 #82 #121
+#148 #149 #175, closed 2026-08-16). Each area ships its own E2E test. Manual steps:
+[`docs/test-runbook.md`](test-runbook.md) Group C.
 
 | Feature | Issue | How to test | Automated coverage |
 |---|---|---|---|
@@ -98,8 +99,8 @@ Some features only show their full behavior when the backing service is configur
 
 - `docs/backlog.md` status snapshot says "verified 2026-08-15" and lists **#52 open** and
   **Tier 2 all open**. Both are stale: rate limiting is committed and wired in
-  `Program.cs`, and the Tier 2 batch is implemented (uncommitted). Re-verify before
-  trusting the snapshot.
+  `Program.cs`, and the Tier 2 batch was implemented and closed 2026-08-16 (see
+  `docs/test-runbook.md`). `docs/backlog.md` §4 has been updated to reflect Tier 2 done.
 - Manual test checklist lives in each feature issue (`## Manual Test Checklist`). No
   checklist → the issue is not done (see `AGENTS.md` → Feature Issue Testing Rule).
 - Keep this file fresh when features ship: see `AGENTS.md` → Issue Completion Docs
