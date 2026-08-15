@@ -251,6 +251,43 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task StartUpload_WithSenderEmail_StoresItOnSession()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+            SenderEmail = "sender@example.com",
+        });
+        Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var session = await db.UploadSessions.AsNoTracking().FirstAsync(s => s.Id == start.DeliveryId);
+        Assert.Equal("sender@example.com", session.SenderEmail);
+    }
+
+    [Fact]
+    public async Task StartUpload_InvalidSenderEmail_Returns400()
+    {
+        var client = CreateNoRedirectClient();
+        var response = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+            SenderEmail = "not-an-email",
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task PartUrls_InProgressSession_ReturnsFreshUrls()
     {
         var client = CreateNoRedirectClient(authenticated: true);

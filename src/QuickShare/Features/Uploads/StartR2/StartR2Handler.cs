@@ -4,7 +4,7 @@ using QuickShare.Features.Uploads.Shared;
 
 namespace QuickShare.Features.Uploads.StartR2;
 
-public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers);
+public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail);
 
 public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
 
@@ -64,6 +64,7 @@ public sealed class StartR2Handler(
         {
             Id = deliveryId,
             SenderId = user?.Id,
+            SenderEmail = string.IsNullOrWhiteSpace(cmd.SenderEmail) ? null : cmd.SenderEmail.Trim(),
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,
