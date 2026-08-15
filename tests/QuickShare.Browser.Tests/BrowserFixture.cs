@@ -128,6 +128,9 @@ internal sealed class BrowserStorageStub : IStorageProvider
     public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
         => Task.CompletedTask;
 
+    public Task UploadObjectAsync(string objectKey, Stream content, string contentType, CancellationToken ct = default)
+        => Task.CompletedTask;
+
     public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
         => Task.FromResult(new Uri("http://stub.local/download"));
 
