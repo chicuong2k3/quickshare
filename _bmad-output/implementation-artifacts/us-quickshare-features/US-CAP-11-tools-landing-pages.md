@@ -31,6 +31,23 @@ As a marketer/user, I want share-text, online-clipboard, and uncompressed-images
 5. **No-JS guarantee** — every CTA is a plain `<a href>` to `/send` (HTMX lazy-load static-page exception applies — no DB/API calls on these pages), so `DownloadNoScriptTests`-style checks (no JS → CTA still navigates) pass without modification.
 6. **i18n note** — tool copy is hardcoded EN/VI in markup (violates SharedLoc-only rule); documented as known debt — text lives in page markup, not resx.
 
+## Flow Diagram
+
+```mermaid
+flowchart TD
+    A[ToolsLanding.razor shared shell: Heading, Description, Lede, PasteHint, Body] --> B1[/tools/share-text - ToolsShareText.razor]
+    A --> B2[/tools/online-clipboard - ToolsOnlineClipboard.razor]
+    A --> B3[/tools/send-images-uncompressed - ToolsSendImagesUncompressed.razor]
+    B1 --> C{First paint — HX-Request?}
+    C -- no --> D[Skeleton shell only — zero DB calls — <100ms]
+    C -- yes --> E[Static body — no DB/API on these pages]
+    B2 --> C
+    B3 --> C
+    D --> F[CTA: plain a href RoutePaths.Send — server-rendered, works no-JS]
+    E --> F
+    B2 -. optional paste-anywhere.js enhancement .-> F
+```
+
 ## Code Structure
 
 - `Components/Shared/ToolsLanding.razor` — shared landing shell + CTA.

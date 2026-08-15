@@ -39,6 +39,31 @@ As a sender, I want to protect a delivery with a 6-digit OTP and/or a password, 
 4. **Reward callback** — `QuickShareAds.init({ adUnitId: 'ca-app-pub-3940256099942544/5224354917', callbackUrl, antiForgeryToken, remainingAds })` → watch ad → rewarded → POST callback `{token, rewardAmount}` + `RequestVerificationToken` header → `RewardCallbackHandler` validates, records `DailyAdTracking`, dispatches CustomEvent `quickshare:ad-rewarded` (P2P uses this to unlock + refetch quota).
 5. **Divergence notes (vs AC)**: password gate in AC is **not implemented** — only 6-digit OTP exists (see CAP-2 divergence for encryption instead of obfuscation); "at most once per delivery" is enforced as a **daily per-user cap** (`ads:daily:{userId}:{date}`), not per-delivery.
 
+## Flow Diagram
+
+```mermaid
+flowchart TD
+    A[Upload.razor: sender sets optional 6-digit OTP] --> B[CommitR2Handler stores BCrypt hash - plaintext never stored]
+    B --> C[Recipient opens /d/ShareCode]
+    C --> D{HasOtp?}
+    D -- yes --> E[OTP phase - server-rendered, no-JS]
+    E --> F{POST verify-otp}
+    F -- correct 200 --> G[Unlocked]
+    F -- wrong 400 --> E
+    D -- no --> G
+    G --> H{Recipient plan at render time}
+    H -- Pro/Studio --> I[Empty ad card - never sees ads]
+    H -- Anonymous --> J[No ad - nothing to monetize]
+    H -- Free signed-in --> K[AdComponent prompt: RemainingAds = MaxDailyAds - completedToday]
+    K --> L{RemainingAds > 0?}
+    L -- yes --> M[Watch ad - reward callback - DailyAdTracking recorded]
+    L -- no 0 --> N[Blocked + ad_reward_limit_reached]
+    M --> O[File phase unlocked]
+    I --> O
+    J --> O
+    N --> O
+```
+
 ## Code Structure
 
 - `Features/Deliveries/Otp/{VerifyOtpEndpoint,VerifyOtpHandler}.cs` — OTP verify.

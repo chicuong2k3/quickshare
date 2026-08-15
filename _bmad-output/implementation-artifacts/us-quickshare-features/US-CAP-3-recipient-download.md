@@ -34,6 +34,35 @@ As a recipient, I want to open a share link on any device and download the file 
    - Full download → R2 presigned GET (7-day) + `DownloadCount++` persisted; `Range` request → 1-hour presigned URL, **no** count increment.
 6. **Expired UX (hand-off to CAP-5)** — handler returns 410 → page renders Expired state (filename + expiry), never a broken page.
 
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as Recipient Browser
+    participant W as Web Server (Download.razor)
+    participant C as FusionCache (TTL 30s)
+    participant H as DownloadDeliveryHandler
+    participant R2 as R2 Storage
+    R->>W: GET /d/{ShareCode}
+    W->>C: GetAsync download:info:{code}
+    C-->>W: DeliveryDownloadInfoResponse (fileName, hasOtp, isEncrypted, senderPlan, expiry)
+    W-->>R: Server-rendered shell + download-info-data (initial phase: otp | file — no-JS)
+    opt OTP gate (hasOtp)
+        R->>W: POST /api/deliveries/{code}/verify-otp
+        W-->>R: 200 verified / 400 incorrect-otp
+    end
+    opt Free-plan ad gate
+        R->>W: Ad countdown 5s → file phase
+    end
+    R->>R: handleDownload: no-JS → native nav; encrypted → fetchBytes
+    R->>H: GET /api/downloads/{code} (encrypted) or native navigation
+    H-->>R: 404 not-found / 410 expired / 403 limit-OTP / 500 no-storage
+    H->>R2: Presigned GET (7-day) + DownloadCount++
+    R2-->>H: bytes
+    H-->>R: file (Range → 1h URL, no count increment)
+```
+
 ## Code Structure
 
 - `Features/Downloads/Download/DownloadDeliveryEndpoint.cs` + `DownloadDeliveryHandler.cs` — public pipe to R2.

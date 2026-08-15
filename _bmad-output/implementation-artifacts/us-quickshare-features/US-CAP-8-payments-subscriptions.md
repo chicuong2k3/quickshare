@@ -36,6 +36,32 @@ As a sender, I want to upgrade my plan by paying through PayOS (VietQR, card, e-
 5. **Billing history** — `/account/billing` (AccountBilling page): `BillingHistoryService.GetForUserAsync(userId, ct)` lists past payments + `SubscriptionService.GetCurrentAsync` current plan; cancel flow posts `SubscriptionActionCancel` = `"cancel"` → `SubscriptionService.CancelAsync` (graceful: keeps tier until cycle end, `FutureChange = Free`), then `UserCacheInvalidator.EvictAsync`.
 6. **Expiry of benefits** — `SubscriptionExpiryJob` (periodic) sweeps subscriptions past their paid period → downgrades tier → evicts user cache.
 
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User Browser (Upgrade.razor)
+    participant S as Server (PayOSProxy / CheckoutService)
+    participant P as PayOS
+    participant C as DB / Cache
+    U->>U: Select plan (Pro/Studio monthly/yearly from PricingKeys)
+    U->>S: First HTMX GET → CreatePaymentLinkAsync
+    S->>P: payOS.createPaymentLink(planId, planName, price, returnUrl, cancelUrl)
+    P-->>S: paymentLinkId
+    S->>C: Persist Checkout row (open-checkout guard: reuse existing link)
+    S-->>U: PayOS hosted checkout iframe (sandbox + lazy)
+    U->>P: Pay in iframe
+    U->>S: Poll payment-status → IsCompletedAsync
+    P-->>S: Webhook (public AllowAnonymous, signature-verified)
+    S->>C: Upsert Subscription (Tier, PlanId, BillingCycle, FutureChange)
+    S->>C: Evict user:plan:{userId} → new tier takes effect immediately
+    S-->>U: Redirect /account/billing (HTMXor header redirect)
+    U->>S: Cancel → SubscriptionActionCancel
+    S->>C: FutureChange = Free (tier kept until cycle end) + evict
+    S->>C: SubscriptionExpiryJob: past paid period → downgrade + evict
+```
+
 ## Code Structure
 
 - `Pages/Upgrade.razor` + `wwwroot/js/upgrade.js` — plan picker + PayOS iframe + polling.

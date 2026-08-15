@@ -33,6 +33,26 @@ As a sender, I want to sign in with my Google account and manage my profile, del
 5. **Billing** — `/account/billing` → `AccountBilling.razor` (see CAP-8): current plan + cancel (posts `SubscriptionActionCancel = "cancel"` → `SubscriptionService.CancelAsync` → `UserCacheInvalidator.EvictAsync`), history via `BillingHistoryService`.
 6. **Cache** — profile/deliveries queries go through FusionCache (user cache TTL 5 min) + direct `StaticCache` for plan; all mutations evict via `UserCacheInvalidator`.
 
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User Browser
+    participant S as Server (FastEndpoints)
+    participant C as FusionCache (user TTL 5 min)
+    U->>S: Login.razor → Google OAuth (GitHub button inert)
+    S-->>U: Auth cookie (dev auto-signin skips authenticated)
+    U->>S: GET /account (Authorize) → AccountTabs: Account / Deliveries / Billing
+    U->>S: /account/profile → avatar upload (≤5MB image preview) + display name
+    S->>C: Profile cache TTL 5 min
+    S-->>U: profileUpdated CustomEvent → other tabs refresh
+    U->>S: /account/deliveries → ListDeliveriesQuery(userId, cursor)
+    S-->>U: CursorPage<DeliveryItem> — infinite scroll hx-trigger=revealed, chunked
+    U->>S: /account/billing → current plan + cancel + history (CAP-8)
+    U->>S: Mutations (avatar/name/cancel) → UserCacheInvalidator evicts user:plan + profile
+```
+
 ## Code Structure
 
 - `Components/Pages/Login.razor` + `Features/Users/Shared/` — sign-in UI + shared user models.

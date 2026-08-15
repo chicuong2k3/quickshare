@@ -41,6 +41,31 @@ As a sender, I want to upload a file by dragging it onto the page or pasting an 
 7. **Result UX** — share-box + QR (inline SVG) + auto copy link; on invalid session/cancel → cancel button issues `/api/uploads/abort-r2` (mismatch = silent no-op, session not deleted).
 8. **Quota/caps (hand-off to CAP-6)** — `plan = user?.Plan ?? PlanTierLimits.Anonymous`; anonymous ceiling `PerkOwnerLimits` 100MB enforced server-side in start/commit handlers — client trust never assumed.
 
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Sender Browser (upload.js)
+    participant S as Server (StartR2 / CommitR2)
+    participant R as R2 Storage
+    B->>B: Drop/paste file → guard ≤5 GB
+    B->>B: AES-256-GCM key + 12B nonce → encrypt → [nonce][ciphertext]
+    B->>S: POST /api/uploads/start-r2 (fileName, fileSize, partNumbers)
+    S-->>B: 402 PlanLimitExceeded (over quota)
+    S-->>B: 200 session + presigned PUT URLs
+    loop 4 concurrent parts (retry ×3, refresh URLs)
+        B->>R: PUT part
+        R-->>B: ETag
+    end
+    B->>S: POST /api/uploads/commit-r2 (parts, otp, source)
+    S->>R: CompleteR2MultipartUpload + GetObjectSizeAsync (actual-size re-check)
+    S-->>B: 201 shareLink
+    B->>B: shareLink += "#key=" + base64url(rawKey)
+    B->>B: Auto-copy link + render QR (full URL incl. fragment)
+    Note over B,S: Key lives only in the URL fragment — never in requests / DB / R2
+```
+
 ## Code Structure
 
 - `Features/Uploads/StartR2/StartR2Endpoint.cs`, `StartR2Handler.cs`, `StartR2Validator.cs` — initiate multipart; quota/part-count gates.

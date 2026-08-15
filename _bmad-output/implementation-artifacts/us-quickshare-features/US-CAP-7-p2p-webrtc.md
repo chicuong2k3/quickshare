@@ -35,6 +35,32 @@ As a sender, I want to transfer a file directly to a recipient device-to-device 
 6. **Client receive (p2pDownload)** — `p2pDownload.js`: same `encryption.js`; inbound re-hydration: if receiver's `call` has `allowSendReflection` → re-inject the `call` into `p2pSend` so the same 20s receiver-connect → send pipeline is reused; decrypt each chunk with `setBigUint64(4, counter, false)` AEAD nonce; accumulate `BlobParts`; stats engine (`files` count) for payload balance; **>500MB → StreamSaver** (`cdn.jsdelivr.net/npm/streamsaver@2.0.6`) writing to disk, else in-memory Blob → `video/vnd.fastly.recorder-via-flv` or `saveBytes`.
 7. **Quota/cleanup** — idle sessions expire via `RoomTtl` 5 min / `CleanupInterval` 30s; receiver never opens TCP sockets to sender (bytes move over the encrypted reliable channel); quota recorded per-guest (CAP-6).
 
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as Sender Browser (p2pSend.js)
+    participant SRV as Server (P2PConnectionManager / P2PHub)
+    participant R as Recipient Browser (p2pDownload.js)
+    S->>SRV: POST /api/p2p/share → 201 shareCode (1:1 guest quota; 429 anti-abuse)
+    S->>SRV: CreateSessionAsync (ExpiresAt 5 min)
+    R->>SRV: ReceiverSessionAsync(shareId) + TryAcceptConnection
+    SRV-->>R: 503 passthrough if room not ready
+    S->>SRV: WebSocket /ws/connect/{shareCode}
+    R->>SRV: WebSocket /ws/connect/{shareCode}
+    S->>SRV: offer + ICE candidates (TransportOffer)
+    SRV-->>R: route offer
+    R-->>SRV: answer + ICE
+    SRV-->>S: route answer
+    Note over S,R: DataChannel established — file bytes never touch server
+    S->>S: PIN → PBKDF2-SHA256 600k → AES-256-GCM per-chunk key
+    S->>R: Encrypted chunks over DataChannel (16KB, counter nonce, backpressure 1MB/512KB)
+    R->>R: Decrypt each chunk (setBigUint64 counter) → BlobParts
+    R->>R: >500MB → StreamSaver to disk; else in-memory Blob
+    Note over SRV: Idle rooms expire via RoomTtl 5 min / CleanupInterval 30s
+```
+
 ## Code Structure
 
 - `Features/Shares/P2P/CreateP2PShare/{Endpoint,Handler,Models}` — 201/429 + 1:1 quota entry.

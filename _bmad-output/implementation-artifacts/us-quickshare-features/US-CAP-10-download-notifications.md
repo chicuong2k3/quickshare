@@ -32,6 +32,27 @@ As a sender, I want an email notification when someone downloads my delivery, so
 
 **Divergence note (vs AC)**: AC/Q-3 implies a per-download email; production implements a **per-sender-per-cycle digest** (see step 2) to avoid notification spam — the AC's "one email per download" is intentionally not honored.
 
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as Recipient
+    participant H as DownloadDeliveryHandler
+    participant J as DownloadNotificationJob
+    participant E as EmailService
+    participant S as Sender
+    R->>H: Full download (DownloadCount++)
+    H->>J: Raise notification intent (async fire-and-forget — never blocks response)
+    J->>J: Periodic run: pull queued events, group by sender per cycle
+    J->>J: Resolve sender identity + locale (en/vi) + per-sender unsubscribe token
+    J->>E: One digest email per sender per cycle (lists all downloads in cycle)
+    E-->>S: Email with unsubscribe footer (SharedLoc templates)
+    J->>J: Persist NotificationRecord (CreatedAt via audit interceptor)
+    S->>E: Click unsubscribe (token-validated, no account required)
+    E-->>S: Future digests skipped
+```
+
 ## Code Structure
 
 - `Features/Downloads/Download/DownloadDeliveryHandler.cs` — download trigger point.

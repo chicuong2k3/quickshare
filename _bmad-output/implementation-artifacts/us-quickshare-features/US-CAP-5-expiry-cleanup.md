@@ -35,6 +35,22 @@ As a sender, I want my deliveries to expire automatically (24 h or 7 d by plan) 
 5. **Multipart tail cleanup** — `ZombiePartSweeper` (on startup + 1h interval): lists in-progress R2 multipart uploads, aborts ones stale > 1h; timeout is not treated as error (best-effort).
 6. **Client-facing flow** — share link past expiry → download /d/{code} → 410 → Expired phase (no JS needed for that state — server-rendered). Expired share never appears in history (`AccountHandler` filters expired out of the folder listing).
 
+## Flow Diagram
+
+```mermaid
+flowchart TD
+    A[CommitR2Handler: ExpiresAt = UtcNow + GetMaxExpiry - Free 24h / Pro 30d / Studio 90d] --> B[Delivery stored - audit fields via interceptor]
+    B --> C[Recipient opens /d/code or downloads]
+    C --> D{ExpiresAt < now?}
+    D -- yes --> E[410 - Expired state: filename + expiry - no-JS server-rendered]
+    D -- no --> F[Download OK]
+    B --> G[DeliveryExpiryJob every 5 min: mark MetadataExpired]
+    B --> H[DeliveryCleanupService every 60 min - never concurrent]
+    H --> I[Expired / limit-reached: delete R2 object best-effort + delete DB row + invalidate cache]
+    H --> J[Abandoned upload sessions UpdatedAt < 60 min: purge via delete-where]
+    B --> K[ZombiePartSweeper on startup + 1h: abort stale R2 multipart uploads > 1h]
+```
+
 ## Code Structure
 
 - `Infrastructure/Jobs/DeliveryExpiryJob.cs` — 5-min expiry flag sweep.

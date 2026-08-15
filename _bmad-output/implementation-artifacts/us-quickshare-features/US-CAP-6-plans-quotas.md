@@ -36,6 +36,23 @@ As a user, I want my plan to cap per-file size, monthly transfer volume, and del
 5. **P2P quota hand-off** — CAP-7 creates the 1:1 per-guest quota entry (free tier `PerkOwnerLimits` storage ceiling) so P2P recipients don't consume cloud bandwidth.
 6. **Cache** — `user:plan:{userId}` TTL 10 min (`StaticCache.Instance.GetOrSet`), invalidated on plan change (CAP-8) through `UserCacheInvalidator`.
 
+## Flow Diagram
+
+```mermaid
+flowchart TD
+    A[PlanTierLimits.InitializeCache - config: PerkOwnerLimits Anonymous + Free/Pro/Studio] --> B[plan = user?.Plan ?? Anonymous]
+    B --> C{StartR2Handler: declared size > GetMaxFileSize plan?}
+    C -- yes --> D[402 PlanLimitExceeded - upgrade CTA - never client-trusted]
+    C -- no --> E[MaxPartsFor = min 10000, ceil size / MinPartBytes + 1]
+    E --> F{CommitR2Handler: actual size via GetObjectSizeAsync}
+    F -- over --> G[Delete R2 object + fail]
+    F -- ok --> H[MaxDownloads = GetMaxDownloads plan]
+    H --> I{DownloadCount >= MaxDownloads?}
+    I -- yes --> J[403 blocked]
+    I -- no --> K[GetMaxExpiry clamp: Free 24h / Pro 30d / Studio 90d]
+    K --> L[user:plan cache TTL 10 min - evicted via UserCacheInvalidator on plan change]
+```
+
 ## Code Structure
 
 - `Infrastructure/Constants/PlanTierLimits.cs` — plan/limit registry + `InitializeCache`.
