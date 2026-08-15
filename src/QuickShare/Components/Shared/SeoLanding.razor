@@ -1,0 +1,30 @@
+@* Shared shell for static /seo landing pages. No async work, no DB — the
+   static-page exception to the HTMX lazy-load rule (AGENTS.md). *@
+
+<PageTitle>@Heading</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Description" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="tools-landing">
+        <h1 class="db-h1">@Heading</h1>
+        <p class="db-p db-text-muted tools-landing__lede">@Lede</p>
+
+        <a href="@RoutePaths.Send" class="tools-landing__box" data-ai-action="seo.cta.send">
+            <span class="tools-landing__box-hint">@CtaLabel</span>
+        </a>
+
+        <div class="tools-landing__body">
+            @Body
+        </div>
+    </article>
+</PageWrapper>
+
+@code {
+    [Parameter, EditorRequired] public string Heading { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Lede { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string CtaLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public RenderFragment? Body { get; set; }
+}

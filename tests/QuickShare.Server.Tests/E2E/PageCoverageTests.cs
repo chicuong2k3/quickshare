@@ -15,6 +15,10 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     [Theory]
     [InlineData("/")]
     [InlineData("/send")]
+    [InlineData("/how-to/send-large-files-free")]
+    [InlineData("/wetransfer-alternatives")]
+    [InlineData("/p2p-file-transfer")]
+    [InlineData("/vi/gui-file-lon-mien-phi")]
     public async Task PublicPage_Returns200(string url)
     {
         var client = _factory.CreateClient();

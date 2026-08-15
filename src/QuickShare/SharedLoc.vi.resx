@@ -640,6 +640,40 @@
   <data name="upload_share_aria" xml:space="preserve"><value>Chia sẻ link qua bảng chia sẻ hệ thống</value></data>
   <data name="upload_share_title" xml:space="preserve"><value>QuickShare — file cho bạn</value></data>
   <data name="upload_share_text" xml:space="preserve"><value>Đây là file tôi chia sẻ qua QuickShare</value></data>
+  <data name="nav_seo_send_large" xml:space="preserve"><value>Gửi file lớn miễn phí</value></data>
+  <data name="nav_seo_wt_alt" xml:space="preserve"><value>Thay thế WeTransfer</value></data>
+  <data name="nav_seo_p2p" xml:space="preserve"><value>Truyền file P2P</value></data>
+  <data name="seo_send_h1" xml:space="preserve"><value>Gửi file lớn miễn phí — không cần tài khoản</value></data>
+  <data name="seo_send_desc" xml:space="preserve"><value>Gửi file tối đa 5 GB miễn phí với mã hóa đầu cuối. Không cần tài khoản, không cần ứng dụng. Link của bạn, thời hạn do bạn chọn.</value></data>
+  <data name="seo_send_lede" xml:space="preserve"><value>Tải file lên, nhận link, chia sẻ. Người nhận tải trực tiếp từ link — không cần cài gì.</value></data>
+  <data name="seo_send_cta" xml:space="preserve"><value>Gửi file ngay — miễn phí</value></data>
+  <data name="seo_send_how_title" xml:space="preserve"><value>Cách hoạt động</value></data>
+  <data name="seo_send_how_body" xml:space="preserve"><value>Chọn file trên trang gửi, chờ tải lên xong, rồi chia sẻ link ở bất kỳ đâu — chat, email hoặc QR. Link hết hạn theo lựa chọn của bạn.</value></data>
+  <data name="seo_send_why_title" xml:space="preserve"><value>Vì sao chọn QuickShare</value></data>
+  <data name="seo_send_why_1" xml:space="preserve"><value>Mã hóa đầu cuối AES-256-GCM — khóa giải mã không bao giờ rời khỏi trình duyệt</value></data>
+  <data name="seo_send_why_2" xml:space="preserve"><value>File tối đa 5 GB miễn phí, tải lên tạm dừng và tiếp tục được</value></data>
+  <data name="seo_send_why_3" xml:space="preserve"><value>Link tồn tại tối đa 7 ngày ở gói miễn phí; Pro chọn thời hạn tùy ý đến 30 ngày</value></data>
+  <data name="seo_send_free_title" xml:space="preserve"><value>Gói miễn phí, nói thật</value></data>
+  <data name="seo_send_free_body" xml:space="preserve"><value>Miễn phí thật sự: 5 GB mỗi file, 15 GB mỗi tháng, link hết hạn từ 2 giờ đến 7 ngày. Không cần thẻ, không chiêu trò dùng thử.</value></data>
+  <data name="seo_wt_h1" xml:space="preserve"><value>Thay thế WeTransfer, so sánh thật lòng</value></data>
+  <data name="seo_wt_desc" xml:space="preserve"><value>WeTransfer so với QuickShare và các dịch vụ chia sẻ file khác: giới hạn dung lượng miễn phí, thời hạn, mã hóa và giá — cạnh nhau.</value></data>
+  <data name="seo_wt_lede" xml:space="preserve"><value>Bạn có nhiều lựa chọn. Đây là cách các dịch vụ phổ biến so sánh về những điều thực sự quan trọng cho một lần chia sẻ.</value></data>
+  <data name="seo_wt_cta" xml:space="preserve"><value>Dùng thử miễn phí — không cần tài khoản</value></data>
+  <data name="seo_wt_compare_title" xml:space="preserve"><value>Tóm tắt</value></data>
+  <data name="seo_wt_compare_1" xml:space="preserve"><value>WeTransfer miễn phí: 2 GB mỗi lần gửi, link 3 ngày, không mã hóa đầu cuối</value></data>
+  <data name="seo_wt_compare_2" xml:space="preserve"><value>QuickShare miễn phí: 5 GB mỗi file, link đến 7 ngày, mã hóa AES-256-GCM, không cần tài khoản</value></data>
+  <data name="seo_wt_compare_3" xml:space="preserve"><value>QuickShare Pro: 200 GB mỗi tháng, thời hạn tùy chỉnh đến 30 ngày, không quảng cáo, hàng đợi ưu tiên</value></data>
+  <data name="seo_wt_compare_4" xml:space="preserve"><value>QuickShare P2P: truyền trực tiếp thiết bị với thiết bị, không qua máy chủ</value></data>
+  <data name="seo_wt_note_title" xml:space="preserve"><value>Lời nói thật</value></data>
+  <data name="seo_wt_note_body" xml:space="preserve"><value>Chúng tôi làm ra QuickShare, nên trang này không trung lập — nhưng các con số trên là sự thật. Với một file lớn, hãy so sánh gói miễn phí và tự quyết định.</value></data>
+  <data name="seo_p2p_h1" xml:space="preserve"><value>Truyền file P2P — thiết bị với thiết bị</value></data>
+  <data name="seo_p2p_desc" xml:space="preserve"><value>Truyền file ngang hàng qua WebRTC: file đi thẳng từ người gửi đến người nhận, không lưu qua máy chủ.</value></data>
+  <data name="seo_p2p_lede" xml:space="preserve"><value>Đôi khi file không nên chạm vào máy chủ. Chế độ P2P gửi trực tiếp giữa hai trình duyệt.</value></data>
+  <data name="seo_p2p_cta" xml:space="preserve"><value>Bắt đầu truyền</value></data>
+  <data name="seo_p2p_how_title" xml:space="preserve"><value>Cách hoạt động</value></data>
+  <data name="seo_p2p_how_body" xml:space="preserve"><value>Người gửi mở trang P2P, người nhận tham gia bằng link, và file truyền qua kết nối WebRTC. Chỉ một relay tín hiệu nhỏ giúp hai trình duyệt tìm thấy nhau.</value></data>
+  <data name="seo_p2p_when_title" xml:space="preserve"><value>Khi nào nên dùng</value></data>
+  <data name="seo_p2p_when_body" xml:space="preserve"><value>P2P phù hợp khi cả hai người đều online cùng lúc và quyền riêng tư quan trọng nhất. Nếu người nhận có thể offline — hoặc file rất lớn — gửi qua máy chủ sẽ đáng tin cậy hơn.</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Báo cáo lạm dụng / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Thiết bị đã biết</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Các thiết bị đã đăng nhập vào tài khoản. Gỡ bỏ thiết bị bạn không nhận ra.</value></data>

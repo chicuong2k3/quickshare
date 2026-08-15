@@ -639,6 +639,40 @@
   <data name="upload_share_aria" xml:space="preserve"><value>Share the link via the system share sheet</value></data>
   <data name="upload_share_title" xml:space="preserve"><value>QuickShare — file for you</value></data>
   <data name="upload_share_text" xml:space="preserve"><value>Here's a file I shared with QuickShare</value></data>
+  <data name="nav_seo_send_large" xml:space="preserve"><value>Send large files free</value></data>
+  <data name="nav_seo_wt_alt" xml:space="preserve"><value>WeTransfer alternatives</value></data>
+  <data name="nav_seo_p2p" xml:space="preserve"><value>P2P file transfer</value></data>
+  <data name="seo_send_h1" xml:space="preserve"><value>Send large files free — no account needed</value></data>
+  <data name="seo_send_desc" xml:space="preserve"><value>Send files up to 5 GB free with end-to-end encryption. No account, no app, no sign-up. Your link, your expiry.</value></data>
+  <data name="seo_send_lede" xml:space="preserve"><value>Upload a file, get a link, share it. The recipient downloads straight from the link — nothing to install.</value></data>
+  <data name="seo_send_cta" xml:space="preserve"><value>Send a file now — it's free</value></data>
+  <data name="seo_send_how_title" xml:space="preserve"><value>How it works</value></data>
+  <data name="seo_send_how_body" xml:space="preserve"><value>Choose a file on the send page, wait for the upload to finish, then share the link anywhere — chat, email, or QR. The link stops working at the expiry you picked.</value></data>
+  <data name="seo_send_why_title" xml:space="preserve"><value>Why QuickShare</value></data>
+  <data name="seo_send_why_1" xml:space="preserve"><value>End-to-end AES-256-GCM encryption — the decryption key never leaves your browser</value></data>
+  <data name="seo_send_why_2" xml:space="preserve"><value>Files up to 5 GB free, with pause-and-resume uploads</value></data>
+  <data name="seo_send_why_3" xml:space="preserve"><value>Links live up to 7 days on the free tier; Pro picks any duration up to 30 days</value></data>
+  <data name="seo_send_free_title" xml:space="preserve"><value>Free tier, honestly</value></data>
+  <data name="seo_send_free_body" xml:space="preserve"><value>Free is genuinely free: 5 GB per file, 15 GB per month, links that expire in 2 hours to 7 days. No credit card, no trial gimmick.</value></data>
+  <data name="seo_wt_h1" xml:space="preserve"><value>WeTransfer alternatives, compared honestly</value></data>
+  <data name="seo_wt_desc" xml:space="preserve"><value>WeTransfer vs QuickShare and other file-sharing services: free size limits, expiry, encryption, and price — side by side.</value></data>
+  <data name="seo_wt_lede" xml:space="preserve"><value>You have options. Here's how the popular services compare on the things that actually matter for a single share.</value></data>
+  <data name="seo_wt_cta" xml:space="preserve"><value>Try it free — no account</value></data>
+  <data name="seo_wt_compare_title" xml:space="preserve"><value>At a glance</value></data>
+  <data name="seo_wt_compare_1" xml:space="preserve"><value>WeTransfer free: 2 GB per transfer, 3-day links, no end-to-end encryption</value></data>
+  <data name="seo_wt_compare_2" xml:space="preserve"><value>QuickShare free: 5 GB per file, links up to 7 days, AES-256-GCM encryption, no account</value></data>
+  <data name="seo_wt_compare_3" xml:space="preserve"><value>QuickShare Pro: 200 GB monthly, custom expiry up to 30 days, no ads, priority queue</value></data>
+  <data name="seo_wt_compare_4" xml:space="preserve"><value>QuickShare P2P mode: device-to-device transfer that skips the server entirely</value></data>
+  <data name="seo_wt_note_title" xml:space="preserve"><value>The honest note</value></data>
+  <data name="seo_wt_note_body" xml:space="preserve"><value>We built QuickShare, so this page is not neutral — but the numbers above are factual. For a single large share, compare the free tiers directly and decide for yourself.</value></data>
+  <data name="seo_p2p_h1" xml:space="preserve"><value>P2P file transfer — device to device</value></data>
+  <data name="seo_p2p_desc" xml:space="preserve"><value>Peer-to-peer file transfer over WebRTC: files go straight from sender to receiver, no server storage in between.</value></data>
+  <data name="seo_p2p_lede" xml:space="preserve"><value>Sometimes a file should never touch a server. P2P mode sends it directly between browsers.</value></data>
+  <data name="seo_p2p_cta" xml:space="preserve"><value>Start a transfer</value></data>
+  <data name="seo_p2p_how_title" xml:space="preserve"><value>How it works</value></data>
+  <data name="seo_p2p_how_body" xml:space="preserve"><value>The sender opens the P2P page, the receiver joins with a link, and the file streams over a WebRTC connection. Only a tiny signaling relay helps the two browsers find each other.</value></data>
+  <data name="seo_p2p_when_title" xml:space="preserve"><value>When to use it</value></data>
+  <data name="seo_p2p_when_body" xml:space="preserve"><value>P2P shines when both people are online at the same time and privacy matters most. If the receiver might be offline — or the file is huge — the regular server-backed send is more reliable.</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Report abuse / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Known devices</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Devices that have signed in to your account. Remove any you don't recognize.</value></data>

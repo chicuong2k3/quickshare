@@ -1,0 +1,37 @@
+@layout MainLayout
+@page "/vi/gui-file-lon-mien-phi"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+
+@* Same content as /how-to/send-large-files-free but pinned to Vietnamese —
+   a real /vi/ URL so Zalo-market SEO ("gui file qua mang khong gioi han")
+   indexes a crawlable page, independent of the visitor's cookie culture. *@
+
+<SeoLanding Heading="@Loc["seo_send_h1"]"
+            Description="@Loc["seo_send_desc"]"
+            Lede="@Loc["seo_send_lede"]"
+            CtaLabel="@Loc["seo_send_cta"]">
+    <Body>
+        <h2 class="db-h2">@Loc["seo_send_how_title"]</h2>
+        <p>@Loc["seo_send_how_body"]</p>
+
+        <h2 class="db-h2">@Loc["seo_send_why_title"]</h2>
+        <ul>
+            <li>@Loc["seo_send_why_1"]</li>
+            <li>@Loc["seo_send_why_2"]</li>
+            <li>@Loc["seo_send_why_3"]</li>
+        </ul>
+
+        <h2 class="db-h2">@Loc["seo_send_free_title"]</h2>
+        <p>@Loc["seo_send_free_body"]</p>
+    </Body>
+</SeoLanding>
+
+@code {
+    protected override void OnInitialized()
+    {
+        CultureInfo.CurrentCulture = new CultureInfo("vi-VN");
+        CultureInfo.CurrentUICulture = new CultureInfo("vi-VN");
+    }
+}

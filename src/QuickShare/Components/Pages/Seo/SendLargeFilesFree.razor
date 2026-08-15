@@ -1,0 +1,24 @@
+@layout MainLayout
+@page "/how-to/send-large-files-free"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<SeoLanding Heading="@Loc["seo_send_h1"]"
+            Description="@Loc["seo_send_desc"]"
+            Lede="@Loc["seo_send_lede"]"
+            CtaLabel="@Loc["seo_send_cta"]">
+    <Body>
+        <h2 class="db-h2">@Loc["seo_send_how_title"]</h2>
+        <p>@Loc["seo_send_how_body"]</p>
+
+        <h2 class="db-h2">@Loc["seo_send_why_title"]</h2>
+        <ul>
+            <li>@Loc["seo_send_why_1"]</li>
+            <li>@Loc["seo_send_why_2"]</li>
+            <li>@Loc["seo_send_why_3"]</li>
+        </ul>
+
+        <h2 class="db-h2">@Loc["seo_send_free_title"]</h2>
+        <p>@Loc["seo_send_free_body"]</p>
+    </Body>
+</SeoLanding>
