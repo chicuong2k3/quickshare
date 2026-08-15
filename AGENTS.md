@@ -284,6 +284,21 @@ After EVERY issue implementation is complete (before closing the issue / before 
 3. **_bmad-output/ artifacts** � if a BMad workflow (specs, architecture, brainstorming) produced artifacts relevant to the issue's area, update the affected artifact(s) or note the change in them.
 4. **DESIGN.md / design-system docs** � only if the issue changed visible UI (new fields, components, tokens). Record what changed and why.
 5. **AGENTS.md conventions** � if the issue introduced a new pattern/constraint future work must follow, add it here.
+6. **Onboarding / index docs** — the next human starts here; keep them in sync or onboarding breaks:
+   - `docs/backlog.md` — feature inventory + tier status. Update on issue create/close or tier change.
+   - `docs/DEVELOPER.md` — codebase map + conventions. Update on new `Features/<X>/` folder, project, or rule.
+   - `docs/TESTING.md` — test map + regression matrix. Update on test suite add/rename/remove.
+   - `docs/SETUP.md` — env vars + local setup. Update on new env var, service, or setup step.
+
+Trigger → doc (quick map):
+
+| Change | Update |
+|---|---|
+| New/closed GitHub issue | `docs/backlog.md` |
+| New `Features/<X>/`, project, or convention | `docs/DEVELOPER.md` (+ `AGENTS.md` if a rule) |
+| Test suite added/renamed/removed | `docs/TESTING.md` |
+| New env var / service / tool version | `docs/SETUP.md` |
+| New alert / service / failure mode | `docs/ONCALL.md` |
 
 The update happens in the SAME commit series as the implementation (docs commit may be separate, but must land before the issue is marked done). Skipping docs = the issue is NOT complete.
 

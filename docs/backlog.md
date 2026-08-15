@@ -1,0 +1,109 @@
+# Backlog & Feature Review Index
+
+Single entry point to review every open issue + feature. Canonical tier list lives in
+[GitHub #325](https://github.com/chicuong2k3/quickshare/issues/325) (party-mode, 2026-08-14);
+this file adds **status** + **local-doc cross-reference** + **review workflow**.
+
+New here? Start at your role's entry point:
+- Developer → [`docs/DEVELOPER.md`](DEVELOPER.md)
+- Tester → [`docs/TESTING.md`](TESTING.md) — feature→test map, issue→checklist, regression matrix.
+- DevOps → [`docs/SETUP.md`](SETUP.md) — prerequisites, env vars, local run, deploy.
+- Support / on-call → [`docs/ONCALL.md`](ONCALL.md) — incident playbooks + rollback.
+
+## 1. How to review (the mechanism)
+
+| Want | Command / URL |
+|---|---|
+| All open issues | `issue://?state=open` |
+| One tier | `issue://?state=open&label=priority-tier-4` |
+| One issue | `issue://<N>` |
+| GitHub web filter | `https://github.com/chicuong2k3/quickshare/issues?q=is:issue+is:open+label:priority-tier-4` |
+| Local full tier rationale | [issue #325](https://github.com/chicuong2k3/quickshare/issues/325) |
+
+`issue://` lists max 100 per query (newest first). For tiers > 100 issues, filter by label.
+
+## 2. Status snapshot (verified 2026-08-15)
+
+| Tier | Meaning | State |
+|---|---|---|
+| Tier 1 | Foundation / survival risk | **9/10 done** — only `#52` rate limiting open |
+| Tier 2 | Existing risk (cheap fixes) | all open |
+| Tier 3 | Growth + monetization levers | all open |
+| Tier 4 | WeTransfer parity baseline | all open (1 done: `#113` expiry countdown) |
+| Tier 5 | Growth wave 2 | all open (1 done: `#69` scheduled send) |
+| Tier 6 | B2B / enterprise / far-future | all open |
+
+Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
+Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
+verified directly.
+
+## 3. Tier 1 — Foundation (do-first)
+
+| # | Item | Status |
+|---|---|---|
+| #52 | Rate limiting + abuse protection | **OPEN** (last unblocker) |
+| #76 | Capture sender email on anonymous upload | DONE 08-15 |
+| #93 | Legal pages ToS + Privacy (+ #230 PDPD) | DONE 08-14 |
+| #10 | Enforce monthly quota (was advertised-only) | DONE 08-15 |
+| #24 | Analytics instrumentation | DONE 08-15 |
+| #90 | Automated DB + R2 backup/restore runbook | DONE 08-15 |
+| #89 | Error tracking + alerting | DONE 08-15 |
+| #107 | Orphan R2 object sweep | DONE 08-14 |
+| #96 | CI/CD pipeline | DONE 08-14 |
+| #91 | Feature flags | DONE 08-15 |
+
+## 4. Tier 2 — Existing risk (cheap, bleeding slowly)
+
+All **open**: #121 (noindex/nofollow), #82 (security headers + CSP), #148 (account lockout),
+#149 (new-device alert), #175 (download CAPTCHA), #53 (report abuse + DMCA).
+
+## 5. Tier 3 — Growth + monetization levers
+
+All **open**: #75 (OpenGraph cards), #65 (7-day trial), #15 (viral loop), #28 (SEO pages),
+#21 (previews), #38 (native share sheet), #22 (expiry tiers), #14 (PWA share target),
+#44 (password-protected downloads), #137 (message with delivery).
+
+## 6–8. Tier 4 / 5 / 6
+
+Full item tables: [issue #325](https://github.com/chicuong2k3/quickshare/issues/325).
+Everything listed there is open except the two marked done above. Sizes: Tier 4 ≈ 70 items,
+Tier 5 ≈ 90 items, Tier 6 ≈ 50 items.
+
+## 9. Local artifact map (feature area → design doc)
+
+Where a design/spec/plan already exists, read it before implementing.
+
+| Feature area | Local docs |
+|---|---|
+| Upload / R2 storage | `_bmad-output/specs/spec-r2-storage/`, `_bmad-output/implementation-artifacts/1-1-r2-infrastructure.md`, `1-2-chunked-upload-api.md`, `US-CAP-1`, `US-CAP-2` |
+| E2E encryption | `1-4-e2e-encryption.md`, `US-CAP-2` |
+| Recipient download | `1-3-recipient-download.md`, `US-CAP-3`, `US-CAP-4` |
+| P2P WebRTC | `_bmad-output/specs/spec-webrtc-p2p/`, `docs/p2p-architecture.md`, `docs/superpowers/plans/2026-07-26-p2p-multi-receiver-plan.md` |
+| Payment / subscription | `_bmad-output/specs/spec-payment/`, `docs/payment-architecture.md`, `US-CAP-8` |
+| Accounts / plans / quota | `1-6-accounts-plans.md`, `US-CAP-6`, `US-CAP-9` |
+| Legal pages | `_bmad-output/specs/spec-legal-pages/` |
+| Localization | `_bmad-output/specs/spec-localization-completeness/` |
+| Ad monetization | `_bmad-output/specs/spec-ad-monetization/` |
+| Pricing page | `_bmad-output/specs/spec-pricing-page/` |
+| Login / auth | `docs/login-architecture.md`, `_bmad-output/specs/spec-enforce-login/` |
+| Sender email capture | `docs/superpowers/specs/2026-08-15-sender-email-capture-design.md` |
+| Analytics | `docs/analytics-architecture.md` |
+| Observability | `docs/observability-setup.md`, `docs/observability-theory.md` |
+| Send flow | `docs/send-architecture.md` |
+| Profile | `docs/profile-architecture.md` |
+| Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
+| HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
+
+## 10. Deferred work + test backlog
+
+- Deferred (code-review findings, 2026-07-19): `_bmad-output/implementation-artifacts/deferred-work.md`
+  — includes `LocalDiskStorageProvider` full-chunk read, `Delivery.CreatedAt` index,
+  `UploadSession.Status` string→enum, orphan-sweep streaming.
+- Manual test checklists (#2–#5, #9, #20) = test backlog, not product work (per #325).
+
+## 11. Review checklist
+
+- [ ] Tier 1: implement `#52` rate limiting → Tier 1 fully done
+- [ ] Tier 2: pick off all 6 (each is a cheap afternoon)
+- [ ] Tier 3: decide the one growth lever to ship next
+- [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
