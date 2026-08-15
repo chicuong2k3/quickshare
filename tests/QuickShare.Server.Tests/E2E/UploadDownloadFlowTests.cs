@@ -135,6 +135,74 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task Commit_WithSenderEmail_CopiesEmailAndSetsConsent()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+            SenderEmail = "sender@example.com",
+        });
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var commitResponse = await client.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            ObjectKey = start.ObjectKey,
+            FileName = TestFileName,
+            ContentType = TestContentType,
+            FileSize = TestFileSize,
+            Parts = [new R2PartEtag(1, "etag-1")],
+        });
+        Assert.Equal(HttpStatusCode.Created, commitResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == start.DeliveryId);
+        Assert.Equal("sender@example.com", delivery.SenderEmail);
+        Assert.True(delivery.SenderEmailConsent);
+        Assert.False(delivery.SenderEmailConfirmed);
+    }
+
+    [Fact]
+    public async Task Commit_WithoutSenderEmail_LeavesEmailNull()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        });
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var commitResponse = await client.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            ObjectKey = start.ObjectKey,
+            FileName = TestFileName,
+            ContentType = TestContentType,
+            FileSize = TestFileSize,
+            Parts = [new R2PartEtag(1, "etag-1")],
+        });
+        Assert.Equal(HttpStatusCode.Created, commitResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == start.DeliveryId);
+        Assert.Null(delivery.SenderEmail);
+        Assert.False(delivery.SenderEmailConsent);
+    }
+
+    [Fact]
     public async Task AnonymousUpload_ExceedingAnonymousLimit_Returns400()
     {
         var client = CreateNoRedirectClient();

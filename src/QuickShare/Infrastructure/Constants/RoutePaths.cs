@@ -20,6 +20,8 @@ public static class RoutePaths
     public const string CookieConsent = "/api/cookie-consent";
     public const string PayOSReturn = "/payments/payos/return";
     public const string Unsubscribe = "/unsubscribe";
+    public const string ConfirmSenderEmail = "/confirm-sender-email";
+    public const string UnsubscribeSender = "/unsubscribe-sender";
     public const string Terms = "/terms";
     public const string Privacy = "/privacy";
     public const string ToolsOnlineClipboard = "/tools/online-clipboard";

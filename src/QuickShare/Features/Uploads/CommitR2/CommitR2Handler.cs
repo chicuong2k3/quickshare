@@ -1,5 +1,8 @@
 using LightResults;
+using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
+using QuickShare.Infrastructure.Constants;
+using QuickShare.Infrastructure.Email;
 using System.Security.Cryptography;
 
 
@@ -12,10 +15,17 @@ public record CommitR2Response(string ShareCode, string ShareLink, DateTime Expi
 public sealed class CommitR2Handler(
     IStorageProvider storage,
     IHttpContextAccessor httpContextAccessor,
+    EmailSender emailSender,
+    SenderEmailTokens senderEmailTokens,
+    SenderEmailRateLimiter senderEmailRateLimiter,
+    IOptions<EmailOptions> emailOptions,
     ILogger<CommitR2Handler> logger)
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
     private const long EncryptionOverheadSlack = 1024;
+    private const string LinkEmailSubject = "Link tải file của bạn trên QuickShare";
+
+    private readonly EmailOptions _emailOptions = emailOptions.Value;
 
     public async Task<Result<CommitR2Response>> Handle(CommitR2Command cmd, AppDbContext db, CancellationToken ct)
     {
@@ -100,6 +110,8 @@ public sealed class CommitR2Handler(
         {
             Id = cmd.DeliveryId,
             SenderId = user?.Id,
+            SenderEmail = session.SenderEmail,
+            SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.
             FileName = session.FileName,
             ContentType = session.ContentType,
@@ -123,7 +135,57 @@ public sealed class CommitR2Handler(
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);
 
+        if (!string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
+        {
+            await SendLinkEmailAsync(delivery, shareCode, ct);
+        }
+
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
         return Result.Success(new CommitR2Response(shareCode, $"{baseUrl}/d/{shareCode}", expiresAt));
+    }
+
+    /// <summary>
+    /// Emails the anonymous sender their share link, with a single-use confirm link and an
+    /// unsubscribe link. Best-effort: a send failure or rate-limit hit must not fail the upload.
+    /// </summary>
+    private async Task SendLinkEmailAsync(Delivery delivery, string shareCode, CancellationToken ct)
+    {
+        var ip = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        if (!senderEmailRateLimiter.TryAllow(delivery.SenderEmail!, ip))
+        {
+            logger.LogWarning("Sender email rate limit hit for {Email}; skipping link email", delivery.SenderEmail);
+            return;
+        }
+
+        var baseUrl = _emailOptions.BaseUrl.TrimEnd('/');
+        var shareUrl = $"{baseUrl}/d/{shareCode}";
+        var confirmUrl = $"{baseUrl}{RoutePaths.ConfirmSenderEmail}/{senderEmailTokens.CreateConfirmToken(delivery.Id)}";
+        var unsubscribeUrl = $"{baseUrl}{RoutePaths.UnsubscribeSender}/{senderEmailTokens.CreateUnsubscribeToken(delivery.Id)}";
+
+        var body = $"""
+            <div style="font-family:system-ui,sans-serif;font-size:15px;color:#1f2937">
+              <p>Chào bạn,</p>
+              <p>File bạn gửi qua QuickShare đã sẵn sàng. Link chia sẻ:</p>
+              <p><a href="{shareUrl}" style="color:#2563eb">{shareUrl}</a></p>
+              <p>Xác nhận email của bạn để nhận thông báo khi file được tải: <a href="{confirmUrl}">Xác nhận email</a>.</p>
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+              <p style="font-size:13px;color:#6b7280">
+                Bạn nhận email này vì đã chọn nhận link và cập nhật khi gửi file.
+                Không muốn nhận nữa? <a href="{unsubscribeUrl}">Huỷ đăng ký</a>.
+              </p>
+            </div>
+            """;
+
+        try
+        {
+            await emailSender.SendAsync(delivery.SenderEmail!, "QuickShare", LinkEmailSubject, body, ct);
+            logger.LogInformation("Sent sender link email to {Email} for delivery {DeliveryId}", delivery.SenderEmail, delivery.Id);
+        }
+        catch (Exception ex)
+        {
+            // ponytail: log and drop — a failed sender email isn't worth a retry queue.
+            logger.LogWarning(ex, "Failed to send sender link email to {Email} for delivery {DeliveryId}", delivery.SenderEmail, delivery.Id);
+        }
     }
 }
