@@ -8,6 +8,7 @@
     "tsc:watch": "tsc -p tsconfig.json --watch"
   },
   "devDependencies": {
+    "eslint": "^10.8.1",
     "typescript": "^5.9.3"
   }
 }
