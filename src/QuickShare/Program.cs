@@ -16,6 +16,7 @@ using QuickShare.Features.Shares.P2P;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.FeatureFlags;
+using QuickShare.Infrastructure.HealthChecks;
 using QuickShare.Infrastructure.Jobs;
 using QuickShare.Infrastructure.Middleware;
 using QuickShare.Infrastructure.Telemetry;
@@ -88,11 +89,19 @@ if (envFilePath is not null)
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+const string ReleaseShaEnvVar = "GIT_SHA";
+const string DefaultRelease = "dev";
+const string ReleaseProperty = "release";
+var releaseSha = Environment.GetEnvironmentVariable(ReleaseShaEnvVar) ?? DefaultRelease;
+
 builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
-        .Enrich.WithSpan();
+        .Enrich.WithSpan()
+        .Enrich.With<PiiRedactingEnricher>()
+        .Enrich.WithProperty(ReleaseProperty, releaseSha);
 });
 
 const string DefaultConnectionName = "DefaultConnection";
@@ -325,16 +334,22 @@ builder.Services.AddAuthorization();
 // ── Observability: health checks + Prometheus metrics ──
 // ponytail: R2 reachability is verified at startup via EnsureBucketExistsAsync;
 // the old AddUrlGroup check did an unauthenticated GET that R2 always rejects,
-// so /health was permanently 503. Add an authenticated R2 check with #89 if needed.
-builder.Services.AddHealthChecks()
-    .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"]);
+// so /health was permanently 503. The live R2 check (issue #89) uses an
+// authenticated HeadBucket instead.
+var healthChecks = builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"])
+    .AddCheck<EmailConfigHealthCheck>("email", tags: ["notification"]);
+if (hasR2)
+{
+    healthChecks.AddCheck<R2HealthCheck>("r2", tags: ["storage"]);
+}
 
 // ── Observability: OpenTelemetry tracing → Tempo (via Grafana Alloy) ──
 const string ObservabilityOtlpEndpointKey = "Observability:OtlpEndpoint";
 const string DefaultOtlpEndpoint = "http://localhost:4318";
 var otlpEndpoint = builder.Configuration[ObservabilityOtlpEndpointKey] ?? DefaultOtlpEndpoint;
 builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(ActivitySources.Name))
+    .ConfigureResource(resource => resource.AddService(ActivitySources.Name, serviceVersion: releaseSha))
     .WithTracing(tracing => tracing
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()

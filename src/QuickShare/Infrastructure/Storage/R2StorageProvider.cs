@@ -51,6 +51,11 @@ public sealed class R2StorageProvider : IStorageProvider, IDisposable
         }
     }
 
+    public async Task PingAsync(CancellationToken ct = default)
+    {
+        await _s3.HeadBucketAsync(new HeadBucketRequest { BucketName = _options.BucketName }, ct);
+    }
+
     // ── R2 multipart upload ────────────────────────────────────────────────
 
     public async Task<R2InitResult> InitR2MultipartUploadAsync(

@@ -554,3 +554,72 @@ curl http://localhost:3200/ready
 | `http://<server>:4318` | Alloy (OTLP receiver) |
 | `http://<server>:9090/targets` | Prometheus targets status |
 | `http://<server>:3000` | Grafana UI |
+
+---
+
+## 10. Alerting (issue #89)
+
+Crash-rate alerting via **Grafana Alerting** on Loki → **Telegram** contact point. No Sentry — fully self-hosted.
+
+### 10.1 Health checks (updated)
+
+`/health` now reports three checks:
+
+| Name | Tags | Checks |
+|---|---|---|
+| `postgresql` | `db` | Npgsql `SELECT 1` |
+| `r2` | `storage` | authenticated `HeadBucket` (only when R2 configured) |
+| `email` | `notification` | SMTP host + from-address configured |
+
+### 10.2 Telegram contact point
+
+Grafana has a native Telegram contact point — needs a bot token + chat ID (no need to build the full #71 bot):
+
+1. Grafana → Alerting → Contact points → New → **Telegram**.
+2. Bot API token (from @BotFather) + chat ID.
+3. Save.
+
+Provisioning equivalent (`alerting/contactpoints.yaml`):
+
+```yaml
+apiVersion: 1
+contactPoints:
+  - name: telegram-owner
+    type: telegram
+    settings:
+      bottoken: ${TELEGRAM_BOT_TOKEN}
+      chatid: ${TELEGRAM_CHAT_ID}
+```
+
+### 10.3 Error-rate alert rule
+
+Loki alert: more than N error-level logs in 5 minutes → page the owner.
+
+LogQL:
+
+```logql
+sum(count_over_time({service="quickshare"} |~ "(?i)error|exception|fatal|unhandled" [5m]))
+```
+
+Rule: condition `> 10`, evaluation every `1m`, for `1m`, notification → `telegram-owner`.
+
+Provisioning (`alerting/rules.yaml`):
+
+```yaml
+apiVersion: 1
+groups:
+  - name: quickshare-crash
+    rules:
+      - alert: HighErrorRate
+        expr: sum(count_over_time({service="quickshare"} |~ "(?i)error|exception|fatal|unhandled" [5m])) > 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on QuickShare"
+```
+
+### 10.4 Release tracking + PII scrub
+
+- **Release**: every log line and trace carries the git SHA — logs via the `release` property (from `GIT_SHA` env, default `dev`), traces via OTel resource `service.version`. Set `GIT_SHA` in CI so a crash maps to a release.
+- **PII scrub**: `PiiRedactingEnricher` redacts `Email`/`SenderEmail`/`FileName`/`IpAddress`/`RemoteIp`/access keys from every log event before it reaches Loki.
