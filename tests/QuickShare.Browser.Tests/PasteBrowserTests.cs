@@ -102,7 +102,10 @@ public sealed class PasteBrowserTests : IClassFixture<BrowserFixture>
         await page.GotoAsync(_fx.BaseUrl + "/");
         await page.EvaluateAsync(PasteText, "ghi chu tu trang chu");
 
-        await page.WaitForURLAsync(url => url.Contains("/send"), new PageWaitForURLOptions { Timeout = 15_000 });
+        // Poll-based rather than event-based: the handoff navigation can commit before
+        // WaitForURLAsync registers its listener, and an already-committed navigation
+        // is never re-emitted — timing out on slow machines. ToHaveURL polls the URL.
+        await Assertions.Expect(page).ToHaveURLAsync(new Regex("/send"), new PageAssertionsToHaveURLOptions { Timeout = 15_000 });
 
         await Assertions.Expect(page.Locator("#upload-success")).ToBeVisibleAsync(
             new LocatorAssertionsToBeVisibleOptions { Timeout = 30_000 });
