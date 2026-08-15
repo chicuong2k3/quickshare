@@ -1,5 +1,8 @@
 
 
+using QuickShare.Features.Uploads.Shared;
+
+
 namespace QuickShare.Features.Uploads.CommitR2;
 
 public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Response>
@@ -33,7 +36,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
             await Send.ResponseAsync(value, StatusCodes.Status201Created, ct);
         }
         else if (result.IsFailure(out var error))
-            ThrowError(error.Message, error.Message.Contains("R2") ? 502 : 400);
+            ThrowError(error.Message, error.Message.StartsWith(UploadErrors.R2Upstream, StringComparison.Ordinal) ? 502 : 400);
     }
 }
 

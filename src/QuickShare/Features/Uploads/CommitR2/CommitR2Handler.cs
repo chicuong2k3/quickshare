@@ -1,4 +1,5 @@
 using LightResults;
+using QuickShare.Features.Uploads.Shared;
 using System.Security.Cryptography;
 
 
@@ -8,7 +9,10 @@ public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
-public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+public sealed class CommitR2Handler(
+    IStorageProvider storage,
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<CommitR2Handler> logger)
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
     private const long EncryptionOverheadSlack = 1024;
@@ -37,10 +41,10 @@ public sealed class CommitR2Handler(IStorageProvider storage, IHttpContextAccess
             completionResult = await storage.CompleteR2MultipartUploadAsync(
                 cmd.UploadId, cmd.ObjectKey, cmd.Parts, ct);
         }
-        catch (Exception ex)
+        catch (R2StorageException ex)
         {
-            return Result.Failure<CommitR2Response>(new LightResults.Error(
-                $"R2 commit failed: {ex.Message}"));
+            logger.LogError(ex, "R2 commit failed for delivery {DeliveryId}", cmd.DeliveryId);
+            return Result.Failure<CommitR2Response>(new LightResults.Error(UploadErrors.R2Upstream + "commit failed"));
         }
 
         if (!completionResult.Success)
