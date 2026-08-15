@@ -2,13 +2,48 @@
 @page "/send"
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using QuickShare.Infrastructure.Caching
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject AppDbContext Db
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
     var apiBase = string.Empty;
+
+    // The idle subtext is auth-aware: anonymous visitors see the sign-up nudge,
+    // signed-in users see their plan's per-file limit (mirrors the Pricing page).
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    string idleSubtext;
+    if (isAuthenticated)
+    {
+        var plan = PlanTierLimits.Free;
+        var userIdClaim = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(userIdClaim, out var userId))
+        {
+            plan = StaticCache.Instance.GetOrSet(
+                $"user:plan:{userId}",
+                () => Db.Users
+                    .AsNoTracking()
+                    .Where(x => x.Id == userId)
+                    .Select(x => x.Plan)
+                    .FirstOrDefault() ?? PlanTierLimits.Free,
+                TimeSpan.FromMinutes(10)
+            );
+        }
+
+        idleSubtext = plan switch
+        {
+            PlanTierLimits.Pro => Loc["pricing_pro_feat_size"],
+            PlanTierLimits.Studio => Loc["pricing_studio_feat_size"],
+            _ => Loc["pricing_free_feat_size"],
+        };
+    }
+    else
+    {
+        idleSubtext = Loc["upload_idle_sub_limit"];
+    }
 }
 
 <PageTitle>@Loc["upload_title"]</PageTitle>
@@ -26,7 +61,7 @@
                     <span id="upload-drag-text" class="hidden">@Loc["upload_drag_drop_file"]</span>
                 </h1>
                 <p class="sub" id="upload-idle-sub">
-                    <span id="upload-idle-subtext">@Loc["upload_idle_sub_limit"]</span>
+                    <span id="upload-idle-subtext">@idleSubtext</span>
                     <span id="upload-drag-subtext" class="hidden">@Loc["upload_drag_release"]</span>
                 </p>
 
