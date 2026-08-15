@@ -17,6 +17,8 @@ QuickShare supports **server-mediated file uploads** via the **R2 direct-upload 
 | `POST /api/uploads/start-r2` | `Features/Uploads/StartR2/StartR2Endpoint.cs` | Initiate R2 multipart upload, return presigned part URLs |
 | `POST /api/uploads/commit-r2` | `Features/Uploads/CommitR2/CommitR2Endpoint.cs` | Complete R2 upload, create Delivery record, return share link |
 | `POST /api/uploads/abort-r2` | `Features/Uploads/AbortR2/AbortR2Endpoint.cs` | Cancel in-progress R2 upload |
+| `GET /confirm-sender-email/{token}` | `Features/Notifications/SenderConfirm/SenderConfirmEmailEndpoint.cs` | Mark anonymous sender email confirmed (single-use DataProtection token, 24h expiry) |
+| `GET /unsubscribe-sender/{token}` | `Features/Notifications/SenderUnsubscribe/SenderUnsubscribeEndpoint.cs` | Opt out of sender link emails for one delivery (`SenderEmailConsent = false`) |
 
 ### Server Business Logic
 
@@ -38,8 +40,8 @@ QuickShare supports **server-mediated file uploads** via the **R2 direct-upload 
 
 | Model | File | Role |
 |-------|------|------|
-| `UploadSession` | `Data/Entities/UploadSession.cs` | Tracks in-progress upload: sender, file meta, status, R2 IDs |
-| `Delivery` | `Data/Entities/Delivery.cs` | The "share" — file metadata, share code, download limits, branding |
+| `UploadSession` | `Data/Entities/UploadSession.cs` | Tracks in-progress upload: sender, optional `SenderEmail`, file meta, status, R2 IDs |
+| `Delivery` | `Data/Entities/Delivery.cs` | The "share" — file metadata, share code, download limits, branding, `SenderEmail`/`SenderEmailConfirmed`/`SenderEmailConsent` (issue #76) |
 | `Chunk` | `Data/Entities/Chunk.cs` | One chunk of a file: index, size, storage ref, SHA-256 |
 | `Manifest` | `Data/Entities/Manifest.cs` | Encrypted chunk index (binary blob, AES-CBC keyed by share code) |
 | `ManifestData` | `Features/Uploads/Shared/ManifestData.cs` | Plaintext manifest: file metadata + `ChunkEntry[]` |
@@ -67,7 +69,8 @@ Client Browser              Server API                    Cloudflare R2
   │    start-r2               │                              │
   │  { fileName, fileSize,    │                              │
   │    contentType,           │                              │
-  │    partNumbers }          │                              │
+  │    partNumbers,           │                              │
+  │    senderEmail? }         │   ← anonymous opt-in (issue #76)│
   │──────────────────────────▶│                              │
   │                           │── Validate plan limits       │
   │                           │── InitR2MultipartUploadAsync │
@@ -113,7 +116,20 @@ Client Browser              Server API                    Cloudflare R2
   │                           │   (8 bytes → base64url ~11c) │
   │                           │── Create Delivery record     │
   │                           │   (StoragePath = objectKey)  │
+  │                           │   (SenderEmail ← session)    │
+  │                           │   (SenderEmailConsent=true   │
+  │                           │    when email present)       │
   │                           │── Mark UploadSession Committed│
+  │                           │                              │
+  │                           │── (if SenderEmail + SMTP     │
+  │                           │    configured)               │
+  │                           │   Send link email:           │
+  │                           │   share link + confirm token │
+  │                           │   + unsubscribe token        │
+  │                           │   (best-effort, rate-limited │
+  │                           │    5/email/h, 20/IP/h —      │
+  │                           │    failure never fails       │
+  │                           │    the commit)               │
   │                           │                              │
   │  { shareCode, shareLink } │                              │
   │◀──────────────────────────│                              │
@@ -136,19 +152,24 @@ UploadSession                         Delivery                         Chunk
 ┌─────────────────┐                  ┌──────────────────┐             ┌──────────────┐
 │ Id (Guid PK)    │                  │ Id (Guid PK)     │             │ Id (Guid PK) │
 │ SenderId (FK)   │──► User          │ SenderId (FK)    │──► User     │ DeliveryId   │──► Delivery
-│ FileName        │                  │ FileName         │             │ Index (int)  │
-│ ContentType     │    commit ──►    │ ContentType      │             │ Size         │
-│ FileSize        │                  │ FileSize         │             │ StorageRef   │
-│ Status          │                  │ TotalBytes       │             │ Sha256       │
-│ ExpiresAt       │                  │ ChunkCount       │             │ CreatedAt    │
-│ R2UploadId?     │                  │ ShareCode (uniq) │             └──────────────┘
-│ StoragePath?    │                  │ MaxDownloads     │
-└─────────────────┘                  │ DownloadCount    │
-                                     │ EgressBytes      │          Manifest
-    Status values:                   │ ExpiresAt?       │          ┌──────────────────┐
-    "InProgress"                     │ PasswordHash?    │          │ Id (Guid PK)     │
-    "Committed"                      │ BrandLogo?       │          │ DeliveryId (FK)  │──► Delivery
-    (expired = deleted)              │ BrandMessage?    │          │ EncryptedData    │
+│ SenderEmail?    │                  │ SenderEmail?     │             │ Index (int)  │
+│ FileName        │                  │ SenderEmail-     │             │ Size         │
+│ ContentType     │    commit ──►    │   Confirmed      │             │ StorageRef   │
+│ FileSize        │                  │ SenderEmail-     │             │ Sha256       │
+│ Status          │                  │   Consent        │             │ CreatedAt    │
+│ ExpiresAt       │                  │ FileName         │             └──────────────┘
+│ R2UploadId?     │                  │ ContentType      │
+│ StoragePath?    │                  │ FileSize         │
+└─────────────────┘                  │ TotalBytes       │
+                                     │ ChunkCount       │
+    Status values:                   │ ShareCode (uniq) │
+    "InProgress"                     │ MaxDownloads     │
+    "Committed"                      │ DownloadCount    │
+    (expired = deleted)              │ EgressBytes      │          Manifest
+                                     │ ExpiresAt?       │          ┌──────────────────┐
+                                     │ PasswordHash?    │          │ Id (Guid PK)     │
+                                     │ BrandLogo?       │          │ DeliveryId (FK)  │──► Delivery
+                                     │ BrandMessage?    │          │ EncryptedData    │
                                      │ BrandAccent?     │          │ (bytea = AES-CBC │
                                      │ Price?           │          │  ManifestData    │
                                      │ PaymentStatus?   │          │  JSON)           │
@@ -226,7 +247,7 @@ The upload page at `/` renders one section at a time:
 
 | State | Section ID | Trigger |
 |-------|-----------|---------|
-| **idle** | `upload-idle` | Page load — drag/drop zone, paste hint, always-on encryption badge, expiry picker |
+| **idle** | `upload-idle` | Page load — drag/drop zone, paste hint, always-on encryption badge, expiry picker, optional sender-email input (anonymous only, issue #76) |
 | **dragging** | `upload-idle` (visual) | File being dragged over drop zone |
 | **uploading** | `upload-uploading` | File selected — progress bar, speed, ETA, cancel button |
 | **success** | `upload-success` | Commit returns share link — copy button, QR code, encrypt badge |
@@ -248,19 +269,22 @@ doUpload(file):
      - totalParts = ceil(effectiveSize / 25MB)
      - up to 5 GB total (MAX_FILE_BYTES)
 
-  3. POST /api/uploads/start-r2
-     → session = { deliveryId, uploadId, objectKey, parts[] }
+  3. Read optional sender email (#upload-sender-email, anonymous only)
 
-  4. Upload parts:
+  4. POST /api/uploads/start-r2
+     → session = { deliveryId, uploadId, objectKey, parts[] }
+     body includes senderEmail (or null)
+
+  5. Upload parts:
      - 4 concurrent parts (CONCURRENT_PARTS)
      - Each: PUT presigned URL with file.slice(start, end)
      - Collect ETag per part
      - Update progress, speed, ETA
 
-  5. POST /api/uploads/commit-r2
+  6. POST /api/uploads/commit-r2
      → result = { shareCode, shareLink }
 
-  6. Success:
+  7. Success:
      - If encrypted: append #key={encryptionKeyStr} to URL
      - Render QR code
      - Auto-copy link to clipboard

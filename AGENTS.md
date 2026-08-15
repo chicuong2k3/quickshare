@@ -273,3 +273,15 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` â€” the `stats.
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Issue Completion — Docs Update Rule (MANDATORY)
+
+After EVERY issue implementation is complete (before closing the issue / before pushing), update ALL related documentation in this order:
+
+1. **docs/*.md architecture/feature docs** — if the issue touches a documented flow (e.g. send-architecture.md, payment-architecture.md, p2p-architecture.md, login-architecture.md), update the doc to reflect the new behavior. If no existing doc covers the changed area, create one.
+2. **docs/superpowers/specs/ and docs/superpowers/plans/** — the brainstorming spec + implementation plan produced by the workflow are the record of the change; make sure they are committed alongside the code.
+3. **_bmad-output/ artifacts** — if a BMad workflow (specs, architecture, brainstorming) produced artifacts relevant to the issue's area, update the affected artifact(s) or note the change in them.
+4. **DESIGN.md / design-system docs** — only if the issue changed visible UI (new fields, components, tokens). Record what changed and why.
+5. **AGENTS.md conventions** — if the issue introduced a new pattern/constraint future work must follow, add it here.
+
+The update happens in the SAME commit series as the implementation (docs commit may be separate, but must land before the issue is marked done). Skipping docs = the issue is NOT complete.

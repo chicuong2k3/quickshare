@@ -324,6 +324,7 @@ Borders are always exactly 1px, always mountain, never doubled. `--db-border-rou
 - **Error:** Message in mono at 0.6875rem, tracking 0.08em, in error oxide, 0.5rem below the field.
 - **Disabled:** Sheet-deep fill, mountain border, muted text, `not-allowed` cursor. `--db-disabled-opacity` is 0.38.
 - **Select:** Native appearance stripped; the chevron is drawn from two 5px `linear-gradient` triangles. Mono 0.6875rem uppercase, tracking 0.1em, transparent background, mountain border.
+- **Sender-email field (`/send`, anonymous):** a single email input labeled "Email me the link + updates" — entering an email IS the consent (no checkbox). Same Inputs/Fields treatment: mountain border, sheet-raised fill, 0 radius, 0.875rem text; scoped class `.sender-email-input` in `Upload.razor.css`. Added with issue #76 (sender email capture).
 
 ### OTP Cells (signature)
 2.75rem × 3.25rem parallelograms (`skewX(-14deg)`), mountain border, surface fill, Azeret Mono at 1.125rem, centered. On focus the cell fills valley, its border goes valley-ink, and the 2px valley-ink outline appears. One glyph per cell, measured.
