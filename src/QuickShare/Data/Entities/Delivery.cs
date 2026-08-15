@@ -3,6 +3,8 @@ namespace QuickShare.Data.Entities;
 [DynamicSort]
 public record Delivery : BaseAuditEntity
 {
+    public const int MessageMaxLength = 500;
+
     public Guid? SenderId { get; init; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
@@ -18,6 +20,7 @@ public record Delivery : BaseAuditEntity
     public DateTime? ExpiresAt { get; set; }
     public DateTime? DeliverAt { get; set; }
     public string? OtpHash { get; set; }
+    public string? Message { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }

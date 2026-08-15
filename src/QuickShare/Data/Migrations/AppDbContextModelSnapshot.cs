@@ -217,6 +217,9 @@ namespace QuickShare.Migrations
                     b.Property<int>("MaxDownloads")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Message")
+                        .HasColumnType("text");
+
                     b.Property<string>("OtpHash")
                         .HasColumnType("text");
 

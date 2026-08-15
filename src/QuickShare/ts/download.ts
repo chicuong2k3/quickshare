@@ -18,9 +18,10 @@ window.downloadApp = (function (): DownloadPage {
         maxDownloads: number;
         expiresLabel: string;
         previewStarted: boolean;
+        mediaPreviewStarted: boolean;
         fullText: string | null;
         bytes: ArrayBuffer | null;
-    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
+    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, fullText: null, bytes: null };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
     const TEXT_MIME_PREFIX = 'text/plain';
@@ -71,6 +72,7 @@ window.downloadApp = (function (): DownloadPage {
                 if (icon2) icon2.style.visibility = '';
             }
             maybeRenderTextPreview();
+            maybeRenderMediaPreview();
         }
     }
 
@@ -271,6 +273,9 @@ window.downloadApp = (function (): DownloadPage {
     // Returns false to cancel the anchor's own navigation, true to let it
     // happen. With JS dead the anchor still delivers an unencrypted file.
     function handleDownload(event?: Event): boolean | void {
+        // Viral CTA (issue #15): reveal once the recipient's hands are free —
+        // after the download starts, never before.
+        show('dl-viral-cta');
         if (state.bytes) { saveBytes(state.bytes); return false; }
         if (!state.isEncrypted && !state.verifiedOtp) return true;
         if (event && event.preventDefault) event.preventDefault();
@@ -322,6 +327,55 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     function showFullText() { renderText(false); }
+
+    // Media preview (issue #21): image/video/audio/PDF inline, served by the
+    // preview endpoint (never counts a download). Skipped for encrypted or
+    // OTP-gated deliveries — the payload there is not previewable. Elements
+    // are built via createElement so nothing user-controlled becomes markup.
+    function maybeRenderMediaPreview() {
+        if (state.mediaPreviewStarted) return;
+        const i = infoFromDom();
+        const ct = String(i.contentType || '').toLowerCase();
+        const kind = ct.indexOf('image/') === 0 ? 'image'
+            : ct.indexOf('video/') === 0 ? 'video'
+            : ct.indexOf('audio/') === 0 ? 'audio'
+            : ct === 'application/pdf' ? 'pdf' : null;
+        if (!kind || state.isEncrypted || i.hasOtp) return;
+
+        const container = document.getElementById('dl-media-preview');
+        if (!container) return;
+        state.mediaPreviewStarted = true;
+
+        const url = apiBase() + '/api/downloads/' + shareCode() + '/preview';
+        const el = document.createElement(kind === 'image' ? 'img' : kind === 'video' ? 'video' : kind === 'audio' ? 'audio' : 'iframe') as HTMLElement;
+        el.style.maxWidth = '100%';
+        el.style.display = 'block';
+        el.style.margin = '0 auto';
+        if (kind !== 'audio') el.style.maxHeight = '60vh';
+
+        if (kind === 'image') {
+            el.setAttribute('src', url);
+            el.setAttribute('alt', t('previewImageAlt'));
+        } else if (kind === 'video') {
+            el.setAttribute('src', url);
+            el.setAttribute('controls', '');
+            el.setAttribute('playsinline', '');
+            el.setAttribute('preload', 'metadata');
+        } else if (kind === 'audio') {
+            el.setAttribute('src', url);
+            el.setAttribute('controls', '');
+            el.setAttribute('preload', 'metadata');
+        } else {
+            el.setAttribute('src', url);
+            el.setAttribute('title', t('previewPdfTitle'));
+            el.style.height = '65vh';
+            el.style.border = '0';
+            el.style.background = '#fff';
+        }
+
+        container.appendChild(el);
+        show('dl-media-preview');
+    }
 
     function copyText() {
         if (!state.fullText || !navigator.clipboard) return;

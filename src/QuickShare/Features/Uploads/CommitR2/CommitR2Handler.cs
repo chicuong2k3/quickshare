@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Source, DateTime? DeliverAt);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Message, string? Source, DateTime? DeliverAt);
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
@@ -110,6 +110,10 @@ public sealed class CommitR2Handler(
             }
         }
 
+        var message = NormalizeMessage(cmd.Message);
+        if (message is not null && message.Length > Delivery.MessageMaxLength)
+            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.MessageTooLong));
+
         var randomBytes = new byte[8];
         RandomNumberGenerator.Fill(randomBytes);
         var shareCode = Convert.ToBase64String(randomBytes)
@@ -136,6 +140,7 @@ public sealed class CommitR2Handler(
             DeliverAt = cmd.DeliverAt,
             Status = cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
+            Message = message,
             Source = DeliverySources.Normalize(cmd.Source)
         };
 
@@ -158,6 +163,19 @@ public sealed class CommitR2Handler(
 
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
         return Result.Success(new CommitR2Response(shareCode, $"{baseUrl}/d/{shareCode}", expiresAt));
+    }
+
+    /// <summary>
+    /// Trims the sender note; whitespace-only input becomes null. The max-length
+    /// rejection is a security boundary: the note renders escaped on the download
+    /// page and must never be emitted as markup.
+    /// </summary>
+    private static string? NormalizeMessage(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return null;
+
+        return message.Trim();
     }
 
     /// <summary>

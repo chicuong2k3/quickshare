@@ -18,6 +18,13 @@
 <PageTitle>@Loc["dl_title"]</PageTitle>
 <HeadContent>
     <meta name="robots" content="noindex, nofollow" />
+    @* OpenGraph rich card (issue #75) — server-rendered so Zalo/FB/Telegram
+       crawlers get filename + size + brand without any client JS. *@
+    <meta property="og:title" content="@OgTitle" />
+    <meta property="og:description" content="@OgDescription" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@OgUrl" />
+    <meta property="og:image" content="@OgImageUrl" />
 </HeadContent>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
@@ -154,6 +161,19 @@
                             <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
                         </div>
 
+                        @* Sender note (issue #137) — server-rendered escaped text. *@
+                        @if (!string.IsNullOrEmpty(Info?.Message))
+                        {
+                            <div class="dl-message" style="margin-top: 1.25rem; padding: 1rem 1.25rem; background: var(--db-color-surface, rgba(255,255,255,0.04))">
+                                <p class="db-label" style="margin: 0 0 0.375rem">@Loc["dl_message_label"]</p>
+                                <p class="db-p" style="margin: 0; font-size: 0.875rem; white-space: pre-wrap; overflow-wrap: anywhere">@Info.Message</p>
+                            </div>
+                        }
+
+                        @* Inline media preview (issue #21) — filled by download.js. Only
+                           ungated, unencrypted media reaches this element. *@
+                        <div id="dl-media-preview" class="dl-media hidden" style="margin-top: 1.5rem"></div>
+
                         <div style="margin-top: 2rem">
                             <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
                                 <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -173,6 +193,17 @@
                                 @Loc["dl_report_link"]
                             </button>
                         </div>
+
+                        @* Viral CTA (issue #15, layer 0) — hidden until the download starts;
+                           never shown to paid senders whose branding is on the page. *@
+                        @if (ShowViralCta)
+                        {
+                            <div id="dl-viral-cta" class="dl-viral hidden" style="margin-top: 2rem; padding: 1.25rem; border: 1px solid var(--db-color-border, rgba(255,255,255,0.12)); text-align: center">
+                                <h3 class="db-h3" style="font-size: 1rem">@Loc["dl_cta_title"]</h3>
+                                <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_cta_sub"]</p>
+                                <a href="/send?ref=dl" class="btn" style="display: inline-flex; margin-top: 1rem; width: auto; padding: 0.75rem 1.5rem" data-ai-action="download.viral.cta">@Loc["dl_cta_button"]</a>
+                            </div>
+                        }
                     </div>
 
                     @* Report dialog — raised by JS; server still renders the trigger. *@
@@ -335,12 +366,22 @@
         ["scheduledCountdown"] = Loc["dl_scheduled_countdown"],
         ["initialPhase"] = InitialPhase,
         ["reportError"] = Loc["dl_report_error"],
+        ["previewImageAlt"] = Loc["dl_preview_alt"],
+        ["previewPdfTitle"] = Loc["dl_preview_pdf"],
     };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
     private string ExpiryLabel { get; set; } = string.Empty;
     private bool IsScheduled => Info?.Status == DeliveryStatus.Scheduled && Info.DeliverAt > DateTime.UtcNow;
     private string ScheduledLabel => Info?.DeliverAt is { } d ? d.ToLocalTime().ToString("f") : string.Empty;
+    private string RequestBase => $"{HttpContextAccessor.HttpContext!.Request.Scheme}://{HttpContextAccessor.HttpContext.Request.Host}";
+    private string OgTitle => !string.IsNullOrEmpty(Info?.FileName) ? Info!.FileName : Loc["dl_title"];
+    private string OgDescription => Info is null
+        ? string.Empty
+        : $"{FormatBytes(Info.FileSize)} · {(Info.ExpiresAt.HasValue ? ExpiryCountdown(Info.ExpiresAt.Value) : Loc["dl_expiry_none"])}";
+    private string OgUrl => $"{RequestBase}{HttpContextAccessor.HttpContext!.Request.Path}{HttpContextAccessor.HttpContext.Request.QueryString}";
+    private string OgImageUrl => $"{RequestBase}/og-cover.svg";
+    private bool ShowViralCta => Info is not null && Info.SenderPlan is not (PlanTierLimits.Pro or PlanTierLimits.Studio);
 
     protected override async Task OnInitializedAsync()
     {
@@ -377,7 +418,8 @@
                 DownloadCount = value.DownloadCount,
                 MaxDownloads = value.MaxDownloads,
                 HasOtp = value.HasOtp,
-                SenderPlan = value.SenderPlan
+                SenderPlan = value.SenderPlan,
+                Message = value.Message
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -432,6 +474,7 @@
         public DateTime? ExpiresAt { get; set; } public DateTime? DeliverAt { get; set; } public string Status { get; set; } = string.Empty;
         public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
         public bool HasOtp { get; set; } public string SenderPlan { get; set; } = string.Empty;
+        public string? Message { get; set; }
     }
 }
 

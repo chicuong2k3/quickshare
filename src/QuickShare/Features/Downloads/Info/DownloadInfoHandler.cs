@@ -15,7 +15,8 @@ public record DownloadInfoResponse(
     int DownloadCount,
     int MaxDownloads,
     bool HasOtp,
-    string SenderPlan
+    string SenderPlan,
+    string? Message
 );
 
 public sealed class DownloadInfoHandler
@@ -55,7 +56,8 @@ public sealed class DownloadInfoHandler
                     delivery.DownloadCount,
                     delivery.MaxDownloads,
                     HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
-                    SenderPlan: senderPlan
+                    SenderPlan: senderPlan,
+                    Message: delivery.Message
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

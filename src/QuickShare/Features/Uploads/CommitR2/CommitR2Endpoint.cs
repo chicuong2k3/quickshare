@@ -27,7 +27,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         var cmd = new CommitR2Command(
             req.DeliveryId, req.UploadId, req.ObjectKey,
-            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Source, req.DeliverAt);
+            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Message, req.Source, req.DeliverAt);
         var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -50,6 +50,7 @@ public class CommitR2Request
     public long FileSize { get; set; }
     public IReadOnlyList<R2PartEtag> Parts { get; set; } = [];
     public string? Otp { get; set; }
+    public string? Message { get; set; }
     public string? Source { get; set; }
     public DateTime? DeliverAt { get; set; }
 }

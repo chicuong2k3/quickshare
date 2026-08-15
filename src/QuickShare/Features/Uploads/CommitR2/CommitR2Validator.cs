@@ -27,5 +27,9 @@ public sealed class CommitR2Validator : Validator<CommitR2Request>
         RuleFor(x => x.DeliverAt)
             .Must(d => d is null || d.Value > DateTime.UtcNow)
             .WithMessage("DeliverAt must be in the future.");
+
+        RuleFor(x => x.Message)
+            .Must(m => m is null || m.Trim().Length <= Delivery.MessageMaxLength)
+            .WithMessage($"Message must be at most {Delivery.MessageMaxLength} characters.");
     }
 }

@@ -614,6 +614,12 @@
   <data name="dl_report_cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="dl_report_done" xml:space="preserve"><value>Thanks — our team will review this report.</value></data>
   <data name="dl_report_error" xml:space="preserve"><value>Could not send the report. Please try again.</value></data>
+  <data name="dl_message_label" xml:space="preserve"><value>Note from sender</value></data>
+  <data name="dl_cta_title" xml:space="preserve"><value>Send your file — free, end-to-end encrypted</value></data>
+  <data name="dl_cta_sub" xml:space="preserve"><value>No account needed. Big files, fast.</value></data>
+  <data name="dl_cta_button" xml:space="preserve"><value>Send a file</value></data>
+  <data name="dl_preview_alt" xml:space="preserve"><value>File preview</value></data>
+  <data name="dl_preview_pdf" xml:space="preserve"><value>PDF preview</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Report abuse / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Known devices</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Devices that have signed in to your account. Remove any you don't recognize.</value></data>

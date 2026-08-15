@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="QuickShare">
+  <rect width="1200" height="630" fill="#0d1117"/>
+  <polygon points="0,505 1200,405 1200,630 0,630" fill="#161c25"/>
+  <rect x="0" y="498" width="1200" height="28" fill="#e8b84b" opacity="0.85"/>
+  <text x="600" y="300" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="76" font-weight="600" fill="#f0f2f5" letter-spacing="2">QuickShare</text>
+  <text x="600" y="372" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="30" fill="#8b93a1">Send files, not friction</text>
+</svg>

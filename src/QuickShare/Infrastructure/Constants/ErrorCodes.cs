@@ -12,4 +12,7 @@ public static class ErrorCodes
     public const string DeliverAtMustBeFuture = "deliver_at_must_be_future";
     public const string DeliveryNotActive = "delivery_not_active";
     public const string DeliveryNotScheduled = "delivery_not_scheduled";
+    public const string MessageTooLong = "message_too_long";
+    public const string DeliveryAlreadyDownloaded = "delivery_already_downloaded";
+    public const string DeliveryGated = "delivery_gated";
 }
