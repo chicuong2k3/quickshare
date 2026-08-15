@@ -929,6 +929,65 @@ body::after,
     max-width: 28rem;
 }
 
+/* ─── Account: monthly usage bar (global — ships inside an HTMX partial) ─── */
+.account-usage {
+    margin-top: var(--db-space-4);
+}
+
+.account-usage__title {
+    margin: 0 0 var(--db-space-4) 0;
+}
+
+.account-usage__unlimited {
+    margin: 0;
+}
+
+.account-usage-bar {
+    width: 100%;
+    height: 0.625rem;
+    background: var(--db-color-border);
+    border: 1px solid var(--db-mountain);
+    border-radius: var(--db-radius-full);
+    overflow: hidden;
+}
+
+.account-usage-bar__fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.account-usage-bar__fill--ok {
+    background: var(--db-color-success);
+}
+
+.account-usage-bar__fill--warn {
+    background: var(--db-color-warning);
+}
+
+.account-usage-bar__fill--over {
+    background: var(--db-color-error);
+}
+
+.account-usage-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-2);
+    font-size: var(--db-text-sm);
+}
+
+.account-usage-pct {
+    font-family: var(--db-font-mono);
+    color: var(--db-color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account-usage-bar__fill {
+        transition: none;
+    }
+}
+
 /* Skeleton */
 .account-skeleton-avatar {
     width: 5rem;

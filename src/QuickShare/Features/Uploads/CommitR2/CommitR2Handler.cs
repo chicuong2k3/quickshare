@@ -21,6 +21,7 @@ public sealed class CommitR2Handler(
     {
         var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
         var plan = user?.Plan ?? PlanTierLimits.Anonymous;
+        var quota = user is null ? null : new QuotaService(db);
 
         // The commit must match the session created by start-r2, for the same owner —
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
@@ -53,11 +54,15 @@ public sealed class CommitR2Handler(
 
         // Enforce the plan limit on what actually landed in storage, not the declared size —
         // the declared size is client-controlled and part uploads are not size-constrained.
+        long actualSize = session.FileSize;
         var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
         if (maxFileSize.HasValue)
         {
-            var actualSize = await storage.GetObjectSizeAsync(cmd.ObjectKey, ct);
-            if (actualSize > maxFileSize.Value + EncryptionOverheadSlack)
+            var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, ct);
+            if (stored >= 0)
+                actualSize = stored;
+
+            if (stored > maxFileSize.Value + EncryptionOverheadSlack)
             {
                 try
                 {
@@ -65,7 +70,22 @@ public sealed class CommitR2Handler(
                 }
                 catch { /* best-effort cleanup; the sweeper handles leftovers */ }
                 return Result.Failure<CommitR2Response>(new LightResults.Error(
-                    $"Uploaded size {actualSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
+                    $"Uploaded size {stored} exceeds {plan} plan limit of {maxFileSize} bytes"));
+            }
+        }
+
+        // Monthly quota: check the actual committed size, then record on success.
+        if (quota is not null)
+        {
+            var check = await quota.CheckAsync(user!.Id, plan, actualSize, ct);
+            if (check.IsExceeded)
+            {
+                try
+                {
+                    await storage.DeleteObjectsAsync(cmd.ObjectKey, ct);
+                }
+                catch { /* best-effort cleanup; the sweeper handles leftovers */ }
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.MonthlyQuotaExceeded));
             }
         }
 
@@ -96,6 +116,9 @@ public sealed class CommitR2Handler(
 
         session.Status = UploadSessionStatus.Committed;
         session.R2UploadId = null;
+
+        if (quota is not null)
+            await quota.RecordAsync(user!.Id, plan, actualSize, ct);
 
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);

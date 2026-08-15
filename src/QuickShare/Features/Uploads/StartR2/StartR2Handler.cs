@@ -32,6 +32,15 @@ public sealed class StartR2Handler(
             return Result.Failure<StartR2Response>(new LightResults.Error(
                 $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
 
+        // Monthly quota check (authenticated users only; anonymous keeps the per-file cap).
+        if (user is not null)
+        {
+            var quota = new QuotaService(db);
+            var check = await quota.CheckAsync(user.Id, plan, cmd.FileSize, ct);
+            if (check.IsExceeded)
+                return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.MonthlyQuotaExceeded));
+        }
+
         var deliveryId = Guid.CreateVersion7();
 
         R2InitResult initResult;

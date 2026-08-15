@@ -196,6 +196,9 @@
   <data name="account_profile_error_name_required" xml:space="preserve"><value>Name is required</value></data>
   <data name="account_profile_error_image_size" xml:space="preserve"><value>Image must be under 5 MB</value></data>
   <data name="account_profile_error_update_failed" xml:space="preserve"><value>Failed to update profile</value></data>
+  <data name="account_usage_title" xml:space="preserve"><value>Monthly upload usage</value></data>
+  <data name="account_usage_summary" xml:space="preserve"><value>{0} of {1} used</value></data>
+  <data name="account_usage_unlimited" xml:space="preserve"><value>Unlimited monthly uploads on this plan</value></data>
   <data name="lang_switch_label" xml:space="preserve"><value>Switch language</value></data>
   <data name="cookie_consent_title" xml:space="preserve"><value>Cookie Settings</value></data>
   <data name="cookie_consent_desc" xml:space="preserve"><value>We use cookies and Google AdMob to show rewarded ads that unlock extra bandwidth. By accepting, you allow AdMob to use cookies for ad personalization and measurement.</value></data>

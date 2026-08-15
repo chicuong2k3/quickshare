@@ -11,6 +11,12 @@ public static class PlanTierLimits
     // Not a purchasable plan — the tier applied to uploads without a signed-in user.
     public const string Anonymous = "anonymous";
 
+    // Monthly upload quotas (bytes). Advertised on /pricing; enforced at start-r2
+    // (declared size) and commit-r2 (actual size). Anonymous has no monthly cap.
+    public const long FreeMonthlyQuotaBytes = 15L * 1024 * 1024 * 1024;      // 15 GB
+    public const long ProMonthlyQuotaBytes = 200L * 1024 * 1024 * 1024;     // 200 GB
+    public const long StudioMonthlyQuotaBytes = 2L * 1024 * 1024 * 1024 * 1024; // 2 TB
+
     private const string ConfigPrefix = "Pricing:Limits";
     private const string MaxFileSizeKey = "MaxFileSizeBytes";
     private const string MaxExpiryHoursKey = "MaxExpiryHours";
@@ -78,6 +84,18 @@ public static class PlanTierLimits
             Pro => null,
             Studio => null,
             _ => AdConstants.MaxDailyP2PUploads,
+        };
+    }
+
+    /// <summary>Monthly upload quota in bytes. Null means no monthly cap (anonymous).</summary>
+    public static long? GetMonthlyQuota(string plan)
+    {
+        return (plan ?? string.Empty).ToLowerInvariant() switch
+        {
+            Free => FreeMonthlyQuotaBytes,
+            Pro => ProMonthlyQuotaBytes,
+            Studio => StudioMonthlyQuotaBytes,
+            _ => null,
         };
     }
 

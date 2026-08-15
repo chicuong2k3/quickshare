@@ -1,0 +1,93 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/usage"
+@attribute [Authorize]
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="usage-card" class="db-card account-card account-usage">
+    <div class="db-card__body">
+        <h3 class="db-h4 account-usage__title">@Loc["account_usage_title"]</h3>
+        @if (unlimited)
+        {
+            <p class="db-p db-text-muted account-usage__unlimited">@Loc["account_usage_unlimited"]</p>
+        }
+        else
+        {
+            <div class="account-usage-bar" role="meter" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100" aria-label="@Loc["account_usage_title"]">
+                <div class="account-usage-bar__fill @barClass" style="width: @barWidth%"></div>
+            </div>
+            <div class="account-usage-meta">
+                <span class="db-text-muted">@Loc["account_usage_summary", usedText, quotaText]</span>
+                <span class="account-usage-pct">@pct%</span>
+            </div>
+        }
+    </div>
+</div>
+</HtmxFragment>
+
+@code {
+    private bool unlimited;
+    private int pct;
+    private int barWidth;
+    private string barClass = "account-usage-bar__fill--ok";
+    private string usedText = string.Empty;
+    private string quotaText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            var quota = PlanTierLimits.GetMonthlyQuota(user.Plan);
+            if (quota is null)
+            {
+                unlimited = true;
+                return;
+            }
+
+            var periodStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var usage = await Db.UserUsages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == user.Id && u.PeriodStart == periodStart);
+
+            var used = usage?.TotalBytesUploaded ?? 0;
+            pct = quota.Value == 0 ? 100 : (int)(used * 100 / quota.Value);
+            barWidth = Math.Min(100, pct);
+            barClass = pct switch
+            {
+                < 70 => "account-usage-bar__fill--ok",
+                < 90 => "account-usage-bar__fill--warn",
+                _ => "account-usage-bar__fill--over",
+            };
+            usedText = FormatBytes(used);
+            quotaText = FormatBytes(quota.Value);
+        }
+        catch
+        {
+            unlimited = true;
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        var magnitude = (int)Math.Floor(Math.Log(bytes, 1024));
+        if (magnitude >= units.Length) magnitude = units.Length - 1;
+        var size = bytes / Math.Pow(1024, magnitude);
+        return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
+    }
+}

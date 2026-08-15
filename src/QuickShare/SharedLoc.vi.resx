@@ -197,6 +197,9 @@
   <data name="account_profile_error_name_required" xml:space="preserve"><value>Tên không được để trống</value></data>
   <data name="account_profile_error_image_size" xml:space="preserve"><value>Ảnh phải dưới 5 MB</value></data>
   <data name="account_profile_error_update_failed" xml:space="preserve"><value>Không thể cập nhật hồ sơ</value></data>
+  <data name="account_usage_title" xml:space="preserve"><value>Dung lượng tải lên hàng tháng</value></data>
+  <data name="account_usage_summary" xml:space="preserve"><value>Đã dùng {0} trên {1}</value></data>
+  <data name="account_usage_unlimited" xml:space="preserve"><value>Gói này không giới hạn tải lên hàng tháng</value></data>
   <data name="lang_switch_label" xml:space="preserve"><value>Đổi ngôn ngữ</value></data>
   <data name="cookie_consent_title" xml:space="preserve"><value>Cài đặt cookie</value></data>
   <data name="cookie_consent_desc" xml:space="preserve"><value>Chúng tôi dùng cookie và Google AdMob để hiển thị quảng cáo có thưởng giúp mở khóa thêm băng thông. Khi đồng ý, bạn cho phép AdMob dùng cookie để cá nhân hóa và đo lường quảng cáo.</value></data>
