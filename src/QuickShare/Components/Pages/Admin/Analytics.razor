@@ -1,0 +1,179 @@
+@page "/admin/analytics"
+@layout MainLayout
+@attribute [Authorize]
+@using QuickShare.Features.Analytics.Dashboard
+@using Microsoft.Extensions.Options
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMessageBus Bus
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_analytics_page_title"]</PageTitle>
+
+@if (isHxRequest)
+{
+    <HtmxFragment>
+    <div id="admin-analytics-app" class="db-card admin-analytics-card">
+        <div class="db-card__body">
+            @if (!isAdmin)
+            {
+                <div class="db-alert db-alert--error" role="alert">@Loc["admin_analytics_forbidden"]</div>
+            }
+            else if (data is null)
+            {
+                <p class="db-p db-text-muted">@Loc["admin_analytics_empty"]</p>
+            }
+            else
+            {
+                <div class="admin-analytics-dau">
+                    <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_dau_title"]</h2>
+                    <div class="admin-analytics-cards">
+                        @foreach (var dau in data.DailyActiveUsers)
+                        {
+                            <div class="admin-analytics-card" data-ai-action="analytics.dau.@dau.Day.ToString("yyyyMMdd")">
+                                <span class="admin-analytics-card__day">@dau.Day.ToString("MMM d")</span>
+                                <span class="admin-analytics-card__value">@dau.Count</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="admin-analytics-funnel">
+                    <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_funnel_title"]</h2>
+                    <table class="admin-analytics-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Loc["admin_analytics_funnel_visitor"]</th>
+                                <th scope="col">@Loc["admin_analytics_funnel_upload_started"]</th>
+                                <th scope="col">@Loc["admin_analytics_funnel_upload_completed"]</th>
+                                <th scope="col">@Loc["admin_analytics_funnel_download_completed"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>@data.Funnel.Visitor</td>
+                                <td>@data.Funnel.UploadStarted</td>
+                                <td>@data.Funnel.UploadCompleted</td>
+                                <td>@data.Funnel.DownloadCompleted</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="admin-analytics-grid">
+                    <div class="admin-analytics-top-files">
+                        <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_top_files_title"]</h2>
+                        @if (data.TopFiles.Count == 0)
+                        {
+                            <p class="db-p db-text-muted">@Loc["admin_analytics_top_files_empty"]</p>
+                        }
+                        else
+                        {
+                            <table class="admin-analytics-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">@Loc["admin_analytics_file_col"]</th>
+                                        <th scope="col">@Loc["admin_analytics_downloads_col"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var file in data.TopFiles)
+                                    {
+                                        <tr>
+                                            <td class="admin-analytics-file-name">@file.FileName</td>
+                                            <td>@file.DownloadCount</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+
+                    <div class="admin-analytics-geo">
+                        <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_geo_title"]</h2>
+                        @if (data.GeographicSpread.Count == 0)
+                        {
+                            <p class="db-p db-text-muted">@Loc["admin_analytics_geo_empty"]</p>
+                        }
+                        else
+                        {
+                            <table class="admin-analytics-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">@Loc["admin_analytics_country_col"]</th>
+                                        <th scope="col">@Loc["admin_analytics_events_col"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var country in data.GeographicSpread)
+                                    {
+                                        <tr>
+                                            <td>@(country.CountryCode ?? "?")</td>
+                                            <td>@country.Count</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    </HtmxFragment>
+}
+else
+{
+    <PageWrapper id="admin-analytics-shell" Variant="PageVariant.Padded">
+        <div class="admin-analytics-heading">
+            <h1 class="db-h1">@Loc["admin_analytics_title"]</h1>
+            <p class="db-p db-text-muted">@Loc["admin_analytics_subtitle"]</p>
+        </div>
+
+        @if (!isAdmin)
+        {
+            <div class="db-alert db-alert--error" role="alert">@Loc["admin_analytics_forbidden"]</div>
+        }
+        else
+        {
+            <HtmxFragment>
+            <div id="admin-analytics-app" class="db-card admin-analytics-card"
+                 hx-get="@RoutePaths.AdminAnalytics"
+                 hx-trigger="load"
+                 hx-target="#admin-analytics-app"
+                 hx-select="#admin-analytics-app"
+                 hx-swap="outerHTML">
+                <div class="db-card__body">
+                    <div class="admin-skeleton-line admin-skeleton-row"></div>
+                    <div class="admin-skeleton-line admin-skeleton-row"></div>
+                    <div class="admin-skeleton-line admin-skeleton-row"></div>
+                </div>
+            </div>
+            </HtmxFragment>
+        }
+    </PageWrapper>
+}
+
+@code {
+    private bool isHxRequest;
+    private bool isAdmin;
+    private AnalyticsDashboardResponse? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        var request = httpContext?.Request;
+        isHxRequest = request is not null
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() == HtmxHeaders.RequestValue;
+
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+
+        if (!isHxRequest || !isAdmin)
+        {
+            return;
+        }
+
+        data = await Bus.InvokeAsync<AnalyticsDashboardResponse>(new AnalyticsDashboardQuery(), CancellationToken.None);
+    }
+}

@@ -578,6 +578,25 @@
   <data name="admin_flags_off" xml:space="preserve"><value>Tắt</value></data>
   <data name="admin_flags_rollout_label" xml:space="preserve"><value>Tỷ lệ rollout (%)</value></data>
   <data name="admin_flags_save_btn" xml:space="preserve"><value>Lưu</value></data>
+  <data name="admin_analytics_page_title" xml:space="preserve"><value>Thống kê — QuickShareCloud</value></data>
+  <data name="admin_analytics_title" xml:space="preserve"><value>Thống kê</value></data>
+  <data name="admin_analytics_subtitle" xml:space="preserve"><value>Chỉ số sản phẩm ẩn danh — DAU, phễu chuyển đổi, file hàng đầu, phân bố địa lý. Không thu thập dữ liệu cá nhân.</value></data>
+  <data name="admin_analytics_forbidden" xml:space="preserve"><value>Chỉ admin mới xem được thống kê.</value></data>
+  <data name="admin_analytics_empty" xml:space="preserve"><value>Chưa có dữ liệu thống kê trong kỳ này.</value></data>
+  <data name="admin_analytics_dau_title" xml:space="preserve"><value>Người dùng hoạt động hằng ngày (30 ngày qua)</value></data>
+  <data name="admin_analytics_funnel_title" xml:space="preserve"><value>Phễu chuyển đổi (khách → tải lên → gửi link → người nhận tải)</value></data>
+  <data name="admin_analytics_funnel_visitor" xml:space="preserve"><value>Khách</value></data>
+  <data name="admin_analytics_funnel_upload_started" xml:space="preserve"><value>Bắt đầu tải lên</value></data>
+  <data name="admin_analytics_funnel_upload_completed" xml:space="preserve"><value>Đã gửi link</value></data>
+  <data name="admin_analytics_funnel_download_completed" xml:space="preserve"><value>Người nhận tải</value></data>
+  <data name="admin_analytics_top_files_title" xml:space="preserve"><value>File hàng đầu theo lượt tải</value></data>
+  <data name="admin_analytics_top_files_empty" xml:space="preserve"><value>Chưa có lượt tải nào.</value></data>
+  <data name="admin_analytics_file_col" xml:space="preserve"><value>File</value></data>
+  <data name="admin_analytics_downloads_col" xml:space="preserve"><value>Lượt tải</value></data>
+  <data name="admin_analytics_geo_title" xml:space="preserve"><value>Phân bố địa lý (theo quốc gia)</value></data>
+  <data name="admin_analytics_geo_empty" xml:space="preserve"><value>Chưa có dữ liệu quốc gia.</value></data>
+  <data name="admin_analytics_country_col" xml:space="preserve"><value>Quốc gia</value></data>
+  <data name="admin_analytics_events_col" xml:space="preserve"><value>Sự kiện</value></data>
   <data name="upload_sender_email_label" xml:space="preserve"><value>Gửi link và cập nhật qua email cho tôi</value></data>
   <data name="upload_sender_email_placeholder" xml:space="preserve"><value>ban@example.com</value></data>
   <data name="upload_sender_email_hint" xml:space="preserve"><value>Tuỳ chọn — nhận link chia sẻ và thông báo khi file được tải. Huỷ bất cứ lúc nào.</value></data>

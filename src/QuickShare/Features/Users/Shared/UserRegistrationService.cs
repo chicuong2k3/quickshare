@@ -14,7 +14,8 @@ public static class UserRegistrationService
         string email,
         string? avatarUrl,
         AppDbContext db,
-        CancellationToken ct)
+        CancellationToken ct,
+        AnalyticsService? analytics = null)
     {
         var existing = await db.UserLogins
             .Include(l => l.User)
@@ -61,6 +62,9 @@ public static class UserRegistrationService
         });
 
         await db.SaveChangesAsync(ct);
+
+        if (analytics is not null)
+            await analytics.RecordAsync(AnalyticsEvents.Signup, new AnalyticsEventData(Plan: PlanTierLimits.Free), ct);
 
         return user.ToProfileResponse();
     }

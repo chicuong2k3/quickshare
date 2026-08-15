@@ -93,6 +93,13 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 ### Shares (`Features/Shares/`)
 - **P2P** — `POST /api/shares/p2p` — create P2P share code + WebRTC signaling metadata
 
+### Analytics (`Features/Analytics/`)
+- Anonymous product analytics (issue #24) — no PII, no user ids, no raw IPs
+- Events recorded at upload start/commit, download, P2P create/join, OTP pass/fail, ad interstitial, signup
+- Client beacon `POST /api/analytics/track` (allowlisted events, sets `qs_visitor` cookie)
+- Founder dashboard `/admin/analytics` + `GET /api/admin/analytics` — DAU, funnel, top files, geo spread
+- See [analytics-architecture.md](analytics-architecture.md)
+
 ### Users (`Features/Users/`)
 - **Profile** — `Account.razor` `<form method="post">` handler reads name/avatar, re-signs cookie. In-process via `IMessageBus` or `AppDbContext`.
 - **Registration** — `UserRegistrationService.RegisterAsync()` called in-process from Google OAuth `OnCreatingTicket` (DRY — same service used by all providers)
@@ -220,6 +227,7 @@ Entities live in `src/QuickShare/Data/Entities/` (namespace `QuickShare.Data.Ent
 | `Manifest` | `manifests` | Upload manifest metadata |
 | `DownloadTracking` | `download_tracking` | Per-delivery download counters |
 | `PaymentEvent` | `payment_events` | PayOS payment webhook events |
+| `AnalyticsEvent` | `analytics_events` | Anonymous product events (visitor, upload, download, P2P, OTP, ad, signup) — no PII |
 
 ### Constants
 - `Infrastructure/PlanTierLimits.cs` — plan limits: max file size, max expiry days, max downloads, monthly bytes, concurrency
@@ -382,6 +390,7 @@ src/QuickShare/
 │   ├── Uploads/           # StartR2, CommitR2, AbortR2 + Shared/ (ManifestEncryption, ManifestData)
 │   ├── Users/             # Avatar endpoint, Shared/ (UserRegistrationService, UserMapper)
 │   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)
+│   ├── Analytics/         # Anonymous analytics: AnalyticsService, track endpoint, dashboard query (issue #24)
 │   └── Users/             # UserRegistrationService, UserMapper
 ├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, HtmxCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware
 ├── Middleware/            # (empty — middleware lives in Infrastructure/)

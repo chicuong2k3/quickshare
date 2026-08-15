@@ -19,6 +19,7 @@ public sealed class CommitR2Handler(
     SenderEmailTokens senderEmailTokens,
     SenderEmailRateLimiter senderEmailRateLimiter,
     IOptions<EmailOptions> emailOptions,
+    AnalyticsService analytics,
     ILogger<CommitR2Handler> logger)
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
@@ -146,6 +147,9 @@ public sealed class CommitR2Handler(
 
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);
+
+        await analytics.RecordAsync(AnalyticsEvents.UploadCompleted,
+            new AnalyticsEventData(delivery.FileName, delivery.FileSize, delivery.ContentType, plan), ct);
 
         if (!string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
         {

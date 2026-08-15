@@ -577,6 +577,25 @@
   <data name="admin_flags_off" xml:space="preserve"><value>Off</value></data>
   <data name="admin_flags_rollout_label" xml:space="preserve"><value>Rollout percentage</value></data>
   <data name="admin_flags_save_btn" xml:space="preserve"><value>Save</value></data>
+  <data name="admin_analytics_page_title" xml:space="preserve"><value>Analytics — QuickShareCloud</value></data>
+  <data name="admin_analytics_title" xml:space="preserve"><value>Analytics</value></data>
+  <data name="admin_analytics_subtitle" xml:space="preserve"><value>Anonymous product metrics — DAU, funnel, top files, geographic spread. No personal data is collected.</value></data>
+  <data name="admin_analytics_forbidden" xml:space="preserve"><value>Only admins can view analytics.</value></data>
+  <data name="admin_analytics_empty" xml:space="preserve"><value>No analytics data in this window yet.</value></data>
+  <data name="admin_analytics_dau_title" xml:space="preserve"><value>Daily active visitors (last 30 days)</value></data>
+  <data name="admin_analytics_funnel_title" xml:space="preserve"><value>Funnel (visitor → upload → link sent → recipient download)</value></data>
+  <data name="admin_analytics_funnel_visitor" xml:space="preserve"><value>Visitor</value></data>
+  <data name="admin_analytics_funnel_upload_started" xml:space="preserve"><value>Upload started</value></data>
+  <data name="admin_analytics_funnel_upload_completed" xml:space="preserve"><value>Link sent</value></data>
+  <data name="admin_analytics_funnel_download_completed" xml:space="preserve"><value>Recipient download</value></data>
+  <data name="admin_analytics_top_files_title" xml:space="preserve"><value>Top files by downloads</value></data>
+  <data name="admin_analytics_top_files_empty" xml:space="preserve"><value>No downloads yet.</value></data>
+  <data name="admin_analytics_file_col" xml:space="preserve"><value>File</value></data>
+  <data name="admin_analytics_downloads_col" xml:space="preserve"><value>Downloads</value></data>
+  <data name="admin_analytics_geo_title" xml:space="preserve"><value>Geographic spread (by country)</value></data>
+  <data name="admin_analytics_geo_empty" xml:space="preserve"><value>No country data yet.</value></data>
+  <data name="admin_analytics_country_col" xml:space="preserve"><value>Country</value></data>
+  <data name="admin_analytics_events_col" xml:space="preserve"><value>Events</value></data>
   <data name="upload_sender_email_label" xml:space="preserve"><value>Email me the link + updates</value></data>
   <data name="upload_sender_email_placeholder" xml:space="preserve"><value>you@example.com</value></data>
   <data name="upload_sender_email_hint" xml:space="preserve"><value>Optional — get your share link and download updates by email. Unsubscribe anytime.</value></data>

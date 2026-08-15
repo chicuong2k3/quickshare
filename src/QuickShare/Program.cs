@@ -139,8 +139,12 @@ var useInMemoryDb = builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
 
 if (useInMemoryDb)
 {
+    // Test factories pass a unique name (InMemoryDatabaseName) so each fixture gets an
+    // isolated store. Without it the default InMemory root is shared process-wide, so the
+    // per-IP anonymous P2P quota (3/day) leaks across test classes and fails later tests.
+    var inMemoryDbName = builder.Configuration["InMemoryDatabaseName"] ?? "QuickShareTests";
     builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseInMemoryDatabase("QuickShareTests"));
+        opts.UseInMemoryDatabase(inMemoryDbName));
 }
 else
 {
@@ -223,6 +227,10 @@ builder.Services.AddSingleton<CacheService>();
 builder.Services.Configure<FeatureFlagSettings>(builder.Configuration.GetSection(FeatureFlagSettings.Section));
 builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
 builder.Services.AddScoped<IFeatureFlagService, FeatureFlagService>();
+
+// ── Analytics (issue #24) — anonymous product events + founder dashboard ──
+builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(AnalyticsOptions.Section));
+builder.Services.AddScoped<AnalyticsService>();
 
 builder.Host.UseWolverine(opts =>
 {
@@ -317,6 +325,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             {
                 // Register in-process (no HTTP roundtrip) via the shared registration service.
                 var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
                 await UserRegistrationService.RegisterAsync(
                     AuthConstants.GoogleProvider,
                     subject,
@@ -324,7 +333,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                     email,
                     avatar,
                     db,
-                    ctx.HttpContext.RequestAborted);
+                    ctx.HttpContext.RequestAborted,
+                    analytics);
             }
         };
     });

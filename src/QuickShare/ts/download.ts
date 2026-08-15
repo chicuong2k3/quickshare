@@ -30,6 +30,15 @@ window.downloadApp = (function (): DownloadPage {
 
     function apiBase(): string { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function shareCode(): string { const m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
+
+    // Anonymous ad-interstitial analytics beacon (issue #24). Fire-and-forget;
+    // a failed beacon must never block the download flow.
+    function trackAdView(): void {
+        try {
+            navigator.sendBeacon('/api/analytics/track',
+                new Blob([JSON.stringify({ event: 'ad_interstitial_viewed' })], { type: 'application/json' }));
+        } catch (_) { /* ignore */ }
+    }
     function show(id: string) { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
     function hide(id: string) { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
     function text(id: string, val: string) { const el = document.getElementById(id); if (el) el.textContent = val; }
@@ -97,7 +106,7 @@ window.downloadApp = (function (): DownloadPage {
             return;
         }
         if (info.hasOtp) state.phase = 'otp';
-        else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
+        else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
         else state.phase = 'file';
         if (state.expiresAt) startExpiryTimer();
         render();
@@ -225,7 +234,7 @@ window.downloadApp = (function (): DownloadPage {
             .then(function () {
                 state.verifiedOtp = otp;
                 const info = infoFromDom();
-                if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
+                if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
                 else state.phase = 'file';
             })
             .catch(function (e) {

@@ -11,6 +11,7 @@ public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey
 public sealed class StartR2Handler(
     IStorageProvider storage,
     IHttpContextAccessor httpContextAccessor,
+    AnalyticsService analytics,
     ILogger<StartR2Handler> logger)
 {
     // S3/R2 minimum part size (all parts except the last). Caps how many presigned
@@ -76,6 +77,9 @@ public sealed class StartR2Handler(
 
         db.UploadSessions.Add(session);
         await db.SaveChangesAsync(ct);
+
+        await analytics.RecordAsync(AnalyticsEvents.UploadStarted,
+            new AnalyticsEventData(cmd.FileName, cmd.FileSize, cmd.ContentType, plan), ct);
 
         return Result.Success(new StartR2Response(
             deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls));

@@ -86,6 +86,10 @@ public sealed class CreateP2PShareEndpoint : Endpoint<CreateP2PShareRequest>
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(ct);
 
+        var analytics = Resolve<AnalyticsService>();
+        await analytics.RecordAsync(AnalyticsEvents.P2pSessionCreated,
+            new AnalyticsEventData(req.FileName, req.FileSize, req.MimeType, plan), ct);
+
         var shareLink = $"{req.BaseUrl.TrimEnd('/')}/p2p/d/{shareCode}";
 
         HttpContext.Response.Headers.Location = $"/p2p/d/{shareCode}";

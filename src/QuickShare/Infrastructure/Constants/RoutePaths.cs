@@ -28,4 +28,5 @@ public static class RoutePaths
     public const string ToolsSendImagesUncompressed = "/tools/gui-anh-khong-nen";
     public const string ToolsShareText = "/tools/share-text";
     public const string AdminFlags = "/admin/flags";
+    public const string AdminAnalytics = "/admin/analytics";
 }

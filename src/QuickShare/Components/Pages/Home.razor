@@ -163,4 +163,16 @@
 
 <script src="/js/paste-anywhere.js"></script>
 
+@* Anonymous visitor beacon (issue #24) — first funnel step. Fires per real page
+   load even when the shell is served from the public HTTP cache. *@
+<script>
+    (function () {
+        try {
+            navigator.sendBeacon('@AnalyticsConstants.TrackRoute',
+                new Blob([JSON.stringify({ event: '@AnalyticsEvents.Visitor' })], { type: 'application/json' }));
+        } catch (e) { /* analytics must never break the page */ }
+    })();
+</script>
+
+
 

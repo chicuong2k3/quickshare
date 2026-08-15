@@ -5,6 +5,7 @@ global using Microsoft.EntityFrameworkCore;
 global using QuickShare.Data;
 global using QuickShare.Data.Entities;
 global using QuickShare.Extensions;
+global using QuickShare.Features.Analytics;
 global using QuickShare.Infrastructure;
 global using QuickShare.Infrastructure.Constants;
 global using QuickShare.Infrastructure.Storage;

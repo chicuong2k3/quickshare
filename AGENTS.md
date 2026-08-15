@@ -98,6 +98,7 @@ protected override async Task OnInitializedAsync()
 - **No magic strings / numbers** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed). Protocol identifiers, HTTP headers, route paths, config keys, entity statuses, roles, and wire formats MUST be centralized in `static class` string constants (e.g. `AuthConstants`, `PlanTierLimits`, `P2PProtocol`, `RoutePaths`).
 - **Isolation CSS** — use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`). **Exception:** markup returned inside an HTMX partial does not carry the requesting component's scope attribute, so anything rendered that way must be styled from `wwwroot/css/app.css` with a prefixed global class (`account-`, `files-`, …).
 - **User-facing strings live in `SharedLoc.{en,vi}.resx`** — never hardcode display copy in a page. Strings that JavaScript needs are handed to it as a JSON block rendered by the page (see `download-i18n`), so no `.js` file carries English literals.
+- **Product analytics are anonymous** — new lifecycle events MUST be recorded via `AnalyticsService.RecordAsync()` (see `docs/analytics-architecture.md`). Never store email, user id, or raw IP in an analytics event; use the `qs_visitor` cookie id + `CF-IPCountry` code only. New event names go in `AnalyticsEvents` constants. Recording must never break the primary flow — wrap in try/catch or use the captured-context overload.
 
 ## Design System
 

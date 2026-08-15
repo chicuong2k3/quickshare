@@ -85,6 +85,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             // are disposed once the response completes, racing the background task.
             var scopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
             var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+            var analyticsContext = AnalyticsService.CaptureContext(httpContext);
 
             _ = Task.Run(async () =>
             {
@@ -107,6 +108,11 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                         });
 
                         await updateDb.SaveChangesAsync(CancellationToken.None);
+
+                        var analytics = scope.ServiceProvider.GetRequiredService<AnalyticsService>();
+                        await analytics.RecordAsync(AnalyticsEvents.DownloadCompleted,
+                            new AnalyticsEventData(entity.FileName, entity.FileSize, entity.ContentType, null),
+                            analyticsContext, CancellationToken.None);
 
                         var cache = scope.ServiceProvider.GetRequiredService<CacheService>();
                         await cache.RemoveAsync($"download:info:{query.ShareCode}");

@@ -6,7 +6,7 @@ public record VerifyOtpCommand(string ShareCode, string Otp);
 
 public record VerifyOtpResponse(bool Valid);
 
-public sealed class VerifyOtpHandler
+public sealed class VerifyOtpHandler(AnalyticsService analytics)
 {
     public async Task<Result<VerifyOtpResponse>> Handle(VerifyOtpCommand cmd, AppDbContext db, CancellationToken ct)
     {
@@ -15,11 +15,20 @@ public sealed class VerifyOtpHandler
             .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
 
         if (delivery is null)
+        {
+            await analytics.RecordAsync(AnalyticsEvents.OtpFail, ct: ct);
             return Result.Failure<VerifyOtpResponse>(new LightResults.Error("Delivery not found."));
-        if (delivery.OtpHash is null)
-            return Result.Success(new VerifyOtpResponse(true));
+        }
 
-        return BCrypt.Net.BCrypt.Verify(cmd.Otp, delivery.OtpHash)
+        if (delivery.OtpHash is null)
+        {
+            await analytics.RecordAsync(AnalyticsEvents.OtpPass, ct: ct);
+            return Result.Success(new VerifyOtpResponse(true));
+        }
+
+        var valid = BCrypt.Net.BCrypt.Verify(cmd.Otp, delivery.OtpHash);
+        await analytics.RecordAsync(valid ? AnalyticsEvents.OtpPass : AnalyticsEvents.OtpFail, ct: ct);
+        return valid
             ? Result.Success(new VerifyOtpResponse(true))
             : Result.Failure<VerifyOtpResponse>(new LightResults.Error("Wrong code."));
     }

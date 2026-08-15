@@ -50,7 +50,7 @@ public sealed class P2PSignalingMiddleware
 
         try
         {
-            await HandleConnectionAsync(ws, shareCode, context.RequestAborted);
+            await HandleConnectionAsync(ws, shareCode, context.RequestServices, context.RequestAborted);
         }
         finally
         {
@@ -87,7 +87,7 @@ public sealed class P2PSignalingMiddleware
         }
     }
 
-    private async Task HandleConnectionAsync(WebSocket ws, string shareCode, CancellationToken ct)
+    private async Task HandleConnectionAsync(WebSocket ws, string shareCode, IServiceProvider requestServices, CancellationToken ct)
     {
         try
         {
@@ -121,7 +121,7 @@ public sealed class P2PSignalingMiddleware
                 }
 
                 var connectionId = shareCode + "_" + ws.GetHashCode();
-                await HandleMessageAsync(ws, shareCode, connectionId, text, ct);
+                await HandleMessageAsync(ws, shareCode, connectionId, text, requestServices, ct);
             }
         }
         catch (WebSocketException ex)
@@ -139,7 +139,7 @@ public sealed class P2PSignalingMiddleware
         }
     }
 
-    private async Task HandleMessageAsync(WebSocket ws, string shareCode, string connectionId, string text, CancellationToken ct)
+    private async Task HandleMessageAsync(WebSocket ws, string shareCode, string connectionId, string text, IServiceProvider requestServices, CancellationToken ct)
     {
         try
         {
@@ -154,7 +154,7 @@ public sealed class P2PSignalingMiddleware
             switch (type)
             {
                 case P2PProtocol.TypeRegister:
-                    await HandleRegisterAsync(ws, shareCode, connectionId, root, ct);
+                    await HandleRegisterAsync(ws, shareCode, connectionId, root, requestServices, ct);
                     break;
 
                 case P2PProtocol.TypeOffer:
@@ -176,7 +176,7 @@ public sealed class P2PSignalingMiddleware
         }
     }
 
-    private async Task HandleRegisterAsync(WebSocket ws, string shareCode, string connectionId, JsonElement root, CancellationToken ct)
+    private async Task HandleRegisterAsync(WebSocket ws, string shareCode, string connectionId, JsonElement root, IServiceProvider requestServices, CancellationToken ct)
     {
         var role = root.TryGetProperty(P2PProtocol.PropRole, out var roleProp) ? roleProp.GetString() : null;
         if (role is not (P2PProtocol.RoleSender or P2PProtocol.RoleReceiver))
@@ -251,6 +251,16 @@ public sealed class P2PSignalingMiddleware
             {
                 await _manager.SendToSocketAsync(ws, new { type = P2PProtocol.TypeError, message = "Failed to register receiver" }, ct);
                 return;
+            }
+
+            try
+            {
+                var analytics = requestServices.GetRequiredService<AnalyticsService>();
+                await analytics.RecordAsync(AnalyticsEvents.P2pReceiverJoined, ct: ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Analytics record failed for receiver join {ShareCode}", shareCode);
             }
 
             var room = _manager.GetRoom(shareCode);

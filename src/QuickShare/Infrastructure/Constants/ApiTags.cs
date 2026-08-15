@@ -11,4 +11,5 @@ public static class ApiTags
     public const string ClientErrors = "Client Errors";
     public const string Notifications = "Notifications";
     public const string Admin = "Admin";
+    public const string Analytics = "Analytics";
 }

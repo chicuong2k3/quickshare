@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<DailyAdTracking> DailyAdTrackings => Set<DailyAdTracking>();
     public DbSet<DailyP2PUsage> DailyP2PUsages => Set<DailyP2PUsage>();
     public DbSet<FeatureFlagOverride> FeatureFlagOverrides => Set<FeatureFlagOverride>();
+    public DbSet<AnalyticsEvent> AnalyticsEvents => Set<AnalyticsEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -197,6 +198,17 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Key).IsRequired().HasMaxLength(64);
             entity.HasIndex(e => e.Key).IsUnique();
+        });
+
+        modelBuilder.Entity<AnalyticsEvent>(entity =>
+        {
+            entity.ToTable("analytics_events");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EventName).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.CountryCode).HasMaxLength(2);
+            entity.HasIndex(e => new { e.EventName, e.CreatedAt });
+            entity.HasIndex(e => new { e.VisitorId, e.CreatedAt });
+            entity.HasIndex(e => e.CountryCode);
         });
 
     }
