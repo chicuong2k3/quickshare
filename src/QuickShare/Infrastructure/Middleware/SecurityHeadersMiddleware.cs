@@ -69,6 +69,7 @@ public sealed class SecurityHeaderOptions
     /// Full CSP string. 'unsafe-inline' is required for script because the
     /// Blazor SSR shell + htmx partials ship inline config blocks; everything
     /// else is locked down (self-only default, frame-ancestors none, no object/embed).
+    /// connect-src allows https: because R2 presigned URLs live on a different origin.
     /// </summary>
     public string ContentSecurityPolicy { get; set; } =
         "default-src 'self'; " +
@@ -76,7 +77,7 @@ public sealed class SecurityHeaderOptions
         "style-src 'self' 'unsafe-inline' https://daub.dev https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com data:; " +
         "img-src 'self' data: blob: https:; " +
-        "connect-src 'self' https://daub.dev wss: ws:; " +
+        "connect-src 'self' https: wss: ws:; " +
         "frame-ancestors 'none'; " +
         "base-uri 'self'; " +
         "form-action 'self'; " +

@@ -45,6 +45,10 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
         builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
         builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");
+        // Upload part PUTs go to http://stub.local/... (BrowserStorageStub), which a
+        // production CSP (connect-src 'self' https:) would block. CSP itself is covered
+        // by SecurityHeadersTests in the server suite — keep the browser suite CSP-free.
+        builder.UseSetting("SecurityHeaders:Enabled", "false");
 
         builder.ConfigureTestServices(services =>
         {
