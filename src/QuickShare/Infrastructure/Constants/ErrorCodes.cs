@@ -19,4 +19,5 @@ public static class ErrorCodes
     public const string TrialAlreadyUsed = "trial_already_used";
     public const string ExpiryInvalid = "expiry_invalid";
     public const string ExpiryTooLong = "expiry_too_long";
+    public const string PasswordTooLong = "password_too_long";
 }

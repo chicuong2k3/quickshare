@@ -47,6 +47,25 @@
                     break;
 
                 case DownloadRenderState.Ready:
+
+                    @* Password Gate (issue #44) — unlocked before the OTP gate *@
+                    <div id="download-phase-password" class="db-text-center @PhaseClass(PhasePassword)">
+                        <div class="icon-box --lock">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
+                            </svg>
+                        </div>
+                        <h2 class="db-h2" style="font-size: 1.125rem">@Loc["dl_password_h2"]</h2>
+                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_password_sub"]</p>
+                        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
+                            <input type="password" id="dl-password" class="db-field__input db-input" style="max-width: 20rem; width: 100%" autocomplete="off" onkeydown="downloadApp.passwordKeydown(event)" aria-label="@Loc["dl_password_h2"]" />
+                            <p id="dl-password-error" class="error hidden"></p>
+                            <button id="dl-password-btn" type="button" class="btn" onclick="downloadApp.verifyPassword()" data-ai-action="download.password.unlock">
+                                <span id="dl-password-btn-text">@Loc["dl_password_unlock"]</span>
+                            </button>
+                        </div>
+                    </div>
+
                     @* OTP Gate *@
                     <div id="download-phase-otp" class="db-text-center @PhaseClass(PhaseOtp)">
                         <div class="icon-box --lock">
@@ -330,24 +349,25 @@
 </PageWrapper>
 
 @code {
+    private const string PhasePassword = "password";
     private const string PhaseOtp = "otp";
     private const string PhaseFile = "file";
-
     [Parameter] public string ShareCode { get; set; } = string.Empty;
 
     // The server renders the phase that works without JS. The ad phase never
     // qualifies, so JS raises that one after the page is already usable.
-    private string InitialPhase => Info?.HasOtp == true ? PhaseOtp : PhaseFile;
-
+    private string InitialPhase => Info?.HasPassword == true ? PhasePassword : Info?.HasOtp == true ? PhaseOtp : PhaseFile;
     private string PhaseClass(string phase) => InitialPhase == phase ? string.Empty : "hidden";
-
-    // download.js reads its copy from here rather than carrying English literals.
     private Dictionary<string, string> Strings() => new()
     {
         ["otpIncomplete"] = Loc["dl_otp_incomplete"],
         ["otpWrong"] = Loc["dl_otp_wrong"],
         ["otpVerifying"] = Loc["dl_otp_verifying"],
         ["otpUnlock"] = Loc["dl_otp_unlock"],
+        ["passwordIncomplete"] = Loc["dl_password_incomplete"],
+        ["passwordWrong"] = Loc["dl_password_wrong"],
+        ["passwordVerifying"] = Loc["dl_password_verifying"],
+        ["passwordUnlock"] = Loc["dl_password_unlock"],
         ["adCountdown"] = Loc["dl_ad_countdown"],
         ["previewLoading"] = Loc["dl_preview_loading"],
         ["previewLines"] = Loc["dl_preview_lines"],
@@ -430,6 +450,7 @@
                 DownloadCount = value.DownloadCount,
                 MaxDownloads = value.MaxDownloads,
                 HasOtp = value.HasOtp,
+                HasPassword = value.HasPassword,
                 SenderPlan = value.SenderPlan,
                 Message = value.Message
             };
@@ -485,7 +506,7 @@
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }
         public DateTime? ExpiresAt { get; set; } public DateTime? DeliverAt { get; set; } public string Status { get; set; } = string.Empty;
         public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
-        public bool HasOtp { get; set; } public string SenderPlan { get; set; } = string.Empty;
+        public bool HasOtp { get; set; } public bool HasPassword { get; set; } public string SenderPlan { get; set; } = string.Empty;
         public string? Message { get; set; }
     }
 }

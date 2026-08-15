@@ -244,6 +244,9 @@
   <data name="upload_dropzone_sub" xml:space="preserve"><value>hoặc Ctrl+V để dán, hoặc nhấp để duyệt</value></data>
   <data name="upload_otp_label" xml:space="preserve"><value>Mã bảo mật (tùy chọn)</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mã này để tải file</value></data>
+  <data name="upload_password_label" xml:space="preserve"><value>Mật khẩu chia sẻ (tùy chọn)</value></data>
+  <data name="upload_password_placeholder" xml:space="preserve"><value>Đặt mật khẩu người nhận phải nhập</value></data>
+  <data name="upload_password_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mật khẩu này trước khi tải file.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Thời gian gửi</value></data>
   <data name="upload_deliver_at_hint" xml:space="preserve"><value>Liên kết sẽ kích hoạt vào thời điểm này.</value></data>
   <data name="upload_expiry_label" xml:space="preserve"><value>Hết hạn: {0}</value></data>
@@ -517,6 +520,12 @@
   <data name="dl_otp_verifying" xml:space="preserve"><value>Đang kiểm tra…</value></data>
   <data name="dl_otp_incomplete" xml:space="preserve"><value>Vui lòng nhập đủ 6 số.</value></data>
   <data name="dl_otp_wrong" xml:space="preserve"><value>Mã không đúng.</value></data>
+  <data name="dl_password_h2" xml:space="preserve"><value>Nhập mật khẩu</value></data>
+  <data name="dl_password_sub" xml:space="preserve"><value>Hỏi người gửi mật khẩu để mở file này.</value></data>
+  <data name="dl_password_unlock" xml:space="preserve"><value>Mở khoá</value></data>
+  <data name="dl_password_verifying" xml:space="preserve"><value>Đang kiểm tra…</value></data>
+  <data name="dl_password_incomplete" xml:space="preserve"><value>Vui lòng nhập mật khẩu.</value></data>
+  <data name="dl_password_wrong" xml:space="preserve"><value>Mật khẩu không đúng.</value></data>
   <data name="dl_ad_title" xml:space="preserve"><value>Gửi bằng QuickShareCloud</value></data>
   <data name="dl_ad_sub" xml:space="preserve"><value>Gửi file lớn, mã hoá đầu-cuối.</value></data>
   <data name="dl_ad_upgrade" xml:space="preserve"><value>Xem gói</value></data>

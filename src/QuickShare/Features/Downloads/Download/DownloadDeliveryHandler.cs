@@ -3,7 +3,7 @@ using QuickShare.Features.Deliveries.Otp;
 
 namespace QuickShare.Features.Downloads.Download;
 
-public record DownloadDeliveryQuery(string ShareCode, string? Otp);
+public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp);
 
 public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
 {
@@ -43,6 +43,29 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             return;
         }
 
+
+        // Password gate (issue #44) runs before the OTP gate — the recipient
+        // unlocks the password first, then any sender-set code.
+        if (!string.IsNullOrEmpty(delivery.PasswordHash))
+        {
+            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, ct);
+            if (isLocked)
+            {
+                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, ct);
+                response.StatusCode = StatusCodes.Status423Locked;
+                response.Headers[HttpHeaders.RetryAfter] = retryAfter.ToString(CultureInfo.InvariantCulture);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(query.Password) || !BCrypt.Net.BCrypt.Verify(query.Password, delivery.PasswordHash))
+            {
+                await lockout.RecordFailureAsync(db, delivery.Id, ct);
+                response.StatusCode = 403;
+                return;
+            }
+
+            await lockout.ResetAsync(db, delivery.Id, ct);
+        }
         if (!string.IsNullOrEmpty(delivery.OtpHash))
         {
             var isLocked = await lockout.IsLockedAsync(db, delivery.Id, ct);

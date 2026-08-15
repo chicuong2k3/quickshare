@@ -28,7 +28,7 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage)
         if (delivery.DownloadCount >= delivery.MaxDownloads)
             return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
 
-        if (!string.IsNullOrEmpty(delivery.OtpHash) || string.IsNullOrEmpty(delivery.StoragePath))
+        if (!string.IsNullOrEmpty(delivery.OtpHash) || !string.IsNullOrEmpty(delivery.PasswordHash) || string.IsNullOrEmpty(delivery.StoragePath))
             return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DeliveryGated));
 
         try

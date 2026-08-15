@@ -4,6 +4,7 @@ namespace QuickShare.Data.Entities;
 public record Delivery : BaseAuditEntity
 {
     public const int MessageMaxLength = 500;
+    public const int PasswordMaxLength = 72;
 
     public Guid? SenderId { get; init; }
     public string? SenderEmail { get; set; }
@@ -20,6 +21,7 @@ public record Delivery : BaseAuditEntity
     public DateTime? ExpiresAt { get; set; }
     public DateTime? DeliverAt { get; set; }
     public string? OtpHash { get; set; }
+    public string? PasswordHash { get; set; }
     public string? Message { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;

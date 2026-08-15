@@ -111,6 +111,14 @@
                     </div>
                 </div>
 
+                @* Share password (issue #44) — optional, BCrypt-hashed server-side *@
+                <div class="sender-email-wrap">
+                    <label for="upload-password" class="otp-label">@Loc["upload_password_label"]</label>
+                    <input type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" />
+                    <span class="otp-hint">@Loc["upload_password_hint"]</span>
+                </div>
+
+
                 @* Sender note (issue #137) — optional, plain text, rendered escaped on /d *@
                 <div class="sender-email-wrap">
                     <label for="upload-message" class="otp-label">@Loc["upload_message_label"]</label>

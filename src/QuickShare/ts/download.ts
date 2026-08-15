@@ -7,6 +7,7 @@ window.downloadApp = (function (): DownloadPage {
         zkOpen: boolean;
         otpVerifying: boolean;
         verifiedOtp: string;
+        verifiedPassword: string;
         adCountdown: number;
         adTimer: ReturnType<typeof setInterval> | null;
         expiresAt: Date | null;
@@ -21,7 +22,7 @@ window.downloadApp = (function (): DownloadPage {
         mediaPreviewStarted: boolean;
         fullText: string | null;
         bytes: ArrayBuffer | null;
-    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, fullText: null, bytes: null };
+    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, fullText: null, bytes: null };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
     const TEXT_MIME_PREFIX = 'text/plain';
@@ -47,8 +48,9 @@ window.downloadApp = (function (): DownloadPage {
     function removeAttr(id: string, name: string) { const el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
     function render() {
-        hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file'); hide('download-phase-expired');
-        if (state.phase === 'otp') show('download-phase-otp');
+        hide('download-phase-password'); hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file'); hide('download-phase-expired');
+        if (state.phase === 'password') show('download-phase-password');
+        else if (state.phase === 'otp') show('download-phase-otp');
         else if (state.phase === 'ad') show('download-phase-ad');
         else if (state.phase === 'expired') show('download-phase-expired');
         else if (state.phase === 'file') {
@@ -107,7 +109,8 @@ window.downloadApp = (function (): DownloadPage {
             startScheduledCountdown();
             return;
         }
-        if (info.hasOtp) state.phase = 'otp';
+        if (info.hasPassword) state.phase = 'password';
+        else if (info.hasOtp) state.phase = 'otp';
         else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
         else state.phase = 'file';
         if (state.expiresAt) startExpiryTimer();
@@ -245,6 +248,36 @@ window.downloadApp = (function (): DownloadPage {
             .finally(function () { text('dl-otp-btn-text', t('otpUnlock')); removeAttr('dl-otp-btn', 'disabled'); render(); });
     }
 
+    function readPassword(): string {
+        const input = document.getElementById('dl-password') as HTMLInputElement | null;
+        return input ? input.value : '';
+    }
+
+    function passwordKeydown(event: KeyboardEvent) {
+        if (event.key === 'Enter') verifyPassword();
+    }
+
+    function verifyPassword() {
+        const password = readPassword();
+        if (!password) { show('dl-password-error'); text('dl-password-error', t('passwordIncomplete')); return; }
+        hide('dl-password-error'); text('dl-password-btn-text', t('passwordVerifying')); attr('dl-password-btn', 'disabled', 'disabled');
+        fetch(apiBase() + '/api/deliveries/' + shareCode() + '/verify-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password }) })
+            .then(function (r) {
+                return r.ok ? r.json().catch(function () { return {}; }) : r.json().then(function (b) { throw b; }).catch(function () { throw {}; });
+            })
+            .then(function () {
+                state.verifiedPassword = password;
+                const info = infoFromDom();
+                if (info.hasOtp) state.phase = 'otp';
+                else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
+                else state.phase = 'file';
+            })
+            .catch(function (e) {
+                show('dl-password-error'); text('dl-password-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || t('passwordWrong'));
+            })
+            .finally(function () { text('dl-password-btn-text', t('passwordUnlock')); removeAttr('dl-password-btn', 'disabled'); render(); });
+    }
+
     function startAdTimer() {
         state.adCountdown = 5;
         text('dl-ad-countdown', t('adCountdown', 5));
@@ -266,7 +299,10 @@ window.downloadApp = (function (): DownloadPage {
 
     function downloadUrl(): string {
         let url = apiBase() + '/api/downloads/' + shareCode();
-        if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);
+        const params: string[] = [];
+        if (state.verifiedPassword) params.push('password=' + encodeURIComponent(state.verifiedPassword));
+        if (state.verifiedOtp) params.push('otp=' + encodeURIComponent(state.verifiedOtp));
+        if (params.length) url += '?' + params.join('&');
         return url;
     }
 
@@ -277,7 +313,7 @@ window.downloadApp = (function (): DownloadPage {
         // after the download starts, never before.
         show('dl-viral-cta');
         if (state.bytes) { saveBytes(state.bytes); return false; }
-        if (!state.isEncrypted && !state.verifiedOtp) return true;
+        if (!state.isEncrypted && !state.verifiedOtp && !state.verifiedPassword) return true;
         if (event && event.preventDefault) event.preventDefault();
         state.downloading = true; render();
         if (state.isEncrypted) {
@@ -340,7 +376,7 @@ window.downloadApp = (function (): DownloadPage {
             : ct.indexOf('video/') === 0 ? 'video'
             : ct.indexOf('audio/') === 0 ? 'audio'
             : ct === 'application/pdf' ? 'pdf' : null;
-        if (!kind || state.isEncrypted || i.hasOtp) return;
+        if (!kind || state.isEncrypted || i.hasOtp || i.hasPassword) return;
 
         const container = document.getElementById('dl-media-preview');
         if (!container) return;
@@ -386,5 +422,5 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-    return { verifyOtp: verifyOtp, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText };
+    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText };
 })();

@@ -57,6 +57,7 @@ browser download needed.
 | Feature flags | `FeatureFlagServiceTests`, `AdminFlagsApiTests` |
 | Security headers + robots | `SecurityHeadersTests` |
 | OTP brute-force lockout | `OtpLockoutTests` |
+| Share password (download gate) | `DeliveryPasswordTests` |
 | New-device login tracking | `DeviceTrackerTests` |
 | Abuse/DMCA reports + admin | `AbuseReportTests` |
 | Localization vi/en | `LocalizationTests`, `LanguageSwitchTests` |

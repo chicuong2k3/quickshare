@@ -243,6 +243,9 @@
   <data name="upload_dropzone_sub" xml:space="preserve"><value>or Ctrl+V to paste, or click to browse</value></data>
   <data name="upload_otp_label" xml:space="preserve"><value>Security code (optional)</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>If set, recipients must enter this code to download</value></data>
+  <data name="upload_password_label" xml:space="preserve"><value>Share password (optional)</value></data>
+  <data name="upload_password_placeholder" xml:space="preserve"><value>Set a password recipients must enter</value></data>
+  <data name="upload_password_hint" xml:space="preserve"><value>If set, recipients must enter this password before downloading.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Deliver at</value></data>
   <data name="upload_deliver_at_hint" xml:space="preserve"><value>The link becomes active at this time.</value></data>
   <data name="upload_expiry_label" xml:space="preserve"><value>Expires: {0}</value></data>
@@ -516,6 +519,12 @@
   <data name="dl_otp_verifying" xml:space="preserve"><value>Verifying…</value></data>
   <data name="dl_otp_incomplete" xml:space="preserve"><value>Please enter all 6 digits.</value></data>
   <data name="dl_otp_wrong" xml:space="preserve"><value>Incorrect code.</value></data>
+  <data name="dl_password_h2" xml:space="preserve"><value>Enter password</value></data>
+  <data name="dl_password_sub" xml:space="preserve"><value>Ask the sender for the password to unlock this file.</value></data>
+  <data name="dl_password_unlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="dl_password_verifying" xml:space="preserve"><value>Verifying…</value></data>
+  <data name="dl_password_incomplete" xml:space="preserve"><value>Please enter the password.</value></data>
+  <data name="dl_password_wrong" xml:space="preserve"><value>Incorrect password.</value></data>
   <data name="dl_ad_title" xml:space="preserve"><value>Sent with QuickShareCloud</value></data>
   <data name="dl_ad_sub" xml:space="preserve"><value>Send large files with end-to-end encryption.</value></data>
   <data name="dl_ad_upgrade" xml:space="preserve"><value>See plans</value></data>

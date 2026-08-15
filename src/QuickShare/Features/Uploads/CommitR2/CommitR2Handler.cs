@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours);
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
@@ -115,6 +115,10 @@ public sealed class CommitR2Handler(
         if (message is not null && message.Length > Delivery.MessageMaxLength)
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.MessageTooLong));
 
+        var password = NormalizePassword(cmd.Password);
+        if (password is not null && System.Text.Encoding.UTF8.GetByteCount(password) > Delivery.PasswordMaxLength)
+            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.PasswordTooLong));
+
         var randomBytes = new byte[8];
         RandomNumberGenerator.Fill(randomBytes);
         var shareCode = Convert.ToBase64String(randomBytes)
@@ -151,6 +155,7 @@ public sealed class CommitR2Handler(
             DeliverAt = cmd.DeliverAt,
             Status = cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
+            PasswordHash = password is not null ? BCrypt.Net.BCrypt.HashPassword(password) : null,
             Message = message,
             Source = DeliverySources.Normalize(cmd.Source)
         };
@@ -205,6 +210,19 @@ public sealed class CommitR2Handler(
             return null;
 
         return message.Trim();
+    }
+
+    /// <summary>
+    /// Trims the share password; whitespace-only input becomes null. The length
+    /// bound matches BCrypt's 72-byte limit — a longer input would be silently
+    /// truncated, so it is rejected instead.
+    /// </summary>
+    private static string? NormalizePassword(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            return null;
+
+        return password.Trim();
     }
 
     /// <summary>

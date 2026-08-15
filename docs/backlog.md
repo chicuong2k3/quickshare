@@ -28,7 +28,7 @@ New here? Start at your role's entry point:
 |---|---|---|
 | Tier 1 | Foundation / survival risk | **9/10 done** — only `#52` rate limiting open |
 | Tier 2 | Existing risk (cheap fixes) | all open |
-| Tier 3 | Growth + monetization levers | all open |
+| Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | all open (1 done: `#113` expiry countdown) |
 | Tier 5 | Growth wave 2 | all open (1 done: `#69` scheduled send) |
 | Tier 6 | B2B / enterprise / far-future | all open |
@@ -68,9 +68,10 @@ All **done** (08-16): #121 (noindex/nofollow — X-Robots-Tag + robots meta on /
 
 ## 5. Tier 3 — Growth + monetization levers
 
-All **open**: #75 (OpenGraph cards), #65 (7-day trial), #15 (viral loop), #28 (SEO pages),
-#21 (previews), #38 (native share sheet), #22 (expiry tiers), #14 (PWA share target),
-#44 (password-protected downloads), #137 (message with delivery).
+All **done** (08-16): #75 (OpenGraph cards), #65 (7-day Pro trial), #15 (viral CTA + referral
++2GB), #28 (SEO landing pages), #21 (file previews), #38 (native share sheet + QR),
+#22 (free-tier 24h/7d expiry), #14 (PWA + Android Share Target), #44 (password-protected
+downloads), #137 (message with delivery).
 
 ## 6–8. Tier 4 / 5 / 6
 
@@ -114,5 +115,5 @@ Where a design/spec/plan already exists, read it before implementing.
 
 - [ ] Tier 1: implement `#52` rate limiting → Tier 1 fully done
 - [x] Tier 2: all 6 done 08-16 (see section 4)
-- [ ] Tier 3: decide the one growth lever to ship next
+- [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear

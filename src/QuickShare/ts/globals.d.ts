@@ -180,6 +180,8 @@ interface UploadPage {
 
 interface DownloadPage {
     verifyOtp(): void;
+    verifyPassword(): void;
+    passwordKeydown(event: KeyboardEvent): void;
     otpInput(event: Event, idx: number): void;
     otpKeydown(event: KeyboardEvent, idx: number): void;
     skipAd(): void;

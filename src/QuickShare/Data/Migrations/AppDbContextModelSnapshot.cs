@@ -223,6 +223,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("OtpHash")
                         .HasColumnType("text");
 
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
                     b.Property<string>("SenderEmail")
                         .HasColumnType("text");
 

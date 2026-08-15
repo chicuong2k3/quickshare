@@ -15,6 +15,7 @@ public record DownloadInfoResponse(
     int DownloadCount,
     int MaxDownloads,
     bool HasOtp,
+    bool HasPassword,
     string SenderPlan,
     string? Message
 );
@@ -56,6 +57,7 @@ public sealed class DownloadInfoHandler
                     delivery.DownloadCount,
                     delivery.MaxDownloads,
                     HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
+                    HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
                     SenderPlan: senderPlan,
                     Message: delivery.Message
                 ));

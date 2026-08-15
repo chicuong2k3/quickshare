@@ -63,6 +63,7 @@
         senderEmail: string;
         deliverAt: string | null;
         message: string;
+        password: string;
         expiryHours: number | null;
         _resumeCtx: UploadContext | null;
         objectKey: string;
@@ -78,6 +79,7 @@
         senderEmail: '',
         deliverAt: null,
         message: '',
+        password: '',
         expiryHours: null,
         _resumeCtx: null, objectKey: ''
     };
@@ -289,6 +291,7 @@
         const deliverAtInput = document.getElementById('upload-deliver-at') as HTMLInputElement | null;
         state.deliverAt = deliverAtInput && deliverAtInput.value ? new Date(deliverAtInput.value).toISOString() : null;
         state.message = (document.getElementById('upload-message') as HTMLTextAreaElement | null)?.value.trim() ?? '';
+        state.password = (document.getElementById('upload-password') as HTMLInputElement | null)?.value ?? '';
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
         const expiryDays = document.getElementById('upload-expiry-days') as HTMLInputElement | null;
         if (expirySelect) state.expiryHours = parseFloat(expirySelect.value) || null;
@@ -406,7 +409,7 @@
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;
