@@ -10,6 +10,7 @@ public static class RoutePaths
     public const string AccountBilling = "/account/billing";
     public const string AccountDeliveries = "/account/deliveries";
     public const string AccountUsage = "/account/usage";
+    public const string AccountDevices = "/account/devices";
     public const string Login = "/login";
     public const string Logout = "/logout";
     public const string P2p = "/p2p";
@@ -29,4 +30,6 @@ public static class RoutePaths
     public const string ToolsShareText = "/tools/share-text";
     public const string AdminFlags = "/admin/flags";
     public const string AdminAnalytics = "/admin/analytics";
+    public const string AdminReports = "/admin/reports";
+    public const string Abuse = "/abuse";
 }

@@ -11,6 +11,9 @@ public class AppDbContext : DbContext
     public DbSet<Delivery> Deliveries => Set<Delivery>();
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
+    public DbSet<OtpLockout> OtpLockouts => Set<OtpLockout>();
+    public DbSet<AbuseReport> AbuseReports => Set<AbuseReport>();
+    public DbSet<UserDevice> UserDevices => Set<UserDevice>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
     public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -94,6 +97,42 @@ public class AppDbContext : DbContext
             entity.HasOne<Delivery>()
                 .WithMany()
                 .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OtpLockout>(entity =>
+        {
+            entity.ToTable("otp_lockouts");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.DeliveryId).IsUnique();
+            entity.HasOne<Delivery>()
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AbuseReport>(entity =>
+        {
+            entity.ToTable("abuse_reports");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.DeliveryId);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.Status).IsRequired();
+            entity.HasOne<Delivery>()
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserDevice>(entity =>
+        {
+            entity.ToTable("user_devices");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.FingerprintHash }).IsUnique();
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

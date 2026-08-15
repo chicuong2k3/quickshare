@@ -1,4 +1,5 @@
 using QuickShare.Infrastructure.Caching;
+using QuickShare.Features.Deliveries.Otp;
 
 namespace QuickShare.Features.Downloads.Download;
 
@@ -9,7 +10,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
     private static readonly TimeSpan FullDownloadTtl = TimeSpan.FromDays(7);
     private static readonly TimeSpan RangeRequestTtl = TimeSpan.FromHours(1);
 
-    public async Task HandleAsync(DownloadDeliveryQuery query, AppDbContext db, CancellationToken ct)
+    public async Task HandleAsync(DownloadDeliveryQuery query, AppDbContext db, OtpLockoutService lockout, CancellationToken ct)
     {
         var httpContext = httpContextAccessor.HttpContext!;
         var response = httpContext.Response;
@@ -21,6 +22,12 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
         if (delivery is null)
         {
             response.StatusCode = 404;
+            return;
+        }
+
+        if (delivery.Status == DeliveryStatus.Suspended)
+        {
+            response.StatusCode = StatusCodes.Status410Gone;
             return;
         }
 
@@ -38,11 +45,23 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
 
         if (!string.IsNullOrEmpty(delivery.OtpHash))
         {
+            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, ct);
+            if (isLocked)
+            {
+                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, ct);
+                response.StatusCode = StatusCodes.Status423Locked;
+                response.Headers[HttpHeaders.RetryAfter] = retryAfter.ToString(CultureInfo.InvariantCulture);
+                return;
+            }
+
             if (string.IsNullOrEmpty(query.Otp) || !BCrypt.Net.BCrypt.Verify(query.Otp, delivery.OtpHash))
             {
+                await lockout.RecordFailureAsync(db, delivery.Id, ct);
                 response.StatusCode = 403;
                 return;
             }
+
+            await lockout.ResetAsync(db, delivery.Id, ct);
         }
 
         if (delivery.DownloadCount >= delivery.MaxDownloads)

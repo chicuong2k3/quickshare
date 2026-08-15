@@ -1,0 +1,86 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/devices"
+@attribute [Authorize]
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using QuickShare.Features.Users.Shared
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="devices-card" class="db-card account-card">
+    <div class="db-card__body">
+        <div class="account-section-head">
+            <h2 class="db-h3">@Loc["account_devices_title"]</h2>
+            <p class="db-p db-text-muted" style="margin-top: 0.25rem; font-size: 0.875rem">@Loc["account_devices_subtitle"]</p>
+        </div>
+
+        @if (devices.Count == 0)
+        {
+            <p class="db-p db-text-muted" style="margin-top: 1rem">@Loc["account_devices_empty"]</p>
+        }
+        else
+        {
+            <ul class="account-device-list" style="margin-top: 1rem">
+                @foreach (var device in devices)
+                {
+                    <li class="account-device-item">
+                        <div class="account-device-info">
+                            <span class="account-device-label">@device.UserAgentLabel</span>
+                            <span class="account-device-meta">@Loc["account_devices_first_seen", device.FirstSeenAt.ToLocalTime().ToString("g")]</span>
+                            <span class="account-device-meta">@Loc["account_devices_last_seen", device.LastSeenAt.ToLocalTime().ToString("g")]</span>
+                        </div>
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-device-remove"
+                                onclick="window.quickShareAccount.removeDevice('@device.Id', this)"
+                                data-ai-action="device.remove">@Loc["account_devices_remove"]</button>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+</HtmxFragment>
+
+<script>
+    window.quickShareAccount = window.quickShareAccount || {};
+    window.quickShareAccount.removeDevice = function (id, btn) {
+        var msg = btn.getAttribute('data-confirm') || '@Loc["account_devices_remove_confirm"]';
+        if (!window.confirm(msg)) return;
+        fetch('/api/me/devices/' + id, { method: 'DELETE' }).then(function (r) {
+            if (r.ok) {
+                var item = btn.closest('.account-device-item');
+                if (item) item.remove();
+                window.dispatchEvent(new CustomEvent('devicesUpdated', { bubbles: true }));
+            }
+        });
+    };
+</script>
+
+@code {
+    private List<DeviceListItem> devices = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+
+        devices = await Db.UserDevices
+            .AsNoTracking()
+            .Where(d => d.UserId == user.Id)
+            .OrderByDescending(d => d.LastSeenAt)
+            .Select(d => new DeviceListItem(d.Id, d.UserAgentLabel, d.FirstSeenAt, d.LastSeenAt))
+            .ToListAsync(CancellationToken.None);
+    }
+
+    private sealed record DeviceListItem(Guid Id, string UserAgentLabel, DateTime FirstSeenAt, DateTime LastSeenAt);
+}

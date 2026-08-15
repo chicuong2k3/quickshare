@@ -22,6 +22,10 @@ public static class AnalyticsEvents
     public const string OtpFail = "otp_fail";
     public const string AdInterstitialViewed = "ad_interstitial_viewed";
 
+    // Anti-bot (issue #175)
+    public const string CaptchaRequired = "captcha_required";
+    public const string CaptchaPassed = "captcha_passed";
+
     // Signup conversion
     public const string Signup = "signup";
 

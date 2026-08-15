@@ -22,6 +22,48 @@ namespace QuickShare.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("QuickShare.Data.Entities.AbuseReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReporterIpHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.ToTable("abuse_reports", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.AnalyticsEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -284,6 +326,35 @@ namespace QuickShare.Migrations
                     b.ToTable("feature_flag_overrides", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.OtpLockout", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LockStage")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId")
+                        .IsUnique();
+
+                    b.ToTable("otp_lockouts", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -533,6 +604,44 @@ namespace QuickShare.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.UserDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FingerprintHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("FirstSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IpHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserAgentLabel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "FingerprintHash")
+                        .IsUnique();
+
+                    b.ToTable("user_devices", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -589,6 +698,15 @@ namespace QuickShare.Migrations
                     b.ToTable("user_usage", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.AbuseReport", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.DailyAdTracking", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.User", "User")
@@ -621,6 +739,15 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.OtpLockout", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.Delivery", null)
                         .WithMany()
@@ -668,6 +795,15 @@ namespace QuickShare.Migrations
                         .WithMany()
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.UserDevice", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>

@@ -29,4 +29,5 @@ public static class DeliveryStatus
     public const string Active = "Active";
     public const string Scheduled = "Scheduled";
     public const string Expired = "Expired";
+    public const string Suspended = "Suspended";
 }

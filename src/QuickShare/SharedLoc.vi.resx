@@ -600,4 +600,38 @@
   <data name="upload_sender_email_label" xml:space="preserve"><value>Gửi link và cập nhật qua email cho tôi</value></data>
   <data name="upload_sender_email_placeholder" xml:space="preserve"><value>ban@example.com</value></data>
   <data name="upload_sender_email_hint" xml:space="preserve"><value>Tuỳ chọn — nhận link chia sẻ và thông báo khi file được tải. Huỷ bất cứ lúc nào.</value></data>
+  <data name="dl_suspended_h1" xml:space="preserve"><value>File này hiện không khả dụng</value></data>
+  <data name="dl_suspended_sub" xml:space="preserve"><value>Liên kết này đã bị vô hiệu hoá. Hãy liên hệ người gửi để có cách khác.</value></data>
+  <data name="dl_report_link" xml:space="preserve"><value>Báo cáo</value></data>
+  <data name="dl_report_title" xml:space="preserve"><value>Báo cáo file này</value></data>
+  <data name="dl_report_sub" xml:space="preserve"><value>Cho chúng tôi biết vì sao liên kết này cần được xem xét. Không cần tài khoản.</value></data>
+  <data name="dl_report_category" xml:space="preserve"><value>Loại vi phạm</value></data>
+  <data name="dl_report_cat_abuse" xml:space="preserve"><value>Lạm dụng</value></data>
+  <data name="dl_report_cat_copyright" xml:space="preserve"><value>Vi phạm bản quyền</value></data>
+  <data name="dl_report_cat_malware" xml:space="preserve"><value>Phần mềm độc hại</value></data>
+  <data name="dl_report_cat_other" xml:space="preserve"><value>Khác</value></data>
+  <data name="dl_report_note" xml:space="preserve"><value>Chi tiết (không bắt buộc)</value></data>
+  <data name="dl_report_submit" xml:space="preserve"><value>Gửi báo cáo</value></data>
+  <data name="dl_report_cancel" xml:space="preserve"><value>Huỷ</value></data>
+  <data name="dl_report_done" xml:space="preserve"><value>Cảm ơn — đội ngũ của chúng tôi sẽ xem xét báo cáo này.</value></data>
+  <data name="dl_report_error" xml:space="preserve"><value>Không gửi được báo cáo. Vui lòng thử lại.</value></data>
+  <data name="footer_abuse" xml:space="preserve"><value>Báo cáo lạm dụng / DMCA</value></data>
+  <data name="account_devices_title" xml:space="preserve"><value>Thiết bị đã biết</value></data>
+  <data name="account_devices_subtitle" xml:space="preserve"><value>Các thiết bị đã đăng nhập vào tài khoản. Gỡ bỏ thiết bị bạn không nhận ra.</value></data>
+  <data name="account_devices_empty" xml:space="preserve"><value>Chưa có thiết bị nào.</value></data>
+  <data name="account_devices_first_seen" xml:space="preserve"><value>Lần đầu thấy {0}</value></data>
+  <data name="account_devices_last_seen" xml:space="preserve"><value>Lần cuối thấy {0}</value></data>
+  <data name="account_devices_remove" xml:space="preserve"><value>Gỡ bỏ</value></data>
+  <data name="account_devices_remove_confirm" xml:space="preserve"><value>Gỡ thiết bị này? Lần đăng nhập sau sẽ kích hoạt cảnh báo thiết bị mới.</value></data>
+  <data name="admin_reports_page_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
+  <data name="admin_reports_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
+  <data name="admin_reports_subtitle" xml:space="preserve"><value>Xem xét, xử lý hoặc tạm ngưng các liên kết bị báo cáo lạm dụng hoặc vi phạm bản quyền.</value></data>
+  <data name="admin_reports_forbidden" xml:space="preserve"><value>Cần quyền quản trị.</value></data>
+  <data name="admin_reports_empty" xml:space="preserve"><value>Không có báo cáo nào đang mở.</value></data>
+  <data name="admin_reports_error" xml:space="preserve"><value>Không tải được báo cáo.</value></data>
+  <data name="admin_reports_delivery" xml:space="preserve"><value>Liên kết</value></data>
+  <data name="admin_reports_resolve" xml:space="preserve"><value>Xử lý</value></data>
+  <data name="admin_reports_suspend" xml:space="preserve"><value>Tạm ngưng liên kết</value></data>
+  <data name="admin_reports_confirm_resolve" xml:space="preserve"><value>Xử lý mà không hành động?</value></data>
+  <data name="admin_reports_confirm_suspend" xml:space="preserve"><value>Tạm ngưng liên kết này? File sẽ không còn tải được.</value></data>
 </root>

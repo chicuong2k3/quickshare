@@ -208,6 +208,18 @@ if (hasR2)
 builder.Services.AddScoped<PayOSService>();
 builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
 
+// ── OTP brute-force lockout (issue #148) ──
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Otp.OtpLockoutService>();
+
+// ── Turnstile anti-bot on download/verify (issue #175) ──
+builder.Services.Configure<QuickShare.Features.Deliveries.Otp.TurnstileOptions>(
+    builder.Configuration.GetSection(QuickShare.Features.Deliveries.Otp.TurnstileOptions.Section));
+builder.Services.AddHttpClient<QuickShare.Features.Deliveries.Otp.TurnstileService>();
+
+// ── New-device login alert (issue #149) ──
+builder.Services.AddScoped<QuickShare.Features.Users.Shared.DeviceTrackerService>();
+builder.Services.AddScoped<QuickShare.Features.Users.Shared.NewDeviceAlertSender>();
+
 // ── FusionCache with kill-switch toggle ──
 var cacheSection = builder.Configuration.GetSection(CacheSettings.Section);
 builder.Services.Configure<CacheSettings>(cacheSection);
@@ -227,6 +239,9 @@ builder.Services.AddSingleton<CacheService>();
 builder.Services.Configure<FeatureFlagSettings>(builder.Configuration.GetSection(FeatureFlagSettings.Section));
 builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
 builder.Services.AddScoped<IFeatureFlagService, FeatureFlagService>();
+
+// ── Security headers (issue #82) — config-driven CSP/HSTS policy ──
+builder.Services.Configure<SecurityHeaderOptions>(builder.Configuration.GetSection(SecurityHeaderOptions.Section));
 
 // ── Analytics (issue #24) — anonymous product events + founder dashboard ──
 builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(AnalyticsOptions.Section));
@@ -326,7 +341,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 // Register in-process (no HTTP roundtrip) via the shared registration service.
                 var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
                 var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
-                await UserRegistrationService.RegisterAsync(
+                var profile = await UserRegistrationService.RegisterAsync(
                     AuthConstants.GoogleProvider,
                     subject,
                     name ?? email,
@@ -335,6 +350,22 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                     db,
                     ctx.HttpContext.RequestAborted,
                     analytics);
+
+                // New-device login alert (issue #149): fingerprint UA + IP, email on first sighting.
+                var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();
+                var alertSender = ctx.HttpContext.RequestServices.GetRequiredService<NewDeviceAlertSender>();
+                var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                var userAgent = ctx.HttpContext.Request.Headers.UserAgent.ToString();
+
+                var (device, isNew) = await deviceTracker.RecordLoginAsync(
+                    db, profile.Id, userAgent, ip, ctx.HttpContext.RequestAborted);
+
+                if (isNew)
+                {
+                    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == profile.Id, ctx.HttpContext.RequestAborted);
+                    if (user is not null)
+                        await alertSender.SendAsync(user, device, DateTime.UtcNow, ctx.HttpContext.RequestAborted);
+                }
             }
         };
     });
@@ -434,6 +465,9 @@ app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSecond
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<RobotsNoIndexMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 app.UseAntiforgery();
 app.UseHtmxAntiforgery();

@@ -16,6 +16,9 @@
 }
 
 <PageTitle>@Loc["dl_title"]</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 <script id="download-i18n" type="application/json">@RawJson(Strings())</script>
@@ -56,6 +59,7 @@
                                 <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" />
                             </div>
                             <p id="dl-otp-error" class="error hidden"></p>
+                            <div id="dl-captcha" class="dl-captcha hidden"></div>
                             <button id="dl-otp-btn" type="button" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
                                 <span id="dl-otp-btn-text">@Loc["dl_otp_unlock"]</span>
                             </button>
@@ -161,6 +165,43 @@
 
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
                         <QuickShare.Components.Shared.AdComponent />
+
+                        @* Report abuse / DMCA — anonymous, no account needed (issue #53) *@
+                        <div class="dl-report">
+                            <button type="button" class="dl-report__link" onclick="downloadApp.openReport()" data-ai-action="download.report.open">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 0.875rem; height: 0.875rem"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                @Loc["dl_report_link"]
+                            </button>
+                        </div>
+                    </div>
+
+                    @* Report dialog — raised by JS; server still renders the trigger. *@
+                    <div id="download-report-dialog" class="dl-report-dialog hidden">
+                        <div class="dl-report-dialog__inner">
+                            <h2 class="db-h3">@Loc["dl_report_title"]</h2>
+                            <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_report_sub"]</p>
+                            <form id="dl-report-form" onsubmit="return downloadApp.submitReport(event)">
+                                <label class="db-field" style="margin-top: 1rem">
+                                    <span class="db-label">@Loc["dl_report_category"]</span>
+                                    <select id="dl-report-category" class="db-field__input db-input" required>
+                                        <option value="abuse">@Loc["dl_report_cat_abuse"]</option>
+                                        <option value="copyright">@Loc["dl_report_cat_copyright"]</option>
+                                        <option value="malware">@Loc["dl_report_cat_malware"]</option>
+                                        <option value="other">@Loc["dl_report_cat_other"]</option>
+                                    </select>
+                                </label>
+                                <label class="db-field" style="margin-top: 0.75rem">
+                                    <span class="db-label">@Loc["dl_report_note"]</span>
+                                    <textarea id="dl-report-note" class="db-field__input db-input" rows="3" maxlength="2000"></textarea>
+                                </label>
+                                <p id="dl-report-error" class="error hidden" style="margin-top: 0.5rem"></p>
+                                <div style="margin-top: 1rem; display: flex; gap: 0.5rem">
+                                    <button type="submit" class="btn" data-ai-action="download.report.submit">@Loc["dl_report_submit"]</button>
+                                    <button type="button" class="db-btn db-btn--ghost" onclick="downloadApp.closeReport()">@Loc["dl_report_cancel"]</button>
+                                </div>
+                            </form>
+                            <p id="dl-report-done" class="db-p db-text-muted hidden" style="margin-top: 1rem; font-size: 0.875rem">@Loc["dl_report_done"]</p>
+                        </div>
                     </div>
 
                     @* Expired phase — hidden by default; download.js swaps to it when the
@@ -204,6 +245,19 @@
                         </div>
                         <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</h1>
                         <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
+                case DownloadRenderState.Suspended:
+                    <div id="download-phase-suspended" class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_suspended_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_suspended_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
@@ -280,6 +334,7 @@
         ["expiryDownloadNow"] = Loc["dl_expiry_download_now"],
         ["scheduledCountdown"] = Loc["dl_scheduled_countdown"],
         ["initialPhase"] = InitialPhase,
+        ["reportError"] = Loc["dl_report_error"],
     };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
@@ -304,6 +359,8 @@
                     RenderState = DownloadRenderState.Expired;
                 else if (msg.Contains("limit", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.LimitReached;
+                else if (msg.Contains("suspended", StringComparison.OrdinalIgnoreCase))
+                    RenderState = DownloadRenderState.Suspended;
                 else
                     RenderState = DownloadRenderState.NotFound;
                 return;
@@ -368,7 +425,7 @@
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, NotFound, LimitReached, Error }
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, NotFound, LimitReached, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }

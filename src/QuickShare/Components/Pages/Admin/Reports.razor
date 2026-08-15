@@ -1,0 +1,124 @@
+@page "/admin/reports"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.Extensions.Options
+@using QuickShare.Features.Reports
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMessageBus Bus
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_reports_page_title"]</PageTitle>
+
+@if (isHxRequest)
+{
+    <HtmxFragment>
+    <div id="admin-reports-app" class="db-card admin-reports-card">
+        <div class="db-card__body">
+            @if (!isAdmin)
+            {
+                <div class="db-alert db-alert--error" role="alert">@Loc["admin_reports_forbidden"]</div>
+            }
+            else if (reports is null)
+            {
+                <p class="db-p db-text-muted">@Loc["admin_reports_error"]</p>
+            }
+            else if (reports.Count == 0)
+            {
+                <p class="db-p db-text-muted">@Loc["admin_reports_empty"]</p>
+            }
+            else
+            {
+                <ul class="admin-reports-list">
+                    @foreach (var report in reports)
+                    {
+                        <li class="admin-report-item" data-report-id="@report.Id">
+                            <div class="admin-report-item__head">
+                                <span class="db-badge">@report.Category</span>
+                                <span class="miura-spec">@report.CreatedAt.ToLocalTime().ToString("g")</span>
+                            </div>
+                            <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">
+                                @Loc["admin_reports_delivery"]: <span class="miura-spec">@report.DeliveryId.ToString("N")</span>
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(report.Note))
+                            {
+                                <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@report.Note</p>
+                            }
+                            <div class="admin-report-item__actions" style="margin-top: 0.75rem; display: flex; gap: 0.5rem">
+                                <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        hx-post="/api/admin/reports/@report.Id/resolve"
+                                        hx-vals='{"action":"resolve"}'
+                                        hx-target="closest .admin-report-item"
+                                        hx-swap="outerHTML"
+                                        hx-confirm="@Loc["admin_reports_confirm_resolve"]"
+                                        data-ai-action="report.resolve">@Loc["admin_reports_resolve"]</button>
+                                <button type="button" class="db-btn db-btn--primary db-btn--sm"
+                                        hx-post="/api/admin/reports/@report.Id/resolve"
+                                        hx-vals='{"action":"suspend"}'
+                                        hx-target="closest .admin-report-item"
+                                        hx-swap="outerHTML"
+                                        hx-confirm="@Loc["admin_reports_confirm_suspend"]"
+                                        data-ai-action="report.suspend">@Loc["admin_reports_suspend"]</button>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    </HtmxFragment>
+}
+else
+{
+    <PageWrapper id="admin-reports-shell" Variant="PageVariant.Padded">
+        <div class="admin-reports-heading">
+            <h1 class="db-h1">@Loc["admin_reports_title"]</h1>
+            <p class="db-p db-text-muted">@Loc["admin_reports_subtitle"]</p>
+        </div>
+
+        @if (!isAdmin)
+        {
+            <div class="db-alert db-alert--error" role="alert">@Loc["admin_reports_forbidden"]</div>
+        }
+        else
+        {
+            <HtmxFragment>
+            <div id="admin-reports-app" class="db-card admin-reports-card"
+                 hx-get="@RoutePaths.AdminReports"
+                 hx-trigger="load"
+                 hx-target="#admin-reports-app"
+                 hx-select="#admin-reports-app"
+                 hx-swap="outerHTML">
+                <div class="db-card__body">
+                    <div class="admin-skeleton-line admin-skeleton-row"></div>
+                    <div class="admin-skeleton-line admin-skeleton-row"></div>
+                </div>
+            </div>
+            </HtmxFragment>
+        }
+    </PageWrapper>
+}
+
+@code {
+    private bool isHxRequest;
+    private bool isAdmin;
+    private List<ReportListItem>? reports;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        var request = httpContext?.Request;
+        isHxRequest = request is not null
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() == HtmxHeaders.RequestValue;
+
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+
+        if (!isHxRequest || !isAdmin)
+        {
+            return;
+        }
+
+        reports = await Bus.InvokeAsync<List<ReportListItem>>(new ListReportsQuery(), CancellationToken.None);
+    }
+}
