@@ -6,6 +6,14 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<Reque
 {
     public async Task InvokeAsync(HttpContext ctx)
     {
+        // WebSocket requests carry no response body; buffering here would also
+        // break the TestHost handshake flush that signals "response started".
+        if (ctx.WebSockets.IsWebSocketRequest)
+        {
+            await next(ctx);
+            return;
+        }
+
         var sw = Stopwatch.StartNew();
         var originalBody = ctx.Response.Body;
 

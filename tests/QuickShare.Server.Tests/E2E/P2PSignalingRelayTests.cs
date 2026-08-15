@@ -118,6 +118,7 @@ public sealed class P2PSignalingRelayTests : IClassFixture<TestWebAppFactory>
         using var second = await ConnectAsync(shareCode);
         await RegisterReceiverAsync(second);
         await ReceiveOfTypeAsync(second, P2PProtocol.TypeRegistered);
+        await ReceiveOfTypeAsync(second, P2PProtocol.TypeFileMeta);
         await ReceiveOfTypeAsync(sender, P2PProtocol.TypePeerJoined);
 
         await SendAsync(sender, new
