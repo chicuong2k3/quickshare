@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickShareCloud — Grounded directions</title>
+  <style>
+    :root {
+      --chrome-bg: #e9eae7;
+      --chrome-ink: #191917;
+      --chrome-muted: #5e5c55;
+      --chrome-line: #c8c5b9;
+      --font: Outfit, "Segoe UI", system-ui, sans-serif;
+      --mono: "Azeret Mono", Consolas, "Courier New", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; min-width: 320px; overflow-x: hidden; }
+    body { margin: 0; min-height: 100vh; background: var(--chrome-bg); color: var(--chrome-ink); font-family: var(--font); }
+    :focus-visible { outline: 3px solid #c2410c; outline-offset: 3px; }
+
+    .page { width: min(1220px, calc(100% - 44px)); margin: 0 auto; }
+    .masthead { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding: 26px 0 18px; border-bottom: 1px solid var(--chrome-line); }
+    .masthead .mark { font-weight: 800; letter-spacing: -.02em; }
+    .masthead .note { color: var(--chrome-muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+    .catalog-head { padding: 60px 0 28px; }
+    .catalog-head h1 { max-width: 780px; margin: 0; font-weight: 400; font-size: clamp(1.7rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -.02em; }
+    .catalog-head p { max-width: 540px; margin: 20px 0 0; color: var(--chrome-muted); font-size: .95rem; line-height: 1.6; }
+    .toc { display: flex; flex-wrap: wrap; border-top: 1px solid var(--chrome-line); border-bottom: 1px solid var(--chrome-line); }
+    .toc a { flex: 1 1 180px; padding: 14px 16px 14px 0; color: var(--chrome-ink); text-decoration: none; font-size: .8rem; letter-spacing: .01em; }
+    .toc a + a { padding-left: 16px; border-left: 1px solid var(--chrome-line); }
+    .toc a span { display: block; margin-top: 4px; color: var(--chrome-muted); font-size: .75rem; }
+
+    .concept { margin: 74px 0; }
+    .concept-head { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; padding-bottom: 22px; }
+    .concept-title { max-width: 560px; margin: 0; font-weight: 500; font-size: clamp(1.5rem, 3.5vw, 2.6rem); line-height: 1; letter-spacing: -.02em; }
+    .concept-thesis { margin: 14px 0 0; color: var(--chrome-muted); font-size: .9rem; line-height: 1.6; }
+    .palette { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+    .palette i { display: inline-block; width: 30px; height: 30px; border: 1px solid rgba(0,0,0,.18); }
+    .palette em { display: block; width: 100%; margin-top: 4px; text-align: right; font-style: normal; color: var(--chrome-muted); font-size: .75rem; letter-spacing: .04em; }
+
+    /* ── shared mockup skeleton ── */
+    .frame { border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+    .app-nav { display: flex; align-items: center; gap: 22px; padding: 14px 22px; border-bottom: 1px solid var(--line); }
+    .app-nav .word { font-weight: 800; letter-spacing: -.02em; }
+    .app-nav .links { display: flex; gap: 18px; color: var(--muted); font-size: .78rem; }
+    .app-nav .cta { margin-left: auto; border: 1px solid var(--accent); border-radius: var(--radius, 0); background: var(--accent); color: var(--accent-ink); padding: 8px 14px; font-size: .78rem; font-weight: 700; }
+    .app-body { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 0; }
+    .col-main { padding: 26px 26px 34px; }
+    .col-side { padding: 26px 26px 34px; border-left: 1px solid var(--line); }
+    .eyebrow { color: var(--muted); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+    .app-h2 { margin: 14px 0 0; font-weight: 500; font-size: 1.6rem; letter-spacing: -.02em; }
+    .app-sub { margin: 10px 0 0; color: var(--muted); font-size: .86rem; line-height: 1.55; }
+    .file-list { margin-top: 22px; border-top: 1px solid var(--line); }
+    .file-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+    .file-row .name { font-size: .84rem; font-weight: 600; overflow-wrap: anywhere; }
+    .file-row .size { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .field { display: grid; gap: 7px; margin-top: 18px; }
+    .field label { font-size: .75rem; font-weight: 700; letter-spacing: .04em; }
+    .field input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius, 0); background: var(--surface, transparent); color: var(--ink); padding: 10px 11px; font-size: .8rem; }
+    .gauge { margin-top: 20px; }
+    .gauge .bar { height: 7px; border: 1px solid var(--line); background: var(--surface, transparent); }
+    .gauge .fill { height: 100%; width: 62%; background: var(--accent); }
+    .gauge .meta { display: flex; justify-content: space-between; margin-top: 7px; color: var(--muted); font-family: var(--mono); font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .primary { margin-top: 20px; width: 100%; border: 1px solid var(--accent); border-radius: var(--radius, 0); background: var(--accent); color: var(--accent-ink); padding: 12px 16px; font-size: .8rem; font-weight: 700; }
+    .status { margin-top: 12px; min-height: 18px; color: var(--muted); font-size: .75rem; }
+    .app-foot { display: flex; justify-content: space-between; gap: 16px; padding: 14px 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: .75rem; }
+
+    /* ── 1 · The Unfold ── */
+    .c-unfold { --bg: #efeeea; --surface: #f9f9f7; --ink: #0a0a0a; --muted: #55524b; --line: #b9b6ae; --accent: #0a0a0a; --accent-ink: #d4af37; --radius: 0; }
+    .c-unfold .primary { background: #0a0a0a; color: #d4af37; box-shadow: inset 0 0 0 5px #0a0a0a, inset 0 0 0 6px rgba(212,175,55,.55); }
+    .unfold-stage { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+    .unfold-card { border: 1px solid var(--line); background: var(--surface); padding: 16px; min-height: 120px; }
+    .unfold-card .tag { font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .folded { position: relative; background-image: linear-gradient(135deg, transparent 49.5%, #c9c4b4 49.5%, #c9c4b4 50.5%, transparent 50.5%); }
+    .folded::before { content: "bản đã gấp · ciphertext"; position: absolute; inset: 0; display: grid; place-items: center; color: #8e8b83; font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; }
+    .unfolded .fold-line { display: block; height: 0; border-top: 1px dashed #c9c4b4; margin: 8px 0; }
+    .unfolded .fold-line + .fold-line { margin-top: 26px; }
+    .pull-tab { display: inline-block; margin-top: 10px; background: #d4af37; color: #0a0a0a; padding: 4px 10px; font-family: var(--mono); font-size: .75rem; font-weight: 700; letter-spacing: .06em; }
+
+    /* ── 2 · Tamper-Evident Seal ── */
+    .c-seal { --bg: #0e1420; --surface: #161d2a; --ink: #eae7de; --muted: #96a0ad; --line: #2a3444; --accent: #d4af37; --accent-ink: #0e1420; --radius: 0; }
+    .seal-stage { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+    .seal-panel { border: 1px solid var(--line); background: var(--surface); padding: 16px; min-height: 120px; }
+    .seal-panel .tag { display: block; font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .opaque { position: relative; background: repeating-linear-gradient(45deg, #1a2230 0 8px, #1e2736 8px 16px); }
+    .opaque::before { content: "ciphertext"; position: absolute; inset: 0; display: grid; place-items: center; color: #5b6676; font-family: var(--mono); font-size: .75rem; letter-spacing: .14em; }
+    .seal-strip { margin-top: 12px; height: 9px; background: #d4af37; position: relative; }
+    .seal-strip::after { content: ""; position: absolute; right: -2px; top: -3px; width: 15px; height: 15px; background: #d4af37; clip-path: polygon(0 0, 100% 0, 100% 100%, 55% 70%, 0 100%); }
+    .opened .hash { margin-top: 10px; font-family: var(--mono); font-size: .75rem; color: var(--muted); word-break: break-all; }
+
+    /* ── 3 · The Key + Link ── */
+    .c-link { --bg: #f6f7f9; --surface: #ffffff; --ink: #14171c; --muted: #5b6370; --line: #d8dde4; --accent: #0a0a0a; --accent-ink: #d4af37; --radius: 0; }
+    .c-link .primary { background: #0a0a0a; color: #d4af37; }
+    .link-object { margin-top: 24px; border: 1px solid var(--line); background: var(--surface); padding: 18px; }
+    .link-object .label { font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .link-line { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-family: var(--mono); font-size: .82rem; word-break: break-all; }
+    .link-line .key { background: #f3ecd6; color: #6b5518; padding: 1px 6px; border: 1px dashed #c9a227; }
+    .share-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .share-chip { border: 1px solid var(--line); background: var(--surface); padding: 7px 11px; font-size: .78rem; font-weight: 600; }
+
+    /* ── 4 · Verifiable Receipt ── */
+    .c-receipt { --bg: #f3f1eb; --surface: #fffdf8; --ink: #191919; --muted: #62605a; --line: #d5d1c6; --accent: #2f7d5c; --accent-ink: #ffffff; --radius: 0; }
+    .c-receipt .primary { background: #2f7d5c; color: #fff; }
+    .receipt { margin-top: 24px; border: 1px solid var(--line); background: var(--surface); padding: 18px; }
+    .receipt .r-head { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+    .receipt .r-head b { font-weight: 700; }
+    .receipt .r-head span { font-family: var(--mono); font-size: .75rem; color: var(--muted); }
+    .r-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .82rem; }
+    .r-row dt { color: var(--muted); }
+    .r-row dd { margin: 0; font-family: var(--mono); font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .verify { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: #2f7d5c; font-size: .82rem; font-weight: 700; }
+
+    @media (max-width: 720px) {
+      .page { width: min(100% - 26px, 620px); }
+      .masthead { flex-direction: column; gap: 6px; }
+      .catalog-head { padding-top: 40px; }
+      .toc a { flex: 1 1 50%; border-left: 0; }
+      .toc a:nth-child(even) { border-left: 1px solid var(--chrome-line); }
+      .concept-head { grid-template-columns: 1fr; gap: 16px; }
+      .palette { justify-content: flex-start; }
+      .palette em { text-align: left; }
+      .app-body { grid-template-columns: 1fr; }
+      .col-side { border-left: 0; border-top: 1px solid var(--line); }
+      .app-nav { flex-wrap: wrap; gap: 14px; }
+      .unfold-stage, .seal-stage { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <span class="mark">QuickShareCloud</span>
+      <span class="note">Grounded directions — bắt nguồn từ cơ chế thật</span>
+    </header>
+
+    <section class="catalog-head">
+      <h1>Bốn hướng sinh ra từ chính cơ chế của sản phẩm, không nhập từ ngoài.</h1>
+      <p>Zero-knowledge, key trong link, đo lường thật. Mỗi hướng biến một sự thật trong PRODUCT.md thành một hệ visual có thể kiểm chứng. Cùng một giọng thương hiệu Outfit + Azeret Mono.</p>
+    </section>
+
+    <nav class="toc" aria-label="Mục lục hướng thiết kế">
+      <a href="#unfold"><span>01</span>The Unfold</a>
+      <a href="#seal"><span>02</span>Tamper-Evident Seal</a>
+      <a href="#link"><span>03</span>The Key + Link</a>
+      <a href="#receipt"><span>04</span>Verifiable Receipt</a>
+    </nav>
+
+    <!-- 01 -->
+    <article class="concept c-unfold" id="unfold">
+      <header class="concept-head">
+        <div>
+          <h2 class="concept-title">The Unfold — deploy the sheet</h2>
+          <p class="concept-thesis">Giữ thế giới Miura, nhưng cuối cùng ship động tác bị thiếu: gói đang gấp, key trong link đến là lúc sheet tự bung. Máy chủ chỉ giữ bản đã gấp.</p>
+        </div>
+        <div class="palette" aria-hidden="true">
+          <i style="background:#efeeea"></i><i style="background:#f9f9f7"></i><i style="background:#0a0a0a"></i><i style="background:#d4af37"></i><i style="background:#cfe0f2"></i>
+          <em>sheet · raised · stamp · foil · valley</em>
+        </div>
+      </header>
+      <div class="frame">
+        <nav class="app-nav">
+          <span class="word">QuickShareCloud</span>
+          <span class="links"><span>Gửi file</span><span>Gói đã gửi</span><span>Tài khoản</span></span>
+          <span class="cta">Gửi file mới</span>
+        </nav>
+        <div class="app-body">
+          <div class="col-main">
+            <span class="eyebrow">Miura · deploy</span>
+            <h2 class="app-h2">Gói đang gấp. Link đến là lúc nó mở.</h2>
+            <p class="app-sub">Key nằm trong link. Người nhận mở link, sheet tự bung thành danh sách file.</p>
+            <div class="unfold-stage">
+              <div class="unfold-card folded"><span class="tag">Trước · bản đã gấp</span></div>
+              <div class="unfold-card unfolded"><span class="tag">Sau · bản đã mở</span><span class="fold-line"></span><span class="fold-line"></span><span class="pull-tab">DEPLOY</span></div>
+            </div>
+            <div class="file-list">
+              <div class="file-row"><span class="name">ho-so-du-an-final.pdf</span><span class="size">18.6 MB</span></div>
+              <div class="file-row"><span class="name">anh-san-pham.zip</span><span class="size">2.4 GB</span></div>
+            </div>
+          </div>
+          <div class="col-side">
+            <span class="eyebrow">Người nhận</span>
+            <div class="field"><label for="unfold-mail">Email</label><input id="unfold-mail" type="email" placeholder="nguoinhan@dia.chi"></div>
+            <div class="gauge"><div class="bar"><div class="fill"></div></div><div class="meta"><span>Đang gấp</span><span>62%</span></div></div>
+            <button class="primary" type="button">Đóng dấu · Tạo link</button>
+            <p class="status">Sheet chưa được deploy . Bản xem thử.</p>
+          </div>
+        </div>
+        <footer class="app-foot"><span>QuickShareCloud / deploy</span><span>Prototype · không gửi dữ liệu</span></footer>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="concept c-seal" id="seal">
+      <header class="concept-head">
+        <div>
+          <h2 class="concept-title">Tamper-Evident Seal</h2>
+          <p class="concept-thesis">Lời hứa zero-knowledge thành khoảnh khắc ký: máy chủ cầm gói mờ đục không đọc được, chỉ người giữ link mới xé seal và đối chiếu SHA-256.</p>
+        </div>
+        <div class="palette" aria-hidden="true">
+          <i style="background:#0e1420"></i><i style="background:#161d2a"></i><i style="background:#eae7de"></i><i style="background:#d4af37"></i><i style="background:#96a0ad"></i>
+          <em>slate · vault · bone · seal · mist</em>
+        </div>
+      </header>
+      <div class="frame">
+        <nav class="app-nav">
+          <span class="word">QuickShareCloud</span>
+          <span class="links"><span>Gửi</span><span>Kho gửi</span><span>Tài khoản</span></span>
+          <span class="cta">Gửi file mới</span>
+        </nav>
+        <div class="app-body">
+          <div class="col-main">
+            <span class="eyebrow">Zero-knowledge · sealed</span>
+            <h2 class="app-h2">Máy chủ cầm một gói không thể mở.</h2>
+            <p class="app-sub">Server chỉ thấy ciphertext. Người giữ link mới xé được seal.</p>
+            <div class="seal-stage">
+              <div class="seal-panel"><span class="tag">Server view</span><div class="opaque" style="height:70px;margin-top:12px"></div></div>
+              <div class="seal-panel opened"><span class="tag">Your view</span><div class="seal-strip"></div><div class="hash">SHA-256 · 9f2c…e41a</div></div>
+            </div>
+            <div class="file-list">
+              <div class="file-row"><span class="name">bao-cao-tai-chinh-q3.xlsx</span><span class="size">4.1 MB</span></div>
+            </div>
+          </div>
+          <div class="col-side">
+            <span class="eyebrow">Mở seal</span>
+            <div class="field"><label for="seal-mail">Người nhận</label><input id="seal-mail" type="email" placeholder="nguoinhan@dia.chi"></div>
+            <button class="primary" type="button">Xé seal · Tải xuống</button>
+            <p class="status">Gói chưa được mở . Bản xem thử.</p>
+          </div>
+        </div>
+        <footer class="app-foot"><span>QuickShareCloud / sealed</span><span>Prototype · không gửi dữ liệu</span></footer>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="concept c-link" id="link">
+      <header class="concept-head">
+        <div>
+          <h2 class="concept-title">The Key + Link</h2>
+          <p class="concept-thesis">Link chính là gói gửi. Copy và gửi qua Zalo, Facebook, email. Key nằm trong fragment: người nhận không cần tài khoản.</p>
+        </div>
+        <div class="palette" aria-hidden="true">
+          <i style="background:#f6f7f9"></i><i style="background:#ffffff"></i><i style="background:#0a0a0a"></i><i style="background:#d4af37"></i><i style="background:#f3ecd6"></i>
+          <em>paper · white · ink · foil · key</em>
+        </div>
+      </header>
+      <div class="frame">
+        <nav class="app-nav">
+          <span class="word">QuickShareCloud</span>
+          <span class="links"><span>Gửi</span><span>Lịch sử</span><span>Tài khoản</span></span>
+          <span class="cta">Gửi file mới</span>
+        </nav>
+        <div class="app-body">
+          <div class="col-main">
+            <span class="eyebrow">Share · link-first</span>
+            <h2 class="app-h2">Link chính là gói gửi.</h2>
+            <p class="app-sub">Một link, đủ mọi thứ người nhận cần.</p>
+            <div class="link-object">
+              <span class="label">Link chia sẻ</span>
+              <div class="link-line"><span>quickshare.cloud/d/</span><span class="key">K9x-2mQ-8pV</span></div>
+              <div class="share-row">
+                <span class="share-chip">Zalo</span>
+                <span class="share-chip">Facebook</span>
+                <span class="share-chip">Email</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-side">
+            <span class="eyebrow">Chia sẻ</span>
+            <div class="field"><label for="link-mail">Người nhận</label><input id="link-mail" type="email" placeholder="nguoinhan@dia.chi"></div>
+            <button class="primary" type="button">Copy link</button>
+            <p class="status">Link chưa được tạo . Bản xem thử.</p>
+          </div>
+        </div>
+        <footer class="app-foot"><span>QuickShareCloud / share</span><span>Prototype · không gửi dữ liệu</span></footer>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="concept c-receipt" id="receipt">
+      <header class="concept-head">
+        <div>
+          <h2 class="concept-title">Verifiable Receipt</h2>
+          <p class="concept-thesis">Mỗi lần gửi là một biên nhận có thể đối chiếu: byte, số part, prefix SHA-256, hạn tải. Toàn số liệu thật, không phải lời quảng cáo.</p>
+        </div>
+        <div class="palette" aria-hidden="true">
+          <i style="background:#f3f1eb"></i><i style="background:#fffdf8"></i><i style="background:#191919"></i><i style="background:#2f7d5c"></i><i style="background:#d5d1c6"></i>
+          <em>paper · white · ink · verify · rule</em>
+        </div>
+      </header>
+      <div class="frame">
+        <nav class="app-nav">
+          <span class="word">QuickShareCloud</span>
+          <span class="links"><span>Gửi</span><span>Biên nhận</span><span>Tài khoản</span></span>
+          <span class="cta">Gửi file mới</span>
+        </nav>
+        <div class="app-body">
+          <div class="col-main">
+            <span class="eyebrow">Receipt · verifiable</span>
+            <h2 class="app-h2">Một biên nhận có thể đối chiếu.</h2>
+            <p class="app-sub">Số liệu thật, không phải lời quảng cáo.</p>
+            <div class="receipt">
+              <div class="r-head"><b>Biên nhận gửi</b><span>QSC-000731</span></div>
+              <dl style="margin:0">
+                <div class="r-row"><dt>Tổng dung lượng</dt><dd>2.41 GB</dd></div>
+                <div class="r-row"><dt>Số part</dt><dd>1,024</dd></div>
+                <div class="r-row"><dt>SHA-256</dt><dd>9f2c…e41a</dd></div>
+                <div class="r-row"><dt>Hạn tải</dt><dd>7 ngày</dd></div>
+              </dl>
+              <div class="verify"><span aria-hidden="true">✓</span> Đã đối chiếu · khớp</div>
+            </div>
+          </div>
+          <div class="col-side">
+            <span class="eyebrow">Kiểm chứng</span>
+            <div class="field"><label for="receipt-mail">Người nhận</label><input id="receipt-mail" type="email" placeholder="nguoinhan@dia.chi"></div>
+            <button class="primary" type="button">Đối chiếu SHA-256</button>
+            <p class="status">Biên nhận chưa lập . Bản xem thử.</p>
+          </div>
+        </div>
+        <footer class="app-foot"><span>QuickShareCloud / receipt</span><span>Prototype · không gửi dữ liệu</span></footer>
+      </div>
+    </article>
+  </div>
+</body>
+</html>
