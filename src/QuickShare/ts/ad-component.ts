@@ -3,7 +3,7 @@
 window.QuickShareAds = (function (): QuickShareAdsModule {
     'use strict';
 
-    var state: {
+    const state: {
         adUnitId: string | null;
         callbackUrl: string | null;
         antiForgeryToken: string | null;
@@ -24,7 +24,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
     };
 
     function t(key: string, a?: string | number, b?: string | number): string {
-        var v = state.i18n[key] || '';
+        const v = state.i18n[key] || '';
         return v.replace('{0}', String(a)).replace('{1}', String(b));
     }
 
@@ -52,7 +52,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
     }
 
     function wireButton() {
-        var btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
+        const btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
         if (!btn) return;
 
         btn.addEventListener('click', function () {
@@ -63,7 +63,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
     }
 
     function updateButtonState() {
-        var btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
+        const btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
         if (!btn) return;
 
         if (state.remainingAds <= 0) {
@@ -80,11 +80,11 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
             return;
         }
 
-        var container = document.getElementById('ad-reward-card');
+        const container = document.getElementById('ad-reward-card');
         if (!container) return;
 
         // Indicate loading.
-        var btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
+        const btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
         if (btn) {
             btn.disabled = true;
             btn.textContent = t('loading');
@@ -113,7 +113,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
                 return;
             }
 
-            var script = document.createElement('script');
+            const script = document.createElement('script');
             script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
             script.async = true;
             script.crossOrigin = 'anonymous';
@@ -133,7 +133,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
             try {
                 // AdMob web rewarded ad API.
                 // Reference: https://developers.google.com/admob/web/rewarded
-                var ad = new (window.google!.ads!.admanager!.RewardedAd!)(state.adUnitId!);
+                const ad = new (window.google!.ads!.admanager!.RewardedAd!)(state.adUnitId!);
 
                 ad.onRewardedAdLoaded = function () {
                     // Ad ready to show.
@@ -145,7 +145,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
 
                 ad.onRewardedAdClosed = function () {
                     // User closed without completing — re-enable button.
-                    var btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
+                    const btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
                     if (btn && !state.rewardGranted) {
                         btn.disabled = false;
                         btn.textContent = t('watchBtn');
@@ -154,7 +154,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
 
                 ad.onRewardedAdReward = function (reward) {
                     state.rewardGranted = true;
-                    var token = reward.rewardToken || reward.token || crypto.randomUUID();
+                    const token = reward.rewardToken || reward.token || crypto.randomUUID();
                     verifyReward(token, reward.amount || 1);
                 };
 
@@ -168,7 +168,7 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
 
     // Send reward verification token to server.
     function verifyReward(token: string, amount: number) {
-        var btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
+        const btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
         if (btn) {
             btn.disabled = true;
             btn.textContent = t('verifying');
@@ -196,10 +196,10 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
     }
 
     function showSuccess(data: any) {
-        var container = document.getElementById('ad-reward-card');
+        const container = document.getElementById('ad-reward-card');
         if (!container) return;
 
-        var p2pNote = '';
+        let p2pNote = '';
         if (data.p2pUploadsUnlocked > 0) {
             p2pNote = '<p class="ad-reward-card__description" style="color:var(--color-success)">'
                 + t('p2pUnlocked', data.p2pUploadsUnlocked) + '</p>';
@@ -224,12 +224,12 @@ window.QuickShareAds = (function (): QuickShareAdsModule {
     }
 
     function showError(message: string) {
-        var btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
+        const btn = document.getElementById('ad-reward-watch-btn') as HTMLButtonElement;
         if (btn) {
             btn.disabled = false;
             btn.textContent = t('tryAgain');
         }
-        var error = document.getElementById('ad-reward-error');
+        const error = document.getElementById('ad-reward-error');
         if (error) {
             error.textContent = message;
             error.style.display = 'block';

@@ -14,7 +14,7 @@
 
     function report(data: ClientErrorReportPayload): void {
         try {
-            var body = JSON.stringify(data);
+            const body = JSON.stringify(data);
             if (navigator.sendBeacon) {
                 navigator.sendBeacon('/api/client-errors', new Blob([body], { type: 'application/json' }));
             } else {
@@ -42,7 +42,7 @@
     });
 
     window.addEventListener('unhandledrejection', function (e: PromiseRejectionEvent) {
-        var r = e.reason;
+        const r = e.reason;
         report({
             message: 'Unhandled promise rejection: ' + (r && r.message ? r.message : String(r)),
             stack: r && r.stack ? r.stack : '',

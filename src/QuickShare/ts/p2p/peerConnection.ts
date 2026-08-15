@@ -7,7 +7,7 @@
     // server has a standard R2 send/receive path for that. When peers cannot
     // reach each other directly (different networks/NAT), the UI tells the
     // user instead of relaying through a bandwidth-hungry TURN server.
-    var ICE_SERVERS: RTCIceServer[] = [
+    const ICE_SERVERS: RTCIceServer[] = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
@@ -20,26 +20,26 @@
     // same NAT report the same one, so a mismatch means a direct connection is
     // impossible and the UI can say so up front instead of waiting out an ICE
     // timeout. Inconclusive (no srflx candidate) is never treated as a failure.
-    var PROBE_TIMEOUT_MS = 5000;
-    var IPV4_PATTERN = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-    var CANDIDATE_TYPE_FIELD = 'typ';
-    var CANDIDATE_TYPE_SRFLX = 'srflx';
-    var CANDIDATE_ADDRESS_INDEX = 4;
-    var PROBE_CHANNEL_LABEL = 'netprobe';
-    var NETWORK_RESULT = {
+    const PROBE_TIMEOUT_MS = 5000;
+    const IPV4_PATTERN = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+    const CANDIDATE_TYPE_FIELD = 'typ';
+    const CANDIDATE_TYPE_SRFLX = 'srflx';
+    const CANDIDATE_ADDRESS_INDEX = 4;
+    const PROBE_CHANNEL_LABEL = 'netprobe';
+    const NETWORK_RESULT = {
         same: 'same',
         different: 'different',
         unknown: 'unknown'
     } as const;
 
     function extractPublicIpv4(candidateLine: string | null): string | null {
-        var parts = (candidateLine || '').split(' ');
-        var typeIndex = parts.indexOf(CANDIDATE_TYPE_FIELD);
+        const parts = (candidateLine || '').split(' ');
+        const typeIndex = parts.indexOf(CANDIDATE_TYPE_FIELD);
         if (typeIndex < 0 || parts[typeIndex + 1] !== CANDIDATE_TYPE_SRFLX) {
             return null;
         }
 
-        var address = parts[CANDIDATE_ADDRESS_INDEX];
+        const address = parts[CANDIDATE_ADDRESS_INDEX];
         // IPv6 is skipped on purpose: two devices on one LAN still get distinct
         // global IPv6 addresses, so it cannot separate same from different network.
         if (!address || !IPV4_PATTERN.test(address)) {
@@ -53,9 +53,9 @@
     // (STUN blocked, IPv6-only, timeout). Never rejects.
     function probePublicAddress(timeoutMs?: number): Promise<string | null> {
         return new Promise(function (resolve) {
-            var pc: RTCPeerConnection | null = null;
-            var settled = false;
-            var timer: ReturnType<typeof setTimeout> | null = null;
+            let pc: RTCPeerConnection | null = null;
+            let settled = false;
+            let timer: ReturnType<typeof setTimeout> | null = null;
 
             function finish(address: string | null) {
                 if (settled) {
@@ -87,7 +87,7 @@
                     finish(null); // Gathering finished with no usable srflx candidate.
                     return;
                 }
-                var address = extractPublicIpv4(event.candidate.candidate);
+                const address = extractPublicIpv4(event.candidate.candidate);
                 if (address) {
                     finish(address);
                 }
@@ -143,7 +143,7 @@
 
         _ensurePC(): void {
             if (this.pc) return;
-            var self = this;
+            const self = this;
 
             try {
                 this.pc = new RTCPeerConnection({ iceServers: resolveIceServers() });
@@ -174,7 +174,7 @@
         }
 
         createOffer(): Promise<string> {
-            var self = this;
+            const self = this;
             this._ensurePC();
             if (!this.pc) return Promise.reject(new Error('PC not initialized'));
 
@@ -192,7 +192,7 @@
         }
 
         createAnswer(offerSdp: string): Promise<string> {
-            var self = this;
+            const self = this;
             this._ensurePC();
             if (!this.pc) return Promise.reject(new Error('PC not initialized'));
 
@@ -217,7 +217,7 @@
         }
 
         setRemoteSdp(sdp: string): Promise<void> {
-            var self = this;
+            const self = this;
             this._ensurePC();
             if (!this.pc) return Promise.reject(new Error('PC not initialized'));
 
@@ -245,9 +245,9 @@
         }
 
         _flushPendingCandidates(): Promise<void> {
-            var self = this;
+            const self = this;
             if (!this.pc) return Promise.resolve();
-            var promises = this.pendingCandidates.map(function (c) {
+            const promises = this.pendingCandidates.map(function (c) {
                 try {
                     return self.pc!.addIceCandidate(new RTCIceCandidate(c as unknown as RTCIceCandidateInit));
                 } catch (e) {

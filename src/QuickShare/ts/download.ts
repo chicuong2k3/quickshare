@@ -1,6 +1,6 @@
 window.downloadApp = (function (): DownloadPage {
     'use strict';
-    var state: {
+    const state: {
         phase: string;
         downloading: boolean;
         isEncrypted: boolean;
@@ -21,18 +21,18 @@ window.downloadApp = (function (): DownloadPage {
     } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, fullText: null, bytes: null };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
-    var TEXT_MIME_PREFIX = 'text/plain';
-    var PREVIEW_MAX_BYTES = 1024 * 1024;
-    var INLINE_FULL_BYTES = 10 * 1024;
-    var PREVIEW_LINE_LIMIT = 50;
+    const TEXT_MIME_PREFIX = 'text/plain';
+    const PREVIEW_MAX_BYTES = 1024 * 1024;
+    const INLINE_FULL_BYTES = 10 * 1024;
+    const PREVIEW_LINE_LIMIT = 50;
 
     function apiBase(): string { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
-    function shareCode(): string { var m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
-    function show(id: string) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
-    function hide(id: string) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
-    function text(id: string, val: string) { var el = document.getElementById(id); if (el) el.textContent = val; }
-    function attr(id: string, name: string, val: string) { var el = document.getElementById(id); if (el) el.setAttribute(name, val); }
-    function removeAttr(id: string, name: string) { var el = document.getElementById(id); if (el) el.removeAttribute(name); }
+    function shareCode(): string { const m = window.location.pathname.match(/\/d\/(.+)/); return m ? m[1] : ''; }
+    function show(id: string) { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
+    function hide(id: string) { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
+    function text(id: string, val: string) { const el = document.getElementById(id); if (el) el.textContent = val; }
+    function attr(id: string, name: string, val: string) { const el = document.getElementById(id); if (el) el.setAttribute(name, val); }
+    function removeAttr(id: string, name: string) { const el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
     function render() {
         hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file'); hide('download-phase-expired');
@@ -51,12 +51,12 @@ window.downloadApp = (function (): DownloadPage {
                 text('dl-download-text', t('decrypting'));
                 // Hide the icon rather than destroy it: outerHTML removed the
                 // node permanently and the next render threw on null.
-                var icon = document.getElementById('dl-download-icon');
+                const icon = document.getElementById('dl-download-icon');
                 if (icon) icon.style.visibility = 'hidden';
             } else {
                 removeAttr('dl-download-btn', 'aria-disabled');
                 text('dl-download-text', t('download'));
-                var icon2 = document.getElementById('dl-download-icon');
+                const icon2 = document.getElementById('dl-download-icon');
                 if (icon2) icon2.style.visibility = '';
             }
             maybeRenderTextPreview();
@@ -64,30 +64,30 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     // Copy comes from the server so this file carries no English literals.
-    var T: Record<string, string> = (function () {
-        var el = document.getElementById('download-i18n');
+    const T: Record<string, string> = (function () {
+        const el = document.getElementById('download-i18n');
         try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
     })();
 
     function t(key: string, a?: string | number, b?: string | number): string {
-        var v = T[key] || '';
+        const v = T[key] || '';
         return v.replace('{0}', String(a)).replace('{1}', String(b));
     }
 
     function infoFromDom(): any {
-        var el = document.getElementById('download-info-data');
+        const el = document.getElementById('download-info-data');
         try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
     }
 
-    var initAttempts = 0;
+    let initAttempts = 0;
 
     function init() {
-        var infoEl = document.getElementById('download-info-data');
+        const infoEl = document.getElementById('download-info-data');
         // Bounded: the old loop rescheduled itself forever on a page that
         // would never have the element.
         if (!infoEl) { if (++initAttempts < 40) setTimeout(init, 50); return; }
-        var hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
-        var info = infoFromDom();
+        const hash = window.location.hash; if (hash && hash.startsWith('#key=')) state.isEncrypted = true;
+        const info = infoFromDom();
         state.downloadCount = info.downloadCount || 0; state.maxDownloads = info.maxDownloads || 0; state.expiresAt = info.expiresAt ? new Date(info.expiresAt) : null; state.expiresLabel = state.expiresAt ? formatExpiry().label : t('expiryNone');
         if (info.hasOtp) state.phase = 'otp';
         else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
@@ -101,20 +101,20 @@ window.downloadApp = (function (): DownloadPage {
     // this only refines it — with JS dead the anchor still delivers.
     function formatExpiry(): { expired: boolean; label: string; level: string } {
         if (!state.expiresAt) return { expired: false, label: t('expiryNone'), level: 'subtle' };
-        var r = state.expiresAt.getTime() - Date.now();
+        const r = state.expiresAt.getTime() - Date.now();
         if (r <= 0) return { expired: true, label: t('expiryExpired'), level: 'urgent' };
-        var totalSec = Math.floor(r / 1000);
-        var h = Math.floor(totalSec / 3600);
-        var clock = h + ':' + pad2(Math.floor(totalSec / 60) % 60) + ':' + pad2(totalSec % 60);
+        const totalSec = Math.floor(r / 1000);
+        const h = Math.floor(totalSec / 3600);
+        const clock = h + ':' + pad2(Math.floor(totalSec / 60) % 60) + ':' + pad2(totalSec % 60);
         if (h < 1) return { expired: false, label: t('expiryCountdown', clock), level: 'urgent' };
         if (h < 24) return { expired: false, label: t('expiryCountdown', clock), level: 'warn' };
         return { expired: false, label: t('expiryDay', Math.floor(h / 24)), level: 'subtle' };
     }
 
     function applyExpiryClass(level: string) {
-        var ids = ['dl-spec-expires', 'dl-expires-label'];
-        for (var i = 0; i < ids.length; i++) {
-            var el = document.getElementById(ids[i]);
+        const ids = ['dl-spec-expires', 'dl-expires-label'];
+        for (let i = 0; i < ids.length; i++) {
+            const el = document.getElementById(ids[i]);
             if (!el) continue;
             el.classList.remove('dl-expiry--subtle', 'dl-expiry--warn', 'dl-expiry--urgent');
             if (level) el.classList.add('dl-expiry--' + level);
@@ -122,14 +122,14 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     function setNudge(showNudge: boolean) {
-        var el = document.getElementById('dl-expiry-nudge');
+        const el = document.getElementById('dl-expiry-nudge');
         if (!el) return;
         if (showNudge) el.classList.remove('hidden'); else el.classList.add('hidden');
     }
 
     function tickExpiry() {
         if (!state.expiresAt) return;
-        var r = state.expiresAt.getTime() - Date.now();
+        const r = state.expiresAt.getTime() - Date.now();
         if (r <= 0) {
             if (state.expiryTimer) { clearInterval(state.expiryTimer); state.expiryTimer = null; }
             if (state.adTimer) { clearInterval(state.adTimer); state.adTimer = null; }
@@ -139,7 +139,7 @@ window.downloadApp = (function (): DownloadPage {
             render();
             return;
         }
-        var f = formatExpiry();
+        const f = formatExpiry();
         state.expiryLevel = f.level;
         state.expiresLabel = f.label;
         if (state.phase !== 'file') return;
@@ -157,33 +157,33 @@ window.downloadApp = (function (): DownloadPage {
 
 
     function readOtp(): string {
-        var inputs = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input');
-        var pin = '';
-        for (var i = 0; i < inputs.length; i++) pin += inputs[i].value;
+        const inputs = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input');
+        let pin = '';
+        for (let i = 0; i < inputs.length; i++) pin += inputs[i].value;
         return pin;
     }
 
     function otpInput(event: Event, idx: number) {
-        var target = event.target as HTMLInputElement;
-        var val = target.value.replace(/\D/g, '');
+        const target = event.target as HTMLInputElement;
+        const val = target.value.replace(/\D/g, '');
         target.value = val;
         if (val && idx < 5) {
-            var next = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input')[idx + 1];
+            const next = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input')[idx + 1];
             if (next) next.focus();
         }
     }
 
     function otpKeydown(event: KeyboardEvent, idx: number) {
-        var target = event.target as HTMLInputElement;
+        const target = event.target as HTMLInputElement;
         if (event.key === 'Backspace' && !target.value && idx > 0) {
-            var prev = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input')[idx - 1];
+            const prev = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input')[idx - 1];
             if (prev) prev.focus();
         }
         if (event.key === 'Enter') verifyOtp();
     }
 
     function verifyOtp() {
-        var otp = readOtp();
+        const otp = readOtp();
         if (otp.length < 6) { show('dl-otp-error'); text('dl-otp-error', t('otpIncomplete')); return; }
         hide('dl-otp-error'); text('dl-otp-btn-text', t('otpVerifying')); attr('dl-otp-btn', 'disabled', 'disabled');
         fetch(apiBase() + '/api/deliveries/' + shareCode() + '/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ otp: otp }) })
@@ -192,7 +192,7 @@ window.downloadApp = (function (): DownloadPage {
             })
             .then(function () {
                 state.verifiedOtp = otp;
-                var info = infoFromDom();
+                const info = infoFromDom();
                 if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); }
                 else state.phase = 'file';
             })
@@ -222,7 +222,7 @@ window.downloadApp = (function (): DownloadPage {
     function toggleZK() { state.zkOpen = !state.zkOpen; render(); }
 
     function downloadUrl(): string {
-        var url = apiBase() + '/api/downloads/' + shareCode();
+        let url = apiBase() + '/api/downloads/' + shareCode();
         if (state.verifiedOtp) url += '?otp=' + encodeURIComponent(state.verifiedOtp);
         return url;
     }
@@ -245,13 +245,13 @@ window.downloadApp = (function (): DownloadPage {
         return false;
     }
 
-    function saveBytes(bytes: ArrayBuffer) { var blob = new Blob([bytes]); var dlUrl = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = dlUrl; a.download = infoFromDom().fileName || shareCode(); document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
+    function saveBytes(bytes: ArrayBuffer) { const blob = new Blob([bytes]); const dlUrl = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = dlUrl; a.download = infoFromDom().fileName || shareCode(); document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }
 
-    async function fetchBytes(): Promise<ArrayBuffer> { var response = await fetch(downloadUrl()); if (!response.ok) throw new Error('Download failed: ' + response.statusText); var data = await response.arrayBuffer(); if (!state.isEncrypted) return data; var hash = window.location.hash; var keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); var base64 = keyMatch[1].replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; var binary = atob(base64); var keyBytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); var key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); var nonce = data.slice(0, 12); var ciphertext = data.slice(12); return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); }
+    async function fetchBytes(): Promise<ArrayBuffer> { const response = await fetch(downloadUrl()); if (!response.ok) throw new Error('Download failed: ' + response.statusText); const data = await response.arrayBuffer(); if (!state.isEncrypted) return data; const hash = window.location.hash; const keyMatch = hash.match(/key=([A-Za-z0-9\-_]+)/); if (!keyMatch) throw new Error('Encryption key not found'); let base64 = keyMatch[1].replace(/-/g, '+').replace(/_/g, '/'); while (base64.length % 4) base64 += '='; const binary = atob(base64); const keyBytes = new Uint8Array(binary.length); for (let i = 0; i < binary.length; i++) keyBytes[i] = binary.charCodeAt(i); const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']); const nonce = data.slice(0, 12); const ciphertext = data.slice(12); return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(nonce) }, key, ciphertext); }
 
     function maybeRenderTextPreview() {
         if (state.previewStarted) return;
-        var i = infoFromDom();
+        const i = infoFromDom();
         if (!i.contentType || i.contentType.indexOf(TEXT_MIME_PREFIX) !== 0) return;
         if (!i.fileSize || i.fileSize > PREVIEW_MAX_BYTES) return;
 
@@ -270,10 +270,10 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     function renderText(truncate: boolean) {
-        var body = document.getElementById('dl-text-body');
+        const body = document.getElementById('dl-text-body');
         if (!body) return;
-        var lines = state.fullText!.split('\n');
-        var truncated = truncate && lines.length > PREVIEW_LINE_LIMIT;
+        const lines = state.fullText!.split('\n');
+        const truncated = truncate && lines.length > PREVIEW_LINE_LIMIT;
         // textContent, never innerHTML — the snippet is untrusted user content.
         body.textContent = truncated ? lines.slice(0, PREVIEW_LINE_LIMIT).join('\n') : state.fullText;
         if (truncated) { show('dl-text-more'); text('dl-text-status', t('previewLines', PREVIEW_LINE_LIMIT, lines.length)); }

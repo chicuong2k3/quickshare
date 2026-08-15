@@ -3,9 +3,9 @@
 (function () {
     'use strict';
 
-    var STREAMSAVER_CDN = 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.6/StreamSaver.min.js';
-    var BLOB_THRESHOLD = 500 * 1024 * 1024; // 500MB
-    var HEADER_SIZE = 8; // 4 bytes index + 1 byte final + 2 bytes length + 1 reserved
+    const STREAMSAVER_CDN = 'https://cdn.jsdelivr.net/npm/streamsaver@2.0.6/StreamSaver.min.js';
+    const BLOB_THRESHOLD = 500 * 1024 * 1024; // 500MB
+    const HEADER_SIZE = 8; // 4 bytes index + 1 byte final + 2 bytes length + 1 reserved
 
     class FileReceiver implements P2PFileReceiver {
         dc: RTCDataChannel;
@@ -41,7 +41,7 @@
         }
 
         start(): void {
-            var self = this;
+            const self = this;
 
             this.dc.binaryType = 'arraybuffer';
 
@@ -63,12 +63,12 @@
         }
 
         _handleMessage(data: ArrayBuffer | string): void {
-            var self = this;
+            const self = this;
 
             if (typeof data === 'string') {
                 // Meta message (JSON string)
                 try {
-                    var meta = JSON.parse(data);
+                    const meta = JSON.parse(data);
                     if (meta.type === 'meta') {
                         this._fileInfo = {
                             name: meta.name,
@@ -95,19 +95,19 @@
                 return;
             }
 
-            var header = new Uint8Array(data.slice(0, HEADER_SIZE));
-            var view = new DataView(header.buffer);
-            var chunkIndex = view.getUint32(0, true);
-            var isFinal = view.getUint8(4) === 1;
-            var dataLength = view.getUint16(5, true);
+            const header = new Uint8Array(data.slice(0, HEADER_SIZE));
+            const view = new DataView(header.buffer);
+            const chunkIndex = view.getUint32(0, true);
+            const isFinal = view.getUint8(4) === 1;
+            const dataLength = view.getUint16(5, true);
 
-            var chunkData = data.slice(HEADER_SIZE, HEADER_SIZE + (dataLength || data.byteLength - HEADER_SIZE));
+            const chunkData = data.slice(HEADER_SIZE, HEADER_SIZE + (dataLength || data.byteLength - HEADER_SIZE));
 
             this._processChunk(chunkIndex, isFinal, chunkData);
         }
 
         async _processChunk(index: number, isFinal: boolean, chunkData: ArrayBuffer): Promise<void> {
-            var self = this;
+            const self = this;
 
             // Decrypt if encryption is configured
             if (this.encryption && this.encryption.key) {
@@ -161,9 +161,9 @@
         }
 
         _finalizeBlobDownload(): void {
-            var blob = new Blob(this._parts, { type: this._fileInfo!.mime });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
+            const blob = new Blob(this._parts, { type: this._fileInfo!.mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
             a.href = url;
             a.download = this._fileInfo!.name;
             a.style.display = 'none';
@@ -179,7 +179,7 @@
         }
 
         _initStreamSaver(meta: P2PFileMeta): void {
-            var self = this;
+            const self = this;
 
             function loadStreamSaver() {
                 if (window.streamSaver) {
@@ -187,7 +187,7 @@
                     return;
                 }
 
-                var script = document.createElement('script');
+                const script = document.createElement('script');
                 script.src = STREAMSAVER_CDN;
                 script.onload = function () {
                     if (window.streamSaver) {
@@ -205,7 +205,7 @@
 
             function setupWriteStream(streamSaver: StreamSaverModule) {
                 try {
-                    var fileStream = streamSaver.createWriteStream(meta.name, {
+                    const fileStream = streamSaver.createWriteStream(meta.name, {
                         size: meta.size,
                         mimeType: meta.mime
                     });

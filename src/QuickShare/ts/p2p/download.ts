@@ -6,28 +6,28 @@
     'use strict';
 
     // UI copy is rendered by the page into a JSON block — no English literals here.
-    var T: Record<string, string> = (function () {
-        var el = document.getElementById('p2p-download-i18n');
+    const T: Record<string, string> = (function () {
+        const el = document.getElementById('p2p-download-i18n');
         try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
     })();
     function t(key: string, a?: string | number, b?: string | number): string {
-        var v = T[key] || '';
+        const v = T[key] || '';
         return v.replace('{0}', String(a)).replace('{1}', String(b));
     }
     function apiBase(): string { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function formatBytes(b: number): string { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
-    function show(id: string): void { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
-    function hide(id: string): void { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
-    function text(id: string, val: string): void { var el = document.getElementById(id); if (el) el.textContent = val; }
-    var SIGNALING_CONNECT_TIMEOUT_MS = 15000;
-    var SIGNALING_CONNECT_TIMEOUT_MESSAGE = t('signalingTimeout');
-    var RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
-    var RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = t('handshakeTimeout');
-    var ICE_CONNECT_TIMEOUT_MS = 12000;
-    var ICE_CONNECT_TIMEOUT_MESSAGE = t('iceTimeout');
-    var DIFFERENT_NETWORK_MESSAGE = t('diffNetwork');
-    var SENDER_LEFT_MESSAGE = t('senderLeft');
-    var RELAY_TYPE = {
+    function show(id: string): void { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
+    function hide(id: string): void { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
+    function text(id: string, val: string): void { const el = document.getElementById(id); if (el) el.textContent = val; }
+    const SIGNALING_CONNECT_TIMEOUT_MS = 15000;
+    const SIGNALING_CONNECT_TIMEOUT_MESSAGE = t('signalingTimeout');
+    const RECEIVER_HANDSHAKE_TIMEOUT_MS = 25000;
+    const RECEIVER_HANDSHAKE_TIMEOUT_MESSAGE = t('handshakeTimeout');
+    const ICE_CONNECT_TIMEOUT_MS = 12000;
+    const ICE_CONNECT_TIMEOUT_MESSAGE = t('iceTimeout');
+    const DIFFERENT_NETWORK_MESSAGE = t('diffNetwork');
+    const SENDER_LEFT_MESSAGE = t('senderLeft');
+    const RELAY_TYPE = {
         offer: 'offer',
         ice: 'ice',
         answer: 'answer',
@@ -37,10 +37,10 @@
     // without a clean close (network dropped, device slept). WebRTC state
     // events can stay silent on a dead pipe, so this watchdog guarantees the
     // receiver stops showing a frozen progress bar.
-    var TRANSFER_STALL_TIMEOUT_MS = 30000;
+    const TRANSFER_STALL_TIMEOUT_MS = 30000;
 
     window.p2pDownload = (function (): P2pDownloadPage {
-        var state: {
+        const state: {
             phase: string;
             progress: number;
             fileName: string;
@@ -82,20 +82,20 @@
 
         function render(): void {
             [{ p: 'checking', id: 'p2pd-checking' }, { p: 'ready', id: 'p2pd-ready' }, { p: 'connecting', id: 'p2pd-ready' }, { p: 'transferring', id: 'p2pd-transfer' }, { p: 'complete', id: 'p2pd-complete' }, { p: 'waiting-sender', id: 'p2pd-waiting' }, { p: 'error', id: 'p2pd-error' }].forEach(function (s) { hide(s.id); });
-            var phaseEls: Record<string, string> = {
+            const phaseEls: Record<string, string> = {
                 'checking': 'p2pd-checking', 'ready': 'p2pd-ready',
                 'connecting': 'p2pd-ready', 'transferring': 'p2pd-transfer',
                 'complete': 'p2pd-complete', 'waiting-sender': 'p2pd-waiting',
                 'error': 'p2pd-error'
             };
-            var elId = phaseEls[state.phase];
+            const elId = phaseEls[state.phase];
             if (elId) show(elId);
 
             if (state.phase === 'ready' || state.phase === 'connecting') {
                 text('p2pd-filename', state.fileName);
                 text('p2pd-filesize', formatBytes(state.fileSize));
-                var btn = document.getElementById('p2pd-dl-btn') as HTMLButtonElement | null;
-                var btnTxt = document.getElementById('p2pd-dl-text');
+                const btn = document.getElementById('p2pd-dl-btn') as HTMLButtonElement | null;
+                const btnTxt = document.getElementById('p2pd-dl-text');
                 if (state.phase === 'connecting') {
                     if (btn) btn.disabled = true;
                     if (btnTxt) btnTxt.textContent = t('connecting');
@@ -107,7 +107,7 @@
             if (state.phase === 'transferring') {
                 text('p2pd-transfer-name', state.fileName);
                 text('p2pd-transfer-progress', progressLabel());
-                var bar = document.getElementById('p2pd-progress-bar');
+                const bar = document.getElementById('p2pd-progress-bar');
                 if (bar) bar.setAttribute('aria-valuenow', String(state.progress));
             }
             if (state.phase === 'complete') text('p2pd-complete-name', state.fileName);
@@ -119,15 +119,15 @@
 
         function progressLabel(): string {
             if (state.progress === 0) return t('starting');
-            var l = state.progress + '%';
+            let l = state.progress + '%';
             if (state._receivedBytes && state.fileSize) {
                 l += ' \u00b7 ' + formatBytes(state._receivedBytes) + ' / ' + formatBytes(state.fileSize);
             }
-            var elapsed = (Date.now() - state._startTime) / 1000;
+            const elapsed = (Date.now() - state._startTime) / 1000;
             if (elapsed > 0 && state._receivedBytes > 0) {
-                var bps = state._receivedBytes / elapsed;
+                const bps = state._receivedBytes / elapsed;
                 l += ' \u00b7 ' + formatBytes(bps) + '/s';
-                var rem = (state.fileSize - state._receivedBytes) / bps;
+                const rem = (state.fileSize - state._receivedBytes) / bps;
                 if (rem < 60) l += ' \u00b7 ~' + Math.round(rem) + 's';
                 else l += ' \u00b7 ~' + Math.round(rem / 60) + 'm';
             }
@@ -263,7 +263,7 @@
 
         function init(): void {
             render();
-            var api = apiBase();
+            const api = apiBase();
             if (!window.P2P || !window.P2P.SignalingClient) {
                 state.phase = 'error';
                 state.error = t('signalingNotLoaded');
@@ -320,7 +320,7 @@
             };
             state._signaling.onRelay = function (type: string, data: unknown) {
                 if (type === RELAY_TYPE.netProbe) {
-                    var probeData = data as { address?: string } | null | undefined;
+                    const probeData = data as { address?: string } | null | undefined;
                     state._remoteAddress = (probeData && probeData.address) || null;
                     evaluateNetwork();
                     return;
@@ -332,7 +332,7 @@
                         state._pendingOffer = data;
                     }
                 } else if (type === RELAY_TYPE.ice && data) {
-                    var candidate = (data as { candidate?: RTCIceCandidateInit | string }).candidate || (data as RTCIceCandidateInit | string);
+                    const candidate = (data as { candidate?: RTCIceCandidateInit | string }).candidate || (data as RTCIceCandidateInit | string);
                     if (state._peerConnection) {
                         state._peerConnection.addIceCandidate(candidate);
                     } else {
@@ -392,16 +392,16 @@
                 handleOffer(state._pendingOffer);
                 state._pendingOffer = null;
             }
-            for (var i = 0; i < state._pendingIceCandidates.length; i++) {
-                var pending = state._pendingIceCandidates[i];
-                var pendingCandidate = (pending as { candidate?: RTCIceCandidateInit | string }).candidate || pending;
+            for (let i = 0; i < state._pendingIceCandidates.length; i++) {
+                const pending = state._pendingIceCandidates[i];
+                const pendingCandidate = (pending as { candidate?: RTCIceCandidateInit | string }).candidate || pending;
                 state._peerConnection.addIceCandidate(pendingCandidate);
             }
             state._pendingIceCandidates = [];
         }
 
         function handleOffer(data: unknown): void {
-            var sdp: unknown = (data as { sdp?: unknown }).sdp || (data as string);
+            let sdp: unknown = (data as { sdp?: unknown }).sdp || (data as string);
             if (sdp && typeof sdp === 'object' && (sdp as { sdp?: string }).sdp) {
                 sdp = (sdp as { sdp?: string }).sdp;
             }

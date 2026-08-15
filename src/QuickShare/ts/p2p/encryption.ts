@@ -3,14 +3,14 @@
 (function () {
     'use strict';
 
-    var PBKDF2_ITERATIONS = 600000;
-    var SALT_LENGTH = 16;
-    var KEY_LENGTH = 256;
-    var NONCE_LENGTH = 12;
+    const PBKDF2_ITERATIONS = 600000;
+    const SALT_LENGTH = 16;
+    const KEY_LENGTH = 256;
+    const NONCE_LENGTH = 12;
 
     async function deriveKey(pin: string, salt: string): Promise<CryptoKey> {
-        var enc = new TextEncoder();
-        var keyMaterial = await crypto.subtle.importKey(
+        const enc = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
             'raw',
             enc.encode(pin),
             { name: 'PBKDF2' },
@@ -33,11 +33,11 @@
     }
 
     async function encryptChunk(chunk: ArrayBuffer | Uint8Array, key: CryptoKey, counter: number): Promise<ArrayBuffer> {
-        var nonce = new Uint8Array(NONCE_LENGTH);
-        var view = new DataView(nonce.buffer);
+        const nonce = new Uint8Array(NONCE_LENGTH);
+        const view = new DataView(nonce.buffer);
         view.setBigUint64(4, BigInt(counter), false); // Big-endian, last 8 bytes
 
-        var encrypted = await crypto.subtle.encrypt(
+        const encrypted = await crypto.subtle.encrypt(
             { name: 'AES-GCM', iv: nonce },
             key,
             chunk as BufferSource
@@ -47,11 +47,11 @@
     }
 
     async function decryptChunk(chunk: ArrayBuffer | Uint8Array, key: CryptoKey, counter: number): Promise<ArrayBuffer> {
-        var nonce = new Uint8Array(NONCE_LENGTH);
-        var view = new DataView(nonce.buffer);
+        const nonce = new Uint8Array(NONCE_LENGTH);
+        const view = new DataView(nonce.buffer);
         view.setBigUint64(4, BigInt(counter), false);
 
-        var decrypted = await crypto.subtle.decrypt(
+        const decrypted = await crypto.subtle.decrypt(
             { name: 'AES-GCM', iv: nonce },
             key,
             chunk as BufferSource
@@ -61,15 +61,15 @@
     }
 
     function generateSalt(): string {
-        var salt = new Uint8Array(SALT_LENGTH);
+        const salt = new Uint8Array(SALT_LENGTH);
         crypto.getRandomValues(salt);
         return Array.from(salt, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
     async function hashPin(pin: string, salt: string): Promise<string> {
-        var enc = new TextEncoder();
-        var data = enc.encode(pin + '|' + salt);
-        var hash = await crypto.subtle.digest('SHA-256', data);
+        const enc = new TextEncoder();
+        const data = enc.encode(pin + '|' + salt);
+        const hash = await crypto.subtle.digest('SHA-256', data);
         return Array.from(new Uint8Array(hash), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 

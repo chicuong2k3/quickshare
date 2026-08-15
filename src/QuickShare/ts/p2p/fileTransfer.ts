@@ -2,9 +2,9 @@
 (function () {
     'use strict';
 
-    var CHUNK_SIZE = 16 * 1024; // 16KB
-    var BACKPRESSURE_HIGH = 1024 * 1024; // 1MB
-    var BACKPRESSURE_LOW = 512 * 1024; // 512KB
+    const CHUNK_SIZE = 16 * 1024; // 16KB
+    const BACKPRESSURE_HIGH = 1024 * 1024; // 1MB
+    const BACKPRESSURE_LOW = 512 * 1024; // 512KB
 
     class FileSender implements P2PFileSender {
         file: File;
@@ -30,14 +30,14 @@
         }
 
         start(): void {
-            var self = this;
+            const self = this;
             this._cancelled = false;
-            var totalChunks = Math.ceil(this.file.size / CHUNK_SIZE);
-            var currentChunk = 0;
+            const totalChunks = Math.ceil(this.file.size / CHUNK_SIZE);
+            let currentChunk = 0;
 
             // Send meta first
             try {
-                var metaMsg = JSON.stringify({
+                const metaMsg = JSON.stringify({
                     type: 'meta',
                     name: this.file.name,
                     size: this.file.size,
@@ -50,10 +50,10 @@
                 return;
             }
 
-            var reader = new FileReader();
-            var offset = 0;
+            const reader = new FileReader();
+            let offset = 0;
 
-            var sendNext = function () {
+            const sendNext = function () {
                 if (self._cancelled) return;
 
                 if (offset >= self.file.size) {
@@ -71,15 +71,15 @@
                     return;
                 }
 
-                var chunk = self.file.slice(offset, offset + CHUNK_SIZE);
+                const chunk = self.file.slice(offset, offset + CHUNK_SIZE);
                 reader.onload = async function (e: ProgressEvent<FileReader>) {
                     if (self._cancelled) return;
 
-                    var arrayBuffer = (e.target as FileReader).result as ArrayBuffer;
-                    var isFinal = (offset + CHUNK_SIZE) >= self.file.size;
+                    const arrayBuffer = (e.target as FileReader).result as ArrayBuffer;
+                    const isFinal = (offset + CHUNK_SIZE) >= self.file.size;
 
                     try {
-                        var data: ArrayBuffer = arrayBuffer;
+                        let data: ArrayBuffer = arrayBuffer;
 
                         // Encrypt if encryption is configured
                         if (self.encryption && self.encryption.key) {
@@ -87,13 +87,13 @@
                         }
 
                         // Create message: first 4 bytes = chunk index as Uint32, rest = chunk data
-                        var header = new ArrayBuffer(8);
-                        var headerView = new DataView(header);
+                        const header = new ArrayBuffer(8);
+                        const headerView = new DataView(header);
                         headerView.setUint32(0, currentChunk, true); // chunk index
                         headerView.setUint8(4, isFinal ? 1 : 0); // final flag
                         headerView.setUint16(5, data.byteLength, true); // data length (max 64KB + overhead)
 
-                        var combined = new Uint8Array(header.byteLength + data.byteLength);
+                        const combined = new Uint8Array(header.byteLength + data.byteLength);
                         combined.set(new Uint8Array(header), 0);
                         combined.set(new Uint8Array(data), header.byteLength);
 

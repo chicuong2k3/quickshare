@@ -3,16 +3,16 @@
 (function () {
     'use strict';
 
-    var MAX_RECONNECT_ATTEMPTS = 3;
-    var RECONNECT_BACKOFF_MS = 1000;
-    var WS_PROTOCOL = {
+    const MAX_RECONNECT_ATTEMPTS = 3;
+    const RECONNECT_BACKOFF_MS = 1000;
+    const WS_PROTOCOL = {
         http: 'ws:',
         https: 'wss:'
     };
 
     function resolveWebSocketBaseUrl(apiBaseUrl: string): string {
         if (!apiBaseUrl) {
-            var protocol = window.location.protocol === 'https:' ? WS_PROTOCOL.https : WS_PROTOCOL.http;
+            const protocol = window.location.protocol === 'https:' ? WS_PROTOCOL.https : WS_PROTOCOL.http;
             return protocol + '//' + window.location.host;
         }
 
@@ -62,9 +62,9 @@
             this.role = role;
             this._intentionalClose = false;
 
-            var wsBaseUrl = resolveWebSocketBaseUrl(this.apiBaseUrl);
-            var url = wsBaseUrl + '/ws/connect/' + encodeURIComponent(this.shareCode);
-            var self = this;
+            const wsBaseUrl = resolveWebSocketBaseUrl(this.apiBaseUrl);
+            const url = wsBaseUrl + '/ws/connect/' + encodeURIComponent(this.shareCode);
+            const self = this;
 
             try {
                 this.ws = new WebSocket(url);
@@ -75,7 +75,7 @@
 
             this.ws.onopen = function () {
                 self.reconnectAttempts = 0;
-                var msg: { type: string; role: P2PRole; fileMeta?: P2PFileMeta } = { type: 'register', role: role };
+                const msg: { type: string; role: P2PRole; fileMeta?: P2PFileMeta } = { type: 'register', role: role };
                 if (role === 'sender' && fileMeta) {
                     msg.fileMeta = {
                         name: fileMeta.name,
@@ -90,7 +90,7 @@
 
             this.ws.onmessage = function (event) {
                 try {
-                    var data = JSON.parse(event.data);
+                    const data = JSON.parse(event.data);
                     self._handleMessage(data);
                 } catch (e) {
                     if (self.onError) self.onError('Invalid message: ' + (e as Error).message);
@@ -100,7 +100,7 @@
             this.ws.onclose = function () {
                 if (!self._intentionalClose && self.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                     self.reconnectAttempts++;
-                    var delay = RECONNECT_BACKOFF_MS * Math.pow(2, self.reconnectAttempts - 1);
+                    const delay = RECONNECT_BACKOFF_MS * Math.pow(2, self.reconnectAttempts - 1);
                     setTimeout(function () { self.connect(role, fileMeta); }, delay);
                 } else if (!self._intentionalClose && self.onError) {
                     self.onError('Connection lost');

@@ -1,7 +1,7 @@
 // Avatar preview + profile-updated toast (Account page).
 function previewAvatar(e: Event): void {
-    var target = e.target as HTMLInputElement;
-    var file = target.files && target.files[0];
+    const target = e.target as HTMLInputElement;
+    const file = target.files && target.files[0];
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
@@ -16,10 +16,10 @@ function previewAvatar(e: Event): void {
         return;
     }
 
-    var reader = new FileReader();
+    const reader = new FileReader();
     reader.onload = function (ev: ProgressEvent<FileReader>) {
-        var img = document.getElementById('avatarPreview');
-        var initial = document.getElementById('avatarInitial');
+        const img = document.getElementById('avatarPreview');
+        const initial = document.getElementById('avatarInitial');
         if (img) {
             (img as HTMLImageElement).src = (ev.target as FileReader).result as string;
             img.classList.remove('hidden');

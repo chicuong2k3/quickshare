@@ -4,22 +4,22 @@
     'use strict';
 
     // Copy comes from the server so this file carries no English literals.
-    var T: Record<string, string> = (function () {
-        var el = document.getElementById('upload-i18n');
+    const T: Record<string, string> = (function () {
+        const el = document.getElementById('upload-i18n');
         try { return JSON.parse((el && el.textContent) || '{}'); } catch (_) { return {}; }
     })();
 
     function t(key: string, a?: string | number, b?: string | number): string {
-        var v = T[key] || '';
+        const v = T[key] || '';
         return v.replace('{0}', String(a)).replace('{1}', String(b));
     }
 
-    var MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
-    var PART_TARGET = 25 * 1024 * 1024;
-    var CONCURRENT_PARTS = 4;
-    var PART_RETRY_ATTEMPTS = 3;
-    var SOURCE_WEB = 'web';
-    var SOURCE_PASTE = 'paste';
+    const MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
+    const PART_TARGET = 25 * 1024 * 1024;
+    const CONCURRENT_PARTS = 4;
+    const PART_RETRY_ATTEMPTS = 3;
+    const SOURCE_WEB = 'web';
+    const SOURCE_PASTE = 'paste';
 
     interface UploadContext {
         fileName: string;
@@ -37,7 +37,7 @@
         encryptionKeyStr: string | null;
     }
 
-    var state: {
+    const state: {
         phase: string;
         progress: number;
         filename: string;
@@ -76,22 +76,22 @@
         _resumeCtx: null, objectKey: ''
     };
 
-    function show(id: string): void { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
-    function hide(id: string): void { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
+    function show(id: string): void { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
+    function hide(id: string): void { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
 
     function render(): void {
         ['upload-idle', 'upload-uploading', 'upload-success', 'upload-error'].forEach(hide);
-        var phaseMap: Record<string, string> = { idle: 'upload-idle', dragging: 'upload-idle', uploading: 'upload-uploading', success: 'upload-success', error: 'upload-error' };
-        var elId = phaseMap[state.phase]; if (elId) show(elId);
+        const phaseMap: Record<string, string> = { idle: 'upload-idle', dragging: 'upload-idle', uploading: 'upload-uploading', success: 'upload-success', error: 'upload-error' };
+        const elId = phaseMap[state.phase]; if (elId) show(elId);
 
         if (state.phase === 'idle' || state.phase === 'dragging') {
-            var isDrag = state.draggingActive;
-            var idleText = document.getElementById('upload-idle-text');
-            var dragText = document.getElementById('upload-drag-text');
-            var idleSub = document.getElementById('upload-idle-subtext');
-            var dragSub = document.getElementById('upload-drag-subtext');
-            var dropIdle = document.getElementById('dropzone-idle');
-            var dropDrag = document.getElementById('dropzone-drag');
+            const isDrag = state.draggingActive;
+            const idleText = document.getElementById('upload-idle-text');
+            const dragText = document.getElementById('upload-drag-text');
+            const idleSub = document.getElementById('upload-idle-subtext');
+            const dragSub = document.getElementById('upload-drag-subtext');
+            const dropIdle = document.getElementById('dropzone-idle');
+            const dropDrag = document.getElementById('dropzone-drag');
             if (isDrag) {
                 if (idleText) idleText.classList.add('hidden');
                 if (dragText) dragText.classList.remove('hidden');
@@ -107,27 +107,27 @@
                 if (dropIdle) dropIdle.classList.remove('hidden');
                 if (dropDrag) dropDrag.classList.add('hidden');
             }
-            var dz = document.getElementById('dropzone');
+            const dz = document.getElementById('dropzone');
             if (dz) { if (state.draggingActive) dz.classList.add('active'); else dz.classList.remove('active'); }
         }
         if (state.phase === 'uploading') {
-            var filenameEl = document.getElementById('upload-filename');
-            var progressLabelEl = document.getElementById('upload-progress-label');
-            var progressBar = document.getElementById('upload-progress-bar');
+            const filenameEl = document.getElementById('upload-filename');
+            const progressLabelEl = document.getElementById('upload-progress-label');
+            const progressBar = document.getElementById('upload-progress-bar');
             if (filenameEl) filenameEl.textContent = state.filename;
             if (progressLabelEl) progressLabelEl.textContent = progressLabel();
             if (progressBar) progressBar.setAttribute('aria-valuenow', String(state.progress));
             show('upload-encrypt-badge');
         }
         if (state.phase === 'success') {
-            var successNameEl = document.getElementById('upload-success-name');
-            var shareLinkEl = document.getElementById('share-link') as HTMLInputElement | null;
+            const successNameEl = document.getElementById('upload-success-name');
+            const shareLinkEl = document.getElementById('share-link') as HTMLInputElement | null;
             if (successNameEl) successNameEl.textContent = state.filename;
             if (shareLinkEl) shareLinkEl.value = state.link;
             show('upload-success-encrypt-badge');
         }
         if (state.phase === 'error') {
-            var errorMsgEl = document.getElementById('upload-error-msg');
+            const errorMsgEl = document.getElementById('upload-error-msg');
             if (errorMsgEl) errorMsgEl.textContent = state.error || t('errorUnknown');
             if (state._resumeCtx) show('upload-resume-btn'); else hide('upload-resume-btn');
         }
@@ -136,10 +136,10 @@
         if (state.pasteTip) show('upload-paste-tip'); else hide('upload-paste-tip');
 
         // Expiry label — date comes from the server (result.expiresAt), not a client choice.
-        var expLabel = document.getElementById('upload-expiry-label');
+        const expLabel = document.getElementById('upload-expiry-label');
         if (expLabel && state.expiresAt) {
             try {
-                var d = new Date(state.expiresAt);
+                const d = new Date(state.expiresAt);
                 if (!isNaN(d.getTime())) expLabel.textContent = t('expiryLabel', d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
             } catch (_) { /* invalid expiry string; keep the default label */ }
         }
@@ -151,7 +151,7 @@
 
     function progressLabel(): string {
         if (state.progress === 0) return t('starting');
-        var l = state.progress + '%';
+        let l = state.progress + '%';
         if (state.uploadedBytes && state.fileSize) l += ' \u00b7 ' + formatBytes(state.uploadedBytes) + ' / ' + formatBytes(state.fileSize);
         if (state.speed) l += ' \u00b7 ' + state.speed;
         if (state.eta) l += ' \u00b7 ~' + state.eta;
@@ -160,25 +160,25 @@
 
     window.uploadPage = {
         otpInput: function (event, idx) {
-            var target = event.target as HTMLInputElement;
-            var val = target.value.replace(/\D/g, '');
+            const target = event.target as HTMLInputElement;
+            const val = target.value.replace(/\D/g, '');
             target.value = val;
             if (val && idx < 5) {
-                var next = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input')[idx + 1];
+                const next = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input')[idx + 1];
                 if (next) next.focus();
             }
         },
         otpKeydown: function (event, idx) {
-            var target = event.target as HTMLInputElement;
+            const target = event.target as HTMLInputElement;
             if (event.key === 'Backspace' && !target.value && idx > 0) {
-                var prev = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input')[idx - 1];
+                const prev = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input')[idx - 1];
                 if (prev) prev.focus();
             }
         },
         readOtp: function () {
-            var inputs = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input');
-            var pin = '';
-            for (var i = 0; i < inputs.length; i++) pin += inputs[i].value;
+            const inputs = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input');
+            let pin = '';
+            for (let i = 0; i < inputs.length; i++) pin += inputs[i].value;
             state.otp = pin;
         },
 
@@ -198,7 +198,7 @@
         onDrop: function (e) {
             e.preventDefault();
             state.draggingActive = false;
-            var files = e.dataTransfer && e.dataTransfer.files;
+            const files = e.dataTransfer && e.dataTransfer.files;
             if (files && files.length) {
                 startUpload(files[0]);
             } else {
@@ -208,11 +208,11 @@
         },
 
         onFileInput: function (e) {
-            var target = e.target as HTMLInputElement;
-            var files = target && target.files;
+            const target = e.target as HTMLInputElement;
+            const files = target && target.files;
             if (files && files.length) startUpload(files[0]);
         },
-        triggerFileInput: function () { var input = document.querySelector<HTMLInputElement>('input[type="file"]'); if (input) input.click(); },
+        triggerFileInput: function () { const input = document.querySelector<HTMLInputElement>('input[type="file"]'); if (input) input.click(); },
 
         copyLink: function () {
             if (!state.link) return;
@@ -232,7 +232,7 @@
         },
 
         resumeUpload: function () {
-            var ctx = state._resumeCtx; if (!ctx) return;
+            const ctx = state._resumeCtx; if (!ctx) return;
             state.phase = 'uploading'; state.error = ''; state._cancelled = false;
             state._abortController = new AbortController(); state._startTime = Date.now();
             render();
@@ -243,7 +243,7 @@
     };
 
     function copyFallback(): void {
-        var input = document.getElementById('share-link') as HTMLInputElement | null; if (!input) return;
+        const input = document.getElementById('share-link') as HTMLInputElement | null; if (!input) return;
         try { input.removeAttribute('readonly'); input.focus(); input.select(); document.execCommand('copy'); state.copied = true; render(); } catch (_) { state.copied = false; } finally { input.setAttribute('readonly', ''); }
     }
 
@@ -254,7 +254,7 @@
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
         state.source = SOURCE_WEB;
         state.senderEmail = '';
-        var senderEmailEl = document.getElementById('upload-sender-email') as HTMLInputElement | null;
+        const senderEmailEl = document.getElementById('upload-sender-email') as HTMLInputElement | null;
         if (senderEmailEl)
             senderEmailEl.value = '';
     }
@@ -274,38 +274,38 @@
     }
 
     async function doUpload(file: File): Promise<void> {
-        var api = apiBase();
-        var uploadBlob: Blob = file;
-        var encryptionKeyStr: string | null = null;
-        var originalSize = file.size;
+        const api = apiBase();
+        let uploadBlob: Blob = file;
+        let encryptionKeyStr: string | null = null;
+        const originalSize = file.size;
 
         if (state.encryptionEnabled) {
-            var keyInfo = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-            var raw = await crypto.subtle.exportKey('raw', keyInfo);
-            var rawKey = new Uint8Array(raw);
-            var fileData = await file.arrayBuffer();
-            var nonce = crypto.getRandomValues(new Uint8Array(12));
-            var encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, keyInfo, fileData);
-            var combined = new Uint8Array(nonce.length + encryptedBuf.byteLength);
+            const keyInfo = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+            const raw = await crypto.subtle.exportKey('raw', keyInfo);
+            const rawKey = new Uint8Array(raw);
+            const fileData = await file.arrayBuffer();
+            const nonce = crypto.getRandomValues(new Uint8Array(12));
+            const encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, keyInfo, fileData);
+            const combined = new Uint8Array(nonce.length + encryptedBuf.byteLength);
             combined.set(nonce, 0); combined.set(new Uint8Array(encryptedBuf), nonce.length);
             uploadBlob = new Blob([combined.buffer as ArrayBuffer]);
-            var binary = ''; for (var i = 0; i < rawKey.length; i++) binary += String.fromCharCode(rawKey[i]);
+            let binary = ''; for (let i = 0; i < rawKey.length; i++) binary += String.fromCharCode(rawKey[i]);
             encryptionKeyStr = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
             state._encryptionUsed = true;
         }
 
-        var effectiveSize = uploadBlob.size;
-        var totalParts = effectiveSize <= PART_TARGET ? 1 : Math.ceil(effectiveSize / PART_TARGET);
-        var partNumbers: number[] = []; for (var p = 1; p <= totalParts; p++) partNumbers.push(p);
+        const effectiveSize = uploadBlob.size;
+        const totalParts = effectiveSize <= PART_TARGET ? 1 : Math.ceil(effectiveSize / PART_TARGET);
+        const partNumbers: number[] = []; for (let p = 1; p <= totalParts; p++) partNumbers.push(p);
 
-        state._abortController = new AbortController(); var signal = state._abortController!.signal;
+        state._abortController = new AbortController(); const signal = state._abortController!.signal;
 
-        var startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: file.name, fileSize: originalSize, contentType: file.type || 'application/octet-stream', partNumbers: partNumbers, senderEmail: state.senderEmail || null }) });
-        if (!startResp.ok) { var errT = await startResp.text(); throw new Error(errT || t('startFailed')); }
-        var session = await startResp.json();
+        const startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: file.name, fileSize: originalSize, contentType: file.type || 'application/octet-stream', partNumbers: partNumbers, senderEmail: state.senderEmail || null }) });
+        if (!startResp.ok) { const errT = await startResp.text(); throw new Error(errT || t('startFailed')); }
+        const session = await startResp.json();
         state._deliveryId = session.deliveryId; state._uploadId = session.uploadId; state.objectKey = session.objectKey;
 
-        var ctx: UploadContext = {
+        const ctx: UploadContext = {
             fileName: file.name, contentType: file.type || 'application/octet-stream',
             originalSize: originalSize, uploadBlob: uploadBlob, effectiveSize: effectiveSize,
             totalParts: totalParts, partSize: Math.ceil(effectiveSize / totalParts),
@@ -313,45 +313,45 @@
             deliveryId: session.deliveryId, uploadId: session.uploadId, objectKey: session.objectKey,
             encryptionKeyStr: encryptionKeyStr
         };
-        for (var u = 0; u < session.parts.length; u++) ctx.urlByPart[session.parts[u].partNumber] = session.parts[u].url;
+        for (let u = 0; u < session.parts.length; u++) ctx.urlByPart[session.parts[u].partNumber] = session.parts[u].url;
         state._resumeCtx = ctx;
 
         await uploadPartsAndCommit(ctx);
     }
 
-    function completedCount(ctx: UploadContext): number { var n = 0; for (var i = 0; i < ctx.totalParts; i++) if (ctx.partEtags[i]) n++; return n; }
+    function completedCount(ctx: UploadContext): number { let n = 0; for (let i = 0; i < ctx.totalParts; i++) if (ctx.partEtags[i]) n++; return n; }
 
     function updateProgress(ctx: UploadContext): void {
-        var done = completedCount(ctx);
+        const done = completedCount(ctx);
         state.progress = Math.round((done / ctx.totalParts) * 100);
-        var elapsed = (Date.now() - state._startTime) / 1000;
+        const elapsed = (Date.now() - state._startTime) / 1000;
         if (elapsed > 0 && done > 0) {
-            var uploadedSoFar = (done / ctx.totalParts) * ctx.effectiveSize;
+            const uploadedSoFar = (done / ctx.totalParts) * ctx.effectiveSize;
             state.uploadedBytes = uploadedSoFar;
-            var bps = uploadedSoFar / elapsed;
+            const bps = uploadedSoFar / elapsed;
             state.speed = formatBytes(bps) + '/s';
-            var remaining = (ctx.effectiveSize - uploadedSoFar) / bps;
+            const remaining = (ctx.effectiveSize - uploadedSoFar) / bps;
             state.eta = remaining < 60 ? Math.round(remaining) + 's' : Math.round(remaining / 60) + 'm';
         }
         render();
     }
 
     async function freshPartUrls(ctx: UploadContext, partNums: number[], signal: AbortSignal): Promise<void> {
-        var resp = await fetch(apiBase() + '/api/uploads/part-urls', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, partNumbers: partNums }) });
-        if (!resp.ok) { var errText = await resp.text(); throw new Error(errText || t('urlRefreshFailed')); }
-        var data = await resp.json();
-        for (var i = 0; i < data.parts.length; i++) ctx.urlByPart[data.parts[i].partNumber] = data.parts[i].url;
+        const resp = await fetch(apiBase() + '/api/uploads/part-urls', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, partNumbers: partNums }) });
+        if (!resp.ok) { const errText = await resp.text(); throw new Error(errText || t('urlRefreshFailed')); }
+        const data = await resp.json();
+        for (let i = 0; i < data.parts.length; i++) ctx.urlByPart[data.parts[i].partNumber] = data.parts[i].url;
     }
 
     async function uploadOnePart(ctx: UploadContext, partNumber: number, signal: AbortSignal): Promise<void> {
-        var idx = partNumber - 1;
-        var start = idx * ctx.partSize; var end = Math.min(start + ctx.partSize, ctx.effectiveSize);
-        var lastError: unknown = null;
-        for (var attempt = 1; attempt <= PART_RETRY_ATTEMPTS; attempt++) {
+        const idx = partNumber - 1;
+        const start = idx * ctx.partSize; const end = Math.min(start + ctx.partSize, ctx.effectiveSize);
+        let lastError: unknown = null;
+        for (let attempt = 1; attempt <= PART_RETRY_ATTEMPTS; attempt++) {
             try {
-                var resp = await fetch(ctx.urlByPart[partNumber], { method: 'PUT', body: ctx.uploadBlob.slice(start, end), signal: signal });
+                const resp = await fetch(ctx.urlByPart[partNumber], { method: 'PUT', body: ctx.uploadBlob.slice(start, end), signal: signal });
                 if (!resp.ok) throw new Error(t('partFailed', partNumber, resp.status));
-                var etag = (resp.headers.get('ETag') || '').replace(/^"(.*)"$/, '$1');
+                const etag = (resp.headers.get('ETag') || '').replace(/^"(.*)"$/, '$1');
                 ctx.partEtags[idx] = { partNumber: partNumber, etag: etag };
                 updateProgress(ctx);
                 return;
@@ -370,18 +370,18 @@
     }
 
     async function uploadPartsAndCommit(ctx: UploadContext): Promise<void> {
-        var signal = state._abortController!.signal;
-        var pending: number[] = []; for (var p = 1; p <= ctx.totalParts; p++) if (!ctx.partEtags[p - 1]) pending.push(p);
+        const signal = state._abortController!.signal;
+        const pending: number[] = []; for (let p = 1; p <= ctx.totalParts; p++) if (!ctx.partEtags[p - 1]) pending.push(p);
 
-        for (var batchStart = 0; batchStart < pending.length; batchStart += CONCURRENT_PARTS) {
-            var batch = pending.slice(batchStart, batchStart + CONCURRENT_PARTS).map(function (pn) { return uploadOnePart(ctx, pn, signal); });
-            var results = await Promise.allSettled(batch);
-            for (var r = 0; r < results.length; r++) { var res = results[r]; if (res.status === 'rejected') throw res.reason; }
+        for (let batchStart = 0; batchStart < pending.length; batchStart += CONCURRENT_PARTS) {
+            const batch = pending.slice(batchStart, batchStart + CONCURRENT_PARTS).map(function (pn) { return uploadOnePart(ctx, pn, signal); });
+            const results = await Promise.allSettled(batch);
+            for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        var commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source }) });
-        if (!commitResp.ok) { var cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
-        var result = await commitResp.json();
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, source: state.source }) });
+        if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
+        const result = await commitResp.json();
         state.link = result.shareLink;
         if (ctx.encryptionKeyStr) state.link += '#key=' + ctx.encryptionKeyStr;
         if (result.expiresAt) { state.expiresAt = result.expiresAt; }
@@ -392,20 +392,20 @@
     }
 
     async function resumePendingParts(ctx: UploadContext): Promise<void> {
-        var signal = state._abortController!.signal;
-        var pending: number[] = []; for (var p = 1; p <= ctx.totalParts; p++) if (!ctx.partEtags[p - 1]) pending.push(p);
+        const signal = state._abortController!.signal;
+        const pending: number[] = []; for (let p = 1; p <= ctx.totalParts; p++) if (!ctx.partEtags[p - 1]) pending.push(p);
         if (pending.length > 0) await freshPartUrls(ctx, pending, signal);
         await uploadPartsAndCommit(ctx);
     }
 
     function renderQR(text: string): void {
-        var el = document.getElementById('qrcode'); if (!el) return; el.innerHTML = '';
+        const el = document.getElementById('qrcode'); if (!el) return; el.innerHTML = '';
         if (!text || !window.qrcode) { if (!window.qrcode) el.textContent = t('qrNotLoaded'); return; }
         try {
-            var qr = window.qrcode(0, 'M'); qr.addData(text); qr.make();
-            var moduleCount = qr.getModuleCount(); var cell = 6; var dim = moduleCount * cell;
-            var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim + '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + t('qrAria') + '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
-            for (var r = 0; r < moduleCount; r++) for (var c = 0; c < moduleCount; c++) if (qr.isDark(r, c)) parts.push('<rect x="' + (c * cell) + '" y="' + (r * cell) + '" width="' + cell + '" height="' + cell + '" fill="#0f172a"/>');
+            const qr = window.qrcode(0, 'M'); qr.addData(text); qr.make();
+            const moduleCount = qr.getModuleCount(); const cell = 6; const dim = moduleCount * cell;
+            const parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim + '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + t('qrAria') + '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
+            for (let r = 0; r < moduleCount; r++) for (let c = 0; c < moduleCount; c++) if (qr.isDark(r, c)) parts.push('<rect x="' + (c * cell) + '" y="' + (r * cell) + '" width="' + cell + '" height="' + cell + '" fill="#0f172a"/>');
             parts.push('</svg>'); el.innerHTML = parts.join('');
         } catch (e) { el.textContent = t('qrUnavailable'); }
     }
@@ -418,7 +418,7 @@
     document.addEventListener('paste', function (e) {
         if (state.phase === 'uploading') return;
         if (!window.qsPaste || window.qsPaste.isEditable(e.target)) return;
-        var file = window.qsPaste.fileFromClipboard(e);
+        const file = window.qsPaste.fileFromClipboard(e);
         if (!file) { flashPasteTip(); return; }
         e.preventDefault();
         startUpload(file, SOURCE_PASTE);
@@ -427,7 +427,7 @@
     // Pasted on the homepage or a /tools page → the file was stashed before the redirect here.
     function consumePasteHandoff(): void {
         if (!window.qsPaste) return;
-        var file = window.qsPaste.takeStashed();
+        const file = window.qsPaste.takeStashed();
         if (file) { startUpload(file, SOURCE_PASTE); return; }
         if (window.location.hash === '#paste') flashPasteTip();
     }

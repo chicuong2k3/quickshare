@@ -36,20 +36,20 @@
         shareLink?: string;
     }
 
-    var RECEIVER_CONNECT_TIMEOUT_MS = 20000;
+    const RECEIVER_CONNECT_TIMEOUT_MS = 20000;
     // If no progress event arrives for this long while status is 'receiving',
     // the receiver is gone (tab closed / network dropped). WebRTC state events
     // alone can stay silent for a long time on a dead pipe, so this watchdog
     // guarantees the sender eventually shows a disconnect instead of a frozen
     // progress bar.
-    var RECEIVER_STALL_TIMEOUT_MS = 30000;
-    var RELAY_TYPE = {
+    const RECEIVER_STALL_TIMEOUT_MS = 30000;
+    const RELAY_TYPE = {
         offer: 'offer',
         answer: 'answer',
         ice: 'ice',
         netProbe: 'netprobe'
     } as const;
-    var RECEIVER_STATUS = {
+    const RECEIVER_STATUS = {
         connecting: 'connecting',
         receiving: 'receiving',
         done: 'done',
@@ -58,22 +58,22 @@
     } as const;
     function apiBase(): string { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
     function formatBytes(b: number): string { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB'; return (b / 1073741824).toFixed(1) + ' GB'; }
-    function show(id: string): void { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
-    function hide(id: string): void { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
-    function text(id: string, val: string): void { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function show(id: string): void { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
+    function hide(id: string): void { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }
+    function text(id: string, val: string): void { const el = document.getElementById(id); if (el) el.textContent = val; }
 
     // UI copy is rendered by the page into a JSON block — no English literals here.
-    var T: Record<string, string> = (function () {
-        var el = document.getElementById('p2p-send-i18n');
+    const T: Record<string, string> = (function () {
+        const el = document.getElementById('p2p-send-i18n');
         try { return JSON.parse((el && el.textContent) || '{}'); } catch (e) { return {}; }
     })();
     function t(key: string, a?: string | number, b?: string | number): string {
-        var v = T[key] || '';
+        const v = T[key] || '';
         return v.replace('{0}', String(a)).replace('{1}', String(b));
     }
 
     window.p2pSend = (function (): P2pSendPage {
-        var state: {
+        const state: {
             phase: string;
             progress: number;
             shareCode: string;
@@ -98,7 +98,7 @@
         // --- Daily P2P upload quota ---
 
         function fetchQuota(): void {
-            var api = apiBase();
+            const api = apiBase();
             fetch(api + '/api/p2p/quota', { headers: { 'Accept': 'application/json' } })
                 .then(function (res) { return res.ok ? res.json() : null; })
                 .then(function (data) {
@@ -109,7 +109,7 @@
         }
 
         function renderQuota(): void {
-            var el = document.getElementById('p2ps-quota');
+            const el = document.getElementById('p2ps-quota');
             if (!el || !state._quota) return;
 
             if (state._quota.unlimited) {
@@ -117,11 +117,11 @@
                 return;
             }
 
-            var remaining = state._quota.remaining;
-            var allowance = state._quota.allowance;
-            var unlocked = state._quota.unlocked || 0;
-            var suffix = unlocked > 0 ? t('quotaFromAds', unlocked) : '';
-            var quotaText = t('quotaLeft', remaining, allowance) + suffix;
+            const remaining = state._quota.remaining;
+            const allowance = state._quota.allowance;
+            const unlocked = state._quota.unlocked || 0;
+            const suffix = unlocked > 0 ? t('quotaFromAds', unlocked) : '';
+            let quotaText = t('quotaLeft', remaining, allowance) + suffix;
             if (remaining != null && remaining <= 0) {
                 quotaText = t('quotaLimitReached', allowance, allowance);
                 quotaText += state._quota.canUnlockWithAd
@@ -135,13 +135,13 @@
         }
 
         function showAdUnlock(): void {
-            var btn = document.getElementById('p2ps-ad-unlock-btn');
+            const btn = document.getElementById('p2ps-ad-unlock-btn');
             if (!btn || !state._quota || !state._quota.canUnlockWithAd) return;
             btn.classList.remove('hidden');
         }
 
         function hideAdUnlock(): void {
-            var btn = document.getElementById('p2ps-ad-unlock-btn');
+            const btn = document.getElementById('p2ps-ad-unlock-btn');
             if (btn) btn.classList.add('hidden');
         }
 
@@ -161,27 +161,27 @@
                 return;
             }
             // Fallback: scroll to the ad card so the user can click Watch Ad.
-            var card = document.getElementById('ad-reward-card');
+            const card = document.getElementById('ad-reward-card');
             if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         window.addEventListener('quickshare:ad-rewarded', onAdRewarded);
-        var unlockBtn = document.getElementById('p2ps-ad-unlock-btn');
+        const unlockBtn = document.getElementById('p2ps-ad-unlock-btn');
         if (unlockBtn) unlockBtn.addEventListener('click', triggerAdUnlock);
 
         function render(): void {
-            var sections = ['p2ps-idle', 'p2ps-creating', 'p2ps-waiting', 'p2ps-failed'];
+            const sections = ['p2ps-idle', 'p2ps-creating', 'p2ps-waiting', 'p2ps-failed'];
             sections.forEach(hide);
 
-            var phaseMap: Record<string, string> = { idle: 'p2ps-idle', creating: 'p2ps-creating', waiting: 'p2ps-waiting', failed: 'p2ps-failed' };
-            var elId = phaseMap[state.phase];
+            const phaseMap: Record<string, string> = { idle: 'p2ps-idle', creating: 'p2ps-creating', waiting: 'p2ps-waiting', failed: 'p2ps-failed' };
+            const elId = phaseMap[state.phase];
             if (elId) show(elId);
 
             if (state.phase === 'waiting') {
-                var linkInput = document.getElementById('p2ps-share-link') as HTMLInputElement | null;
+                const linkInput = document.getElementById('p2ps-share-link') as HTMLInputElement | null;
                 if (linkInput) linkInput.value = state.shareLink;
-                var copyBtn = document.getElementById('p2ps-copy-text');
-                var copyDone = document.getElementById('p2ps-copy-done');
+                const copyBtn = document.getElementById('p2ps-copy-text');
+                const copyDone = document.getElementById('p2ps-copy-done');
                 if (copyBtn) copyBtn.classList.remove('hidden');
                 if (copyDone) copyDone.classList.add('hidden');
                 renderQR(state.shareLink);
@@ -200,21 +200,21 @@
         }
 
         function renderReceivers(): void {
-            var container = document.getElementById('p2ps-receiver-list');
-            var itemsEl = document.getElementById('p2ps-receiver-items');
+            const container = document.getElementById('p2ps-receiver-list');
+            const itemsEl = document.getElementById('p2ps-receiver-items');
             if (!container || !itemsEl) return;
 
-            var ids = Object.keys(state._receivers);
+            const ids = Object.keys(state._receivers);
             // The stylesheet keeps the list hidden until a receiver exists, so the
             // visible state must be set explicitly — clearing the inline style
             // would fall back to the stylesheet's display:none.
             container.style.display = ids.length === 0 ? 'none' : 'block';
             if (ids.length === 0) return;
 
-            var html = '';
-            for (var i = 0; i < ids.length; i++) {
-                var r = state._receivers[ids[i]];
-                var pct = Math.round(r.progress * 100);
+            let html = '';
+            for (let i = 0; i < ids.length; i++) {
+                const r = state._receivers[ids[i]];
+                const pct = Math.round(r.progress * 100);
                 html += '<div class="p2p-receiver-entry">';
                 html += '<span class="p2p-receiver-index">#' + r.index + '</span>';
                 html += '<span class="p2p-receiver-id">' + ids[i].slice(0, 6) + '\u2026</span>';
@@ -234,8 +234,8 @@
         // --- File input & drag-and-drop ---
 
         function onFileSelect(event: Event): void {
-            var input = event.target as HTMLInputElement;
-            var file = input.files ? input.files[0] : null;
+            const input = event.target as HTMLInputElement;
+            const file = input.files ? input.files[0] : null;
             if (!file) return;
             startWithFile(file);
             input.value = '';
@@ -250,7 +250,7 @@
             show('drag-sub');
             hide('dropzone-idle');
             show('dropzone-drag');
-            var dz = document.querySelector('.p2p-dropzone');
+            const dz = document.querySelector('.p2p-dropzone');
             if (dz) dz.classList.add('active');
         }
 
@@ -263,7 +263,7 @@
             hide('drag-sub');
             show('dropzone-idle');
             hide('dropzone-drag');
-            var dz = document.querySelector('.p2p-dropzone');
+            const dz = document.querySelector('.p2p-dropzone');
             if (dz) dz.classList.remove('active');
         }
 
@@ -271,8 +271,8 @@
             event.preventDefault();
             event.stopPropagation();
             onDragLeave(event);
-            var dt = event.dataTransfer;
-            var file = dt && dt.files ? dt.files[0] : null;
+            const dt = event.dataTransfer;
+            const file = dt && dt.files ? dt.files[0] : null;
             if (!file) return;
             startWithFile(file);
         }
@@ -284,9 +284,9 @@
             setPhase('creating');
             hideAdUnlock();
 
-            var body = { FileName: file.name, FileSize: file.size, MimeType: file.type || 'application/octet-stream', BaseUrl: window.location.origin };
+            const body = { FileName: file.name, FileSize: file.size, MimeType: file.type || 'application/octet-stream', BaseUrl: window.location.origin };
 
-            var api = apiBase();
+            const api = apiBase();
             fetch(api + '/api/shares/p2p', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -294,9 +294,9 @@
             })
             .then(function (res) {
                 if (!res.ok) return res.text().then(function (raw) {
-                    var parsed: P2pQuota | null = null;
+                    let parsed: P2pQuota | null = null;
                     try { parsed = JSON.parse(raw); } catch (e) { /* not JSON */ }
-                    var err = new Error((parsed && (parsed as { message?: string }).message) || raw || t('createFailed')) as P2pCreateError;
+                    const err = new Error((parsed && (parsed as { message?: string }).message) || raw || t('createFailed')) as P2pCreateError;
                     err.quota = parsed;
                     throw err;
                 });
@@ -338,11 +338,11 @@
                 if (type === RELAY_TYPE.answer) onAnswer(data, receiverId || '');
                 else if (type === RELAY_TYPE.netProbe) onReceiverNetProbe(data, receiverId || '');
                 else if (type === RELAY_TYPE.ice && data && receiverId) {
-                    var rcv = state._receivers[receiverId];
+                    const rcv = state._receivers[receiverId];
                     if (rcv && rcv.pc) rcv.pc.addIceCandidate(data as RTCIceCandidateInit);
                 }
             };
-            var fileMeta = {
+            const fileMeta = {
                 name: state._file!.name,
                 size: state._file!.size,
                 mime: state._file!.type || 'application/octet-stream'
@@ -375,20 +375,20 @@
         // sides reach the same verdict, and mark a confirmed mismatch as such
         // rather than leaving the entry on "Connecting…" until it times out.
         function onReceiverNetProbe(data: unknown, receiverId: string): void {
-            var probeData = data as { address?: string } | null | undefined;
-            var remoteAddress = (probeData && probeData.address) || null;
+            const probeData = data as { address?: string } | null | undefined;
+            const remoteAddress = (probeData && probeData.address) || null;
 
             localAddress().then(function (address) {
                 if (address && state._signaling) {
                     state._signaling.sendTo(RELAY_TYPE.netProbe, { address: address }, receiverId);
                 }
 
-                var result = window.P2P.compareNetwork(address, remoteAddress);
+                const result = window.P2P.compareNetwork(address, remoteAddress);
                 if (result !== window.P2P.NETWORK_RESULT.different) {
                     return;
                 }
 
-                var rcv = state._receivers[receiverId];
+                const rcv = state._receivers[receiverId];
                 if (!rcv || rcv.status === RECEIVER_STATUS.done) {
                     return;
                 }
@@ -410,7 +410,7 @@
             // showing "Connecting…" forever — the receiver shows its own
             // clear error message.
             setTimeout(function () {
-                var pulled = state._receivers[receiverId];
+                const pulled = state._receivers[receiverId];
                 if (pulled && pulled.status === RECEIVER_STATUS.connecting && !pulled.channel) {
                     onReceiverLeft(receiverId);
                 }
@@ -428,7 +428,7 @@
             };
             renderReceivers();
 
-            var pc = new window.P2P.PeerConnection();
+            const pc = new window.P2P.PeerConnection();
             state._receivers[receiverId].pc = pc;
 
             pc.onIceCandidate = function (c) {
@@ -442,9 +442,9 @@
                 }
             };
 
-            var rcv = state._receivers[receiverId];
+            const rcv = state._receivers[receiverId];
             if (!rcv) return;
-            var channel = pc.createDataChannel('filetransfer');
+            const channel = pc.createDataChannel('filetransfer');
             if (!channel) { onReceiverLeft(receiverId); return; }
             rcv.channel = channel;
             channel.onopen = function () { onChannelOpen(receiverId); };
@@ -463,8 +463,8 @@
         }
 
         function onAnswer(data: unknown, receiverId: string): void {
-            var sdp = (data && (data as { sdp?: unknown }).sdp) || (data as string);
-            var rcv = state._receivers[receiverId];
+            const sdp = (data && (data as { sdp?: unknown }).sdp) || (data as string);
+            const rcv = state._receivers[receiverId];
             if (rcv && rcv.pc) {
                 rcv.pc.setRemoteSdp(sdp as string).catch(function () {});
             }
@@ -473,17 +473,17 @@
         function onChannelOpen(receiverId: string): void {
             if (!window.P2P.FileSender) { state.error = t('senderModuleNotLoaded'); setPhase('failed'); return; }
 
-            var rcv = state._receivers[receiverId];
+            const rcv = state._receivers[receiverId];
             if (!rcv) return;
             rcv.status = RECEIVER_STATUS.receiving;
             renderReceivers();
 
-            var channel = rcv.channel;
-            var sender = new window.P2P.FileSender(state._file!, channel!, null);
+            const channel = rcv.channel;
+            const sender = new window.P2P.FileSender(state._file!, channel!, null);
             rcv.sender = sender;
 
             sender.onProgress = function (sent: number, total: number) {
-                var r = state._receivers[receiverId];
+                const r = state._receivers[receiverId];
                 if (!r) return;
                 r.progress = sent / total;
                 // Re-arm the stall watchdog on every progress event.
@@ -492,7 +492,7 @@
                 renderReceivers();
             };
             sender.onComplete = function () {
-                var r = state._receivers[receiverId];
+                const r = state._receivers[receiverId];
                 if (!r) return;
                 clearTimeout(r._stallTimer);
                 r.status = RECEIVER_STATUS.done;
@@ -508,7 +508,7 @@
         }
 
         function onReceiverStalled(receiverId: string): void {
-            var r = state._receivers[receiverId];
+            const r = state._receivers[receiverId];
             if (!r || r.status !== RECEIVER_STATUS.receiving) return;
             onReceiverLeft(receiverId);
         }
@@ -528,7 +528,7 @@
 
         function onReceiverLeft(receiverId: string): void {
             if (!receiverId) return;
-            var rcv = state._receivers[receiverId];
+            const rcv = state._receivers[receiverId];
             if (!rcv) return;
             if (rcv.status === RECEIVER_STATUS.done
                 || rcv.status === RECEIVER_STATUS.disconnected
@@ -544,13 +544,13 @@
         }
 
         function copyLink(): void {
-            var input = document.getElementById('p2ps-share-link') as HTMLInputElement | null;
+            const input = document.getElementById('p2ps-share-link') as HTMLInputElement | null;
             if (!input) return;
             input.select();
             try { document.execCommand('copy'); } catch (e) { /* ignore */ }
             navigator.clipboard.writeText(input.value).catch(function () { /* execCommand already copied; clipboard API failure is non-fatal */ });
-            var copyBtn = document.getElementById('p2ps-copy-text');
-            var copyDone = document.getElementById('p2ps-copy-done');
+            const copyBtn = document.getElementById('p2ps-copy-text');
+            const copyDone = document.getElementById('p2ps-copy-done');
             if (copyBtn) copyBtn.classList.add('hidden');
             if (copyDone) copyDone.classList.remove('hidden');
             setTimeout(function () {
@@ -563,24 +563,24 @@
         function cancelTransfer(): void { state._intentionalStop = true; cleanup(); setPhase('idle'); }
 
         function renderQR(value: string): void {
-            var el = document.getElementById('p2ps-qrcode');
+            const el = document.getElementById('p2ps-qrcode');
             if (!el) return;
             el.innerHTML = '';
-            var qrcode = window.qrcode;
+            const qrcode = window.qrcode;
             if (!value || !qrcode) {
                 if (!qrcode) el.textContent = t('qrNotLoaded');
                 return;
             }
             try {
-                var qr = qrcode(0, 'M');
+                const qr = qrcode(0, 'M');
                 qr.addData(value);
                 qr.make();
-                var moduleCount = qr.getModuleCount();
-                var cell = 6;
-                var dim = moduleCount * cell;
-                var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim + '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + t('qrAria') + '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
-                for (var r = 0; r < moduleCount; r++) {
-                    for (var c = 0; c < moduleCount; c++) {
+                const moduleCount = qr.getModuleCount();
+                const cell = 6;
+                const dim = moduleCount * cell;
+                const parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim + '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + t('qrAria') + '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
+                for (let r = 0; r < moduleCount; r++) {
+                    for (let c = 0; c < moduleCount; c++) {
                         if (qr.isDark(r, c)) parts.push('<rect x="' + (c * cell) + '" y="' + (r * cell) + '" width="' + cell + '" height="' + cell + '" fill="#0f172a"/>');
                     }
                 }
@@ -596,7 +596,7 @@
             state._file = null;
             state.shareCode = '';
             state.shareLink = '';
-            var qrEl = document.getElementById('p2ps-qrcode');
+            const qrEl = document.getElementById('p2ps-qrcode');
             if (qrEl) qrEl.innerHTML = '';
             state.progress = 0;
             state.error = '';
@@ -606,9 +606,9 @@
         }
 
         function cleanup(): void {
-            var recvIds = Object.keys(state._receivers);
-            for (var i = 0; i < recvIds.length; i++) {
-                var r = state._receivers[recvIds[i]];
+            const recvIds = Object.keys(state._receivers);
+            for (let i = 0; i < recvIds.length; i++) {
+                const r = state._receivers[recvIds[i]];
                 if (r.sender) r.sender.cancel();
                 if (r.pc) r.pc.close();
                 clearTimeout(r._stallTimer);
