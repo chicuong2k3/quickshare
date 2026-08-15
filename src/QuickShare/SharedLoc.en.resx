@@ -620,6 +620,12 @@
   <data name="dl_cta_button" xml:space="preserve"><value>Send a file</value></data>
   <data name="dl_preview_alt" xml:space="preserve"><value>File preview</value></data>
   <data name="dl_preview_pdf" xml:space="preserve"><value>PDF preview</value></data>
+  <data name="trial_banner_title" xml:space="preserve"><value>Pro trial active</value></data>
+  <data name="trial_banner_sub" xml:space="preserve"><value>{0} days left — go Pro to keep the benefits</value></data>
+  <data name="trial_option_title" xml:space="preserve"><value>Try Pro free for 7 days</value></data>
+  <data name="trial_option_desc" xml:space="preserve"><value>No card required. Full Pro features for a week.</value></data>
+  <data name="trial_option_btn" xml:space="preserve"><value>Start 7-day free trial</value></data>
+  <data name="trial_option_error" xml:space="preserve"><value>Trial unavailable for this account.</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Report abuse / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Known devices</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Devices that have signed in to your account. Remove any you don't recognize.</value></data>

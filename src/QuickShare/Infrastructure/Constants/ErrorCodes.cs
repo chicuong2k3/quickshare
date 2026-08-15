@@ -15,4 +15,6 @@ public static class ErrorCodes
     public const string MessageTooLong = "message_too_long";
     public const string DeliveryAlreadyDownloaded = "delivery_already_downloaded";
     public const string DeliveryGated = "delivery_gated";
+    public const string TrialRequiresFreePlan = "trial_requires_free_plan";
+    public const string TrialAlreadyUsed = "trial_already_used";
 }

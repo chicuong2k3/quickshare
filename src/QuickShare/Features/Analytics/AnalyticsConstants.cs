@@ -29,6 +29,9 @@ public static class AnalyticsEvents
     // Signup conversion
     public const string Signup = "signup";
 
+    // Pro trial (issue #65)
+    public const string TrialStarted = "trial_started";
+
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)
     {

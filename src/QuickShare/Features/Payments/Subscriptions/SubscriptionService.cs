@@ -1,9 +1,63 @@
+using LightResults;
 using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Payments.Subscriptions;
 
 public static class SubscriptionService
 {
+    /// <summary>
+    /// Starts a one-time 7-day Pro trial (issue #65). No card required. The
+    /// subscription is Active with CurrentPeriodEnd == TrialEndsAt, so the
+    /// existing expiry path downgrades a non-converted trial to Free.
+    /// </summary>
+    public static async Task<Result<Subscription>> StartTrialAsync(User user, AppDbContext db, CancellationToken ct)
+    {
+        if (user.Plan != PlanTierLimits.Free)
+            return Result.Failure<Subscription>(new LightResults.Error(ErrorCodes.TrialRequiresFreePlan));
+
+        var hasEverSubscribed = await db.Subscriptions
+            .AnyAsync(s => s.UserId == user.Id && s.Status != SubscriptionStatus.Expired, ct);
+        if (hasEverSubscribed)
+            return Result.Failure<Subscription>(new LightResults.Error(ErrorCodes.TrialAlreadyUsed));
+
+        var now = DateTime.UtcNow;
+        var trialEnd = now.AddDays(Subscription.TrialDays);
+        var subscription = new Subscription
+        {
+            UserId = user.Id,
+            Plan = PlanTierLimits.Pro,
+            Status = SubscriptionStatus.Active,
+            BillingPeriod = BillingPeriod.Monthly,
+            CurrentPeriodStart = now,
+            CurrentPeriodEnd = trialEnd,
+            TrialEndsAt = trialEnd
+        };
+        db.Subscriptions.Add(subscription);
+
+        await db.Users
+            .Where(u => u.Id == user.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(u => u.Plan, PlanTierLimits.Pro)
+                .SetProperty(u => u.UpdatedAt, now), ct);
+
+        user.Plan = PlanTierLimits.Pro;
+        user.UpdatedAt = now;
+
+        await db.SaveChangesAsync(ct);
+
+        return Result.Success(subscription);
+    }
+
+    /// <summary>Days left in the current trial, or null when not on a trial.</summary>
+    public static async Task<int?> GetTrialDaysLeftAsync(User user, AppDbContext db, CancellationToken ct)
+    {
+        var sub = await GetCurrentAsync(user, db, ct);
+        if (sub?.TrialEndsAt is not { } trialEnd || trialEnd <= DateTime.UtcNow)
+            return null;
+
+        return Math.Max(1, (int)Math.Ceiling((trialEnd - DateTime.UtcNow).TotalDays));
+    }
+
     /// <summary>
     /// Activates or extends a subscription after a successful payment.
     /// If user has no active subscription, creates one.
@@ -35,6 +89,7 @@ public static class SubscriptionService
             subscription.BillingPeriod = period;
             subscription.Status = SubscriptionStatus.Active;
             subscription.CancelledAt = null;
+            subscription.TrialEndsAt = null;
             subscription.UpdatedAt = DateTime.UtcNow;
 
             // Extend from the later of now and the current period end (no double-dipping).

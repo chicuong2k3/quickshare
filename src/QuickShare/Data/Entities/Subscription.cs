@@ -22,6 +22,8 @@ public static class SubscriptionStatusExtensions
 [DynamicSort]
 public record Subscription : BaseAuditEntity
 {
+    public const int TrialDays = 7;
+
     public Guid UserId { get; set; }
     public string Plan { get; set; } = PlanTierLimits.Free;
     public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
@@ -29,6 +31,7 @@ public record Subscription : BaseAuditEntity
     public DateTime CurrentPeriodStart { get; set; }
     public DateTime CurrentPeriodEnd { get; set; }
     public DateTime? CancelledAt { get; set; }
+    public DateTime? TrialEndsAt { get; set; }
 
     public User User { get; init; } = null!;
 }

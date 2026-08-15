@@ -79,6 +79,21 @@ else
                     @((MarkupString)string.Format(Loc["upgrade_complete_desc"], $"<strong>{planDisplay}</strong>", IsYearly ? Loc["upgrade_billing_yearly_label"] : Loc["upgrade_billing_monthly_label"], $"<strong>{(IsYearly ? planYearlyPrice : planMonthlyPrice)}</strong>"))
                 </p>
 
+                @if (currentPlan == PlanTierLimits.Free)
+                {
+                    <div class="payment-option" style="margin-top: 1.25rem">
+                        <h3 class="db-h3">@Loc["trial_option_title"]</h3>
+                        <p class="db-text-muted" style="margin-top: 0.25rem">@Loc["trial_option_desc"]</p>
+                        <button type="button" class="db-btn db-btn--primary" style="width:100%;margin-top:0.75rem"
+                                onclick="quickShareStartTrial(this)"
+                                data-err="@Loc["trial_option_error"]"
+                                data-ai-action="upgrade.trial.start">
+                            @Loc["trial_option_btn"]
+                        </button>
+                        <p id="trial-error" class="error hidden" style="margin-top: 0.5rem"></p>
+                    </div>
+                }
+
                 @if (paymentCompleted)
                 {
                     @PaymentStatus
@@ -138,6 +153,21 @@ else
 }
 
 
+
+<script>
+    window.quickShareStartTrial = function (btn) {
+        var err = document.getElementById('trial-error');
+        if (err) err.classList.add('hidden');
+        fetch('/api/subscriptions/trial', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(function (r) {
+                if (!r.ok) throw new Error('failed');
+                window.location.reload();
+            })
+            .catch(function () {
+                if (err) { err.textContent = btn.getAttribute('data-err'); err.classList.remove('hidden'); }
+            });
+    };
+</script>
 
 @code {
     [Parameter]

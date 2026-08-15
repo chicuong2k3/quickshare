@@ -37,6 +37,14 @@
         }
         else
         {
+            @if (trialDaysLeft is { } daysLeft)
+            {
+                <div class="trial-banner" role="status" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; border: 1px solid var(--db-color-accent, rgba(232,184,75,0.4)); background: var(--db-color-surface, rgba(255,255,255,0.03)); display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem">
+                    <strong class="db-p" style="margin: 0">@Loc["trial_banner_title"]</strong>
+                    <span class="db-p db-text-muted" style="margin: 0; font-size: 0.875rem">@Loc["trial_banner_sub", daysLeft]</span>
+                    <a href="/pricing" class="db-btn db-btn--primary db-btn--sm" style="margin-left: auto" data-ai-action="billing.trial.convert">@Loc["billing_btn_upgrade"]</a>
+                </div>
+            }
             <div class="summary-card">
                 <div class="summary-card__head">
                     <h2 class="db-h2">@billing.PlanDisplay @Loc["billing_plan_suffix"]</h2>
@@ -125,8 +133,9 @@
 @code {
     private const string SubscriptionActionCancel = "cancel";
 
-    private BillingHistoryResponse? billing;
-    private Subscription? subscription;
+private BillingHistoryResponse? billing;
+private Subscription? subscription;
+private int? trialDaysLeft;
 
     private string planPrice => (billing?.Plan, billingPeriod) switch
     {
@@ -202,5 +211,6 @@
 
         billing = await BillingHistoryService.GetForUserAsync(user, Db, Loc, ct);
         subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
+        trialDaysLeft = await SubscriptionService.GetTrialDaysLeftAsync(user, Db, ct);
     }
 }

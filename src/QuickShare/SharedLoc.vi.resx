@@ -621,6 +621,12 @@
   <data name="dl_cta_button" xml:space="preserve"><value>Gửi file</value></data>
   <data name="dl_preview_alt" xml:space="preserve"><value>Xem trước file</value></data>
   <data name="dl_preview_pdf" xml:space="preserve"><value>Xem trước PDF</value></data>
+  <data name="trial_banner_title" xml:space="preserve"><value>Đang dùng thử Pro</value></data>
+  <data name="trial_banner_sub" xml:space="preserve"><value>Còn {0} ngày — lên Pro để giữ quyền lợi</value></data>
+  <data name="trial_option_title" xml:space="preserve"><value>Dùng thử Pro miễn phí 7 ngày</value></data>
+  <data name="trial_option_desc" xml:space="preserve"><value>Không cần thẻ. Đầy đủ tính năng Pro trong một tuần.</value></data>
+  <data name="trial_option_btn" xml:space="preserve"><value>Bắt đầu dùng thử 7 ngày</value></data>
+  <data name="trial_option_error" xml:space="preserve"><value>Tài khoản này không thể dùng thử.</value></data>
   <data name="footer_abuse" xml:space="preserve"><value>Báo cáo lạm dụng / DMCA</value></data>
   <data name="account_devices_title" xml:space="preserve"><value>Thiết bị đã biết</value></data>
   <data name="account_devices_subtitle" xml:space="preserve"><value>Các thiết bị đã đăng nhập vào tài khoản. Gỡ bỏ thiết bị bạn không nhận ra.</value></data>
