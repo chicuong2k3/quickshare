@@ -1,7 +1,8 @@
-# Observability Setup Guide — Prometheus + Grafana
+# Observability Setup Guide — Grafana (Loki + Prometheus + Tempo)
 
 > TeleCloud metrics endpoint: `http://<server>:9001/metrics`
 > Health check endpoint: `http://<server>:9001/health`
+> Logs: Serilog → Loki · Traces: OpenTelemetry → Tempo · Pipeline: Grafana Alloy
 
 ---
 
@@ -11,11 +12,14 @@
 
 Grafana cũng không cần connection string — nó query Prometheus qua HTTP API.
 
+Loki và Tempo cũng vậy — Serilog đẩy log qua HTTP POST tới `/loki/api/v1/push`, OTel đẩy trace qua OTLP (gRPC/HTTP) tới Alloy. Không connection string, không database chung.
+
 ```
-┌──────────────┐   HTTP scrape /metrics    ┌──────────────┐   HTTP query    ┌──────────────┐
-│  QuickShare  │ ◄─────────────────────── │  Prometheus  │ ◄───────────── │   Grafana    │
-│  :9001       │                           │  :9090       │                │  :3000       │
-└──────────────┘                           └──────────────┘                └──────────────┘
+QuickShare ── Serilog (direct push) ───────────────────▶ Loki :3100
+QuickShare ── OpenTelemetry (OTLP) ──▶ Alloy :4318 ───▶ Tempo :3200
+QuickShare ── Prometheus scrape /metrics ──────────────▶ Prometheus :9090
+                                                              │
+                                          Grafana :3000 ◀────┘ (queries all three)
 ```
 
 ---
@@ -285,9 +289,158 @@ groups:
 
 ---
 
-## 5. Docker Compose (All-in-One)
+## 5. Loki Configuration (Logs)
 
-Nếu chưa có Prometheus + Grafana, chạy cả stack 1 lệnh:
+### 5.1 Serilog Sink
+
+```bash
+dotnet add package Serilog.Sinks.Grafana.Loki
+```
+
+Bỏ `Serilog.Sinks.Seq` khỏi `.csproj`. Trong `appsettings.json`, thay block `WriteTo`:
+
+```json
+"WriteTo": [
+  { "Name": "Console" },
+  {
+    "Name": "GrafanaLoki",
+    "Args": {
+      "uri": "http://localhost:3100",
+      "labels": [
+        { "key": "service", "value": "quickshare" },
+        { "key": "env", "value": "production" }
+      ]
+    }
+  }
+]
+```
+
+**Label discipline (quan trọng nhất):** chỉ `service`/`env`/`level` làm label. `deliveryId`, `userId`, `recipientEmail` để trong log line (structured fields) — query được qua logfmt / `|=`, không bị index. High-cardinality label là #1 nguyên nhân Loki chết chậm.
+
+**Redaction:** strip `recipientEmail`, `accessKeySecret`, presigned URL ở sink (Serilog `IDestructuringPolicy`) trước khi vào Loki.
+
+### 5.2 Loki Container
+
+```bash
+docker run -d --name loki \
+  -p 3100:3100 \
+  -v /path/to/loki-config.yml:/etc/loki/local-config.yaml \
+  -v loki_data:/loki \
+  grafana/loki:latest
+```
+
+Set retention tường minh trong `loki-config.yml` — đừng lấy default:
+
+```yaml
+limits_config:
+  retention_period: 168h        # 7 days — tự chọn
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+```
+
+### 5.3 Add Loki Data Source (Grafana)
+
+1. Grafana → Connections → Data Sources → **Loki**
+2. URL: `http://localhost:3100`
+3. **Save & test**
+
+---
+
+## 6. OpenTelemetry + Tempo + Alloy (Traces)
+
+Lý do bật tracing: **background job** (scheduled send — issue #69) chạy không có HTTP request nên không có traceId tự nhiên. Span trên job + `deliveryId` làm baggage cho phép truy vết job chạy lúc 3h sáng.
+
+### 6.1 .NET — AddOpenTelemetry
+
+```bash
+dotnet add package OpenTelemetry.Extensions.Hosting
+dotnet add package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add package OpenTelemetry.Instrumentation.Http
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+```
+
+Trong `Program.cs`:
+
+```csharp
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("QuickShare"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4318")));
+```
+
+Trên background job, thêm root span (xem `src/QuickShare/Infrastructure/Telemetry/ActivitySources.cs` — shared source, và `DeliveryExpiryJob` là ví dụ sống):
+
+```csharp
+using var activity = ActivitySources.Source.StartActivity(ActivitySources.DeliveryExpiryActivity);
+activity?.SetTag(ActivitySources.DeliveryCountTag, expired.Count);
+```
+
+Cross-request flow (upload → activate) liên kết span qua baggage:
+
+```csharp
+activity?.SetBaggage("deliveryId", delivery.Id.ToString());
+```
+
+### 6.2 Grafana Alloy (collector)
+
+Alloy nhận OTLP rồi fan-out: traces → Tempo. Logs do Serilog đẩy thẳng Loki, metrics do Prometheus scrape trực tiếp — không qua Alloy.
+
+`config.alloy`:
+
+```alloy
+otelcol.receiver.otlp "default" {
+  grpc { endpoint = "0.0.0.0:4317" }
+  http { endpoint = "0.0.0.0:4318" }
+
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client { endpoint = "tempo:4317" }
+}
+```
+
+### 6.3 Tempo Container
+
+```bash
+docker run -d --name tempo \
+  -p 3200:3200 -p 4317:4317 \
+  -v /path/to/tempo-config.yml:/etc/tempo.yaml \
+  grafana/tempo:latest
+```
+
+`tempo-config.yml` tối thiểu (local storage):
+
+```yaml
+server:
+  http_listen_port: 3200
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo/traces
+```
+
+### 6.4 Add Tempo Data Source (Grafana)
+
+1. Grafana → Data Sources → **Tempo**
+2. URL: `http://localhost:3200`
+3. **Save & test** — rồi trong Loki data source bật **Derived fields** trỏ `traceId` sang Tempo để click từ log → trace.
+
+---
+
+## 7. Docker Compose (All-in-One)
+
+Chạy cả stack 1 lệnh:
 
 ```yaml
 # docker-compose.observability.yml
@@ -308,6 +461,35 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
 
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - '3100:3100'
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    ports:
+      - '3200:3200'
+      - '4317:4317'
+    volumes:
+      - ./tempo-config.yml:/etc/tempo.yaml
+      - tempo_data:/tmp/tempo
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    ports:
+      - '4318:4318'
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy
+    depends_on:
+      - tempo
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -320,10 +502,14 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+      - loki
+      - tempo
 
 volumes:
   prometheus_data:
   grafana_data:
+  loki_data:
+  tempo_data:
 ```
 
 ```bash
@@ -332,7 +518,7 @@ docker compose -f docker-compose.observability.yml up -d
 
 ---
 
-## 6. Verification Checklist
+## 8. Verification Checklist
 
 ```bash
 # 1. QuickShare metrics có expose?
@@ -343,17 +529,28 @@ curl http://localhost:9001/metrics | head -5
 curl 'http://localhost:9090/api/v1/query?query=up{job="quickshare"}'
 # → phải thấy: "value":[timestamp,"1"]
 
-# 3. Grafana query được Prometheus?
-# Mở http://localhost:3000 → Explore → chọn Prometheus → query: up{job="quickshare"}
+# 3. Loki nhận log?
+curl -G http://localhost:3100/loki/api/v1/query --data-urlencode 'query={service="quickshare"}'
+# → phải thấy dòng log gần nhất
+
+# 4. Tempo nhận trace?
+curl http://localhost:3200/ready
+# → "ready"
+
+# 5. Grafana query được cả 3?
+# Mở http://localhost:3000 → Explore → chọn Prometheus/Loki/Tempo → query thử
 ```
 
 ---
 
-## 7. Quick Reference
+## 9. Quick Reference
 
 | URL | Purpose |
 |---|---|
 | `http://<server>:9001/metrics` | Prometheus scrape target |
 | `http://<server>:9001/health` | Health check (Npgsql + R2) |
+| `http://<server>:3100` | Loki (logs) |
+| `http://<server>:3200` | Tempo (traces) |
+| `http://<server>:4318` | Alloy (OTLP receiver) |
 | `http://<server>:9090/targets` | Prometheus targets status |
 | `http://<server>:3000` | Grafana UI |

@@ -1,7 +1,7 @@
 # TeleCloud Observability — Theory & Architecture
 
-> Distilled from team discussion, 2026-08-03.
-> Stack decision: **Prometheus + Grafana** (metrics), **Seq** (logs), **OpenTelemetry** (tracing — deferred).
+> Distilled from team discussion, 2026-08-03. Updated 2026-08-15 (Seq → Loki, OTel + Tempo enabled).
+> Stack decision: **Prometheus + Grafana** (metrics), **Loki** (logs), **OpenTelemetry + Tempo** (tracing), **Grafana Alloy** (pipeline).
 
 ---
 
@@ -92,21 +92,32 @@ Logs and traces are complementary: logs answer "what happened?", traces answer "
 
 | Concern | Tool | Why |
 |---|---|---|
-| **Logs** | Serilog → Seq | Already installed; rich structured log query; free tier sufficient |
+| **Logs** | Serilog → Loki | Single pane in the self-hosted Grafana; index-light (labels, not content) |
 | **Metrics** | prometheus-net → Prometheus → Grafana | Lightweight (< 512 MB RAM); .NET native; PromQL for ad-hoc queries |
-| **Tracing** | OpenTelemetry (deferred) | Overkill for single-process app; add when complexity warrants |
+| **Tracing** | OpenTelemetry → Tempo | Background jobs (scheduled send) have no HTTP request — spans carry the correlation logs alone can't |
 | **Health** | ASP.NET Core Health Checks | Built-in; expose Npgsql + R2 connectivity as `/health` |
 | **Load Test** | k6 | Simpler than NBomber for HTTP-only; mature ecosystem |
+| **Pipeline** | Grafana Alloy | One collector receives OTLP and fans out to Loki + Tempo + Prometheus |
 
 ### Why NOT ELK
 - Elasticsearch is resource-heavy (JVM, RAM)
 - Overkill for single-server .NET app
-- Seq covers logging, Prometheus covers metrics — no gap ELK fills
+- Loki covers logging, Prometheus covers metrics — no gap ELK fills
 
-### Why NOT Loki (for now)
-- Seq already serves as structured log store with excellent query UI
-- Adding Loki duplicates log storage without benefit
-- If Seq outgrown, Grafana Loki integrates with existing Grafana
+### Why Loki (replaced Seq)
+- Grafana is already self-hosted — Loki is a marginal container, not a new system
+- One pane: logs, metrics, and traces land in the same Grafana UI; Seq was a second place to look
+- Index-light: Loki indexes labels, not content — cost-effective *only* if high-cardinality values stay out of labels
+
+### Loki label discipline (non-negotiable)
+- **Labels** (indexed): `service`, `env`, `level` — low cardinality only
+- **Structured fields** (in the log line): `deliveryId`, `userId`, `recipientEmail` — queryable via logfmt / `|=`, not indexed
+- High-cardinality labels are the #1 Loki performance killer; get this wrong and "cheap Loki" is a myth
+
+### Operational guardrails
+- **Retention:** set `limits_config.retention_period` explicitly — never take Loki defaults
+- **Redaction:** strip `recipientEmail`, `accessKeySecret`, presigned URLs at the sink (Serilog `IDestructuringPolicy` or sink formatter) before they reach Loki
+- **Sampling:** do not trace 100% on busy days — head-sampling or lean spans, or Tempo eats disk
 
 ---
 
@@ -133,7 +144,7 @@ fetch("/api/uploads/commit-r2", {
 var deliveryId = Baggage.Current.GetBaggage("deliveryId");
 ```
 
-Grep `deliveryId=abc-123` in Seq → every log line from the entire upload flow, across all 5 traces.
+Query `{service="quickshare"} |= "deliveryId=abc-123"` in Loki → every log line from the entire upload flow, across all 5 traces.
 
 ---
 

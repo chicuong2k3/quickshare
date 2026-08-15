@@ -1,5 +1,8 @@
 
 
+using QuickShare.Infrastructure.Telemetry;
+
+
 namespace QuickShare.Infrastructure.Jobs;
 
 public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<DeliveryExpiryJob> logger) : BackgroundService
@@ -22,6 +25,7 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
 
     private async Task ExpireDeliveriesAsync(CancellationToken ct)
     {
+        using var activity = ActivitySources.Source.StartActivity(ActivitySources.DeliveryExpiryActivity);
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;
@@ -31,6 +35,8 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
             .ToListAsync(ct);
 
         if (expired.Count == 0) return;
+
+        activity?.SetTag(ActivitySources.DeliveryCountTag, expired.Count);
 
         foreach (var delivery in expired)
         {

@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Npgsql;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Prometheus;
 using QuickShare;
 using QuickShare.Features.Payments.PayOS;
@@ -15,6 +18,7 @@ using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.FeatureFlags;
 using QuickShare.Infrastructure.Jobs;
 using QuickShare.Infrastructure.Middleware;
+using QuickShare.Infrastructure.Telemetry;
 using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
@@ -323,6 +327,18 @@ builder.Services.AddAuthorization();
 // so /health was permanently 503. Add an authenticated R2 check with #89 if needed.
 builder.Services.AddHealthChecks()
     .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"]);
+
+// ── Observability: OpenTelemetry tracing → Tempo (via Grafana Alloy) ──
+const string ObservabilityOtlpEndpointKey = "Observability:OtlpEndpoint";
+const string DefaultOtlpEndpoint = "http://localhost:4318";
+var otlpEndpoint = builder.Configuration[ObservabilityOtlpEndpointKey] ?? DefaultOtlpEndpoint;
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(ActivitySources.Name))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint)));
+
 var app = builder.Build();
 
 
