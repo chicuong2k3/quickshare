@@ -1436,6 +1436,75 @@ body::after,
     padding: 0 var(--db-space-1);
 }
 
+/* Command palette (issue #153). */
+.layout-command-kbd {
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.375rem;
+    border: 1px solid var(--db-mountain);
+    border-radius: var(--db-radius);
+    margin-left: var(--db-space-1);
+}
+
+.command-palette {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.command-palette__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.command-palette__panel {
+    position: relative;
+    width: min(36rem, calc(100vw - 2rem));
+    margin: 15vh auto 0;
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    border-radius: var(--db-radius);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.command-palette__input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--db-mountain);
+    padding: var(--db-space-3);
+    font-size: var(--db-text-base);
+    background: transparent;
+    color: var(--db-color-text);
+}
+
+.command-palette__list {
+    list-style: none;
+    margin: 0;
+    padding: var(--db-space-2);
+    max-height: 24rem;
+    overflow-y: auto;
+}
+
+.command-palette__list li a {
+    display: block;
+    padding: var(--db-space-2) var(--db-space-3);
+    border-radius: var(--db-radius);
+    color: var(--db-color-text);
+    text-decoration: none;
+}
+
+.command-palette__list li.command-palette__item--active a {
+    background: var(--db-valley);
+}
+
+.command-palette__empty {
+    padding: var(--db-space-3);
+    color: var(--db-color-text-muted, #6b7280);
+    text-align: center;
+}
+
 /* Link-health strip above the delivery list (issue #202). */
 .account-deliveries-health {
     display: flex;

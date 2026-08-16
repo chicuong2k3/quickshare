@@ -14,6 +14,11 @@
   <data name="nav_logout" xml:space="preserve"><value>Đăng xuất</value></data>
   <data name="nav_menu" xml:space="preserve"><value>Trình đơn</value></data>
   <data name="nav_user_menu" xml:space="preserve"><value>Trình đơn người dùng</value></data>
+  <data name="nav_p2p" xml:space="preserve"><value>P2P</value></data>
+  <data name="nav_help" xml:space="preserve"><value>Trợ giúp</value></data>
+  <data name="command_palette_trigger" xml:space="preserve"><value>Bảng lệnh (Ctrl+K)</value></data>
+  <data name="command_palette_placeholder" xml:space="preserve"><value>Tìm thao tác...</value></data>
+  <data name="command_palette_empty" xml:space="preserve"><value>Không có thao tác phù hợp</value></data>
   <data name="nav_tools_footer_label" xml:space="preserve"><value>Công cụ</value></data>
   <data name="nav_tools_clipboard" xml:space="preserve"><value>Bảng nhớ tạm trực tuyến</value></data>
   <data name="nav_tools_sharetext" xml:space="preserve"><value>Chia sẻ văn bản</value></data>

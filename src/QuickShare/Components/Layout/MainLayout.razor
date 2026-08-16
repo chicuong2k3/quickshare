@@ -66,6 +66,10 @@
         </div>
         <div class="db-navbar__spacer"></div>
         <div class="db-navbar__actions">
+            <button type="button" class="db-btn db-btn--ghost db-btn--sm layout-command-trigger" onclick="openCommandPalette()" aria-label="@Loc["command_palette_trigger"]" title="@Loc["command_palette_trigger"]" data-ai-action="commandPalette.open">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span class="layout-command-kbd" aria-hidden="true">⌘K</span>
+            </button>
             <button type="button" class="db-btn db-btn--ghost db-btn--sm layout-theme-toggle" onclick="toggleTheme()" aria-label="@Loc["theme_toggle"]" title="@Loc["theme_toggle"]" data-ai-action="theme.toggle">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
             </button>
@@ -106,6 +110,26 @@
         </button>
     </nav>
 
+    @* Command palette (issue #153) — Ctrl+K / Cmd+K opens; type to filter, arrows + Enter to pick. *@
+    <div id="command-palette" class="command-palette" hidden role="dialog" aria-modal="true" aria-label="@Loc["command_palette_trigger"]">
+        <div class="command-palette__backdrop" onclick="closeCommandPalette()"></div>
+        <div class="command-palette__panel">
+            <input id="command-palette-input" type="text" class="command-palette__input"
+                   placeholder="@Loc["command_palette_placeholder"]" autocomplete="off"
+                   aria-label="@Loc["command_palette_placeholder"]" />
+            <ul id="command-palette-list" class="command-palette__list">
+                <li><a href="@RoutePaths.Send" data-keywords="send upload file">@Loc["nav_send"]</a></li>
+                <li><a href="@RoutePaths.P2pSend" data-keywords="p2p peer webrtc browser">@Loc["nav_p2p"]</a></li>
+                <li><a href="@RoutePaths.AccountDeliveries" data-keywords="files deliveries list">@Loc["nav_files"]</a></li>
+                <li><a href="@RoutePaths.Account" data-keywords="account settings profile">@Loc["nav_account"]</a></li>
+                <li><a href="@RoutePaths.AccountBilling" data-keywords="billing plan payment">@Loc["billing_h1"]</a></li>
+                <li><a href="@RoutePaths.Pricing" data-keywords="pricing plans upgrade">@Loc["nav_pricing"]</a></li>
+                <li><a href="@RoutePaths.Help" data-keywords="help support docs faq">@Loc["nav_help"]</a></li>
+                <li><a href="@RoutePaths.Status" data-keywords="status uptime">@Loc["footer_status"]</a></li>
+            </ul>
+            <p id="command-palette-empty" class="command-palette__empty" hidden>@Loc["command_palette_empty"]</p>
+        </div>
+    </div>
     @* Cookie consent banner *@
     <CookieConsent />
 
@@ -142,6 +166,73 @@
         localStorage.setItem('db-scheme', scheme === 'dark' ? 'light' : 'dark');
         window.location.reload();
     };
+
+    // Command palette (#153): Ctrl+K / Cmd+K opens, Esc closes, arrows + Enter pick.
+    window.openCommandPalette = function () {
+        var pal = document.getElementById('command-palette');
+        if (!pal) return;
+        pal.hidden = false;
+        var input = document.getElementById('command-palette-input');
+        if (input) { input.value = ''; filterCommandPalette(''); setTimeout(function () { input.focus(); }, 0); }
+        commandHighlight(0);
+    };
+    window.closeCommandPalette = function () {
+        var pal = document.getElementById('command-palette');
+        if (pal) pal.hidden = true;
+    };
+    window.filterCommandPalette = function (q) {
+        var items = document.querySelectorAll('#command-palette-list li');
+        var empty = document.getElementById('command-palette-empty');
+        var visible = 0;
+        q = (q || '').toLowerCase().trim();
+        items.forEach(function (li) {
+            var link = li.querySelector('a');
+            var text = (link.textContent + ' ' + (link.getAttribute('data-keywords') || '')).toLowerCase();
+            var show = !q || text.indexOf(q) !== -1;
+            li.hidden = !show;
+            if (show) visible++;
+        });
+        if (empty) empty.hidden = visible !== 0;
+    };
+    window.commandHighlight = function (idx) {
+        var items = Array.prototype.filter.call(document.querySelectorAll('#command-palette-list li'), function (li) { return !li.hidden; });
+        if (items.length === 0) return;
+        if (idx < 0) idx = items.length - 1;
+        if (idx >= items.length) idx = 0;
+        items.forEach(function (li, i) { li.classList.toggle('command-palette__item--active', i === idx); });
+        items[idx].scrollIntoView({ block: 'nearest' });
+        document.querySelector('#command-palette-list').dataset.active = idx;
+    };
+    window.commandActiveIndex = function () {
+        return parseInt(document.querySelector('#command-palette-list').dataset.active || '0', 10);
+    };
+    window.commandActivate = function () {
+        var items = Array.prototype.filter.call(document.querySelectorAll('#command-palette-list li'), function (li) { return !li.hidden; });
+        var idx = window.commandActiveIndex();
+        var link = items[idx] && items[idx].querySelector('a');
+        if (link) window.location.href = link.getAttribute('href');
+    };
+    document.addEventListener('keydown', function (e) {
+        var pal = document.getElementById('command-palette');
+        if (!pal) return;
+        var open = !pal.hidden;
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+            e.preventDefault();
+            open ? window.closeCommandPalette() : window.openCommandPalette();
+            return;
+        }
+        if (!open) return;
+        if (e.key === 'Escape') { e.preventDefault(); window.closeCommandPalette(); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); window.commandHighlight(window.commandActiveIndex() + 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); window.commandHighlight(window.commandActiveIndex() - 1); }
+        else if (e.key === 'Enter') { e.preventDefault(); window.commandActivate(); }
+    });
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'command-palette-input') {
+            window.filterCommandPalette(e.target.value);
+            window.commandHighlight(0);
+        }
+    });
 </script>
 
 @code {

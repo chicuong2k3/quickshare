@@ -14,6 +14,11 @@
   <data name="nav_logout" xml:space="preserve"><value>Sign out</value></data>
   <data name="nav_menu" xml:space="preserve"><value>Menu</value></data>
   <data name="nav_user_menu" xml:space="preserve"><value>User menu</value></data>
+  <data name="nav_p2p" xml:space="preserve"><value>P2P</value></data>
+  <data name="nav_help" xml:space="preserve"><value>Help</value></data>
+  <data name="command_palette_trigger" xml:space="preserve"><value>Command palette (Ctrl+K)</value></data>
+  <data name="command_palette_placeholder" xml:space="preserve"><value>Search actions...</value></data>
+  <data name="command_palette_empty" xml:space="preserve"><value>No matching action</value></data>
   <data name="nav_tools_footer_label" xml:space="preserve"><value>Tools</value></data>
   <data name="nav_tools_clipboard" xml:space="preserve"><value>Online clipboard</value></data>
   <data name="nav_tools_sharetext" xml:space="preserve"><value>Share text</value></data>
