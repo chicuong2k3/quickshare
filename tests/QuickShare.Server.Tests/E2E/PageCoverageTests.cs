@@ -23,6 +23,7 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     [InlineData("/roadmap")]
     [InlineData("/compare")]
     [InlineData("/why-private")]
+    [InlineData("/status")]
     public async Task PublicPage_Returns200(string url)
     {
         var client = _factory.CreateClient();
@@ -71,6 +72,14 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("Disallow: /account", body);
         Assert.Contains("Disallow: /api", body);
         Assert.Contains("Sitemap:", body);
+    }
+
+    [Fact]
+    public async Task LoginPage_RendersGithubButton()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/login");
+        Assert.Contains("login-provider--github", html);
     }
 
     [Fact]

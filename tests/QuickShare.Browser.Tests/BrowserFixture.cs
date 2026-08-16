@@ -42,6 +42,8 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("InMemoryDatabaseName", $"QuickShareTests-{Guid.NewGuid():N}");
         builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
         builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
+        builder.UseSetting("Authentication:GitHub:ClientId", "test-client-id");
+        builder.UseSetting("Authentication:GitHub:ClientSecret", "test-client-secret");
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
         builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
         builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");

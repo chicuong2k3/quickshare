@@ -45,4 +45,5 @@ public static class RoutePaths
     public const string WhyPrivate = "/why-private";
     public const string Sitemap = "/sitemap.xml";
     public const string Robots = "/robots.txt";
+    public const string Status = "/status";
 }

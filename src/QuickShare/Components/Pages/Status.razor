@@ -1,0 +1,37 @@
+@layout MainLayout
+@page "/status"
+@using System.Globalization
+
+@* Public status page (issue #36) — component health + incident history. *@
+
+<PageTitle>@(IsVi ? "Trạng thái dịch vụ" : "Service status")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "Trạng thái hoạt động của QuickShareCloud." : "QuickShareCloud service status.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        <h1 class="db-h1">@(IsVi ? "Trạng thái dịch vụ" : "Service status")</h1>
+        <p class="db-p db-text-muted">@(IsVi ? "Tất cả hệ thống đang hoạt động bình thường." : "All systems operational.")</p>
+
+        <h2 class="db-h2">@(IsVi ? "Thành phần" : "Components")</h2>
+        <table class="db-table">
+            <thead>
+                <tr><th scope="col">@(IsVi ? "Thành phần" : "Component")</th><th scope="col">@(IsVi ? "Trạng thái" : "Status")</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>@(IsVi ? "API / tải tệp lên" : "API / upload")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
+                <tr><td>@(IsVi ? "Lưu trữ (R2)" : "Storage (R2)")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
+                <tr><td>@(IsVi ? "Tín hiệu P2P (WebRTC)" : "P2P signaling (WebRTC)")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
+                <tr><td>@(IsVi ? "Thanh toán (PayOS)" : "Payments (PayOS)")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
+            </tbody>
+        </table>
+
+        <h2 class="db-h2">@(IsVi ? "Lịch sử sự cố" : "Incident history")</h2>
+        <p class="db-p">@(IsVi ? "Không có sự cố nào được ghi nhận gần đây." : "No recent incidents recorded.")</p>
+    </article>
+</PageWrapper>
+
+@code {
+    private static bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+}

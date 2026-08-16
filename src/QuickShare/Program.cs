@@ -304,10 +304,47 @@ builder.Services.AddRazorComponents()
 builder.Services.AddLocalization();
 builder.Services.AddAntiforgery();
 
+// Shared OAuth post-login hook (Google + GitHub): tag the identity with the
+// provider, register/find the user, and run new-device tracking (issue #149).
+static async Task FinalizeOAuthAsync(Microsoft.AspNetCore.Authentication.OAuth.OAuthCreatingTicketContext ctx, string provider, string? avatar)
+{
+    ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, provider));
+
+    var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
+    var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
+    var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(subject))
+        return;
+
+    var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+    var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
+    var referralCode = ctx.HttpContext.Request.Cookies[ReferralPolicy.CookieName];
+    var profile = await UserRegistrationService.RegisterAsync(
+        provider, subject, name ?? email, email, avatar, db, ctx.HttpContext.RequestAborted, analytics, referralCode);
+
+    var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();
+    var alertSender = ctx.HttpContext.RequestServices.GetRequiredService<NewDeviceAlertSender>();
+    var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+    var userAgent = ctx.HttpContext.Request.Headers.UserAgent.ToString();
+
+    var (device, isNew) = await deviceTracker.RecordLoginAsync(db, profile.Id, userAgent, ip, ctx.HttpContext.RequestAborted);
+
+    if (isNew)
+    {
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == profile.Id, ctx.HttpContext.RequestAborted);
+        if (user is not null)
+            await alertSender.SendAsync(user, device, DateTime.UtcNow, ctx.HttpContext.RequestAborted);
+    }
+}
+
 // ── Unified cookie auth + Google OAuth ──
 // A single AddAuthentication call serves both the API (401/403 on /api/*) and the
 // SSR pages (redirect to /login for browser navigations).
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+var githubClientId = builder.Configuration["Authentication:GitHub:ClientId"];
+var githubClientSecret = builder.Configuration["Authentication:GitHub:ClientSecret"];
+
+var authBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.Cookie.Name = AuthConstants.CookieName;
@@ -341,50 +378,27 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-        options.Events.OnCreatingTicket = async ctx =>
-        {
-            ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, AuthConstants.GoogleProvider));
-
-            var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
-            var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
-            var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var avatar = ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null;
-
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(subject))
-            {
-                // Register in-process (no HTTP roundtrip) via the shared registration service.
-                var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-                var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
-                var referralCode = ctx.HttpContext.Request.Cookies[ReferralPolicy.CookieName];
-                var profile = await UserRegistrationService.RegisterAsync(
-                    AuthConstants.GoogleProvider,
-                    subject,
-                    name ?? email,
-                    email,
-                    avatar,
-                    db,
-                    ctx.HttpContext.RequestAborted,
-                    analytics,
-                    referralCode);
-
-                // New-device login alert (issue #149): fingerprint UA + IP, email on first sighting.
-                var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();
-                var alertSender = ctx.HttpContext.RequestServices.GetRequiredService<NewDeviceAlertSender>();
-                var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
-                var userAgent = ctx.HttpContext.Request.Headers.UserAgent.ToString();
-
-                var (device, isNew) = await deviceTracker.RecordLoginAsync(
-                    db, profile.Id, userAgent, ip, ctx.HttpContext.RequestAborted);
-
-                if (isNew)
-                {
-                    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == profile.Id, ctx.HttpContext.RequestAborted);
-                    if (user is not null)
-                        await alertSender.SendAsync(user, device, DateTime.UtcNow, ctx.HttpContext.RequestAborted);
-                }
-            }
-        };
+        options.Events.OnCreatingTicket = ctx =>
+            FinalizeOAuthAsync(ctx, AuthConstants.GoogleProvider,
+                ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null);
     });
+
+// GitHub OAuth (issue #97) — registered only when configured, so an unconfigured
+// deployment does not fail startup (aspnet-contrib validates ClientId eagerly).
+if (!string.IsNullOrEmpty(githubClientId) && !string.IsNullOrEmpty(githubClientSecret))
+{
+    authBuilder.AddGitHub(options =>
+    {
+        options.ClientId = githubClientId;
+        options.ClientSecret = githubClientSecret;
+        // user:email → the handler fetches /user/emails and maps the primary
+        // verified address to ClaimTypes.Email (GitHub emails are verified).
+        options.Scope.Add("user:email");
+        options.Events.OnCreatingTicket = ctx =>
+            FinalizeOAuthAsync(ctx, AuthConstants.GitHubProvider,
+                ctx.User.TryGetProperty("avatar_url", out var avatar) ? avatar.GetString() : null);
+    });
+}
 
 builder.Services.AddAuthorization();
 
