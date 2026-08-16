@@ -180,8 +180,9 @@
                             </div>
                         </div>
 
-                        @* Text snippets render inline — pastebin-lite. Filled by download.js via
-                           textContent only; never innerHTML. *@
+                        @* Text snippets render inline — pastebin-lite. Filled by download.js;
+                           markdown/code (issue #240) render structured HTML, everything else
+                           is set via textContent only. All input is HTML-escaped first. *@
                         <div id="dl-text-preview" class="text-preview hidden">
                             <div class="text-preview__bar">
                                 <span id="dl-text-status" class="text-preview__status"></span>
@@ -189,7 +190,7 @@
                                     <span id="dl-text-copy-label">@Loc["dl_preview_copy"]</span>
                                 </button>
                             </div>
-                            <pre id="dl-text-body" class="text-preview__body"></pre>
+                            <div id="dl-text-body" class="text-preview__body"></div>
                             <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
                         </div>
 

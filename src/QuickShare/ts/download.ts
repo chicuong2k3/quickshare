@@ -351,13 +351,86 @@ window.downloadApp = (function (): DownloadPage {
         });
     }
 
+    // Snippet preview (issue #240): markdown + code files render structured,
+    // everything else stays plain text. All input is HTML-escaped first, so
+    // the snippet can never become markup.
+    function escapeHtml(s: string): string {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function isMarkdown(i: { contentType?: string; fileName?: string }): boolean {
+        if (i.contentType === 'text/markdown') return true;
+        const name = String(i.fileName || '').toLowerCase();
+        return name.endsWith('.md') || name.endsWith('.markdown');
+    }
+    function isCode(i: { fileName?: string }): boolean {
+        return /\.(js|mjs|ts|jsx|tsx|py|rb|go|rs|java|c|cpp|h|cs|php|sh|bash|css|html|json|yml|yaml|xml|sql)$/.test(String(i.fileName || '').toLowerCase());
+    }
+
+    function inlineMarkdown(s: string): string {
+        let esc = escapeHtml(s);
+        // Links first, then code, bold, italic — all on already-escaped text.
+        esc = esc.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, txt, url) {
+            if (!/^https?:\/\//i.test(url)) return txt;
+            return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + txt + '</a>';
+        });
+        esc = esc.replace(/`([^`]+)`/g, '<code>$1</code>');
+        esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        esc = esc.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+        return esc;
+    }
+
+    function renderMarkdown(md: string): string {
+        const lines = md.split('\n');
+        const out: string[] = [];
+        let inCode = false;
+        let codeBuf: string[] = [];
+        let listBuf: string[] = [];
+        const flushList = function () {
+            if (listBuf.length) { out.push('<ul>' + listBuf.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'); listBuf = []; }
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const raw = lines[i];
+            if (raw.trim().indexOf('```') === 0) {
+                flushList();
+                if (inCode) { out.push('<pre><code>' + codeBuf.join('\n') + '</code></pre>'); codeBuf = []; inCode = false; }
+                else inCode = true;
+                continue;
+            }
+            if (inCode) { codeBuf.push(escapeHtml(raw)); continue; }
+            if (/^\s*$/.test(raw)) { flushList(); out.push(''); continue; }
+            if (/^\s*-\s+/.test(raw)) { flushList(); listBuf.push(inlineMarkdown(raw.replace(/^\s*-\s+/, ''))); continue; }
+            flushList();
+            if (/^###\s+/.test(raw)) out.push('<h3>' + inlineMarkdown(raw.replace(/^###\s+/, '')) + '</h3>');
+            else if (/^##\s+/.test(raw)) out.push('<h2>' + inlineMarkdown(raw.replace(/^##\s+/, '')) + '</h2>');
+            else if (/^#\s+/.test(raw)) out.push('<h1>' + inlineMarkdown(raw.replace(/^#\s+/, '')) + '</h1>');
+            else out.push('<p>' + inlineMarkdown(raw) + '</p>');
+        }
+        if (inCode) out.push('<pre><code>' + codeBuf.join('\n') + '</code></pre>');
+        flushList();
+        return out.join('\n');
+    }
+
     function renderText(truncate: boolean) {
         const body = document.getElementById('dl-text-body');
         if (!body) return;
+        const i = infoFromDom();
         const lines = state.fullText!.split('\n');
         const truncated = truncate && lines.length > PREVIEW_LINE_LIMIT;
-        // textContent, never innerHTML — the snippet is untrusted user content.
-        body.textContent = truncated ? lines.slice(0, PREVIEW_LINE_LIMIT).join('\n') : state.fullText;
+        const slice = truncated ? lines.slice(0, PREVIEW_LINE_LIMIT).join('\n') : state.fullText!;
+
+        if (isMarkdown(i)) {
+            body.innerHTML = renderMarkdown(slice);
+            body.classList.add('dl-text-body--markdown');
+        } else if (isCode(i)) {
+            body.innerHTML = '<pre><code>' + escapeHtml(slice) + '</code></pre>';
+            body.classList.add('dl-text-body--code');
+        } else {
+            body.textContent = slice;
+            body.classList.remove('dl-text-body--markdown', 'dl-text-body--code');
+        }
+
         if (truncated) { show('dl-text-more'); text('dl-text-status', t('previewLines', PREVIEW_LINE_LIMIT, lines.length)); }
         else { hide('dl-text-more'); text('dl-text-status', ''); }
     }
