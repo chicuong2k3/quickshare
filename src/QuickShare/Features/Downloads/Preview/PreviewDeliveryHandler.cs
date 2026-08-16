@@ -19,6 +19,7 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage)
             return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.NotFound));
 
         if (delivery.Status == DeliveryStatus.Suspended
+            || delivery.Status == DeliveryStatus.Revoked
             || delivery.Status == DeliveryStatus.Expired
             || (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow))
         {

@@ -352,6 +352,19 @@
                     </div>
                     break;
 
+                case DownloadRenderState.Revoked:
+                    <div id="download-phase-revoked" class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_revoked_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_revoked_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
                 case DownloadRenderState.NotFound:
                     <div class="db-text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
@@ -475,6 +488,8 @@
                     RenderState = DownloadRenderState.LimitReached;
                 else if (msg.Contains("suspended", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.Suspended;
+                else if (msg.Contains("revoked", StringComparison.OrdinalIgnoreCase))
+                    RenderState = DownloadRenderState.Revoked;
                 else
                     RenderState = DownloadRenderState.NotFound;
                 return;
@@ -554,7 +569,7 @@
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, NotFound, LimitReached, Error }
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, Revoked, NotFound, LimitReached, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }

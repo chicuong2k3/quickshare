@@ -43,6 +43,9 @@ public sealed class DownloadInfoHandler
                 if (delivery.Status == DeliveryStatus.Suspended)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliverySuspended));
 
+                if (delivery.Status == DeliveryStatus.Revoked)
+                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryRevoked));
+
                 if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryExpired));
 

@@ -194,6 +194,29 @@
             state.otp = pin;
         },
 
+        // Live strength feedback while typing a share password (issue #287).
+        // ponytail: heuristic scoring (length + character variety), not zxcvbn — good
+        // enough for a share password; swap in zxcvbn if real entropy estimates matter.
+        passwordInput: function (event) {
+            const value = (event.target as HTMLInputElement).value;
+            const meter = document.getElementById('upload-password-meter');
+            if (!meter) return;
+            if (!value) { meter.classList.add('hidden'); return; }
+            meter.classList.remove('hidden');
+            let score = 0;
+            if (value.length >= 8) score++;
+            if (value.length >= 12) score++;
+            if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score++;
+            if (/\d/.test(value)) score++;
+            if (/[^a-zA-Z0-9]/.test(value)) score++;
+            const level = score <= 2 ? 'weak' : score <= 3 ? 'fair' : 'strong';
+            meter.setAttribute('data-level', level);
+            const fill = meter.querySelector<HTMLElement>('.pw-meter__fill');
+            if (fill) fill.style.width = (score * 20) + '%';
+            const label = meter.querySelector<HTMLElement>('.pw-meter__label');
+            if (label) label.textContent = meter.getAttribute('data-' + level) || '';
+        },
+
         onDragOver: function (e) {
             e.preventDefault();
             if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';

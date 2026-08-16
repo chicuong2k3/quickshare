@@ -27,7 +27,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             return;
         }
 
-        if (delivery.Status == DeliveryStatus.Suspended)
+        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
         {
             response.StatusCode = StatusCodes.Status410Gone;
             return;

@@ -166,6 +166,7 @@ interface UploadPage {
     otpInput(event: Event, idx: number): void;
     otpKeydown(event: KeyboardEvent, idx: number): void;
     readOtp(): void;
+    passwordInput(event: Event): void;
     onDragOver(e: DragEvent): void;
     onDragLeave(e: DragEvent): void;
     onDrop(e: DragEvent): void;

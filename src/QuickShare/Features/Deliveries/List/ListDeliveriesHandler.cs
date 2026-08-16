@@ -2,7 +2,11 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.List;
 
-public record ListDeliveriesQuery(string? Cursor = null, int Limit = DeliveryPaging.DefaultLimit);
+public record ListDeliveriesQuery(
+    string? Cursor = null,
+    int Limit = DeliveryPaging.DefaultLimit,
+    string? Status = null,
+    string? Search = null);
 
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
@@ -28,9 +32,26 @@ public sealed class ListDeliveriesHandler
 
         // Not cached: this list changes on every download, and a stale count here is exactly
         // the bug the page exists to avoid.
-        var page = await db.Deliveries
+        var source = db.Deliveries
             .AsNoTracking()
-            .Where(d => d.SenderId == userId)
+            .Where(d => d.SenderId == userId);
+
+        // Status filter + name search (issue #214). Sort stays newest-first: the cursor is
+        // keyed on CreatedAt, so arbitrary sort orders don't compose with keyset paging.
+        if (!string.IsNullOrEmpty(query.Status))
+            source = source.Where(d => d.Status == query.Status);
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            // ToLower here translates to SQL LOWER() — the analyzer's culture concern
+            // doesn't apply inside an EF expression tree.
+#pragma warning disable CA1304, CA1311, CA1862
+            var term = query.Search.Trim().ToLower();
+            source = source.Where(d => d.FileName.ToLower().Contains(term));
+#pragma warning restore CA1304, CA1311, CA1862
+        }
+
+        var page = await source
             .ToCursorPageAsync(query.Cursor, limit, d => new DeliveryItem(
                 d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode,
                 d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats), ct);

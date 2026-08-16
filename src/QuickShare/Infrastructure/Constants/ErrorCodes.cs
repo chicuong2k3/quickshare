@@ -6,6 +6,9 @@ public static class ErrorCodes
     public const string DeliveryNotFound = "delivery_not_found";
     public const string DeliveryExpired = "delivery_expired";
     public const string DeliverySuspended = "delivery_suspended";
+    public const string DeliveryRevoked = "delivery_revoked";
+    public const string DeliveryNoExpiry = "delivery_no_expiry";
+    public const string FileNameInvalid = "file_name_invalid";
     public const string DownloadLimitReached = "download_limit_reached";
     public const string MonthlyQuotaExceeded = "monthly_quota_exceeded";
     public const string SchedulingRequiresPaidPlan = "scheduling_requires_paid_plan";

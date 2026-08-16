@@ -718,4 +718,58 @@
   <data name="deliveries_extend" xml:space="preserve"><value>Gia hạn 7 ngày</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Ẩn thống kê</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Hiện thống kê</value></data>
+  <data name="deliveries_revoke" xml:space="preserve">
+    <value>Thu hồi</value>
+  </data>
+  <data name="deliveries_revoke_confirm" xml:space="preserve">
+    <value>Thu hồi liên kết này? Người nhận sẽ không thể tải xuống nữa. Không thể hoàn tác.</value>
+  </data>
+  <data name="deliveries_revoked" xml:space="preserve">
+    <value>Đã thu hồi</value>
+  </data>
+  <data name="deliveries_rename" xml:space="preserve">
+    <value>Đổi tên</value>
+  </data>
+  <data name="deliveries_rename_prompt" xml:space="preserve">
+    <value>Tên tệp mới:</value>
+  </data>
+  <data name="deliveries_calendar" xml:space="preserve">
+    <value>Thêm vào lịch</value>
+  </data>
+  <data name="deliveries_filter_all" xml:space="preserve">
+    <value>Tất cả</value>
+  </data>
+  <data name="deliveries_filter_active" xml:space="preserve">
+    <value>Đang hoạt động</value>
+  </data>
+  <data name="deliveries_filter_scheduled" xml:space="preserve">
+    <value>Đã lên lịch</value>
+  </data>
+  <data name="deliveries_filter_expired" xml:space="preserve">
+    <value>Đã hết hạn</value>
+  </data>
+  <data name="deliveries_filter_revoked" xml:space="preserve">
+    <value>Đã thu hồi</value>
+  </data>
+  <data name="deliveries_search_placeholder" xml:space="preserve">
+    <value>Tìm theo tên tệp…</value>
+  </data>
+  <data name="deliveries_no_results" xml:space="preserve">
+    <value>Không có lượt gửi nào khớp bộ lọc.</value>
+  </data>
+  <data name="dl_revoked_h1" xml:space="preserve">
+    <value>Liên kết đã bị thu hồi</value>
+  </data>
+  <data name="dl_revoked_sub" xml:space="preserve">
+    <value>Người gửi đã thu hồi liên kết này. Tệp không còn khả dụng.</value>
+  </data>
+  <data name="upload_pw_weak" xml:space="preserve">
+    <value>Yếu</value>
+  </data>
+  <data name="upload_pw_fair" xml:space="preserve">
+    <value>Trung bình</value>
+  </data>
+  <data name="upload_pw_strong" xml:space="preserve">
+    <value>Mạnh</value>
+  </data>
 </root>

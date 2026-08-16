@@ -100,7 +100,13 @@
                     <span class="otp-label">@Loc["upload_protect_label"]</span>
 
                     <label for="upload-password" class="protect-sub">@Loc["upload_password_label"]</label>
-                    <input type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" />
+                    <input type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" oninput="uploadPage.passwordInput(event)" />
+                    @* Live strength meter (issue #287) — client-side only, hidden until typing starts *@
+                    <div id="upload-password-meter" class="pw-meter hidden" aria-live="polite"
+                         data-weak="@Loc["upload_pw_weak"]" data-fair="@Loc["upload_pw_fair"]" data-strong="@Loc["upload_pw_strong"]">
+                        <span class="pw-meter__bar"><span class="pw-meter__fill"></span></span>
+                        <span class="pw-meter__label"></span>
+                    </div>
                     <span class="otp-hint">@Loc["upload_password_hint"]</span>
 
                     <span class="protect-sub">@Loc["upload_otp_label"]</span>

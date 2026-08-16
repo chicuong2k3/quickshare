@@ -34,7 +34,8 @@ public sealed class ExtendDeliveryHandler
         if (delivery is null)
             return Result.Failure<ExtendDeliveryResponse>(new LightResults.Error(ErrorCodes.NotFound));
 
-        if (delivery.Status == DeliveryStatus.Suspended)
+        // Revoked links lost their stored bytes — nothing left to extend.
+        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
             return Result.Failure<ExtendDeliveryResponse>(new LightResults.Error(ErrorCodes.ExtendNotAllowed));
 
         var now = DateTime.UtcNow;

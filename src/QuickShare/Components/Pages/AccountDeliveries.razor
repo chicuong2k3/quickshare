@@ -42,13 +42,42 @@ else
     else
     {
         <section id="deliveries-body">
+            @* Filter + search controls (issue #214). Every control swaps the whole body via HTMX. *@
+            <div class="account-deliveries-controls">
+                <nav class="account-deliveries-filters">
+                    @FilterLink(null, Loc["deliveries_filter_all"])
+                    @FilterLink(DeliveryStatus.Active, Loc["deliveries_filter_active"])
+                    @FilterLink(DeliveryStatus.Scheduled, Loc["deliveries_filter_scheduled"])
+                    @FilterLink(DeliveryStatus.Expired, Loc["deliveries_filter_expired"])
+                    @FilterLink(DeliveryStatus.Revoked, Loc["deliveries_filter_revoked"])
+                </nav>
+                <input type="search" name="@SearchQueryKey" value="@Search"
+                       class="account-deliveries-search"
+                       placeholder="@Loc["deliveries_search_placeholder"]"
+                       aria-label="@Loc["deliveries_search_placeholder"]"
+                       hx-get="@BodyUrl(Status, null)"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="#deliveries-body"
+                       hx-select="#deliveries-body"
+                       hx-swap="outerHTML" />
+            </div>
+
             @if (items.Count == 0)
             {
-                <div class="account-deliveries-empty">
-                    <p class="db-p">@Loc["deliveries_empty"]</p>
-                    <p class="db-text-muted">@Loc["deliveries_empty_free"]</p>
-                    <a href="@RoutePaths.Send" class="db-btn db-btn--primary">@Loc["deliveries_empty_cta"]</a>
-                </div>
+                @if (hasFilter)
+                {
+                    <div class="account-deliveries-empty">
+                        <p class="db-p">@Loc["deliveries_no_results"]</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="account-deliveries-empty">
+                        <p class="db-p">@Loc["deliveries_empty"]</p>
+                        <p class="db-text-muted">@Loc["deliveries_empty_free"]</p>
+                        <a href="@RoutePaths.Send" class="db-btn db-btn--primary">@Loc["deliveries_empty_cta"]</a>
+                    </div>
+                }
             }
             else
             {
@@ -81,6 +110,41 @@ else
         }).catch(function () { /* leave the stale label; user can retry */ })
           .finally(function () { btn.disabled = false; });
     };
+    window.revokeDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var msg = btn.getAttribute('data-confirm');
+        if (msg && !window.confirm(msg)) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/revoke', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                var article = btn.closest('article');
+                article.classList.add('account-delivery--spent');
+                article.querySelectorAll('button').forEach(function (b) { b.remove(); });
+                var expiry = article.querySelector('.account-delivery__expiry');
+                if (expiry) expiry.textContent = btn.getAttribute('data-revoked-label');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.renameDelivery = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('delivery-', '');
+        var nameEl = article.querySelector('.account-delivery__name');
+        var current = nameEl ? nameEl.textContent : '';
+        var next = window.prompt(btn.getAttribute('data-prompt'), current);
+        if (!next || next.trim() === '' || next.trim() === current) return;
+        fetch('/api/deliveries/' + id + '/filename', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: next.trim() })
+        }).then(function (r) {
+            if (r.ok && nameEl) {
+                nameEl.textContent = next.trim();
+                nameEl.setAttribute('title', next.trim());
+            }
+        });
+    };
     window.toggleDeliveryStats = function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
         fetch('/api/deliveries/' + id + '/download-stats', { method: 'PATCH' }).then(function (r) {
@@ -94,6 +158,8 @@ else
 
 @code {
     private const string CursorQueryKey = "cursor";
+    private const string StatusQueryKey = "status";
+    private const string SearchQueryKey = "q";
     private const string ChunkClass = "deliveries-chunk";
     private const int GaugeFullPercent = 100;
     private const int MinutesPerHour = 60;
@@ -102,6 +168,35 @@ else
     [Parameter]
     [SupplyParameterFromQuery(Name = CursorQueryKey)]
     public string? Cursor { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = StatusQueryKey)]
+    public string? Status { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = SearchQueryKey)]
+    public string? Search { get; set; }
+
+    private bool hasFilter => !string.IsNullOrEmpty(Status) || !string.IsNullOrWhiteSpace(Search);
+
+    /// <summary>URL for a full-body swap carrying the given filter plus the current search (or an explicit cursor).</summary>
+    private string BodyUrl(string? status, string? cursor)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(status)) query.Add($"{StatusQueryKey}={Uri.EscapeDataString(status)}");
+        if (!string.IsNullOrWhiteSpace(Search)) query.Add($"{SearchQueryKey}={Uri.EscapeDataString(Search)}");
+        if (!string.IsNullOrEmpty(cursor)) query.Add($"{CursorQueryKey}={cursor}");
+        return query.Count == 0 ? RoutePaths.AccountDeliveries : $"{RoutePaths.AccountDeliveries}?{string.Join('&', query)}";
+    }
+
+    private RenderFragment FilterLink(string? status, string label) =>
+        @<a class="db-btn db-btn--ghost db-btn--sm @(Status == status || (status is null && string.IsNullOrEmpty(Status)) ? "account-deliveries-filter--current" : "")"
+            href="@BodyUrl(status, null)"
+            hx-get="@BodyUrl(status, null)"
+            hx-target="#deliveries-body"
+            hx-select="#deliveries-body"
+            hx-swap="outerHTML"
+            hx-push-url="true">@label</a>;
 
     private bool isLoaded;
     private bool isChunkRequest;
@@ -123,6 +218,10 @@ else
                         @if (item.Status == DeliveryStatus.Scheduled)
                         {
                             @Loc["deliveries_scheduled"] <text>·</text> @item.DeliverAt?.ToLocalTime().ToString("g")
+                        }
+                        else if (item.Status == DeliveryStatus.Revoked)
+                        {
+                            @Loc["deliveries_revoked"]
                         }
                         else
                         {
@@ -149,10 +248,28 @@ else
                                 data-confirm="@Loc["deliveries_cancel_confirm"]"
                                 onclick="cancelDelivery(this)">@Loc["deliveries_cancel"]</button>
                     }
-                    @if (item.Status != DeliveryStatus.Scheduled && !exhausted)
+                    @if (item.Status is not (DeliveryStatus.Scheduled or DeliveryStatus.Revoked) && !exhausted)
                     {
                         <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__extend"
                                 onclick="extendDelivery(this)" data-ai-action="delivery.extend">@Loc["deliveries_extend"]</button>
+                    }
+                    @if (item.Status == DeliveryStatus.Active)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__revoke"
+                                data-confirm="@Loc["deliveries_revoke_confirm"]" data-revoked-label="@Loc["deliveries_revoked"]"
+                                onclick="revokeDelivery(this)" data-ai-action="delivery.revoke">@Loc["deliveries_revoke"]</button>
+                    }
+                    @if (item.Status != DeliveryStatus.Revoked)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__rename"
+                                data-prompt="@Loc["deliveries_rename_prompt"]"
+                                onclick="renameDelivery(this)" data-ai-action="delivery.rename">@Loc["deliveries_rename"]</button>
+                    }
+                    @if (item.Status == DeliveryStatus.Active && item.ExpiresAt.HasValue)
+                    {
+                        <a class="db-btn db-btn--ghost db-btn--sm account-delivery__calendar"
+                           href="@($"/api/downloads/{item.ShareCode}/calendar.ics")" download
+                           data-ai-action="delivery.calendar">@Loc["deliveries_calendar"]</a>
                     }
                     <button type="button" class="db-btn db-btn--ghost db-btn--sm"
                             onclick="toggleDeliveryStats(this)" data-ai-action="delivery.toggleStats"
@@ -166,7 +283,7 @@ else
         @if (nextCursor is not null)
         {
             <div class="account-deliveries-more"
-                 hx-get="@($"{RoutePaths.AccountDeliveries}?{CursorQueryKey}={nextCursor}")"
+                 hx-get="@BodyUrl(Status, nextCursor)"
                  hx-trigger="revealed"
                  hx-target="this"
                  hx-select=".@ChunkClass"
@@ -190,7 +307,7 @@ else
         isChunkRequest = !string.IsNullOrEmpty(Cursor);
 
         var result = await Bus.InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(
-            new ListDeliveriesQuery(Cursor), CancellationToken.None);
+            new ListDeliveriesQuery(Cursor, Status: Status, Search: Search), CancellationToken.None);
 
         if (result.IsSuccess(out var page))
         {

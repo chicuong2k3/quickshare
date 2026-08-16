@@ -717,4 +717,58 @@
   <data name="deliveries_extend" xml:space="preserve"><value>Extend 7d</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
+  <data name="deliveries_revoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="deliveries_revoke_confirm" xml:space="preserve">
+    <value>Revoke this link? Recipients will no longer be able to download it. This cannot be undone.</value>
+  </data>
+  <data name="deliveries_revoked" xml:space="preserve">
+    <value>Revoked</value>
+  </data>
+  <data name="deliveries_rename" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="deliveries_rename_prompt" xml:space="preserve">
+    <value>New file name:</value>
+  </data>
+  <data name="deliveries_calendar" xml:space="preserve">
+    <value>Add to calendar</value>
+  </data>
+  <data name="deliveries_filter_all" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="deliveries_filter_active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="deliveries_filter_scheduled" xml:space="preserve">
+    <value>Scheduled</value>
+  </data>
+  <data name="deliveries_filter_expired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="deliveries_filter_revoked" xml:space="preserve">
+    <value>Revoked</value>
+  </data>
+  <data name="deliveries_search_placeholder" xml:space="preserve">
+    <value>Search by file name…</value>
+  </data>
+  <data name="deliveries_no_results" xml:space="preserve">
+    <value>No deliveries match this filter.</value>
+  </data>
+  <data name="dl_revoked_h1" xml:space="preserve">
+    <value>Link revoked</value>
+  </data>
+  <data name="dl_revoked_sub" xml:space="preserve">
+    <value>The sender revoked this link. The file is no longer available.</value>
+  </data>
+  <data name="upload_pw_weak" xml:space="preserve">
+    <value>Weak</value>
+  </data>
+  <data name="upload_pw_fair" xml:space="preserve">
+    <value>Fair</value>
+  </data>
+  <data name="upload_pw_strong" xml:space="preserve">
+    <value>Strong</value>
+  </data>
 </root>
