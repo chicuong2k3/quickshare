@@ -206,6 +206,7 @@
   <data name="referral_copy" xml:space="preserve"><value>Sao chép</value></data>
   <data name="referral_stats" xml:space="preserve"><value>{0} người đã giới thiệu · {1} thưởng nhận được</value></data>
   <data name="lang_switch_label" xml:space="preserve"><value>Đổi ngôn ngữ</value></data>
+  <data name="theme_toggle" xml:space="preserve"><value>Đổi giao diện</value></data>
   <data name="cookie_consent_title" xml:space="preserve"><value>Cài đặt cookie</value></data>
   <data name="cookie_consent_desc" xml:space="preserve"><value>Chúng tôi dùng cookie và Google AdMob để hiển thị quảng cáo có thưởng giúp mở khóa thêm băng thông. Khi đồng ý, bạn cho phép AdMob dùng cookie để cá nhân hóa và đo lường quảng cáo.</value></data>
   <data name="cookie_consent_upgrade_link" xml:space="preserve"><value>Nâng cấp lên Pro</value></data>

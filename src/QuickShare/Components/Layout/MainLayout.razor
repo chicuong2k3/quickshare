@@ -66,6 +66,9 @@
         </div>
         <div class="db-navbar__spacer"></div>
         <div class="db-navbar__actions">
+            <button type="button" class="db-btn db-btn--ghost db-btn--sm layout-theme-toggle" onclick="toggleTheme()" aria-label="@Loc["theme_toggle"]" title="@Loc["theme_toggle"]" data-ai-action="theme.toggle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+            </button>
             <LanguageSwitch />
             @if (isAuthenticated)
             {
@@ -132,6 +135,14 @@
         </div>
     </footer>
 </div>
+
+<script>
+    window.toggleTheme = function () {
+        var scheme = localStorage.getItem('db-scheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        localStorage.setItem('db-scheme', scheme === 'dark' ? 'light' : 'dark');
+        window.location.reload();
+    };
+</script>
 
 @code {
     private const string RootSpec = "INDEX";

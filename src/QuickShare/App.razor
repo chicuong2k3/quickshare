@@ -26,7 +26,7 @@
         (function() {
             try {
                 var family = window.localStorage.getItem('db-family') || 'grunge';
-                var scheme = window.localStorage.getItem('db-scheme') || 'light';
+                var scheme = window.localStorage.getItem('db-scheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 // Map family+scheme to theme variant
                 var familyMap = {
                     grunge: { dark: 'grunge-dark', light: 'grunge-light' },
@@ -74,7 +74,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         (function() {
             if (window.DAUB) {
                 var family = window.localStorage.getItem('db-family') || 'grunge';
-                var scheme = window.localStorage.getItem('db-scheme') || 'light';
+                var scheme = window.localStorage.getItem('db-scheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 window.DAUB.setFamily(family);
                 window.DAUB.setScheme(scheme);
             }
