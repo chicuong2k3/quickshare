@@ -386,6 +386,19 @@
                     </div>
                     break;
 
+                case DownloadRenderState.DailyLimit:
+                    <div id="download-phase-daily-limit" class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_daily_limit_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_daily_limit_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
                 case DownloadRenderState.Error:
                     <div class="db-text-center" style="padding: 2.5rem 0">
                         <h1 class="db-h1" style="font-size: 1.25rem">@Loc["dl_error_h1"]</h1>
@@ -484,6 +497,8 @@
                 var msg = error?.Message ?? string.Empty;
                 if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.Expired;
+                else if (msg.Contains("daily", StringComparison.OrdinalIgnoreCase))
+                    RenderState = DownloadRenderState.DailyLimit;
                 else if (msg.Contains("limit", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.LimitReached;
                 else if (msg.Contains("suspended", StringComparison.OrdinalIgnoreCase))
@@ -569,7 +584,7 @@
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, Revoked, NotFound, LimitReached, Error }
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, Revoked, NotFound, LimitReached, DailyLimit, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }

@@ -48,8 +48,9 @@ public sealed class CreateReportEndpoint : Endpoint<CreateReportRequest>
 
         var delivery = await db.Deliveries
             .AsNoTracking()
+            .ByCode(shareCode)
             .Select(d => new { d.Id, d.ShareCode })
-            .FirstOrDefaultAsync(d => d.ShareCode == shareCode, ct);
+            .FirstOrDefaultAsync(ct);
 
         if (delivery is null)
         {

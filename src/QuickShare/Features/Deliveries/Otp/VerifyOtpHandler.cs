@@ -12,7 +12,8 @@ public sealed class VerifyOtpHandler(AnalyticsService analytics, OtpLockoutServi
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
+            .ByCode(cmd.ShareCode)
+            .FirstOrDefaultAsync(ct);
 
         if (delivery is null)
         {

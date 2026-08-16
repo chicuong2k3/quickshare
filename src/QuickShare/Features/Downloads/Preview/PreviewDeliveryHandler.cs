@@ -13,7 +13,8 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
+            .ByCode(query.ShareCode)
+            .FirstOrDefaultAsync(ct);
 
         if (delivery is null)
             return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.NotFound));

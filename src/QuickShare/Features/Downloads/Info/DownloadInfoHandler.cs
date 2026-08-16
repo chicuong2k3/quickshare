@@ -35,7 +35,8 @@ public sealed class DownloadInfoHandler
                 var delivery = await db.Deliveries
                     .AsNoTracking()
                     .Include(d => d.Sender)
-                    .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct2);
+                    .ByCode(query.ShareCode)
+                    .FirstOrDefaultAsync(ct2);
 
                 if (delivery is null)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
@@ -51,6 +52,17 @@ public sealed class DownloadInfoHandler
 
                 if (delivery.DownloadCount >= delivery.MaxDownloads)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
+
+                // Daily cap (issue #227) — the page shows "come back tomorrow" instead of a dead button.
+                if (delivery.DailyDownloadLimit is { } dailyLimit)
+                {
+                    var todayStart = DateTime.UtcNow.Date;
+                    var todayCount = await db.DownloadTrackings
+                        .AsNoTracking()
+                        .CountAsync(t => t.DeliveryId == delivery.Id && t.DownloadedAt >= todayStart, ct2);
+                    if (todayCount >= dailyLimit)
+                        return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryDailyLimitReached));
+                }
 
                 var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
 

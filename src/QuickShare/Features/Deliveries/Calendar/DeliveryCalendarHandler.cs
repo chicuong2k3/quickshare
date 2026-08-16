@@ -17,7 +17,8 @@ public sealed class DeliveryCalendarHandler(IHttpContextAccessor http)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
+            .ByCode(query.ShareCode)
+            .FirstOrDefaultAsync(ct);
 
         if (delivery is null || delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
             return Result.Failure<string>(new LightResults.Error(ErrorCodes.DeliveryNotFound));

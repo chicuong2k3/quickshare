@@ -18,7 +18,8 @@ public sealed class VerifyPasswordHandler(OtpLockoutService lockout)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.ShareCode == cmd.ShareCode, ct);
+            .ByCode(cmd.ShareCode)
+            .FirstOrDefaultAsync(ct);
 
         if (delivery is null)
             return Result.Failure<VerifyPasswordResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));

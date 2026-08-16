@@ -19,7 +19,8 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
 
         var delivery = await db.Deliveries
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.ShareCode == query.ShareCode, ct);
+            .ByCode(query.ShareCode)
+            .FirstOrDefaultAsync(ct);
 
         if (delivery is null)
         {
@@ -108,6 +109,22 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
         }
 
         var hasRangeHeader = httpContext.Request.Headers.ContainsKey(HttpHeaders.Range);
+
+        // Per-link daily cap (issue #227): count-only check against today's records —
+        // no extra identity logging. Range requests resume a download already granted,
+        // so they bypass the cap the same way they bypass the counter.
+        if (delivery.DailyDownloadLimit is { } dailyLimit && !hasRangeHeader)
+        {
+            var todayStart = DateTime.UtcNow.Date;
+            var todayCount = await db.DownloadTrackings
+                .AsNoTracking()
+                .CountAsync(t => t.DeliveryId == delivery.Id && t.DownloadedAt >= todayStart, ct);
+            if (todayCount >= dailyLimit)
+            {
+                response.StatusCode = StatusCodes.Status429TooManyRequests;
+                return;
+            }
+        }
         var ttl = hasRangeHeader ? RangeRequestTtl : FullDownloadTtl;
 
         if (delivery.ExpiresAt.HasValue)

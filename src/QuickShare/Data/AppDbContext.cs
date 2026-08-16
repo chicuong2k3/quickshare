@@ -69,6 +69,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ShareCode).IsRequired();
             entity.HasIndex(e => e.SenderId);
             entity.HasIndex(e => e.ShareCode).IsUnique();
+            entity.Property(e => e.Alias).HasMaxLength(Delivery.AliasMaxLength);
+            entity.HasIndex(e => e.Alias).IsUnique();
             entity.HasIndex(e => e.ExpiresAt);
             entity.HasOne(e => e.Sender)
                 .WithMany()

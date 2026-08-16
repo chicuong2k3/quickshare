@@ -10,6 +10,11 @@ public static class ErrorCodes
     public const string DeliveryNoExpiry = "delivery_no_expiry";
     public const string FileNameInvalid = "file_name_invalid";
     public const string DownloadLimitReached = "download_limit_reached";
+    public const string DeliveryDailyLimitReached = "delivery_daily_limit_reached";
+    public const string DailyLimitInvalid = "daily_limit_invalid";
+    public const string RequiresPaidPlan = "requires_paid_plan";
+    public const string AliasInvalid = "alias_invalid";
+    public const string AliasTaken = "alias_taken";
     public const string MonthlyQuotaExceeded = "monthly_quota_exceeded";
     public const string SchedulingRequiresPaidPlan = "scheduling_requires_paid_plan";
     public const string DeliverAtMustBeFuture = "deliver_at_must_be_future";

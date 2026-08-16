@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QuickShare.Data;
 using QuickShare.Data.Entities;
+using QuickShare.Infrastructure.Constants;
 using QuickShare.Infrastructure.Jobs;
 using QuickShare.Querying;
 
@@ -250,6 +251,148 @@ public sealed class DeliveryManageTests : IClassFixture<TestWebAppFactory>
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("db-card", html);
     }
+
+    // ── Custom alias (#311) ──
+
+    [Fact]
+    public async Task Alias_ProUser_SetsAlias_AndLinkResolvesByIt()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey, PlanTierLimits.Pro);
+        var delivery = await SeedDeliveryAsync(user.Id, fileName: "aliased.pdf");
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        var alias = $"my-project-{Guid.NewGuid().ToString("N")[..6]}";
+
+        var set = await client.PatchAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/alias", new { Alias = alias.ToUpperInvariant() });
+        Assert.Equal(HttpStatusCode.NoContent, set.StatusCode);
+
+        // Lookup by alias behaves like the share code (lowercased on store).
+        var calendar = await _factory.CreateClient().GetAsync($"/api/downloads/{alias}/calendar.ics");
+        Assert.Equal(HttpStatusCode.OK, calendar.StatusCode);
+    }
+
+    [Fact]
+    public async Task Alias_FreeUser_Gets403()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PatchAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/alias", new { Alias = "free-user-alias" });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("ab")]
+    [InlineData("Bad Slug!")]
+    public async Task Alias_InvalidOrReserved_Gets400(string alias)
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey, PlanTierLimits.Pro);
+        var delivery = await SeedDeliveryAsync(user.Id);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PatchAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/alias", new { Alias = alias });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Alias_Taken_Gets409_AndCheckReportsUnavailable()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey, PlanTierLimits.Pro);
+        var first = await SeedDeliveryAsync(user.Id);
+        var second = await SeedDeliveryAsync(user.Id);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        var alias = $"taken-{Guid.NewGuid().ToString("N")[..6]}";
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PatchAsJsonAsync($"{DeliveriesApi}/{first.Id}/alias", new { Alias = alias })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await client.PatchAsJsonAsync($"{DeliveriesApi}/{second.Id}/alias", new { Alias = alias })).StatusCode);
+
+        var check = await client.GetFromJsonAsync<AliasCheckJson>($"{DeliveriesApi}/alias-check?alias={alias}");
+        Assert.NotNull(check);
+        Assert.False(check.Available);
+    }
+
+    private sealed record AliasCheckJson(bool Available);
+
+    // ── Daily download cap (#227) ──
+
+    [Fact]
+    public async Task DailyLimit_Reached_Blocks_WithRetryTomorrow()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey, PlanTierLimits.Pro);
+        var delivery = await SeedDeliveryAsync(user.Id);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PatchAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/daily-limit", new { Limit = 1 })).StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.First(d => d.Id == delivery.Id).StoragePath = "stub/key";
+            db.DownloadTrackings.Add(new DownloadTracking
+            {
+                Id = Guid.CreateVersion7(),
+                DeliveryId = delivery.Id,
+                IpAddress = "10.0.0.1",
+                DownloadedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var download = await _factory.CreateClient().GetAsync($"/api/downloads/{delivery.ShareCode}");
+        Assert.Equal(HttpStatusCode.TooManyRequests, download.StatusCode);
+    }
+
+    [Fact]
+    public async Task DailyLimit_FreeUser_Gets403()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PatchAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/daily-limit", new { Limit = 10 });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ── Favorites (#242) ──
+
+    [Fact]
+    public async Task Favorite_TogglesAndFilters()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var starred = await SeedDeliveryAsync(user.Id, fileName: "starred.pdf");
+        await SeedDeliveryAsync(user.Id, fileName: "plain.pdf");
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var toggle = await client.PatchAsync($"{DeliveriesApi}/{starred.Id}/favorite", null);
+        Assert.Equal(HttpStatusCode.OK, toggle.StatusCode);
+        var body = await toggle.Content.ReadFromJsonAsync<FavoriteJson>();
+        Assert.NotNull(body);
+        Assert.True(body.IsFavorite);
+
+        var favorites = await client.GetFromJsonAsync<CursorPage<DeliveryRow>>($"{DeliveriesApi}?favorite=true");
+        Assert.NotNull(favorites);
+        Assert.Single(favorites.Items);
+        Assert.Equal("starred.pdf", favorites.Items[0].FileName);
+
+        // Toggle back off.
+        var untoggle = await client.PatchAsync($"{DeliveriesApi}/{starred.Id}/favorite", null);
+        var offBody = await untoggle.Content.ReadFromJsonAsync<FavoriteJson>();
+        Assert.NotNull(offBody);
+        Assert.False(offBody.IsFavorite);
+    }
+
+    private sealed record FavoriteJson(bool IsFavorite);
 
     // ── List filter + search (#214) ──
 

@@ -21,8 +21,9 @@ public sealed class VerifyOtpEndpoint : Endpoint<VerifyOtpRequest>
 
         var delivery = await db.Deliveries
             .AsNoTracking()
+            .ByCode(shareCode)
             .Select(d => new { d.Id, d.ShareCode })
-            .FirstOrDefaultAsync(d => d.ShareCode == shareCode, ct);
+            .FirstOrDefaultAsync(ct);
 
         // Unknown deliveries behave exactly like locked ones — no user enumeration.
         var deliveryId = delivery?.Id ?? Guid.Empty;
@@ -73,7 +74,7 @@ public sealed class VerifyOtpEndpoint : Endpoint<VerifyOtpRequest>
         var shareCode = Route<string>("ShareCode")!;
         var deliveryId = await db.Deliveries
             .AsNoTracking()
-            .Where(d => d.ShareCode == shareCode)
+            .ByCode(shareCode)
             .Select(d => (Guid?)d.Id)
             .FirstOrDefaultAsync(ct);
 

@@ -6,6 +6,7 @@ public sealed class ListDeliveriesEndpoint : EndpointWithoutRequest
     private const string LimitQueryKey = "limit";
     private const string StatusQueryKey = "status";
     private const string SearchQueryKey = "q";
+    private const string FavoriteQueryKey = "favorite";
 
     public override void Configure()
     {
@@ -24,9 +25,10 @@ public sealed class ListDeliveriesEndpoint : EndpointWithoutRequest
         var limit = Query<int?>(LimitQueryKey, isRequired: false) ?? DeliveryPaging.DefaultLimit;
         var status = Query<string>(StatusQueryKey, isRequired: false);
         var search = Query<string>(SearchQueryKey, isRequired: false);
+        var favorite = Query<bool?>(FavoriteQueryKey, isRequired: false) ?? false;
 
         var result = await Resolve<IMessageBus>()
-            .InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(new ListDeliveriesQuery(cursor, limit, status, search), ct);
+            .InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(new ListDeliveriesQuery(cursor, limit, status, search, favorite), ct);
 
         if (result.IsSuccess(out var page))
             await Send.OkAsync(page, ct);

@@ -790,4 +790,40 @@
   <data name="notfound_cta_deliveries" xml:space="preserve">
     <value>Lượt gửi của tôi</value>
   </data>
+  <data name="deliveries_favorite" xml:space="preserve">
+    <value>Yêu thích</value>
+  </data>
+  <data name="deliveries_filter_favorites" xml:space="preserve">
+    <value>Yêu thích</value>
+  </data>
+  <data name="deliveries_alias" xml:space="preserve">
+    <value>Bí danh</value>
+  </data>
+  <data name="deliveries_alias_prompt" xml:space="preserve">
+    <value>Bí danh liên kết (3-30 ký tự, a-z, 0-9, gạch ngang). Để trống để xoá:</value>
+  </data>
+  <data name="deliveries_alias_error" xml:space="preserve">
+    <value>Bí danh không hợp lệ, đã có người dùng, hoặc cần gói Pro.</value>
+  </data>
+  <data name="deliveries_daily_limit" xml:space="preserve">
+    <value>Giới hạn/ngày</value>
+  </data>
+  <data name="deliveries_daily_limit_prompt" xml:space="preserve">
+    <value>Số lượt tải tối đa mỗi ngày (để trống để bỏ giới hạn):</value>
+  </data>
+  <data name="deliveries_daily_limit_error" xml:space="preserve">
+    <value>Giới hạn không hợp lệ, hoặc cần gói Pro.</value>
+  </data>
+  <data name="dl_daily_limit_h1" xml:space="preserve">
+    <value>Đã đạt giới hạn tải trong ngày</value>
+  </data>
+  <data name="dl_daily_limit_sub" xml:space="preserve">
+    <value>Liên kết này đã đạt giới hạn tải hôm nay. Hãy quay lại vào ngày mai, hoặc nhờ người gửi nâng giới hạn.</value>
+  </data>
+  <data name="account_usage_largest_title" xml:space="preserve">
+    <value>Tệp lớn nhất</value>
+  </data>
+  <data name="account_usage_largest_manage" xml:space="preserve">
+    <value>Quản lý lượt gửi</value>
+  </data>
 </root>

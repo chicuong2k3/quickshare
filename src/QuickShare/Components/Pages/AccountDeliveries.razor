@@ -50,6 +50,7 @@ else
                     @FilterLink(DeliveryStatus.Scheduled, Loc["deliveries_filter_scheduled"])
                     @FilterLink(DeliveryStatus.Expired, Loc["deliveries_filter_expired"])
                     @FilterLink(DeliveryStatus.Revoked, Loc["deliveries_filter_revoked"])
+                    @FavoritesLink
                 </nav>
                 <input type="search" name="@SearchQueryKey" value="@Search"
                        class="account-deliveries-search"
@@ -145,6 +146,44 @@ else
             }
         });
     };
+    window.toggleFavorite = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        fetch('/api/deliveries/' + id + '/favorite', { method: 'PATCH' }).then(function (r) {
+            if (r.ok) return r.json();
+            throw r;
+        }).then(function (data) {
+            btn.textContent = data.isFavorite ? '★' : '☆';
+            btn.setAttribute('aria-pressed', data.isFavorite ? 'true' : 'false');
+        }).catch(function () { /* leave the star as-is */ });
+    };
+    window.setDeliveryAlias = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('delivery-', '');
+        var next = window.prompt(btn.getAttribute('data-prompt'), btn.getAttribute('data-current') || '');
+        if (next === null) return;
+        fetch('/api/deliveries/' + id + '/alias', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ alias: next.trim() || null })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        });
+    };
+    window.setDailyLimit = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var next = window.prompt(btn.getAttribute('data-prompt'), '');
+        if (next === null) return;
+        var value = next.trim() === '' ? null : parseInt(next, 10);
+        if (value !== null && (isNaN(value) || value < 1)) { window.alert(btn.getAttribute('data-error')); return; }
+        fetch('/api/deliveries/' + id + '/daily-limit', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ limit: value })
+        }).then(function (r) {
+            if (!r.ok) window.alert(btn.getAttribute('data-error'));
+        });
+    };
     window.cloneDelivery = function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
         btn.disabled = true;
@@ -168,6 +207,7 @@ else
     private const string CursorQueryKey = "cursor";
     private const string StatusQueryKey = "status";
     private const string SearchQueryKey = "q";
+    private const string FavoriteQueryKey = "favorite";
     private const string ChunkClass = "deliveries-chunk";
     private const int GaugeFullPercent = 100;
     private const int MinutesPerHour = 60;
@@ -185,22 +225,36 @@ else
     [SupplyParameterFromQuery(Name = SearchQueryKey)]
     public string? Search { get; set; }
 
-    private bool hasFilter => !string.IsNullOrEmpty(Status) || !string.IsNullOrWhiteSpace(Search);
+    [Parameter]
+    [SupplyParameterFromQuery(Name = FavoriteQueryKey)]
+    public bool Favorite { get; set; }
+
+    private bool hasFilter => !string.IsNullOrEmpty(Status) || !string.IsNullOrWhiteSpace(Search) || Favorite;
 
     /// <summary>URL for a full-body swap carrying the given filter plus the current search (or an explicit cursor).</summary>
-    private string BodyUrl(string? status, string? cursor)
+    private string BodyUrl(string? status, string? cursor, bool? favorite = null)
     {
         var query = new List<string>();
         if (!string.IsNullOrEmpty(status)) query.Add($"{StatusQueryKey}={Uri.EscapeDataString(status)}");
+        if (favorite ?? Favorite) query.Add($"{FavoriteQueryKey}=true");
         if (!string.IsNullOrWhiteSpace(Search)) query.Add($"{SearchQueryKey}={Uri.EscapeDataString(Search)}");
         if (!string.IsNullOrEmpty(cursor)) query.Add($"{CursorQueryKey}={cursor}");
         return query.Count == 0 ? RoutePaths.AccountDeliveries : $"{RoutePaths.AccountDeliveries}?{string.Join('&', query)}";
     }
 
+    private RenderFragment FavoritesLink =>
+        @<a class="db-btn db-btn--ghost db-btn--sm @(Favorite ? "account-deliveries-filter--current" : "")"
+            href="@BodyUrl(null, null, favorite: true)"
+            hx-get="@BodyUrl(null, null, favorite: true)"
+            hx-target="#deliveries-body"
+            hx-select="#deliveries-body"
+            hx-swap="outerHTML"
+            hx-push-url="true">@Loc["deliveries_filter_favorites"]</a>;
+
     private RenderFragment FilterLink(string? status, string label) =>
-        @<a class="db-btn db-btn--ghost db-btn--sm @(Status == status || (status is null && string.IsNullOrEmpty(Status)) ? "account-deliveries-filter--current" : "")"
-            href="@BodyUrl(status, null)"
-            hx-get="@BodyUrl(status, null)"
+        @<a class="db-btn db-btn--ghost db-btn--sm @((Status == status || (status is null && string.IsNullOrEmpty(Status))) && !Favorite ? "account-deliveries-filter--current" : "")"
+            href="@BodyUrl(status, null, favorite: false)"
+            hx-get="@BodyUrl(status, null, favorite: false)"
             hx-target="#deliveries-body"
             hx-select="#deliveries-body"
             hx-swap="outerHTML"
@@ -221,7 +275,15 @@ else
 
             <article id="delivery-@item.Id" class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
                 <div class="account-delivery__head">
+                    <button type="button" class="account-delivery__star" onclick="toggleFavorite(this)"
+                            aria-pressed="@(item.IsFavorite ? "true" : "false")"
+                            aria-label="@Loc["deliveries_favorite"]" title="@Loc["deliveries_favorite"]"
+                            data-ai-action="delivery.favorite">@(item.IsFavorite ? "★" : "☆")</button>
                     <span class="account-delivery__name" title="@item.FileName">@item.FileName</span>
+                    @if (!string.IsNullOrEmpty(item.Alias))
+                    {
+                        <span class="account-delivery__alias db-text-muted">/d/@item.Alias</span>
+                    }
                     <span class="account-delivery__expiry db-text-muted">
                         @if (item.Status == DeliveryStatus.Scheduled)
                         {
@@ -277,6 +339,14 @@ else
                     {
                         <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__clone"
                                 onclick="cloneDelivery(this)" data-ai-action="delivery.clone">@Loc["deliveries_clone"]</button>
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__set-alias"
+                                data-prompt="@Loc["deliveries_alias_prompt"]" data-current="@item.Alias"
+                                data-error="@Loc["deliveries_alias_error"]"
+                                onclick="setDeliveryAlias(this)" data-ai-action="delivery.alias">@Loc["deliveries_alias"]</button>
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__daily-limit"
+                                data-prompt="@Loc["deliveries_daily_limit_prompt"]"
+                                data-error="@Loc["deliveries_daily_limit_error"]"
+                                onclick="setDailyLimit(this)" data-ai-action="delivery.dailyLimit">@Loc["deliveries_daily_limit"]</button>
                     }
                     @if (item.Status == DeliveryStatus.Active && item.ExpiresAt.HasValue)
                     {
@@ -320,7 +390,7 @@ else
         isChunkRequest = !string.IsNullOrEmpty(Cursor);
 
         var result = await Bus.InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(
-            new ListDeliveriesQuery(Cursor, Status: Status, Search: Search), CancellationToken.None);
+            new ListDeliveriesQuery(Cursor, Status: Status, Search: Search, FavoritesOnly: Favorite), CancellationToken.None);
 
         if (result.IsSuccess(out var page))
         {

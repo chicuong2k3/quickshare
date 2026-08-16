@@ -188,6 +188,10 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Alias")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 
@@ -197,6 +201,9 @@ namespace QuickShare.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DailyDownloadLimit")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("DeliverAt")
                         .HasColumnType("timestamp with time zone");
@@ -218,6 +225,9 @@ namespace QuickShare.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("HideDownloadStats")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFavorite")
                         .HasColumnType("boolean");
 
                     b.Property<int>("MaxDownloads")
@@ -269,6 +279,9 @@ namespace QuickShare.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Alias")
+                        .IsUnique();
 
                     b.HasIndex("ExpiresAt");
 

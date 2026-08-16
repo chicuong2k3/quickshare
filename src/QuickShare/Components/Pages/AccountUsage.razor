@@ -25,11 +25,32 @@
                 <span class="account-usage-pct">@pct%</span>
             </div>
         }
+
+        @* Largest files (issue #315) — the cleanup shortlist, biggest first. *@
+        @if (largest.Count > 0)
+        {
+            <h4 class="db-h5 account-usage__largest-title">@Loc["account_usage_largest_title"]</h4>
+            <ul class="account-usage-largest">
+                @foreach (var file in largest)
+                {
+                    <li class="account-usage-largest__row">
+                        <span class="account-usage-largest__name" title="@file.FileName">@file.FileName</span>
+                        <span class="account-usage-largest__size db-text-muted">@FormatBytes(file.FileSize)</span>
+                    </li>
+                }
+            </ul>
+            <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost db-btn--sm">@Loc["account_usage_largest_manage"]</a>
+        }
     </div>
 </div>
 </HtmxFragment>
 
 @code {
+    private const int LargestFilesCount = 10;
+
+    private sealed record LargestFile(string FileName, long FileSize);
+
+    private List<LargestFile> largest = [];
     private bool unlimited;
     private int pct;
     private int barWidth;
@@ -51,6 +72,16 @@
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+
+            // Largest live files (issue #315) — cleanup targets, biggest first.
+            largest = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.SenderId == user.Id && d.Status == DeliveryStatus.Active)
+                .OrderByDescending(d => d.FileSize)
+                .Take(LargestFilesCount)
+                .Select(d => new LargestFile(d.FileName, d.FileSize))
+                .ToListAsync();
+
             var quota = PlanTierLimits.GetMonthlyQuota(user.Plan);
             if (quota is null)
             {

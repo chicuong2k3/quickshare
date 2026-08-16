@@ -18,8 +18,17 @@ public record Delivery : BaseAuditEntity
     public long TotalBytes { get; init; }
     public int ChunkCount { get; init; }
     public string ShareCode { get; init; } = string.Empty;
+    public const int AliasMinLength = 3;
+    public const int AliasMaxLength = 30;
+
     public int MaxDownloads { get; set; }
     public int DownloadCount { get; set; }
+    /// <summary>Per-day download cap (issue #227); null = no daily cap. Paid plans only.</summary>
+    public int? DailyDownloadLimit { get; set; }
+    /// <summary>Memorable slug usable in place of the share code (issue #311); lowercase, unique. Paid plans only.</summary>
+    public string? Alias { get; set; }
+    /// <summary>Sender-side star (issue #242).</summary>
+    public bool IsFavorite { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public DateTime? DeliverAt { get; set; }
     public string? OtpHash { get; set; }

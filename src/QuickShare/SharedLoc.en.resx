@@ -789,4 +789,40 @@
   <data name="notfound_cta_deliveries" xml:space="preserve">
     <value>My deliveries</value>
   </data>
+  <data name="deliveries_favorite" xml:space="preserve">
+    <value>Favorite</value>
+  </data>
+  <data name="deliveries_filter_favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="deliveries_alias" xml:space="preserve">
+    <value>Alias</value>
+  </data>
+  <data name="deliveries_alias_prompt" xml:space="preserve">
+    <value>Custom link alias (3-30 chars, a-z, 0-9, dashes). Leave empty to remove:</value>
+  </data>
+  <data name="deliveries_alias_error" xml:space="preserve">
+    <value>That alias is invalid, taken, or requires a Pro plan.</value>
+  </data>
+  <data name="deliveries_daily_limit" xml:space="preserve">
+    <value>Daily limit</value>
+  </data>
+  <data name="deliveries_daily_limit_prompt" xml:space="preserve">
+    <value>Max downloads per day (leave empty to remove the cap):</value>
+  </data>
+  <data name="deliveries_daily_limit_error" xml:space="preserve">
+    <value>Invalid limit, or this needs a Pro plan.</value>
+  </data>
+  <data name="dl_daily_limit_h1" xml:space="preserve">
+    <value>Daily download limit reached</value>
+  </data>
+  <data name="dl_daily_limit_sub" xml:space="preserve">
+    <value>This link hit its daily download cap. Come back tomorrow, or ask the sender to raise the limit.</value>
+  </data>
+  <data name="account_usage_largest_title" xml:space="preserve">
+    <value>Largest files</value>
+  </data>
+  <data name="account_usage_largest_manage" xml:space="preserve">
+    <value>Manage deliveries</value>
+  </data>
 </root>

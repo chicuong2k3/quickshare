@@ -6,13 +6,14 @@ public record ListDeliveriesQuery(
     string? Cursor = null,
     int Limit = DeliveryPaging.DefaultLimit,
     string? Status = null,
-    string? Search = null);
+    string? Search = null,
+    bool FavoritesOnly = false);
 
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
     string ShareCode, int DownloadCount, int MaxDownloads,
     DateTime? ExpiresAt, DateTime CreatedAt, string Status, DateTime? DeliverAt,
-    bool HideDownloadStats
+    bool HideDownloadStats, bool IsFavorite, string? Alias
 );
 
 public static class DeliveryPaging
@@ -41,6 +42,9 @@ public sealed class ListDeliveriesHandler
         if (!string.IsNullOrEmpty(query.Status))
             source = source.Where(d => d.Status == query.Status);
 
+        if (query.FavoritesOnly)
+            source = source.Where(d => d.IsFavorite);
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             // ToLower here translates to SQL LOWER() — the analyzer's culture concern
@@ -54,7 +58,8 @@ public sealed class ListDeliveriesHandler
         var page = await source
             .ToCursorPageAsync(query.Cursor, limit, d => new DeliveryItem(
                 d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode,
-                d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats), ct);
+                d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats,
+                d.IsFavorite, d.Alias), ct);
 
         return Result.Success(page);
     }

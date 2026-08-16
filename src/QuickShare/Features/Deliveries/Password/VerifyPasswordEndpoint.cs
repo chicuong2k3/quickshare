@@ -21,7 +21,7 @@ public sealed class VerifyPasswordEndpoint : Endpoint<VerifyPasswordRequest>
 
         var deliveryId = await db.Deliveries
             .AsNoTracking()
-            .Where(d => d.ShareCode == shareCode)
+            .ByCode(shareCode)
             .Select(d => (Guid?)d.Id)
             .FirstOrDefaultAsync(ct);
 
@@ -49,7 +49,7 @@ public sealed class VerifyPasswordEndpoint : Endpoint<VerifyPasswordRequest>
 
         var deliveryId = await db.Deliveries
             .AsNoTracking()
-            .Where(d => d.ShareCode == shareCode)
+            .ByCode(shareCode)
             .Select(d => (Guid?)d.Id)
             .FirstOrDefaultAsync(ct);
 
