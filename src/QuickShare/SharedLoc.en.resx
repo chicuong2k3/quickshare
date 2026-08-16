@@ -499,6 +499,7 @@
   <data name="deliveries_title" xml:space="preserve"><value>Deliveries — QuickShareCloud</value></data>
   <data name="deliveries_h1" xml:space="preserve"><value>Deliveries</value></data>
   <data name="deliveries_lead" xml:space="preserve"><value>How many downloads each link has left before it stops working.</value></data>
+  <data name="deliveries_export" xml:space="preserve"><value>Export CSV</value></data>
   <data name="deliveries_loading" xml:space="preserve"><value>Loading deliveries...</value></data>
   <data name="deliveries_empty" xml:space="preserve"><value>Nothing here yet. Links you send show up on this page.</value></data>
   <data name="deliveries_empty_free" xml:space="preserve"><value>Free links expire after 2 hours.</value></data>
@@ -703,6 +704,12 @@
   <data name="admin_reports_resolve" xml:space="preserve"><value>Resolve</value></data>
   <data name="admin_reports_suspend" xml:space="preserve"><value>Suspend delivery</value></data>
   <data name="admin_reports_confirm_resolve" xml:space="preserve"><value>Resolve without action?</value></data>
+  <data name="admin_feedback_page_title" xml:space="preserve"><value>Feedback</value></data>
+  <data name="admin_feedback_title" xml:space="preserve"><value>Feedback</value></data>
+  <data name="admin_feedback_subtitle" xml:space="preserve"><value>Anonymous in-product feedback from the send and download pages.</value></data>
+  <data name="admin_feedback_forbidden" xml:space="preserve"><value>Admin access required.</value></data>
+  <data name="admin_feedback_empty" xml:space="preserve"><value>No feedback yet.</value></data>
+  <data name="admin_feedback_error" xml:space="preserve"><value>Could not load feedback.</value></data>
   <data name="admin_reports_confirm_suspend" xml:space="preserve"><value>Suspend this delivery? The file becomes undownloadable.</value></data>
   <data name="dl_badge_burn" xml:space="preserve"><value>Single-use</value></data>
   <data name="dl_burn_warning" xml:space="preserve"><value>This link can only be opened once — make sure you're ready to save the file.</value></data>

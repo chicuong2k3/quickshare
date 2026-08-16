@@ -354,6 +354,31 @@ namespace QuickShare.Migrations
                     b.ToTable("feature_flag_overrides", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.Feedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Page")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sentiment")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Feedbacks");
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.OtpLockout", b =>
                 {
                     b.Property<Guid>("Id")

@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<DailyP2PUsage> DailyP2PUsages => Set<DailyP2PUsage>();
     public DbSet<FeatureFlagOverride> FeatureFlagOverrides => Set<FeatureFlagOverride>();
     public DbSet<AnalyticsEvent> AnalyticsEvents => Set<AnalyticsEvent>();
+    public DbSet<Feedback> Feedbacks => Set<Feedback>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

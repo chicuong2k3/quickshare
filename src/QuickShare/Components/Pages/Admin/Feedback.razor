@@ -1,0 +1,105 @@
+@page "/admin/feedback"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.Extensions.Options
+@using QuickShare.Features.Feedback
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMessageBus Bus
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_feedback_page_title"]</PageTitle>
+
+@if (isHxRequest)
+{
+    <HtmxFragment>
+    <div id="admin-feedback-app" class="db-card admin-reports-card">
+        <div class="db-card__body">
+            @if (!isAdmin)
+            {
+                <div class="db-alert db-alert--error" role="alert">@Loc["admin_feedback_forbidden"]</div>
+            }
+            else if (feedback is null)
+            {
+                <p class="db-p db-text-muted">@Loc["admin_feedback_error"]</p>
+            }
+            else if (feedback.Count == 0)
+            {
+                <p class="db-p db-text-muted">@Loc["admin_feedback_empty"]</p>
+            }
+            else
+            {
+                <ul class="admin-reports-list">
+                    @foreach (var item in feedback)
+                    {
+                        <li class="admin-report-item">
+                            <div class="admin-report-item__head">
+                                <span class="db-badge">@item.Sentiment</span>
+                                <span class="db-badge">@item.Page</span>
+                                <span class="miura-spec">@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.Message))
+                            {
+                                <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@item.Message</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    </HtmxFragment>
+}
+else
+{
+    <PageWrapper id="admin-feedback-shell" Variant="PageVariant.Padded">
+        <div class="admin-reports-heading">
+            <h1 class="db-h1">@Loc["admin_feedback_title"]</h1>
+            <p class="db-p db-text-muted">@Loc["admin_feedback_subtitle"]</p>
+        </div>
+
+        @if (!isAdmin)
+        {
+            <div class="db-alert db-alert--error" role="alert">@Loc["admin_feedback_forbidden"]</div>
+        }
+        else
+        {
+            <HtmxFragment>
+            <div id="admin-feedback-app" class="db-card admin-reports-card"
+                 hx-get="/api/admin/feedback"
+                 hx-trigger="load"
+                 hx-target="#admin-feedback-app"
+                 hx-select="#admin-feedback-app"
+                 hx-swap="outerHTML">
+                <div class="db-card__body">
+                    <div class="admin-skeleton-line admin-skeleton-row"></div>
+                </div>
+            </div>
+            </HtmxFragment>
+        }
+    </PageWrapper>
+}
+
+@code {
+    private bool isHxRequest;
+    private bool isAdmin;
+    private List<FeedbackListItem>? feedback;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        var request = httpContext?.Request;
+        isHxRequest = request is not null
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() == HtmxHeaders.RequestValue;
+
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+
+        if (!isHxRequest || !isAdmin)
+        {
+            return;
+        }
+
+        feedback = await Bus.InvokeAsync<List<FeedbackListItem>>(new ListFeedbackQuery(), CancellationToken.None);
+    }
+}

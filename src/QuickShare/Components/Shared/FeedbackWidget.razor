@@ -1,0 +1,28 @@
+@using System.Globalization
+
+@* Anonymous one-click feedback widget (issue #35). *@
+
+<div id="feedback-widget" class="feedback-widget">
+    <p class="db-label">@(IsVi ? "Bạn thấy sao?" : "How was that?")</p>
+    <div class="feedback-actions" role="group" aria-label="@(IsVi ? "Đánh giá trải nghiệm" : "Rate your experience")">
+        <button type="button" class="feedback-emoji" onclick="feedbackSubmit('up', '@Page')" aria-label="@(IsVi ? "Tốt" : "Good")">😊</button>
+        <button type="button" class="feedback-emoji" onclick="feedbackSubmit('neutral', '@Page')" aria-label="@(IsVi ? "Bình thường" : "Neutral")">😐</button>
+        <button type="button" class="feedback-emoji" onclick="feedbackSubmit('down', '@Page')" aria-label="@(IsVi ? "Kém" : "Bad")">😞</button>
+    </div>
+    <textarea id="feedback-message" class="db-field__input db-input" rows="2" maxlength="1000"
+              placeholder="@(IsVi ? "Góp ý thêm (tùy chọn)…" : "Optional note…")"></textarea>
+</div>
+
+<script>
+    window.feedbackSubmit = function (sentiment, page) {
+        var msg = document.getElementById('feedback-message');
+        fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sentiment: sentiment, message: msg ? msg.value : null, page: page }) })
+            .then(function () { var w = document.getElementById('feedback-widget'); if (w) w.textContent = '✓'; })
+            .catch(function () { /* fire-and-forget */ });
+    };
+</script>
+
+@code {
+    [Parameter] public string Page { get; set; } = "unknown";
+    private static bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+}

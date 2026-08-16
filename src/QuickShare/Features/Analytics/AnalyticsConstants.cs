@@ -35,6 +35,9 @@ public static class AnalyticsEvents
     // Roadmap vote (issue #58) — anonymous aggregate feedback signal.
     public const string RoadmapVote = "roadmap_vote";
 
+    // In-product feedback (issue #35) — anonymous sentiment.
+    public const string FeedbackSubmitted = "feedback_submitted";
+
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)
     {

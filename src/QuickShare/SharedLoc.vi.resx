@@ -500,6 +500,7 @@
   <data name="deliveries_title" xml:space="preserve"><value>File đã gửi — QuickShareCloud</value></data>
   <data name="deliveries_h1" xml:space="preserve"><value>File đã gửi</value></data>
   <data name="deliveries_lead" xml:space="preserve"><value>Mỗi link còn lại bao nhiêu lượt tải trước khi ngừng hoạt động.</value></data>
+  <data name="deliveries_export" xml:space="preserve"><value>Xuất CSV</value></data>
   <data name="deliveries_loading" xml:space="preserve"><value>Đang tải danh sách...</value></data>
   <data name="deliveries_empty" xml:space="preserve"><value>Chưa có gì ở đây. File bạn gửi sẽ xuất hiện tại trang này.</value></data>
   <data name="deliveries_empty_free" xml:space="preserve"><value>Link gói Free hết hạn sau 2 giờ.</value></data>
@@ -705,6 +706,12 @@
   <data name="admin_reports_suspend" xml:space="preserve"><value>Tạm ngưng liên kết</value></data>
   <data name="admin_reports_confirm_resolve" xml:space="preserve"><value>Xử lý mà không hành động?</value></data>
   <data name="admin_reports_confirm_suspend" xml:space="preserve"><value>Tạm ngưng liên kết này? File sẽ không còn tải được.</value></data>
+  <data name="admin_feedback_page_title" xml:space="preserve"><value>Phản hồi</value></data>
+  <data name="admin_feedback_title" xml:space="preserve"><value>Phản hồi</value></data>
+  <data name="admin_feedback_subtitle" xml:space="preserve"><value>Phản hồi ẩn danh từ trang gửi và trang tải file.</value></data>
+  <data name="admin_feedback_forbidden" xml:space="preserve"><value>Cần quyền quản trị.</value></data>
+  <data name="admin_feedback_empty" xml:space="preserve"><value>Chưa có phản hồi.</value></data>
+  <data name="admin_feedback_error" xml:space="preserve"><value>Không tải được phản hồi.</value></data>
   <data name="dl_badge_burn" xml:space="preserve"><value>Dùng một lần</value></data>
   <data name="dl_burn_warning" xml:space="preserve"><value>Liên kết này chỉ mở được một lần — hãy chắc chắn bạn sẵn sàng lưu file.</value></data>
   <data name="dl_stats_downloaded" xml:space="preserve"><value>Đã tải {0} lần</value></data>
