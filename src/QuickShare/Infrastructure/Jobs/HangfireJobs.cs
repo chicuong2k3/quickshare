@@ -25,33 +25,38 @@ public static class HangfireJobs
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
-        RecurringJob.AddOrUpdate<DeliveryActivationJob>(DeliveryActivation, j => j.ActivateDeliveriesAsync(), Cron.Minutely());
-        RecurringJob.AddOrUpdate<DeliveryExpiryJob>(DeliveryExpiry, j => j.ExpireDeliveriesAsync(), Cron.MinuteInterval(5));
-        RecurringJob.AddOrUpdate<SubscriptionExpiryJob>(SubscriptionExpiry, j => j.CheckAndExpireAsync(), Cron.MinuteInterval(15));
-        RecurringJob.AddOrUpdate<ZombiePartSweeper>(ZombiePartSweep, j => j.SweepZombiePartsAsync(), Cron.MinuteInterval(30));
-        RecurringJob.AddOrUpdate<TempUploadCleanupJob>(TempUploadCleanup, j => j.CleanupAsync(), Cron.MinuteInterval(15));
+        // Hangfire's static API (RecurringJob/BackgroundJob) requires JobStorage.Current,
+        // which AddHangfire does not set — use the DI-registered service APIs instead.
+        var recurring = services.GetRequiredService<IRecurringJobManager>();
+        var background = services.GetRequiredService<IBackgroundJobClient>();
+
+        recurring.AddOrUpdate<DeliveryActivationJob>(DeliveryActivation, j => j.ActivateDeliveriesAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<DeliveryExpiryJob>(DeliveryExpiry, j => j.ExpireDeliveriesAsync(), Cron.MinuteInterval(5));
+        recurring.AddOrUpdate<SubscriptionExpiryJob>(SubscriptionExpiry, j => j.CheckAndExpireAsync(), Cron.MinuteInterval(15));
+        recurring.AddOrUpdate<ZombiePartSweeper>(ZombiePartSweep, j => j.SweepZombiePartsAsync(), Cron.MinuteInterval(30));
+        recurring.AddOrUpdate<TempUploadCleanupJob>(TempUploadCleanup, j => j.CleanupAsync(), Cron.MinuteInterval(15));
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
-        RecurringJob.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),
+        recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),
             Cron.MinuteInterval(Math.Max(1, quickShareOptions.CleanupIntervalMinutes)));
 
         var emailSender = services.GetRequiredService<EmailSender>();
         if (emailSender.IsConfigured)
         {
             var emailOptions = services.GetRequiredService<IOptions<EmailOptions>>().Value;
-            RecurringJob.AddOrUpdate<DownloadNotificationJob>(DownloadNotification, j => j.NotifyAsync(),
+            recurring.AddOrUpdate<DownloadNotificationJob>(DownloadNotification, j => j.NotifyAsync(),
                 Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
-            RecurringJob.AddOrUpdate<TrialReminderJob>(TrialReminder, j => j.NotifyAsync(), Cron.Daily());
+            recurring.AddOrUpdate<TrialReminderJob>(TrialReminder, j => j.NotifyAsync(), Cron.Daily());
         }
 
         if (hasR2)
         {
-            RecurringJob.AddOrUpdate<OrphanSweepJob>(OrphanSweep, j => j.SweepAsync(),
+            recurring.AddOrUpdate<OrphanSweepJob>(OrphanSweep, j => j.SweepAsync(),
                 Cron.HourInterval(Math.Max(1, quickShareOptions.OrphanSweepIntervalHours)));
 
             // First sweep soon after boot — an hourly-only schedule would never run on
             // hosts that redeploy daily (same reason the old loop used a 15-min initial delay).
-            BackgroundJob.Schedule<OrphanSweepJob>(j => j.SweepAsync(), TimeSpan.FromMinutes(15));
+            background.Schedule<OrphanSweepJob>(j => j.SweepAsync(), TimeSpan.FromMinutes(15));
         }
     }
 }
