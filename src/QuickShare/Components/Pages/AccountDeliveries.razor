@@ -6,6 +6,7 @@
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IMessageBus Bus
+@inject AppDbContext Db
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["deliveries_title"]</PageTitle>
@@ -42,6 +43,22 @@ else
     else
     {
         <section id="deliveries-body">
+            @* Link health at a glance (issue #202) — the DB is the source of truth, no probes needed. *@
+            @if (health is not null && health.Active > 0)
+            {
+                <p class="account-deliveries-health db-text-muted">
+                    <span>@string.Format(Loc["deliveries_health_active"], health.Active)</span>
+                    @if (health.ExpiringSoon > 0)
+                    {
+                        <span class="account-deliveries-health__warn">@string.Format(Loc["deliveries_health_expiring"], health.ExpiringSoon)</span>
+                    }
+                    @if (health.Exhausted > 0)
+                    {
+                        <span class="account-deliveries-health__warn">@string.Format(Loc["deliveries_health_exhausted"], health.Exhausted)</span>
+                    }
+                </p>
+            }
+
             @* Filter + search controls (issue #214). Every control swaps the whole body via HTMX. *@
             <div class="account-deliveries-controls">
                 <nav class="account-deliveries-filters">
@@ -51,6 +68,7 @@ else
                     @FilterLink(DeliveryStatus.Expired, Loc["deliveries_filter_expired"])
                     @FilterLink(DeliveryStatus.Revoked, Loc["deliveries_filter_revoked"])
                     @FavoritesLink
+                    <a class="db-btn db-btn--ghost db-btn--sm" href="@RoutePaths.AccountDeliveryLabels">@Loc["deliveries_print_labels"]</a>
                 </nav>
                 <input type="search" name="@SearchQueryKey" value="@Search"
                        class="account-deliveries-search"
@@ -260,6 +278,11 @@ else
             hx-swap="outerHTML"
             hx-push-url="true">@label</a>;
 
+    private const int ExpiringSoonHours = 48;
+
+    private sealed record HealthStats(int Active, int ExpiringSoon, int Exhausted);
+
+    private HealthStats? health;
     private bool isLoaded;
     private bool isChunkRequest;
     private List<DeliveryItem> items = [];
@@ -388,6 +411,22 @@ else
 
         isLoaded = true;
         isChunkRequest = !string.IsNullOrEmpty(Cursor);
+
+        if (!isChunkRequest)
+        {
+            var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+            var now = DateTime.UtcNow;
+            var soon = now.AddHours(ExpiringSoonHours);
+            health = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.SenderId == user.Id)
+                .GroupBy(_ => 1)
+                .Select(g => new HealthStats(
+                    g.Count(d => d.Status == DeliveryStatus.Active),
+                    g.Count(d => d.Status == DeliveryStatus.Active && d.ExpiresAt != null && d.ExpiresAt > now && d.ExpiresAt < soon),
+                    g.Count(d => d.Status == DeliveryStatus.Active && d.DownloadCount >= d.MaxDownloads)))
+                .FirstOrDefaultAsync();
+        }
 
         var result = await Bus.InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(
             new ListDeliveriesQuery(Cursor, Status: Status, Search: Search, FavoritesOnly: Favorite), CancellationToken.None);

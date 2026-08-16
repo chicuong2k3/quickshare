@@ -5,86 +5,94 @@
    only cross-page primitives and utilities.
    ============================================================ */
 
-/* ─── MIURA · the sheet, the crease, the pull ───────────────────
-   Ciphertext is a folded sheet. The key in the link is the one pull
-   that deploys it. Gold marks what can be pulled; valley blue marks
-   what is active; mountain gray is everything at rest.
+/* ─── HYPERCARD · the stack, the card, the visible button ────────
+   Every delivery is a card in your stack. Colorized classic-Mac
+   grammar: putty dither ground, white cards with 2px ink borders and
+   hard offset shadows, striped title bars, a double-ring default
+   button. Six Apple colors are rationed by role — blue is the active
+   state, the rainbow is progress, washes are state grounds.
    Token NAMES are DAUB's — only the values are ours, so every
    db-* component and every scoped .razor.css re-skins from here.
-   ──────────────────────────────────────────────────────────────── */
+   Legacy Miura token names (sheet/mountain/valley/foil) are kept as
+   aliases into this world so nothing dangles. ─────────────────── */
 [data-theme="grunge-light"],
 [data-theme="light"] {
-    /* === Sheet materials === */
-    --db-sheet: #EFEEEA;
-    --db-sheet-raised: #F9F9F7;
-    --db-sheet-deep: #E3E2DC;
-    --db-mountain: #B9B6AE;
-    --db-mountain-deep: #8E8B83;
-    --db-valley: #CFE0F2;
-    --db-valley-ink: #3F6187;
-    --db-foil: #D4AF37;
-    --db-foil-deep: #B8952A;
-    --db-foil-ink: #6B5518;
-    --db-ink: #0A0A0A;
-    --db-ink-soft: #55524B;
-    /* The stamped tab. Deliberately NOT --db-ink: that token flips to
-       near-white in the dark theme, which would put gold on white at 1.9:1. */
-    --db-stamp: #0A0A0A;
-    --db-stamp-rule: rgba(212,175,55,0.55);
-    --db-lattice: rgba(10,10,10,0.10);
+    /* === Card stock === */
+    --db-sheet: #EDE9DC;          /* putty desktop ground */
+    --db-sheet-raised: #FFFFFF;   /* the card */
+    --db-sheet-deep: #E2DDCE;     /* recessed regions */
+    --db-mountain: #141414;       /* every border is drawn ink */
+    --db-mountain-deep: #000000;
+    --db-valley: #DDF1FB;         /* blue wash — active/selected ground */
+    --db-valley-ink: #005F8C;     /* blue ink — active text/focus */
+    --db-foil: #FDB827;           /* apple yellow — accent fill only */
+    --db-foil-deep: #F5821F;      /* apple orange */
+    --db-foil-ink: #7A4A00;       /* accent as type (7:1 on putty) */
+    --db-ink: #141414;
+    --db-ink-soft: #55534E;
+    /* The default button: ink ground, paper label, outer double ring. */
+    --db-stamp: #141414;
+    --db-stamp-label: #FFFFFF;
+    --db-stamp-rule: 0 0 0 3px #FFFFFF, 0 0 0 5px #141414;
+    /* The desktop pattern (was the crease lattice) — kept as the name
+       every child texture reads; now the dither's ink component. */
+    --db-lattice: rgba(20,20,20,0.08);
+    /* The six-band rainbow — progress and nothing else. */
+    --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
 
     /* === Legacy palette names, remapped so nothing dangles === */
     --db-cream: var(--db-sheet);
     --db-cream-dark: var(--db-sheet-deep);
-    --db-sand: var(--db-mountain);
+    --db-sand: #B9B4A5;
     --db-terracotta: var(--db-foil);
     --db-clay: var(--db-foil-deep);
-    --db-warm-gray: #55524B;
-    --db-charcoal: #2B2924;
+    --db-warm-gray: #55534E;
+    --db-charcoal: #2B2A26;
     --db-white: var(--db-sheet-raised);
-    --db-error: #A4322A;
-    --db-success: #4F7A5B;
+    --db-error: #C42B2F;
+    --db-success: #2E8540;
     --db-warning: var(--db-foil-deep);
 
     /* === RGB channels === */
-    --db-shadow-rgb: 10,10,10;
-    --db-glow-rgb: 247,246,243;
-    --db-accent-rgb: 212,175,55;
-    --db-clay-rgb: 184,149,42;
-    --db-success-rgb: 79,122,91;
-    --db-warning-rgb: 184,149,42;
-    --db-error-rgb: 164,50,42;
-    --db-sand-rgb: 185,182,174;
-    --db-white-rgb: 249,249,247;
+    --db-shadow-rgb: 20,20,20;
+    --db-glow-rgb: 255,255,255;
+    --db-accent-rgb: 253,184,39;
+    --db-clay-rgb: 245,130,31;
+    --db-success-rgb: 46,133,64;
+    --db-warning-rgb: 245,130,31;
+    --db-error-rgb: 196,43,47;
+    --db-sand-rgb: 185,180,165;
+    --db-white-rgb: 255,255,255;
 
     /* === Derived accents === */
     --db-accent-dark: var(--db-foil-deep);
-    --db-accent-light: #E3C566;
-    --db-accent-hover: #E3C566;
-    --db-accent-pressed: #9E7F1F;
-    --db-success-dark: #3E6449;
-    --db-overlay-bg: rgba(10,10,10,0.42);
+    --db-accent-light: #FFCF66;
+    --db-accent-hover: #FFCF66;
+    --db-accent-pressed: #E09C00;
+    --db-success-dark: #226732;
+    --db-overlay-bg: rgba(20,20,20,0.45);
 
-    /* Gold is a FILL, never a text colour — 2.1:1 on sheet.
-       Anything typographic uses the deep bronze instead (6.1:1). */
+    /* Yellow is a FILL, never a text colour on paper.
+       Anything typographic uses the deep brown instead. */
     --db-terracotta-text: var(--db-foil-ink);
-    --db-success-text: #3E6449;
+    --db-success-text: #226732;
 
-    /* === Material === */
+    /* === Material — the desktop dither, drawn not photographed === */
     --db-texture-opacity: 0;
     --db-noise: 0;
-    --db-grain-sheet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
-    --db-grain-foil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.75' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23f)' opacity='0.16'/%3E%3C/svg%3E");
+    --db-grain-sheet: none;
+    --db-grain-foil: none;
     --db-border-roughness: 0px;
+    --db-dither: repeating-conic-gradient(var(--db-lattice) 0% 25%, transparent 0% 50%);
 
     /* === Typography === */
-    --db-font-ui: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-body: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-heading: "Outfit", system-ui, sans-serif;
-    --db-font-display: "Outfit", system-ui, sans-serif;
-    --db-font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --db-font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --db-font-body: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --db-font-heading: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
+    --db-font-display: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
+    --db-font-mono: "Courier Prime", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* === Geometry — a crease has no radius === */
+    /* === Geometry — cards are square, buttons are Mac rounded-rects === */
     --db-radius-0: 0px;
     --db-radius-1: 0px;
     --db-radius-2: 0px;
@@ -92,13 +100,13 @@
     --db-radius-4: 0px;
     --db-radius-5: 0px;
     --db-radius-full: 0px;
-    --db-crease-angle: 60deg;
-    --db-crease-skew: -14deg;
+    --db-crease-angle: 0deg;
+    --db-crease-skew: 0deg;
 
-    /* === Shadows — a foil tab lifts off the sheet === */
-    --db-shadow-1: 0 1px 2px rgba(10,10,10,0.06);
-    --db-shadow-2: 0 2px 8px rgba(10,10,10,0.10);
-    --db-shadow-3: 0 6px 20px rgba(10,10,10,0.14);
+    /* === Shadows — hard offset, the classic window drop === */
+    --db-shadow-1: 2px 2px 0 rgba(20,20,20,1);
+    --db-shadow-2: 3px 3px 0 rgba(20,20,20,1);
+    --db-shadow-3: 5px 5px 0 rgba(20,20,20,1);
     --db-shadow-inset: none;
     --db-shadow-ring: none;
 
@@ -157,38 +165,38 @@
     --db-color-warning-subtle: rgba(184,149,42,0.10);
     --db-surface-rgb: 249,249,247;
 
-    /* === Button === */
+    /* === Button — Mac rounded-rect, 2px ink === */
     --db-btn-py: 9px;
     --db-btn-px: 20px;
-    --db-btn-radius: 0px;
+    --db-btn-radius: 14px;
     --db-btn-font-size: var(--db-text-sm);
-    --db-btn-font-weight: 500;
-    --db-btn-bg: transparent;
+    --db-btn-font-weight: 700;
+    --db-btn-bg: var(--db-sheet-raised);
     --db-btn-color: var(--db-ink);
-    --db-btn-border: 1px solid var(--db-mountain);
+    --db-btn-border: 2px solid var(--db-ink);
 
-    /* === Field === */
+    /* === Field — square, drawn === */
     --db-field-py: 9px;
     --db-field-px: 12px;
     --db-field-radius: 0px;
     --db-field-font-size: 0.9375rem;
     --db-field-bg: var(--db-sheet-raised);
     --db-field-color: var(--db-ink);
-    --db-field-border: 1px solid var(--db-mountain);
-    --db-field-border-focus: 1px solid var(--db-valley-ink);
+    --db-field-border: 2px solid var(--db-ink);
+    --db-field-border-focus: 2px solid var(--db-valley-ink);
 
-    /* === Card — a cell of the sheet, corner cut === */
+    /* === Card — a card of the stack: 2px ink, hard drop === */
     --db-card-padding: var(--db-space-6);
     --db-card-radius: 0px;
     --db-card-bg: var(--db-sheet-raised);
-    --db-card-border: 1px solid var(--db-mountain);
-    --db-card-shadow: none;
-    --db-card-shadow-hover: none;
+    --db-card-border: 2px solid var(--db-ink);
+    --db-card-shadow: var(--db-shadow-2);
+    --db-card-shadow-hover: var(--db-shadow-2);
 
-    /* === Navbar === */
+    /* === Navbar — the menu bar === */
     --db-navbar-height: 3.75rem;
-    --db-navbar-bg: transparent;
-    --db-navbar-border: 1px solid var(--db-mountain);
+    --db-navbar-bg: var(--db-sheet-raised);
+    --db-navbar-border: 2px solid var(--db-ink);
     --db-navbar-shadow: none;
 
     /* === Badge === */
@@ -196,14 +204,14 @@
     --db-badge-px: 10px;
     --db-badge-radius: 0px;
     --db-badge-font-size: 0.6875rem;
-    --db-badge-font-weight: 500;
+    --db-badge-font-weight: 700;
 
     /* === Modal === */
     --db-modal-radius: 0px;
     --db-modal-padding: var(--db-space-6);
     --db-modal-bg: var(--db-sheet-raised);
     --db-modal-shadow: var(--db-shadow-3);
-    --db-modal-backdrop: rgba(10,10,10,0.42);
+    --db-modal-backdrop: rgba(20,20,20,0.45);
 
     /* === Toast === */
     --db-toast-radius: 0px;
@@ -211,10 +219,10 @@
     --db-toast-shadow: var(--db-shadow-2);
 
     /* === Tabs === */
-    --db-tabs-border: 1px solid transparent;
-    --db-tabs-border-active: 1px solid var(--db-foil);
+    --db-tabs-border: 2px solid transparent;
+    --db-tabs-border-active: 2px solid var(--db-valley-ink);
     --db-tabs-font-size: var(--db-text-sm);
-    --db-tabs-font-weight: 500;
+    --db-tabs-font-weight: 700;
 
     /* === Table === */
     --db-table-border: 1px solid var(--db-color-border-subtle);
@@ -225,75 +233,78 @@
     --db-dropdown-shadow: var(--db-shadow-2);
 
     /* === Switch === */
-    --db-switch-bg: var(--db-mountain);
-    --db-switch-bg-on: var(--db-foil);
+    --db-switch-bg: var(--db-sand);
+    --db-switch-bg-on: var(--db-valley-ink);
 
-    /* === Progress — parts landing on the sheet === */
+    /* === Progress — the rainbow, and nothing else may wear it === */
     --db-progress-bg: var(--db-sheet-deep);
-    --db-progress-fill: var(--db-foil);
+    --db-progress-fill: var(--db-rainbow);
 
     /* === Alert === */
     --db-alert-radius: 0px;
     --db-alert-padding: var(--db-space-4);
 
     /* === Separator === */
-    --db-separator-color: var(--db-mountain);
+    --db-separator-color: var(--db-ink);
 }
 
-/* ─── Dark: the packet in shadow. Same sheet, lit from one side. ───
+/* ─── Dark: the desktop at night. Same drawn cards, inverted ink. ──
    Use scene: a recipient opening a link at night in a chat app, and
    senders who keep the tab open in a dim room. ─────────────────── */
 [data-theme="grunge-dark"],
 [data-theme="dark"] {
-    --db-sheet: #16171A;
-    --db-sheet-raised: #1D1F23;
-    --db-sheet-deep: #101113;
-    --db-mountain: #3A3D43;
-    --db-mountain-deep: #575B62;
-    --db-valley: #24384F;
-    --db-valley-ink: #8FB6E0;
-    --db-foil: #E0BC4A;
-    --db-foil-deep: #C79F2E;
-    --db-foil-ink: #E8CB70;
+    --db-sheet: #1B1B1F;          /* the desktop at night */
+    --db-sheet-raised: #242429;   /* the card */
+    --db-sheet-deep: #141417;
+    --db-mountain: #E8E6DF;       /* borders stay drawn — now in light ink */
+    --db-mountain-deep: #FFFFFF;
+    --db-valley: #14384D;
+    --db-valley-ink: #6FC3EE;
+    --db-foil: #FDB827;
+    --db-foil-deep: #F5821F;
+    --db-foil-ink: #FFCF66;       /* accent as type on near-black */
     --db-ink: #F2F1ED;
-    --db-ink-soft: #A5A49E;
-    /* Deeper than the dark sheet, so the stamp still separates from it. */
-    --db-stamp: #050505;
-    --db-stamp-rule: rgba(224,188,74,0.60);
-    --db-lattice: rgba(242,241,237,0.07);
+    --db-ink-soft: #A8A69F;
+    /* The default button inverts at night: paper ground, ink label. */
+    --db-stamp: #F2F1ED;
+    --db-stamp-label: #141414;
+    --db-stamp-rule: 0 0 0 3px #242429, 0 0 0 5px #F2F1ED;
+    --db-lattice: rgba(242,241,237,0.06);
+    --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
+    --db-dither: repeating-conic-gradient(var(--db-lattice) 0% 25%, transparent 0% 50%);
 
     --db-charcoal: #D8D7D2;
-    --db-warm-gray: #A5A49E;
+    --db-warm-gray: #A8A69F;
     --db-white: var(--db-sheet-raised);
-    --db-error: #E0685C;
-    --db-success: #7FB08C;
+    --db-error: #FF6B5E;
+    --db-success: #6FCF87;
 
     --db-shadow-rgb: 0,0,0;
     --db-glow-rgb: 242,241,237;
     --db-color-text-rgb: 242,241,237;
-    --db-color-bg-rgb: 22,23,26;
-    --db-color-surface-rgb: 29,31,35;
-    --db-color-border-rgb: 58,61,67;
+    --db-color-bg-rgb: 27,27,31;
+    --db-color-surface-rgb: 36,36,41;
+    --db-color-border-rgb: 232,230,223;
 
-    --db-color-surface-raised: #24262B;
-    --db-color-text-inverse: var(--db-ink);
+    --db-color-surface-raised: #2B2B31;
+    --db-color-text-inverse: #141414;
     --db-color-accent-text: var(--db-foil-ink);
-    --db-color-border-subtle: rgba(242,241,237,0.12);
-    --db-color-accent-subtle: rgba(224,188,74,0.16);
-    --db-on-accent: #16171A;
+    --db-color-border-subtle: rgba(242,241,237,0.16);
+    --db-color-accent-subtle: rgba(253,184,39,0.16);
+    --db-on-accent: #141414;
     --db-overlay-bg: rgba(0,0,0,0.62);
     --db-modal-backdrop: rgba(0,0,0,0.62);
     --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
     --db-focus-ring-color: var(--db-valley-ink);
 
     /* === Typography === */
-    --db-font-ui: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-body: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-heading: "Outfit", system-ui, sans-serif;
-    --db-font-display: "Outfit", system-ui, sans-serif;
-    --db-font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --db-font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --db-font-body: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --db-font-heading: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
+    --db-font-display: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
+    --db-font-mono: "Courier Prime", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* === Geometry — a crease has no radius === */
+    /* === Geometry === */
     --db-radius-0: 0px;
     --db-radius-1: 0px;
     --db-radius-2: 0px;
@@ -301,13 +312,13 @@
     --db-radius-4: 0px;
     --db-radius-5: 0px;
     --db-radius-full: 0px;
-    --db-crease-angle: 60deg;
-    --db-crease-skew: -14deg;
+    --db-crease-angle: 0deg;
+    --db-crease-skew: 0deg;
 
-    /* === Shadows — a foil tab lifts off the sheet === */
-    --db-shadow-1: 0 1px 2px rgba(10,10,10,0.06);
-    --db-shadow-2: 0 2px 8px rgba(10,10,10,0.10);
-    --db-shadow-3: 0 6px 20px rgba(10,10,10,0.14);
+    /* === Shadows — the hard drop goes to true black at night === */
+    --db-shadow-1: 2px 2px 0 rgba(0,0,0,1);
+    --db-shadow-2: 3px 3px 0 rgba(0,0,0,1);
+    --db-shadow-3: 5px 5px 0 rgba(0,0,0,1);
     --db-shadow-inset: none;
     --db-shadow-ring: none;
 
@@ -349,32 +360,24 @@
     --db-color-error: var(--db-error);
     --db-color-overlay: var(--db-overlay-bg);
 
-    --db-color-bg-rgb: 239,238,234;
-    --db-color-text-rgb: 10,10,10;
-    --db-color-surface-rgb: 249,249,247;
-    --db-color-accent-rgb: 212,175,55;
-    --db-color-border-rgb: 185,182,174;
+    --db-color-accent-rgb: 253,184,39;
 
-    --db-color-surface-raised: #FFFFFF;
-    --db-color-text-inverse: var(--db-sheet-raised);
     --db-color-accent-active: var(--db-accent-pressed);
-    --db-color-accent-subtle: rgba(212,175,55,0.14);
     --db-color-border-strong: var(--db-mountain-deep);
-    --db-color-border-subtle: rgba(10,10,10,0.10);
-    --db-color-error-subtle: rgba(164,50,42,0.08);
-    --db-color-success-subtle: rgba(79,122,91,0.08);
-    --db-color-warning-subtle: rgba(184,149,42,0.10);
-    --db-surface-rgb: 249,249,247;
+    --db-color-error-subtle: rgba(255,107,94,0.12);
+    --db-color-success-subtle: rgba(111,207,135,0.12);
+    --db-color-warning-subtle: rgba(245,130,31,0.14);
+    --db-surface-rgb: 36,36,41;
 
     /* === Button === */
     --db-btn-py: 9px;
     --db-btn-px: 20px;
-    --db-btn-radius: 0px;
+    --db-btn-radius: 14px;
     --db-btn-font-size: var(--db-text-sm);
-    --db-btn-font-weight: 500;
-    --db-btn-bg: transparent;
+    --db-btn-font-weight: 700;
+    --db-btn-bg: var(--db-sheet-raised);
     --db-btn-color: var(--db-ink);
-    --db-btn-border: 1px solid var(--db-mountain);
+    --db-btn-border: 2px solid var(--db-mountain);
 
     /* === Field === */
     --db-field-py: 9px;
@@ -383,21 +386,21 @@
     --db-field-font-size: 0.9375rem;
     --db-field-bg: var(--db-sheet-raised);
     --db-field-color: var(--db-ink);
-    --db-field-border: 1px solid var(--db-mountain);
-    --db-field-border-focus: 1px solid var(--db-valley-ink);
+    --db-field-border: 2px solid var(--db-mountain);
+    --db-field-border-focus: 2px solid var(--db-valley-ink);
 
-    /* === Card — a cell of the sheet, corner cut === */
+    /* === Card === */
     --db-card-padding: var(--db-space-6);
     --db-card-radius: 0px;
     --db-card-bg: var(--db-sheet-raised);
-    --db-card-border: 1px solid var(--db-mountain);
-    --db-card-shadow: none;
-    --db-card-shadow-hover: none;
+    --db-card-border: 2px solid var(--db-mountain);
+    --db-card-shadow: var(--db-shadow-2);
+    --db-card-shadow-hover: var(--db-shadow-2);
 
     /* === Navbar === */
     --db-navbar-height: 3.75rem;
-    --db-navbar-bg: transparent;
-    --db-navbar-border: 1px solid var(--db-mountain);
+    --db-navbar-bg: var(--db-sheet-raised);
+    --db-navbar-border: 2px solid var(--db-mountain);
     --db-navbar-shadow: none;
 
     /* === Badge === */
@@ -405,14 +408,14 @@
     --db-badge-px: 10px;
     --db-badge-radius: 0px;
     --db-badge-font-size: 0.6875rem;
-    --db-badge-font-weight: 500;
+    --db-badge-font-weight: 700;
 
     /* === Modal === */
     --db-modal-radius: 0px;
     --db-modal-padding: var(--db-space-6);
     --db-modal-bg: var(--db-sheet-raised);
     --db-modal-shadow: var(--db-shadow-3);
-    --db-modal-backdrop: rgba(10,10,10,0.42);
+    --db-modal-backdrop: rgba(0,0,0,0.62);
 
     /* === Toast === */
     --db-toast-radius: 0px;
@@ -420,10 +423,10 @@
     --db-toast-shadow: var(--db-shadow-2);
 
     /* === Tabs === */
-    --db-tabs-border: 1px solid transparent;
-    --db-tabs-border-active: 1px solid var(--db-foil);
+    --db-tabs-border: 2px solid transparent;
+    --db-tabs-border-active: 2px solid var(--db-valley-ink);
     --db-tabs-font-size: var(--db-text-sm);
-    --db-tabs-font-weight: 500;
+    --db-tabs-font-weight: 700;
 
     /* === Table === */
     --db-table-border: 1px solid var(--db-color-border-subtle);
@@ -434,12 +437,12 @@
     --db-dropdown-shadow: var(--db-shadow-2);
 
     /* === Switch === */
-    --db-switch-bg: var(--db-mountain);
-    --db-switch-bg-on: var(--db-foil);
+    --db-switch-bg: #4A4A52;
+    --db-switch-bg-on: var(--db-valley-ink);
 
-    /* === Progress — parts landing on the sheet === */
+    /* === Progress — the rainbow === */
     --db-progress-bg: var(--db-sheet-deep);
-    --db-progress-fill: var(--db-foil);
+    --db-progress-fill: var(--db-rainbow);
 
     /* === Alert === */
     --db-alert-radius: 0px;
@@ -447,14 +450,6 @@
 
     /* === Separator === */
     --db-separator-color: var(--db-mountain);
-
-    /* Dark-specific overrides sit last so they win over the shared layer. */
-    --db-color-surface-raised: #24262B;
-    --db-color-border-subtle: rgba(242,241,237,0.12);
-    --db-color-accent-subtle: rgba(224,188,74,0.16);
-    --db-on-accent: #16171A;
-    --db-overlay-bg: rgba(0,0,0,0.62);
-    --db-modal-backdrop: rgba(0,0,0,0.62);
 }
 
 
@@ -501,30 +496,11 @@
     }
 }
 
-/* ─── The sheet itself: a 60° crease lattice under everything ─── */
+/* ─── The desktop itself: the 4px dither pattern under everything ─── */
 body {
     background-color: var(--db-color-bg);
-    background-image:
-        repeating-linear-gradient(60deg,
-            transparent 0 63px,
-            var(--db-lattice) 63px 64px),
-        repeating-linear-gradient(-60deg,
-            transparent 0 63px,
-            var(--db-lattice) 63px 64px),
-        var(--db-grain-sheet);
-    background-attachment: fixed;
-}
-
-@media (max-width: 767px) {
-    body {
-        background-image:
-            repeating-linear-gradient(60deg,
-                transparent 0 43px,
-                var(--db-lattice) 43px 44px),
-            repeating-linear-gradient(-60deg,
-                transparent 0 43px,
-                var(--db-lattice) 43px 44px);
-    }
+    background-image: var(--db-dither);
+    background-size: 4px 4px;
 }
 
 ::selection {
@@ -569,7 +545,7 @@ textarea:focus-visible {
     font-variant-numeric: tabular-nums;
 }
 
-/* A hairline rule that ends in its own spec label. */
+/* A dotted rule that ends in its own spec label. */
 .miura-rule {
     display: flex;
     align-items: center;
@@ -580,142 +556,149 @@ textarea:focus-visible {
 .miura-rule::before {
     content: "";
     flex: 1;
-    height: 1px;
-    background: var(--db-mountain);
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--db-mountain) 0 2px, transparent 2px 6px);
 }
 
-/* Display voice: light, wide, uppercase — engineering lettering. */
+/* Display voice: heavy, tight — Bricolage carries the card's title. */
 .miura-display {
     font-family: var(--db-font-display);
-    font-weight: 200;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    line-height: 0.98;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: -0.015em;
+    line-height: 1.02;
     text-wrap: balance;
 }
 
-/* A cut cell: the sheet's parallelogram, corner folded to valley. */
+/* A card of the stack: 2px ink border, hard drop shadow. */
 .miura-cell {
     position: relative;
     background: var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
-    background-image: linear-gradient(225deg, var(--db-valley) 0 18px, transparent 18px);
-    background-repeat: no-repeat;
-    background-position: top right;
+    border: 2px solid var(--db-mountain);
+    box-shadow: var(--db-shadow-2);
 }
 
-/* ─── Buttons: the pull tab ─────────────────────────────────────
-   Primary is foil — it is the one thing on the surface that can be
-   pulled. Gold is a fill and never a text colour (2.1:1 on sheet). */
+/* ─── The striped title bar — the card's signature chrome ────────
+   Global because it also ships inside HTMX partials. Anatomy: a box,
+   the label on its paper patch, a box; the stripes run behind. ── */
+.qs-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--db-mountain);
+    padding: 6px 10px;
+    background:
+        repeating-linear-gradient(180deg, transparent 0 3px, var(--db-mountain) 3px 4px) content-box,
+        var(--db-color-surface);
+    background-clip: content-box, border-box;
+}
+
+.qs-titlebar__label {
+    background: var(--db-color-surface);
+    padding: 0 10px;
+    font-family: var(--db-font-mono);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--db-color-text);
+}
+
+.qs-titlebar__box {
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    flex: none;
+}
+
+/* ─── Buttons: drawn Mac rounded-rects, pressed = inverted ──────── */
 .db-btn, .db-btn:hover, .db-btn:focus, .db-btn:active,
 .db-btn--secondary, .db-btn--secondary:hover, .db-btn--secondary:focus, .db-btn--secondary:active,
 .db-btn--ghost, .db-btn--ghost:hover, .db-btn--ghost:focus, .db-btn--ghost:active {
     box-shadow: none !important;
     transform: none !important;
     background-image: none !important;
-    border-radius: 0 !important;
+    border-radius: var(--db-btn-radius) !important;
 }
 
 .db-btn--primary, .db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active {
     transform: none !important;
-    border-radius: 0 !important;
+    border-radius: 16px !important;
 }
 
 .db-btn {
     font-family: var(--db-font-ui);
-    font-weight: 500;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    transition: background-color var(--db-transition), color var(--db-transition), border-color var(--db-transition);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 0.875rem;
+    transition: background-color var(--db-transition-fast), color var(--db-transition-fast), border-color var(--db-transition-fast);
 }
 
-/* ─── Primary: a foil stamp, not a slab of gold ──────────────────
-   The action is the darkest object on a pale sheet, which is where its
-   hierarchy comes from, and gold moves from fill to stamp — the one
-   place it may be type, because it reads 8:1 on ink. The inner hairline
-   is the blind-stamp border a real foiled card carries.
-   No clip-path: it took the border with it on the cut edges and forced a
-   second silhouette below 560px. ─────────────────────────────────── */
+/* ─── Primary: the default button ────────────────────────────────
+   Ink ground, paper label, and the outer double ring every Mac dialog
+   drew around the button Return would press. At night it inverts:
+   paper ground, ink label, paper ring. The ring is a box-shadow, so it
+   costs no layout — keep at least 6px of clearance around it. ───── */
 .db-btn--primary {
     background-color: var(--db-stamp) !important;
     background-image: none !important;
-    color: var(--db-foil) !important;
+    color: var(--db-stamp-label) !important;
     border: none !important;
-    box-shadow:
-        inset 0 0 0 5px var(--db-stamp),
-        inset 0 0 0 6px var(--db-stamp-rule) !important;
+    box-shadow: var(--db-stamp-rule) !important;
     padding-left: calc(var(--db-btn-px) + 6px);
     padding-right: calc(var(--db-btn-px) + 6px);
-    transition: background-color var(--db-transition), box-shadow var(--db-transition);
+    transition: background-color var(--db-transition-fast), color var(--db-transition-fast);
 }
 
-.db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active {
-    transform: none !important;
-    border-radius: 0 !important;
-}
-
-.db-btn {
-    font-family: var(--db-font-ui);
-    font-weight: 500;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    transition: background-color var(--db-transition), color var(--db-transition), border-color var(--db-transition);
-}
-
-/* Hover brightens the stamp's rule and label — the old rule replaced the
-   whole background shorthand, which wiped the material on contact. */
+/* Hover deepens the ground; press inverts to the active blue. */
 .db-btn--primary:hover {
-    color: var(--db-accent-light) !important;
-    box-shadow:
-        inset 0 0 0 5px var(--db-stamp),
-        inset 0 0 0 6px var(--db-foil) !important;
+    background-color: var(--db-mountain-deep) !important;
+    box-shadow: var(--db-stamp-rule) !important;
 }
 
 .db-btn--primary:active {
-    background-color: #000 !important;
-    color: var(--db-foil-deep) !important;
+    background-color: var(--db-valley-ink) !important;
+    color: var(--db-sheet-raised) !important;
 }
 
-/* No clip-path now, so a real outline works and the inset hack can go. */
 .db-btn--primary:focus-visible {
-    outline: 2px solid var(--db-valley);
-    outline-offset: 2px;
+    outline: 2px solid var(--db-valley-ink);
+    outline-offset: 6px;
 }
 
-/* The board's secondary carries a trailing valley cell with an arrow in it.
-   The arrow needs per-button markup this pass cannot add, and the cell alone
-   reads as an unexplained sliver — so the secondary stays a plain hairline
-   cell until the arrow can ship with it. */
+/* Secondary: paper fill, 2px ink line. Hover opens the blue wash. */
 .db-btn--secondary,
 .db-btn--ghost {
-    background: transparent !important;
+    background: var(--db-sheet-raised) !important;
     color: var(--db-color-text) !important;
-    border: 1px solid var(--db-mountain) !important;
+    border: 2px solid var(--db-mountain) !important;
 }
 
 .db-btn--secondary:hover,
 .db-btn--ghost:hover {
     background: var(--db-valley) !important;
     background-color: var(--db-valley) !important;
-    border-color: var(--db-valley-ink) !important;
+    border-color: var(--db-mountain) !important;
 }
 
 .db-btn--secondary:active,
 .db-btn--ghost:active {
-    background: var(--db-sheet-deep) !important;
-    background-color: var(--db-sheet-deep) !important;
+    background: var(--db-mountain) !important;
+    background-color: var(--db-mountain) !important;
+    color: var(--db-sheet-raised) !important;
 }
 
-[data-theme^="grunge"] .db-btn { border-width: 1px !important; }
+[data-theme^="grunge"] .db-btn { border-width: 2px !important; }
 
-/* ─── Cards: flat cells of one sheet, never stacked or rounded ─── */
+/* ─── Cards: white cards with 2px ink borders and a hard drop ─── */
 .db-card, .db-card:hover {
     outline: none !important;
-    box-shadow: none !important;
+    box-shadow: var(--db-card-shadow) !important;
     border-radius: 0 !important;
-    border: 1px solid var(--db-mountain);
+    border: 2px solid var(--db-mountain) !important;
 }
 
 /* ─── Inputs read as measured cells ─── */
@@ -777,8 +760,8 @@ body::after,
 /* ─── Layout fixes: navbar, footer, page structure ─── */
 .db-navbar {
     height: 3.25rem !important;
-    background: transparent !important;
-    border-bottom: 1px solid var(--db-mountain) !important;
+    background: var(--db-sheet-raised) !important;
+    border-bottom: 2px solid var(--db-mountain) !important;
     box-shadow: none !important;
 }
 
@@ -1257,12 +1240,11 @@ body::after,
     gap: var(--db-space-4);
 }
 
-/* Each delivery is a cell of the sheet with a folded corner. */
+/* Each delivery is a card of the stack. */
 .account-delivery {
-    background:
-        linear-gradient(225deg, var(--db-valley) 0 16px, transparent 16px) top right / auto no-repeat,
-        var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    border: 2px solid var(--db-mountain);
+    box-shadow: var(--db-shadow-1);
     padding: var(--db-space-5);
 }
 
@@ -1306,7 +1288,7 @@ body::after,
 .account-delivery__gauge-fill {
     display: block;
     height: 100%;
-    background: var(--db-foil);
+    background: var(--db-rainbow);
     transition: width var(--db-transition-slow);
 }
 
@@ -1335,6 +1317,113 @@ body::after,
     margin-top: var(--db-space-5);
 }
 
+/* Batch QR label sheet (issue #250). */
+.account-labels-toolbar {
+    display: flex;
+    gap: var(--db-space-3);
+    margin-bottom: var(--db-space-4);
+}
+
+.account-labels {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--db-space-3);
+}
+
+.account-label {
+    border: 1px solid var(--db-mountain);
+    padding: var(--db-space-3);
+    text-align: center;
+    break-inside: avoid;
+    background: #fff;
+    color: #000;
+}
+
+.account-label__qr {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--db-space-2);
+}
+
+.account-label__name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-label__meta {
+    font-size: 0.6875rem;
+}
+
+.account-label__url {
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    word-break: break-all;
+    margin-top: var(--db-space-1);
+}
+
+@media print {
+    .account-labels-toolbar,
+    .hero {
+        display: none !important;
+    }
+
+    .account-labels {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4mm;
+    }
+}
+
+/* Site-wide announcement banner (issue #282). */
+.site-announcement {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--db-space-3);
+    padding: var(--db-space-2) var(--db-space-4);
+    font-size: 0.8125rem;
+    border-bottom: 1px solid var(--db-mountain);
+    background: var(--db-valley);
+    color: var(--db-color-text);
+}
+
+.site-announcement--warning {
+    background: var(--db-foil);
+    color: var(--db-foil-ink);
+}
+
+.site-announcement a {
+    text-decoration: underline;
+    color: inherit;
+}
+
+.site-announcement__dismiss {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: inherit;
+    padding: 0 var(--db-space-1);
+}
+
+/* Link-health strip above the delivery list (issue #202). */
+.account-deliveries-health {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--db-space-4);
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    margin: 0 0 var(--db-space-3);
+}
+
+.account-deliveries-health__warn {
+    color: var(--db-foil-ink, #b45309);
+}
+
 /* Filter + search bar above the delivery list (issue #214). */
 .account-deliveries-controls {
     display: flex;
@@ -1351,9 +1440,83 @@ body::after,
     gap: var(--db-space-2);
 }
 
+/* Largest-files cleanup shortlist on the usage card (issue #315). */
+.account-usage__largest-title {
+    margin-top: var(--db-space-5);
+    margin-bottom: var(--db-space-2);
+}
+
+.account-usage-largest {
+    list-style: none;
+    margin: 0 0 var(--db-space-3);
+    padding: 0;
+}
+
+.account-usage-largest__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--db-space-3);
+    padding: var(--db-space-1) 0;
+    font-size: 0.8125rem;
+}
+
+.account-usage-largest__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-usage-largest__size {
+    font-family: var(--db-font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.account-delivery__star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 var(--db-space-1) 0 0;
+    color: var(--db-foil-deep);
+}
+
+.account-delivery__alias {
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    white-space: nowrap;
+}
+
 .account-deliveries-filter--current {
     background: var(--db-valley);
     color: var(--db-color-text);
+}
+
+/* ─── Print (issue #226) ───
+   Paper gets the content, not the chrome: nav, footer, buttons, ads, and the
+   deliveries filter bar disappear; ink stays black on white. */
+@media print {
+    .db-navbar,
+    .layout-footer,
+    .btn,
+    .db-btn,
+    .ad-reward-card,
+    #download-phase-ad,
+    .account-deliveries-controls,
+    .account-deliveries-more {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+    }
+
+    a {
+        color: #000;
+        text-decoration: none;
+    }
 }
 
 .account-deliveries-search {
@@ -1387,9 +1550,7 @@ body::after,
     margin: var(--db-space-6) 0;
     padding: var(--db-space-6);
     border: 1px solid var(--db-mountain);
-    background:
-        repeating-linear-gradient(60deg, transparent 0 47px, var(--db-lattice) 47px 48px),
-        var(--db-color-surface);
+    background: var(--db-dither) 0 0 / 4px 4px, var(--db-color-surface);
     text-decoration: none;
     color: var(--db-color-text);
     text-align: center;
@@ -1429,31 +1590,52 @@ body::after,
     list-style: disc;
 }
 
-/* ─── Heading voice: engineering lettering everywhere ───────────
+/* ─── Heading voice: Bricolage, heavy and tight ─────────────────
    DAUB's own h1/h2/h3 still carried the old magazine register. ── */
 .db-h1, .db-h2, .db-h3, .db-h4 {
     font-family: var(--db-font-display);
-    font-weight: 200;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: -0.015em;
     line-height: 1.05;
     text-wrap: balance;
 }
 
 .db-h3, .db-h4 {
-    font-weight: 300;
-    letter-spacing: 0.1em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
-/* ─── OTP cells: one glyph per cell, measured ─── */
+/* The vendor's grunge family uppercases headings and roughens card
+   corners at [data-theme^="grunge"] specificity — match it and undo. */
+[data-theme^="grunge"] .db-h1,
+[data-theme^="grunge"] .db-h2,
+[data-theme^="grunge"] .db-h3,
+[data-theme^="grunge"] .db-h4,
+[data-theme^="grunge"] .db-card__title,
+[data-theme^="grunge"] .db-modal__title,
+[data-theme^="grunge"] .db-empty__title {
+    text-transform: none;
+    letter-spacing: -0.015em;
+}
+
+[data-theme^="grunge"] .db-surface--raised,
+[data-theme^="grunge"] .db-card,
+[data-theme^="grunge"] .db-modal,
+[data-theme^="grunge"] .db-toast {
+    border-radius: 0;
+    border-width: 2px;
+}
+
+/* ─── OTP cells: one glyph per drawn cell ─── */
 .db-otp__input {
-    transform: skewX(-14deg);
     width: 2.75rem;
     height: 3.25rem;
-    border: 1px solid var(--db-mountain) !important;
+    border: 2px solid var(--db-mountain) !important;
     border-radius: 0 !important;
     background: var(--db-color-surface) !important;
     font-family: var(--db-font-mono) !important;
+    font-weight: 700;
     font-size: 1.125rem;
     text-align: center;
     color: var(--db-color-text) !important;
@@ -1478,7 +1660,7 @@ select {
     background-size: 10px 7px;
     background-repeat: no-repeat;
     padding-right: 28px;
-    border: 1px solid var(--db-mountain);
+    border: 2px solid var(--db-mountain);
     border-radius: 0;
     background: transparent;
     color: var(--db-color-text);
@@ -1510,45 +1692,33 @@ html, body {
     }
 }
 
-/* ─── Deployment ─────────────────────────────────────────────────
-   The world is named for a sheet that opens in one pull, so the page
-   gets exactly one authored motion: the moment a packet is created
-   (upload success) or opened (the download file card). Both start life
-   as .hidden, so the keyframe fires the instant JS reveals them and
+/* ─── The dissolve ───────────────────────────────────────────────
+   HyperCard's native transition between cards. The page gets exactly
+   one authored motion: the moment a delivery card is created (upload
+   success) or opened (the download file card) it dissolves in — a
+   stepped opacity, never a slide or a fold. Both start life as
+   .hidden, so the keyframe fires the instant JS reveals them and
    never on an already-visible element. Nothing else animates. ──── */
 @keyframes miura-deploy {
-    from {
-        opacity: 0;
-        transform: perspective(1400px) rotateX(-34deg) scaleY(0.76);
-    }
-    to {
-        opacity: 1;
-        transform: perspective(1400px) rotateX(0) scaleY(1);
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes miura-deploy-cell {
-    from {
-        opacity: 0;
-        clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
-    }
-    to {
-        opacity: 1;
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 #upload-success,
 #download-phase-file {
-    transform-origin: top center;
-    animation: miura-deploy 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: miura-deploy 360ms steps(6, end) both;
 }
 
-/* The share link and the file's spec block land after the sheet is flat,
-   the way a Miura panel settles last. */
+/* The share link and the file's spec block dissolve in one beat later,
+   the way the next card's fields landed after its frame. */
 #upload-success .share-box,
 #download-phase-file .file-specs {
-    animation: miura-deploy-cell 460ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+    animation: miura-deploy-cell 300ms steps(5, end) 260ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {

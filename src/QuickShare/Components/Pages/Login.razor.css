@@ -13,7 +13,7 @@
     overflow: hidden;
     border: 1px solid var(--db-mountain);
     background:
-        linear-gradient(225deg, var(--db-valley) 0 22px, transparent 22px) top right / auto no-repeat,
+        none top right / auto no-repeat,
         linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
         var(--db-color-surface);
 }
@@ -38,13 +38,13 @@
     border: 1px solid var(--db-mountain);
     background: var(--db-color-surface);
     color: var(--db-color-text-secondary);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .login-mark svg {
     width: 1.375rem;
     height: 1.375rem;
-    transform: skewX(14deg);
+    transform: none;
 }
 
 .login-header .db-card__title {

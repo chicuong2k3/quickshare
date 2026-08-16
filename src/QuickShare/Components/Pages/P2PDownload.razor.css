@@ -29,7 +29,7 @@
     border: 1px solid var(--db-color-success);
     background: var(--db-color-success-subtle);
     color: var(--db-color-success);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .icon-error {
@@ -42,7 +42,7 @@
     border: 1px solid var(--db-color-error);
     background: var(--db-color-error-subtle);
     color: var(--db-color-error);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .icon-accent {
@@ -55,13 +55,13 @@
     border: 1px solid var(--db-mountain);
     background: var(--db-color-surface);
     color: var(--db-color-text-secondary);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .icon-success svg,
 .icon-error svg,
 .icon-accent svg {
-    transform: skewX(14deg);
+    transform: none;
     width: 1.5rem;
     height: 1.5rem;
 }
@@ -103,13 +103,13 @@
     border: 1px solid var(--db-mountain);
     background: var(--db-sheet);
     color: var(--db-color-text-secondary);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .file-icon svg {
     width: 1.375rem;
     height: 1.375rem;
-    transform: skewX(14deg);
+    transform: none;
 }
 
 /* ─── Progress bar ─── */

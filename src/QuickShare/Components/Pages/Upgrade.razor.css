@@ -36,7 +36,7 @@
     margin-inline: auto;
     border: 1px solid var(--db-mountain);
     background:
-        linear-gradient(225deg, var(--db-foil) 0 28px, transparent 28px) top right / auto no-repeat,
+        none top right / auto no-repeat,
         var(--db-color-surface);
     padding: var(--db-space-7);
 }
@@ -89,7 +89,7 @@
     margin-top: 0.4rem;
     background: var(--db-valley-ink);
     color: transparent;
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 /* ─── Payment section ─── */

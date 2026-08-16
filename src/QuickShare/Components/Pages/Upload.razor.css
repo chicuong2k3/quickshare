@@ -16,9 +16,9 @@
 .h1 {
     font-family: var(--db-font-display);
     font-size: 2rem;
-    font-weight: 200;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: -0.015em;
     line-height: 1.02;
     color: var(--db-color-text);
     margin: 0;
@@ -34,7 +34,7 @@
 /* Emphasis is a crease under the word, never a gradient across it. */
 .h1 span.gradient {
     color: var(--db-color-text);
-    box-shadow: inset 0 -0.24em 0 var(--db-valley);
+    background: var(--db-foil); box-shadow: 0 0 0 4px var(--db-foil); color: #141414;
 }
 
 .sub {
@@ -73,12 +73,8 @@
     flex-direction: column;
     align-items: center;
     gap: var(--db-space-5);
-    border: 1px solid var(--db-mountain);
-    background:
-        repeating-linear-gradient(60deg,
-            transparent 0 47px,
-            var(--db-lattice) 47px 48px),
-        var(--db-color-surface);
+    border: 2px dashed var(--db-mountain);
+    background: var(--db-dither) 0 0 / 4px 4px, var(--db-color-surface);
     padding: var(--db-space-9) var(--db-space-6);
     cursor: pointer;
     transition: background-color var(--db-transition), border-color var(--db-transition);
@@ -91,11 +87,8 @@
 /* Dragging: the valley opens. */
 .dropzone.active {
     border-color: var(--db-valley-ink);
-    background:
-        repeating-linear-gradient(60deg,
-            transparent 0 47px,
-            rgba(63, 97, 135, 0.14) 47px 48px),
-        var(--db-valley);
+    border-style: solid;
+    background: var(--db-valley);
 }
 
 .dropzone-icon {
@@ -107,7 +100,7 @@
     border: 1px solid var(--db-mountain);
     background: var(--db-color-surface);
     color: var(--db-color-text-secondary);
-    transform: skewX(-14deg);
+    transform: none;
     transition: border-color var(--db-transition), color var(--db-transition);
 }
 
@@ -120,15 +113,15 @@
 .dropzone-icon svg {
     width: 1.5rem;
     height: 1.5rem;
-    transform: skewX(14deg);
+    transform: none;
 }
 
 .dropzone-title {
     font-family: var(--db-font-display);
     font-size: 1rem;
-    font-weight: 300;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: -0.015em;
     color: var(--db-color-text);
 }
 
@@ -193,9 +186,9 @@
     margin-top: var(--db-space-6);
     font-family: var(--db-font-display);
     font-size: 1.25rem;
-    font-weight: 300;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: -0.015em;
     color: var(--db-color-text);
     overflow-wrap: anywhere;
 }
@@ -247,7 +240,7 @@
 
 .progress-fill {
     height: 100%;
-    background: var(--db-foil);
+    background: var(--db-rainbow);
     transition: width var(--db-transition-slow);
 }
 
@@ -261,7 +254,7 @@
     justify-content: center;
     margin: 0 auto;
     border: 1px solid;
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .icon-success {
@@ -280,7 +273,7 @@
 .icon-error svg {
     width: 1.5rem;
     height: 1.5rem;
-    transform: skewX(14deg);
+    transform: none;
 }
 
 /* ─── The packet's address ─── */

@@ -9,16 +9,17 @@
     <title>QuickShareCloud</title>
 
     <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#EFEEEA" />
+    <meta name="theme-color" content="#EDE9DC" />
     <base href="/" />
 
     @* PWA (issue #14): installable shell + Android Web Share Target *@
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    @* Outfit (display + UI, set light and wide-tracked) + Azeret Mono (spec labels, codes, measurements) *@
+    @* Bricolage Grotesque (display) + Archivo (UI/body) + Courier Prime (labels, codes, measurements).
+       All three are SIL OFL — chosen for legibility and license safety. *@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200..700&family=Azeret+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Archivo:wght@400..800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
 
     @* DAUB anti-FOUC: set theme before CSS loads *@
     <script>
@@ -51,18 +52,18 @@
 </head>
 <body>
 <!--
-DIRECTION CONTRACT · seed 46c7765a
-THESIS: Ciphertext is a folded sheet; the key in the link is the one pull that deploys it. The
-server holds a packet it cannot open. Refuses the category's centered white card on a soft ground.
-OWN-WORLD: Matte sheet stock, 60-degree crease lattice, hairline rules ending in mono spec labels,
-parallelogram cells with cut corners, zero radius. Foil gold marks the single deployable action,
-stamped on ink so it may be type;
-valley blue marks the active cell; mountain gray is everything at rest.
-STORY: A stranger from a chat sees a packet with real measurements on it, watches their own browser
-pull it open, and takes the file.
-FIRST VIEWPORT: Crease lattice full-bleed; the delivery as a folded packet with its true specs
-(bytes, parts, expiry, code) in mono along hairlines; the deploy action is a foil stamp on ink.
-FORM: Miura deployable sheet — user-pinned challenger; roll 46c7765a assigned index 5 (bearer ticket).
+DIRECTION CONTRACT · seed ad3dafb6
+THESIS: Every delivery is a card in your stack; sending a file is flipping a card. Refuses both
+the category's floating white card on a soft gradient and minimal flat-tech.
+OWN-WORLD: Colorized classic-Mac / HyperCard grammar: putty dither ground, white cards with 2px
+ink borders and hard offset shadows, striped title bars, a double-ring default button, drawn
+pixel iconography. Six Apple colors rationed by role — blue wash is active, the rainbow is
+progress and nothing else, yellow is an accent fill never type on paper.
+STORY: A Vietnamese sender sees at once: drop a file, get a link, share it on Zalo — no account,
+end-to-end encrypted, server cannot read it.
+FIRST VIEWPORT: Menu-bar navbar; the page as a white card on the dithered desktop; display voice
+Bricolage Grotesque 800, facts in Courier Prime; the primary action wears the default-button ring.
+FORM: HyperCard Stack — user-pinned challenger ("thêm nhiều màu"); roll ad3dafb6.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->
     <Routes />

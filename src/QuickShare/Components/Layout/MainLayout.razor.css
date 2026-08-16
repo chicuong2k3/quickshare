@@ -6,19 +6,17 @@
     min-height: 100vh;
     min-width: 0;
     color: var(--db-color-text);
-    /* The sheet: a 60-degree crease lattice under every page. Painted on
+    /* The desktop: the 4px dither pattern under every page. Painted on
        the root rather than body, which DAUB's base sheet already claims. */
     background-color: var(--db-color-bg);
-    background-image:
-        repeating-linear-gradient(60deg, transparent 0 63px, var(--db-lattice) 63px 64px),
-        repeating-linear-gradient(-60deg, transparent 0 63px, var(--db-lattice) 63px 64px);
-    background-attachment: fixed;
+    background-image: var(--db-dither);
+    background-size: 4px 4px;
 }
 
-/* ─── Navbar ─── */
+/* ─── Navbar: the menu bar ─── */
 .layout-root ::deep .db-navbar {
-    border-bottom: 1px solid var(--db-mountain);
-    background: transparent;
+    border-bottom: 2px solid var(--db-mountain);
+    background: var(--db-sheet-raised);
 }
 
 /* Nav items read as engineering labels; the active one takes the valley cell. */

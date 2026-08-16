@@ -61,6 +61,7 @@
   <data name="btn_upgrade" xml:space="preserve"><value>Nâng cấp</value></data>
   <data name="home_title" xml:space="preserve"><value>QuickShareCloud — gửi file, không phiền phức</value></data>
   <data name="home_tag" xml:space="preserve"><value>Bảo mật · Nhanh · Tạm thời</value></data>
+  <data name="home_hero_tab" xml:space="preserve"><value>Thẻ 1 · Chào mừng</value></data>
   <data name="home_h1_send" xml:space="preserve"><value>Gửi</value></data>
   <data name="home_h1_anything" xml:space="preserve"><value>mọi thứ</value></data>
   <data name="home_h1_zero" xml:space="preserve"><value>không phiền phức</value></data>
@@ -825,5 +826,95 @@
   </data>
   <data name="account_usage_largest_manage" xml:space="preserve">
     <value>Quản lý lượt gửi</value>
+  </data>
+  <data name="dl_share" xml:space="preserve">
+    <value>Chia sẻ</value>
+  </data>
+  <data name="dl_share_copied" xml:space="preserve">
+    <value>Đã sao chép liên kết</value>
+  </data>
+  <data name="pricing_compare_title" xml:space="preserve">
+    <value>So sánh các gói</value>
+  </data>
+  <data name="pricing_compare_feature" xml:space="preserve">
+    <value>Tính năng</value>
+  </data>
+  <data name="pricing_compare_max_file" xml:space="preserve">
+    <value>Kích thước tệp tối đa</value>
+  </data>
+  <data name="pricing_compare_monthly" xml:space="preserve">
+    <value>Dung lượng gửi mỗi tháng</value>
+  </data>
+  <data name="pricing_compare_expiry" xml:space="preserve">
+    <value>Thời hạn liên kết tối đa</value>
+  </data>
+  <data name="pricing_compare_downloads" xml:space="preserve">
+    <value>Lượt tải mỗi liên kết</value>
+  </data>
+  <data name="pricing_compare_password" xml:space="preserve">
+    <value>Bảo vệ mật khẩu &amp; OTP</value>
+  </data>
+  <data name="pricing_compare_scheduled" xml:space="preserve">
+    <value>Hẹn giờ gửi</value>
+  </data>
+  <data name="pricing_compare_alias" xml:space="preserve">
+    <value>Bí danh liên kết tuỳ chỉnh</value>
+  </data>
+  <data name="pricing_compare_daily_cap" xml:space="preserve">
+    <value>Giới hạn tải mỗi ngày theo liên kết</value>
+  </data>
+  <data name="pricing_compare_noads" xml:space="preserve">
+    <value>Không quảng cáo</value>
+  </data>
+  <data name="pricing_compare_unlimited" xml:space="preserve">
+    <value>Không giới hạn</value>
+  </data>
+  <data name="pricing_compare_days" xml:space="preserve">
+    <value>{0} ngày</value>
+  </data>
+  <data name="deliveries_health_active" xml:space="preserve">
+    <value>{0} liên kết đang hoạt động</value>
+  </data>
+  <data name="deliveries_health_expiring" xml:space="preserve">
+    <value>{0} sắp hết hạn trong 48h</value>
+  </data>
+  <data name="deliveries_health_exhausted" xml:space="preserve">
+    <value>{0} đã hết lượt tải</value>
+  </data>
+  <data name="announcement_more" xml:space="preserve">
+    <value>Xem thêm</value>
+  </data>
+  <data name="announcement_dismiss" xml:space="preserve">
+    <value>Đóng thông báo</value>
+  </data>
+  <data name="deliveries_print_labels" xml:space="preserve">
+    <value>In nhãn QR</value>
+  </data>
+  <data name="labels_title" xml:space="preserve">
+    <value>Nhãn QR — QuickShareCloud</value>
+  </data>
+  <data name="labels_h1" xml:space="preserve">
+    <value>Bảng nhãn QR</value>
+  </data>
+  <data name="labels_lead" xml:space="preserve">
+    <value>Một trang in — mỗi liên kết đang hoạt động một nhãn QR.</value>
+  </data>
+  <data name="labels_loading" xml:space="preserve">
+    <value>Đang chuẩn bị nhãn…</value>
+  </data>
+  <data name="labels_empty" xml:space="preserve">
+    <value>Không có liên kết đang hoạt động để in.</value>
+  </data>
+  <data name="labels_print" xml:space="preserve">
+    <value>In</value>
+  </data>
+  <data name="labels_back" xml:space="preserve">
+    <value>Về danh sách lượt gửi</value>
+  </data>
+  <data name="labels_expires" xml:space="preserve">
+    <value>Hết hạn {0}</value>
+  </data>
+  <data name="labels_no_expiry" xml:space="preserve">
+    <value>Không hết hạn</value>
   </data>
 </root>

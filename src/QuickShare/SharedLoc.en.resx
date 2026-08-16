@@ -61,6 +61,7 @@
   <data name="btn_upgrade" xml:space="preserve"><value>Upgrade</value></data>
   <data name="home_title" xml:space="preserve"><value>QuickShareCloud — send files, not friction</value></data>
   <data name="home_tag" xml:space="preserve"><value>Secure · Fast · Temporary</value></data>
+  <data name="home_hero_tab" xml:space="preserve"><value>Card 1 · Welcome</value></data>
   <data name="home_h1_send" xml:space="preserve"><value>Send</value></data>
   <data name="home_h1_anything" xml:space="preserve"><value>anything</value></data>
   <data name="home_h1_zero" xml:space="preserve"><value>zero friction</value></data>
@@ -824,5 +825,95 @@
   </data>
   <data name="account_usage_largest_manage" xml:space="preserve">
     <value>Manage deliveries</value>
+  </data>
+  <data name="dl_share" xml:space="preserve">
+    <value>Share</value>
+  </data>
+  <data name="dl_share_copied" xml:space="preserve">
+    <value>Link copied</value>
+  </data>
+  <data name="pricing_compare_title" xml:space="preserve">
+    <value>Compare plans</value>
+  </data>
+  <data name="pricing_compare_feature" xml:space="preserve">
+    <value>Feature</value>
+  </data>
+  <data name="pricing_compare_max_file" xml:space="preserve">
+    <value>Max file size</value>
+  </data>
+  <data name="pricing_compare_monthly" xml:space="preserve">
+    <value>Monthly transfer</value>
+  </data>
+  <data name="pricing_compare_expiry" xml:space="preserve">
+    <value>Max link lifetime</value>
+  </data>
+  <data name="pricing_compare_downloads" xml:space="preserve">
+    <value>Downloads per link</value>
+  </data>
+  <data name="pricing_compare_password" xml:space="preserve">
+    <value>Password &amp; OTP protection</value>
+  </data>
+  <data name="pricing_compare_scheduled" xml:space="preserve">
+    <value>Scheduled send</value>
+  </data>
+  <data name="pricing_compare_alias" xml:space="preserve">
+    <value>Custom link alias</value>
+  </data>
+  <data name="pricing_compare_daily_cap" xml:space="preserve">
+    <value>Per-link daily download cap</value>
+  </data>
+  <data name="pricing_compare_noads" xml:space="preserve">
+    <value>No ads</value>
+  </data>
+  <data name="pricing_compare_unlimited" xml:space="preserve">
+    <value>Unlimited</value>
+  </data>
+  <data name="pricing_compare_days" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="deliveries_health_active" xml:space="preserve">
+    <value>{0} active links</value>
+  </data>
+  <data name="deliveries_health_expiring" xml:space="preserve">
+    <value>{0} expiring within 48h</value>
+  </data>
+  <data name="deliveries_health_exhausted" xml:space="preserve">
+    <value>{0} out of downloads</value>
+  </data>
+  <data name="announcement_more" xml:space="preserve">
+    <value>Learn more</value>
+  </data>
+  <data name="announcement_dismiss" xml:space="preserve">
+    <value>Dismiss announcement</value>
+  </data>
+  <data name="deliveries_print_labels" xml:space="preserve">
+    <value>Print QR labels</value>
+  </data>
+  <data name="labels_title" xml:space="preserve">
+    <value>QR labels — QuickShareCloud</value>
+  </data>
+  <data name="labels_h1" xml:space="preserve">
+    <value>QR label sheet</value>
+  </data>
+  <data name="labels_lead" xml:space="preserve">
+    <value>One printable sheet — a QR label for each active link.</value>
+  </data>
+  <data name="labels_loading" xml:space="preserve">
+    <value>Preparing labels…</value>
+  </data>
+  <data name="labels_empty" xml:space="preserve">
+    <value>No active links to print.</value>
+  </data>
+  <data name="labels_print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="labels_back" xml:space="preserve">
+    <value>Back to deliveries</value>
+  </data>
+  <data name="labels_expires" xml:space="preserve">
+    <value>Expires {0}</value>
+  </data>
+  <data name="labels_no_expiry" xml:space="preserve">
+    <value>No expiry</value>
   </data>
 </root>

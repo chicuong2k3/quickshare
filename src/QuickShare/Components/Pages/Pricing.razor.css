@@ -157,7 +157,7 @@
 .card--popular {
     position: relative;
     background:
-        linear-gradient(225deg, var(--db-foil) 0 28px, transparent 28px) top right / auto no-repeat,
+        none top right / auto no-repeat,
         linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
         var(--db-sheet-raised);
 }
@@ -246,7 +246,7 @@
     height: 0.5rem;
     flex-shrink: 0;
     background: var(--db-valley-ink);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .feature__icon svg {
@@ -337,9 +337,9 @@
 .cta__title {
     font-family: var(--db-font-display);
     font-size: 1.375rem;
-    font-weight: 200;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: -0.015em;
 }
 
 .cta ::deep .db-btn {
@@ -369,8 +369,55 @@
 
     .card--popular {
         background:
-            linear-gradient(225deg, var(--db-foil) 0 28px, transparent 28px) top right / auto no-repeat,
+            none top right / auto no-repeat,
             linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
             var(--db-sheet-raised);
     }
+}
+
+/* Side-by-side comparison table (issue #299). */
+.compare {
+    margin-top: 4rem;
+}
+
+.compare__title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.compare__scroll {
+    overflow-x: auto;
+}
+
+.compare__table {
+    width: 100%;
+    max-width: 56rem;
+    margin-inline: auto;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.compare__table th,
+.compare__table td {
+    border: 1px solid var(--db-color-border, #d1d5db);
+    padding: 0.625rem 0.875rem;
+    text-align: center;
+}
+
+.compare__table th[scope="row"] {
+    text-align: left;
+    font-weight: 500;
+}
+
+.compare__table thead th {
+    background: var(--db-color-surface-2, #f3f4f6);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }

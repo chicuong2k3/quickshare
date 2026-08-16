@@ -9,7 +9,7 @@
 /* ─── Summary card ─── */
 .summary-card {
     background:
-        linear-gradient(225deg, var(--db-valley) 0 22px, transparent 22px) top right / auto no-repeat,
+        none top right / auto no-repeat,
         var(--db-color-surface);
     border: 1px solid var(--db-mountain);
     padding: var(--db-space-6);
@@ -65,7 +65,7 @@
     flex-shrink: 0;
     background: var(--db-valley-ink);
     color: transparent;
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 /* ─── Actions ─── */
@@ -103,7 +103,7 @@
     height: 0.6rem;
     margin-top: 0.45rem;
     flex-shrink: 0;
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .dot--created {

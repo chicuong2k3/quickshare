@@ -9,7 +9,7 @@
     background: var(--db-color-surface);
     border: 1px solid var(--db-mountain);
     /* The folded corner: valley on the inside of the crease. */
-    background-image: linear-gradient(225deg, var(--db-valley) 0 22px, transparent 22px);
+    background-image: none;
     background-repeat: no-repeat;
     background-position: top right;
 }
@@ -27,13 +27,13 @@
     justify-content: center;
     margin: 0 auto var(--db-space-5);
     border: 1px solid var(--db-mountain);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .icon-box svg {
     width: 1.5rem;
     height: 1.5rem;
-    transform: skewX(14deg);
+    transform: none;
 }
 
 .--lock {
@@ -146,13 +146,13 @@
     border: 1px solid var(--db-mountain);
     background: var(--db-sheet);
     color: var(--db-color-text-secondary);
-    transform: skewX(-14deg);
+    transform: none;
 }
 
 .file-icon svg {
     width: 1.375rem;
     height: 1.375rem;
-    transform: skewX(14deg);
+    transform: none;
 }
 
 .file-meta {

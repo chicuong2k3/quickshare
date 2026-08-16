@@ -1,8 +1,11 @@
 @inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
+@using System.Globalization
 @using System.Security.Claims
 @using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Options
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IOptions<QuickShare.Infrastructure.QuickShareOptions> Options
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
@@ -12,6 +15,32 @@
 }
 
 <div class="layout-root">
+    @{
+        var announcement = Options.Value.Announcement;
+        var announcementText = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" && !string.IsNullOrEmpty(announcement.TextVi)
+            ? announcement.TextVi
+            : announcement.TextEn;
+    }
+    @if (!string.IsNullOrEmpty(announcement.Id) && !string.IsNullOrEmpty(announcementText))
+    {
+        @* Site-wide announcement (issue #282) — server-rendered, dismiss persists in localStorage by Id. *@
+        <div id="site-announcement" class="site-announcement site-announcement--@announcement.Level"
+             role="status" data-announcement-id="@announcement.Id">
+            <span>@announcementText</span>
+            @if (!string.IsNullOrEmpty(announcement.Url))
+            {
+                <a href="@announcement.Url">@Loc["announcement_more"]</a>
+            }
+            <button type="button" class="site-announcement__dismiss" aria-label="@Loc["announcement_dismiss"]"
+                    onclick="var b=document.getElementById('site-announcement');localStorage.setItem('qs-announce-'+b.dataset.announcementId,'1');b.remove()">×</button>
+        </div>
+        <script>
+            (function () {
+                var b = document.getElementById('site-announcement');
+                if (b && localStorage.getItem('qs-announce-' + b.dataset.announcementId)) b.remove();
+            })();
+        </script>
+    }
     <nav class="db-navbar">
         <a class="db-navbar__brand" href="/">
             @* Mark: one crease cell folded — mountain solid, valley open. *@

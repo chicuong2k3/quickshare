@@ -240,6 +240,14 @@
                                 </svg>
                                 <span id="dl-download-text">@Loc["dl_download"]</span>
                             </a>
+                            @* Native share sheet (issue #283) — shares the link only, never the password/OTP. *@
+                            <button type="button" class="db-btn db-btn--ghost" style="margin-top: 0.75rem"
+                                    onclick="downloadApp.sharePage()" data-ai-action="download.share">
+                                <svg style="width: 1rem; height: 1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                                </svg>
+                                <span id="dl-share-label">@Loc["dl_share"]</span>
+                            </button>
                         </div>
 
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
@@ -440,6 +448,8 @@
         ["copy"] = Loc["dl_preview_copy"],
         ["copied"] = Loc["dl_preview_copied"],
         ["copySha"] = Loc["dl_sha_copy"],
+        ["shareLabel"] = Loc["dl_share"],
+        ["shareCopied"] = Loc["dl_share_copied"],
         ["download"] = Loc["dl_download"],
         ["decrypting"] = Loc["dl_decrypting"],
         ["downloadFailed"] = Loc["dl_download_failed"],

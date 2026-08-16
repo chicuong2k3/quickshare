@@ -191,6 +191,7 @@ interface DownloadPage {
     showFullText(): void;
     copyText(): void;
     copySha256(): void;
+    sharePage(): void;
 }
 
 interface P2pSendPage {

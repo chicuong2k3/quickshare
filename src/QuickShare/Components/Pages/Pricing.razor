@@ -201,6 +201,70 @@
     </section>
 
 
+    @* Side-by-side comparison (issue #299) — real limits from PlanTierLimits, no fabricated features. *@
+    <section class="compare">
+        <h2 class="db-h2 compare__title">@Loc["pricing_compare_title"]</h2>
+        <div class="compare__scroll">
+            <table class="compare__table">
+                <caption class="visually-hidden">@Loc["pricing_compare_title"]</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">@Loc["pricing_compare_feature"]</th>
+                        <th scope="col">@Loc["pricing_free_name"]</th>
+                        <th scope="col">@Loc["pricing_pro_name"]</th>
+                        <th scope="col">@Loc["pricing_studio_name"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_max_file"]</th>
+                        <td>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Free))</td>
+                        <td>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Pro))</td>
+                        <td>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Studio))</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_monthly"]</th>
+                        <td>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Free))</td>
+                        <td>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Pro))</td>
+                        <td>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Studio))</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_expiry"]</th>
+                        <td>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Free))</td>
+                        <td>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Pro))</td>
+                        <td>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Studio))</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_downloads"]</th>
+                        <td>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free)</td>
+                        <td>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro)</td>
+                        <td>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_password"]</th>
+                        <td>✓</td><td>✓</td><td>✓</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_scheduled"]</th>
+                        <td>—</td><td>✓</td><td>✓</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_alias"]</th>
+                        <td>—</td><td>✓</td><td>✓</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_daily_cap"]</th>
+                        <td>—</td><td>✓</td><td>✓</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">@Loc["pricing_compare_noads"]</th>
+                        <td>—</td><td>✓</td><td>✓</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
     @* FAQ *@
     <section class="faq">
         <div class="faq__head">
@@ -233,8 +297,17 @@
 </PageWrapper>
 
 @code {
+    private const long BytesPerGb = 1_073_741_824L;
+
     [SupplyParameterFromQuery]
     public string? Billing { get; set; }
+
+    /// <summary>Comparison-table cell for a byte limit; null = unlimited (issue #299).</summary>
+    private string SizeLabel(long? bytes) =>
+        bytes is { } b ? $"{b / BytesPerGb} GB" : Loc["pricing_compare_unlimited"];
+
+    private string DaysLabel(TimeSpan expiry) =>
+        string.Format(Loc["pricing_compare_days"], (int)expiry.TotalDays);
 
     private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
     private const int FreePlanRank = 0;

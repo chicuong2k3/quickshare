@@ -9,6 +9,7 @@ public static class RoutePaths
     public const string Account = "/account";
     public const string AccountBilling = "/account/billing";
     public const string AccountDeliveries = "/account/deliveries";
+    public const string AccountDeliveryLabels = "/account/deliveries/labels";
     public const string AccountUsage = "/account/usage";
     public const string AccountDevices = "/account/devices";
     public const string Login = "/login";

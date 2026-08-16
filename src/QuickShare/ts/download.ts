@@ -431,5 +431,21 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText, copySha256: copySha256 };
+    // Native device share sheet (issue #283): shares the page URL only — never the
+    // password or OTP. Falls back to copying the link where navigator.share is absent.
+    function sharePage() {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({ title: document.title, url: url }).catch(function () { /* user dismissed the sheet */ });
+            return;
+        }
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function () {
+                text('dl-share-label', t('shareCopied'));
+                setTimeout(function () { text('dl-share-label', t('shareLabel')); }, 2000);
+            });
+        }
+    }
+
+    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText, copySha256: copySha256, sharePage: sharePage };
 })();
