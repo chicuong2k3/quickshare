@@ -302,6 +302,7 @@ else
                             aria-pressed="@(item.IsFavorite ? "true" : "false")"
                             aria-label="@Loc["deliveries_favorite"]" title="@Loc["deliveries_favorite"]"
                             data-ai-action="delivery.favorite">@(item.IsFavorite ? "★" : "☆")</button>
+                    <FileTypeIcon ContentType="@item.ContentType" />
                     <span class="account-delivery__name" title="@item.FileName">@item.FileName</span>
                     @if (!string.IsNullOrEmpty(item.Alias))
                     {

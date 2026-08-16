@@ -1,0 +1,21 @@
+@* File-type icon (issue #205) — small glyph per content type, aria-hidden. *@
+<span class="file-type-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="@IconPath" />
+    </svg>
+</span>
+
+@code {
+    [Parameter] public string? ContentType { get; set; }
+
+    private string IconPath => (ContentType ?? string.Empty).ToLowerInvariant() switch
+    {
+        var s when s.StartsWith("image/") => "M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9 M3 16l5-5 4 4 3-3 4 4 M16 19h6 M19 16v6",
+        var s when s.StartsWith("video/") => "m22 8-6 4 6 4V8Z M14 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z",
+        var s when s.StartsWith("audio/") => "M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+        "application/pdf" => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h6",
+        var s when s.Contains("zip") || s.Contains("compressed") || s.Contains("tar") => "M21 8v13H3V8 M1 3h22v5H1z M10 12h4",
+        var s when s.StartsWith("text/") => "M4 7h16 M4 12h16 M4 17h10",
+        _ => "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6"
+    };
+}
