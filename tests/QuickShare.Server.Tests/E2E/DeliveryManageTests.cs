@@ -472,4 +472,36 @@ public sealed class DeliveryManageTests : IClassFixture<TestWebAppFactory>
         var response = await attacker.PostAsJsonAsync($"{DeliveriesApi}/bulk", new { Ids = new[] { delivery.Id }, Action = "trash" });
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    // ── Purge forever (#157) ──
+
+    [Fact]
+    public async Task Purge_RemovesDeliveryPermanently()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.DeleteAsync($"{DeliveriesApi}/{delivery.Id}/purge");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.False(await db.Deliveries.AnyAsync(d => d.Id == delivery.Id));
+    }
+
+    [Fact]
+    public async Task Purge_SomeoneElsesDelivery_Returns404()
+    {
+        var ownerKey = Guid.CreateVersion7().ToString();
+        var attackerKey = Guid.CreateVersion7().ToString();
+        var owner = await _factory.SeedUserAsync(ownerKey);
+        await _factory.SeedUserAsync(attackerKey);
+        var delivery = await SeedDeliveryAsync(owner.Id);
+
+        var attacker = _factory.CreateAuthenticatedClient(attackerKey);
+        var response = await attacker.DeleteAsync($"{DeliveriesApi}/{delivery.Id}/purge");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

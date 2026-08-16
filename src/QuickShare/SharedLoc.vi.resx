@@ -772,6 +772,8 @@
   <data name="deliveries_bulk_trash" xml:space="preserve"><value>Chuyển vào thùng rác</value></data>
   <data name="deliveries_bulk_trash_confirm" xml:space="preserve"><value>Chuyển {0} file vào thùng rác? Có thể khôi phục trong 24 giờ.</value></data>
   <data name="deliveries_bulk_error" xml:space="preserve"><value>Thao tác hàng loạt thất bại</value></data>
+  <data name="deliveries_purge" xml:space="preserve"><value>Xóa vĩnh viễn</value></data>
+  <data name="deliveries_purge_confirm" xml:space="preserve"><value>Xóa vĩnh viễn file và dữ liệu của nó? Không thể hoàn tác.</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>

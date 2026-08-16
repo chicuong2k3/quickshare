@@ -1671,6 +1671,11 @@ body::after,
     white-space: nowrap;
 }
 
+.account-delivery__purge {
+    color: var(--db-color-danger, #dc2626);
+    border-color: var(--db-color-danger, #dc2626);
+}
+
 .account-deliveries-filter--current {
     background: var(--db-valley);
     color: var(--db-color-text);
