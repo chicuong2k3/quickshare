@@ -665,6 +665,8 @@
   <data name="dl_cta_button" xml:space="preserve"><value>Gửi file</value></data>
   <data name="dl_preview_alt" xml:space="preserve"><value>Xem trước file</value></data>
   <data name="dl_preview_pdf" xml:space="preserve"><value>Xem trước PDF</value></data>
+  <data name="dl_zip_title" xml:space="preserve"><value>Nội dung tệp nén</value></data>
+  <data name="dl_zip_bytes" xml:space="preserve"><value>byte</value></data>
   <data name="trial_banner_title" xml:space="preserve"><value>Đang dùng thử Pro</value></data>
   <data name="trial_banner_sub" xml:space="preserve"><value>Còn {0} ngày — lên Pro để giữ quyền lợi</value></data>
   <data name="trial_option_title" xml:space="preserve"><value>Dùng thử Pro miễn phí 7 ngày</value></data>

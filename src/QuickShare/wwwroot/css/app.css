@@ -2018,6 +2018,40 @@ html, body {
     margin: 0;
 }
 
+/* ─── ZIP archive contents (issue #215) ────────────────────────────
+   Children are injected via download.js (unscoped), so these live in
+   the global sheet, not scoped CSS. Entry names come from the archive
+   central directory and are rendered as plain text by the script. ── */
+.dl-zip__list {
+    max-height: 40vh;
+    overflow-y: auto;
+    font-family: var(--db-font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    background: var(--db-sheet-deep);
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+}
+
+.dl-zip__list ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dl-zip__list li {
+    padding: 0.125rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dl-zip__list li::before {
+    content: "\2022";
+    margin-right: 0.5rem;
+    opacity: 0.7;
+}
+
 /* ─── Admin: feature flags (shared for HTMX lazy-load) ─── */
 .admin-flags-heading {
     margin-bottom: var(--db-space-4);

@@ -191,5 +191,8 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
 
         public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
             => throw new NotSupportedException();
+
+        public Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
+            => Task.FromResult<Stream?>(null);
     }
 }

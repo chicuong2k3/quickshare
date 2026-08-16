@@ -309,6 +309,31 @@ public sealed class R2StorageProvider : IStorageProvider, IDisposable
         }
     }
 
+    public async Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _s3.GetObjectAsync(new GetObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectKey,
+            }, ct);
+
+            var buffer = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(buffer, ct);
+            buffer.Position = 0;
+            return buffer;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            throw R2StorageException.FromAmazonS3(ex, $"OpenReadAsync({objectKey})");
+        }
+    }
+
     // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
 
     // S3/R2 timestamps are UTC; some SDK versions surface them as Unspecified or Local.

@@ -75,6 +75,7 @@ window.downloadApp = (function (): DownloadPage {
             }
             maybeRenderTextPreview();
             maybeRenderMediaPreview();
+            maybeRenderZipPreview();
         }
     }
 
@@ -484,6 +485,37 @@ window.downloadApp = (function (): DownloadPage {
 
         container.appendChild(el);
         show('dl-media-preview');
+    }
+
+    // ZIP content listing (issue #215): fetch the entry list and render it as
+    // plain text (names + sizes), never markup — entry names are untrusted.
+    let zipPreviewStarted = false;
+    function maybeRenderZipPreview() {
+        if (zipPreviewStarted) return;
+        const i = infoFromDom();
+        const name = String(i.fileName || '').toLowerCase();
+        const isZip = i.contentType === 'application/zip' || i.contentType === 'application/x-zip-compressed' || name.endsWith('.zip');
+        if (!isZip || state.isEncrypted || i.hasOtp || i.hasPassword) return;
+
+        const container = document.getElementById('dl-zip-list');
+        if (!container) return;
+        zipPreviewStarted = true;
+
+        fetch(apiBase() + '/api/downloads/' + shareCode() + '/zip-contents')
+            .then(function (r) { if (!r.ok) throw r; return r.json(); })
+            .then(function (entries: Array<{ name: string; size: number; isDirectory: boolean }>) {
+                if (!entries || entries.length === 0) return;
+                const wrap = document.getElementById('dl-zip-preview');
+                const ul = document.createElement('ul');
+                entries.forEach(function (e) {
+                    const li = document.createElement('li');
+                    li.textContent = (e.isDirectory ? e.name : e.name + ' (' + e.size + ' ' + t('zipBytes') + ')');
+                    ul.appendChild(li);
+                });
+                container.appendChild(ul);
+                if (wrap) show('dl-zip-preview');
+            })
+            .catch(function () { /* preview is a nicety — stay hidden on failure */ });
     }
 
     function copyText() {

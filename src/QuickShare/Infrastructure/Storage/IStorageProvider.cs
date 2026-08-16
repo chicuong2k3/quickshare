@@ -60,6 +60,13 @@ public interface IStorageProvider
     Task CopyObjectAsync(
         string sourceKey, string destinationKey, CancellationToken ct = default);
 
+    /// <summary>
+    /// Opens a seekable read stream for an object, or null if it does not exist.
+    /// Used for server-side inspection like ZIP content listing (issue #215).
+    /// </summary>
+    Task<Stream?> OpenReadAsync(
+        string objectKey, CancellationToken ct = default);
+
     // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
 
     /// <summary>Keys under <paramref name="prefix"/> last modified before <paramref name="olderThan"/>.</summary>

@@ -240,6 +240,12 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     public Task CopyObjectAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
         => Task.CompletedTask;
 
+    /// <summary>Bytes returned by OpenReadAsync; used by the ZIP preview test.</summary>
+    public byte[] NextReadBytes { get; set; } = [];
+
+    public Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult<Stream?>(new MemoryStream(NextReadBytes));
+
     public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<string>>([]);
 

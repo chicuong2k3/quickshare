@@ -35,4 +35,7 @@ public static class ErrorCodes
     public const string ExtendTooLate = "extend_too_late";
     public const string TagTooLong = "tag_too_long";
     public const string AccountDeleteConfirmMismatch = "account_delete_confirm_mismatch";
+    public const string NotZip = "not_a_zip";
+    public const string ZipTooLarge = "zip_too_large";
+    public const string ZipTooManyEntries = "zip_too_many_entries";
 }

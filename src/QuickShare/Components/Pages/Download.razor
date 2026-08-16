@@ -207,6 +207,15 @@
                            ungated, unencrypted media reaches this element. *@
                         <div id="dl-media-preview" class="dl-media hidden" style="margin-top: 1.5rem"></div>
 
+                        @* ZIP archive contents (issue #215) — filled by download.js; a
+                           read-only entry listing so recipients see what's inside before
+                           committing to a large download. Only ungated, unencrypted
+                           .zip deliveries reach this element. *@
+                        <div id="dl-zip-preview" class="dl-zip hidden" style="margin-top: 1.5rem">
+                            <p class="db-label" style="margin: 0 0 0.5rem">@Loc["dl_zip_title"]</p>
+                            <div id="dl-zip-list" class="dl-zip__list"></div>
+                        </div>
+
                         @* Aggregate download stats (issue #64) — count only, no sender identity. *@
                         @if (Info?.HideDownloadStats != true && (Info?.DownloadCount ?? 0) > 0)
                         {
@@ -476,6 +485,7 @@
         ["reportError"] = Loc["dl_report_error"],
         ["previewImageAlt"] = Loc["dl_preview_alt"],
         ["previewPdfTitle"] = Loc["dl_preview_pdf"],
+        ["zipBytes"] = Loc["dl_zip_bytes"],
     };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
