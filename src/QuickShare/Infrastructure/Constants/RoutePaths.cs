@@ -46,4 +46,5 @@ public static class RoutePaths
     public const string Sitemap = "/sitemap.xml";
     public const string Robots = "/robots.txt";
     public const string Status = "/status";
+    public const string Help = "/help";
 }

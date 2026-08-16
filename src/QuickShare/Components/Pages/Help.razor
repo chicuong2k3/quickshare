@@ -1,0 +1,99 @@
+@layout MainLayout
+@page "/help"
+@using System.Globalization
+
+@* Help center (issue #116) — self-serve FAQ + guides, client-side searchable. *@
+
+<PageTitle>@(IsVi ? "Trợ giúp" : "Help center")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "Câu hỏi thường gặp và hướng dẫn sử dụng QuickShareCloud." : "QuickShareCloud help: FAQ and how-to guides.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        <h1 class="db-h1">@(IsVi ? "Trợ giúp" : "Help center")</h1>
+
+        <label class="db-field" style="max-width: 24rem; margin-top: 1rem">
+            <span class="db-label">@(IsVi ? "Tìm kiếm" : "Search")</span>
+            <input type="search" id="help-search" class="db-field__input db-input" oninput="helpFilter(this.value)" placeholder="@(IsVi ? "Tìm câu hỏi…" : "Search questions…")" />
+        </label>
+
+        @foreach (var section in Sections)
+        {
+            <h2 class="db-h2">@SectionName(section)</h2>
+            @foreach (var q in Questions.Where(q => q.Section == section))
+            {
+                <details class="help-faq" data-search="@(SectionName(section) + " " + QuestionText(q))">
+                    <summary class="db-p" style="font-weight: 500; cursor: pointer">@QuestionText(q)</summary>
+                    <p class="db-p db-text-muted">@AnswerText(q)</p>
+                </details>
+            }
+        }
+
+        <h2 class="db-h2">@(IsVi ? "Hướng dẫn" : "Guides")</h2>
+        <ul class="db-p legal__list">
+            @if (IsVi)
+            {
+                <li><a class="db-link" href="@RoutePaths.Send">Gửi file lớn miễn phí</a></li>
+                <li><a class="db-link" href="@RoutePaths.Compare">So sánh với WeTransfer / SwissTransfer / Smash</a></li>
+                <li><a class="db-link" href="@RoutePaths.WhyPrivate">Vì sao file của bạn riêng tư</a></li>
+            }
+            else
+            {
+                <li><a class="db-link" href="@RoutePaths.Send">Send a large file free</a></li>
+                <li><a class="db-link" href="@RoutePaths.Compare">Compare WeTransfer / SwissTransfer / Smash</a></li>
+                <li><a class="db-link" href="@RoutePaths.WhyPrivate">Why your files are private</a></li>
+            }
+        </ul>
+    </article>
+</PageWrapper>
+
+<script>
+    window.helpFilter = function (q) {
+        var needle = (q || '').toLowerCase();
+        document.querySelectorAll('.help-faq').forEach(function (el) {
+            var hay = (el.getAttribute('data-search') || '').toLowerCase();
+            el.style.display = !needle || hay.indexOf(needle) >= 0 ? '' : 'none';
+        });
+    };
+</script>
+
+@code {
+    private const string Upload = "upload";
+    private const string Security = "security";
+    private const string Billing = "billing";
+    private const string P2p = "p2p";
+
+    private static readonly string[] Sections = [Upload, Security, Billing, P2p];
+
+    private sealed record Faq(string Section, string En, string EnAnswer, string Vi, string ViAnswer);
+
+    private static readonly Faq[] Questions =
+    [
+        new(Upload, "How big a file can I send?", "Free: up to 5 GB. Pro: 20 GB. Studio: 100 GB.", "Tôi gửi được file bao nhiêu GB?", "Miễn phí: tới 5 GB. Pro: 20 GB. Studio: 100 GB."),
+        new(Upload, "How long do links last?", "Free: 2 hours to 7 days. Paid plans: up to 90 days.", "Liên kết tồn tại bao lâu?", "Miễn phí: 2 giờ đến 7 ngày. Gói trả phí: tới 90 ngày."),
+        new(Upload, "Do I need an account?", "No — send anonymously. An account gives you a dashboard, longer expiry, and quotas.", "Tôi có cần tài khoản không?", "Không — gửi ẩn danh được. Tài khoản cho bạn bảng điều khiển, thời hạn dài hơn và hạn mức."),
+        new(Security, "Can the server read my files?", "No. Files are encrypted in your browser (AES-256-GCM) before upload; the key lives in the link.", "Máy chủ có đọc được file của tôi không?", "Không. File được mã hoá trong trình duyệt (AES-256-GCM) trước khi tải lên; chìa khoá nằm trong liên kết."),
+        new(Security, "How do I protect a link with a password?", "Set a password (or a 6-digit code) in 'Protect your link' on the send page. The recipient must enter it to download.", "Làm sao bảo vệ liên kết bằng mật khẩu?", "Đặt mật khẩu (hoặc mã 6 số) ở mục 'Bảo vệ liên kết' trên trang gửi. Người nhận phải nhập để tải."),
+        new(Security, "Are photos stripped of location data?", "Yes — GPS/camera/device tags are removed by default when you upload an image.", "Ảnh có bị xoá vị trí không?", "Có — tag GPS/máy ảnh/thiết bị được gỡ mặc định khi tải ảnh."),
+        new(Billing, "How do I upgrade?", "Sign in and open /pricing or /upgrade. Payment is via PayOS (VND).", "Làm sao nâng cấp gói?", "Đăng nhập rồi mở /pricing hoặc /upgrade. Thanh toán qua PayOS (VND)."),
+        new(Billing, "Can I cancel anytime?", "Yes — cancel from /account/billing; your plan runs until the end of the cycle.", "Tôi huỷ được bất cứ lúc nào không?", "Được — huỷ ở /account/billing; gói chạy đến hết chu kỳ."),
+        new(P2p, "What is P2P transfer?", "A direct browser-to-browser transfer — the file never touches our storage servers.", "Truyền P2P là gì?", "Truyền trực tiếp giữa hai trình duyệt — file không qua máy chủ lưu trữ của chúng tôi."),
+        new(P2p, "When should I use P2P?", "When both people are online and privacy matters most. For offline recipients, use a regular link.", "Khi nào nên dùng P2P?", "Khi cả hai cùng online và cần riêng tư nhất. Người nhận offline thì dùng liên kết thường."),
+    ];
+
+    private bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+    private string SectionName(string s) => (s, IsVi) switch
+    {
+        (Upload, true) => "Tải lên",
+        (Upload, false) => "Upload",
+        (Security, true) => "Bảo mật",
+        (Security, false) => "Security",
+        (Billing, true) => "Thanh toán",
+        (Billing, false) => "Billing",
+        (P2p, true) => "P2P",
+        _ => "P2P",
+    };
+    private string QuestionText(Faq q) => IsVi ? q.Vi : q.En;
+    private string AnswerText(Faq q) => IsVi ? q.ViAnswer : q.EnAnswer;
+}

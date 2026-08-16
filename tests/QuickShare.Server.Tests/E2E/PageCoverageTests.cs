@@ -24,6 +24,7 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     [InlineData("/compare")]
     [InlineData("/why-private")]
     [InlineData("/status")]
+    [InlineData("/help")]
     public async Task PublicPage_Returns200(string url)
     {
         var client = _factory.CreateClient();
@@ -80,6 +81,17 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateClient();
         var html = await client.GetStringAsync("/login");
         Assert.Contains("login-provider--github", html);
+    }
+
+    [Fact]
+    public async Task ApiResponse_CarriesRateLimitHeaders()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/deliveries");
+
+        Assert.True(response.Headers.Contains("X-RateLimit-Limit"));
+        Assert.True(response.Headers.Contains("X-RateLimit-Remaining"));
+        Assert.True(response.Headers.Contains("X-RateLimit-Reset"));
     }
 
     [Fact]

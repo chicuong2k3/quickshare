@@ -10,6 +10,9 @@ public static class HttpHeaders
     public const string PermissionsPolicy = "Permissions-Policy";
     public const string ContentSecurityPolicy = "Content-Security-Policy";
     public const string RetryAfter = "Retry-After";
+    public const string XRateLimitLimit = "X-RateLimit-Limit";
+    public const string XRateLimitRemaining = "X-RateLimit-Remaining";
+    public const string XRateLimitReset = "X-RateLimit-Reset";
 }
 
 public static class RobotsValues

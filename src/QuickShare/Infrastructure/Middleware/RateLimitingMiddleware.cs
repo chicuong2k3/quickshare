@@ -49,11 +49,20 @@ public sealed class RateLimitingMiddleware
 
             window.Count++;
 
+            // Issue #143: expose the quota on every rate-limited response so API
+            // consumers (SDKs) can throttle client-side instead of hitting 429 storms.
+            var remaining = Math.Max(0, limit - window.Count);
+            var reset = new DateTimeOffset(window.Start + Window).ToUnixTimeSeconds();
+            context.Response.Headers[HttpHeaders.XRateLimitLimit] = limit.ToString(CultureInfo.InvariantCulture);
+            context.Response.Headers[HttpHeaders.XRateLimitRemaining] = remaining.ToString(CultureInfo.InvariantCulture);
+            context.Response.Headers[HttpHeaders.XRateLimitReset] = reset.ToString(CultureInfo.InvariantCulture);
+
             if (window.Count > limit)
             {
                 var retryAfter = (int)(Window - (now - window.Start)).TotalSeconds;
                 context.Response.StatusCode = 429;
                 context.Response.Headers.RetryAfter = retryAfter.ToString(CultureInfo.InvariantCulture);
+                context.Response.Headers[HttpHeaders.XRateLimitRemaining] = "0";
                 context.Response.Headers.ContentType = MediaTypes.Json;
                 context.Response.WriteAsync(
                     $"{{\"error\":\"rate_limit_exceeded\",\"message\":\"Too many requests. Try again in {retryAfter} seconds.\",\"retryAfter\":{retryAfter}}}");

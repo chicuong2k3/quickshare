@@ -26,6 +26,8 @@ public sealed class SitemapEndpoint : EndpointWithoutRequest
         RoutePaths.Privacy,
         RoutePaths.Security,
         RoutePaths.Abuse,
+        RoutePaths.Status,
+        RoutePaths.Help,
         RoutePaths.ToolsOnlineClipboard,
         RoutePaths.ToolsSendImagesUncompressed,
         RoutePaths.ToolsShareText,

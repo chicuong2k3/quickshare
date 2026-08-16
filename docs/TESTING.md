@@ -59,6 +59,7 @@ browser download needed.
 | Security headers + robots | `SecurityHeadersTests` |
 | Trust static pages (security.txt, changelog, roadmap) | `PageCoverageTests` |
 | SEO + trust (sitemap, robots, compare, why-private) | `PageCoverageTests` |
+| Rate-limit headers + help center | `PageCoverageTests` |
 | OTP brute-force lockout | `OtpLockoutTests` |
 | Share password (download gate) | `DeliveryPasswordTests` |
 | New-device login tracking | `DeviceTrackerTests` |
