@@ -39,6 +39,8 @@ public record Delivery : BaseAuditEntity
     public string? Message { get; set; }
     public string? Sha256 { get; set; }
     public DateTime? FirstDownloadedAt { get; set; }
+    /// <summary>When the sender-expiry reminder email was sent (issue #29); null = not yet reminded.</summary>
+    public DateTime? ExpiryReminderSentAt { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }

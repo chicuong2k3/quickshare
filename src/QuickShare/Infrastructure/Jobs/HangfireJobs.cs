@@ -19,6 +19,7 @@ public static class HangfireJobs
     public const string ZombiePartSweep = "zombie-part-sweep";
     public const string DeliveryCleanup = "delivery-cleanup";
     public const string DownloadNotification = "download-notification";
+    public const string DeliveryExpiryReminder = "delivery-expiry-reminder";
     public const string OrphanSweep = "orphan-sweep";
     public const string TrialReminder = "trial-reminder";
     public const string TempUploadCleanup = "temp-upload-cleanup";
@@ -48,6 +49,7 @@ public static class HangfireJobs
             recurring.AddOrUpdate<DownloadNotificationJob>(DownloadNotification, j => j.NotifyAsync(),
                 Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
             recurring.AddOrUpdate<TrialReminderJob>(TrialReminder, j => j.NotifyAsync(), Cron.Daily());
+            recurring.AddOrUpdate<DeliveryExpiryReminderJob>(DeliveryExpiryReminder, j => j.RemindAsync(), Cron.Hourly());
             recurring.AddOrUpdate<WeeklyDigestJob>(WeeklyDigest, j => j.NotifyAsync(), Cron.Weekly());
         }
 
