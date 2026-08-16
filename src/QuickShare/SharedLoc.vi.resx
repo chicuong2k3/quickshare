@@ -212,6 +212,13 @@
   <data name="account_data_delete" xml:space="preserve"><value>Xóa tài khoản</value></data>
   <data name="account_data_delete_prompt" xml:space="preserve"><value>Nhập email của bạn để xóa vĩnh viễn tài khoản và toàn bộ dữ liệu:</value></data>
   <data name="account_data_delete_error" xml:space="preserve"><value>Xóa thất bại. Hãy chắc chắn bạn nhập đúng email.</value></data>
+  <data name="onboarding_title" xml:space="preserve"><value>Bắt đầu</value></data>
+  <data name="onboarding_progress" xml:space="preserve"><value>Hoàn thành {0} trên {1}</value></data>
+  <data name="onboarding_step_upload" xml:space="preserve"><value>Tải file đầu tiên</value></data>
+  <data name="onboarding_step_share" xml:space="preserve"><value>Nhận lượt tải đầu tiên</value></data>
+  <data name="onboarding_step_expiry" xml:space="preserve"><value>Đặt thời hạn</value></data>
+  <data name="onboarding_step_password" xml:space="preserve"><value>Bảo vệ file bằng mật khẩu</value></data>
+  <data name="onboarding_dismiss" xml:space="preserve"><value>Ẩn</value></data>
   <data name="account_usage_rate_limit" xml:space="preserve"><value>Giới hạn tần suất: {0} yêu cầu/phút</value></data>
   <data name="account_notifications_title" xml:space="preserve"><value>Thông báo</value></data>
   <data name="account_notifications_download_label" xml:space="preserve"><value>Gửi email khi có người tải file của tôi</value></data>

@@ -211,6 +211,13 @@
   <data name="account_data_delete" xml:space="preserve"><value>Delete account</value></data>
   <data name="account_data_delete_prompt" xml:space="preserve"><value>Type your email to permanently delete your account and all its data:</value></data>
   <data name="account_data_delete_error" xml:space="preserve"><value>Delete failed. Make sure you typed your email correctly.</value></data>
+  <data name="onboarding_title" xml:space="preserve"><value>Getting started</value></data>
+  <data name="onboarding_progress" xml:space="preserve"><value>{0} of {1} complete</value></data>
+  <data name="onboarding_step_upload" xml:space="preserve"><value>Upload your first file</value></data>
+  <data name="onboarding_step_share" xml:space="preserve"><value>Get your first download</value></data>
+  <data name="onboarding_step_expiry" xml:space="preserve"><value>Set an expiry</value></data>
+  <data name="onboarding_step_password" xml:space="preserve"><value>Password-protect a file</value></data>
+  <data name="onboarding_dismiss" xml:space="preserve"><value>Dismiss</value></data>
   <data name="account_usage_rate_limit" xml:space="preserve"><value>Rate limit: {0} requests/min</value></data>
   <data name="account_notifications_title" xml:space="preserve"><value>Notifications</value></data>
   <data name="account_notifications_download_label" xml:space="preserve"><value>Email me when someone downloads my files</value></data>

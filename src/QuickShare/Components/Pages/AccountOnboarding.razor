@@ -1,0 +1,81 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/onboarding"
+@attribute [Authorize]
+@using QuickShare.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="onboarding-card" class="db-card account-card account-onboarding" data-ai-action="account.onboarding">
+    <div class="db-card__body">
+        <div class="account-onboarding-head">
+            <h3 class="db-h4">@Loc["onboarding_title"]</h3>
+            <button type="button" class="account-onboarding-dismiss" aria-label="@Loc["onboarding_dismiss"]"
+                    onclick="dismissOnboarding(this)" data-ai-action="account.onboarding.dismiss">×</button>
+        </div>
+        <p class="db-text-muted account-onboarding-progress">@string.Format(Loc["onboarding_progress"], completed, StepCount)</p>
+        <div class="account-onboarding-bar" role="progressbar" aria-valuenow="@completed" aria-valuemin="0" aria-valuemax="@StepCount">
+            <div class="account-onboarding-bar__fill" style="width: @(completed * 100 / StepCount)%"></div>
+        </div>
+        <ul class="account-onboarding-list">
+            <li class="@StepClass(hasUpload)">@Loc["onboarding_step_upload"]</li>
+            <li class="@StepClass(hasDownload)">@Loc["onboarding_step_share"]</li>
+            <li class="@StepClass(hasExpiry)">@Loc["onboarding_step_expiry"]</li>
+            <li class="@StepClass(hasPassword)">@Loc["onboarding_step_password"]</li>
+        </ul>
+    </div>
+</div>
+</HtmxFragment>
+
+@code {
+    private const string HtmxRequestHeader = "HX-Request";
+    private const string HtmxRequestValue = "true";
+    private const int StepCount = 4;
+
+    private bool hasUpload;
+    private bool hasDownload;
+    private bool hasExpiry;
+    private bool hasPassword;
+
+    private int completed =>
+        (hasUpload ? 1 : 0) + (hasDownload ? 1 : 0) + (hasExpiry ? 1 : 0) + (hasPassword ? 1 : 0);
+
+    private string StepClass(bool done) => done ? "account-onboarding-step account-onboarding-step--done" : "account-onboarding-step";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxRequestHeader].FirstOrDefault() != HtmxRequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            var stats = await Db.Deliveries
+                .Where(d => d.SenderId == user.Id)
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Total = g.Count(),
+                    Downloads = g.Count(d => d.DownloadCount > 0),
+                    Expiry = g.Count(d => d.ExpiresAt != null),
+                    Password = g.Count(d => d.PasswordHash != null)
+                })
+                .FirstOrDefaultAsync();
+
+            hasUpload = stats is { Total: > 0 };
+            hasDownload = stats is { Downloads: > 0 };
+            hasExpiry = stats is { Expiry: > 0 };
+            hasPassword = stats is { Password: > 0 };
+        }
+        catch { }
+    }
+}

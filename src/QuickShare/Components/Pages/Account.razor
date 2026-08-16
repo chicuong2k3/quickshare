@@ -11,6 +11,18 @@
 
     <AccountTabs Current="@RoutePaths.Account" />
 
+    @* Onboarding checklist (issue #129) — HTMX lazy loaded, dismissible. *@
+    <HtmxFragment>
+    <div id="onboarding-card" class="db-card account-card"
+         hx-get="@RoutePaths.AccountOnboarding"
+         hx-trigger="load"
+         hx-select="#onboarding-card"
+         hx-swap="outerHTML">
+        <div class="db-card__body">
+            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+        </div>
+    </div>
+    </HtmxFragment>
     @* Profile Card — HTMX lazy loaded *@
     <HtmxFragment>
     <div id="profile-card" class="db-card account-card"
@@ -112,6 +124,17 @@
         }).catch(function () { window.alert(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
     };
+    window.dismissOnboarding = function (btn) {
+        localStorage.setItem('qs-onboarding-dismissed', '1');
+        var card = btn.closest('#onboarding-card');
+        if (card) card.remove();
+    };
+    (function () {
+        if (localStorage.getItem('qs-onboarding-dismissed')) {
+            var card = document.getElementById('onboarding-card');
+            if (card) card.remove();
+        }
+    })();
 </script>
 
 <script src="/js/account.js"></script>

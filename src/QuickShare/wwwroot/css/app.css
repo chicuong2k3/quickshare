@@ -1048,6 +1048,80 @@ body::after,
     border-color: var(--db-color-danger, #dc2626);
 }
 
+/* Onboarding checklist (issue #129). */
+.account-onboarding-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--db-space-2);
+}
+
+.account-onboarding-dismiss {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--db-color-text-muted, #6b7280);
+}
+
+.account-onboarding-progress {
+    font-size: var(--db-text-sm);
+    margin-bottom: var(--db-space-2);
+}
+
+.account-onboarding-bar {
+    height: 0.5rem;
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    border-radius: var(--db-radius);
+    overflow: hidden;
+    margin-bottom: var(--db-space-3);
+}
+
+.account-onboarding-bar__fill {
+    height: 100%;
+    background: var(--db-valley);
+    transition: width 0.3s ease;
+}
+
+.account-onboarding-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--db-space-2);
+}
+
+.account-onboarding-step {
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted, #6b7280);
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.account-onboarding-step::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.1rem;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid var(--db-mountain);
+    border-radius: 50%;
+}
+
+.account-onboarding-step--done {
+    color: var(--db-color-text);
+    text-decoration: line-through;
+}
+
+.account-onboarding-step--done::before {
+    background: var(--db-valley);
+    border-color: var(--db-valley);
+}
+
 /* --- P2P send quota banner --- */
 .p2p-quota-banner {
     margin-bottom: var(--db-space-4);
