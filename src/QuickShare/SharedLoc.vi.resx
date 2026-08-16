@@ -261,7 +261,7 @@
   <data name="upload_password_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mật khẩu này trước khi tải file.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Thời gian gửi</value></data>
   <data name="upload_deliver_at_hint" xml:space="preserve"><value>Liên kết sẽ kích hoạt vào thời điểm này.</value></data>
-  <data name="upload_expiry_label" xml:space="preserve"><value>Hết hạn: {0}</value></data>
+  <data name="upload_expiry_at" xml:space="preserve"><value>Hết hạn: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>Không tìm thấy ảnh trong clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Đã mã hóa</value></data>
   <data name="upload_cancel" xml:space="preserve"><value>Hủy</value></data>

@@ -260,7 +260,7 @@
   <data name="upload_password_hint" xml:space="preserve"><value>If set, recipients must enter this password before downloading.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Deliver at</value></data>
   <data name="upload_deliver_at_hint" xml:space="preserve"><value>The link becomes active at this time.</value></data>
-  <data name="upload_expiry_label" xml:space="preserve"><value>Expires: {0}</value></data>
+  <data name="upload_expiry_at" xml:space="preserve"><value>Expires: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>No image found in clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Encrypted</value></data>
   <data name="upload_cancel" xml:space="preserve"><value>Cancel</value></data>
