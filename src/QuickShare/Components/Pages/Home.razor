@@ -22,7 +22,7 @@
                     @* The stack's own object: a drawn pixel floppy with the rainbow label. *@
                     <svg class="home-hero__art" viewBox="0 0 24 24" aria-hidden="true">
                         <rect x="1" y="1" width="22" height="22" fill="var(--db-ink)"/>
-                        <rect x="2" y="2" width="20" height="20" fill="var(--db-valley)"/>
+                        <rect x="2" y="2" width="20" height="20" fill="var(--db-disk)"/>
                         <rect x="7" y="2" width="10" height="7" fill="var(--db-ink)"/>
                         <rect x="8" y="3" width="8" height="5" fill="var(--db-sand)"/>
                         <rect x="13" y="4" width="2" height="3" fill="var(--db-sheet-raised)"/>
@@ -68,9 +68,14 @@
             </span>
         </div>
         <div class="db-card home-why__card">
+            <div class="qs-titlebar home-why__bar">
+                <span class="qs-titlebar__box" aria-hidden="true"></span>
+                <span class="qs-titlebar__label">@Loc["home_table_caption"]</span>
+                <span class="qs-titlebar__box" aria-hidden="true"></span>
+            </div>
             <div class="db-card__body">
                 <table class="home-why__table">
-                    <caption class="home-why__caption">@Loc["home_table_caption"]</caption>
+                    <caption class="sr-only">@Loc["home_table_caption"]</caption>
                     <thead>
                         <tr>
                             <th scope="col">@Loc["home_table_what"]</th>
@@ -117,6 +122,7 @@
         <div class="db-grid db-grid--3 db-gap-4">
             <div class="db-card">
                 <div class="db-card__body">
+                    <span class="home-feature-tab home-feature-tab--green">@Loc["home_feat_tab1"]</span>
                     <div class="home-feature-icon home-feature-icon--green">
                         @* Pixel padlock *@
                         <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -137,6 +143,7 @@
             </div>
             <div class="db-card">
                 <div class="db-card__body">
+                    <span class="home-feature-tab home-feature-tab--blue">@Loc["home_feat_tab2"]</span>
                     <div class="home-feature-icon home-feature-icon--blue">
                         @* Pixel clock *@
                         <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -154,6 +161,7 @@
             </div>
             <div class="db-card">
                 <div class="db-card__body">
+                    <span class="home-feature-tab home-feature-tab--yellow">@Loc["home_feat_tab3"]</span>
                     <div class="home-feature-icon home-feature-icon--yellow">
                         @* Pixel arrow through an open door — no signup gate *@
                         <svg viewBox="0 0 16 16" aria-hidden="true">

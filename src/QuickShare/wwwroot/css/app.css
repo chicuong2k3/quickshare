@@ -39,6 +39,13 @@
     --db-lattice: rgba(20,20,20,0.08);
     /* The six-band rainbow — progress and nothing else. */
     --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
+    /* State washes — solid per theme so they survive the dark ground. */
+    --db-wash-green: #E2F2DC;
+    --db-wash-blue: var(--db-valley);
+    --db-wash-yellow: #FBEED0;
+    --db-wash-orange: #F9E4CF;
+    /* The disk: the drawn floppy's pale plastic, same in both themes. */
+    --db-disk: #DDF1FB;
 
     /* === Legacy palette names, remapped so nothing dangles === */
     --db-cream: var(--db-sheet);
@@ -272,6 +279,13 @@
     --db-lattice: rgba(242,241,237,0.06);
     --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
     --db-dither: repeating-conic-gradient(var(--db-lattice) 0% 25%, transparent 0% 50%);
+    /* State washes deepen at night but stay unmistakably colored. */
+    --db-wash-green: #2F4A2B;
+    --db-wash-blue: #24455C;
+    --db-wash-yellow: #4A3D1E;
+    --db-wash-orange: #4A3320;
+    /* The disk keeps its pale plastic so the floppy reads at night. */
+    --db-disk: #9FD3EE;
 
     --db-charcoal: #D8D7D2;
     --db-warm-gray: #A8A69F;

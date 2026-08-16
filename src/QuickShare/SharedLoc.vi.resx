@@ -7,6 +7,10 @@
   <data name="lang_en" xml:space="preserve"><value>English</value></data>
   <data name="lang_vi" xml:space="preserve"><value>Tiếng Việt</value></data>
   <data name="nav_pricing" xml:space="preserve"><value>Bảng giá</value></data>
+  <data name="nav_home" xml:space="preserve"><value>Trang chủ</value></data>
+  <data name="home_feat_tab1" xml:space="preserve"><value>Thẻ 2</value></data>
+  <data name="home_feat_tab2" xml:space="preserve"><value>Thẻ 3</value></data>
+  <data name="home_feat_tab3" xml:space="preserve"><value>Thẻ 4</value></data>
   <data name="nav_send" xml:space="preserve"><value>Gửi</value></data>
   <data name="nav_files" xml:space="preserve"><value>Tệp</value></data>
   <data name="nav_account" xml:space="preserve"><value>Tài khoản</value></data>

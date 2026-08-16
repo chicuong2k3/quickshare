@@ -1,87 +1,107 @@
 ---
 name: QuickShareCloud
-description: A folded sheet you can measure — ciphertext as matte paper stock, creased at 60 degrees, with one gold tab that deploys it.
+description: A HyperCard stack, colorized — every delivery is a drawn white card on a putty dither desktop, with 2px ink borders, hard offset shadows, and six Apple colors rationed by role.
 colors:
-  sheet: "#EFEEEA"
-  sheet-raised: "#F9F9F7"
-  sheet-deep: "#E3E2DC"
-  mountain: "#B9B6AE"
-  mountain-deep: "#8E8B83"
-  valley: "#CFE0F2"
-  valley-ink: "#3F6187"
-  foil: "#D4AF37"
-  foil-deep: "#B8952A"
-  foil-ink: "#6B5518"
-  ink: "#0A0A0A"
-  ink-soft: "#55524B"
-  charcoal: "#2B2924"
-  error: "#A4322A"
-  success: "#4F7A5B"
-  dark-sheet: "#16171A"
-  dark-sheet-raised: "#1D1F23"
-  dark-sheet-deep: "#101113"
-  dark-mountain: "#3A3D43"
-  dark-mountain-deep: "#575B62"
-  dark-valley: "#24384F"
-  dark-valley-ink: "#8FB6E0"
-  dark-foil: "#E0BC4A"
-  dark-foil-deep: "#C79F2E"
-  dark-foil-ink: "#E8CB70"
+  sheet: "#EDE9DC"                 # putty desktop ground (light)
+  sheet-raised: "#FFFFFF"          # the card
+  sheet-deep: "#E2DDCE"            # recessed regions
+  mountain: "#141414"              # every border is drawn ink
+  mountain-deep: "#000000"
+  valley: "#DDF1FB"                # blue wash — active/selected ground
+  valley-ink: "#005F8C"            # blue ink — active text/focus
+  foil: "#FDB827"                  # apple yellow — accent fill only
+  foil-deep: "#F5821F"             # apple orange
+  foil-ink: "#7A4A00"              # accent as type (7:1 on putty)
+  ink: "#141414"
+  ink-soft: "#55534E"
+  stamp: "#141414"                 # the default button's ground (light)
+  stamp-label: "#FFFFFF"
+  lattice: "rgba(20,20,20,0.08)"   # the dither's ink component
+  wash-green: "#E2F2DC"
+  wash-blue: "#DDF1FB"
+  wash-yellow: "#FBEED0"
+  wash-orange: "#F9E4CF"
+  disk: "#DDF1FB"                  # the drawn floppy's pale plastic
+  error: "#C42B2F"
+  success: "#2E8540"
+  # Dark — the desktop at night. Same drawn cards, inverted ink.
+  dark-sheet: "#1B1B1F"
+  dark-sheet-raised: "#242429"
+  dark-sheet-deep: "#141417"
+  dark-mountain: "#E8E6DF"         # borders stay drawn — now in light ink
+  dark-mountain-deep: "#FFFFFF"
+  dark-valley: "#14384D"
+  dark-valley-ink: "#6FC3EE"
+  dark-foil-ink: "#FFCF66"         # accent as type on near-black
   dark-ink: "#F2F1ED"
-  dark-ink-soft: "#A5A49E"
-  # Third-party brand colours, allowed only on the control they belong to:
-  github-brand: "#24292f"        # GitHub provider button border only
-  foil-specular: "rgba(255,255,255,0.34)"  # the highlight pass across foil
-  stamp: "#0A0A0A"                         # the primary action's ground (light theme)
-  stamp-rule: "rgba(212,175,55,0.55)"      # its inner blind-stamp hairline
-  lattice: "rgba(10,10,10,0.10)"           # the crease line, per theme
-  dark-stamp: "#050505"                    # deeper than the dark sheet, so it still separates
-  dark-stamp-rule: "rgba(224,188,74,0.60)"
-  dark-lattice: "rgba(242,241,237,0.07)"
+  dark-ink-soft: "#A8A69F"
+  dark-stamp: "#F2F1ED"            # the default button inverts at night
+  dark-stamp-label: "#141414"
+  dark-lattice: "rgba(242,241,237,0.06)"
+  dark-wash-green: "#2F4A2B"
+  dark-wash-blue: "#24455C"
+  dark-wash-yellow: "#4A3D1E"
+  dark-wash-orange: "#4A3320"
+  dark-disk: "#9FD3EE"
+  dark-error: "#FF6B5E"
+  dark-success: "#6FCF87"
+  # The six-band rainbow — progress and nothing else (top to bottom):
+  rainbow-green: "#61BB46"
+  rainbow-yellow: "#FDB827"
+  rainbow-orange: "#F5821F"
+  rainbow-red: "#E03A3E"
+  rainbow-purple: "#963D97"
+  rainbow-blue: "#009DDC"
 typography:
   # The closed size set. Anything outside this list is a defect, not a choice.
-  # Small end steps in 1/16rem because mono spec labels live there.
-  scale: ["0.5625rem", "0.625rem", "0.6875rem", "0.75rem", "0.8125rem", "0.875rem", "0.9375rem", "1rem", "1.125rem", "1.25rem", "1.375rem", "2rem", "2.25rem", "3.25rem", "3.5rem"]
+  scale: ["0.5625rem", "0.625rem", "0.6875rem", "0.75rem", "0.8125rem", "0.875rem", "0.9375rem", "1rem", "1.125rem", "1.375rem", "2rem", "3.5rem"]
   display:
-    fontFamily: "Outfit, system-ui, sans-serif"
+    fontFamily: "Bricolage Grotesque, Archivo, system-ui, sans-serif"
     fontSize: "clamp(2.1rem, 7vw, 4.25rem)"
-    fontWeight: 200
+    fontWeight: 800
     lineHeight: 1.0
-    letterSpacing: "0.05em"
+    letterSpacing: "-0.015em"
   headline:
-    fontFamily: "Outfit, system-ui, sans-serif"
+    fontFamily: "Bricolage Grotesque, Archivo, system-ui, sans-serif"
     fontSize: "2rem"
-    fontWeight: 200
+    fontWeight: 800
     lineHeight: 1.05
-    letterSpacing: "0.1em"
+    letterSpacing: "-0.015em"
   title:
-    fontFamily: "Outfit, system-ui, sans-serif"
+    fontFamily: "Bricolage Grotesque, Archivo, system-ui, sans-serif"
     fontSize: "1.125rem"
-    fontWeight: 300
+    fontWeight: 700
     lineHeight: 1.25
-    letterSpacing: "0.12em"
+    letterSpacing: "-0.01em"
   body:
-    fontFamily: "Outfit, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontFamily: "Archivo, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.65
     letterSpacing: "normal"
   label:
-    fontFamily: "Azeret Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontFamily: "Courier Prime, ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.6875rem"
     fontWeight: 400
     lineHeight: 1.4
     letterSpacing: "0.14em"
+  titlebar:
+    fontFamily: "Courier Prime, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.8125rem"
+    fontWeight: 700
+    lineHeight: 1.4
+    letterSpacing: "0.08em"
   measurement:
-    fontFamily: "Azeret Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontFamily: "Courier Prime, ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.4
     letterSpacing: "0.02em"
     fontFeature: "tabular-nums"
 rounded:
-  none: "0px"
-  full: "0px"
+  none: "0px"        # cards, fields, modals, badges, everything drawn square
+  button: "14px"     # the Mac rounded-rect button
+  button-primary: "16px"
 spacing:
   "1": "4px"
   "2": "8px"
@@ -93,43 +113,48 @@ spacing:
   "8": "40px"
   "9": "64px"
 components:
-  # A foil stamp, not a slab of gold. See "The Stamp" below.
+  # The default button: ink ground, paper label, outer double ring.
   button-primary:
     backgroundColor: "{colors.stamp}"
-    textColor: "{colors.foil}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
-    padding: "7px 26px"
-    innerRule: "inset 0 0 0 5px {colors.stamp}, inset 0 0 0 6px {colors.stamp-rule}"
+    textColor: "{colors.stamp-label}"
+    rounded: "{rounded.button-primary}"
+    padding: "7px 20px"
+    ring: "0 0 0 3px {colors.sheet-raised}, 0 0 0 5px {colors.stamp}"
   button-primary-hover:
-    backgroundColor: "{colors.stamp}"
-    textColor: "#E3C566"
-    innerRule: "the rule brightens to {colors.foil}"
+    backgroundColor: "{colors.mountain-deep}"
+    textColor: "{colors.stamp-label}"
   button-primary-active:
-    backgroundColor: "#000000"
-    textColor: "{colors.foil-deep}"
+    backgroundColor: "{colors.valley-ink}"
+    textColor: "{colors.sheet-raised}"
   button-secondary:
-    backgroundColor: "transparent"
+    backgroundColor: "{colors.sheet-raised}"
     textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.button}"
     padding: "7px 14px"
+    border: "2px solid {colors.mountain}"
   button-secondary-hover:
     backgroundColor: "{colors.valley}"
     textColor: "{colors.ink}"
+  button-secondary-active:
+    backgroundColor: "{colors.mountain}"
+    textColor: "{colors.sheet-raised}"
   card:
     backgroundColor: "{colors.sheet-raised}"
     textColor: "{colors.ink}"
     rounded: "{rounded.none}"
     padding: "20px"
+    border: "2px solid {colors.mountain}"
+    shadow: "3px 3px 0 rgba(20,20,20,1)"
   field:
     backgroundColor: "{colors.sheet-raised}"
     textColor: "{colors.ink}"
     rounded: "{rounded.none}"
     padding: "8px 12px"
+    border: "2px solid {colors.mountain}"
   field-focus:
     backgroundColor: "{colors.sheet-raised}"
     textColor: "{colors.ink}"
+    border: "2px solid {colors.valley-ink}"
   otp-cell:
     backgroundColor: "{colors.sheet-raised}"
     textColor: "{colors.ink}"
@@ -138,20 +163,21 @@ components:
     height: "3.25rem"
   otp-cell-focus:
     backgroundColor: "{colors.valley}"
-    textColor: "{colors.valley-ink}"
+    textColor: "{colors.ink}"
+  titlebar:
+    backgroundColor: "{colors.sheet-raised}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.none}"
+    padding: "6px 10px"
   badge:
     backgroundColor: "transparent"
-    textColor: "{colors.charcoal}"
+    textColor: "{colors.ink}"
     typography: "{typography.label}"
     rounded: "{rounded.none}"
-    padding: "0.45rem 0.75rem"
-  badge-active:
-    backgroundColor: "{colors.valley}"
-    textColor: "{colors.valley-ink}"
+    padding: "3px 10px"
   nav-item:
     backgroundColor: "transparent"
     textColor: "{colors.ink-soft}"
-    typography: "{typography.label}"
     rounded: "{rounded.none}"
     padding: "6px 10px"
   nav-item-active:
@@ -163,221 +189,216 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Miura Sheet"**
+**Creative North Star: "The HyperCard Stack, Colorized"**
 
-Ciphertext is a folded sheet. The server holds a packet it cannot open; the key in the link is the one pull that deploys it. Every surface in this product is a region of one continuous piece of matte sheet stock, creased at 60 degrees, printed with the delivery's real measurements in monospace along hairline rules. The category's answer to "share a file" is a centered white card floating on a soft gradient ground — this system refuses that outright. There is no floating, no soft ground, and no rounded card. There are cells of a sheet, separated by creases.
+Every delivery is a card in your stack; sending a file is flipping a card. The world is colorized classic-Mac / HyperCard grammar: a putty desktop covered in a 4px dither pattern, white cards with 2px drawn-ink borders and hard offset shadows (no blur, ever), striped title bars flanked by little boxes, and Mac rounded-rect buttons — of which exactly one per card wears the double outer ring that marked the button Return would press. The category's answer to "share a file" is a floating white card on a soft gradient; this system refuses that and refuses minimal flat-tech equally. Nothing floats — everything is *drawn*, with a visible line weight, on a visible desktop.
 
-The system's authority comes from measurement, not decoration. Byte counts, part counts, expiry timestamps, share codes, SHA-256 prefixes and prices are all set in Azeret Mono with tabular figures, and they are always true values pulled from the actual delivery. The display voice — Outfit at weight 200, uppercase, tracked wide — is engineering lettering, the register of a spec drawing, not a magazine headline. Colour does almost no work: everything is at rest in mountain gray until it becomes active (valley blue) or becomes the single thing you can pull (foil gold).
+Color does specific jobs and no others. Six Apple colors are rationed by role: the blue wash is the active/selected state, the six-band rainbow is progress and nothing else, yellow is an accent fill that never becomes type on paper, and the green/blue/yellow/orange washes are solid state grounds behind pixel icons and step numbers. Everything else is ink on paper. Facts about a delivery — byte counts, share codes, hashes, expiry — are set in Courier Prime with tabular figures; the display voice is Bricolage Grotesque at 800, tight and lowercase, the confident hand-lettered title on the card.
 
-The system's discipline is in what it refuses. Zero radius everywhere, at token level. No shadows on cards, ever. No gradients across text. No decorative serial numbers in the mono voice. One gold element per screen at most. What is left is a sheet you can read the specs off.
+The direction contract for this build lives as an HTML comment at the top of `<body>` in `src/QuickShare/App.razor`, seed **`ad3dafb6`** ("HyperCard Stack — user-pinned challenger, 'thêm nhiều màu'"). The approved comp and its approval record live in `.impeccable/mocks/hypercard-color/`; the world cards are `.impeccable/worlds/hypercard-*.webp`.
 
 **Key Characteristics:**
-- Zero border-radius, enforced at the token layer — a crease has no radius
-- 60-degree crease lattice as full-bleed page ground, fixed-attachment
-- `skewX(-14deg)` parallelograms with counter-skewed glyphs for every icon cell (the primary action is the exception: it is a stamped rectangle)
-- Hairline (1px) rules that terminate in monospace spec labels
-- Foil gold is a fill and never a text colour; deep bronze carries typographic accent
-- Mono labels carry real measurements only — never decorative serials
-- Two themes: light sheet and dark "packet in shadow"
+- Putty dither desktop under every page: `repeating-conic-gradient` at 4px tile, ink component at 8% (light) / 6% (dark)
+- White cards, 2px ink borders, hard offset shadows (2/3/5px, zero blur, full opacity)
+- Striped title bar (`.qs-titlebar`): horizontal 1px stripes behind a mono label on its own paper patch, a drawn box at each end
+- Cards and fields are square (radius 0 at token level); buttons are Mac rounded-rects (14px / 16px)
+- The primary action is *the default button*: ink ground, paper label, outer double ring — inverted at night
+- Pixel iconography: inline SVG rect grids with `shape-rendering: crispEdges` — no emoji, no unicode glyphs
+- One authored motion: the HyperCard dissolve (`steps()` opacity), fired only when a delivery card appears
+- Two mandatory themes: the putty desktop by day, the same desktop at night
 
-**Verification note.** The direction contract for this build lives as an HTML comment at the top of `<body>` in `src/QuickShare/App.razor`, seed key **`46c7765a`**, form index 5 (bearer ticket). It is present and matches the built system except where noted under Honest Gaps below.
-
-**Vendor-override warning.** Every token name in this system is DAUB's (`--db-*`). DAUB is a third-party CSS framework loaded from `https://daub.dev/daub.css` in `App.razor`. The names were kept deliberately so that the ~240 lines of `db-*` markup across 19 component files did not have to change; **only the values were replaced**, inside the two theme blocks at the top of `src/QuickShare/wwwroot/css/app.css`. When you add a token, add it to those blocks under a DAUB-shaped name. When you find a `--db-*` value you did not expect, check whether it is one of ours or one still coming from the vendor sheet — some are (see Honest Gaps).
+**Vendor-override warning.** Every token name in this system is DAUB's (`--db-*`). DAUB is a third-party CSS framework loaded from `https://daub.dev/daub.css` in `App.razor`. The names are kept deliberately — ~322 uses of `db-*` classes across the markup re-skin for free — so **only the values are ours; never rename a token**. All values live in the two theme blocks at the top of `src/QuickShare/wwwroot/css/app.css`. The vendor's grunge family additionally uppercases headings and roughens card corners at `[data-theme^="grunge"]` specificity; `app.css` matches that specificity and undoes it. Legacy Miura-world names (`--db-sheet`, `--db-mountain`, `--db-valley`, `--db-foil`, `.miura-spec`, `.miura-rule`, `.miura-cell`, the `miura-deploy` keyframes) are kept as aliases into this world so nothing dangles — they are HyperCard values wearing old names.
 
 ## Colors
 
-The palette is a paper palette: warm neutral stock, one cool crease shadow, one metallic. Nothing is saturated except the foil, and the foil is rationed.
+Ink on paper, six Apple colors rationed by role. Nothing is tinted for mood; every color is a state, a fill, or a band of the rainbow.
 
 ### Primary
-- **Foil Gold** (`{colors.foil}`): The single deployable action. Primary button fill, progress-bar fill, the recommended pricing cell's folded corner, the switch-on state. Never more than one per viewport. In dark theme it warms and lifts (`{colors.dark-foil}`) so it still reads as metal against near-black stock.
-- **Deep Bronze** (`{colors.foil-ink}`): The typographic form of the accent. Any accent that is *text* — step numbers, the "recommended" badge, inline links — uses this, never the foil. On the light sheet it measures ~6.1:1; the foil itself measures ~2.1:1 and fails as text.
+- **Ink** (`{colors.ink}` light / `{colors.dark-ink}` dark): every border, every drawn line, primary text, and the default button's ground. The workhorse of the whole system — this world's authority is line weight, not hue.
+- **Apple Yellow** (`{colors.foil}`): accent *fill* only — the highlight patch behind the hero's accent word, warning-banner grounds, the star glyph. It measures ~2.1:1 on paper and never carries type there. Same value in both themes.
+- **Accent Ink** (`{colors.foil-ink}` light / `{colors.dark-foil-ink}` dark): the typographic form of the accent — `--db-color-accent-text`. Deep brown (7:1 on putty) by day, pale gold on near-black by night.
 
 ### Secondary
-- **Valley Blue** (`{colors.valley}`) and **Valley Ink** (`{colors.valley-ink}`): The inside of a crease — the active/selected/open state. Active nav item background, selected tab, focused OTP cell, drag-active dropzone, "encrypted" fact chips, selected billing period, the underline crease beneath an emphasized headline word. Valley Ink is also the focus-ring colour and the selection highlight.
+- **Valley Blue wash** (`{colors.valley}`) and **Valley Ink** (`{colors.valley-ink}`): the active/selected state. Active nav item, selected tab, focused OTP cell, drag-active dropzone, secondary-button hover, focus rings, text selection, the pressed state of the default button. Deepens at night (`{colors.dark-valley}` / `{colors.dark-valley-ink}`) but stays unmistakably blue.
+- **The Rainbow** (`--db-rainbow`): a hard six-band vertical gradient — green `{colors.rainbow-green}`, yellow `{colors.rainbow-yellow}`, orange `{colors.rainbow-orange}`, red `{colors.rainbow-red}`, purple `{colors.rainbow-purple}`, blue `{colors.rainbow-blue}` — the classic-Apple stripe. It is the progress fill (`--db-progress-fill`, delivery download gauges) and the drawn floppy's label, and nothing else may wear it.
+
+### Tertiary — the state washes
+Solid per-theme grounds (`--db-wash-green/blue/yellow/orange`) behind pixel icons, step numbers, feature tabs, and the hero's ghost sheets. Solid, not translucent, so they survive the dark ground: `{colors.wash-green}` / `{colors.wash-blue}` / `{colors.wash-yellow}` / `{colors.wash-orange}` by day, `{colors.dark-wash-green}` etc. by night.
 
 ### Neutral
-- **Sheet** (`{colors.sheet}`): The page ground. The crease lattice is drawn over it.
-- **Sheet Raised** (`{colors.sheet-raised}`): Card, field, dropdown, modal and toast surfaces. A slightly whiter region of the same stock, not a floating plane.
-- **Sheet Deep** (`{colors.sheet-deep}`): Recessed regions — progress-track backgrounds, pressed secondary buttons, disabled button fill, muted icon cells.
-- **Mountain** (`{colors.mountain}`): Every hairline. Borders, rules, separators, table lines, cell divisions. This is the workhorse colour of the entire system.
-- **Mountain Deep** (`{colors.mountain-deep}`): Hover-strengthened borders, scrollbar thumb, the brand's route-path label.
-- **Ink** (`{colors.ink}`) / **Ink Soft** (`{colors.ink-soft}`) / **Charcoal** (`{colors.charcoal}`): Primary text, muted spec-label text, secondary body text.
+- **Putty** (`{colors.sheet}` / `{colors.dark-sheet}`): the desktop ground, always under the dither.
+- **Card White** (`{colors.sheet-raised}` / `{colors.dark-sheet-raised}`): card, field, dropdown, modal, toast, navbar surfaces.
+- **Putty Deep** (`{colors.sheet-deep}` / `{colors.dark-sheet-deep}`): recessed regions — progress tracks, muted grounds.
+- **Ink Soft** (`{colors.ink-soft}` / `{colors.dark-ink-soft}`): muted spec-label text.
+- **Disk Plastic** (`{colors.disk}` / `{colors.dark-disk}`): the drawn floppy's pale plastic; kept pale at night so the floppy still reads.
 
 ### Status
-- **Error Oxide** (`{colors.error}`) and **Field Green** (`{colors.success}`): terminal upload states and validation messages only, always as a 1px border plus an 8% subtle fill, never as a solid block.
+- **Error** (`{colors.error}` / `{colors.dark-error}`) and **Success** (`{colors.success}` / `{colors.dark-success}`): validation and terminal states. Text and borders, or a subtle fill — never a solid block of red or green.
 
 ### Dark Theme
-The dark theme is `[data-theme="grunge-dark"], [data-theme="dark"]`; the light sheet is `[data-theme="grunge-light"], [data-theme="light"]`, and it is the default. The names were inverted at one point — the sheet lived under `grunge-dark` — so DAUB's own light/dark toggle produced the opposite scheme; do not reintroduce that. Each theme block carries the **full** shared token layer (typography, geometry, shadows, focus, transitions, semantics, components) after its own raw palette. A block that redefines only raw colours half-applies: the semantic layer falls back to DAUB's defaults and the page renders as an unreadable hybrid.
-
-The dark theme is the same packet lit from one side, not an inversion. Stock goes to `{colors.dark-sheet}`; mountain hairlines become `{colors.dark-mountain}`; the valley darkens to `{colors.dark-valley}` while its ink brightens to `{colors.dark-valley-ink}` so the active cell still reads. Foil brightens; **and here the law flips** — in dark, `--db-color-accent-text` points at `{colors.dark-foil-ink}`, a pale gold that *is* legible as text on near-black. Both themes are required; a surface that only works in one is not finished.
+The light desktop is `[data-theme="grunge-light"], [data-theme="light"]` and is the default (`App.razor` seeds `grunge-light`; `theme-color` is `#EDE9DC`). The dark desktop is `[data-theme="grunge-dark"], [data-theme="dark"]`. Dark is the same drawn world at night, not an inversion of roles: cards stay cards, borders stay drawn — now in light ink (`{colors.dark-mountain}`) — the hard drop goes to true black, the washes deepen, and **the default button inverts**: paper ground, ink label, paper ring. Each theme block carries the **full** token layer (palette, typography, geometry, shadows, focus, components); a block that redefines only raw colors half-applies and the page renders as an unreadable hybrid of ours and DAUB's defaults. Both themes are required; a surface that only works in one is not finished.
 
 ### Named Rules
 
-**The Foil-Is-A-Fill Rule.** Gold is a fill and never a text colour *on the sheet*, where it measures 2.1:1. Any accent read as type against paper uses `--db-color-accent-text` (deep bronze on light, pale gold on dark). The single exception is the stamp: on `--db-stamp` ink, foil measures 8:1 and is the label. `color: var(--db-foil)` is a contrast bug everywhere except inside a stamped surface.
+**The Yellow-Is-A-Fill Rule.** Apple yellow is a fill and never a text color on paper, where it measures 2.1:1. Any accent read as type uses `--db-color-accent-text` (deep brown by day, pale gold by night). The hero's accent word is the canonical form: a yellow patch *behind* ink text (`background: var(--db-foil)` bled 4px by box-shadow), never yellow glyphs.
 
-**The Stamp.** The primary action is the darkest object on the sheet — an ink ground carrying a foil label and an inner hairline rule, the blind-stamp border a foiled card has. Its hierarchy comes from value, not from hue, so it holds at any size and needs no shine. It is a rectangle: an earlier parallelogram lost its border on the cut edges, forced a second silhouette below 560px, and ate the focus outline. Hover brightens the rule and the label rather than repainting the ground; a `background` shorthand on hover wipes the material and is the mistake this rule exists to prevent.
+**The Rainbow-Is-Progress Rule.** The six-band rainbow (`--db-rainbow`) appears on progress fills and on the drawn floppy's label, and nowhere else. A decorative rainbow is a defect. A spent delivery's gauge greys its fill to muted text color — the rainbow is for progress still happening.
 
-**The One Pull Rule.** At most one foil element per viewport, and it must be the thing that actually deploys the packet — download, upload, upgrade. A selected toggle is not a pull; it takes valley. Pricing's billing-period switch explicitly overrides `db-btn--primary` back to valley for exactly this reason.
+**The Blue-Means-Active Rule.** The valley wash is the open cell: active nav, selected tab, focused OTP, drag-over dropzone, hover on secondary buttons, focus outlines, `::selection`. Selection is never yellow and never rainbow.
 
-**The Three-State Rule.** Mountain gray is at rest. Valley blue is active or selected. Foil gold is deployable. There is no fourth state colour; if a component needs one, it needs a different structure instead.
+**The Drawn-Ink Rule.** Every structural border is 2px solid ink (`--db-mountain`). One line weight, drawn, in both themes. 1px is reserved for hairline sub-rules inside a card (table rows, footer rule, gauge frames) — never for a card, button, or field edge.
 
 ## Typography
 
-**Display Font:** Outfit (with `system-ui, sans-serif`)
-**Body Font:** Outfit (with `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`)
-**Label/Mono Font:** Azeret Mono (with `ui-monospace, SFMono-Regular, Menlo, monospace`)
+**Display Font:** Bricolage Grotesque (with `Archivo, system-ui, sans-serif`)
+**UI/Body Font:** Archivo (with `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`)
+**Label/Mono Font:** Courier Prime (with `ui-monospace, SFMono-Regular, Menlo, monospace`)
 
-Both are loaded from Google Fonts in `App.razor` with `Outfit:wght@200..700` and `Azeret Mono:wght@300;400;500`.
+All three are SIL OFL — a durable brand commitment in `PRODUCT.md` (2026-08-16, user-decided, license safety). They load from Google Fonts in `App.razor`: `Bricolage Grotesque:opsz,wght@12..96,400..800`, `Archivo:wght@400..800`, `Courier Prime:wght@400;700`. Outfit and Azeret Mono left with the Miura world; Playfair Display left before that. Do not reintroduce any of them, and no serif ever.
 
-**Character:** Outfit at 200–300 weight, uppercase and tracked to 0.05–0.22em, reads as engineering lettering off a technical drawing — light, wide, impersonal, confident. Azeret Mono is its measuring instrument: every fact about a delivery is set in it, tabular, small, tracked. The pairing has exactly two voices and no third; there is no serif in this system.
-
-**Playfair Display was dropped by explicit user decision.** `PRODUCT.md` still lists it as a brand commitment; that line is stale. The code is the truth: Outfit carries display and UI, Azeret Mono carries measurement. Do not reintroduce a serif.
+**Character:** Bricolage at 800, tight (-0.015em) and sentence-case, is the card's hand-painted title — warm and emphatic where the old world was cold and wide. Archivo is the plain-spoken UI voice. Courier Prime is the typewriter that stamps the card's facts: codes, sizes, hashes, expiry, title-bar labels — always uppercase, tracked, and tabular where digits appear.
 
 ### Hierarchy
-- **Display** (200, `clamp(2.1rem, 7vw, 4.25rem)`, line-height 1.0, tracking 0.05em, uppercase, `text-wrap: balance`): The home hero only. Emphasis inside it is a valley crease drawn as `box-shadow: inset 0 -0.22em 0 var(--db-valley)` under the word — never a colour change, never a gradient.
-- **Headline** (200, 2rem rising to 3.5rem at ≥640px, tracking 0.06–0.1em, uppercase): Page-level headings and `.db-h1/.db-h2`. DAUB's own heading styles are overridden globally in `app.css` because the vendor sheet still carried a magazine register.
-- **Title** (300, 0.9375–1.125rem, tracking 0.08–0.12em, uppercase): Card titles, `.db-h3/.db-h4`, dropzone titles, status headings, filenames. Filenames use `overflow-wrap: anywhere` rather than truncation — a long Vietnamese filename must stay readable on touch, where no hover reveals a title attribute.
-- **Body** (400, 1rem, line-height 1.65): Prose in `/tools` landing bodies, FAQ answers, hero subheads. Constrained to 34–40rem measures.
-- **Label** (400, 0.625–0.75rem, tracking 0.10–0.16em, uppercase, mono): `.miura-spec`, `.qs-eyebrow`, badges, expiry chips, table headers, footer links, the language select. Tracking relaxes to 0.1em below 560px so the labels stop wrapping.
-- **Measurement** (300–400, 0.8125rem up to 2.25rem for prices, mono, `font-variant-numeric: tabular-nums`): file sizes, part counts, progress readouts, share URLs, hashes, prices. Prices are measurements and are set in mono at 2.25rem/300 with `letter-spacing: -0.02em`.
+- **Display** (800, `clamp(2.1rem, 7vw, 4.25rem)`, line-height 1.0, tracking -0.015em, `text-wrap: balance`): the home hero only. Emphasis inside it is the yellow patch behind the word (see Colors), never a color change of the glyphs.
+- **Headline** (800, 2rem rising to 3.5rem at ≥640px, line-height 1.02–1.05, tracking -0.015em): page headings, `.db-h1/.db-h2`, `.miura-display`. `app.css` overrides both DAUB's base headings and the grunge family's uppercase at matching specificity.
+- **Title** (700, 0.9375–1.125rem, tracking -0.01em): card titles, `.db-h3/.db-h4`.
+- **Body** (400, 1rem, line-height 1.65): prose in `/tools` bodies, FAQ answers, hero subheads; 34–40rem measures.
+- **Label** (400, 0.625–0.75rem, tracking 0.10–0.16em, uppercase, mono): `.miura-spec`, `.qs-readout`, badges, expiry chips, table headers, footer links, nav labels, the language select. Tracking relaxes to 0.1em below 560px.
+- **Titlebar** (700, 0.8125rem, tracking 0.08em, uppercase, mono): `.qs-titlebar__label` — the card's name on its paper patch.
+- **Measurement** (400, 0.8125rem, mono, `font-variant-numeric: tabular-nums`): file sizes, part counts, share URLs, hashes, countdowns.
 
 ### Named Rules
 
-**The Real Measurement Rule.** The mono voice is reserved for facts the system actually knows: byte counts, part counts, expiry timestamps, share codes, hash prefixes, download counts, prices. Never a decorative serial, never a fake ID, never "SPEC-001". If you cannot name the value's source, it does not go in mono.
+**The Real Measurement Rule.** The mono voice is reserved for facts the system actually knows: byte counts, part counts, expiry timestamps, share codes, hash prefixes, download counts, prices. Never a decorative serial, never "SPEC-001". If you cannot name the value's source, it does not go in mono.
 
-**The Tabular Rule.** Any mono run containing digits carries `font-variant-numeric: tabular-nums`. Numbers in this system are read in columns and must not jitter as they tick.
+**The Tabular Rule.** Any mono run containing digits carries `font-variant-numeric: tabular-nums`. Countdowns and gauges tick in columns and must not jitter.
 
-**The No-Gradient-Text Rule.** Emphasis inside a headline is a valley crease under the word (`box-shadow: inset 0 -0.22em 0 var(--db-valley)`), never a gradient fill and never an accent colour on the glyphs.
+**The Closed Scale Rule.** Font sizes come from the frontmatter's `typography.scale` set. A size outside that list is a defect, not a choice.
 
 ## Layout
 
-The page is a single centered column of maximum 72rem (`.page`), with narrower variants supplied by `PageWrapper`: `Centered` at 32rem, `Fill` at 42rem, `Account` at 32rem, `Padded` at full width with 24px block padding. Content regions inside a page set their own measures: hero 46–48rem, features 56rem, comparison table 64rem, download card 30rem, upload container 44rem, `/tools` article 44rem.
+The page is a single centered column (max 72rem), with narrower variants supplied by `PageWrapper`; content regions set their own measures — hero 46rem, features 56rem, comparison card 64rem, how-it-works 48rem, download card 30rem, upload container 44rem, `/tools` article 44rem, account card 28rem.
 
-The spacing scale is compact and deliberately tightened over DAUB's defaults, re-declared for every theme in a shared `[data-theme]` block: 4 / 8 / 10 / 14 / 20 / 24 / 32 / 40 / 64px. Buttons are 7px × 14px padding with a 40px minimum height, rising to 44px below 767px so touch targets stay legal. Cards pad at 20px; the download card's body pads at 32/24/24, dropping to 24/14/20 below 480px.
+The spacing scale is compact and shared across every theme in one `[data-theme]` block: 4 / 8 / 10 / 14 / 20 / 24 / 32 / 40 / 64px. Buttons pad 7px × 14px with a 40px minimum height, rising to 44px below 767px so touch targets stay legal. Cards pad at 20px. The navbar is the menu bar: 3.25rem, card-white, a 2px ink rule beneath, `flex-wrap: nowrap`. The footer is a 1px ink hairline ending in the brand mark and a row of mono links. `html, body` carry `max-width: 100%; overflow-x: hidden`; wide content (the comparison table) scrolls inside its own container with `overflow-y: hidden` set explicitly to stop the -1px tab-margin trick from tripping a vertical scrollbar.
 
-Breakpoints in use: **480px** (download card compaction), **560px** (brand lettering compresses, primary button drops its clip-path, spec tracking relaxes), **640px** (share row goes horizontal, upload headline jumps to 3.5rem, pricing grid goes to 2 columns, home steps stack), **767px** (crease lattice tightens from 64px to 44px, touch targets grow), **900px** (comparison table scrolls, why-badges stack), **1024px** (pricing grid goes to 3 columns).
-
-The navbar is 3.25rem tall, transparent, with a single mountain hairline underneath and `flex-wrap: nowrap`. The footer is a hairline rule that terminates in the brand mark and a row of mono links. `html, body` carry `max-width: 100%; overflow-x: hidden` — nothing in this system may set the document wider than the viewport, and any wide content (the comparison table) scrolls inside its own container.
+Breakpoints in use: **480px** (download card compaction), **560px** (hero padding and floppy shrink, second ghost sheet drops, brand lettering compresses, spec tracking relaxes), **640px** (upload headline jumps to 3.5rem, home steps stack, hero actions go vertical), **767px** (touch targets grow to 44px), **900px** (comparison table scrolls, why-badges stack).
 
 ### Named Rules
 
-**The Crease-Ground Rule.** Every page sits on the lattice: two `repeating-linear-gradient`s at +60deg and −60deg, transparent for 63px then a 1px line at 10% text-colour opacity, plus the SVG grain, `background-attachment: fixed`. Below 767px the pitch tightens to 43px/44px and the grain drops. It is painted on `.layout-root` (and on `body` as a fallback) — never re-painted on a child except as a deliberate texture at a finer 47px/48px pitch (dropzone, `/tools` box).
+**The Dither-Ground Rule.** Every page sits on the desktop: `background-image: var(--db-dither)` (a `repeating-conic-gradient` of the lattice ink over transparent) at `4px 4px`, over the putty ground color. It is painted on `body` and `.layout-root`. Children re-use the same 4px dither as a texture fill only where a region should read as "desktop showing through" (the upload dropzone, the `/tools` box) — never at a different tile size.
 
-**The Gap-Is-The-Crease Rule.** Adjacent cells share one hairline rather than each drawing their own. The pricing grid uses `gap: 0` with `outline: 1px solid` per card so the seam between two plans is a single crease, not a doubled border.
+**The Stack-Shows-Its-Edges Rule.** The stack is shown by offset ghost sheets: bordered card-shaped layers translated ~10–24px with sub-degree rotation, each wearing a state wash, behind the top card. This is the hero's thesis object; reuse it only where a literal stack of deliveries is being depicted.
 
 ## Elevation & Depth
 
-**This system is flat and has no card shadows.** `--db-card-shadow` and `--db-card-shadow-hover` are both `none`; `.db-card` is forced to `box-shadow: none !important` alongside `outline: none` and `border-radius: 0`. `--db-shadow-inset` and `--db-shadow-ring` are `none`. Hover on a card changes `border-color` only, over 200ms.
+**Depth is drawn, not blurred.** The card's shadow is the classic window drop: hard, offset, zero blur, full opacity — `2px 2px 0` (`--db-shadow-1`, delivery rows), `3px 3px 0` (`--db-shadow-2`, cards, dropdowns, toasts), `5px 5px 0` (`--db-shadow-3`, modals). Ink-colored by day, true black at night. `--db-shadow-inset` and `--db-shadow-ring` are `none`.
 
-Depth is conveyed by three non-shadow means:
-1. **Tonal layering on one stock** — sheet-deep is recessed, sheet is ground, sheet-raised is a surface. All three are the same paper.
-2. **The folded corner** — a `linear-gradient` wedge of valley blue clipped into a cell's corner (16px on delivery rows, 18px on `.miura-cell` and pricing cells, 22px on the download card, 28px in foil on the recommended plan). This is the only "3D" gesture in the system.
-3. **Material grain** — `--db-grain-sheet` (fractal noise, baseFrequency 0.9, 5% opacity, 140px tile) sits under the lattice as paper tooth. `--db-grain-foil` (anisotropic noise, baseFrequency `0.02 0.75`, 16% opacity, 120px tile) is layered under the primary button's fill so the gold reads as brushed metal, not as flat yellow.
+Buttons carry **no** drop shadow — a button is a drawn control, not a plate — and the button reset forces `box-shadow: none !important` on secondary/ghost. The single exception is the default button's ring, which is a box-shadow but reads as line work, not elevation. Hover never lifts anything: `--db-hover-scale`, `--db-active-scale`, `--db-hover-brightness` are all `1`, and the reset forces `transform: none !important`. Hover is a state change (deeper ground, blue wash), never a float.
 
 ### Shadow Vocabulary
-Three shadow tokens exist but are used only where a surface genuinely detaches from the sheet:
-- **`--db-shadow-2`** (`0 2px 8px rgba(10,10,10,0.10)`): dropdown and toast.
-- **`--db-shadow-3`** (`0 6px 20px rgba(10,10,10,0.14)`): modal only.
-- **`--db-shadow-1`** (`0 1px 2px rgba(10,10,10,0.06)`): declared, effectively unused.
+- **`--db-shadow-1`** (`2px 2px 0` ink/black): delivery list rows.
+- **`--db-shadow-2`** (`3px 3px 0` ink/black): cards, dropdowns, toasts — the workhorse.
+- **`--db-shadow-3`** (`5px 5px 0` ink/black): modals only.
+- **`--db-stamp-rule`** (`0 0 0 3px paper, 0 0 0 5px ink`): the default button's outer double ring; inverts with the theme.
 
 ### Named Rules
 
-**The Nothing-Floats Rule.** Cards, buttons, inputs, badges and cells never carry a shadow, a transform lift, or a hover scale. `--db-hover-scale`, `--db-active-scale` and `--db-hover-brightness` are all `1`, and the button reset forces `transform: none !important`. Only overlay layers — dropdown, toast, modal — may leave the sheet.
+**The Hard-Drop Rule.** Every shadow in this world is offset with zero blur at full opacity. A soft shadow (any blur radius, any alpha below 1) is another world's material and is a defect here.
+
+**The Nothing-Floats Rule.** Cards sit on the desktop with their drawn drop; they never gain shadow, scale, or translate on hover. Only overlay layers (dropdown, toast, modal) get the larger drops, and even those are hard.
 
 ## Shapes
 
-**Radius is zero everywhere and it is enforced at the token level.** `--db-radius-0` through `--db-radius-5` and `--db-radius-full` are all `0px`, and `--db-btn-radius`, `--db-field-radius`, `--db-card-radius`, `--db-modal-radius`, `--db-toast-radius`, `--db-badge-radius`, `--db-alert-radius` and `--db-dropdown-radius` follow. Buttons, cards and inputs additionally force `border-radius: 0 !important` because the vendor sheet fights back. A crease has no radius.
+**Cards are square; buttons are round.** At the token layer `--db-radius-0..5` and `--db-radius-full` are all `0px`, and card/field/modal/badge/toast/alert/dropdown radii follow — reinforced with `border-radius: 0 !important` on cards and inputs because the vendor sheet fights back. Against that squareness, buttons are Mac rounded-rects: `--db-btn-radius: 14px`, and the default button rounds slightly further to 16px so its outer ring keeps a parallel curve. This contrast — rectangular paper, lozenge controls — is the classic-Mac silhouette and the world's most identifiable geometry.
 
-The recurring silhouette is the **parallelogram**: `transform: skewX(-14deg)` on the container, with the glyph inside counter-skewed `transform: skewX(14deg)` so it stays upright. This is the shape of every icon cell (download state icons, file-type icon, home feature icons, home step numbers, dropzone icon, terminal-state icons), every OTP input cell, and the pricing feature marker (an 8px skewed square standing in for a stock circle-check). The skew angle is available as `--db-crease-skew` and the lattice angle as `--db-crease-angle: 60deg`.
+The old world's skew is retired: `--db-crease-angle` and `--db-crease-skew` are both `0deg`, and `--db-border-roughness` is `0px`. Nothing is skewed, torn, or clipped; everything is drawn orthogonally.
 
-The second silhouette is the **cut-corner tab**: `clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)` on the primary button (14px on the download page's full-width variant), with horizontal padding increased by the same amount so the label clears the cuts. Below 560px the clip-path is dropped and the padding reverts — clip-path is not width-aware, and at narrow widths the cut edge starts eating the label and overhanging its container.
-
-Borders are always exactly 1px, always mountain, never doubled. `--db-border-roughness` is `0px`; the sheet is cut, not torn.
+Iconography is **pixel drawing**: inline SVG built from a rect grid on a small viewBox (the hero's floppy is 24×24 rects: ink shell, disk-plastic body, shutter, rainbow label), rendered with `shape-rendering: crispEdges`. Icons sit in drawn square cells (2px ink border) on a state wash. No emoji, no unicode glyphs, no icon fonts, no smooth-path icon packs.
 
 ### Named Rules
 
-**The Counter-Skew Rule.** Any element carrying `skewX(-14deg)` must counter-skew its glyph child by `skewX(14deg)`. A skewed icon is a bug, not a style.
+**The Square-Card-Round-Button Rule.** Radius 0 on every surface, 14px/16px on every button. A rounded card or a square button breaks the silhouette; neither is a style option.
 
-**The Clip-Path-Is-Not-Responsive Rule.** Any `clip-path` cut measured in px must be dropped, with its compensating padding, at the width where the cut would collide with content. The primary button does this at 560px.
+**The Crisp-Pixel Rule.** Every icon is an inline SVG rect grid with `shape-rendering: crispEdges`, drawn in the world's colors via `var(--db-*)` fills so it re-skins with the theme. If an icon cannot be drawn on a coarse pixel grid, simplify the icon.
 
 ## Components
 
 ### Buttons
-- **Shape:** Square (0px radius, forced). Primary additionally carries the cut-corner tab clip-path.
-- **Typography:** Outfit 500, 0.75rem, uppercase, tracking 0.09em.
-- **Primary (the pull tab):** Foil fill layered as three backgrounds — the foil grain, a 102deg specular sweep (`rgba(255,255,255,0.34)` → transparent → `rgba(255,255,255,0.22)`), then flat foil — with ink-coloured label and a `foil-deep` 1px border. Padding 7px vertical, 14px + 12px clip compensation horizontal. Hover flattens to `#E3C566`; active to `#9E7F1F`.
-- **Secondary / Ghost:** Transparent with a mountain hairline and text-coloured label. Hover fills valley and shifts the border to valley-ink; active fills sheet-deep. There is no third button variant.
-- **Focus:** Non-clipped buttons take the global ring (`2px solid var(--db-valley-ink)`, 2px offset). The primary button sets `outline: none` and draws `box-shadow: inset 0 0 0 2px var(--db-valley-ink)` instead, because `clip-path` clips the outline away.
-- **Sizes:** 40px minimum height (44px below 767px); `.db-btn--lg` at 44px minimum with 8px/18px padding; `.db-btn--icon` at 40px minimum width (44px below 767px).
+- **Shape:** Mac rounded-rect, 14px radius (forced with `!important` over the vendor). 40px min height, 44px below 767px.
+- **Typography:** Archivo 700, 0.875rem, sentence case, no tracking.
+- **Primary — the default button:** ink ground (`--db-stamp`), paper label, no border, and the outer double ring `--db-stamp-rule` (3px paper, then 5px ink) that classic Mac dialogs drew around the button Return would press. 16px radius; horizontal padding widened by 6px per side. Hover deepens the ground to `--db-mountain-deep`; **press inverts to the active blue** (`--db-valley-ink` ground, paper label). At night the whole thing inverts: paper ground, ink label, paper ring. The ring is a box-shadow and costs no layout — keep at least 6px clearance around the button; focus-visible draws the valley-ink outline at 6px offset, outside the ring.
+- **Secondary / Ghost:** card-white fill, 2px ink border, ink label. Hover opens the blue wash; active inverts fully to ink ground with paper label. There is no third variant.
+- **Focus:** the global ring — `outline: 2px solid var(--db-valley-ink)` at 2px offset (6px on primary).
 
-### Cards / Cells
-- **Corner Style:** Square, plus a valley-blue folded-corner wedge in one corner.
-- **Background:** `{colors.sheet-raised}`, or transparent where the crease ground should read through (pricing cells).
-- **Shadow Strategy:** None. See Elevation.
-- **Border:** 1px mountain hairline. Adjacent cells share the seam.
-- **Internal Padding:** 20px default; 32/24 on pricing cells; 32/24/24 on the download card.
-- **Primitive:** `.miura-cell` in `app.css` is the canonical version — surface background, mountain border, and an 18px valley wedge at `top right`.
+### Cards
+- **Corner Style:** square. **Border:** 2px ink. **Shadow:** `--db-shadow-2`, unchanged on hover (hover may shift `border-color` only, 200ms).
+- **Background:** card-white on the dithered desktop.
+- **Internal Padding:** 20px.
+- **Primitive:** `.miura-cell` in `app.css` (legacy name, current world): surface, 2px ink border, hard drop.
+
+### The Striped Title Bar (signature)
+`.qs-titlebar` — global, because it also ships inside HTMX partials. Anatomy: a 13px drawn box, the mono uppercase label on its own paper patch, a second box; behind them, horizontal 1px ink stripes on a 4px rhythm (`repeating-linear-gradient` clipped to the content box), and a 2px ink rule below. It is the card's chrome — the thing that makes a card read as a window in the stack. It bleeds to the card's edges (zero the container's margin, as `.home-why__bar` does).
 
 ### Inputs / Fields
-- **Style:** 1px mountain border, sheet-raised fill, 0 radius, 8px/12px padding. Any input that holds a code, URL, hash or measurement switches to Azeret Mono with 0.02–0.08em tracking.
-- **Focus:** Border shifts to valley-ink *and* the global 2px valley-ink outline at 2px offset appears. Both, not either.
-- **Error:** Message in mono at 0.6875rem, tracking 0.08em, in error oxide, 0.5rem below the field.
-- **Disabled:** Sheet-deep fill, mountain border, muted text, `not-allowed` cursor. `--db-disabled-opacity` is 0.38.
-- **Select:** Native appearance stripped; the chevron is drawn from two 5px `linear-gradient` triangles. Mono 0.6875rem uppercase, tracking 0.1em, transparent background, mountain border.
-- **Sender-email field (`/send`, anonymous):** a single email input labeled "Email me the link + updates" — entering an email IS the consent (no checkbox). Same Inputs/Fields treatment: mountain border, sheet-raised fill, 0 radius, 0.875rem text; scoped class `.sender-email-input` in `Upload.razor.css`. Added with issue #76 (sender email capture).
+- **Style:** square (0 radius, forced), 2px ink border, card-white fill, 8px/12px padding. Any input holding a code, URL, or hash switches to Courier Prime with tracking.
+- **Focus:** border shifts to valley-ink *and* the global 2px valley-ink outline appears. Both, not either.
+- **Error:** mono at 0.6875rem in error red below the field.
+- **Disabled:** `--db-disabled-opacity: 0.38`.
+- **Select:** native appearance stripped; the chevron is a drawn SVG stroke in the world's line weight (a select without its drawn chevron stops reading as a control). Mono 0.6875rem uppercase, 2px ink border, square.
 
 ### OTP Cells (signature)
-2.75rem × 3.25rem parallelograms (`skewX(-14deg)`), mountain border, surface fill, Azeret Mono at 1.125rem, centered. On focus the cell fills valley, its border goes valley-ink, and the 2px valley-ink outline appears. One glyph per cell, measured.
+2.75rem × 3.25rem square drawn cells, 2px ink border, card-white fill, Courier Prime 700 at 1.125rem, one glyph per cell. On focus the cell opens the blue wash: valley fill, valley-ink border, valley-ink outline.
 
 ### Badges / Chips
-Mono at 0.625rem, uppercase, tracking 0.14em, 1px mountain border, transparent fill, 0.45rem/0.75rem padding. The "encrypted" chip — a fact about the delivery, not a boast — takes the valley treatment (valley fill, valley-ink border and text). An interactive chip must carry a drawn chevron (`::after` with two 1px borders rotated 45deg) so it is never distinguished by colour alone.
+Mono 700 at 0.6875rem, uppercase, square, 3px/10px padding. The home features' colored **card tabs** (`.home-feature-tab`) are the signature form: 2px ink border, a state wash fill, ink text — the stack's colored index tabs.
 
 ### Navigation
-Nav items are Outfit 400, 0.75rem, uppercase, tracking 0.14em, 6px/10px padding, with a transparent bottom hairline. Hover fills that hairline with mountain-deep; the active item takes the valley cell — valley background plus a valley-ink bottom border. Account section tabs (`.account-tabs`, global because they ship inside HTMX partials) use the identical language at 0.75rem/0.12em with a `-1px` bottom margin so their border merges with the tab strip's rule.
-
-The brand is a stacked lockup: `QUICKSHARE` in Outfit 300 at 0.16em tracking, `CLOUD` in 200 muted beneath it, and a 0.5625rem route-path line at 0.2em tracking in mountain-deep showing the route the visitor is actually on — wayfinding, not ornament. Below 560px the `CLOUD` line is dropped and tracking compresses.
-
-### The Hairline Rule (signature)
-`.miura-rule` is a flex row whose `::before` is a 1px mountain line at `flex: 1`, so any label placed in it is pushed to the end of a rule that spans the remaining width. The centered variant — used on the home hero's spec line, the upload subhead and the pricing lede — flanks the label with two 6rem-max rules via `::before` and `::after`. This is the world's most recognizable device; use it whenever a small mono fact needs to sit on the sheet.
+The navbar is the menu bar: card-white, 2px ink rule beneath. Items are Archivo 400 at 0.75rem, uppercase, tracked 0.14em, square, with a transparent 1px bottom hairline; hover inks that hairline; the active item takes the open cell — valley wash plus a valley-ink bottom border. Account section tabs (`.account-tabs`, global for HTMX partials) speak the same language with a `-1px` bottom margin merging their border with the strip's rule. The brand is a stacked lockup with a mono route-path line beneath it — wayfinding, not ornament.
 
 ### Progress / Gauge
-A 6–8px track with a mountain border and sheet-deep fill; the fill is flat foil and animates its width over `--db-transition-slow` (460ms). A spent delivery greys its fill to muted text colour and drops the whole row to 0.65 opacity.
+A slim track (4–10px) framed in a 1px ink hairline over putty-deep; the fill is **the rainbow** (`--db-progress-fill: var(--db-rainbow)`), width animating over `--db-transition-slow` (460ms). A spent delivery greys its fill to muted text color and drops the row to 0.65 opacity.
 
 ### Dropzone
-A cell of the sheet at a finer crease pitch: `repeating-linear-gradient(60deg, transparent 0 47px, rgba(text,0.06) 47px 48px)` over the surface colour, 1px mountain border, 64px/24px padding. Hover strengthens the border to mountain-deep. Drag-active opens the valley — the fill becomes valley blue, the lattice line becomes `rgba(63,97,135,0.14)`, and the skewed icon cell takes the valley-ink border and colour.
+A patch of desktop inside the card: 2px *dashed* ink border (the one sanctioned dashed line — it means "put something here"), the 4px dither as fill over the surface color, generous 64px/24px padding. Hover inks the border to `--db-mountain-deep`; drag-active opens the valley — solid valley-ink border, blue wash fill, valley-ink icon cell.
+
+### The Dissolve (signature motion)
+HyperCard's native transition, and the page's **only** authored motion: when a delivery card is created (`#upload-success`) or opened (`#download-phase-file`) it dissolves in — `opacity` stepped over `steps(6, end)` in 360ms, with the card's share-box / file-specs following one beat later (`steps(5, end)`, 260ms delay). Both elements start life `.hidden`, so the keyframe fires exactly when JS reveals them, never on an already-visible element. Never a slide, never a fold, never an ease. Everything else limits itself to the utility fades (`kira-fade-in/-up`, used for list staggers) and property transitions. `prefers-reduced-motion` kills all of it.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** define every new token inside the two theme blocks at the top of `app.css`, under a DAUB-shaped `--db-*` name, so existing `db-*` markup re-skins for free.
-- **Do** give every new surface both themes. Test `[data-theme="grunge-dark"]` (the light sheet) and `[data-theme="dark"]` (the packet in shadow) before calling it done. The naming is inverted from the vendor's; trust the values, not the name.
-- **Do** put real measurements in mono — byte counts, part counts, expiry, codes, hashes, prices — with `font-variant-numeric: tabular-nums`.
-- **Do** use `--db-color-accent-text` for any accent that is type, and `--db-foil` only as a fill.
-- **Do** counter-skew every glyph inside a `skewX(-14deg)` container by `skewX(14deg)`.
-- **Do** style cross-component HTMX partial markup from `app.css` with a namespaced global prefix (`account-`, `tools-landing__`, `ad-`, `p2p-`). Scoped `.razor.css` does not reach HTML rendered by another component's partial — this is a project-wide constraint, not a shortcut.
-- **Do** draw focus as `2px solid var(--db-valley-ink)` with `outline-offset: 2px`. Where `clip-path` is present, draw it as `inset 0 0 0 2px var(--db-valley-ink)` instead, because clip-path eats outlines.
-- **Do** honour `prefers-reduced-motion` by dropping transitions only. The `-14deg` skew is geometry, not motion, and stays.
-- **Do** let wide content scroll inside its own container; the document body must never scroll horizontally.
+- **Do** define every new token inside the two theme blocks at the top of `app.css`, under a DAUB-shaped `--db-*` name, so existing `db-*` markup re-skins for free — and give it a value in **both** blocks.
+- **Do** draw every structural edge as 2px solid `var(--db-mountain)`; reserve 1px for hairline sub-rules inside a card.
+- **Do** use hard offset shadows only: `2/3/5px`, zero blur, full opacity, via the shadow tokens.
+- **Do** keep cards and fields square and buttons at 14px (16px primary) radius.
+- **Do** put exactly one default button (`.db-btn--primary`) per card, with ≥6px clearance for its ring, and let press invert it to the active blue.
+- **Do** put real measurements in Courier Prime with `tabular-nums`; give state a wash (`--db-wash-*`), activity the valley, progress the rainbow.
+- **Do** draw icons as inline SVG rect grids with `shape-rendering: crispEdges`, filled with `var(--db-*)` so they re-skin per theme.
+- **Do** style cross-component HTMX partial markup from `app.css` with a namespaced global prefix (`account-`, `tools-landing__`, `ad-`, `p2p-`); scoped `.razor.css` does not reach another component's partial HTML.
+- **Do** draw focus as `2px solid var(--db-valley-ink)` with 2px offset (6px on the primary, outside its ring), and honour `prefers-reduced-motion` by dropping all animation.
+- **Do** keep the download page usable without JS: the server renders a working phase; JS only advances from it (`DownloadNoScriptTests` enforces this).
 
 ### Don't:
-- **Don't** introduce a border-radius anywhere. Not on a chip, not on an avatar, not on a modal.
-- **Don't** put foil gold on text. It measures 2.1:1 on the light sheet.
-- **Don't** put two foil elements in one viewport, and don't make a selected/toggled state gold — selection is valley.
-- **Don't** add a box-shadow or a hover lift to a card, button, input or cell. Only dropdown, toast and modal leave the sheet.
-- **Don't** reintroduce Playfair Display or any serif. `PRODUCT.md`'s font line is stale; the code is the truth.
-- **Don't** invent decorative serials, fake IDs, or placeholder spec strings for the mono voice.
-- **Don't** use a gradient across type. Emphasis is a valley crease under the word.
-- **Don't** measure a `clip-path` in px without also dropping it at the narrow breakpoint where the cut would eat the label.
-- **Don't** re-paint the crease lattice at the page ground's 63/64px pitch inside a child element; use the finer 47/48px texture pitch instead, so the two never moiré.
+- **Don't** rename a `--db-*` token — ~322 `db-*` class uses depend on the vendor's names. Change values only.
+- **Don't** put Apple yellow on text over paper (2.1:1); accent type is `--db-color-accent-text`.
+- **Don't** use the rainbow anywhere but a progress fill (and the drawn floppy's label). Decoration never earns it.
+- **Don't** blur a shadow, lift a card on hover, or scale anything. Depth is drawn.
+- **Don't** round a card, field, modal, or badge — or square a button.
+- **Don't** use emoji, unicode glyphs, icon fonts, or smooth-path icon packs; every icon is a crisp pixel rect grid.
+- **Don't** author motion beyond the dissolve; and never attach the dissolve to an element that is visible at render.
+- **Don't** reintroduce Outfit, Azeret Mono, Playfair Display, or any serif — the font set is Bricolage Grotesque / Archivo / Courier Prime, SIL OFL, by explicit user decision.
+- **Don't** invent decorative serials or placeholder spec strings for the mono voice.
+- **Don't** ship a surface tested in only one theme; the default button, washes, and disk color all change meaningfully at night.
 
 ## Honest Gaps
 
 Recorded so the next contributor does not mistake intention for implementation.
 
-- **The world does not deploy.** The Miura sheet is named for the motion of unfolding, and **nothing on any page unfolds.** There is no deployment animation anywhere in the system. Motion is limited to `kira-fade-in` / `kira-fade-up` (opacity plus a 12px rise, 0.4–0.5s, with a 6-step stagger), width transitions on gauges, colour transitions on borders and fills, and the FAQ's `max-height` reveal. The folded corner is a static gradient wedge, not a fold that opens. If the world is ever to earn its name, this is the missing piece.
-- **The `/d/{code}` file-card state was never rendered locally.** Downloading a real delivery requires R2 credentials that were not available during the build. The `.file-row`, `.file-specs`, `.badges` and `.zk-panel` styling in `Download.razor.css` is written but has only been seen in its locked / expired / error states. Verify it against a real delivery before trusting the spacing.
-- **A true 390px viewport was never captured.** The 480px and 560px rules are reasoned, not observed. Check the primary button, the OTP row and the pricing table on a real phone.
-- **Some radii still come from the vendor.** The override block zeroes `--db-radius-0..5` and `--db-radius-full`, but **not** `--db-radius-sm`, `--db-radius-md` or `--db-radius-lg`. Those names are still referenced by `.p2p-quota-banner`, `.ad-reward-card`, `.ad-reward-btn` and `.tools-landing__kbd`, which therefore keep DAUB's rounding and violate the zero-radius law. Fix by zeroing those three aliases in the theme block.
-- **`.qs-zone` and `.qs-glyph` are pre-Miura survivors.** They carry a 2px dashed border, `--db-radius-4`, `--db-radius-full` and a `1.006` hover scale, and `.qs-zone` references `--db-transition-bounce`, which the theme block never defines. They are inert where radius is zeroed, but they are not written in this world's language. Prefer `.miura-cell` and the skewed icon cell.
-- **The secondary button is unfinished by design.** The board's secondary was to carry a trailing valley cell with an arrow in it; the arrow needs per-button markup that pass could not add, and the cell alone reads as an unexplained sliver. It ships as a plain hairline cell until the arrow can ship with it. This is documented in `app.css` at the rule itself.
-- **`.db-navbar` and `.layout-footer` in `app.css` still carry `rgba(28,22,16,0.06)` hairlines** — a leftover from the previous world's palette that does not track either theme. `MainLayout.razor.css` overrides the navbar correctly with `--db-mountain`; the footer's global rule does not.
+- **The `/d/{code}` real file-card state was never rendered locally.** Downloading a real delivery needs R2 credentials the build did not have. The file card has only been verified in locked / expired / error states (`.impeccable/shots3/`).
+- **Account pages, pricing/upgrade, and login were re-skinned through the tokens plus mechanical edits, not visually verified this round.** The token layer carries them, but nobody has eyeballed every state since the colorized world landed.
+- **The striped title bar ships only on home** (hero card and why-card). Every other page's cards are plain 2px-ink cards without their chrome. Extending `.qs-titlebar` to the upload, download, and account cards is the most impactful unfinished move in the world.
+- **A true 390px viewport was never captured** — the headless browser clamps its minimum width. The 480/560px rules are reasoned, not observed; check the default button's ring, the OTP row, and the hero stack on a real phone.
+- **Five pre-existing `transition: width` warnings on progress fills** (`.account-usage-bar__fill`, `.account-delivery__gauge-fill`, `.p2p-receiver-progress-fill` and kin) predate this world and remain: width transitions trigger layout. Acceptable at these element sizes; migrate to `transform: scaleX()` if a gauge ever janks.
+- **Vendor radii `--db-radius-sm/-md/-lg` are still not overridden** in the theme blocks; `.p2p-quota-banner`, `.ad-reward-card`, `.ad-reward-btn`, `.admin-flag-percent input` and `.tools-landing__kbd` reference them and therefore keep DAUB's rounding, violating the square-card law. Fix by zeroing those three aliases in both theme blocks.
+- **Miura-era prose and line weights survive in scoped page CSS.** `Upload.razor.css` and `Download.razor.css` still open with folded-sheet narration, and several drawn cells there (download card frame, icon boxes, dropzone icon) still use 1px borders where the world's law is 2px. `Download.razor.css`'s `.btn` also draws the *old* inset stamp ring (`inset 0 0 0 6px/7px`) rather than the outer double ring — it renders acceptably because the stamp tokens now carry HyperCard values, but it is not the canonical default button.
+- **Not canonized:** `.qs-zone` / `.qs-glyph` (dashed zone with an undefined `--db-transition-bounce` and a hover scale; circular glyph plate) and `.qs-eyebrow` are survivors from two worlds ago — inert where radius is zeroed, but not in this world's language; prefer the drawn cell, the wash square, and the titlebar label. The footer-hairline gap from the previous DESIGN.md is **resolved**: `MainLayout.razor.css` now rules the footer with `1px solid var(--db-mountain)` and no stale rgba values remain.
