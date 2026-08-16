@@ -746,6 +746,13 @@
   <data name="deliveries_restore" xml:space="preserve"><value>Restore</value></data>
   <data name="deliveries_trash" xml:space="preserve"><value>Trash</value></data>
   <data name="deliveries_back" xml:space="preserve"><value>Back to deliveries</value></data>
+  <data name="deliveries_select" xml:space="preserve"><value>Select delivery</value></data>
+  <data name="deliveries_select_all" xml:space="preserve"><value>Select all</value></data>
+  <data name="deliveries_bulk_selected" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="deliveries_bulk_extend" xml:space="preserve"><value>Extend +7d</value></data>
+  <data name="deliveries_bulk_trash" xml:space="preserve"><value>Move to trash</value></data>
+  <data name="deliveries_bulk_trash_confirm" xml:space="preserve"><value>Move {0} deliveries to trash? Restorable for 24h.</value></data>
+  <data name="deliveries_bulk_error" xml:space="preserve"><value>Bulk action failed</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Revoke</value>
   </data>

@@ -747,6 +747,13 @@
   <data name="deliveries_restore" xml:space="preserve"><value>Khôi phục</value></data>
   <data name="deliveries_trash" xml:space="preserve"><value>Thùng rác</value></data>
   <data name="deliveries_back" xml:space="preserve"><value>Về danh sách</value></data>
+  <data name="deliveries_select" xml:space="preserve"><value>Chọn file</value></data>
+  <data name="deliveries_select_all" xml:space="preserve"><value>Chọn tất cả</value></data>
+  <data name="deliveries_bulk_selected" xml:space="preserve"><value>Đã chọn {0}</value></data>
+  <data name="deliveries_bulk_extend" xml:space="preserve"><value>Gia hạn +7 ngày</value></data>
+  <data name="deliveries_bulk_trash" xml:space="preserve"><value>Chuyển vào thùng rác</value></data>
+  <data name="deliveries_bulk_trash_confirm" xml:space="preserve"><value>Chuyển {0} file vào thùng rác? Có thể khôi phục trong 24 giờ.</value></data>
+  <data name="deliveries_bulk_error" xml:space="preserve"><value>Thao tác hàng loạt thất bại</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>

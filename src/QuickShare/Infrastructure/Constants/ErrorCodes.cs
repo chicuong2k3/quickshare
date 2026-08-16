@@ -3,6 +3,7 @@ namespace QuickShare.Infrastructure.Constants;
 public static class ErrorCodes
 {
     public const string NotFound = "not_found";
+    public const string BadRequest = "bad_request";
     public const string DeliveryNotFound = "delivery_not_found";
     public const string DeliveryExpired = "delivery_expired";
     public const string DeliverySuspended = "delivery_suspended";

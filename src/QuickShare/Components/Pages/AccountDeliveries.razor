@@ -90,6 +90,21 @@ else
                        hx-swap="outerHTML" />
             </div>
 
+            @* Bulk manage (issue #144) — select rows, then extend or trash together. *@
+            <div class="account-deliveries-bulkbar" id="bulk-bar" data-count-template="@Loc["deliveries_bulk_selected"]">
+                <label class="account-deliveries-selectall">
+                    <input type="checkbox" onchange="bulkToggleAll(this)" aria-label="@Loc["deliveries_select_all"]" />
+                    <span>@Loc["deliveries_select_all"]</span>
+                </label>
+                <span id="bulk-count" class="db-text-muted"></span>
+                <button type="button" class="db-btn db-btn--primary db-btn--sm"
+                        data-error="@Loc["deliveries_bulk_error"]"
+                        onclick="bulkExtend(this)" data-ai-action="deliveries.bulkExtend" disabled>@Loc["deliveries_bulk_extend"]</button>
+                <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        data-confirm="@Loc["deliveries_bulk_trash_confirm"]"
+                        onclick="bulkTrash(this)" data-ai-action="deliveries.bulkTrash" disabled>@Loc["deliveries_bulk_trash"]</button>
+            </div>
+
             @if (items.Count == 0)
             {
                 @if (hasFilter)
@@ -263,6 +278,52 @@ else
             if (r.ok) btn.closest('article').remove();
         });
     };
+    window.bulkSelectedIds = function () {
+        return Array.prototype.slice.call(document.querySelectorAll('.account-delivery__select:checked'))
+            .map(function (el) { return el.value; });
+    };
+    window.bulkUpdateBar = function () {
+        var bar = document.getElementById('bulk-bar');
+        if (!bar) return;
+        var ids = window.bulkSelectedIds();
+        var count = document.getElementById('bulk-count');
+        if (count) count.textContent = ids.length ? bar.getAttribute('data-count-template').replace('{0}', ids.length) : '';
+        bar.querySelectorAll('button').forEach(function (b) { b.disabled = ids.length === 0; });
+    };
+    window.bulkToggleAll = function (master) {
+        document.querySelectorAll('.account-delivery__select').forEach(function (cb) { cb.checked = master.checked; });
+        window.bulkUpdateBar();
+    };
+    window.bulkExtend = function (btn) {
+        var ids = window.bulkSelectedIds();
+        if (ids.length === 0) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, action: 'extend', days: 7 })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
+    window.bulkTrash = function (btn) {
+        var ids = window.bulkSelectedIds();
+        if (ids.length === 0) return;
+        var msg = btn.getAttribute('data-confirm').replace('{0}', ids.length);
+        if (!window.confirm(msg)) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, action: 'trash' })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
 </script>
 
 @code {
@@ -346,6 +407,7 @@ else
 
             <article id="delivery-@item.Id" class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
                 <div class="account-delivery__head">
+                    <input type="checkbox" class="account-delivery__select" value="@item.Id" onchange="bulkUpdateBar()" aria-label="@Loc["deliveries_select"]" />
                     <button type="button" class="account-delivery__star" onclick="toggleFavorite(this)"
                             aria-pressed="@(item.IsFavorite ? "true" : "false")"
                             aria-label="@Loc["deliveries_favorite"]" title="@Loc["deliveries_favorite"]"

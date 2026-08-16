@@ -1520,6 +1520,38 @@ body::after,
     color: var(--db-color-text);
 }
 
+/* Bulk manage bar (issue #144). */
+.account-deliveries-bulkbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--db-space-3);
+    padding: var(--db-space-2) var(--db-space-3);
+    margin-bottom: var(--db-space-4);
+    border: 1px solid var(--db-mountain);
+    border-radius: var(--db-radius);
+}
+
+.account-deliveries-selectall {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    font-size: var(--db-text-sm);
+}
+
+.account-deliveries-selectall input,
+.account-delivery__select {
+    accent-color: var(--db-color-accent);
+}
+
+.account-delivery__select {
+    margin: 0 var(--db-space-1) 0 0;
+}
+
+#bulk-count {
+    font-size: var(--db-text-sm);
+}
+
 /* ─── Print (issue #226) ───
    Paper gets the content, not the chrome: nav, footer, buttons, ads, and the
    deliveries filter bar disappear; ink stays black on white. */

@@ -420,4 +420,56 @@ public sealed class DeliveryManageTests : IClassFixture<TestWebAppFactory>
         Assert.Single(both.Items);
         Assert.Equal("invoice-january.pdf", both.Items[0].FileName);
     }
+
+    // ── Bulk manage (#144) ──
+
+    [Fact]
+    public async Task Bulk_Trash_MovesAllOwnedDeliveriesToTrash()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var a = await SeedDeliveryAsync(user.Id, fileName: "a.pdf");
+        var b = await SeedDeliveryAsync(user.Id, fileName: "b.pdf");
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PostAsJsonAsync($"{DeliveriesApi}/bulk", new { Ids = new[] { a.Id, b.Id }, Action = "trash" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var rows = await db.Deliveries.AsNoTracking().Where(d => new[] { a.Id, b.Id }.Contains(d.Id)).ToListAsync();
+        Assert.All(rows, r => Assert.NotNull(r.DeletedAt));
+    }
+
+    [Fact]
+    public async Task Bulk_Extend_ExtendsOwnedDelivery()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id, expiresAt: DateTime.UtcNow.AddHours(5));
+        var before = delivery.ExpiresAt!.Value;
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PostAsJsonAsync($"{DeliveriesApi}/bulk", new { Ids = new[] { delivery.Id }, Action = "extend", Days = 7 });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var row = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == delivery.Id);
+        Assert.True(row.ExpiresAt > before);
+    }
+
+    [Fact]
+    public async Task Bulk_SomeoneElsesDelivery_Returns404()
+    {
+        var ownerKey = Guid.CreateVersion7().ToString();
+        var attackerKey = Guid.CreateVersion7().ToString();
+        var owner = await _factory.SeedUserAsync(ownerKey);
+        await _factory.SeedUserAsync(attackerKey);
+        var delivery = await SeedDeliveryAsync(owner.Id);
+
+        var attacker = _factory.CreateAuthenticatedClient(attackerKey);
+        var response = await attacker.PostAsJsonAsync($"{DeliveriesApi}/bulk", new { Ids = new[] { delivery.Id }, Action = "trash" });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
