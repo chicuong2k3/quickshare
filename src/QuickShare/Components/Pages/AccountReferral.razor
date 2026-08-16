@@ -1,0 +1,81 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/referral"
+@attribute [Authorize]
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="referral-card" class="db-card account-card">
+    <div class="db-card__body">
+        <h3 class="db-h4">@Loc["referral_title"]</h3>
+        <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["referral_lead"]</p>
+
+        <div class="referral-code" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem">
+            <code class="miura-spec" style="font-size: 1.25rem">@referralCode</code>
+            <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="copyReferralCode(this)" data-ai-action="referral.copy">@Loc["referral_copy"]</button>
+        </div>
+
+        <p class="db-p db-text-muted" style="margin-top: 0.75rem; font-size: 0.875rem">
+            @Loc["referral_stats", referredCount.ToString(), bonusText]
+        </p>
+    </div>
+</div>
+</HtmxFragment>
+
+<script>
+    window.copyReferralCode = function (btn) {
+        var code = document.querySelector('.referral-code code');
+        if (!code || !navigator.clipboard) return;
+        navigator.clipboard.writeText(code.textContent || '').then(function () {
+            var original = btn.textContent;
+            btn.textContent = '✓';
+            setTimeout(function () { btn.textContent = original; }, 1500);
+        });
+    };
+</script>
+
+@code {
+    private string referralCode = string.Empty;
+    private int referredCount;
+    private string bonusText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+
+            referralCode = string.IsNullOrEmpty(user.ReferralCode) ? user.Id.ToString("N")[..8] : user.ReferralCode;
+            referredCount = await Db.ReferralEvents
+                .AsNoTracking()
+                .CountAsync(e => e.ReferrerUserId == user.Id && e.Type == ReferralEventTypes.Rewarded);
+            bonusText = FormatBytes(user.BonusQuotaBytes);
+        }
+        catch
+        {
+            referralCode = "—";
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        var magnitude = (int)Math.Floor(Math.Log(bytes, 1024));
+        if (magnitude >= units.Length) magnitude = units.Length - 1;
+        var size = bytes / Math.Pow(1024, magnitude);
+        return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
+    }
+}

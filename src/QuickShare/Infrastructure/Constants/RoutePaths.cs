@@ -47,4 +47,5 @@ public static class RoutePaths
     public const string Robots = "/robots.txt";
     public const string Status = "/status";
     public const string Help = "/help";
+    public const string AccountReferral = "/account/referral";
 }

@@ -200,6 +200,10 @@
   <data name="account_usage_title" xml:space="preserve"><value>Monthly upload usage</value></data>
   <data name="account_usage_summary" xml:space="preserve"><value>{0} of {1} used</value></data>
   <data name="account_usage_unlimited" xml:space="preserve"><value>Unlimited monthly uploads on this plan</value></data>
+  <data name="referral_title" xml:space="preserve"><value>Refer friends</value></data>
+  <data name="referral_lead" xml:space="preserve"><value>Share your files — when someone signs up and uploads, you both earn +2GB monthly quota.</value></data>
+  <data name="referral_copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="referral_stats" xml:space="preserve"><value>{0} referred · {1} bonus earned</value></data>
   <data name="lang_switch_label" xml:space="preserve"><value>Switch language</value></data>
   <data name="cookie_consent_title" xml:space="preserve"><value>Cookie Settings</value></data>
   <data name="cookie_consent_desc" xml:space="preserve"><value>We use cookies and Google AdMob to show rewarded ads that unlock extra bandwidth. By accepting, you allow AdMob to use cookies for ad personalization and measurement.</value></data>
