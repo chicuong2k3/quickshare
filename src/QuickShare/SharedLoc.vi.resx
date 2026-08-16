@@ -242,9 +242,10 @@
   <data name="upload_dropzone_idle" xml:space="preserve"><value>Kéo &amp; thả file vào đây</value></data>
   <data name="upload_dropzone_drag" xml:space="preserve"><value>Thả vào đây</value></data>
   <data name="upload_dropzone_sub" xml:space="preserve"><value>hoặc Ctrl+V để dán, hoặc nhấp để duyệt</value></data>
-  <data name="upload_otp_label" xml:space="preserve"><value>Mã bảo mật (tùy chọn)</value></data>
+  <data name="upload_protect_label" xml:space="preserve"><value>Bảo vệ liên kết (tùy chọn)</value></data>
+  <data name="upload_otp_label" xml:space="preserve"><value>Mã 6 số</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mã này để tải file</value></data>
-  <data name="upload_password_label" xml:space="preserve"><value>Mật khẩu chia sẻ (tùy chọn)</value></data>
+  <data name="upload_password_label" xml:space="preserve"><value>Mật khẩu</value></data>
   <data name="upload_password_placeholder" xml:space="preserve"><value>Đặt mật khẩu người nhận phải nhập</value></data>
   <data name="upload_password_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mật khẩu này trước khi tải file.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Thời gian gửi</value></data>

@@ -241,9 +241,10 @@
   <data name="upload_dropzone_idle" xml:space="preserve"><value>Drag &amp; drop your files here</value></data>
   <data name="upload_dropzone_drag" xml:space="preserve"><value>Drop it here</value></data>
   <data name="upload_dropzone_sub" xml:space="preserve"><value>or Ctrl+V to paste, or click to browse</value></data>
-  <data name="upload_otp_label" xml:space="preserve"><value>Security code (optional)</value></data>
+  <data name="upload_protect_label" xml:space="preserve"><value>Protect your link (optional)</value></data>
+  <data name="upload_otp_label" xml:space="preserve"><value>6-digit code</value></data>
   <data name="upload_otp_hint" xml:space="preserve"><value>If set, recipients must enter this code to download</value></data>
-  <data name="upload_password_label" xml:space="preserve"><value>Share password (optional)</value></data>
+  <data name="upload_password_label" xml:space="preserve"><value>Password</value></data>
   <data name="upload_password_placeholder" xml:space="preserve"><value>Set a password recipients must enter</value></data>
   <data name="upload_password_hint" xml:space="preserve"><value>If set, recipients must enter this password before downloading.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Deliver at</value></data>
