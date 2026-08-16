@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **9/10 done** — only `#52` rate limiting open |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 14 done: `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256 checksum, `#322` revoke link, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password strength meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404 (08-16) |
+| Tier 4 | WeTransfer parity baseline | 18 done: `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256 checksum, `#322` revoke link, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password strength meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily download cap, `#311` custom alias, `#242` favorites, `#315` largest-files report (08-16) |
 | Tier 5 | Growth wave 2 | all open (1 done: `#69` scheduled send) |
 | Tier 6 | B2B / enterprise / far-future | all open |
 
@@ -87,6 +87,13 @@ Tier 4 batch 2, same day (commit `e7acec0`): `#222` expired archive (30-day
 `#218` clone (`IStorageProvider.CopyObjectAsync` + `ShareCodes.Generate()`),
 `#226` print view (`@media print` in `app.css` — rides with the uncommitted theme rewrite),
 `#206` branded 404 (catch-all `NotFound.razor`).
+
+Tier 4 batch 3, same day (commit `8bba30f`, migration `AddDeliveryAliasFavoriteDailyLimit`):
+`#227` per-link daily download cap (Pro; enforced at the download choke point via
+DownloadTracking counts), `#311` custom alias (Pro; unique lowercase slug, `ByCode()`
+resolves code-or-alias on every recipient path), `#242` favorites (star + filter),
+`#315` largest-files report on the usage card. Batch-3 CSS also rides in the
+uncommitted `app.css`.
 
 ## 9. Local artifact map (feature area → design doc)
 
