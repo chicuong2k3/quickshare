@@ -32,6 +32,7 @@ public static class RoutePaths
     public const string AdminAnalytics = "/admin/analytics";
     public const string AdminReports = "/admin/reports";
     public const string Abuse = "/abuse";
+    public const string NotFound = "/not-found";
     public const string SeoSendLargeFilesFree = "/how-to/send-large-files-free";
     public const string SeoWeTransferAlternatives = "/wetransfer-alternatives";
     public const string SeoP2pFileTransfer = "/p2p-file-transfer";

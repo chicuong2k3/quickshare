@@ -772,4 +772,22 @@
   <data name="upload_pw_strong" xml:space="preserve">
     <value>Mạnh</value>
   </data>
+  <data name="deliveries_clone" xml:space="preserve">
+    <value>Nhân bản</value>
+  </data>
+  <data name="notfound_title" xml:space="preserve">
+    <value>Không tìm thấy — QuickShareCloud</value>
+  </data>
+  <data name="notfound_h1" xml:space="preserve">
+    <value>Không tìm thấy trang</value>
+  </data>
+  <data name="notfound_sub" xml:space="preserve">
+    <value>Liên kết này không khớp với nội dung nào. Có thể nó đã bị xoá, hết hạn hoặc chưa từng tồn tại.</value>
+  </data>
+  <data name="notfound_cta_home" xml:space="preserve">
+    <value>Về trang gửi tệp</value>
+  </data>
+  <data name="notfound_cta_deliveries" xml:space="preserve">
+    <value>Lượt gửi của tôi</value>
+  </data>
 </root>

@@ -771,4 +771,22 @@
   <data name="upload_pw_strong" xml:space="preserve">
     <value>Strong</value>
   </data>
+  <data name="deliveries_clone" xml:space="preserve">
+    <value>Clone</value>
+  </data>
+  <data name="notfound_title" xml:space="preserve">
+    <value>Not found — QuickShareCloud</value>
+  </data>
+  <data name="notfound_h1" xml:space="preserve">
+    <value>Page not found</value>
+  </data>
+  <data name="notfound_sub" xml:space="preserve">
+    <value>This link doesn't match anything here. It may have been deleted, expired, or never existed.</value>
+  </data>
+  <data name="notfound_cta_home" xml:space="preserve">
+    <value>Back to upload</value>
+  </data>
+  <data name="notfound_cta_deliveries" xml:space="preserve">
+    <value>My deliveries</value>
+  </data>
 </root>

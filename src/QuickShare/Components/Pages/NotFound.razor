@@ -1,0 +1,35 @@
+@layout MainLayout
+@page "/not-found"
+@* Catch-all (lowest route precedence): any URL no other page or endpoint claims
+   renders this branded 404 instead of an empty response (issue #206). *@
+@page "/{*UnmatchedPath:nonfile}"
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["notfound_title"]</PageTitle>
+
+<div class="db-page-center">
+    <div class="db-card w-full max-w-md db-text-center">
+        <div class="db-card__body p-8">
+            <h1 class="db-h1">@Loc["notfound_h1"]</h1>
+            <p class="db-p db-text-muted">@Loc["notfound_sub"]</p>
+            <a href="@RoutePaths.Home" class="db-btn db-btn--primary mt-6">@Loc["notfound_cta_home"]</a>
+            <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost mt-6">@Loc["notfound_cta_deliveries"]</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? UnmatchedPath { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Direct hits on /not-found should also be a 404, not a 200 (issue #206).
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is not null && !ctx.Response.HasStarted)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        }
+    }
+}

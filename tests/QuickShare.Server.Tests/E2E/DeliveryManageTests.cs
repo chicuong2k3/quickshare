@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QuickShare.Data;
 using QuickShare.Data.Entities;
+using QuickShare.Infrastructure.Jobs;
 using QuickShare.Querying;
 
 namespace QuickShare.Server.Tests.E2E;
@@ -166,6 +167,88 @@ public sealed class DeliveryManageTests : IClassFixture<TestWebAppFactory>
 
         var response = await _factory.CreateClient().GetAsync($"/api/downloads/{delivery.ShareCode}/calendar.ics");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // ── Clone (#218) ──
+
+    [Fact]
+    public async Task Clone_ActiveDelivery_CreatesFreshLink()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id, fileName: "clone-me.pdf");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var row = await db.Deliveries.FirstAsync(d => d.Id == delivery.Id);
+            row.StoragePath = "stub/source-key";
+            row.DownloadCount = 3;
+            await db.SaveChangesAsync();
+        }
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PostAsync($"{DeliveriesApi}/{delivery.Id}/clone", null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<CloneJson>();
+        Assert.NotNull(body);
+        Assert.NotEqual(delivery.ShareCode, body.ShareCode);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var clone = await verifyDb.Deliveries.AsNoTracking().FirstAsync(d => d.Id == body.Id);
+        Assert.Equal("clone-me.pdf", clone.FileName);
+        Assert.Equal(0, clone.DownloadCount);
+        Assert.Equal(DeliveryStatus.Active, clone.Status);
+        Assert.NotEqual("stub/source-key", clone.StoragePath);
+    }
+
+    [Fact]
+    public async Task Clone_RevokedDelivery_Returns400()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id, status: DeliveryStatus.Revoked);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PostAsync($"{DeliveriesApi}/{delivery.Id}/clone", null);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private sealed record CloneJson(Guid Id, string ShareCode);
+
+    // ── Expired archive grace period (#222) ──
+
+    [Fact]
+    public async Task Cleanup_KeepsRecentlyExpiredRows_PurgesOldOnes()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var recent = await SeedDeliveryAsync(user.Id, status: DeliveryStatus.Expired,
+            expiresAt: DateTime.UtcNow.AddDays(-1));
+        var ancient = await SeedDeliveryAsync(user.Id, status: DeliveryStatus.Expired,
+            expiresAt: DateTime.UtcNow - DeliveryCleanupService.ExpiredRowRetention - TimeSpan.FromDays(1));
+
+        var cleanup = new DeliveryCleanupService(
+            _factory.Services.GetRequiredService<IServiceScopeFactory>(),
+            _factory.Services.GetRequiredService<QuickShare.Infrastructure.Storage.IStorageProvider>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<DeliveryCleanupService>.Instance);
+        await cleanup.CleanupAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.NotNull(await db.Deliveries.AsNoTracking().FirstOrDefaultAsync(d => d.Id == recent.Id));
+        Assert.Null(await db.Deliveries.AsNoTracking().FirstOrDefaultAsync(d => d.Id == ancient.Id));
+    }
+
+    // ── 404 page (#206) ──
+
+    [Fact]
+    public async Task UnknownRoute_Returns404_WithBrandedPage()
+    {
+        var response = await _factory.CreateClient().GetAsync("/definitely-not-a-real-page");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("db-card", html);
     }
 
     // ── List filter + search (#214) ──

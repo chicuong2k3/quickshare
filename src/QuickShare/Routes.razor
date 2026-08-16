@@ -1,6 +1,6 @@
 @inject IHttpContextAccessor HttpContextAccessor
 
-<Router AppAssembly="typeof(Program).Assembly">
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Components.Pages.NotFound)">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData">
             <NotAuthorized>
@@ -13,20 +13,4 @@
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
-    <NotFound>
-        <PageTitle>Not found — QuickShareCloud</PageTitle>
-        <div class="db-page-center">
-            <div class="db-card w-full max-w-md db-text-center">
-                <div class="db-card__body p-8">
-                    <h1 class="db-h1">File not found</h1>
-                    <p class="db-p db-text-muted">
-                        This link doesn't match any shared file. It may have been deleted or never existed.
-                    </p>
-                    <a href="/" class="db-btn db-btn--primary mt-6">
-                        Back to upload
-                    </a>
-                </div>
-            </div>
-        </div>
-    </NotFound>
 </Router>

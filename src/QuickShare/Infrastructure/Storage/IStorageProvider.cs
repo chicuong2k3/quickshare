@@ -56,6 +56,10 @@ public interface IStorageProvider
     Task DeleteObjectAsync(
         string objectKey, CancellationToken ct = default);
 
+    /// <summary>Server-side copy of a single object to a new key (issue #218 clone).</summary>
+    Task CopyObjectAsync(
+        string sourceKey, string destinationKey, CancellationToken ct = default);
+
     // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
 
     /// <summary>Keys under <paramref name="prefix"/> last modified before <paramref name="olderThan"/>.</summary>

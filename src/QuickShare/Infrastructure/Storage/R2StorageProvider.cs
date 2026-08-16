@@ -290,6 +290,25 @@ public sealed class R2StorageProvider : IStorageProvider, IDisposable
         }
     }
 
+    public async Task CopyObjectAsync(
+        string sourceKey, string destinationKey, CancellationToken ct = default)
+    {
+        try
+        {
+            await _s3.CopyObjectAsync(new CopyObjectRequest
+            {
+                SourceBucket = _options.BucketName,
+                SourceKey = sourceKey,
+                DestinationBucket = _options.BucketName,
+                DestinationKey = destinationKey,
+            }, ct);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            throw R2StorageException.FromAmazonS3(ex, $"CopyObjectAsync({sourceKey} -> {destinationKey})");
+        }
+    }
+
     // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
 
     // S3/R2 timestamps are UTC; some SDK versions surface them as Unspecified or Local.

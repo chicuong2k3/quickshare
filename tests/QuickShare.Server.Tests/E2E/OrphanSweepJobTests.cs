@@ -165,6 +165,9 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
         public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
             => throw new NotSupportedException("Sweep must use exact-key DeleteObjectAsync, never prefix delete.");
 
+        public Task CopyObjectAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
+            => Task.CompletedTask;
+
         public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
         {
             AbortedUploadIds.Add(uploadId);

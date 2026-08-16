@@ -123,10 +123,7 @@ public sealed class CommitR2Handler(
         if (sha256 is not null && (sha256.Length != 64 || sha256.Any(c => !char.IsAsciiHexDigit(c))))
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.Sha256Invalid));
 
-        var randomBytes = new byte[8];
-        RandomNumberGenerator.Fill(randomBytes);
-        var shareCode = Convert.ToBase64String(randomBytes)
-            .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        var shareCode = ShareCodes.Generate();
 
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
         if (cmd.ExpiryHours is { } requestedHours)

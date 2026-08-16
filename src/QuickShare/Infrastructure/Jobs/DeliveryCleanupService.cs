@@ -12,15 +12,22 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
         await CleanupAbandonedSessionsAsync();
     }
 
+    /// <summary>
+    /// Sender-side expired archive (issue #222): expired rows stay visible for this long
+    /// after expiry before the row is purged. Bytes are already deleted at expiry by
+    /// DeliveryExpiryJob, so the lingering rows cost only DB space.
+    /// </summary>
+    public static readonly TimeSpan ExpiredRowRetention = TimeSpan.FromDays(30);
+
     private async Task CleanupExpiredDeliveriesAsync()
     {
         var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTime.UtcNow;
+        var purgeBefore = DateTime.UtcNow - ExpiredRowRetention;
 
         var expired = await db.Deliveries
-            .Where(d => d.ExpiresAt != null && d.ExpiresAt < now)
+            .Where(d => d.ExpiresAt != null && d.ExpiresAt < purgeBefore)
             .ToListAsync(ct);
 
         if (expired.Count == 0) return;
