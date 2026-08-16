@@ -22,6 +22,7 @@ public static class HangfireJobs
     public const string OrphanSweep = "orphan-sweep";
     public const string TrialReminder = "trial-reminder";
     public const string TempUploadCleanup = "temp-upload-cleanup";
+    public const string WeeklyDigest = "weekly-digest";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -47,6 +48,7 @@ public static class HangfireJobs
             recurring.AddOrUpdate<DownloadNotificationJob>(DownloadNotification, j => j.NotifyAsync(),
                 Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
             recurring.AddOrUpdate<TrialReminderJob>(TrialReminder, j => j.NotifyAsync(), Cron.Daily());
+            recurring.AddOrUpdate<WeeklyDigestJob>(WeeklyDigest, j => j.NotifyAsync(), Cron.Weekly());
         }
 
         if (hasR2)
