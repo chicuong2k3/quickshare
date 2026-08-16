@@ -202,6 +202,7 @@
   <data name="account_usage_summary" xml:space="preserve"><value>Đã dùng {0} trên {1}</value></data>
   <data name="account_usage_unlimited" xml:space="preserve"><value>Gói này không giới hạn tải lên hàng tháng</value></data>
   <data name="account_usage_upgrade" xml:space="preserve"><value>Nâng cấp để có thêm dung lượng</value></data>
+  <data name="account_usage_rate_limit" xml:space="preserve"><value>Giới hạn tần suất: {0} yêu cầu/phút</value></data>
   <data name="referral_title" xml:space="preserve"><value>Giới thiệu bạn bè</value></data>
   <data name="referral_lead" xml:space="preserve"><value>Chia sẻ file — khi người khác đăng ký và tải file lên, cả hai cùng nhận +2GB dung lượng hàng tháng.</value></data>
   <data name="referral_copy" xml:space="preserve"><value>Sao chép</value></data>

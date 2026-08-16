@@ -30,6 +30,9 @@
             }
         }
 
+        <p class="db-text-muted" style="margin-top: 0.75rem; font-size: 0.75rem">@Loc["account_usage_rate_limit", RateLimitPerMinute]</p>
+
+
         @* Largest files (issue #315) — the cleanup shortlist, biggest first. *@
         @if (largest.Count > 0)
         {
@@ -66,6 +69,7 @@
 
 @code {
     private const int LargestFilesCount = 10;
+    private const int RateLimitPerMinute = 1500;
 
     private sealed record LargestFile(string FileName, long FileSize);
     private sealed record RecentDownload(string FileName, DateTime DownloadedAt);

@@ -201,6 +201,7 @@
   <data name="account_usage_summary" xml:space="preserve"><value>{0} of {1} used</value></data>
   <data name="account_usage_unlimited" xml:space="preserve"><value>Unlimited monthly uploads on this plan</value></data>
   <data name="account_usage_upgrade" xml:space="preserve"><value>Upgrade for more space</value></data>
+  <data name="account_usage_rate_limit" xml:space="preserve"><value>Rate limit: {0} requests/min</value></data>
   <data name="referral_title" xml:space="preserve"><value>Refer friends</value></data>
   <data name="referral_lead" xml:space="preserve"><value>Share your files — when someone signs up and uploads, you both earn +2GB monthly quota.</value></data>
   <data name="referral_copy" xml:space="preserve"><value>Copy</value></data>
