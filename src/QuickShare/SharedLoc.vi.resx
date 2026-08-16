@@ -206,7 +206,6 @@
   <data name="account_usage_title" xml:space="preserve"><value>Dung lượng tải lên hàng tháng</value></data>
   <data name="account_usage_summary" xml:space="preserve"><value>Đã dùng {0} trên {1}</value></data>
   <data name="account_usage_unlimited" xml:space="preserve"><value>Gói này không giới hạn tải lên hàng tháng</value></data>
-  <data name="account_notifications_error" xml:space="preserve"><value>Không thể cập nhật tùy chọn</value></data>
   <data name="account_data_title" xml:space="preserve"><value>Dữ liệu &amp; quyền riêng tư</value></data>
   <data name="account_data_export" xml:space="preserve"><value>Xuất dữ liệu của tôi (JSON)</value></data>
   <data name="account_data_delete" xml:space="preserve"><value>Xóa tài khoản</value></data>
@@ -754,6 +753,8 @@
   <data name="upload_burn_hint" xml:space="preserve"><value>Liên kết chỉ dùng một lần rồi hết hạn. Phù hợp cho file nhạy cảm.</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Xoá metadata ảnh (vị trí, máy ảnh)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Gỡ tag GPS/máy ảnh/thiết bị khỏi ảnh. Bật sẵn theo mặc định.</value></data>
+  <data name="upload_compress_label" xml:space="preserve"><value>Nén ảnh lớn</value></data>
+  <data name="upload_compress_hint" xml:space="preserve"><value>Giảm về 1920px và chuyển sang JPEG. Tiết kiệm băng thông.</value></data>
   <data name="deliveries_extend" xml:space="preserve"><value>Gia hạn 7 ngày</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Ẩn thống kê</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Hiện thống kê</value></data>

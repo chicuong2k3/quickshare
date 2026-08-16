@@ -70,6 +70,7 @@
         sha256: string;
         burnAfterDownload: boolean;
         stripMetadata: boolean;
+        compressImages: boolean;
         expiryHours: number | null;
         _resumeCtx: UploadContext | null;
         objectKey: string;
@@ -89,6 +90,7 @@
         sha256: '',
         burnAfterDownload: false,
         stripMetadata: true,
+        compressImages: true,
         expiryHours: null,
         _resumeCtx: null, objectKey: ''
     };
@@ -326,6 +328,7 @@
         state.password = (document.getElementById('upload-password') as HTMLInputElement | null)?.value ?? '';
         state.burnAfterDownload = (document.getElementById('upload-burn') as HTMLInputElement | null)?.checked ?? false;
         state.stripMetadata = (document.getElementById('upload-strip-metadata') as HTMLInputElement | null)?.checked ?? true;
+        state.compressImages = (document.getElementById('upload-compress') as HTMLInputElement | null)?.checked ?? true;
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
         const expiryDays = document.getElementById('upload-expiry-days') as HTMLInputElement | null;
         if (expirySelect) state.expiryHours = parseFloat(expirySelect.value) || null;
@@ -334,7 +337,53 @@
         state.fileSize = file.size; state.progress = 0; state.error = ''; state.link = '';
         state.copied = false; state._encryptionUsed = false; state._cancelled = false;
         state.phase = 'uploading'; state._startTime = Date.now(); render();
-        doUpload(file).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = (e as Error).message || t('failed'); render(); });
+
+        // Auto-compress images (issue #63) before the upload starts. For non-images
+        // (or when the toggle is off) this resolves immediately with the same file.
+        maybeCompress(file).then(function (out) {
+            state.filename = out.name;
+            state.fileSize = out.size;
+            render();
+            doUpload(out).catch(function (e) { if (state._abortController?.signal.aborted || state._cancelled) return; state.phase = 'error'; state.error = (e as Error).message || t('failed'); render(); });
+        });
+    }
+
+    function maybeCompress(file: File): Promise<File> {
+        if (!state.compressImages) return Promise.resolve(file);
+        if (!file.type || file.type.indexOf('image/') !== 0) return Promise.resolve(file);
+        // GIF (animated) and SVG (vector) are left untouched — rasterizing them loses more than it saves.
+        if (file.type === 'image/gif' || file.type === 'image/svg+xml') return Promise.resolve(file);
+        return compressImage(file);
+    }
+
+    function compressImage(file: File): Promise<File> {
+        return new Promise(function (resolve) {
+            const MAX_DIM = 1920;
+            const MIN_BYTES = 1024 * 1024;
+            if (file.size <= MIN_BYTES) { resolve(file); return; }
+
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = function () {
+                URL.revokeObjectURL(url);
+                const w = img.naturalWidth, h = img.naturalHeight;
+                if (w <= MAX_DIM && h <= MAX_DIM) { resolve(file); return; }
+                const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+                const outW = Math.round(w * scale), outH = Math.round(h * scale);
+                const canvas = document.createElement('canvas');
+                canvas.width = outW; canvas.height = outH;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) { resolve(file); return; }
+                ctx.drawImage(img, 0, 0, outW, outH);
+                canvas.toBlob(function (blob) {
+                    if (!blob || blob.size >= file.size) { resolve(file); return; }
+                    const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                    resolve(new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified }));
+                }, 'image/jpeg', 0.82);
+            };
+            img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+            img.src = url;
+        });
     }
 
     async function doUpload(file: File): Promise<void> {
