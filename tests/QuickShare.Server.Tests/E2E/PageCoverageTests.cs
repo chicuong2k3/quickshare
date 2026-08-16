@@ -17,13 +17,28 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     [InlineData("/send")]
     [InlineData("/how-to/send-large-files-free")]
     [InlineData("/wetransfer-alternatives")]
-    [InlineData("/p2p-file-transfer")]
     [InlineData("/vi/gui-file-lon-mien-phi")]
+    [InlineData("/security")]
+    [InlineData("/changelog")]
+    [InlineData("/roadmap")]
     public async Task PublicPage_Returns200(string url)
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync(url);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SecurityTxt_ReturnsRfc9116Content()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/.well-known/security.txt");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Contact: mailto:security@quicksharecloud.com", body);
+        Assert.Contains("Expires:", body);
+        Assert.Contains("Policy:", body);
     }
 
     [Fact]

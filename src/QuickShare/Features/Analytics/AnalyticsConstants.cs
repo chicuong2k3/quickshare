@@ -32,11 +32,15 @@ public static class AnalyticsEvents
     // Pro trial (issue #65)
     public const string TrialStarted = "trial_started";
 
+    // Roadmap vote (issue #58) — anonymous aggregate feedback signal.
+    public const string RoadmapVote = "roadmap_vote";
+
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)
     {
         Visitor,
-        AdInterstitialViewed
+        AdInterstitialViewed,
+        RoadmapVote
     };
 }
 

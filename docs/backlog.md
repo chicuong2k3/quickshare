@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **9/10 done** — only `#52` rate limiting open |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 18 done: `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256 checksum, `#322` revoke link, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password strength meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily download cap, `#311` custom alias, `#242` favorites, `#315` largest-files report (08-16) |
+| Tier 4 | WeTransfer parity baseline | 20 done (08-16): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap |
 | Tier 5 | Growth wave 2 | all open (1 done: `#69` scheduled send) |
 | Tier 6 | B2B / enterprise / far-future | all open |
 

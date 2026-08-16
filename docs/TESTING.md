@@ -56,8 +56,8 @@ browser download needed.
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
 | Sender email (confirm/unsubscribe/rate-limit) | `SenderEmailConfirmTests`, `SenderEmailUnsubscribeTests`, `SenderEmailRateLimiterTests`, `SenderEmailTokensTests` |
-| Feature flags | `FeatureFlagServiceTests`, `AdminFlagsApiTests` |
 | Security headers + robots | `SecurityHeadersTests` |
+| Trust static pages (security.txt, changelog, roadmap) | `PageCoverageTests` |
 | OTP brute-force lockout | `OtpLockoutTests` |
 | Share password (download gate) | `DeliveryPasswordTests` |
 | New-device login tracking | `DeviceTrackerTests` |

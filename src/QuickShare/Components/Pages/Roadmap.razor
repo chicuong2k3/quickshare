@@ -1,0 +1,89 @@
+@layout MainLayout
+@page "/roadmap"
+@using System.Globalization
+
+@* Static roadmap (issue #58) — public momentum signal; anonymous vote = analytics feedback. *@
+
+<PageTitle>@(IsVi ? "Lộ trình" : "Roadmap")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "Lộ trình tính năng của QuickShareCloud." : "QuickShareCloud feature roadmap.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        <h1 class="db-h1">@(IsVi ? "Lộ trình" : "Roadmap")</h1>
+        <p class="db-p db-text-muted">@(IsVi ? "Bình chọn tính năng bạn cần nhất — bình chọn ẩn danh, không cần tài khoản." : "Vote for what you need most — anonymous, no account required.")</p>
+
+        @foreach (var group in Groups)
+        {
+            <h2 class="db-h2">@GroupName(group)</h2>
+            <ul class="db-p legal__list" style="list-style: none; padding-left: 0">
+                @foreach (var item in Items.Where(i => i.Group == group))
+                {
+                    <li style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0">
+                        <span>@ItemName(item)</span>
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-voted="@VotedLabel"
+                                onclick="voteRoadmap('@item.Id', this)">@VoteLabel</button>
+                    </li>
+                }
+            </ul>
+        }
+    </article>
+</PageWrapper>
+
+<script>
+    window.voteRoadmap = function (id, btn) {
+        var key = 'qs_roadmap_vote_' + id;
+        if (localStorage.getItem(key)) { btn.textContent = btn.getAttribute('data-voted'); return; }
+        fetch('/api/analytics/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'roadmap_vote' }) })
+            .then(function () {
+                localStorage.setItem(key, '1');
+                btn.textContent = btn.getAttribute('data-voted');
+            })
+            .catch(function () { /* fire-and-forget */ });
+    };
+</script>
+
+@code {
+    private const string Privacy = "privacy";
+    private const string Growth = "growth";
+    private const string Mobile = "mobile";
+
+    private static readonly string[] Groups = [Privacy, Growth, Mobile];
+
+    private sealed record RoadmapItem(string Id, string Group, string En, string Vi);
+
+    private static readonly RoadmapItem[] Items =
+    [
+        new("privacy-exif", Privacy, "EXIF/GPS metadata stripping", "Xoá metadata EXIF/GPS khi tải lên"),
+        new("privacy-erasure", Privacy, "Right-to-erasure (byte-level purge)", "Quyền xoá dữ liệu (xoá tận gốc)"),
+        new("privacy-2fa", Privacy, "TOTP two-factor authentication", "Xác thực hai lớp TOTP"),
+        new("privacy-zero-knowledge", Privacy, "True zero-knowledge mode", "Chế độ zero-knowledge thực sự"),
+
+        new("growth-file-request", Growth, "File Request (recipient uploads)", "Yêu cầu gửi file (người nhận tự tải lên)"),
+        new("growth-drop-room", Growth, "Drop Room (QR photo gallery)", "Drop Room (gallery ảnh qua QR)"),
+        new("growth-multi-recipient", Growth, "Multi-recipient share + tracking", "Chia sẻ nhiều người nhận + theo dõi"),
+        new("growth-digest", Growth, "Weekly digest email", "Email tóm tắt hàng tuần"),
+
+        new("mobile-ios-share", Mobile, "iOS Share Extension", "Tiện ích chia sẻ iOS"),
+        new("mobile-web-share", Mobile, "Native Web Share API", "Bảng chia sẻ gốc (Web Share API)"),
+        new("mobile-offline", Mobile, "Offline read for received files", "Đọc file nhận được khi offline"),
+        new("mobile-qr-scan", Mobile, "QR scanner to open a delivery", "Quét mã QR để mở liên kết"),
+    ];
+
+    private bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+    private string VoteLabel => IsVi ? "Bình chọn" : "Vote";
+    private string VotedLabel => IsVi ? "Đã bình chọn ✓" : "Voted ✓";
+    private string ItemName(RoadmapItem item) => IsVi ? item.Vi : item.En;
+
+    private string GroupName(string group) => (group, IsVi) switch
+    {
+        (Privacy, true) => "Quyền riêng tư",
+        (Privacy, false) => "Privacy",
+        (Growth, true) => "Tăng trưởng",
+        (Growth, false) => "Growth",
+        (Mobile, true) => "Di động",
+        _ => "Mobile",
+    };
+}
