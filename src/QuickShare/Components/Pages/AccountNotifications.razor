@@ -27,6 +27,13 @@
                     <span class="db-text-muted account-notifications__desc">@Loc["account_notifications_download_desc"]</span>
                 </span>
             </label>
+            <label class="account-notifications__item">
+                <input type="checkbox" name="trackMyDownloads" checked="@trackMyDownloads" onchange="this.form.requestSubmit()" />
+                <span>
+                    <span class="account-notifications__label">@Loc["account_notifications_track_label"]</span>
+                    <span class="db-text-muted account-notifications__desc">@Loc["account_notifications_track_desc"]</span>
+                </span>
+            </label>
         </form>
     </div>
 </div>
@@ -37,10 +44,14 @@
     private const string HtmxRequestValue = "true";
 
     private bool emailOnDownload = true;
+    private bool trackMyDownloads;
     private string? formError;
 
     [SupplyParameterFromForm(Name = "emailOnDownload")]
     private bool FormEmailOnDownload { get; set; }
+
+    [SupplyParameterFromForm(Name = "trackMyDownloads")]
+    private bool FormTrackMyDownloads { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -58,10 +69,12 @@
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
             // Read fresh from the DB — GetUserAsync is cache-backed and can hold a stale toggle.
-            emailOnDownload = await Db.Users
+            var prefs = await Db.Users
                 .Where(u => u.Id == user.Id)
-                .Select(u => u.EmailOnDownload)
+                .Select(u => new { u.EmailOnDownload, u.TrackMyDownloads })
                 .FirstAsync(CancellationToken.None);
+            emailOnDownload = prefs.EmailOnDownload;
+            trackMyDownloads = prefs.TrackMyDownloads;
         }
         catch { }
     }
@@ -73,12 +86,14 @@
         {
             var ct = CancellationToken.None;
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
-
             await Db.Users
                 .Where(u => u.Id == user.Id)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(u => u.EmailOnDownload, FormEmailOnDownload), ct);
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(u => u.EmailOnDownload, FormEmailOnDownload)
+                    .SetProperty(u => u.TrackMyDownloads, FormTrackMyDownloads), ct);
 
             emailOnDownload = FormEmailOnDownload;
+            trackMyDownloads = FormTrackMyDownloads;
         }
         catch
         {

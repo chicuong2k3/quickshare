@@ -761,7 +761,10 @@
   <data name="upload_share_text_toggle" xml:space="preserve"><value>Share text instead</value></data>
   <data name="upload_share_text_placeholder" xml:space="preserve"><value>Paste your text here — it becomes a shareable link.</value></data>
   <data name="upload_share_text_btn" xml:space="preserve"><value>Share text</value></data>
-  <data name="deliveries_extend" xml:space="preserve"><value>Extend 7d</value></data>
+  <data name="account_notifications_track_label" xml:space="preserve"><value>Track my downloads</value></data>
+  <data name="account_notifications_track_desc" xml:space="preserve"><value>Keep a private list of files you've downloaded (opt-in).</value></data>
+  <data name="account_downloads_title" xml:space="preserve"><value>Downloaded files</value></data>
+  <data name="account_downloads_empty" xml:space="preserve"><value>Nothing here yet — files you download while signed in (with tracking on) appear here.</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
   <data name="deliveries_tag" xml:space="preserve"><value>Label</value></data>

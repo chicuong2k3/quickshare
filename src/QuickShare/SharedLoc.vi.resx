@@ -781,6 +781,10 @@
   <data name="upload_share_text_toggle" xml:space="preserve"><value>Chia sẻ văn bản thay vì file</value></data>
   <data name="upload_share_text_placeholder" xml:space="preserve"><value>Dán văn bản vào đây — nó sẽ thành một liên kết chia sẻ.</value></data>
   <data name="upload_share_text_btn" xml:space="preserve"><value>Chia sẻ văn bản</value></data>
+  <data name="account_notifications_track_label" xml:space="preserve"><value>Theo dõi lượt tải của tôi</value></data>
+  <data name="account_notifications_track_desc" xml:space="preserve"><value>Giữ danh sách riêng các file bạn đã tải (tự chọn bật).</value></data>
+  <data name="account_downloads_title" xml:space="preserve"><value>File đã tải</value></data>
+  <data name="account_downloads_empty" xml:space="preserve"><value>Chưa có gì — các file bạn tải khi đăng nhập (bật theo dõi) sẽ hiện ở đây.</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>

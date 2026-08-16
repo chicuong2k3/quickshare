@@ -93,6 +93,19 @@
     </div>
     </HtmxFragment>
 
+    @* Download history (issue #220) — HTMX lazy loaded *@
+    <HtmxFragment>
+    <div id="downloads-card" class="db-card account-card"
+         hx-get="@RoutePaths.AccountDownloads"
+         hx-trigger="load"
+         hx-select="#downloads-card"
+         hx-swap="outerHTML">
+        <div class="db-card__body">
+            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+        </div>
+    </div>
+    </HtmxFragment>
+
     @* Data & privacy (issue #59) — static, no DB calls. *@
     <div class="db-card account-card">
         <div class="db-card__body">

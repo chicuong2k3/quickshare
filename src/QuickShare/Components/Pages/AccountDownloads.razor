@@ -1,0 +1,70 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/downloads"
+@attribute [Authorize]
+@using QuickShare.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="downloads-card" class="db-card account-card">
+    <div class="db-card__body">
+        <h3 class="db-h4">@Loc["account_downloads_title"]</h3>
+
+        @if (items.Count == 0)
+        {
+            <p class="db-p db-text-muted">@Loc["account_downloads_empty"]</p>
+        }
+        else
+        {
+            <ul class="account-downloads-list">
+                @foreach (var item in items)
+                {
+                    <li class="account-downloads-row">
+                        <span class="account-downloads-name" title="@item.FileName">@item.FileName</span>
+                        <span class="account-downloads-size db-text-muted">@item.DownloadedAt.ToLocalTime().ToString("g")</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+</HtmxFragment>
+
+@code {
+    private const string HtmxRequestHeader = "HX-Request";
+    private const string HtmxRequestValue = "true";
+
+    private sealed record DownloadItem(string FileName, DateTime DownloadedAt);
+
+    private List<DownloadItem> items = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxRequestHeader].FirstOrDefault() != HtmxRequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            items = await Db.DownloadTrackings
+                .AsNoTracking()
+                .Where(t => t.UserId == user.Id)
+                .OrderByDescending(t => t.DownloadedAt)
+                .Take(50)
+                .Select(t => new DownloadItem(
+                    Db.Deliveries.Where(d => d.Id == t.DeliveryId).Select(d => d.FileName).FirstOrDefault() ?? string.Empty,
+                    t.DownloadedAt))
+                .ToListAsync();
+        }
+        catch { }
+    }
+}

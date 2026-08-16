@@ -1048,6 +1048,42 @@ body::after,
     border-radius: 50%;
 }
 
+.account-data-delete {
+    color: var(--db-color-danger, #dc2626);
+    border-color: var(--db-color-danger, #dc2626);
+}
+
+/* Download history (issue #220). */
+.account-downloads-list {
+    list-style: none;
+    margin: var(--db-space-3) 0 0;
+    padding: 0;
+}
+
+.account-downloads-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--db-space-3);
+    padding: var(--db-space-2) 0;
+    border-bottom: 1px solid var(--db-mountain);
+}
+
+.account-downloads-row:last-child {
+    border-bottom: none;
+}
+
+.account-downloads-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-downloads-size {
+    font-family: var(--db-font-mono);
+    font-size: var(--db-text-sm);
+    white-space: nowrap;
+}
+
 .account-onboarding-step--done {
     color: var(--db-color-text);
     text-decoration: line-through;

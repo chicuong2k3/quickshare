@@ -318,6 +318,9 @@ namespace QuickShare.Migrations
                     b.Property<bool>("Notified")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DeliveryId");
@@ -325,6 +328,8 @@ namespace QuickShare.Migrations
                     b.HasIndex("DownloadedAt");
 
                     b.HasIndex("Notified");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("download_tracking", (string)null);
                 });
@@ -732,6 +737,9 @@ namespace QuickShare.Migrations
 
                     b.Property<Guid?>("ReferredByUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("TrackMyDownloads")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

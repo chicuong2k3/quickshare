@@ -11,4 +11,6 @@ public record User : BaseAuditEntity
     public string? ReferralCode { get; set; }
     public Guid? ReferredByUserId { get; set; }
     public long BonusQuotaBytes { get; set; }
+    /// <summary>Opt-in recipient download history (#220). Default off for privacy.</summary>
+    public bool TrackMyDownloads { get; set; }
 }

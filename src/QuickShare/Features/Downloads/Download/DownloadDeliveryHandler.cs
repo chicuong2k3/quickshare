@@ -145,6 +145,16 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             return;
         }
 
+        // Recipient download history (issue #220): capture the signed-in user's
+        // opted-in id BEFORE the redirect — the request scope dies on response completion.
+        Guid? trackUserId = null;
+        if (!hasRangeHeader && httpContext.User.Identity?.IsAuthenticated == true)
+        {
+            var signedIn = await httpContext.User.GetUserOrDefaultAsync(db, ct);
+            if (signedIn is { TrackMyDownloads: true })
+                trackUserId = signedIn.Id;
+        }
+
         response.Redirect(presignedUrl.AbsoluteUri, permanent: false);
 
         if (!hasRangeHeader)
@@ -165,14 +175,13 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                     if (entity is not null)
                     {
                         entity.DownloadCount++;
-                        entity.FirstDownloadedAt ??= DateTime.UtcNow;
-
                         updateDb.DownloadTrackings.Add(new DownloadTracking
                         {
                             Id = Guid.CreateVersion7(),
                             DeliveryId = delivery.Id,
                             IpAddress = remoteIp,
-                            DownloadedAt = DateTime.UtcNow
+                            DownloadedAt = DateTime.UtcNow,
+                            UserId = trackUserId
                         });
 
                         await updateDb.SaveChangesAsync(CancellationToken.None);

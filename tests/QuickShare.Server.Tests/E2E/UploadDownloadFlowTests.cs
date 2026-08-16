@@ -653,4 +653,40 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
         await db.SaveChangesAsync();
         return shareCode;
     }
+
+    // ── Recipient download history (#220) ──
+
+    [Fact]
+    public async Task Download_RecordsHistory_WhenOptedIn()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var user = await db.Users.FirstAsync(u => u.Id == _factory.TestUserId);
+            user.TrackMyDownloads = true;
+            await db.SaveChangesAsync();
+        }
+
+        var client = CreateNoRedirectClient(authenticated: true);
+        var commit = await UploadFileAsync(client);
+
+        var download = await client.GetAsync($"/api/downloads/{commit.ShareCode}");
+        Assert.Equal(HttpStatusCode.Found, download.StatusCode);
+
+        // Recording happens on a background task — poll briefly.
+        var recorded = false;
+        for (var i = 0; i < 20 && !recorded; i++)
+        {
+            await Task.Delay(100);
+            using var s = _factory.Services.CreateScope();
+            var db = s.ServiceProvider.GetRequiredService<AppDbContext>();
+            var deliveryId = await db.Deliveries
+                .Where(d => d.ShareCode == commit.ShareCode)
+                .Select(d => d.Id)
+                .FirstAsync();
+            recorded = await db.DownloadTrackings.AnyAsync(t => t.DeliveryId == deliveryId && t.UserId == _factory.TestUserId);
+        }
+
+        Assert.True(recorded, "Expected a download tracking row stamped with the opted-in recipient's user id.");
+    }
 }
