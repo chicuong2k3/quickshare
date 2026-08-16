@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **9/10 done** — only `#52` rate limiting open |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 5 done: `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256 checksum |
+| Tier 4 | WeTransfer parity baseline | 10 done: `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256 checksum, `#322` revoke link, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password strength meter (08-16) |
 | Tier 5 | Growth wave 2 | all open (1 done: `#69` scheduled send) |
 | Tier 6 | B2B / enterprise / far-future | all open |
 
@@ -76,8 +76,15 @@ downloads), #137 (message with delivery).
 ## 6–8. Tier 4 / 5 / 6
 
 Full item tables: [issue #325](https://github.com/chicuong2k3/quickshare/issues/325).
-Everything listed there is open except the two marked done above. Sizes: Tier 4 ≈ 70 items,
+Everything listed there is open except the items marked done above. Sizes: Tier 4 ≈ 70 items,
 Tier 5 ≈ 90 items, Tier 6 ≈ 50 items.
+
+Tier 4 batch 2026-08-16 (commit `5d0ca8d`, tests in `DeliveryManageTests`):
+`#322` revoke link before expiry, `#318` rename after upload, `#232` expiry as .ics calendar
+event, `#214` delivery list status filter + name search, `#287` password strength meter.
+Deferred from that batch: `#222` expired-link archive needs a retention grace period —
+`DeliveryCleanupService` deletes expired rows outright today; `#218` clone needs a storage-side
+object copy API.
 
 ## 9. Local artifact map (feature area → design doc)
 
