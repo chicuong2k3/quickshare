@@ -12,6 +12,8 @@ public record UploadSession : BaseAuditEntity
     public DateTime ExpiresAt { get; init; }
     public string? R2UploadId { get; set; }
     public string? StoragePath { get; set; }
+    /// <summary>When set, this session replaces an existing delivery (issue #72) instead of creating a new one.</summary>
+    public Guid? ReplaceDeliveryId { get; init; }
 }
 
 public static class UploadSessionStatus

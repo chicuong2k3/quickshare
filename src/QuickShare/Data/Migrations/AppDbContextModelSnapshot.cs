@@ -676,6 +676,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("R2UploadId")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ReplaceDeliveryId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("SenderEmail")
                         .HasColumnType("text");
 

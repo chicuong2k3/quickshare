@@ -785,6 +785,8 @@
   <data name="account_notifications_track_desc" xml:space="preserve"><value>Giữ danh sách riêng các file bạn đã tải (tự chọn bật).</value></data>
   <data name="account_downloads_title" xml:space="preserve"><value>File đã tải</value></data>
   <data name="account_downloads_empty" xml:space="preserve"><value>Chưa có gì — các file bạn tải khi đăng nhập (bật theo dõi) sẽ hiện ở đây.</value></data>
+  <data name="deliveries_replace" xml:space="preserve"><value>Thay file</value></data>
+  <data name="deliveries_replace_error" xml:space="preserve"><value>Thay file thất bại. File có thể quá lớn so với gói của bạn.</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>

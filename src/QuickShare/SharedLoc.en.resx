@@ -765,6 +765,8 @@
   <data name="account_notifications_track_desc" xml:space="preserve"><value>Keep a private list of files you've downloaded (opt-in).</value></data>
   <data name="account_downloads_title" xml:space="preserve"><value>Downloaded files</value></data>
   <data name="account_downloads_empty" xml:space="preserve"><value>Nothing here yet — files you download while signed in (with tracking on) appear here.</value></data>
+  <data name="deliveries_replace" xml:space="preserve"><value>Replace file</value></data>
+  <data name="deliveries_replace_error" xml:space="preserve"><value>Replace failed. The file may be too large for your plan.</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
   <data name="deliveries_tag" xml:space="preserve"><value>Label</value></data>

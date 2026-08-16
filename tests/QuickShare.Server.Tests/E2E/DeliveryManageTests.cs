@@ -6,6 +6,8 @@ using QuickShare.Data;
 using QuickShare.Data.Entities;
 using QuickShare.Infrastructure.Constants;
 using QuickShare.Infrastructure.Jobs;
+using QuickShare.Features.Deliveries.Replace;
+using QuickShare.Infrastructure.Storage;
 using QuickShare.Querying;
 
 namespace QuickShare.Server.Tests.E2E;
@@ -503,5 +505,45 @@ public sealed class DeliveryManageTests : IClassFixture<TestWebAppFactory>
         var attacker = _factory.CreateAuthenticatedClient(attackerKey);
         var response = await attacker.DeleteAsync($"{DeliveriesApi}/{delivery.Id}/purge");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // ── Replace file, keep link (#72) ──
+
+    [Fact]
+    public async Task Replace_UpdatesFileAndKeepsLink()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var delivery = await SeedDeliveryAsync(user.Id, fileName: "old.pdf");
+        var originalCode = delivery.ShareCode;
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var startRes = await client.PostAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/replace/start", new
+        {
+            FileName = "new.pdf",
+            FileSize = 2048L,
+            ContentType = "application/pdf",
+            PartNumbers = new[] { 1 }
+        });
+        Assert.Equal(HttpStatusCode.OK, startRes.StatusCode);
+        var start = await startRes.Content.ReadFromJsonAsync<ReplaceDeliveryStartResponse>();
+        Assert.NotNull(start);
+
+        var commitRes = await client.PostAsJsonAsync($"{DeliveriesApi}/{delivery.Id}/replace/commit", new
+        {
+            SessionId = start.SessionId,
+            UploadId = start.UploadId,
+            ObjectKey = start.ObjectKey,
+            Parts = new[] { new R2PartEtag(1, "etag-1") }
+        });
+        Assert.Equal(HttpStatusCode.NoContent, commitRes.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var row = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == delivery.Id);
+        Assert.Equal("new.pdf", row.FileName);
+        Assert.Equal(2048, row.FileSize);
+        Assert.Equal(originalCode, row.ShareCode);
+        Assert.Equal(0, row.DownloadCount);
     }
 }
