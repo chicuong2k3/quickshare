@@ -1008,6 +1008,33 @@ body::after,
 
 /* Profile card styles now in Pages/AccountProfile.razor.css (scoped) */
 
+/* Notification preferences (issue #117) — global: rendered inside an HTMX partial */
+.account-notifications__item {
+    display: flex;
+    gap: var(--db-space-2);
+    align-items: flex-start;
+    padding: var(--db-space-3);
+    border: 1px solid var(--db-mountain);
+    border-radius: var(--db-radius);
+    cursor: pointer;
+}
+
+.account-notifications__item input[type="checkbox"] {
+    margin-top: 0.25rem;
+    accent-color: var(--db-color-accent);
+}
+
+.account-notifications__label {
+    display: block;
+    font-weight: var(--db-font-medium);
+}
+
+.account-notifications__desc {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--db-text-sm);
+}
+
 /* --- P2P send quota banner --- */
 .p2p-quota-banner {
     margin-bottom: var(--db-space-4);

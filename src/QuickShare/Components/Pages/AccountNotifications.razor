@@ -1,0 +1,82 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/notifications"
+@attribute [Authorize]
+@using QuickShare.Data
+@using QuickShare.Features.Users.Shared
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="notifications-card" class="db-card account-card">
+    <div class="db-card__body">
+        <h3 class="db-h4">@Loc["account_notifications_title"]</h3>
+
+        @if (!string.IsNullOrEmpty(formError))
+        {
+            <div class="db-alert db-alert--error" style="margin-top: 0.75rem" role="alert">@formError</div>
+        }
+
+        <form class="account-notifications" hx-post="@RoutePaths.AccountNotifications" hx-target="#notifications-card" hx-select="#notifications-card" hx-swap="outerHTML" onpost="@HandleToggle">
+            <label class="account-notifications__item">
+                <input type="checkbox" name="emailOnDownload" checked="@emailOnDownload" onchange="this.form.requestSubmit()" />
+                <span>
+                    <span class="account-notifications__label">@Loc["account_notifications_download_label"]</span>
+                    <span class="db-text-muted account-notifications__desc">@Loc["account_notifications_download_desc"]</span>
+                </span>
+            </label>
+        </form>
+    </div>
+</div>
+</HtmxFragment>
+
+@code {
+    private const string HtmxRequestHeader = "HX-Request";
+    private const string HtmxRequestValue = "true";
+
+    private bool emailOnDownload = true;
+    private string? formError;
+
+    [SupplyParameterFromForm(Name = "emailOnDownload")]
+    private bool FormEmailOnDownload { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // HTMX partial for /account — direct browser hits render the bare card.
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxRequestHeader].FirstOrDefault() != HtmxRequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            emailOnDownload = user.EmailOnDownload;
+        }
+        catch { }
+    }
+
+    private async Task HandleToggle()
+    {
+        formError = null;
+        var ct = CancellationToken.None;
+        var userId = HttpContextAccessor.HttpContext!.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userId, out var id))
+        {
+            formError = Loc["account_notifications_error"];
+            return;
+        }
+
+        await Db.Users
+            .Where(u => u.Id == id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(u => u.EmailOnDownload, FormEmailOnDownload), ct);
+
+        emailOnDownload = FormEmailOnDownload;
+    }
+}

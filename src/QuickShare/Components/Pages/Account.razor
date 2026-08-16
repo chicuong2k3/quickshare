@@ -68,6 +68,19 @@
     </div>
     </HtmxFragment>
 
+    @* Notification preferences (issue #117) — HTMX lazy loaded *@
+    <HtmxFragment>
+    <div id="notifications-card" class="db-card account-card"
+         hx-get="@RoutePaths.AccountNotifications"
+         hx-trigger="load"
+         hx-select="#notifications-card"
+         hx-swap="outerHTML">
+        <div class="db-card__body">
+            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+        </div>
+    </div>
+    </HtmxFragment>
+
 </PageWrapper>
 
 <script src="/js/account.js"></script>
