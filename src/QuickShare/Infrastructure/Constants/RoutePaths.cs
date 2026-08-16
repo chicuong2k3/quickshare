@@ -38,4 +38,11 @@ public static class RoutePaths
     public const string SeoWeTransferAlternatives = "/wetransfer-alternatives";
     public const string SeoP2pFileTransfer = "/p2p-file-transfer";
     public const string SeoViGuiFileLonMienPhi = "/vi/gui-file-lon-mien-phi";
+    public const string Changelog = "/changelog";
+    public const string Roadmap = "/roadmap";
+    public const string Security = "/security";
+    public const string Compare = "/compare";
+    public const string WhyPrivate = "/why-private";
+    public const string Sitemap = "/sitemap.xml";
+    public const string Robots = "/robots.txt";
 }

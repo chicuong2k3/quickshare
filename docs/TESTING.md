@@ -58,6 +58,7 @@ browser download needed.
 | Sender email (confirm/unsubscribe/rate-limit) | `SenderEmailConfirmTests`, `SenderEmailUnsubscribeTests`, `SenderEmailRateLimiterTests`, `SenderEmailTokensTests` |
 | Security headers + robots | `SecurityHeadersTests` |
 | Trust static pages (security.txt, changelog, roadmap) | `PageCoverageTests` |
+| SEO + trust (sitemap, robots, compare, why-private) | `PageCoverageTests` |
 | OTP brute-force lockout | `OtpLockoutTests` |
 | Share password (download gate) | `DeliveryPasswordTests` |
 | New-device login tracking | `DeviceTrackerTests` |

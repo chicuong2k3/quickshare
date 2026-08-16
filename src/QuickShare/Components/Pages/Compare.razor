@@ -1,0 +1,68 @@
+@layout MainLayout
+@page "/compare"
+@using System.Globalization
+
+@* Competitor comparison (issue #168) — factual, honest, SEO-targeted. *@
+
+<PageTitle>@(IsVi ? "So sánh: QuickShare vs WeTransfer, SwissTransfer, Smash" : "QuickShare vs WeTransfer, SwissTransfer, Smash")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "So sánh trung thực QuickShare với WeTransfer, SwissTransfer và Smash: dung lượng, thời hạn, mã hoá, tính năng." : "An honest comparison of QuickShare vs WeTransfer, SwissTransfer and Smash: limits, expiry, encryption, features.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        <h1 class="db-h1">@(IsVi ? "So sánh QuickShare với các đối thủ" : "QuickShare vs the alternatives")</h1>
+        <p class="db-p db-text-muted">@(IsVi ? "Dữ liệu đối thủ là ảnh chụp năm 2026, kiểm chứng định kỳ mỗi quý. Chúng tôi chỉ nói điều chúng tôi làm được." : "Competitor data is a 2026 snapshot, re-verified quarterly. We only claim what we actually do.")</p>
+
+        <h2 class="db-h2">@(IsVi ? "Bảng so sánh" : "Comparison")</h2>
+        <div class="db-table-wrap" style="overflow-x: auto">
+            <table class="db-table">
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        <th scope="col">QuickShare</th>
+                        <th scope="col">WeTransfer</th>
+                        <th scope="col">SwissTransfer</th>
+                        <th scope="col">Smash</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><th scope="row">@(IsVi ? "Gói miễn phí" : "Free size")</th><td>@(IsVi ? "Lên tới 5 GB" : "Up to 5 GB")</td><td>2 GB</td><td>50 GB</td><td>2 GB</td></tr>
+                    <tr><th scope="row">@(IsVi ? "Thời hạn liên kết" : "Link lifetime")</th><td>@(IsVi ? "2h–7 ngày" : "2h–7 days")</td><td>3 days</td><td>30 days</td><td>14 days</td></tr>
+                    <tr><th scope="row">@(IsVi ? "Mã hoá đầu-cuối" : "End-to-end encryption")</th><td>@(IsVi ? "Có (AES-256-GCM)" : "Yes (AES-256-GCM)")</td><td>No</td><td>No</td><td>No</td></tr>
+                    <tr><th scope="row">@(IsVi ? "Mật khẩu (miễn phí)" : "Password (free)")</th><td>@(IsVi ? "Có" : "Yes")</td><td>@(IsVi ? "Trả phí" : "Paid")</td><td>@(IsVi ? "Có" : "Yes")</td><td>@(IsVi ? "Có" : "Yes")</td></tr>
+                    <tr><th scope="row">@(IsVi ? "Truyền P2P" : "P2P transfer")</th><td>@(IsVi ? "Có" : "Yes")</td><td>No</td><td>No</td><td>No</td></tr>
+                    <tr><th scope="row">@(IsVi ? "Xem trước file" : "File preview")</th><td>@(IsVi ? "Có" : "Yes")</td><td>@(IsVi ? "Trả phí" : "Paid")</td><td>@(IsVi ? "Có" : "Yes")</td><td>@(IsVi ? "Có" : "Yes")</td></tr>
+                    <tr><th scope="row">@(IsVi ? "Cam kết không huấn luyện AI" : "No-AI-training pledge")</th><td>@(IsVi ? "Có" : "Yes")</td><td>No</td><td>—</td><td>@(IsVi ? "Có" : "Yes")</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="db-h2">@(IsVi ? "Điểm khác biệt của chúng tôi" : "Where we differ")</h2>
+        <ul class="db-p legal__list">
+            @if (IsVi)
+            {
+                <li>Mã hoá đầu-cuối: máy chủ không đọc được nội dung file.</li>
+                <li>Truyền P2P trình duyệt-tới-trình duyệt, không lưu trên máy chủ.</li>
+                <li>Mật khẩu bảo vệ miễn phí, tự huỷ sau 1 lần tải, mã SHA-256.</li>
+                <li>Cam kết không dùng file để huấn luyện AI.</li>
+            }
+            else
+            {
+                <li>End-to-end encryption: the server cannot read file contents.</li>
+                <li>P2P browser-to-browser transfer, never stored on our servers.</li>
+                <li>Free password protection, burn-after-download, SHA-256 checksums.</li>
+                <li>A pledge never to use files for AI training.</li>
+            }
+        </ul>
+
+        <h2 class="db-h2">@(IsVi ? "Khi nào họ tốt hơn" : "When they're better")</h2>
+        <p class="db-p">@(IsVi ? "Thành thật: SwissTransfer cho gửi miễn phí tới 50 GB với liên kết 30 ngày — nếu bạn cần gửi file cực lớn, miễn phí, không cần mã hoá, họ hợp hơn. WeTransfer có thương hiệu quen thuộc hơn với người dùng quốc tế. QuickShare hợp nhất khi bạn quan tâm quyền riêng tư, mã hoá và thị trường Việt Nam (Zalo, dữ liệu di động)." : "Honestly: SwissTransfer offers up to 50 GB free with 30-day links — for a very large, free, unencrypted send, they win. WeTransfer has more brand recognition internationally. QuickShare wins when you care about privacy, encryption, and the Vietnamese market (Zalo, mobile data).")</p>
+
+        <p class="db-p"><a class="db-link" href="@RoutePaths.Send">@(IsVi ? "Gửi file miễn phí →" : "Send a file free →")</a></p>
+    </article>
+</PageWrapper>
+
+@code {
+    private static bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+}

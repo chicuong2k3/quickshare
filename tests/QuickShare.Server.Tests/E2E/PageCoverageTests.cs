@@ -21,6 +21,8 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     [InlineData("/security")]
     [InlineData("/changelog")]
     [InlineData("/roadmap")]
+    [InlineData("/compare")]
+    [InlineData("/why-private")]
     public async Task PublicPage_Returns200(string url)
     {
         var client = _factory.CreateClient();
@@ -47,6 +49,28 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateClient();
         var html = await client.GetStringAsync("/send");
         Assert.Contains("upload-strip-metadata", html);
+    }
+
+    [Fact]
+    public async Task Sitemap_ListsPublicPagesOnly_NeverDeliveries()
+    {
+        var client = _factory.CreateClient();
+        var body = await client.GetStringAsync("/sitemap.xml");
+
+        Assert.Contains("<urlset", body);
+        Assert.Contains("/pricing", body);
+        Assert.DoesNotContain("/d/", body);
+    }
+
+    [Fact]
+    public async Task Robots_DisallowsAccountAndApi()
+    {
+        var client = _factory.CreateClient();
+        var body = await client.GetStringAsync("/robots.txt");
+
+        Assert.Contains("Disallow: /account", body);
+        Assert.Contains("Disallow: /api", body);
+        Assert.Contains("Sitemap:", body);
     }
 
     [Fact]
