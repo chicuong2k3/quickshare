@@ -130,6 +130,16 @@
                     <span class="otp-hint">@Loc["upload_burn_hint"]</span>
                 </div>
 
+                @* Metadata strip (issue #170) — privacy-first, on by default *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-strip-metadata" checked />
+                        <span>@Loc["upload_strip_metadata_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_strip_metadata_hint"]</span>
+                </div>
+
+
 
 
                 @* Sender note (issue #137) — optional, plain text, rendered escaped on /d *@

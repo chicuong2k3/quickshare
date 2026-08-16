@@ -42,6 +42,14 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task UploadPage_RendersStripMetadataToggle()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/send");
+        Assert.Contains("upload-strip-metadata", html);
+    }
+
+    [Fact]
     public async Task DownloadPage_SeededDelivery_Returns200()
     {
         var shareCode = await SeedDeliveryAsync();

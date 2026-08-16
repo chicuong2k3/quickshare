@@ -715,6 +715,8 @@
   <data name="dl_sha_copy" xml:space="preserve"><value>Copy</value></data>
   <data name="upload_burn_label" xml:space="preserve"><value>Self-destruct after 1 download</value></data>
   <data name="upload_burn_hint" xml:space="preserve"><value>The link works once, then expires. Best for sensitive files.</value></data>
+  <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
+  <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_extend" xml:space="preserve"><value>Extend 7d</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>

@@ -20,6 +20,9 @@
     const PART_RETRY_ATTEMPTS = 3;
     const SOURCE_WEB = 'web';
     const SOURCE_PASTE = 'paste';
+    // Raster formats the canvas can decode + re-encode for metadata strip (#170).
+    // GIF is skipped (re-encode drops animation); HEIC is left byte-for-byte.
+    const STRIPPABLE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
     interface UploadContext {
         fileName: string;
@@ -66,6 +69,7 @@
         password: string;
         sha256: string;
         burnAfterDownload: boolean;
+        stripMetadata: boolean;
         expiryHours: number | null;
         _resumeCtx: UploadContext | null;
         objectKey: string;
@@ -84,6 +88,7 @@
         password: '',
         sha256: '',
         burnAfterDownload: false,
+        stripMetadata: true,
         expiryHours: null,
         _resumeCtx: null, objectKey: ''
     };
@@ -320,6 +325,7 @@
         state.message = (document.getElementById('upload-message') as HTMLTextAreaElement | null)?.value.trim() ?? '';
         state.password = (document.getElementById('upload-password') as HTMLInputElement | null)?.value ?? '';
         state.burnAfterDownload = (document.getElementById('upload-burn') as HTMLInputElement | null)?.checked ?? false;
+        state.stripMetadata = (document.getElementById('upload-strip-metadata') as HTMLInputElement | null)?.checked ?? true;
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
         const expiryDays = document.getElementById('upload-expiry-days') as HTMLInputElement | null;
         if (expirySelect) state.expiryHours = parseFloat(expirySelect.value) || null;
@@ -335,8 +341,23 @@
         const api = apiBase();
         let uploadBlob: Blob = file;
         let encryptionKeyStr: string | null = null;
-        const originalSize = file.size;
-        const fileData = await file.arrayBuffer();
+        const sourceName = file.name || 'pasted-image';
+        let sourceType = file.type || 'application/octet-stream';
+        let sourceFile: Blob = file;
+
+        // Privacy-first metadata strip (issue #170): re-encode raster images so
+        // GPS/camera/timestamp tags never reach storage. Orientation preserved via
+        // createImageBitmap; the #66 SHA-256 is computed on the stripped bytes.
+        // Best-effort — a decode failure uploads the original, never blocks.
+        if (state.stripMetadata && STRIPPABLE_IMAGE_TYPES.indexOf(file.type.toLowerCase()) >= 0) {
+            try {
+                sourceFile = await stripImageMetadata(file);
+                sourceType = sourceFile.type || sourceType;
+            } catch { /* keep original */ }
+        }
+
+        const originalSize = sourceFile.size;
+        const fileData = await sourceFile.arrayBuffer();
         state.sha256 = await sha256Hex(fileData);
 
         if (state.encryptionEnabled) {
@@ -359,13 +380,13 @@
 
         state._abortController = new AbortController(); const signal = state._abortController!.signal;
 
-        const startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: file.name, fileSize: originalSize, contentType: file.type || 'application/octet-stream', partNumbers: partNumbers, senderEmail: state.senderEmail || null }) });
+        const startResp = await fetch(api + '/api/uploads/start-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ fileName: sourceName, fileSize: originalSize, contentType: sourceType, partNumbers: partNumbers, senderEmail: state.senderEmail || null }) });
         if (!startResp.ok) { const errT = await startResp.text(); throw new Error(errT || t('startFailed')); }
         const session = await startResp.json();
         state._deliveryId = session.deliveryId; state._uploadId = session.uploadId; state.objectKey = session.objectKey;
 
         const ctx: UploadContext = {
-            fileName: file.name, contentType: file.type || 'application/octet-stream',
+            fileName: sourceName, contentType: sourceType,
             originalSize: originalSize, uploadBlob: uploadBlob, effectiveSize: effectiveSize,
             totalParts: totalParts, partSize: Math.ceil(effectiveSize / totalParts),
             partEtags: [], urlByPart: {},
@@ -384,6 +405,31 @@
         let hex = '';
         for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');
         return hex;
+    }
+
+
+    async function stripImageMetadata(file: File): Promise<Blob> {
+        // 'from-image' bakes the EXIF orientation into the pixels so the output is
+        // upright; the canvas re-encode itself drops every metadata tag.
+        const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('2d context unavailable');
+            ctx.drawImage(bitmap, 0, 0);
+
+            const isPng = file.type.toLowerCase() === 'image/png';
+            const mime = isPng ? 'image/png' : 'image/jpeg';
+            const quality = isPng ? undefined : 0.92;
+
+            return await new Promise<Blob>(function (resolve, reject) {
+                canvas.toBlob(function (b) { b ? resolve(b) : reject(new Error('encode failed')); }, mime, quality);
+            });
+        } finally {
+            bitmap.close();
+        }
     }
 
     function completedCount(ctx: UploadContext): number { let n = 0; for (let i = 0; i < ctx.totalParts; i++) if (ctx.partEtags[i]) n++; return n; }
