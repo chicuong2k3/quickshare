@@ -848,6 +848,9 @@
   <data name="account_usage_largest_manage" xml:space="preserve">
     <value>Manage deliveries</value>
   </data>
+  <data name="account_usage_recent_title" xml:space="preserve">
+    <value>Recent downloads</value>
+  </data>
   <data name="dl_share" xml:space="preserve">
     <value>Share</value>
   </data>

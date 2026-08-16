@@ -849,6 +849,9 @@
   <data name="account_usage_largest_manage" xml:space="preserve">
     <value>Quản lý lượt gửi</value>
   </data>
+  <data name="account_usage_recent_title" xml:space="preserve">
+    <value>Tải gần đây</value>
+  </data>
   <data name="dl_share" xml:space="preserve">
     <value>Chia sẻ</value>
   </data>

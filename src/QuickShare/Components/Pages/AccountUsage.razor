@@ -41,6 +41,21 @@
             </ul>
             <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost db-btn--sm">@Loc["account_usage_largest_manage"]</a>
         }
+
+        @* Recent download activity (issue #33) *@
+        @if (recentDownloads.Count > 0)
+        {
+            <h4 class="db-h5 account-usage__largest-title">@Loc["account_usage_recent_title"]</h4>
+            <ul class="account-usage-largest">
+                @foreach (var dl in recentDownloads)
+                {
+                    <li class="account-usage-largest__row">
+                        <span class="account-usage-largest__name" title="@dl.FileName">@dl.FileName</span>
+                        <span class="account-usage-largest__size db-text-muted">@dl.DownloadedAt.ToLocalTime().ToString("g")</span>
+                    </li>
+                }
+            </ul>
+        }
     </div>
 </div>
 </HtmxFragment>
@@ -49,8 +64,10 @@
     private const int LargestFilesCount = 10;
 
     private sealed record LargestFile(string FileName, long FileSize);
+    private sealed record RecentDownload(string FileName, DateTime DownloadedAt);
 
     private List<LargestFile> largest = [];
+    private List<RecentDownload> recentDownloads = [];
     private bool unlimited;
     private int pct;
     private int barWidth;
@@ -81,6 +98,15 @@
                 .Take(LargestFilesCount)
                 .Select(d => new LargestFile(d.FileName, d.FileSize))
                 .ToListAsync();
+
+            // Recent download activity (issue #33) — who downloaded, when.
+            recentDownloads = await (
+                from t in Db.DownloadTrackings
+                join d in Db.Deliveries on t.DeliveryId equals d.Id
+                where d.SenderId == user.Id
+                orderby t.DownloadedAt descending
+                select new RecentDownload(d.FileName, t.DownloadedAt)
+            ).AsNoTracking().Take(5).ToListAsync();
 
             var quota = PlanTierLimits.GetMonthlyQuota(user.Plan);
             if (quota is null)
