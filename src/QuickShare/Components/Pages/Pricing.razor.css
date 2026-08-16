@@ -43,9 +43,9 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     padding: 0.2rem 0.5rem;
-    border: 1px solid var(--db-valley-ink);
+    border: 2px solid var(--db-mountain);
     background: var(--db-valley);
-    color: var(--db-valley-ink);
+    color: var(--db-color-text);
 }
 
 /* ─── Billing toggle ─── */
@@ -55,32 +55,35 @@
     margin-bottom: var(--db-space-8);
 }
 
+/* A drawn segmented control: rounded-rect frame, the selected segment
+   opens the blue wash. Selection is a state, never the default button. */
 .toggle-group {
     display: inline-flex;
+    align-items: stretch;
     padding: 0;
-    border: 1px solid var(--db-mountain);
+    border: 2px solid var(--db-mountain);
+    border-radius: 14px;
+    overflow: hidden;
     background: var(--db-color-surface);
-}
-
-/* A selected option is an open cell, not a pull tab: foil stays
-   reserved for the actions that actually deploy something. */
-.toggle-group ::deep .db-btn--primary {
-    background: var(--db-valley) !important;
-    /* Cancel the foil stamp: a selected option is a state, not an action. */
-    box-shadow: none !important;
-    border-color: var(--db-valley-ink) !important;
-    color: var(--db-color-text) !important;
-    clip-path: none;
-    padding-inline: var(--db-space-6);
 }
 
 .toggle-group ::deep .db-btn {
     border: none !important;
     border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 0;
+    padding: 8px 20px !important;
+    background: transparent !important;
+    color: var(--db-color-text) !important;
+}
+
+.toggle-group ::deep .db-btn--primary {
+    background: var(--db-valley) !important;
+    color: var(--db-color-text) !important;
 }
 
 .toggle-group ::deep .db-btn + .db-btn {
-    border-left: 1px solid var(--db-mountain) !important;
+    border-left: 2px solid var(--db-mountain) !important;
 }
 
 /* ─── Plan cells ─── */

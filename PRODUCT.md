@@ -37,14 +37,14 @@ QuickShareCloud gửi file kích thước bất kỳ (chunked, mã hóa đầu�
 ## Brand Commitments
 
 - Tên: **QuickShareCloud**; tagline: "send files, not friction".
-- Font: **Outfit** (display + UI, đặt ở weight nhẹ, chữ hoa, tracking rộng) + **Azeret Mono** (nhãn spec, mã, hash, dung lượng, số đếm, giá).
-  Playfair Display **đã bỏ** (2026-08-13, user quyết): serif tương phản cao đánh nhau trực diện với thế giới thị giác bản vẽ kỹ thuật.
-- Luật màu: vàng foil là **fill, không bao giờ là màu chữ** (2.1:1 trên nền sheet) — mọi dùng cho chữ lấy đồng đậm `--db-color-accent-text`. Xanh valley = trạng thái đang hoạt động. Xám mountain = mọi thứ ở trạng thái nghỉ.
-- Iconography: SVG inline, vẽ tay, một độ dày nét — không emoji, không glyph unicode thay icon.
+- Font (2026-08-16, user quyết, **chỉ font open source SIL OFL** để tránh rủi ro pháp lý): **Bricolage Grotesque** (display, 700–800, chữ thường, tracking âm nhẹ) + **Archivo** (UI/body, dễ đọc cho người dùng phổ thông) + **Courier Prime** (nhãn spec, mã, hash, dung lượng, số đếm, giá).
+  Outfit + Azeret Mono **đã bỏ** cùng thế giới Miura (2026-08-16). Playfair Display đã bỏ từ 2026-08-13. Không đưa serif trở lại.
+- Luật màu (thế giới HyperCard-màu): vàng Apple là **fill, không bao giờ là màu chữ trên nền giấy** — chữ accent lấy `--db-color-accent-text`. Wash xanh dương = trạng thái đang hoạt động/được chọn. Dải cầu vồng 6 màu = tiến độ, và chỉ tiến độ. Viền mực 2px = mọi thứ được "vẽ".
+- Iconography: SVG inline **vẽ pixel** (lưới rect, `shape-rendering: crispEdges`) — không emoji, không glyph unicode thay icon.
 
 ## Existing Evidence
 
-- **`DESIGN.md`** — hệ thị giác hiện hành (thế giới "Miura deployable sheet", seed `46c7765a`), viết từ code đã dựng. Đây là nguồn chuẩn cho mọi trang mới.
+- **`DESIGN.md`** — hệ thị giác hiện hành (thế giới "HyperCard Stack, colorized", seed `ad3dafb6`), viết từ code đã dựng. Đây là nguồn chuẩn cho mọi trang mới. Comp đã duyệt + biên bản: `.impeccable/mocks/hypercard-color/`.
 - UX/design token cũ: `_bmad-output/planning-artifacts/` (UEx + PRD + architecture spine) — là anti-reference cho redesign.
 - Mã hiện tại: `src/QuickShare/` — toàn bộ giao diện.
 

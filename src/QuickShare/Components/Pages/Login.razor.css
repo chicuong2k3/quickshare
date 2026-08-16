@@ -11,11 +11,8 @@
     width: 100%;
     max-width: 28rem;
     overflow: hidden;
-    border: 1px solid var(--db-mountain);
-    background:
-        none top right / auto no-repeat,
-        linear-gradient(45deg, var(--db-valley) 0 18px, transparent 18px) bottom left / auto no-repeat,
-        var(--db-color-surface);
+    border: 2px solid var(--db-mountain);
+    background: var(--db-color-surface);
 }
 
 /* The shell holds the cell in the upper third, not adrift in dead ground. */

@@ -7,6 +7,10 @@
   <data name="lang_en" xml:space="preserve"><value>English</value></data>
   <data name="lang_vi" xml:space="preserve"><value>Tiếng Việt</value></data>
   <data name="nav_pricing" xml:space="preserve"><value>Pricing</value></data>
+  <data name="nav_home" xml:space="preserve"><value>Home</value></data>
+  <data name="home_feat_tab1" xml:space="preserve"><value>Card 2</value></data>
+  <data name="home_feat_tab2" xml:space="preserve"><value>Card 3</value></data>
+  <data name="home_feat_tab3" xml:space="preserve"><value>Card 4</value></data>
   <data name="nav_send" xml:space="preserve"><value>Send</value></data>
   <data name="nav_files" xml:space="preserve"><value>Files</value></data>
   <data name="nav_account" xml:space="preserve"><value>Account</value></data>
@@ -277,7 +281,7 @@
   <data name="upload_password_hint" xml:space="preserve"><value>If set, recipients must enter this password before downloading.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Deliver at</value></data>
   <data name="upload_deliver_at_hint" xml:space="preserve"><value>The link becomes active at this time.</value></data>
-  <data name="upload_expiry_label" xml:space="preserve"><value>Expires: {0}</value></data>
+  <data name="upload_expiry_at" xml:space="preserve"><value>Expires: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>No image found in clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Encrypted</value></data>
   <data name="upload_cancel" xml:space="preserve"><value>Cancel</value></data>

@@ -276,11 +276,20 @@
     transform: none;
 }
 
-/* ─── The packet's address ─── */
+/* ─── The new delivery's card: striped chrome over its address ─── */
 .share-box {
     margin-top: var(--db-space-7);
     max-width: 30rem;
     margin-inline: auto;
+    border: 2px solid var(--db-mountain);
+    background: var(--db-color-surface);
+    box-shadow: var(--db-shadow-2);
+    text-align: left;
+}
+
+.share-box ::deep .qs-titlebar__label,
+.share-box .qs-titlebar label {
+    cursor: pointer;
 }
 
 .share-label {
@@ -298,6 +307,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--db-space-3);
+    padding: var(--db-space-4);
 }
 
 @media (min-width: 640px) {

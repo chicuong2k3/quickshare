@@ -39,6 +39,15 @@
     --db-lattice: rgba(20,20,20,0.08);
     /* The six-band rainbow — progress and nothing else. */
     --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
+    /* State washes — solid per theme so they survive the dark ground. */
+    --db-wash-green: #E2F2DC;
+    --db-wash-blue: var(--db-valley);
+    --db-wash-yellow: #FBEED0;
+    --db-wash-orange: #F9E4CF;
+    /* The disk: the drawn floppy's pale plastic, same in both themes. */
+    --db-disk: #DDF1FB;
+    /* The select's drawn chevron, in this theme's ink. */
+    --db-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23141414' stroke-width='1.5'/%3E%3C/svg%3E");
 
     /* === Legacy palette names, remapped so nothing dangles === */
     --db-cream: var(--db-sheet);
@@ -272,6 +281,14 @@
     --db-lattice: rgba(242,241,237,0.06);
     --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
     --db-dither: repeating-conic-gradient(var(--db-lattice) 0% 25%, transparent 0% 50%);
+    /* State washes deepen at night but stay unmistakably colored. */
+    --db-wash-green: #2F4A2B;
+    --db-wash-blue: #24455C;
+    --db-wash-yellow: #4A3D1E;
+    --db-wash-orange: #4A3320;
+    /* The disk keeps its pale plastic so the floppy reads at night. */
+    --db-disk: #9FD3EE;
+    --db-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23F2F1ED' stroke-width='1.5'/%3E%3C/svg%3E");
 
     --db-charcoal: #D8D7D2;
     --db-warm-gray: #A8A69F;
@@ -455,6 +472,11 @@
 
 /* ─── Compact density — shared across every DAUB theme ─── */
 [data-theme] {
+    /* Vendor radius aliases the theme blocks never zeroed — .p2p-quota-banner,
+       .ad-reward-card/btn and .tools-landing__kbd read these. Cards are square. */
+    --db-radius-sm: 0px;
+    --db-radius-md: 0px;
+    --db-radius-lg: 0px;
     --db-space-3: 10px;
     --db-space-4: 14px;
     --db-space-5: 20px;
@@ -809,95 +831,9 @@ body::after,
 /* ─── Type: display headline with a single accent word ─── */
 
 
-/* ─── Signature: the mono "readout" — file facts as a terminal line ─── */
-.qs-readout {
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    letter-spacing: 0.04em;
-    color: var(--db-color-text-muted);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--db-space-2);
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.qs-readout__sep {
-    opacity: 0.4;
-}
-
-/* ─── Signature motif: dashed actionable zone (drop / tap targets) ─── */
-.qs-zone {
-    border: 2px dashed var(--db-color-border);
-    border-radius: var(--db-radius-4);
-    background: var(--db-color-bg);
-    transition: border-color var(--db-transition), background var(--db-transition), transform var(--db-transition-bounce);
-}
-
-.qs-zone:hover {
-    border-color: var(--db-color-accent);
-    background: var(--db-color-accent-subtle);
-}
-
-.qs-zone.is-active {
-    border-color: var(--db-color-accent);
-    border-style: solid;
-    background: var(--db-color-accent-subtle);
-    transform: scale(1.006);
-}
-
-/* ─── Circular status glyph (success / error / lock / clock) ─── */
-.qs-glyph {
-    display: flex;
-    width: 4rem;
-    height: 4rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--db-radius-full);
-    margin-inline: auto;
-    background: var(--db-color-surface);
-    color: var(--db-color-text-secondary);
-}
-
-.qs-glyph svg {
-    width: 2rem;
-    height: 2rem;
-}
-
-.qs-glyph--accent {
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
-}
-
-.qs-glyph--success {
-    background: var(--db-color-success-subtle);
-    color: var(--db-color-success);
-}
-
-.qs-glyph--error {
-    background: var(--db-color-error-subtle);
-    color: var(--db-color-error);
-}
-
-/* ─── Eyebrow: small structural label above a heading ─── */
-.qs-eyebrow {
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-medium);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted);
-    margin: 0;
-}
-
-/* ─── Reduced motion ─── */
-@media (prefers-reduced-motion: reduce) {
-    .qs-zone,
-    .qs-zone.is-active {
-        transition: none;
-        transform: none;
-    }
-}
+/* .qs-readout / .qs-zone / .qs-glyph / .qs-eyebrow — pre-HyperCard
+   survivors with zero usages — deleted. The world's devices are
+   .qs-titlebar, .miura-cell and .miura-rule. */
 
 /* ─── Avatar dropdown: pin content to right edge of trigger ─── */
 .db-dropdown__trigger.layout-avatar-btn + .db-dropdown__content,
@@ -1873,22 +1809,22 @@ body::after,
 .db-navbar .db-select,
 select {
     appearance: none;
-    /* A drawn chevron, in the world's line weight. Without it the control
-       stops reading as a control. */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230A0A0A' stroke-width='1.2'/%3E%3C/svg%3E");
+    /* A drawn chevron in this theme's ink. Longhands only: an earlier
+       version set `background`/`padding` shorthands after these and
+       silently wiped both the chevron and its clearance. */
+    background-color: transparent;
+    background-image: var(--db-chevron);
     background-position: right 10px center;
     background-size: 10px 7px;
     background-repeat: no-repeat;
-    padding-right: 28px;
     border: 2px solid var(--db-mountain);
     border-radius: 0;
-    background: transparent;
     color: var(--db-color-text);
     font-family: var(--db-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 6px 8px;
+    padding: 6px 28px 6px 8px;
 }
 
 /* ─── Cookie consent reads as a footnote on the sheet ─── */

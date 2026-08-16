@@ -59,6 +59,7 @@
         </a>
         <div class="db-navbar__nav">
             <div class="db-nav-menu">
+                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Home || string.IsNullOrEmpty(path))" href="/">@Loc["nav_home"]</a>
                 <a class="db-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">@Loc["nav_send"]</a>
                 <a class="db-nav-menu__item @NavActive(path.StartsWith(RoutePaths.P2p))" href="/p2p/send">P2P</a>
                 <a class="db-nav-menu__item @NavActive(path == RoutePaths.Pricing)" href="/pricing">@Loc["nav_pricing"]</a>

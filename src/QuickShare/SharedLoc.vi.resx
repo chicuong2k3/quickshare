@@ -7,6 +7,10 @@
   <data name="lang_en" xml:space="preserve"><value>English</value></data>
   <data name="lang_vi" xml:space="preserve"><value>Tiếng Việt</value></data>
   <data name="nav_pricing" xml:space="preserve"><value>Bảng giá</value></data>
+  <data name="nav_home" xml:space="preserve"><value>Trang chủ</value></data>
+  <data name="home_feat_tab1" xml:space="preserve"><value>Thẻ 2</value></data>
+  <data name="home_feat_tab2" xml:space="preserve"><value>Thẻ 3</value></data>
+  <data name="home_feat_tab3" xml:space="preserve"><value>Thẻ 4</value></data>
   <data name="nav_send" xml:space="preserve"><value>Gửi</value></data>
   <data name="nav_files" xml:space="preserve"><value>Tệp</value></data>
   <data name="nav_account" xml:space="preserve"><value>Tài khoản</value></data>
@@ -278,7 +282,7 @@
   <data name="upload_password_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mật khẩu này trước khi tải file.</value></data>
   <data name="upload_deliver_at_label" xml:space="preserve"><value>Thời gian gửi</value></data>
   <data name="upload_deliver_at_hint" xml:space="preserve"><value>Liên kết sẽ kích hoạt vào thời điểm này.</value></data>
-  <data name="upload_expiry_label" xml:space="preserve"><value>Hết hạn: {0}</value></data>
+  <data name="upload_expiry_at" xml:space="preserve"><value>Hết hạn: {0}</value></data>
   <data name="upload_paste_no_image" xml:space="preserve"><value>Không tìm thấy ảnh trong clipboard.</value></data>
   <data name="upload_encrypted" xml:space="preserve"><value>Đã mã hóa</value></data>
   <data name="upload_cancel" xml:space="preserve"><value>Hủy</value></data>

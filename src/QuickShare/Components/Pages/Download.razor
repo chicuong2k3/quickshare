@@ -36,6 +36,12 @@
         <script id="download-info-data" type="application/json">@RawJson(Info)</script>
     }
     <div class="card db-card">
+        @* The delivery's own card chrome; the label is the real share code. *@
+        <div class="qs-titlebar">
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+            <span class="qs-titlebar__label">@ShareCode</span>
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+        </div>
         <div class="db-card__body">
             @switch (RenderState)
             {

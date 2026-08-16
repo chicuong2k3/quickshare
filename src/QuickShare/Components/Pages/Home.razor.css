@@ -19,12 +19,12 @@
 
 .home-hero__ghost--1 {
     transform: translate(10px, 12px) rotate(0.5deg);
-    background: var(--db-valley);
+    background: var(--db-wash-blue);
 }
 
 .home-hero__ghost--2 {
     transform: translate(20px, 24px) rotate(1.1deg);
-    background: rgba(97, 187, 70, 0.16);
+    background: var(--db-wash-green);
 }
 
 .home-hero__card {
@@ -140,15 +140,41 @@
 }
 
 .home-feature-icon--green {
-    background: rgba(97, 187, 70, 0.2);
+    background: var(--db-wash-green);
 }
 
 .home-feature-icon--blue {
-    background: var(--db-valley);
+    background: var(--db-wash-blue);
 }
 
 .home-feature-icon--yellow {
-    background: rgba(253, 184, 39, 0.28);
+    background: var(--db-wash-yellow);
+}
+
+/* The stack's colored card tabs, worn by each small panel. */
+.home-feature-tab {
+    display: inline-block;
+    border: 2px solid var(--db-mountain);
+    padding: 1px 8px;
+    margin-bottom: var(--db-space-3);
+    font-family: var(--db-font-mono);
+    font-weight: 700;
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--db-color-text);
+}
+
+.home-feature-tab--green {
+    background: var(--db-wash-green);
+}
+
+.home-feature-tab--blue {
+    background: var(--db-wash-blue);
+}
+
+.home-feature-tab--yellow {
+    background: var(--db-wash-yellow);
 }
 
 .home-feature-icon svg {
@@ -212,15 +238,17 @@
     text-align: left;
 }
 
-/* The table's caption wears the striped title-bar chrome. */
+/* The card's striped title bar (global .qs-titlebar) bleeds to its edges. */
+.home-why__card ::deep .home-why__bar,
+.home-why__bar {
+    margin: 0;
+}
+
 .home-why__caption {
     caption-side: top;
     text-align: left;
     margin-bottom: var(--db-space-4);
-    padding: 5px 0 7px;
-    border-bottom: 2px solid var(--db-mountain);
     font-family: var(--db-font-mono);
-    font-weight: 700;
     font-size: 0.625rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -316,15 +344,15 @@
 
 /* Each step card wears its own wash — the stack's colored tabs. */
 .home-step:nth-of-type(1) .home-step__num {
-    background: rgba(97, 187, 70, 0.2);
+    background: var(--db-wash-green);
 }
 
 .home-step:nth-of-type(2) .home-step__num {
-    background: var(--db-valley);
+    background: var(--db-wash-blue);
 }
 
 .home-step:nth-of-type(3) .home-step__num {
-    background: rgba(245, 130, 31, 0.24);
+    background: var(--db-wash-orange);
 }
 
 .home-cta {
