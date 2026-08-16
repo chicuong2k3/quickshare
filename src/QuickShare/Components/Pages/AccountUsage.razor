@@ -24,6 +24,10 @@
                 <span class="db-text-muted">@Loc["account_usage_summary", usedText, quotaText]</span>
                 <span class="account-usage-pct">@pct%</span>
             </div>
+            @if (pct >= 70)
+            {
+                <a href="@RoutePaths.Upgrade" class="db-btn db-btn--primary db-btn--sm" style="margin-top: 0.75rem" data-ai-action="usage.upgrade">@Loc["account_usage_upgrade"]</a>
+            }
         }
 
         @* Largest files (issue #315) — the cleanup shortlist, biggest first. *@
