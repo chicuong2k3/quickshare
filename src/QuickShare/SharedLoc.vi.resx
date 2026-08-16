@@ -584,6 +584,10 @@
   <data name="dl_preview_copied" xml:space="preserve"><value>Đã chép</value></data>
   <data name="dl_preview_more" xml:space="preserve"><value>Xem toàn bộ</value></data>
   <data name="dl_download" xml:space="preserve"><value>Tải về</value></data>
+  <data name="dl_diff_unified" xml:space="preserve"><value>Hợp nhất</value></data>
+  <data name="dl_diff_split" xml:space="preserve"><value>Song song</value></data>
+  <data name="dl_diff_raw" xml:space="preserve"><value>Thô</value></data>
+  <data name="dl_diff_view" xml:space="preserve"><value>Xem diff</value></data>
   <data name="dl_decrypting" xml:space="preserve"><value>Đang giải mã…</value></data>
   <data name="dl_download_failed" xml:space="preserve"><value>Tải thất bại</value></data>
   <data name="dl_expired_h1" xml:space="preserve"><value>Link đã hết hạn</value></data>

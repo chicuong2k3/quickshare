@@ -35,6 +35,9 @@ public static class AnalyticsEvents
     // Roadmap vote (issue #58) — anonymous aggregate feedback signal.
     public const string RoadmapVote = "roadmap_vote";
 
+    // Diff preview (issue #248) — anonymous signal that a patch was rendered.
+    public const string DiffViewed = "diff_view";
+
     // In-product feedback (issue #35) — anonymous sentiment.
     public const string FeedbackSubmitted = "feedback_submitted";
 
@@ -43,7 +46,8 @@ public static class AnalyticsEvents
     {
         Visitor,
         AdInterstitialViewed,
-        RoadmapVote
+        RoadmapVote,
+        DiffViewed
     };
 }
 

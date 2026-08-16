@@ -148,6 +148,9 @@ internal sealed class BrowserStorageStub : IStorageProvider
     public Task CopyObjectAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
         => Task.CompletedTask;
 
+    public Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult<Stream?>(null);
+
     public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<string>>([]);
 

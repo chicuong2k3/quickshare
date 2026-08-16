@@ -583,6 +583,10 @@
   <data name="dl_preview_copied" xml:space="preserve"><value>Copied</value></data>
   <data name="dl_preview_more" xml:space="preserve"><value>Show full text</value></data>
   <data name="dl_download" xml:space="preserve"><value>Download</value></data>
+  <data name="dl_diff_unified" xml:space="preserve"><value>Unified</value></data>
+  <data name="dl_diff_split" xml:space="preserve"><value>Side-by-side</value></data>
+  <data name="dl_diff_raw" xml:space="preserve"><value>Raw</value></data>
+  <data name="dl_diff_view" xml:space="preserve"><value>View diff</value></data>
   <data name="dl_decrypting" xml:space="preserve"><value>Decrypting…</value></data>
   <data name="dl_download_failed" xml:space="preserve"><value>Download failed</value></data>
   <data name="dl_expired_h1" xml:space="preserve"><value>This link has expired</value></data>

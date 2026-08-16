@@ -191,6 +191,8 @@ interface DownloadPage {
     toggleZK(): void;
     handleDownload(event?: Event): boolean | void;
     showFullText(): void;
+    toggleDiffMode(): void;
+    toggleDiffRaw(): void;
     copyText(): void;
     copySha256(): void;
     sharePage(): void;

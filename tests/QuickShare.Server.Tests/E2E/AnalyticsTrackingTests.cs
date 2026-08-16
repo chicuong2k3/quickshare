@@ -112,6 +112,19 @@ public sealed class AnalyticsTrackingTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Track_DiffViewed_RecordsEvent()
+    {
+        await ClearEventsAsync();
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/analytics/track", new { Event = AnalyticsEvents.DiffViewed });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var events = await GetEventsAsync();
+        Assert.Contains(events, e => e.EventName == AnalyticsEvents.DiffViewed);
+    }
+
     // ── Upload lifecycle ──
 
     [Fact]

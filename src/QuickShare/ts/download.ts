@@ -22,7 +22,11 @@ window.downloadApp = (function (): DownloadPage {
         mediaPreviewStarted: boolean;
         fullText: string | null;
         bytes: ArrayBuffer | null;
-    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, fullText: null, bytes: null };
+        diffMode: 'unified' | 'split';
+        diffRaw: boolean;
+        diffTracked: boolean;
+        previewTruncated: boolean;
+    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, fullText: null, bytes: null, diffMode: 'unified', diffRaw: false, diffTracked: false, previewTruncated: false };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
     const TEXT_MIME_PREFIX = 'text/plain';
@@ -39,6 +43,15 @@ window.downloadApp = (function (): DownloadPage {
         try {
             navigator.sendBeacon('/api/analytics/track',
                 new Blob([JSON.stringify({ event: 'ad_interstitial_viewed' })], { type: 'application/json' }));
+        } catch (_) { /* ignore */ }
+    }
+    // Anonymous diff-preview beacon (issue #248). Fired once per page load.
+    function trackDiffView(): void {
+        if (state.diffTracked) return;
+        state.diffTracked = true;
+        try {
+            navigator.sendBeacon('/api/analytics/track',
+                new Blob([JSON.stringify({ event: 'diff_view' })], { type: 'application/json' }));
         } catch (_) { /* ignore */ }
     }
     function show(id: string) { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
@@ -335,7 +348,10 @@ window.downloadApp = (function (): DownloadPage {
     function maybeRenderTextPreview() {
         if (state.previewStarted) return;
         const i = infoFromDom();
-        if (!i.contentType || i.contentType.indexOf(TEXT_MIME_PREFIX) !== 0) return;
+        // Diff files may upload as octet-stream (or any MIME), so the extension
+        // check must also open the gate (issue #248).
+        const isText = i.contentType && i.contentType.indexOf(TEXT_MIME_PREFIX) === 0;
+        if (!isText && !isDiff(i)) return;
         if (!i.fileSize || i.fileSize > PREVIEW_MAX_BYTES) return;
 
         state.previewStarted = true;
@@ -366,6 +382,11 @@ window.downloadApp = (function (): DownloadPage {
     }
     function isCode(i: { fileName?: string }): boolean {
         return /\.(js|mjs|ts|jsx|tsx|py|rb|go|rs|java|c|cpp|h|cs|php|sh|bash|css|html|json|yml|yaml|xml|sql)$/.test(String(i.fileName || '').toLowerCase());
+    }
+    // Diff detection (issue #248): extension-based so it works even when the
+    // upload MIME is octet-stream instead of text/plain.
+    function isDiff(i: { fileName?: string }): boolean {
+        return /\.(patch|diff)$/i.test(String(i.fileName || ''));
     }
 
     function inlineMarkdown(s: string): string {
@@ -419,17 +440,26 @@ window.downloadApp = (function (): DownloadPage {
         const i = infoFromDom();
         const lines = state.fullText!.split('\n');
         const truncated = truncate && lines.length > PREVIEW_LINE_LIMIT;
+        state.previewTruncated = truncated;
         const slice = truncated ? lines.slice(0, PREVIEW_LINE_LIMIT).join('\n') : state.fullText!;
 
-        if (isMarkdown(i)) {
+        if (isDiff(i)) {
+            // Diff preview (issue #248) — unified/split/raw, see renderDiff.
+            renderDiff(slice);
+        } else if (isMarkdown(i)) {
+            hide('dl-diff-toolbar');
             body.innerHTML = renderMarkdown(slice);
             body.classList.add('dl-text-body--markdown');
+            body.classList.remove('dl-text-body--diff', 'dl-text-body--code');
         } else if (isCode(i)) {
+            hide('dl-diff-toolbar');
             body.innerHTML = '<pre><code>' + escapeHtml(slice) + '</code></pre>';
             body.classList.add('dl-text-body--code');
+            body.classList.remove('dl-text-body--diff', 'dl-text-body--markdown');
         } else {
+            hide('dl-diff-toolbar');
             body.textContent = slice;
-            body.classList.remove('dl-text-body--markdown', 'dl-text-body--code');
+            body.classList.remove('dl-text-body--markdown', 'dl-text-body--code', 'dl-text-body--diff');
         }
 
         if (truncated) { show('dl-text-more'); text('dl-text-status', t('previewLines', PREVIEW_LINE_LIMIT, lines.length)); }
@@ -437,6 +467,128 @@ window.downloadApp = (function (): DownloadPage {
     }
 
     function showFullText() { renderText(false); }
+
+    // Diff preview (issue #248). Parsed rows → escaped HTML, never raw bytes.
+    interface DiffRow {
+        kind: 'hunk' | 'add' | 'del' | 'ctx' | 'meta';
+        oldLn: string;
+        newLn: string;
+        text: string;
+    }
+
+    function parseDiff(s: string): DiffRow[] {
+        const lines = s.split('\n');
+        const rows: DiffRow[] = [];
+        let oldLn = 0;
+        let newLn = 0;
+        for (const raw of lines) {
+            const hunk = raw.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+            if (hunk) {
+                oldLn = parseInt(hunk[1], 10);
+                newLn = parseInt(hunk[3], 10);
+                rows.push({ kind: 'hunk', oldLn: '', newLn: '', text: raw });
+                continue;
+            }
+            const c = raw.charAt(0);
+            if (c === '+' && !raw.startsWith('+++ ')) { rows.push({ kind: 'add', oldLn: '', newLn: String(newLn), text: raw.slice(1) }); newLn++; }
+            else if (c === '-' && !raw.startsWith('--- ')) { rows.push({ kind: 'del', oldLn: String(oldLn), newLn: '', text: raw.slice(1) }); oldLn++; }
+            else if (c === ' ') { rows.push({ kind: 'ctx', oldLn: String(oldLn), newLn: String(newLn), text: raw.slice(1) }); oldLn++; newLn++; }
+            else rows.push({ kind: 'meta', oldLn: '', newLn: '', text: raw });
+        }
+        return rows;
+    }
+
+    function diffCell(r: DiffRow | null, side: 'old' | 'new'): string {
+        if (!r) return '<div class="dl-diff__side dl-diff__side--empty"></div>';
+        const kind = r.kind === 'add' ? 'add' : r.kind === 'del' ? 'del' : 'ctx';
+        const ln = side === 'old' ? r.oldLn : r.newLn;
+        const marker = r.kind === 'add' ? '+' : r.kind === 'del' ? '-' : ' ';
+        return '<div class="dl-diff__side dl-diff__side--' + kind + '">'
+            + '<span class="dl-diff__ln">' + ln + '</span>'
+            + '<span class="dl-diff__marker">' + marker + '</span>'
+            + '<span class="dl-diff__text">' + escapeHtml(r.text) + '</span>'
+            + '</div>';
+    }
+
+    function unifiedDiffHtml(rows: DiffRow[]): string {
+        const out: string[] = [];
+        for (const r of rows) {
+            if (r.kind === 'hunk' || r.kind === 'meta') {
+                out.push('<div class="dl-diff__row dl-diff__row--' + r.kind + '"><span class="dl-diff__text">' + escapeHtml(r.text) + '</span></div>');
+                continue;
+            }
+            const marker = r.kind === 'add' ? '+' : r.kind === 'del' ? '-' : ' ';
+            out.push('<div class="dl-diff__row dl-diff__row--' + r.kind + '">'
+                + '<span class="dl-diff__ln">' + r.oldLn + '</span>'
+                + '<span class="dl-diff__ln">' + r.newLn + '</span>'
+                + '<span class="dl-diff__marker">' + marker + '</span>'
+                + '<span class="dl-diff__text">' + escapeHtml(r.text) + '</span>'
+                + '</div>');
+        }
+        return out.join('');
+    }
+
+    function splitDiffHtml(rows: DiffRow[]): string {
+        const out: string[] = [];
+        let delBuf: DiffRow[] = [];
+        let addBuf: DiffRow[] = [];
+        const flush = function () {
+            const n = Math.max(delBuf.length, addBuf.length);
+            for (let i = 0; i < n; i++) {
+                out.push('<div class="dl-diff__pair">'
+                    + diffCell(delBuf[i] || null, 'old')
+                    + diffCell(addBuf[i] || null, 'new')
+                    + '</div>');
+            }
+            delBuf = [];
+            addBuf = [];
+        };
+        for (const r of rows) {
+            if (r.kind === 'del') { delBuf.push(r); continue; }
+            if (r.kind === 'add') { addBuf.push(r); continue; }
+            flush();
+            if (r.kind === 'ctx') {
+                out.push('<div class="dl-diff__pair">' + diffCell(r, 'old') + diffCell(r, 'new') + '</div>');
+            } else {
+                out.push('<div class="dl-diff__row dl-diff__row--' + r.kind + '"><span class="dl-diff__text">' + escapeHtml(r.text) + '</span></div>');
+            }
+        }
+        flush();
+        return out.join('');
+    }
+
+    function renderDiff(slice: string) {
+        const body = document.getElementById('dl-text-body');
+        if (!body) return;
+        body.classList.remove('dl-text-body--markdown', 'dl-text-body--code');
+        body.classList.add('dl-text-body--diff');
+        show('dl-diff-toolbar');
+        if (state.diffRaw) {
+            body.textContent = slice;
+            hide('dl-diff-mode-btn');
+            text('dl-diff-raw-label', t('diffView'));
+            attr('dl-diff-raw-btn', 'aria-pressed', 'true');
+            return;
+        }
+        show('dl-diff-mode-btn');
+        text('dl-diff-raw-label', t('diffRaw'));
+        attr('dl-diff-raw-btn', 'aria-pressed', 'false');
+        const rows = parseDiff(slice);
+        body.innerHTML = state.diffMode === 'split' ? splitDiffHtml(rows) : unifiedDiffHtml(rows);
+        text('dl-diff-mode-label', state.diffMode === 'unified' ? t('diffSplit') : t('diffUnified'));
+        attr('dl-diff-mode-btn', 'aria-pressed', state.diffMode === 'split' ? 'true' : 'false');
+        trackDiffView();
+    }
+
+    function toggleDiffMode() {
+        state.diffMode = state.diffMode === 'unified' ? 'split' : 'unified';
+        renderText(state.previewTruncated);
+    }
+
+    function toggleDiffRaw() {
+        state.diffRaw = !state.diffRaw;
+        renderText(state.previewTruncated);
+    }
 
     // Media preview (issue #21): image/video/audio/PDF inline, served by the
     // preview endpoint (never counts a download). Skipped for encrypted or
@@ -552,5 +704,5 @@ window.downloadApp = (function (): DownloadPage {
         }
     }
 
-    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, copyText: copyText, copySha256: copySha256, sharePage: sharePage };
+    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage };
 })();

@@ -190,6 +190,16 @@
                                     <span id="dl-text-copy-label">@Loc["dl_preview_copy"]</span>
                                 </button>
                             </div>
+                            @* Diff toolbar (issue #248) — shown by download.js only when a
+                               .patch/.diff file renders. Hidden by default for non-diff. *@
+                            <div id="dl-diff-toolbar" class="dl-diff-toolbar hidden">
+                                <button type="button" id="dl-diff-mode-btn" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
+                                    <span id="dl-diff-mode-label">@Loc["dl_diff_split"]</span>
+                                </button>
+                                <button type="button" id="dl-diff-raw-btn" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
+                                    <span id="dl-diff-raw-label">@Loc["dl_diff_raw"]</span>
+                                </button>
+                            </div>
                             <div id="dl-text-body" class="text-preview__body"></div>
                             <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
                         </div>
@@ -465,6 +475,10 @@
         ["adCountdown"] = Loc["dl_ad_countdown"],
         ["previewLoading"] = Loc["dl_preview_loading"],
         ["previewLines"] = Loc["dl_preview_lines"],
+        ["diffUnified"] = Loc["dl_diff_unified"],
+        ["diffSplit"] = Loc["dl_diff_split"],
+        ["diffRaw"] = Loc["dl_diff_raw"],
+        ["diffView"] = Loc["dl_diff_view"],
         ["copy"] = Loc["dl_preview_copy"],
         ["copied"] = Loc["dl_preview_copied"],
         ["copySha"] = Loc["dl_sha_copy"],
