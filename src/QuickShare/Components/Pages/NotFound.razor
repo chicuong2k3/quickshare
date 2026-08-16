@@ -9,16 +9,23 @@
 
 <PageTitle>@Loc["notfound_title"]</PageTitle>
 
-<div class="db-page-center">
-    <div class="db-card w-full max-w-md db-text-center">
-        <div class="db-card__body p-8">
-            <h1 class="db-h1">@Loc["notfound_h1"]</h1>
+<PageWrapper Variant="PageVariant.Centered">
+    <div class="nf-card db-card">
+        <div class="qs-titlebar">
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+            <span class="qs-titlebar__label">404</span>
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+        </div>
+        <div class="db-card__body nf-body">
+            <h1 class="db-h2 nf-title">@Loc["notfound_h1"]</h1>
             <p class="db-p db-text-muted">@Loc["notfound_sub"]</p>
-            <a href="@RoutePaths.Home" class="db-btn db-btn--primary mt-6">@Loc["notfound_cta_home"]</a>
-            <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost mt-6">@Loc["notfound_cta_deliveries"]</a>
+            <div class="nf-actions">
+                <a href="@RoutePaths.Home" class="db-btn db-btn--primary">@Loc["notfound_cta_home"]</a>
+                <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost">@Loc["notfound_cta_deliveries"]</a>
+            </div>
         </div>
     </div>
-</div>
+</PageWrapper>
 
 @code {
     [Parameter] public string? UnmatchedPath { get; set; }

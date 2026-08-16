@@ -122,7 +122,7 @@
                         <div class="price-amount">@proMonthly</div>
                         <div class="price-period db-text-muted">@Loc["pricing_pro_billed_monthly"]</div>
                     </div>
-                    <div x-show="billing === 'yearly'" class="pricing-yearly">
+                    <div x-show="billing === 'yearly'" x-cloak class="pricing-yearly">
                         <div class="price-amount">@proYearly</div>
                         <div class="price-period db-text-muted">@Loc["pricing_pro_billed_yearly"]</div>
                     </div>
@@ -169,7 +169,7 @@
                         <div class="price-amount">@studioMonthly</div>
                         <div class="price-period db-text-muted">@Loc["pricing_studio_billed_monthly"]</div>
                     </div>
-                    <div x-show="billing === 'yearly'" class="pricing-yearly">
+                    <div x-show="billing === 'yearly'" x-cloak class="pricing-yearly">
                         <div class="price-amount">@studioYearly</div>
                         <div class="price-period db-text-muted">@Loc["pricing_studio_billed_yearly"]</div>
                     </div>
