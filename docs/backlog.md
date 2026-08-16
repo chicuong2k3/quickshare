@@ -95,6 +95,10 @@ resolves code-or-alias on every recipient path), `#242` favorites (star + filter
 `#315` largest-files report on the usage card. Batch-3 CSS also rides in the
 uncommitted `app.css`.
 
+Tier 4 batch 4, 2026-08-17: `#248` code diff preview (`.patch`/`.diff` files render as a
+unified/split diff in the download text preview — `parseDiff` + `renderDiff` in
+`download.ts`, `+/-` markers + line numbers, raw fallback, copy).
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
