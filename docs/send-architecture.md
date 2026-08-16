@@ -363,3 +363,22 @@ Pro/Studio senders can set a **"Deliver at"** time — the file uploads to R2 im
 
 ### Observability
 `DeliveryExpiryJob` and `DeliveryActivationJob` both open a root span (`ActivitySources`) so background runs are traceable in Tempo — a background job has no HTTP request to anchor a trace on.
+
+---
+
+## 13. Sender Expiry Reminder (issue #29)
+
+Senders who opted in with an email get **one** reminder when their file is about to expire, so they can notify the recipient or extend the link.
+
+### Trigger
+- `DeliveryExpiryReminderJob` (Hangfire recurring job `delivery-expiry-reminder`, hourly, gated on `EmailSender.IsConfigured` like the other email jobs).
+
+### Query
+- `Status == Active` AND `ExpiresAt` in `(now, now + 24h]` AND `SenderEmail` set AND `SenderEmailConsent` AND `ExpiryReminderSentAt == null`.
+
+### Action
+1. Email the sender (`SenderEmail`) with the share link and the expiry time (Vietnamese subject/body, matching `TrialReminderJob`/`DownloadNotificationJob`).
+2. Set `Delivery.ExpiryReminderSentAt = now` **regardless of send outcome** — a broken mailbox can't replay the reminder (same dedup rule as `DownloadNotificationJob.Notified`).
+
+### Data model
+- `Delivery.ExpiryReminderSentAt` (`DateTime?`) — when the reminder was sent; `null` = not yet reminded. Migration `AddDeliveryExpiryReminder`.
