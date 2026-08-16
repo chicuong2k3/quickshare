@@ -164,6 +164,28 @@ else
             }
         });
     };
+    window.editTag = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('delivery-', '');
+        var tagEl = article.querySelector('.account-delivery__tag');
+        var current = tagEl ? tagEl.textContent : '';
+        var next = window.prompt(btn.getAttribute('data-prompt'), current);
+        if (next === null) return;
+        var value = next.trim();
+        fetch('/api/deliveries/' + id + '/tag', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag: value })
+        }).then(function () {
+            article.querySelectorAll('.account-delivery__tag').forEach(function (el) { el.remove(); });
+            if (value) {
+                var span = document.createElement('span');
+                span.className = 'account-delivery__tag';
+                span.textContent = value;
+                btn.parentNode.insertBefore(span, btn);
+            }
+        }).catch(function () { /* leave as-is */ });
+    };
     window.toggleFavorite = function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
         fetch('/api/deliveries/' + id + '/favorite', { method: 'PATCH' }).then(function (r) {
@@ -308,6 +330,11 @@ else
                     {
                         <span class="account-delivery__alias db-text-muted">/d/@item.Alias</span>
                     }
+                    @if (!string.IsNullOrEmpty(item.Tag))
+                    {
+                        <span class="account-delivery__tag" style="background: @TagColor(item.Tag)">@item.Tag</span>
+                    }
+                    <button type="button" class="account-delivery__tag-edit" onclick="editTag(this)" data-ai-action="delivery.tag" data-prompt="@Loc["deliveries_tag_prompt"]" aria-label="@Loc["deliveries_tag"]" title="@Loc["deliveries_tag"]">#</button>
                     <span class="account-delivery__expiry db-text-muted">
                         @if (item.Status == DeliveryStatus.Scheduled)
                         {
@@ -448,5 +475,15 @@ else
         if (remaining.TotalHours < 1) return string.Format(Loc["deliveries_expires_minutes"], (int)remaining.TotalMinutes + 1);
         if (remaining.TotalHours < HoursPerDay) return string.Format(Loc["deliveries_expires_hours"], (int)remaining.TotalHours);
         return string.Format(Loc["deliveries_expires_days"], (int)remaining.TotalDays);
+    }
+
+    private static string TagColor(string tag)
+    {
+        var hash = 0;
+        foreach (var c in tag)
+            hash = (hash * 31 + c) & 0x7fffffff;
+
+        var hue = hash % 360;
+        return $"hsla({hue}, 70%, 45%, 0.18)";
     }
 }

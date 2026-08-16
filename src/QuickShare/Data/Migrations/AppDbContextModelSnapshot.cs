@@ -272,6 +272,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("StoragePath")
                         .HasColumnType("text");
 
+                    b.Property<string>("Tag")
+                        .HasColumnType("text");
+
                     b.Property<long>("TotalBytes")
                         .HasColumnType("bigint");
 

@@ -733,6 +733,8 @@
   <data name="deliveries_extend" xml:space="preserve"><value>Extend 7d</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
+  <data name="deliveries_tag" xml:space="preserve"><value>Label</value></data>
+  <data name="deliveries_tag_prompt" xml:space="preserve"><value>Label for this delivery (empty to clear)</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Revoke</value>
   </data>

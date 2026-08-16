@@ -734,6 +734,8 @@
   <data name="deliveries_extend" xml:space="preserve"><value>Gia hạn 7 ngày</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Ẩn thống kê</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Hiện thống kê</value></data>
+  <data name="deliveries_tag" xml:space="preserve"><value>Nhãn</value></data>
+  <data name="deliveries_tag_prompt" xml:space="preserve"><value>Nhãn cho file này (bỏ trống để xoá)</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>

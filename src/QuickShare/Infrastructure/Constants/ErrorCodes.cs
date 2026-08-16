@@ -32,4 +32,5 @@ public static class ErrorCodes
     public const string ExtendNotAllowed = "extend_not_allowed";
     public const string ExtendTooEarly = "extend_too_early";
     public const string ExtendTooLate = "extend_too_late";
+    public const string TagTooLong = "tag_too_long";
 }

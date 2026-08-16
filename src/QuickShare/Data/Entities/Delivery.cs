@@ -29,6 +29,9 @@ public record Delivery : BaseAuditEntity
     public string? Alias { get; set; }
     /// <summary>Sender-side star (issue #242).</summary>
     public bool IsFavorite { get; set; }
+    public const int TagMaxLength = 30;
+    /// <summary>Optional sender label (issue #321); color derived from the text.</summary>
+    public string? Tag { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public DateTime? DeliverAt { get; set; }
     public string? OtpHash { get; set; }
