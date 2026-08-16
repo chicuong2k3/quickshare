@@ -205,6 +205,9 @@ namespace QuickShare.Migrations
                     b.Property<int?>("DailyDownloadLimit")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("DeliverAt")
                         .HasColumnType("timestamp with time zone");
 

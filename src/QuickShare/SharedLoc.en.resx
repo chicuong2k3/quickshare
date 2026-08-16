@@ -735,6 +735,11 @@
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
   <data name="deliveries_tag" xml:space="preserve"><value>Label</value></data>
   <data name="deliveries_tag_prompt" xml:space="preserve"><value>Label for this delivery (empty to clear)</value></data>
+  <data name="deliveries_delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="deliveries_delete_confirm" xml:space="preserve"><value>Move this delivery to trash? Restorable for 24h.</value></data>
+  <data name="deliveries_restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="deliveries_trash" xml:space="preserve"><value>Trash</value></data>
+  <data name="deliveries_back" xml:space="preserve"><value>Back to deliveries</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Revoke</value>
   </data>

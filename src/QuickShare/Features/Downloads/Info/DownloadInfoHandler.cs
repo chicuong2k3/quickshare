@@ -38,7 +38,7 @@ public sealed class DownloadInfoHandler
                     .ByCode(query.ShareCode)
                     .FirstOrDefaultAsync(ct2);
 
-                if (delivery is null)
+                if (delivery is null || delivery.DeletedAt is not null)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
 
                 if (delivery.Status == DeliveryStatus.Suspended)

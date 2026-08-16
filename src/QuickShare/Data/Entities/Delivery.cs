@@ -40,6 +40,8 @@ public record Delivery : BaseAuditEntity
     public string? Sha256 { get; set; }
     public DateTime? FirstDownloadedAt { get; set; }
     public bool HideDownloadStats { get; set; }
+    /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
+    public DateTime? DeletedAt { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }

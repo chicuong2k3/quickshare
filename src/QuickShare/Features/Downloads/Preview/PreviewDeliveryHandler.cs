@@ -16,7 +16,7 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage)
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(ct);
 
-        if (delivery is null)
+        if (delivery is null || delivery.DeletedAt is not null)
             return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.NotFound));
 
         if (delivery.Status == DeliveryStatus.Suspended

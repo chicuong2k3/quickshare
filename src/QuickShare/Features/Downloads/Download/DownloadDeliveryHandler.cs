@@ -22,7 +22,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(ct);
 
-        if (delivery is null)
+        if (delivery is null || delivery.DeletedAt is not null)
         {
             response.StatusCode = 404;
             return;

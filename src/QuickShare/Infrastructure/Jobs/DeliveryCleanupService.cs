@@ -9,7 +9,45 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
     public async Task CleanupAsync()
     {
         await CleanupExpiredDeliveriesAsync();
+        await CleanupTrashedDeliveriesAsync();
         await CleanupAbandonedSessionsAsync();
+    }
+
+    /// <summary>Soft-deleted rows (issue #99) are purged after this long.</summary>
+    public static readonly TimeSpan TrashRetention = TimeSpan.FromHours(24);
+
+    private async Task CleanupTrashedDeliveriesAsync()
+    {
+        var ct = CancellationToken.None;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var purgeBefore = DateTime.UtcNow - TrashRetention;
+
+        var trashed = await db.Deliveries
+            .Where(d => d.DeletedAt != null && d.DeletedAt < purgeBefore)
+            .ToListAsync(ct);
+
+        if (trashed.Count == 0) return;
+
+        foreach (var delivery in trashed)
+        {
+            if (!string.IsNullOrEmpty(delivery.StoragePath))
+            {
+                try
+                {
+                    await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to delete R2 objects for trashed delivery {DeliveryId}", delivery.Id);
+                }
+            }
+        }
+
+        db.Deliveries.RemoveRange(trashed);
+        await db.SaveChangesAsync(ct);
+
+        logger.LogInformation("Purged {Count} trashed deliveries", trashed.Count);
     }
 
     /// <summary>

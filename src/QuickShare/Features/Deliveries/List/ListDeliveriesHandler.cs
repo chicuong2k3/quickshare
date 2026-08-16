@@ -7,7 +7,7 @@ public record ListDeliveriesQuery(
     int Limit = DeliveryPaging.DefaultLimit,
     string? Status = null,
     string? Search = null,
-    bool FavoritesOnly = false);
+    bool FavoritesOnly = false, bool DeletedOnly = false);
 
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
@@ -36,6 +36,10 @@ public sealed class ListDeliveriesHandler
         var source = db.Deliveries
             .AsNoTracking()
             .Where(d => d.SenderId == userId);
+
+        source = query.DeletedOnly
+            ? source.Where(d => d.DeletedAt != null)
+            : source.Where(d => d.DeletedAt == null);
 
         // Status filter + name search (issue #214). Sort stays newest-first: the cursor is
         // keyed on CreatedAt, so arbitrary sort orders don't compose with keyset paging.

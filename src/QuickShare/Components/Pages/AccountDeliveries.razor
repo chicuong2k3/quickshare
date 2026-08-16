@@ -22,7 +22,16 @@ else
 
     <section class="hero">
         <h1 class="db-h1">@Loc["deliveries_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["deliveries_lead"] <a class="db-link" href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a></p>
+        <p class="db-p db-text-muted">@Loc["deliveries_lead"] <a class="db-link" href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a>
+            @if (DeletedOnly)
+            {
+                <text>·</text> <a class="db-link" href="/account/deliveries">@Loc["deliveries_back"]</a>
+            }
+            else
+            {
+                <text>·</text> <a class="db-link" href="/account/deliveries?trash=1">@Loc["deliveries_trash"]</a>
+            }
+        </p>
     </section>
 
     <AccountTabs Current="@RoutePaths.AccountDeliveries" />
@@ -241,6 +250,19 @@ else
             btn.textContent = data.hidden ? btn.getAttribute('data-show-label') : btn.getAttribute('data-hide-label');
         }).catch(function () { /* leave the label as-is */ });
     };
+    window.deleteDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        fetch('/api/deliveries/' + id + '/delete', { method: 'POST' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+        });
+    };
+    window.restoreDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        fetch('/api/deliveries/' + id + '/restore', { method: 'POST' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+        });
+    };
 </script>
 
 @code {
@@ -248,6 +270,7 @@ else
     private const string StatusQueryKey = "status";
     private const string SearchQueryKey = "q";
     private const string FavoriteQueryKey = "favorite";
+    private const string TrashQueryKey = "trash";
     private const string ChunkClass = "deliveries-chunk";
     private const int GaugeFullPercent = 100;
     private const int MinutesPerHour = 60;
@@ -266,8 +289,11 @@ else
     public string? Search { get; set; }
 
     [Parameter]
-    [SupplyParameterFromQuery(Name = FavoriteQueryKey)]
     public bool Favorite { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = TrashQueryKey)]
+    public bool DeletedOnly { get; set; }
 
     private bool hasFilter => !string.IsNullOrEmpty(Status) || !string.IsNullOrWhiteSpace(Search) || Favorite;
 
@@ -363,6 +389,17 @@ else
                     {
                         @string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)
                     }
+                    @if (DeletedOnly)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                onclick="restoreDelivery(this)" data-ai-action="delivery.restore">@Loc["deliveries_restore"]</button>
+                    }
+                    else if (item.Status == DeliveryStatus.Active)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__delete"
+                                data-confirm="@Loc["deliveries_delete_confirm"]"
+                                onclick="deleteDelivery(this)" data-ai-action="delivery.delete">@Loc["deliveries_delete"]</button>
+                    }
                     @if (item.Status == DeliveryStatus.Scheduled)
                     {
                         <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__cancel"
@@ -457,7 +494,7 @@ else
         }
 
         var result = await Bus.InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(
-            new ListDeliveriesQuery(Cursor, Status: Status, Search: Search, FavoritesOnly: Favorite), CancellationToken.None);
+            new ListDeliveriesQuery(Cursor, Status: Status, Search: Search, FavoritesOnly: Favorite, DeletedOnly: DeletedOnly), CancellationToken.None);
 
         if (result.IsSuccess(out var page))
         {
