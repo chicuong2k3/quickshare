@@ -256,6 +256,23 @@
         },
         triggerFileInput: function () { const input = document.querySelector<HTMLInputElement>('input[type="file"]'); if (input) input.click(); },
 
+        // Text snippet sharing (issue #178): paste text, share it like a file.
+        toggleTextMode: function () {
+            const mode = document.getElementById('upload-text-mode');
+            if (!mode) return;
+            mode.classList.toggle('hidden');
+            if (!mode.classList.contains('hidden')) {
+                const ta = document.getElementById('upload-text-input') as HTMLTextAreaElement | null;
+                if (ta) ta.focus();
+            }
+        },
+        shareText: function () {
+            const ta = document.getElementById('upload-text-input') as HTMLTextAreaElement | null;
+            if (!ta || !ta.value || !ta.value.trim()) return;
+            const file = new File([ta.value], 'snippet.txt', { type: 'text/plain;charset=utf-8' });
+            startUpload(file, SOURCE_WEB);
+        },
+
         copyLink: function () {
             if (!state.link) return;
             if (navigator.clipboard && navigator.clipboard.writeText) {

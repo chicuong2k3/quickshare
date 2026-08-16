@@ -98,6 +98,16 @@
                     </div>
                 </div>
 
+                @* Text snippet sharing (issue #178) — paste text, share without a file *@
+                <button type="button" class="db-btn db-btn--ghost db-btn--sm upload-text-toggle"
+                        onclick="uploadPage.toggleTextMode()" data-ai-action="upload.shareText.toggle">@Loc["upload_share_text_toggle"]</button>
+                <div id="upload-text-mode" class="hidden upload-text-mode">
+                    <textarea id="upload-text-input" class="sender-email-input upload-text-input" rows="6"
+                              placeholder="@Loc["upload_share_text_placeholder"]" maxlength="100000"></textarea>
+                    <button type="button" class="db-btn db-btn--primary"
+                            onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
+                </div>
+
                 @* Protect your link (issues #44 + OTP gate) — optional password and/or 6-digit code *@
                 <div class="sender-email-wrap">
                     <span class="otp-label">@Loc["upload_protect_label"]</span>

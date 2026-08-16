@@ -172,6 +172,8 @@ interface UploadPage {
     onDrop(e: DragEvent): void;
     onFileInput(e: Event): void;
     triggerFileInput(): void;
+    toggleTextMode(): void;
+    shareText(): void;
     copyLink(): void;
     shareLink(): void;
     cancelUpload(): void;

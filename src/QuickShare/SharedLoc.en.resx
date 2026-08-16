@@ -758,7 +758,9 @@
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>
   <data name="deliveries_purge_confirm" xml:space="preserve"><value>Permanently delete this delivery and its file? This cannot be undone.</value></data>
-  <data name="upload_compress_hint" xml:space="preserve"><value>Downscales to 1920px and re-encodes as JPEG. Saves bandwidth.</value></data>
+  <data name="upload_share_text_toggle" xml:space="preserve"><value>Share text instead</value></data>
+  <data name="upload_share_text_placeholder" xml:space="preserve"><value>Paste your text here — it becomes a shareable link.</value></data>
+  <data name="upload_share_text_btn" xml:space="preserve"><value>Share text</value></data>
   <data name="deliveries_extend" xml:space="preserve"><value>Extend 7d</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
