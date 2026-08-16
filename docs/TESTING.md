@@ -48,7 +48,7 @@ browser download needed.
 | Upload / download / plan limits | `UploadDownloadFlowTests`, `UploadResumeTests`, `MonthlyQuotaTests`, `UploadResumeBrowserTests` |
 | Download page gates (OTP, ad, expiry) | `DownloadPageTests`, `DownloadNoScriptTests` |
 | Delivery extras (brand, abort, P2P share) | `DeliveryExtrasApiTests`, `DeliveryActivationJobTests` |
-| Delivery manage (revoke #322, rename #318, .ics #232, filter/search #214) | `DeliveryManageTests` |
+| Delivery manage (revoke #322, rename #318, .ics #232, filter/search #214, clone #218, expired archive #222, 404 #206) | `DeliveryManageTests` |
 | Trust/retention extras (burn, SHA-256, extend, stats) | `DeliveryTrustExtrasTests` |
 | Auth | `AuthFlowTests` |
 | Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountDeliveriesTests`, `UpgradeFlowTests` |
