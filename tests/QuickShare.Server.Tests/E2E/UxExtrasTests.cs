@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,8 +56,9 @@ public sealed class UxExtrasTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Labels_RequiresAuth()
     {
-        var response = await _factory.CreateClient().GetAsync(RoutePaths.AccountDeliveryLabels);
-        Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var response = await client.GetAsync(RoutePaths.AccountDeliveryLabels);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
     }
 
     [Fact]
