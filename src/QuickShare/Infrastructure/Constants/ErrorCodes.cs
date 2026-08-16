@@ -34,4 +34,5 @@ public static class ErrorCodes
     public const string ExtendTooEarly = "extend_too_early";
     public const string ExtendTooLate = "extend_too_late";
     public const string TagTooLong = "tag_too_long";
+    public const string AccountDeleteConfirmMismatch = "account_delete_confirm_mismatch";
 }

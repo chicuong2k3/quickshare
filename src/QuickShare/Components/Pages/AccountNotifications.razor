@@ -57,7 +57,11 @@
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
-            emailOnDownload = user.EmailOnDownload;
+            // Read fresh from the DB — GetUserAsync is cache-backed and can hold a stale toggle.
+            emailOnDownload = await Db.Users
+                .Where(u => u.Id == user.Id)
+                .Select(u => u.EmailOnDownload)
+                .FirstAsync(CancellationToken.None);
         }
         catch { }
     }
@@ -65,18 +69,20 @@
     private async Task HandleToggle()
     {
         formError = null;
-        var ct = CancellationToken.None;
-        var userId = HttpContextAccessor.HttpContext!.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(userId, out var id))
+        try
+        {
+            var ct = CancellationToken.None;
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+
+            await Db.Users
+                .Where(u => u.Id == user.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(u => u.EmailOnDownload, FormEmailOnDownload), ct);
+
+            emailOnDownload = FormEmailOnDownload;
+        }
+        catch
         {
             formError = Loc["account_notifications_error"];
-            return;
         }
-
-        await Db.Users
-            .Where(u => u.Id == id)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(u => u.EmailOnDownload, FormEmailOnDownload), ct);
-
-        emailOnDownload = FormEmailOnDownload;
     }
 }

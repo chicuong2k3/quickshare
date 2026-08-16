@@ -1,0 +1,155 @@
+using System.Text.Json;
+using LightResults;
+using Microsoft.EntityFrameworkCore;
+using QuickShare.Infrastructure.Storage;
+
+namespace QuickShare.Features.Users.AccountDeletion;
+
+/// <summary>JSON export of the signed-in user's profile + deliveries metadata (issue #59).</summary>
+public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
+{
+    private static readonly JsonSerializerOptions IndentedOptions = new() { WriteIndented = true };
+
+    public override void Configure()
+    {
+        Get("/api/me/export");
+        Description(b => b.WithTags(ApiTags.Users));
+        Summary(s =>
+        {
+            s.Summary = "Export the signed-in user's data as JSON";
+            s.Description = "Profile + deliveries metadata (no object bytes).";
+        });
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var db = Resolve<AppDbContext>();
+        var user = await User.GetUserAsync(db, ct);
+
+        var deliveries = await db.Deliveries
+            .AsNoTracking()
+            .Where(d => d.SenderId == user.Id)
+            .Select(d => new
+            {
+                d.Id,
+                d.FileName,
+                d.ShareCode,
+                d.Alias,
+                d.FileSize,
+                d.ContentType,
+                d.Status,
+                d.CreatedAt,
+                d.ExpiresAt,
+                d.DownloadCount
+            })
+            .OrderBy(d => d.CreatedAt)
+            .ToListAsync(ct);
+
+        var payload = new
+        {
+            ExportedAt = DateTime.UtcNow,
+            Profile = new
+            {
+                user.Id,
+                user.Name,
+                user.Email,
+                user.Plan,
+                user.AvatarUrl,
+                user.CreatedAt,
+                user.ReferralCode,
+                user.BonusQuotaBytes
+            },
+            Deliveries = deliveries
+        };
+
+        var json = JsonSerializer.Serialize(payload, IndentedOptions);
+        var filename = $"quickshare-export-{DateTime.UtcNow:yyyyMMdd}.json";
+        HttpContext.Response.Headers.ContentDisposition = $"attachment; filename=\"{filename}\"";
+        await Send.StringAsync(json, StatusCodes.Status200OK, "application/json; charset=utf-8", ct);
+    }
+}
+
+public record DeleteAccountCommand(string ConfirmEmail);
+
+/// <summary>
+/// Permanently deletes the signed-in account and everything it owns (issue #59):
+/// R2 objects, deliveries (cascade to tracking/OTP/abuse rows), referral events,
+/// then the user (cascade to logins/usage/devices/payments/subscriptions).
+/// </summary>
+public sealed class DeleteAccountHandler
+{
+    public async Task<Result> Handle(
+        DeleteAccountCommand cmd,
+        AppDbContext db,
+        IHttpContextAccessor http,
+        IStorageProvider storage,
+        CancellationToken ct)
+    {
+        var cached = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await db.Users.FirstAsync(u => u.Id == cached.Id, ct);
+
+        if (!string.Equals(cmd.ConfirmEmail?.Trim(), user.Email, StringComparison.OrdinalIgnoreCase))
+            return Result.Failure(new LightResults.Error(ErrorCodes.AccountDeleteConfirmMismatch));
+
+        var deliveries = await db.Deliveries
+            .Where(d => d.SenderId == user.Id)
+            .ToListAsync(ct);
+
+        foreach (var d in deliveries)
+        {
+            if (!string.IsNullOrEmpty(d.StoragePath))
+            {
+                try
+                {
+                    await storage.DeleteObjectsAsync(d.StoragePath, ct);
+                }
+                catch
+                {
+                    // Best-effort object cleanup — never block account deletion on a storage hiccup.
+                }
+            }
+        }
+
+        db.Deliveries.RemoveRange(deliveries);
+
+        // ReferralEvent has plain Guid columns (no FK) — clean up explicitly.
+        await db.ReferralEvents
+            .Where(r => r.ReferrerUserId == user.Id || r.ReferredUserId == user.Id)
+            .ExecuteDeleteAsync(ct);
+
+        db.Users.Remove(user);
+        await db.SaveChangesAsync(ct);
+
+        return Result.Success();
+    }
+}
+
+public sealed class DeleteAccountEndpoint : Endpoint<DeleteAccountRequest>
+{
+    public override void Configure()
+    {
+        Post("/api/me/delete");
+        Description(b => b.WithTags(ApiTags.Users));
+        Summary(s =>
+        {
+            s.Summary = "Permanently delete the signed-in account and all its data";
+            s.Description = "Requires the account email as confirmation. Destructive and irreversible.";
+        });
+    }
+
+    public override async Task HandleAsync(DeleteAccountRequest req, CancellationToken ct)
+    {
+        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(
+            new DeleteAccountCommand(req.ConfirmEmail ?? string.Empty), ct);
+
+        if (result.IsSuccess())
+            await Send.NoContentAsync(ct);
+        else if (result.IsFailure(out var error))
+            ThrowError(error.Message, StatusCodes.Status400BadRequest);
+    }
+}
+
+public class DeleteAccountRequest
+{
+    public string? ConfirmEmail { get; set; }
+}

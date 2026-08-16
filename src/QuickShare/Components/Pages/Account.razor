@@ -81,7 +81,38 @@
     </div>
     </HtmxFragment>
 
+    @* Data & privacy (issue #59) — static, no DB calls. *@
+    <div class="db-card account-card">
+        <div class="db-card__body">
+            <h3 class="db-h4">@Loc["account_data_title"]</h3>
+            <div class="account-data-actions">
+                <a href="/api/me/export" class="db-btn db-btn--ghost db-btn--sm" data-ai-action="account.exportData">@Loc["account_data_export"]</a>
+                <button type="button" class="db-btn db-btn--ghost db-btn--sm account-data-delete"
+                        data-prompt="@Loc["account_data_delete_prompt"]"
+                        data-error="@Loc["account_data_delete_error"]"
+                        onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
+            </div>
+        </div>
+    </div>
+
 </PageWrapper>
+
+<script>
+    window.deleteAccount = function (btn) {
+        var email = window.prompt(btn.getAttribute('data-prompt'));
+        if (!email || email.trim() === '') return;
+        btn.disabled = true;
+        fetch('/api/me/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirmEmail: email.trim() })
+        }).then(function (r) {
+            if (r.ok) window.location.href = '/logout';
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
+</script>
 
 <script src="/js/account.js"></script>
 

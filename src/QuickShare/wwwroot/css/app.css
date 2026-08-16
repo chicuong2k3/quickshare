@@ -1035,6 +1035,19 @@ body::after,
     font-size: var(--db-text-sm);
 }
 
+/* Data & privacy (issue #59). */
+.account-data-actions {
+    display: flex;
+    gap: var(--db-space-3);
+    flex-wrap: wrap;
+    margin-top: var(--db-space-3);
+}
+
+.account-data-delete {
+    color: var(--db-color-danger, #dc2626);
+    border-color: var(--db-color-danger, #dc2626);
+}
+
 /* --- P2P send quota banner --- */
 .p2p-quota-banner {
     margin-bottom: var(--db-space-4);
