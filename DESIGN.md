@@ -361,6 +361,9 @@ A slim track (4–10px) framed in a 1px ink hairline over putty-deep; the fill i
 ### Dropzone
 A patch of desktop inside the card: 2px *dashed* ink border (the one sanctioned dashed line — it means "put something here"), the 4px dither as fill over the surface color, generous 64px/24px padding. Hover inks the border to `--db-mountain-deep`; drag-active opens the valley — solid valley-ink border, blue wash fill, valley-ink icon cell.
 
+### Diff Preview (`.dl-diff-*`)
+The download text preview for `.patch`/`.diff` files (issue #248). The body switches to Courier Prime 0.8125rem with `tabular-nums`; each row is a flex line of old/new line numbers (muted, 2.5rem right-aligned), a marker column (1.25rem), and wrapping text. Add rows take the success wash, del rows the error wash — the state fills — with the marker (`+`/`-`) colored in the same hue so the change reads without color alone. Hunk rows are sheet-deep with accent text (the world's only bold mono); file-header rows (`--- `/`+++ `) are muted meta. The toolbar holds the mode/raw buttons at the small button size. Markup is JS-injected, so the styles live in `app.css` under the `dl-diff-*` prefix, not scoped CSS.
+
 ### The Dissolve (signature motion)
 HyperCard's native transition, and the page's **only** authored motion: when a delivery card is created (`#upload-success`) or opened (`#download-phase-file`) it dissolves in — `opacity` stepped over `steps(6, end)` in 360ms, with the card's share-box / file-specs following one beat later (`steps(5, end)`, 260ms delay). Both elements start life `.hidden`, so the keyframe fires exactly when JS reveals them, never on an already-visible element. Never a slide, never a fold, never an ease. Everything else limits itself to the utility fades (`kira-fade-in/-up`, used for list staggers) and property transitions. `prefers-reduced-motion` kills all of it.
 
