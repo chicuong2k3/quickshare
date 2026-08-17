@@ -266,13 +266,31 @@
                         }
 
 
+                        @* Email OTP gate (issue #291) — recipient requests a single-use emailed code *@
+                        @if (Info?.EmailOtpEnabled == true)
+                        {
+                            <div id="dl-email-otp" class="dl-email-otp" style="margin-top: 2rem">
+                                <p class="db-p">@Loc["dl_email_otp_title"]</p>
+                                <input type="email" id="dl-email-otp-email" class="db-field__input db-input" placeholder="@Loc["dl_email_otp_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_email_otp_email_placeholder"]" />
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
+                                    <button type="button" id="dl-email-otp-send" class="btn" onclick="emailOtp.send()" data-ai-action="download.emailOtp.send">@Loc["dl_email_otp_send"]</button>
+                                    <p id="dl-email-otp-sent" class="db-p hidden" style="margin: 0">@Loc["dl_email_otp_sent"]</p>
+                                </div>
+                                <input type="text" id="dl-email-otp-code" class="db-field__input db-input" placeholder="@Loc["dl_email_otp_placeholder"]" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="max-width: 20rem; width: 100%; margin-top: 0.5rem" aria-label="@Loc["dl_email_otp_placeholder"]" />
+                                <button type="button" id="dl-email-otp-download" class="btn" onclick="emailOtp.download()" data-ai-action="download.emailOtp.download" style="margin-top: 0.75rem">@Loc["dl_email_otp_download"]</button>
+                            </div>
+                        }
+
                         <div style="margin-top: 2rem">
-                            <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
-                                <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                                </svg>
-                                <span id="dl-download-text">@Loc["dl_download"]</span>
-                            </a>
+                            @if (Info?.EmailOtpEnabled != true)
+                            {
+                                <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
+                                    <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    <span id="dl-download-text">@Loc["dl_download"]</span>
+                                </a>
+                            }
                             @* Native share sheet (issue #283) — shares the link only, never the password/OTP. *@
                             <button type="button" class="db-btn db-btn--ghost" style="margin-top: 0.75rem"
                                     onclick="downloadApp.sharePage()" data-ai-action="download.share">
@@ -472,6 +490,33 @@
     <script src="/js/download.js"></script>
 
 <script>
+    window.emailOtp = {
+        send: function () {
+            var email = document.getElementById('dl-email-otp-email');
+            if (!email || !email.value.trim()) return;
+            var btn = document.getElementById('dl-email-otp-send');
+            btn.disabled = true;
+            fetch('/api/deliveries/' + '@ShareCode' + '/request-email-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.value.trim() }),
+            }).then(function (r) {
+                if (r.ok) {
+                    document.getElementById('dl-email-otp-sent').classList.remove('hidden');
+                }
+                btn.disabled = false;
+            }).catch(function () { btn.disabled = false; });
+        },
+        download: function () {
+            var email = document.getElementById('dl-email-otp-email').value.trim();
+            var code = document.getElementById('dl-email-otp-code').value.trim();
+            if (!email || !code) return;
+            window.location.href = '/api/downloads/' + '@ShareCode' + '?emailOtp=' + encodeURIComponent(code) + '&email=' + encodeURIComponent(email);
+        }
+    };
+</script>
+
+<script>
     window.requestExtension = function () {
         var btn = document.getElementById('dl-ext-request-btn');
         if (!btn) return;
@@ -619,7 +664,8 @@
                 HideDownloadStats = value.HideDownloadStats,
                 BurnAfterDownload = value.BurnAfterDownload,
                 AllowExtensionRequests = value.AllowExtensionRequests,
-                PrivacyMode = value.PrivacyMode
+                PrivacyMode = value.PrivacyMode,
+                EmailOtpEnabled = value.EmailOtpEnabled
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -690,6 +736,7 @@
         public bool BurnAfterDownload { get; set; }
         public bool AllowExtensionRequests { get; set; }
         public bool PrivacyMode { get; set; }
+        public bool EmailOtpEnabled { get; set; }
     }
 }
 

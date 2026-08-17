@@ -141,6 +141,11 @@ at upload: no DownloadTracking write, no analytics event, count hidden on the do
 ("Privacy mode: no tracking" badge). Max-downloads/burn enforcement still works via the
 internal counter; expiry/password/OTP gates unchanged.
 
+Tier 5 batch 2, 2026-08-17: `#291` email OTP gate — recipient requests a single-use code
+emailed to them (`POST /api/deliveries/{code}/request-email-otp`, BCrypt-hashed, 15-min TTL,
+60s cooldown). Download verifies the code (`?emailOtp=&email=`) with a 10-min retry grace,
+then marks it used. Upload toggle "Require emailed code".
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

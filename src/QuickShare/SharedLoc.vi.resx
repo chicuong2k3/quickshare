@@ -769,6 +769,14 @@
   <data name="upload_privacy_label" xml:space="preserve"><value>Chế độ riêng tư</value></data>
   <data name="upload_privacy_hint" xml:space="preserve"><value>Không theo dõi lượt tải, không phân tích, không hiển thị số lượt.</value></data>
   <data name="dl_privacy_badge" xml:space="preserve"><value>Chế độ riêng tư: không theo dõi</value></data>
+  <data name="upload_email_otp_label" xml:space="preserve"><value>Yêu cầu mã qua email</value></data>
+  <data name="upload_email_otp_hint" xml:space="preserve"><value>Người nhận phải yêu cầu mã dùng một lần gửi qua email.</value></data>
+  <data name="dl_email_otp_title" xml:space="preserve"><value>Nhập email để nhận mã tải xuống</value></data>
+  <data name="dl_email_otp_send" xml:space="preserve"><value>Gửi mã</value></data>
+  <data name="dl_email_otp_sent" xml:space="preserve"><value>Đã gửi mã — kiểm tra email của bạn.</value></data>
+  <data name="dl_email_otp_placeholder" xml:space="preserve"><value>Mã 6 chữ số</value></data>
+  <data name="dl_email_otp_email_placeholder" xml:space="preserve"><value>your@email.com</value></data>
+  <data name="dl_email_otp_download" xml:space="preserve"><value>Tải xuống</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Xoá metadata ảnh (vị trí, máy ảnh)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Gỡ tag GPS/máy ảnh/thiết bị khỏi ảnh. Bật sẵn theo mặc định.</value></data>
   <data name="upload_compress_label" xml:space="preserve"><value>Nén ảnh lớn</value></data>

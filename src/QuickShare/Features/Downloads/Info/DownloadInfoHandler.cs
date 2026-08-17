@@ -23,7 +23,8 @@ public record DownloadInfoResponse(
     bool HideDownloadStats,
     bool BurnAfterDownload,
     bool AllowExtensionRequests,
-    bool PrivacyMode
+    bool PrivacyMode,
+    bool EmailOtpEnabled
 );
 
 public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
@@ -89,7 +90,8 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
                     HideDownloadStats: delivery.HideDownloadStats || delivery.PrivacyMode,
                     BurnAfterDownload: delivery.MaxDownloads == 1,
                     AllowExtensionRequests: delivery.AllowExtensionRequests,
-                    PrivacyMode: delivery.PrivacyMode
+                    PrivacyMode: delivery.PrivacyMode,
+                    EmailOtpEnabled: delivery.EmailOtpEnabled
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

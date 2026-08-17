@@ -10,7 +10,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -202,6 +202,7 @@ public sealed class CommitR2Handler(
             FileRequestId = requestId,
             AllowExtensionRequests = cmd.AllowExtensionRequests,
             PrivacyMode = cmd.PrivacyMode,
+            EmailOtpEnabled = cmd.EmailOtpEnabled,
         };
 
         session.Status = UploadSessionStatus.Committed;

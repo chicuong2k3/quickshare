@@ -3,7 +3,7 @@ using QuickShare.Features.Deliveries.Otp;
 
 namespace QuickShare.Features.Downloads.Download;
 
-public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp) : IRequest;
+public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp, string? EmailOtp, string? Email) : IRequest;
 
 public sealed class DownloadDeliveryHandler(
     IStorageProvider storage,
@@ -93,6 +93,21 @@ public sealed class DownloadDeliveryHandler(
             }
 
             await lockout.ResetAsync(db, delivery.Id, cancellationToken);
+        }
+
+        // Email OTP gate (issue #291): the recipient redeemed a single-use emailed code.
+        if (delivery.EmailOtpEnabled)
+        {
+            if (!VerifyEmailOtp(delivery, query.EmailOtp, query.Email))
+            {
+                response.StatusCode = 403;
+                return Unit.Value;
+            }
+
+            // Single-use: consume the code before the redirect.
+            await db.Deliveries
+                .Where(d => d.Id == delivery.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(d => d.EmailOtpUsedAt, DateTime.UtcNow), cancellationToken);
         }
 
         if (delivery.DownloadCount >= delivery.MaxDownloads)
@@ -229,5 +244,27 @@ public sealed class DownloadDeliveryHandler(
             .AnyAsync(t => t.DeliveryId == deliveryId
                 && t.IpAddress == remoteIp
                 && t.DownloadedAt >= cutoff, cancellationToken);
+    }
+
+    private static bool VerifyEmailOtp(Delivery delivery, string? code, string? email)
+    {
+        if (string.IsNullOrEmpty(delivery.EmailOtpHash) || delivery.EmailOtpExpiresAt is null)
+            return false;
+
+        if (delivery.EmailOtpExpiresAt < DateTime.UtcNow)
+            return false;
+
+        if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(email))
+            return false;
+
+        if (!string.Equals(email.Trim(), delivery.EmailOtpEmail, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // Single-use, with a 10-minute grace so a mid-transfer network drop doesn't force
+        // a fresh code (mirrors the burn-after-download grace).
+        if (delivery.EmailOtpUsedAt is { } usedAt && DateTime.UtcNow - usedAt > TimeSpan.FromMinutes(BurnGraceMinutes))
+            return false;
+
+        return BCrypt.Net.BCrypt.Verify(code, delivery.EmailOtpHash);
     }
 }

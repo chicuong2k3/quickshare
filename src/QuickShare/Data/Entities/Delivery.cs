@@ -47,6 +47,13 @@ public record Delivery : BaseAuditEntity
     public bool AllowExtensionRequests { get; set; }
     /// <summary>Privacy mode (issue #187): no download tracking, no analytics, no visible counts.</summary>
     public bool PrivacyMode { get; set; }
+    /// <summary>Email OTP gate (issue #291): recipient requests a code sent to their email, single-use + TTL.</summary>
+    public bool EmailOtpEnabled { get; set; }
+    public string? EmailOtpHash { get; set; }
+    public string? EmailOtpEmail { get; set; }
+    public DateTime? EmailOtpExpiresAt { get; set; }
+    public DateTime? EmailOtpUsedAt { get; set; }
+    public DateTime? EmailOtpLastSentAt { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }

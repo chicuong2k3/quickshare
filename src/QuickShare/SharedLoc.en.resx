@@ -768,6 +768,14 @@
   <data name="upload_privacy_label" xml:space="preserve"><value>Privacy mode</value></data>
   <data name="upload_privacy_hint" xml:space="preserve"><value>No download tracking, no analytics, no visible counts.</value></data>
   <data name="dl_privacy_badge" xml:space="preserve"><value>Privacy mode: no tracking</value></data>
+  <data name="upload_email_otp_label" xml:space="preserve"><value>Require emailed code</value></data>
+  <data name="upload_email_otp_hint" xml:space="preserve"><value>Recipients must request a single-use code sent to their email.</value></data>
+  <data name="dl_email_otp_title" xml:space="preserve"><value>Enter your email to receive a download code</value></data>
+  <data name="dl_email_otp_send" xml:space="preserve"><value>Send code</value></data>
+  <data name="dl_email_otp_sent" xml:space="preserve"><value>Code sent — check your email.</value></data>
+  <data name="dl_email_otp_placeholder" xml:space="preserve"><value>6-digit code</value></data>
+  <data name="dl_email_otp_email_placeholder" xml:space="preserve"><value>your@email.com</value></data>
+  <data name="dl_email_otp_download" xml:space="preserve"><value>Download</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>

@@ -220,6 +220,24 @@ namespace QuickShare.Migrations
                     b.Property<int>("DownloadCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("EmailOtpEmail")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("EmailOtpEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("EmailOtpExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmailOtpHash")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EmailOtpLastSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EmailOtpUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 

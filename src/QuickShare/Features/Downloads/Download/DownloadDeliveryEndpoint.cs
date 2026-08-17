@@ -24,7 +24,7 @@ public sealed class DownloadDeliveryEndpoint : Endpoint<DownloadDeliveryRequest>
     public override async Task HandleAsync(DownloadDeliveryRequest req, CancellationToken ct)
     {
         var shareCode = Route<string>("ShareCode")!;
-        var query = new DownloadDeliveryQuery(shareCode, req.Password, req.Otp);
+        var query = new DownloadDeliveryQuery(shareCode, req.Password, req.Otp, req.EmailOtp, req.Email);
         await Resolve<IMediator>().Send(query, ct);
     }
 }
@@ -33,4 +33,6 @@ public class DownloadDeliveryRequest
 {
     public string? Password { get; set; }
     public string? Otp { get; set; }
+    public string? EmailOtp { get; set; }
+    public string? Email { get; set; }
 }

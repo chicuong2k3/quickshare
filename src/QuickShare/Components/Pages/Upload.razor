@@ -181,6 +181,15 @@
                     <span class="otp-hint">@Loc["upload_privacy_hint"]</span>
                 </div>
 
+                @* Email OTP (issue #291) — recipient requests a single-use emailed code *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-email-otp" />
+                        <span>@Loc["upload_email_otp_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_email_otp_hint"]</span>
+                </div>
+
                 @* Metadata strip (issue #170) — privacy-first, on by default *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">
