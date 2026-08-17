@@ -186,6 +186,8 @@ builder.Services.AddSingleton<QuickShare.Infrastructure.Email.UnsubscribeTokens>
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailTokens>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailRateLimiter>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.IRemoteUrlFetcher, QuickShare.Infrastructure.RemoteUrlFetcher>();
+builder.Services.Configure<QuickShare.Infrastructure.Push.PushOptions>(builder.Configuration.GetSection(QuickShare.Infrastructure.Push.PushOptions.Section));
+builder.Services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, QuickShare.Infrastructure.Push.PushService>();
 
 // Maintenance jobs now run as Hangfire recurring jobs (see HangfireJobs.Register) —
 // only the one-shot PayOS webhook registration stays as a hosted service.

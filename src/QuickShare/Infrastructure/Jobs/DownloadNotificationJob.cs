@@ -15,6 +15,7 @@ public sealed class DownloadNotificationJob(
     EmailSender emailSender,
     UnsubscribeTokens unsubscribeTokens,
     IOptions<EmailOptions> emailOptions,
+    QuickShare.Infrastructure.Push.IPushService pushService,
     ILogger<DownloadNotificationJob> logger)
 {
     private const int BatchSize = 500;
@@ -97,6 +98,17 @@ public sealed class DownloadNotificationJob(
                 Title = firstDelivery.FileName,
                 LinkUrl = RoutePaths.DeliveryPage + firstDelivery.ShareCode,
             });
+
+            // Web push (issue #103): mirror to the sender's browsers, best-effort.
+            var pushSubs = await db.PushSubscriptions
+                .AsNoTracking()
+                .Where(s => s.UserId == group.Key)
+                .ToListAsync(ct);
+            if (pushSubs.Count > 0)
+            {
+                await pushService.SendAsync(pushSubs, Subject,
+                    $"File: {firstDelivery.FileName}", RoutePaths.DeliveryPage + firstDelivery.ShareCode, ct);
+            }
         }
 
         // Marked regardless of send outcome, so a broken mailbox can't replay the same digest forever.

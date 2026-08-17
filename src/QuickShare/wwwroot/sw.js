@@ -61,3 +61,36 @@ self.addEventListener('fetch', function (event) {
         );
     }
 });
+
+// Web push (issue #103): show the notification; the payload carries title/message/link.
+self.addEventListener('push', function (event) {
+    var data = {};
+    try { data = event.data ? event.data.json() : {}; } catch (_) { /* non-JSON payload */ }
+
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'QuickShare', {
+            body: data.message || '',
+            icon: '/og-cover.svg',
+            badge: '/og-cover.svg',
+            data: { link: data.link || '/' }
+        })
+    );
+});
+
+self.addEventListener('notificationclick', function (event) {
+    event.notification.close();
+    var link = (event.notification.data && event.notification.data.link) || '/';
+
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+            for (var i = 0; i < clientList.length; i++) {
+                var client = clientList[i];
+                if ('focus' in client) {
+                    client.navigate(link);
+                    return client.focus();
+                }
+            }
+            if (self.clients.openWindow) return self.clients.openWindow(link);
+        })
+    );
+});

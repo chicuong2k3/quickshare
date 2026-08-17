@@ -22,6 +22,10 @@ else
     <section class="hero">
         <h1 class="db-h1">@Loc["notifications_center_h1"]</h1>
         <p class="db-p db-text-muted">@Loc["notifications_center_lead"]</p>
+        <button type="button" class="db-btn db-btn--ghost db-btn--sm" id="enable-push-btn"
+                data-enabled-label="@Loc["notifications_push_enabled"]"
+                onclick="window.enablePush && window.enablePush().then(function (ok) { if (ok) { var b = document.getElementById('enable-push-btn'); b.textContent = b.getAttribute('data-enabled-label'); b.disabled = true; } })"
+                data-ai-action="notifications.enablePush">@Loc["notifications_enable_push"]</button>
     </section>
 
     @if (!isLoaded)
@@ -55,6 +59,8 @@ else
 
 </PageWrapper>
 }
+
+<script src="/js/push.js"></script>
 
 <script>
     window.markNotificationRead = function (btn) {

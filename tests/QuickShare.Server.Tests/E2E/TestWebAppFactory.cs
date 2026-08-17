@@ -81,6 +81,8 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             services.AddSingleton<IStorageProvider, LocalDiskStorageProviderStub>();
             services.RemoveAll<IRemoteUrlFetcher>();
             services.AddSingleton<IRemoteUrlFetcher, StubRemoteUrlFetcher>();
+            services.RemoveAll<QuickShare.Infrastructure.Push.IPushService>();
+            services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, StubPushService>();
             services.AddScoped<PayOSService, StubPayOSService>();
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
@@ -223,11 +225,21 @@ internal sealed class StubRemoteUrlFetcher : IRemoteUrlFetcher
     }
 }
 
+internal sealed class StubPushService : QuickShare.Infrastructure.Push.IPushService
+{
+    public string PublicKey => "test-vapid-public-key";
+    public bool IsConfigured => true;
+
+    public Task SendAsync(
+        IReadOnlyList<QuickShare.Data.Entities.PushSubscription> subscriptions,
+        string title, string message, string link, CancellationToken ct)
+        => Task.CompletedTask;
+}
+
 internal sealed class LocalDiskStorageProviderStub : IStorageProvider
 {
     /// <summary>Size reported by GetObjectSizeAsync; -1 (default) means "unknown", which skips the commit-time size check.</summary>
     public long NextObjectSize { get; set; } = -1;
-
     public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
         => Task.FromResult(NextObjectSize);
 

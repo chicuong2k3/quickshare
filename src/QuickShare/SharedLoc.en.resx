@@ -793,6 +793,8 @@
   <data name="nav_notifications" xml:space="preserve"><value>Notifications</value></data>
   <data name="notif_delivery_expired" xml:space="preserve"><value>Your file expired: {0}</value></data>
   <data name="notif_delivery_downloaded" xml:space="preserve"><value>Your file was downloaded: {0}</value></data>
+  <data name="notifications_enable_push" xml:space="preserve"><value>Enable browser notifications</value></data>
+  <data name="notifications_push_enabled" xml:space="preserve"><value>Notifications enabled</value></data>
   <data name="dl_ext_request_btn" xml:space="preserve"><value>Request more time</value></data>
   <data name="dl_ext_request_sent" xml:space="preserve"><value>Request sent. The sender will be notified.</value></data>
   <data name="notif_extension_requested" xml:space="preserve"><value>Extension requested: {0}</value></data>

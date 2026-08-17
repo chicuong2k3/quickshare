@@ -131,6 +131,11 @@ Tier 4 batch 10, 2026-08-17: `#37` multi-recipient share — "send link to" fiel
 emails the link to N recipients (`CommitR2.RecipientEmails`), capped per plan (Free 3,
 Pro/Studio 20), deduped + validated server-side.
 
+Tier 4 batch 11, 2026-08-17: `#103` web push notifications — `PushSubscription` entity,
+VAPID auth via `Lib.Net.Http.WebPush`, subscribe/unsubscribe/vapid-key endpoints,
+`sw.js` push + notificationclick handlers, opt-in button on the notification center,
+and a `DownloadNotificationJob` push trigger (mirrors the email + in-app notification).
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

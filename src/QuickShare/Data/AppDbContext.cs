@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ExtensionRequest> ExtensionRequests => Set<ExtensionRequest>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -331,6 +332,22 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Delivery)
                 .WithMany()
                 .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PushSubscription>(entity =>
+        {
+            entity.ToTable("push_subscriptions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Endpoint).IsRequired().HasMaxLength(PushSubscription.EndpointMaxLength);
+            entity.Property(e => e.P256dh).IsRequired().HasMaxLength(PushSubscription.KeyMaxLength);
+            entity.Property(e => e.Auth).IsRequired().HasMaxLength(PushSubscription.KeyMaxLength);
+            entity.Property(e => e.DeviceName).HasMaxLength(PushSubscription.DeviceNameMaxLength);
+            entity.HasIndex(e => e.Endpoint).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -813,6 +813,8 @@
   <data name="nav_notifications" xml:space="preserve"><value>Thông báo</value></data>
   <data name="notif_delivery_expired" xml:space="preserve"><value>File của bạn đã hết hạn: {0}</value></data>
   <data name="notif_delivery_downloaded" xml:space="preserve"><value>File của bạn vừa được tải: {0}</value></data>
+  <data name="notifications_enable_push" xml:space="preserve"><value>Bật thông báo trình duyệt</value></data>
+  <data name="notifications_push_enabled" xml:space="preserve"><value>Đã bật thông báo</value></data>
   <data name="dl_ext_request_btn" xml:space="preserve"><value>Yêu cầu gia hạn</value></data>
   <data name="dl_ext_request_sent" xml:space="preserve"><value>Đã gửi yêu cầu. Người gửi sẽ được thông báo.</value></data>
   <data name="notif_extension_requested" xml:space="preserve"><value>Yêu cầu gia hạn: {0}</value></data>
