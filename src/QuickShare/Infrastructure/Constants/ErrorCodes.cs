@@ -44,4 +44,5 @@ public static class ErrorCodes
     public const string FileRequestLimitReached = "file_request_limit_reached";
     public const string FileRequestTitleInvalid = "file_request_title_invalid";
     public const string FileRequestExpiryInvalid = "file_request_expiry_invalid";
+    public const string NotificationNotFound = "notification_not_found";
 }

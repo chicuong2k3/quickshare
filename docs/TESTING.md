@@ -53,6 +53,7 @@ browser download needed.
 | Auth | `AuthFlowTests` |
 | Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountDeliveriesTests`, `UpgradeFlowTests` |
 | File requests (#16) — create/list/close/owner-isolation/digest | `FileRequestsApiTests`, `FileRequestDigestJobTests` |
+| Notification center (#246) — list/read/unread-count/sources/retention | `NotificationCenterTests`, `NotificationJobTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |

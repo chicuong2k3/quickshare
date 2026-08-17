@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<FeatureFlagOverride> FeatureFlagOverrides => Set<FeatureFlagOverride>();
     public DbSet<AnalyticsEvent> AnalyticsEvents => Set<AnalyticsEvent>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -300,6 +301,21 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.EventName, e.CreatedAt });
             entity.HasIndex(e => new { e.VisitorId, e.CreatedAt });
             entity.HasIndex(e => e.CountryCode);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notifications");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).IsRequired().HasMaxLength(Notification.TypeMaxLength);
+            entity.Property(e => e.Title).HasMaxLength(Notification.TitleMaxLength);
+            entity.Property(e => e.LinkUrl).HasMaxLength(Notification.LinkMaxLength);
+            entity.HasIndex(e => new { e.UserId, e.IsRead });
+            entity.HasIndex(e => e.CreatedAt).IsDescending();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
     }

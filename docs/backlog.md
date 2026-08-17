@@ -105,6 +105,12 @@ on `Delivery`, migration `AddDeliveryDigestNotifiedAt`). **Blocked remainder**: 
 `/r/{code}` submission page + anonymous upload wiring — paused on the E2E-encryption
 decision (key-in-URL-fragment) for request uploads.
 
+Tier 4 batch 6, 2026-08-17: `#246` in-app notification center — `Notification` entity
++ migration `AddNotifications`, list/mark-read/read-all/unread-count endpoints
+(`/api/notifications`), `/account/notifications/inbox` page (filter + mark-read + infinite
+scroll), navbar bell + unread badge, `NotificationCleanupJob` (30-day retention). Sources:
+delivery expired (`DeliveryExpiryJob`) + downloaded (`DownloadNotificationJob`).
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

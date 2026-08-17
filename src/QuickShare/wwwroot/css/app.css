@@ -1409,6 +1409,111 @@ body::after,
     margin-top: var(--db-space-5);
 }
 
+/* In-app notification center (issue #246) + navbar bell badge. */
+.layout-bell {
+    position: relative;
+}
+
+.layout-bell__badge {
+    position: absolute;
+    top: -0.35rem;
+    right: -0.35rem;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    padding: 0 0.3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--db-color-accent-text);
+    color: var(--db-foil-ink);
+    font-family: var(--db-font-mono);
+    font-size: 0.5625rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.notif-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    margin-bottom: var(--db-space-4);
+    flex-wrap: wrap;
+}
+
+.notif-filters__item {
+    font-family: var(--db-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: var(--db-space-2) var(--db-space-3);
+    border: 1px solid var(--db-mountain);
+    color: var(--db-color-text-muted);
+    text-decoration: none;
+}
+
+.notif-filters__item--active {
+    color: var(--db-color-text);
+    border-color: var(--db-color-text);
+}
+
+.notif-filters__markall {
+    margin-left: auto;
+}
+
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-2);
+}
+
+.notif {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--db-space-3);
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    padding: var(--db-space-4);
+}
+
+.notif--read {
+    opacity: 0.65;
+}
+
+.notif--unread {
+    border-left: 3px solid var(--db-color-accent-text);
+}
+
+.notif__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-1);
+    min-width: 0;
+}
+
+.notif__message {
+    font-size: 0.875rem;
+    color: var(--db-color-text);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+a.notif__message:hover {
+    text-decoration: underline;
+}
+
+.notif__time {
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+}
+
+.notif__read {
+    flex-shrink: 0;
+}
+
 /* Batch QR label sheet (issue #250). */
 .account-labels-toolbar {
     display: flex;

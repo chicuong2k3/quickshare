@@ -769,6 +769,20 @@
   <data name="upload_share_text_btn" xml:space="preserve"><value>Share text</value></data>
   <data name="account_notifications_track_label" xml:space="preserve"><value>Track my downloads</value></data>
   <data name="account_notifications_track_desc" xml:space="preserve"><value>Keep a private list of files you've downloaded (opt-in).</value></data>
+  <data name="notifications_center_title" xml:space="preserve"><value>Notifications — QuickShareCloud</value></data>
+  <data name="notifications_center_h1" xml:space="preserve"><value>Notifications</value></data>
+  <data name="notifications_center_lead" xml:space="preserve"><value>Activity in your account.</value></data>
+  <data name="notifications_center_loading" xml:space="preserve"><value>Loading notifications...</value></data>
+  <data name="notifications_center_empty" xml:space="preserve"><value>No notifications yet.</value></data>
+  <data name="notifications_center_empty_unread" xml:space="preserve"><value>You're all caught up.</value></data>
+  <data name="notifications_filter_all" xml:space="preserve"><value>All</value></data>
+  <data name="notifications_filter_unread" xml:space="preserve"><value>Unread</value></data>
+  <data name="notifications_mark_all_read" xml:space="preserve"><value>Mark all read</value></data>
+  <data name="notifications_mark_read" xml:space="preserve"><value>Mark read</value></data>
+  <data name="notifications_badge_aria" xml:space="preserve"><value>{0} unread notifications</value></data>
+  <data name="nav_notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="notif_delivery_expired" xml:space="preserve"><value>Your file expired: {0}</value></data>
+  <data name="notif_delivery_downloaded" xml:space="preserve"><value>Your file was downloaded: {0}</value></data>
   <data name="account_downloads_title" xml:space="preserve"><value>Downloaded files</value></data>
   <data name="account_downloads_empty" xml:space="preserve"><value>Nothing here yet — files you download while signed in (with tracking on) appear here.</value></data>
   <data name="deliveries_replace" xml:space="preserve"><value>Replace file</value></data>

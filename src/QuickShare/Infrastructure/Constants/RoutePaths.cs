@@ -13,10 +13,12 @@ public static class RoutePaths
     public const string AccountUsage = "/account/usage";
     public const string AccountDevices = "/account/devices";
     public const string AccountNotifications = "/account/notifications";
+    public const string AccountNotificationCenter = "/account/notifications/inbox";
     public const string AccountOnboarding = "/account/onboarding";
     public const string AccountDownloads = "/account/downloads";
     public const string AccountFileRequests = "/account/requests";
     public const string FileRequestPage = "/r/";
+    public const string DeliveryPage = "/d/";
     public const string Login = "/login";
     public const string Logout = "/logout";
     public const string P2p = "/p2p";

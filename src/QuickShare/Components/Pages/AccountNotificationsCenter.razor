@@ -1,0 +1,199 @@
+@layout MainLayout
+@page "/account/notifications/inbox"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Notifications.Center
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["notifications_center_title"]</PageTitle>
+
+@if (isChunkRequest)
+{
+    @* Infinite-scroll append: only the chunk is selected out of this response. *@
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["notifications_center_h1"]</h1>
+        <p class="db-p db-text-muted">@Loc["notifications_center_lead"]</p>
+    </section>
+
+    @if (!isLoaded)
+    {
+        <section id="notifications-body"
+                 hx-get="@BodyUrl(CurrentFilter, null)"
+                 hx-trigger="load"
+                 hx-target="#notifications-body"
+                 hx-select="#notifications-body"
+                 hx-swap="outerHTML"
+                 aria-busy="true">
+            <p class="db-text-muted">@Loc["notifications_center_loading"]</p>
+        </section>
+    }
+    else
+    {
+        <section id="notifications-body">
+            @FilterTabs
+            @if (items.Count == 0)
+            {
+                <div class="account-deliveries-empty">
+                    <p class="db-p">@(CurrentFilter == NotificationFilter.Unread ? Loc["notifications_center_empty_unread"] : Loc["notifications_center_empty"])</p>
+                </div>
+            }
+            else
+            {
+                @Chunk
+            }
+        </section>
+    }
+
+</PageWrapper>
+}
+
+<script>
+    window.markNotificationRead = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('notification-', '');
+        btn.disabled = true;
+        fetch('/api/notifications/' + id + '/read', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                article.classList.add('notif--read');
+                btn.remove();
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+</script>
+
+@code {
+    private const string CursorQueryKey = "cursor";
+    private const string FilterQueryKey = "filter";
+    private const string ChunkClass = "notifications-chunk";
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = CursorQueryKey)]
+    public string? Cursor { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = FilterQueryKey)]
+    public string? Filter { get; set; }
+
+    private bool isLoaded;
+    private bool isChunkRequest;
+    private List<NotificationItem> items = [];
+    private string? nextCursor;
+
+    private string CurrentFilter =>
+        string.Equals(Filter, NotificationFilter.Unread, StringComparison.OrdinalIgnoreCase)
+            ? NotificationFilter.Unread
+            : NotificationFilter.All;
+
+    private RenderFragment FilterTabs => @<nav class="notif-filters" aria-label="Filter notifications">
+        <a href="@BodyUrl(NotificationFilter.All, null)"
+           class="notif-filters__item @(CurrentFilter == NotificationFilter.All ? "notif-filters__item--active" : "")"
+           hx-get="@BodyUrl(NotificationFilter.All, null)"
+           hx-target="#notifications-body"
+           hx-select="#notifications-body"
+           hx-swap="outerHTML"
+           hx-push-url="true">@Loc["notifications_filter_all"]</a>
+        <a href="@BodyUrl(NotificationFilter.Unread, null)"
+           class="notif-filters__item @(CurrentFilter == NotificationFilter.Unread ? "notif-filters__item--active" : "")"
+           hx-get="@BodyUrl(NotificationFilter.Unread, null)"
+           hx-target="#notifications-body"
+           hx-select="#notifications-body"
+           hx-swap="outerHTML"
+           hx-push-url="true">@Loc["notifications_filter_unread"]</a>
+        @if (items.Any(i => !i.IsRead))
+        {
+            <button type="button" class="db-btn db-btn--ghost db-btn--sm notif-filters__markall"
+                    hx-post="/api/notifications/read-all"
+                    hx-target="#notifications-body"
+                    hx-select="#notifications-body"
+                    hx-swap="outerHTML">@Loc["notifications_mark_all_read"]</button>
+        }
+    </nav>;
+
+    private RenderFragment Chunk => @<div class="@ChunkClass notif-list">
+        @foreach (var item in items)
+        {
+            <article id="notification-@item.Id" class="notif @(item.IsRead ? "notif--read" : "notif--unread")">
+                <div class="notif__body">
+                    @if (item.LinkUrl is not null)
+                    {
+                        <a class="notif__message" href="@item.LinkUrl">@MessageFor(item)</a>
+                    }
+                    else
+                    {
+                        <span class="notif__message">@MessageFor(item)</span>
+                    }
+                    <time class="db-text-muted notif__time" datetime="@item.CreatedAt.ToString("o")">@item.CreatedAt.ToLocalTime().ToString("g")</time>
+                </div>
+                @if (!item.IsRead)
+                {
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm notif__read"
+                            onclick="markNotificationRead(this)" data-ai-action="notification.markRead">@Loc["notifications_mark_read"]</button>
+                }
+            </article>
+        }
+
+        @if (nextCursor is not null)
+        {
+            <div class="account-deliveries-more"
+                 hx-get="@BodyUrl(CurrentFilter, nextCursor)"
+                 hx-trigger="revealed"
+                 hx-target="this"
+                 hx-select=".@ChunkClass"
+                 hx-swap="outerHTML"
+                 aria-busy="true"></div>
+        }
+    </div>;
+
+    private string BodyUrl(string filter, string? cursor)
+    {
+        var query = new List<string>();
+        if (filter == NotificationFilter.Unread) query.Add($"{FilterQueryKey}={NotificationFilter.Unread}");
+        if (!string.IsNullOrEmpty(cursor)) query.Add($"{CursorQueryKey}={Uri.EscapeDataString(cursor)}");
+
+        return query.Count == 0
+            ? RoutePaths.AccountNotificationCenter
+            : $"{RoutePaths.AccountNotificationCenter}?{string.Join('&', query)}";
+    }
+
+    private string MessageFor(NotificationItem item) => item.Type switch
+    {
+        NotificationType.DeliveryExpired => string.Format(Loc["notif_delivery_expired"], item.Title),
+        NotificationType.DeliveryDownloaded => string.Format(Loc["notif_delivery_downloaded"], item.Title),
+        _ => item.Title,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        // Shell render: return immediately, no DB calls.
+        if (!isHtmxRequest) return;
+
+        isLoaded = true;
+        isChunkRequest = !string.IsNullOrEmpty(Cursor);
+
+        var result = await Bus.Send<LightResults.Result<CursorPage<NotificationItem>>>(
+            new ListNotificationsQuery(CurrentFilter, Cursor), CancellationToken.None);
+
+        if (result.IsSuccess(out var page))
+        {
+            items = page.Items;
+            nextCursor = page.NextCursor;
+        }
+    }
+}

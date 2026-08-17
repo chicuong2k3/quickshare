@@ -789,7 +789,20 @@
   <data name="upload_share_text_btn" xml:space="preserve"><value>Chia sẻ văn bản</value></data>
   <data name="account_notifications_track_label" xml:space="preserve"><value>Theo dõi lượt tải của tôi</value></data>
   <data name="account_notifications_track_desc" xml:space="preserve"><value>Giữ danh sách riêng các file bạn đã tải (tự chọn bật).</value></data>
-  <data name="account_downloads_title" xml:space="preserve"><value>File đã tải</value></data>
+  <data name="notifications_center_title" xml:space="preserve"><value>Thông báo — QuickShareCloud</value></data>
+  <data name="notifications_center_h1" xml:space="preserve"><value>Thông báo</value></data>
+  <data name="notifications_center_lead" xml:space="preserve"><value>Hoạt động trong tài khoản của bạn.</value></data>
+  <data name="notifications_center_loading" xml:space="preserve"><value>Đang tải thông báo...</value></data>
+  <data name="notifications_center_empty" xml:space="preserve"><value>Chưa có thông báo nào.</value></data>
+  <data name="notifications_center_empty_unread" xml:space="preserve"><value>Bạn đã xem hết mọi thứ.</value></data>
+  <data name="notifications_filter_all" xml:space="preserve"><value>Tất cả</value></data>
+  <data name="notifications_filter_unread" xml:space="preserve"><value>Chưa đọc</value></data>
+  <data name="notifications_mark_all_read" xml:space="preserve"><value>Đánh dấu đã đọc tất cả</value></data>
+  <data name="notifications_mark_read" xml:space="preserve"><value>Đánh dấu đã đọc</value></data>
+  <data name="notifications_badge_aria" xml:space="preserve"><value>{0} thông báo chưa đọc</value></data>
+  <data name="nav_notifications" xml:space="preserve"><value>Thông báo</value></data>
+  <data name="notif_delivery_expired" xml:space="preserve"><value>File của bạn đã hết hạn: {0}</value></data>
+  <data name="notif_delivery_downloaded" xml:space="preserve"><value>File của bạn vừa được tải: {0}</value></data>  <data name="account_downloads_title" xml:space="preserve"><value>File đã tải</value></data>
   <data name="account_downloads_empty" xml:space="preserve"><value>Chưa có gì — các file bạn tải khi đăng nhập (bật theo dõi) sẽ hiện ở đây.</value></data>
   <data name="deliveries_replace" xml:space="preserve"><value>Thay file</value></data>
   <data name="deliveries_replace_error" xml:space="preserve"><value>Thay file thất bại. File có thể quá lớn so với gói của bạn.</value></data>

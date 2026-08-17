@@ -46,7 +46,7 @@ public sealed class DownloadNotificationJob(
         var deliveries = await db.Deliveries
             .AsNoTracking()
             .Where(d => deliveryIds.Contains(d.Id) && d.SenderId != null)
-            .Select(d => new { d.Id, SenderId = d.SenderId!.Value, d.FileName })
+            .Select(d => new { d.Id, SenderId = d.SenderId!.Value, d.FileName, d.ShareCode })
             .ToListAsync(ct);
 
         var deliveryById = deliveries.ToDictionary(d => d.Id);
@@ -86,6 +86,17 @@ public sealed class DownloadNotificationJob(
                 // Add a durable outbox if bounce/delivery guarantees ever matter.
                 logger.LogWarning(ex, "Failed to send download digest to user {UserId}", user.Id);
             }
+
+            // In-app notification mirrors the email (issue #246): one per sender per cycle.
+            var first = group.First();
+            var firstDelivery = deliveryById[first.DeliveryId];
+            db.Notifications.Add(new Notification
+            {
+                UserId = group.Key,
+                Type = NotificationType.DeliveryDownloaded,
+                Title = firstDelivery.FileName,
+                LinkUrl = RoutePaths.DeliveryPage + firstDelivery.ShareCode,
+            });
         }
 
         // Marked regardless of send outcome, so a broken mailbox can't replay the same digest forever.

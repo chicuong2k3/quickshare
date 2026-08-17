@@ -55,6 +55,17 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
             delivery.Status = DeliveryStatus.Expired;
         }
 
+        // In-app notification (issue #246) for logged-in senders whose file expired.
+        foreach (var delivery in expired.Where(d => d.SenderId != null))
+        {
+            db.Notifications.Add(new Notification
+            {
+                UserId = delivery.SenderId!.Value,
+                Type = NotificationType.DeliveryExpired,
+                Title = delivery.FileName,
+            });
+        }
+
         await db.SaveChangesAsync(ct);
         logger.LogInformation("DeliveryExpiryJob expired {Count} deliveries", expired.Count);
     }

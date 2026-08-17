@@ -25,6 +25,7 @@ public static class HangfireJobs
     public const string TempUploadCleanup = "temp-upload-cleanup";
     public const string WeeklyDigest = "weekly-digest";
     public const string FileRequestDigest = "file-request-digest";
+    public const string NotificationCleanup = "notification-cleanup";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -38,6 +39,7 @@ public static class HangfireJobs
         recurring.AddOrUpdate<SubscriptionExpiryJob>(SubscriptionExpiry, j => j.CheckAndExpireAsync(), Cron.MinuteInterval(15));
         recurring.AddOrUpdate<ZombiePartSweeper>(ZombiePartSweep, j => j.SweepZombiePartsAsync(), Cron.MinuteInterval(30));
         recurring.AddOrUpdate<TempUploadCleanupJob>(TempUploadCleanup, j => j.CleanupAsync(), Cron.MinuteInterval(15));
+        recurring.AddOrUpdate<NotificationCleanupJob>(NotificationCleanup, j => j.CleanupAsync(), Cron.Daily());
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
         recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),

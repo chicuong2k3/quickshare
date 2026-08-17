@@ -6,6 +6,7 @@
 @using Microsoft.Extensions.Options
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IOptions<QuickShare.Infrastructure.QuickShareOptions> Options
+@inject AppDbContext Db
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
@@ -77,6 +78,14 @@
             <LanguageSwitch />
             @if (isAuthenticated)
             {
+                <a href="@RoutePaths.AccountNotificationCenter" class="db-btn db-btn--ghost db-btn--sm layout-bell"
+                   aria-label="@Loc["nav_notifications"]" title="@Loc["nav_notifications"]" data-ai-action="notifications.open">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    @if (unreadCount > 0)
+                    {
+                        <span class="layout-bell__badge" aria-label="@string.Format(Loc["notifications_badge_aria"], unreadCount)">@BadgeLabel(unreadCount)</span>
+                    }
+                </a>
                 <div class="db-dropdown">
                     <button class="db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn"
                             hx-get="/api/me/avatar"
@@ -238,6 +247,27 @@
 
 @code {
     private const string RootSpec = "INDEX";
+
+    private int unreadCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated != true)
+            return;
+
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext.User.GetUserAsync(Db, CancellationToken.None);
+            unreadCount = await Db.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+        }
+        catch
+        {
+            // A notification count must never break the shell render.
+            unreadCount = 0;
+        }
+    }
+
+    private static string BadgeLabel(int count) => count > 99 ? "99+" : count.ToString(CultureInfo.InvariantCulture);
 
     private static string NavActive(bool isActive) =>
         isActive ? "db-nav-menu__item--active" : string.Empty;
