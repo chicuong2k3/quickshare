@@ -45,6 +45,8 @@ public record Delivery : BaseAuditEntity
     public DateTime? DigestNotifiedAt { get; set; }
     /// <summary>Whether recipients may ask for more time after expiry (issue #233). Default off for privacy.</summary>
     public bool AllowExtensionRequests { get; set; }
+    /// <summary>Privacy mode (issue #187): no download tracking, no analytics, no visible counts.</summary>
+    public bool PrivacyMode { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }

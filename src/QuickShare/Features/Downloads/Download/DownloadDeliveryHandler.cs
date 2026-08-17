@@ -180,21 +180,30 @@ public sealed class DownloadDeliveryHandler(
                     if (entity is not null)
                     {
                         entity.DownloadCount++;
-                        updateDb.DownloadTrackings.Add(new DownloadTracking
+
+                        // Privacy mode (issue #187): the count still drives max-downloads/burn
+                        // enforcement, but nothing is logged — no IP, no analytics event.
+                        if (!entity.PrivacyMode)
                         {
-                            Id = Guid.CreateVersion7(),
-                            DeliveryId = delivery.Id,
-                            IpAddress = remoteIp,
-                            DownloadedAt = DateTime.UtcNow,
-                            UserId = trackUserId
-                        });
+                            updateDb.DownloadTrackings.Add(new DownloadTracking
+                            {
+                                Id = Guid.CreateVersion7(),
+                                DeliveryId = delivery.Id,
+                                IpAddress = remoteIp,
+                                DownloadedAt = DateTime.UtcNow,
+                                UserId = trackUserId
+                            });
+                        }
 
                         await updateDb.SaveChangesAsync(CancellationToken.None);
 
-                        var analytics = scope.ServiceProvider.GetRequiredService<AnalyticsService>();
-                        await analytics.RecordAsync(AnalyticsEvents.DownloadCompleted,
-                            new AnalyticsEventData(entity.FileName, entity.FileSize, entity.ContentType, null),
-                            analyticsContext, CancellationToken.None);
+                        if (!entity.PrivacyMode)
+                        {
+                            var analytics = scope.ServiceProvider.GetRequiredService<AnalyticsService>();
+                            await analytics.RecordAsync(AnalyticsEvents.DownloadCompleted,
+                                new AnalyticsEventData(entity.FileName, entity.FileSize, entity.ContentType, null),
+                                analyticsContext, CancellationToken.None);
+                        }
 
                         var cache = scope.ServiceProvider.GetRequiredService<CacheService>();
                         await cache.RemoveAsync($"download:info:{query.ShareCode}");

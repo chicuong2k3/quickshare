@@ -22,7 +22,8 @@ public record DownloadInfoResponse(
     DateTime? FirstDownloadedAt,
     bool HideDownloadStats,
     bool BurnAfterDownload,
-    bool AllowExtensionRequests
+    bool AllowExtensionRequests,
+    bool PrivacyMode
 );
 
 public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
@@ -68,6 +69,8 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
 
                 var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
 
+                // Privacy mode (issue #187): expose the flag and zero the visible counts —
+                // the recipient sees "no tracking", never a partial or misleading number.
                 return Result.Success(new DownloadInfoResponse(
                     delivery.FileName,
                     delivery.ContentType,
@@ -75,17 +78,18 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
                     delivery.ExpiresAt,
                     delivery.DeliverAt,
                     delivery.Status,
-                    delivery.DownloadCount,
+                    delivery.PrivacyMode ? 0 : delivery.DownloadCount,
                     delivery.MaxDownloads,
                     HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
                     HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
                     SenderPlan: senderPlan,
                     Message: delivery.Message,
                     Sha256: delivery.Sha256,
-                    FirstDownloadedAt: delivery.FirstDownloadedAt,
-                    HideDownloadStats: delivery.HideDownloadStats,
+                    FirstDownloadedAt: delivery.PrivacyMode ? null : delivery.FirstDownloadedAt,
+                    HideDownloadStats: delivery.HideDownloadStats || delivery.PrivacyMode,
                     BurnAfterDownload: delivery.MaxDownloads == 1,
-                    AllowExtensionRequests: delivery.AllowExtensionRequests
+                    AllowExtensionRequests: delivery.AllowExtensionRequests,
+                    PrivacyMode: delivery.PrivacyMode
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

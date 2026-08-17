@@ -257,6 +257,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
+                    b.Property<bool>("PrivacyMode")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("SenderEmail")
                         .HasColumnType("text");
 

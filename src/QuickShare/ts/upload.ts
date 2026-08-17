@@ -71,6 +71,7 @@
         burnAfterDownload: boolean;
         allowExtensionRequests: boolean;
         recipientEmails: string[];
+        privacyMode: boolean;
         stripMetadata: boolean;
         compressImages: boolean;
         expiryHours: number | null;
@@ -93,6 +94,7 @@
         burnAfterDownload: false,
         allowExtensionRequests: false,
         recipientEmails: [],
+        privacyMode: false,
         stripMetadata: true,
         compressImages: true,
         expiryHours: null,
@@ -351,6 +353,7 @@
 state.allowExtensionRequests = (document.getElementById('upload-allow-requests') as HTMLInputElement | null)?.checked ?? false;
 state.recipientEmails = String((document.getElementById('upload-recipients') as HTMLInputElement | null)?.value || '')
     .split(',').map(function (e) { return e.trim(); }).filter(function (e) { return e.length > 0; });
+state.privacyMode = (document.getElementById('upload-privacy') as HTMLInputElement | null)?.checked ?? false;
         state.stripMetadata = (document.getElementById('upload-strip-metadata') as HTMLInputElement | null)?.checked ?? true;
         state.compressImages = (document.getElementById('upload-compress') as HTMLInputElement | null)?.checked ?? true;
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
@@ -565,7 +568,7 @@ state.recipientEmails = String((document.getElementById('upload-recipients') as 
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

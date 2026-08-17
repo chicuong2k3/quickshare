@@ -765,6 +765,9 @@
   <data name="upload_burn_hint" xml:space="preserve"><value>The link works once, then expires. Best for sensitive files.</value></data>
   <data name="upload_allow_requests_label" xml:space="preserve"><value>Allow extension requests</value></data>
   <data name="upload_allow_requests_hint" xml:space="preserve"><value>Recipients can ask you to extend the link after it expires.</value></data>
+  <data name="upload_privacy_label" xml:space="preserve"><value>Privacy mode</value></data>
+  <data name="upload_privacy_hint" xml:space="preserve"><value>No download tracking, no analytics, no visible counts.</value></data>
+  <data name="dl_privacy_badge" xml:space="preserve"><value>Privacy mode: no tracking</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>

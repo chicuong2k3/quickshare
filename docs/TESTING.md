@@ -59,6 +59,7 @@ browser download needed.
 | Office document preview (#94) — docx/xlsx/pptx extraction + gating | `OfficeTextExtractorTests`, `OfficePreviewTests` |
 | Multi-recipient share (#37) — recipient limit + normalization | `MultiRecipientTests` |
 | Web push (#103) — subscribe/upsert/unsubscribe/vapid-key | `PushSubscriptionTests` |
+| Privacy mode (#187) — no tracking/analytics, count hidden | `PrivacyModeTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |

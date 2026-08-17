@@ -239,6 +239,12 @@
                             </p>
                         }
 
+                        @* Privacy mode (issue #187) — the sender left no trace; say so, don't count. *@
+                        @if (Info?.PrivacyMode == true)
+                        {
+                            <p class="db-p db-text-muted" style="margin-top: 0.75rem; font-size: 0.8125rem" role="note">@Loc["dl_privacy_badge"]</p>
+                        }
+
                         @* Burn-after-download warning (issue #12) — shown before the download button. *@
                         @if (Info?.BurnAfterDownload == true)
                         {
@@ -612,7 +618,8 @@
                 FirstDownloadedAt = value.FirstDownloadedAt,
                 HideDownloadStats = value.HideDownloadStats,
                 BurnAfterDownload = value.BurnAfterDownload,
-                AllowExtensionRequests = value.AllowExtensionRequests
+                AllowExtensionRequests = value.AllowExtensionRequests,
+                PrivacyMode = value.PrivacyMode
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -682,6 +689,7 @@
         public bool HideDownloadStats { get; set; }
         public bool BurnAfterDownload { get; set; }
         public bool AllowExtensionRequests { get; set; }
+        public bool PrivacyMode { get; set; }
     }
 }
 

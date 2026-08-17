@@ -136,6 +136,11 @@ VAPID auth via `Lib.Net.Http.WebPush`, subscribe/unsubscribe/vapid-key endpoints
 `sw.js` push + notificationclick handlers, opt-in button on the notification center,
 and a `DownloadNotificationJob` push trigger (mirrors the email + in-app notification).
 
+Tier 5 batch 1, 2026-08-17: `#187` per-delivery privacy mode — `Delivery.PrivacyMode` toggle
+at upload: no DownloadTracking write, no analytics event, count hidden on the download page
+("Privacy mode: no tracking" badge). Max-downloads/burn enforcement still works via the
+internal counter; expiry/password/OTP gates unchanged.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

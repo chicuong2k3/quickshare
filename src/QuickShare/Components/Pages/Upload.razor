@@ -172,6 +172,15 @@
                     <span class="otp-hint">@Loc["upload_allow_requests_hint"]</span>
                 </div>
 
+                @* Privacy mode (issue #187) — no tracking, no analytics, no visible counts *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-privacy" />
+                        <span>@Loc["upload_privacy_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_privacy_hint"]</span>
+                </div>
+
                 @* Metadata strip (issue #170) — privacy-first, on by default *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

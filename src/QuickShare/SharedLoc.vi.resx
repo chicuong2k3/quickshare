@@ -766,6 +766,9 @@
   <data name="upload_burn_hint" xml:space="preserve"><value>Liên kết chỉ dùng một lần rồi hết hạn. Phù hợp cho file nhạy cảm.</value></data>
   <data name="upload_allow_requests_label" xml:space="preserve"><value>Cho phép yêu cầu gia hạn</value></data>
   <data name="upload_allow_requests_hint" xml:space="preserve"><value>Người nhận có thể yêu cầu bạn gia hạn liên kết sau khi hết hạn.</value></data>
+  <data name="upload_privacy_label" xml:space="preserve"><value>Chế độ riêng tư</value></data>
+  <data name="upload_privacy_hint" xml:space="preserve"><value>Không theo dõi lượt tải, không phân tích, không hiển thị số lượt.</value></data>
+  <data name="dl_privacy_badge" xml:space="preserve"><value>Chế độ riêng tư: không theo dõi</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Xoá metadata ảnh (vị trí, máy ảnh)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Gỡ tag GPS/máy ảnh/thiết bị khỏi ảnh. Bật sẵn theo mặc định.</value></data>
   <data name="upload_compress_label" xml:space="preserve"><value>Nén ảnh lớn</value></data>
