@@ -62,6 +62,7 @@ browser download needed.
 | Trust static pages (security.txt, changelog, roadmap) | `PageCoverageTests` |
 | SEO + trust (sitemap, robots, compare, why-private) | `PageCoverageTests` |
 | Rate-limit headers + help center | `PageCoverageTests` |
+| Rate limiting escalating backoff (#52) | `RateLimitingMiddlewareTests` |
 | CSV export + feedback | `FeedbackExportTests` |
 | OTP brute-force lockout | `OtpLockoutTests` |
 | Share password (download gate) | `DeliveryPasswordTests` |

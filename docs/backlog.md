@@ -26,7 +26,7 @@ New here? Start at your role's entry point:
 
 | Tier | Meaning | State |
 |---|---|---|
-| Tier 1 | Foundation / survival risk | **9/10 done** — only `#52` rate limiting open |
+| Tier 1 | Foundation / survival risk | **10/10 done** (08-17) |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
@@ -37,16 +37,14 @@ Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded i
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
 verified directly.
 
-> ⚠️ Stale as of 2026-08-16: `#52` (rate limiting) is **committed and wired** in
-> `Program.cs`, and the whole Tier 2 batch (#53, #82, #121, #148, #149, #175) is
-> **implemented but uncommitted** in the working tree. Current implemented-and-testable
-> list: [`docs/TESTABLE.md`](TESTABLE.md).
+> ✅ Resolved 2026-08-17: `#52` (rate limiting) — base middleware + escalating backoff
+> (60s → 5min → 1h lockout after repeated violations) now committed. Tier 1 fully done.
 
 ## 3. Tier 1 — Foundation (do-first)
 
 | # | Item | Status |
 |---|---|---|
-| #52 | Rate limiting + abuse protection | **OPEN** (last unblocker) |
+| #52 | Rate limiting + abuse protection | DONE 08-17 (escalating backoff on top of existing middleware) |
 | #76 | Capture sender email on anonymous upload | DONE 08-15 |
 | #93 | Legal pages ToS + Privacy (+ #230 PDPD) | DONE 08-14 |
 | #10 | Enforce monthly quota (was advertised-only) | DONE 08-15 |
@@ -141,7 +139,7 @@ Where a design/spec/plan already exists, read it before implementing.
 
 ## 11. Review checklist
 
-- [ ] Tier 1: implement `#52` rate limiting → Tier 1 fully done
+- [x] Tier 1: implement `#52` rate limiting → Tier 1 fully done (08-17)
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
