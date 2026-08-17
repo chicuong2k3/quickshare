@@ -18,7 +18,7 @@ public sealed class ToggleFavoriteEndpoint : EndpointWithoutRequest<ToggleFavori
     public override async Task HandleAsync(CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<ToggleFavoriteResponse>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<ToggleFavoriteResponse>>(
             new ToggleFavoriteCommand(id), ct);
 
         if (result.IsSuccess(out var value))

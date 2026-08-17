@@ -21,7 +21,7 @@ public sealed class ListReportsEndpoint : EndpointWithoutRequest
         }
 
         var db = Resolve<AppDbContext>();
-        var reports = await Resolve<IMessageBus>().InvokeAsync<List<ReportListItem>>(new ListReportsQuery(), ct);
+        var reports = await Resolve<IMediator>().Send<List<ReportListItem>>(new ListReportsQuery(), ct);
 
         await Send.OkAsync(reports, ct);
     }

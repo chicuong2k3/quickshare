@@ -49,7 +49,7 @@ public sealed class VerifyOtpEndpoint : Endpoint<VerifyOtpRequest>
             await Send.StringAsync(body, StatusCodes.Status428PreconditionRequired, MediaTypes.Json, ct);
             return;
         }
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<VerifyOtpResponse>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<VerifyOtpResponse>>(
             new VerifyOtpCommand(shareCode, req.Otp), ct);
 
         if (result.IsSuccess(out var v))

@@ -3,7 +3,7 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.Revoke;
 
-public record RevokeDeliveryCommand(Guid DeliveryId);
+public record RevokeDeliveryCommand(Guid DeliveryId) : IRequest<Result>;
 
 /// <summary>
 /// Kills a live link before its expiry (issue #322). The row stays so the sender's
@@ -11,14 +11,18 @@ public record RevokeDeliveryCommand(Guid DeliveryId);
 /// </summary>
 public sealed class RevokeDeliveryHandler(
     IStorageProvider storage,
-    ILogger<RevokeDeliveryHandler> logger)
+    ILogger<RevokeDeliveryHandler> logger,
+    AppDbContext db,
+    IHttpContextAccessor http,
+    CacheService cache)
+    : IRequestHandler<RevokeDeliveryCommand, Result>
 {
-    public async Task<Result> Handle(RevokeDeliveryCommand cmd, AppDbContext db, IHttpContextAccessor http, CacheService cache, CancellationToken ct)
+    public async ValueTask<Result> Handle(RevokeDeliveryCommand cmd, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -30,7 +34,7 @@ public sealed class RevokeDeliveryHandler(
         {
             try
             {
-                await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -40,8 +44,8 @@ public sealed class RevokeDeliveryHandler(
 
         delivery.Status = DeliveryStatus.Revoked;
         delivery.StoragePath = null;
-        await db.SaveChangesAsync(ct);
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }

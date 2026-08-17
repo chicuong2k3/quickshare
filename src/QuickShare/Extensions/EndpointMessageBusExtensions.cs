@@ -6,7 +6,7 @@ public static class EndpointMessageBusExtensions
 {
     public static async Task SendResultOkAsync<TRequest, TResponse, TValue>(
         this Endpoint<TRequest, TResponse> ep,
-        Task<Result<TValue>> resultTask,
+        ValueTask<Result<TValue>> resultTask,
         CancellationToken ct)
         where TRequest : notnull
     {
@@ -25,7 +25,7 @@ public static class EndpointMessageBusExtensions
 
     public static async Task SendResultNoContentAsync<TRequest>(
         this Endpoint<TRequest> ep,
-        Task<Result> resultTask,
+        ValueTask<Result> resultTask,
         CancellationToken ct)
         where TRequest : notnull
     {

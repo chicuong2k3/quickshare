@@ -25,7 +25,7 @@ public sealed class DownloadDeliveryEndpoint : Endpoint<DownloadDeliveryRequest>
     {
         var shareCode = Route<string>("ShareCode")!;
         var query = new DownloadDeliveryQuery(shareCode, req.Password, req.Otp);
-        await Resolve<IMessageBus>().InvokeAsync(query, ct);
+        await Resolve<IMediator>().Send(query, ct);
     }
 }
 

@@ -2,26 +2,25 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.Favorite;
 
-public record ToggleFavoriteCommand(Guid DeliveryId);
+public record ToggleFavoriteCommand(Guid DeliveryId) : IRequest<Result<ToggleFavoriteResponse>>;
 
-public sealed class ToggleFavoriteHandler
+public sealed class ToggleFavoriteHandler(AppDbContext db, IHttpContextAccessor http)
+    : IRequestHandler<ToggleFavoriteCommand, Result<ToggleFavoriteResponse>>
 {
-    public async Task<Result<ToggleFavoriteResponse>> Handle(
+    public async ValueTask<Result<ToggleFavoriteResponse>> Handle(
         ToggleFavoriteCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure<ToggleFavoriteResponse>(new LightResults.Error(ErrorCodes.NotFound));
 
         delivery.IsFavorite = !delivery.IsFavorite;
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new ToggleFavoriteResponse(delivery.IsFavorite));
     }

@@ -39,7 +39,7 @@ protected override async Task OnInitializedAsync()
     var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
     if (hxHeader != "true") return; // shell render — show skeleton, no DB calls
 
-    // ... data loading (DB queries, Bus.InvokeAsync, etc.) ...
+    // ... data loading (DB queries, IMediator.Send, etc.) ...
 }
 ```
 
@@ -151,7 +151,7 @@ protected override async Task OnInitializedAsync()
 ### FusionCache (Data-Layer Caching)
 
 - **All read-heavy data paths MUST use `CacheService` or `StaticCache.Instance`** — no direct DB queries without caching.
-- `CacheService` (via DI) for Wolverine handlers/endpoints. `StaticCache.Instance` for static classes and Razor inline blocks.
+- `CacheService` (via DI) for Mediator handlers/endpoints. `StaticCache.Instance` for static classes and Razor inline blocks.
 - **TTL guidelines:**
   - Download info: 30s (download count changes frequently)
   - File/folder lists: 15–30s (user-visible mutations)
@@ -165,7 +165,7 @@ protected override async Task OnInitializedAsync()
 
 - **Recurring maintenance jobs use Hangfire, not hand-rolled `BackgroundService` loops.** Register them in `Infrastructure/Jobs/HangfireJobs.cs` with a stable job ID + cron. Each job class exposes one public entry method annotated `[DisableConcurrentExecution(timeoutInSeconds: 0)]` and `[AutomaticRetry(Attempts = 0)]`.
 - **The Hangfire dashboard (`/hangfire`) MUST stay behind `AdminDashboardAuthorizationFilter`** — it is not under the ASP.NET Core auth pipeline. Do not remove or weaken the filter.
-- **Wolverine stays as the request/response mediator + transactional outbox.** Hangfire handles recurring/poll jobs only; do not move request/response dispatch onto Hangfire.
+- **Mediator (martinothamar/Mediator) is the in-process request/response dispatcher** — source-generated `IRequestHandler` implementations, registered scoped (`AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)` in `Program.cs`). Endpoints dispatch via `Resolve<IMediator>().Send<T>(cmd, ct)`. No durable messaging — background/polling jobs stay on Hangfire; do not reintroduce an outbox.
 - **Gate all Hangfire wiring on `!useInMemoryDb`** so the in-memory/SQLite test factories never boot a Hangfire server or Postgres storage.
 
 @RTK.md

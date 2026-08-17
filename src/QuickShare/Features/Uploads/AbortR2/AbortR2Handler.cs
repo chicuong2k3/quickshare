@@ -4,21 +4,23 @@ using QuickShare.Features.Uploads.Shared;
 
 namespace QuickShare.Features.Uploads.AbortR2;
 
-public record AbortR2Command(Guid DeliveryId, string UploadId, string ObjectKey);
+public record AbortR2Command(Guid DeliveryId, string UploadId, string ObjectKey) : IRequest<Result>;
 
 public sealed class AbortR2Handler(
     IStorageProvider storage,
     IHttpContextAccessor httpContextAccessor,
-    ILogger<AbortR2Handler> logger)
+    ILogger<AbortR2Handler> logger,
+    AppDbContext db)
+    : IRequestHandler<AbortR2Command, Result>
 {
-    public async Task<Result> Handle(AbortR2Command cmd, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result> Handle(AbortR2Command cmd, CancellationToken cancellationToken)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, cancellationToken);
 
         // Only the session's owner may abort it, and only with matching ids —
         // otherwise anyone who learns a DeliveryId could kill an in-progress upload.
         // Mismatch is a silent no-op: abort is best-effort and this avoids probing.
-        var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);
+        var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], cancellationToken);
         if (session is null ||
             session.Status != UploadSessionStatus.InProgress ||
             session.R2UploadId != cmd.UploadId ||
@@ -30,7 +32,7 @@ public sealed class AbortR2Handler(
 
         try
         {
-            await storage.AbortR2MultipartUploadAsync(cmd.UploadId, session.StoragePath, ct);
+            await storage.AbortR2MultipartUploadAsync(cmd.UploadId, session.StoragePath, cancellationToken);
         }
         catch (R2StorageException ex)
         {
@@ -39,7 +41,7 @@ public sealed class AbortR2Handler(
         }
 
         db.UploadSessions.Remove(session);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

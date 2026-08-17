@@ -3,7 +3,7 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Downloads.Info;
 
-public record DownloadInfoQuery(string ShareCode);
+public record DownloadInfoQuery(string ShareCode) : IRequest<Result<DownloadInfoResponse>>;
 
 public record DownloadInfoResponse(
     string FileName,
@@ -24,9 +24,10 @@ public record DownloadInfoResponse(
     bool BurnAfterDownload
 );
 
-public sealed class DownloadInfoHandler
+public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
+    : IRequestHandler<DownloadInfoQuery, Result<DownloadInfoResponse>>
 {
-    public async Task<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, AppDbContext db, CacheService cache, CancellationToken ct)
+    public async ValueTask<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, CancellationToken cancellationToken)
     {
         return await cache.GetOrSetAsync(
             $"download:info:{query.ShareCode}",
@@ -86,7 +87,7 @@ public sealed class DownloadInfoHandler
                 ));
             },
             duration: TimeSpan.FromSeconds(30),
-            token: ct
+            token: cancellationToken
         );
     }
 }

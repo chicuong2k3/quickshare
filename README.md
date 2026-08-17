@@ -6,7 +6,7 @@ Recipients open the link and download; no account, no app.
 
 ## Stack
 
-.NET 10 · FastEndpoints · Blazor Static SSR + Htmxor · Wolverine (inbox/outbox) · EF Core/Npgsql
+.NET 10 · FastEndpoints · Blazor Static SSR + Htmxor · Mediator (martinothamar/Mediator) · EF Core/Npgsql
 · PostgreSQL · Cloudflare R2 · PayOS (VN payments) · TypeScript · DAUB design system
 
 ## Quick start

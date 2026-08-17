@@ -2,7 +2,7 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Analytics.Dashboard;
 
-public record AnalyticsDashboardQuery(DateOnly? From = null, DateOnly? To = null);
+public record AnalyticsDashboardQuery(DateOnly? From = null, DateOnly? To = null) : IRequest<AnalyticsDashboardResponse>;
 
 public sealed record DailyActiveUsersRow(DateOnly Day, int Count);
 
@@ -22,9 +22,10 @@ public sealed record AnalyticsDashboardResponse(
 /// Founder dashboard aggregates (issue #24): DAU, funnel, top files, geo spread.
 /// Anonymous by design — DAU counts distinct qs_visitor cookie ids, never users.
 /// </summary>
-public sealed class AnalyticsDashboardHandler
+public sealed class AnalyticsDashboardHandler(AppDbContext db, CacheService cache)
+    : IRequestHandler<AnalyticsDashboardQuery, AnalyticsDashboardResponse>
 {
-    public async Task<AnalyticsDashboardResponse> Handle(AnalyticsDashboardQuery query, AppDbContext db, CacheService cache, CancellationToken ct)
+    public async ValueTask<AnalyticsDashboardResponse> Handle(AnalyticsDashboardQuery query, CancellationToken cancellationToken)
     {
         var to = query.To ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var from = query.From ?? to.AddDays(-29);
@@ -79,6 +80,6 @@ public sealed class AnalyticsDashboardHandler
                     geo);
             },
             duration: TimeSpan.FromSeconds(30),
-            token: ct);
+            token: cancellationToken);
     }
 }

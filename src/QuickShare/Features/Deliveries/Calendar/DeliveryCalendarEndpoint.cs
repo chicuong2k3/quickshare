@@ -17,7 +17,7 @@ public sealed class DeliveryCalendarEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var shareCode = Route<string>("ShareCode")!;
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<string>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<string>>(
             new DeliveryCalendarQuery(shareCode), ct);
 
         if (result.IsSuccess(out var ics))

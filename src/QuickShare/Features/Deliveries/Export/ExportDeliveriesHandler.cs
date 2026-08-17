@@ -4,22 +4,23 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.Export;
 
-public record ExportDeliveriesQuery(int Days);
+public record ExportDeliveriesQuery(int Days) : IRequest<Result<string>>;
 
 /// <summary>
 /// CSV export of a sender's download activity (issue #74). Pro/Studio only —
 /// download tracking is the Pro-scoped surface. IPs are SHA-256-hashed and
 /// truncated so the export is a reporting tool, not a deanonymization vector.
 /// </summary>
-public sealed class ExportDeliveriesHandler
+public sealed class ExportDeliveriesHandler(AppDbContext db, IHttpContextAccessor http)
+    : IRequestHandler<ExportDeliveriesQuery, Result<string>>
 {
     private const int DefaultDays = 30;
     private const int MaxDays = 365;
     private const int IpHashChars = 12;
 
-    public async Task<Result<string>> Handle(ExportDeliveriesQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async ValueTask<Result<string>> Handle(ExportDeliveriesQuery query, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         if (user.Plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
             return Result.Failure<string>(new LightResults.Error(ErrorCodes.RequiresPaidPlan));
@@ -33,7 +34,7 @@ public sealed class ExportDeliveriesHandler
             where d.SenderId == user.Id && t.DownloadedAt >= cutoff
             orderby t.DownloadedAt descending
             select new { d.ShareCode, d.FileName, t.DownloadedAt, t.IpAddress }
-        ).AsNoTracking().ToListAsync(ct);
+        ).AsNoTracking().ToListAsync(cancellationToken);
 
         var csv = new StringBuilder();
         csv.AppendLine("ShareCode,FileName,DownloadedAt,IpHash");

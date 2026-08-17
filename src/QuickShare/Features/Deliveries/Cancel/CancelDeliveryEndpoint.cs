@@ -16,7 +16,7 @@ public sealed class CancelDeliveryEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(new CancelDeliveryCommand(id), ct);
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(new CancelDeliveryCommand(id), ct);
 
         if (result.IsSuccess())
             await Send.OkAsync(cancellation: ct);

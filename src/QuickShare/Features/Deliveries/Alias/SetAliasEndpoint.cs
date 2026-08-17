@@ -16,7 +16,7 @@ public sealed class SetAliasEndpoint : Endpoint<SetAliasRequest>
     public override async Task HandleAsync(SetAliasRequest req, CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(
             new SetAliasCommand(id, req.Alias), ct);
 
         if (result.IsSuccess())

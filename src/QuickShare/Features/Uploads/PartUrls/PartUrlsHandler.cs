@@ -2,15 +2,19 @@ using LightResults;
 
 namespace QuickShare.Features.Uploads.PartUrls;
 
-public record PartUrlsCommand(Guid DeliveryId, string UploadId, IReadOnlyList<int> PartNumbers);
+public record PartUrlsCommand(Guid DeliveryId, string UploadId, IReadOnlyList<int> PartNumbers) : IRequest<Result<PartUrlsResponse>>;
 
 public record PartUrlsResponse(IReadOnlyList<R2PartUrl> Parts);
 
-public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+public sealed class PartUrlsHandler(
+    IStorageProvider storage,
+    IHttpContextAccessor httpContextAccessor,
+    AppDbContext db)
+    : IRequestHandler<PartUrlsCommand, Result<PartUrlsResponse>>
 {
-    public async Task<Result<PartUrlsResponse>> Handle(PartUrlsCommand cmd, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<PartUrlsResponse>> Handle(PartUrlsCommand cmd, CancellationToken cancellationToken)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, cancellationToken);
         var senderId = user?.Id;
 
         var session = await db.UploadSessions
@@ -19,7 +23,7 @@ public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccess
                 s.Id == cmd.DeliveryId &&
                 s.SenderId == senderId &&
                 s.R2UploadId == cmd.UploadId &&
-                s.Status == UploadSessionStatus.InProgress, ct);
+                s.Status == UploadSessionStatus.InProgress, cancellationToken);
 
         if (session is null || string.IsNullOrEmpty(session.StoragePath))
             return Result.Failure<PartUrlsResponse>(new LightResults.Error("No matching in-progress upload session"));
@@ -29,7 +33,7 @@ public sealed class PartUrlsHandler(IStorageProvider storage, IHttpContextAccess
 
         // Presigned URL generation is local (no network) — an exception here is a bug
         // and must surface to the global exception handler, not be masked as an R2 failure.
-        var parts = await storage.GenerateUploadPartUrlsAsync(cmd.UploadId, session.StoragePath, cmd.PartNumbers, ct);
+        var parts = await storage.GenerateUploadPartUrlsAsync(cmd.UploadId, session.StoragePath, cmd.PartNumbers, cancellationToken);
 
         return Result.Success(new PartUrlsResponse(parts));
     }

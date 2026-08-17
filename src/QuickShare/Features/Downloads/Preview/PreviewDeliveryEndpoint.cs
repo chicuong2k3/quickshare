@@ -20,7 +20,7 @@ public sealed class PreviewDeliveryEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var shareCode = Route<string>("ShareCode")!;
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<Uri>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<Uri>>(
             new PreviewDeliveryQuery(shareCode), ct);
 
         if (result.IsSuccess(out var url))

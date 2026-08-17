@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using QuickShare.Infrastructure.FeatureFlags;
 
 namespace QuickShare.Features.Feedback;
@@ -58,18 +58,18 @@ public class SubmitFeedbackRequest
     public string? Page { get; set; }
 }
 
-public record ListFeedbackQuery();
+public record ListFeedbackQuery() : IRequest<List<FeedbackListItem>>;
 
-public sealed class ListFeedbackHandler
+public sealed class ListFeedbackHandler(AppDbContext db) : IRequestHandler<ListFeedbackQuery, List<FeedbackListItem>>
 {
-    public async Task<List<FeedbackListItem>> Handle(ListFeedbackQuery _, AppDbContext db, CancellationToken ct)
+    public async ValueTask<List<FeedbackListItem>> Handle(ListFeedbackQuery _, CancellationToken cancellationToken)
     {
         return await db.Feedbacks
             .AsNoTracking()
             .OrderByDescending(f => f.CreatedAt)
             .Take(100)
             .Select(f => new FeedbackListItem(f.Id, f.Sentiment, f.Message, f.Page, f.CreatedAt))
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
     }
 }
 
@@ -90,7 +90,7 @@ public sealed class ListFeedbackEndpoint : EndpointWithoutRequest
             return;
         }
 
-        var feedback = await Resolve<IMessageBus>().InvokeAsync<List<FeedbackListItem>>(new ListFeedbackQuery(), ct);
+        var feedback = await Resolve<IMediator>().Send<List<FeedbackListItem>>(new ListFeedbackQuery(), ct);
         await Send.OkAsync(feedback, ct);
     }
 }

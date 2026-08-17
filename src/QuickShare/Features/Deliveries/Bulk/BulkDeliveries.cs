@@ -1,13 +1,14 @@
-using LightResults;
+﻿using LightResults;
 using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.Bulk;
 
-public record BulkDeliveriesCommand(Guid[] Ids, string Action, int Days);
+public record BulkDeliveriesCommand(Guid[] Ids, string Action, int Days) : IRequest<Result<BulkDeliveriesResponse>>;
 
 public record BulkDeliveriesResponse(int Affected, int Skipped);
 
-public sealed class BulkDeliveriesHandler
+public sealed class BulkDeliveriesHandler(AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<BulkDeliveriesCommand, Result<BulkDeliveriesResponse>>
 {
     public const string ActionExtend = "extend";
     public const string ActionTrash = "trash";
@@ -16,23 +17,20 @@ public sealed class BulkDeliveriesHandler
     private const int FreeExtendWindowHours = 24;
     private const int ExpiredGraceHours = 72;
 
-    public async Task<Result<BulkDeliveriesResponse>> Handle(
+    public async ValueTask<Result<BulkDeliveriesResponse>> Handle(
         BulkDeliveriesCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CacheService cache,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var ids = cmd.Ids.Distinct().Take(500).ToArray();
         if (ids.Length == 0)
             return Result.Failure<BulkDeliveriesResponse>(new LightResults.Error(ErrorCodes.NotFound));
 
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
         var plan = user.Plan;
 
         var deliveries = await db.Deliveries
             .Where(d => ids.Contains(d.Id) && d.SenderId == user.Id)
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
 
         if (deliveries.Count == 0)
             return Result.Failure<BulkDeliveriesResponse>(new LightResults.Error(ErrorCodes.NotFound));
@@ -101,10 +99,10 @@ public sealed class BulkDeliveriesHandler
                 return Result.Failure<BulkDeliveriesResponse>(new LightResults.Error(ErrorCodes.BadRequest));
         }
 
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         foreach (var d in deliveries)
-            await cache.RemoveAsync($"download:info:{d.ShareCode}", ct);
+            await cache.RemoveAsync($"download:info:{d.ShareCode}", cancellationToken);
 
         return Result.Success(new BulkDeliveriesResponse(affected, skipped));
     }
@@ -125,7 +123,7 @@ public sealed class BulkDeliveriesEndpoint : Endpoint<BulkDeliveriesRequest>
 
     public override async Task HandleAsync(BulkDeliveriesRequest req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<Result<BulkDeliveriesResponse>>(
+        var result = await Resolve<IMediator>().Send<Result<BulkDeliveriesResponse>>(
             new BulkDeliveriesCommand(req.Ids ?? [], req.Action ?? string.Empty, req.Days), ct);
 
         if (result.IsSuccess(out var response))

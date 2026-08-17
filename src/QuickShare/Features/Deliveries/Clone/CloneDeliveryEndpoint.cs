@@ -16,7 +16,7 @@ public sealed class CloneDeliveryEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<CloneDeliveryResponse>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<CloneDeliveryResponse>>(
             new CloneDeliveryCommand(id), ct);
 
         if (result.IsSuccess(out var value))

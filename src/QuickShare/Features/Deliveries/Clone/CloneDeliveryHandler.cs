@@ -2,7 +2,7 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.Clone;
 
-public record CloneDeliveryCommand(Guid DeliveryId);
+public record CloneDeliveryCommand(Guid DeliveryId) : IRequest<Result<CloneDeliveryResponse>>;
 
 public record CloneDeliveryResponse(Guid Id, string ShareCode);
 
@@ -12,19 +12,18 @@ public record CloneDeliveryResponse(Guid Id, string ShareCode);
 /// The clone gets the same expiry window the original had at creation, clamped to the
 /// sender's current plan maximum.
 /// </summary>
-public sealed class CloneDeliveryHandler(IStorageProvider storage)
+public sealed class CloneDeliveryHandler(IStorageProvider storage, AppDbContext db, IHttpContextAccessor http)
+    : IRequestHandler<CloneDeliveryCommand, Result<CloneDeliveryResponse>>
 {
-    public async Task<Result<CloneDeliveryResponse>> Handle(
+    public async ValueTask<Result<CloneDeliveryResponse>> Handle(
         CloneDeliveryCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure<CloneDeliveryResponse>(new LightResults.Error(ErrorCodes.NotFound));
@@ -36,7 +35,7 @@ public sealed class CloneDeliveryHandler(IStorageProvider storage)
         var newId = Guid.CreateVersion7();
         // Same key shape InitR2MultipartUploadAsync uses.
         var newKey = R2ObjectKey.For(Guid.Empty, newId, delivery.FileName);
-        await storage.CopyObjectAsync(delivery.StoragePath, newKey, ct);
+        await storage.CopyObjectAsync(delivery.StoragePath, newKey, cancellationToken);
 
         var now = DateTime.UtcNow;
         DateTime? expiresAt = null;
@@ -65,7 +64,7 @@ public sealed class CloneDeliveryHandler(IStorageProvider storage)
         };
 
         db.Deliveries.Add(clone);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new CloneDeliveryResponse(clone.Id, clone.ShareCode));
     }

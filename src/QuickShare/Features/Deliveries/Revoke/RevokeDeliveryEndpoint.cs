@@ -16,7 +16,7 @@ public sealed class RevokeDeliveryEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(
             new RevokeDeliveryCommand(id), ct);
 
         if (result.IsSuccess())

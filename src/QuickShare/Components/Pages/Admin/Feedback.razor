@@ -6,7 +6,7 @@
 @using QuickShare.Infrastructure.FeatureFlags
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IHttpContextAccessor HttpContextAccessor
-@inject IMessageBus Bus
+@inject IMediator Bus
 @inject IOptions<AdminOptions> AdminOpt
 
 <PageTitle>@Loc["admin_feedback_page_title"]</PageTitle>
@@ -100,6 +100,6 @@ else
             return;
         }
 
-        feedback = await Bus.InvokeAsync<List<FeedbackListItem>>(new ListFeedbackQuery(), CancellationToken.None);
+        feedback = await Bus.Send<List<FeedbackListItem>>(new ListFeedbackQuery(), CancellationToken.None);
     }
 }

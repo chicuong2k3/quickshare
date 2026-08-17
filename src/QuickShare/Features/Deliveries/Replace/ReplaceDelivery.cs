@@ -1,30 +1,33 @@
-using LightResults;
+﻿using LightResults;
 using QuickShare.Features.Uploads.Shared;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Deliveries.Replace;
 
-public record ReplaceDeliveryStartCommand(Guid DeliveryId, string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers);
+public record ReplaceDeliveryStartCommand(Guid DeliveryId, string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers)
+    : IRequest<Result<ReplaceDeliveryStartResponse>>;
 
 public record ReplaceDeliveryStartResponse(Guid SessionId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
 
-public record ReplaceDeliveryCommitCommand(Guid DeliveryId, Guid SessionId, string UploadId, string ObjectKey, IReadOnlyList<R2PartEtag> Parts, string? Sha256);
+public record ReplaceDeliveryCommitCommand(Guid DeliveryId, Guid SessionId, string UploadId, string ObjectKey, IReadOnlyList<R2PartEtag> Parts, string? Sha256)
+    : IRequest<Result>;
 
 /// <summary>
 /// "Replace file, keep link" (issue #72): re-uploads a file under an existing
 /// delivery so the share link, password, expiry, branding and download cap all
 /// stay unchanged; only the bytes (and size/hash/download-count) change.
 /// </summary>
-public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpContextAccessor http)
+public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpContextAccessor http, AppDbContext db)
+    : IRequestHandler<ReplaceDeliveryStartCommand, Result<ReplaceDeliveryStartResponse>>
 {
-    public async Task<Result<ReplaceDeliveryStartResponse>> Handle(ReplaceDeliveryStartCommand cmd, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<ReplaceDeliveryStartResponse>> Handle(ReplaceDeliveryStartCommand cmd, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
         var plan = user.Plan;
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure<ReplaceDeliveryStartResponse>(new LightResults.Error(ErrorCodes.NotFound));
@@ -42,7 +45,7 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
         R2InitResult initResult;
         try
         {
-            initResult = await storage.InitR2MultipartUploadAsync(sessionId, cmd.FileName, ct);
+            initResult = await storage.InitR2MultipartUploadAsync(sessionId, cmd.FileName, cancellationToken);
         }
         catch (R2StorageException)
         {
@@ -50,7 +53,7 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
         }
 
         var partUrls = await storage.GenerateUploadPartUrlsAsync(
-            initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, ct);
+            initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, cancellationToken);
 
         var session = new UploadSession
         {
@@ -67,21 +70,22 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
         };
 
         db.UploadSessions.Add(session);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new ReplaceDeliveryStartResponse(
             sessionId, initResult.UploadId, initResult.ObjectKey, partUrls));
     }
 }
 
-public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogger<ReplaceDeliveryCommitHandler> logger)
+public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogger<ReplaceDeliveryCommitHandler> logger, AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<ReplaceDeliveryCommitCommand, Result>
 {
-    public async Task<Result> Handle(ReplaceDeliveryCommitCommand cmd, AppDbContext db, IHttpContextAccessor http, CacheService cache, CancellationToken ct)
+    public async ValueTask<Result> Handle(ReplaceDeliveryCommitCommand cmd, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -91,7 +95,7 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
                 && s.ReplaceDeliveryId == cmd.DeliveryId
                 && s.Status == UploadSessionStatus.InProgress
                 && s.R2UploadId == cmd.UploadId
-                && s.StoragePath == cmd.ObjectKey, ct);
+                && s.StoragePath == cmd.ObjectKey, cancellationToken);
 
         if (session is null)
             return Result.Failure(new LightResults.Error("No matching in-progress replace session"));
@@ -103,7 +107,7 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
         CompletionResult completion;
         try
         {
-            completion = await storage.CompleteR2MultipartUploadAsync(cmd.UploadId, cmd.ObjectKey, cmd.Parts, ct);
+            completion = await storage.CompleteR2MultipartUploadAsync(cmd.UploadId, cmd.ObjectKey, cmd.Parts, cancellationToken);
         }
         catch (R2StorageException ex)
         {
@@ -119,7 +123,7 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
         {
             try
             {
-                await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -140,13 +144,13 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
                 .SetProperty(d => d.ChunkCount, cmd.Parts.Count)
                 .SetProperty(d => d.Sha256, string.IsNullOrEmpty(sha256) ? null : sha256)
                 .SetProperty(d => d.DownloadCount, 0)
-                .SetProperty(d => d.FirstDownloadedAt, (DateTime?)null), ct);
+                .SetProperty(d => d.FirstDownloadedAt, (DateTime?)null), cancellationToken);
 
         session.Status = UploadSessionStatus.Committed;
         session.R2UploadId = null;
 
-        await db.SaveChangesAsync(ct);
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }
@@ -168,7 +172,7 @@ public sealed class ReplaceDeliveryStartEndpoint : Endpoint<ReplaceDeliveryStart
     public override async Task HandleAsync(ReplaceDeliveryStartRequest req, CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<Result<ReplaceDeliveryStartResponse>>(
+        var result = await Resolve<IMediator>().Send<Result<ReplaceDeliveryStartResponse>>(
             new ReplaceDeliveryStartCommand(id, req.FileName, req.FileSize, req.ContentType, req.PartNumbers ?? []), ct);
 
         if (result.IsSuccess(out var response))
@@ -199,7 +203,7 @@ public sealed class ReplaceDeliveryCommitEndpoint : Endpoint<ReplaceDeliveryComm
     public override async Task HandleAsync(ReplaceDeliveryCommitRequest req, CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(
             new ReplaceDeliveryCommitCommand(id, req.SessionId, req.UploadId, req.ObjectKey, req.Parts ?? [], req.Sha256), ct);
 
         if (result.IsSuccess())

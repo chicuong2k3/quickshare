@@ -4,14 +4,15 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.Alias;
 
-public record SetAliasCommand(Guid DeliveryId, string? Alias);
+public record SetAliasCommand(Guid DeliveryId, string? Alias) : IRequest<Result>;
 
 /// <summary>
 /// Memorable per-share slug (issue #311): /d/my-project-2026 next to the generated code.
 /// Paid plans only; the alias is an addressing convenience, never a security boundary —
 /// password/OTP gates still apply on lookup.
 /// </summary>
-public sealed partial class SetAliasHandler
+public sealed partial class SetAliasHandler(AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<SetAliasCommand, Result>
 {
     [GeneratedRegex("^[a-z0-9][a-z0-9-]*[a-z0-9]$")]
     private static partial Regex AliasPattern();
@@ -24,20 +25,17 @@ public sealed partial class SetAliasHandler
         "support", "help", "download", "unsubscribe",
     ];
 
-    public async Task<Result> Handle(
+    public async ValueTask<Result> Handle(
         SetAliasCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CacheService cache,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         if (user.Plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
             return Result.Failure(new LightResults.Error(ErrorCodes.RequiresPaidPlan));
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -55,7 +53,7 @@ public sealed partial class SetAliasHandler
 
             var taken = await db.Deliveries
                 .AsNoTracking()
-                .AnyAsync(d => d.Alias == alias && d.Id != delivery.Id, ct);
+                .AnyAsync(d => d.Alias == alias && d.Id != delivery.Id, cancellationToken);
             if (taken)
                 return Result.Failure(new LightResults.Error(ErrorCodes.AliasTaken));
         }
@@ -63,7 +61,7 @@ public sealed partial class SetAliasHandler
         delivery.Alias = alias;
         try
         {
-            await db.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -71,7 +69,7 @@ public sealed partial class SetAliasHandler
             return Result.Failure(new LightResults.Error(ErrorCodes.AliasTaken));
         }
 
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }

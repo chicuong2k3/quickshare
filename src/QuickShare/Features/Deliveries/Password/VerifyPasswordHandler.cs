@@ -3,7 +3,7 @@ using QuickShare.Features.Deliveries.Otp;
 
 namespace QuickShare.Features.Deliveries.Password;
 
-public record VerifyPasswordCommand(string ShareCode, string Password);
+public record VerifyPasswordCommand(string ShareCode, string Password) : IRequest<Result<VerifyPasswordResponse>>;
 
 public record VerifyPasswordResponse(bool Valid);
 
@@ -12,14 +12,15 @@ public record VerifyPasswordResponse(bool Valid);
 /// lockout counter with the OTP gate — a delivery has one verification gate, so
 /// password and OTP failures both count toward the same escalating lockout.
 /// </summary>
-public sealed class VerifyPasswordHandler(OtpLockoutService lockout)
+public sealed class VerifyPasswordHandler(OtpLockoutService lockout, AppDbContext db)
+    : IRequestHandler<VerifyPasswordCommand, Result<VerifyPasswordResponse>>
 {
-    public async Task<Result<VerifyPasswordResponse>> Handle(VerifyPasswordCommand cmd, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<VerifyPasswordResponse>> Handle(VerifyPasswordCommand cmd, CancellationToken cancellationToken)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
             .ByCode(cmd.ShareCode)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (delivery is null)
             return Result.Failure<VerifyPasswordResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
@@ -32,11 +33,11 @@ public sealed class VerifyPasswordHandler(OtpLockoutService lockout)
 
         if (valid)
         {
-            await lockout.ResetAsync(db, delivery.Id, ct);
+            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
             return Result.Success(new VerifyPasswordResponse(true));
         }
 
-        await lockout.RecordFailureAsync(db, delivery.Id, ct);
+        await lockout.RecordFailureAsync(db, delivery.Id, cancellationToken);
         return Result.Failure<VerifyPasswordResponse>(new LightResults.Error("Wrong password."));
     }
 }

@@ -5,7 +5,7 @@
 @using QuickShare.Features.Deliveries.List
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
-@inject IMessageBus Bus
+@inject IMediator Bus
 @inject AppDbContext Db
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
@@ -621,7 +621,7 @@ else
                 .FirstOrDefaultAsync();
         }
 
-        var result = await Bus.InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(
+        var result = await Bus.Send<LightResults.Result<CursorPage<DeliveryItem>>>(
             new ListDeliveriesQuery(Cursor, Status: Status, Search: Search, FavoritesOnly: Favorite, DeletedOnly: DeletedOnly), CancellationToken.None);
 
         if (result.IsSuccess(out var page))

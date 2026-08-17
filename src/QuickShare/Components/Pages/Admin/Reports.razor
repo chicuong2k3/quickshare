@@ -6,7 +6,7 @@
 @using QuickShare.Infrastructure.FeatureFlags
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IHttpContextAccessor HttpContextAccessor
-@inject IMessageBus Bus
+@inject IMediator Bus
 @inject IOptions<AdminOptions> AdminOpt
 
 <PageTitle>@Loc["admin_reports_page_title"]</PageTitle>
@@ -119,6 +119,6 @@ else
             return;
         }
 
-        reports = await Bus.InvokeAsync<List<ReportListItem>>(new ListReportsQuery(), CancellationToken.None);
+        reports = await Bus.Send<List<ReportListItem>>(new ListReportsQuery(), CancellationToken.None);
     }
 }

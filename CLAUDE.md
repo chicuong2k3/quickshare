@@ -31,7 +31,7 @@ protected override async Task OnInitializedAsync()
     var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
     if (hxHeader != "true") return; // shell render — show skeleton, no DB calls
 
-    // ... data loading (DB queries, Bus.InvokeAsync, ...) ...
+    // ... data loading (DB queries, IMediator.Send, ...) ...
 }
 ```
 
@@ -80,7 +80,7 @@ protected override async Task OnInitializedAsync()
 
 ```
 src/QuickShare/
-├── Program.cs                # composition root: DI, middleware pipeline, auth, Wolverine, FastEndpoints
+├── Program.cs                # composition root: DI, middleware pipeline, auth, Mediator, FastEndpoints
 ├── GlobalUsings.cs           # namespace dùng toàn cục (Data, Entities, Infrastructure.Constants, .Storage…)
 ├── Components/
 │   ├── Layout/               # MainLayout, HtmxorLayout
@@ -90,7 +90,7 @@ src/QuickShare/
 │   ├── AppDbContext.cs
 │   ├── Entities/             # EF entities
 │   └── Migrations/
-├── Extensions/               # extension method (ClaimsPrincipal, IMessageBus, Result)
+├── Extensions/               # extension method (ClaimsPrincipal, IMediator, Result)
 ├── Features/<Tên>/<Action>/  # vertical slice — TOÀN BỘ code của 1 feature nằm ở đây
 │   └── vd: Uploads/StartR2/ → StartR2Endpoint.cs, StartR2Handler.cs, StartR2Validator.cs
 ├── Infrastructure/           # CHỈ chứa thứ dùng chung cho ≥2 feature
@@ -110,7 +110,7 @@ Làm theo thứ tự con người sẽ làm:
 
 1. **Đọc trước khi viết**: `Program.cs` (xem pipeline + DI đã có gì), 1 feature tương tự trong `Features/` để copy pattern — `Deliveries/Brand/` cho CRUD nhỏ, `Uploads/StartR2/` cho flow phức tạp — và entity liên quan trong `Data/Entities/`.
 2. **Cần entity mới?** Thêm class vào `Data/Entities/`, thêm `DbSet` vào `AppDbContext`, chạy `dotnet ef migrations add <Tên>` (output vào `Data/Migrations/`).
-3. **API endpoint**: tạo folder `Features/<Tên>/<Action>/` với tối đa 3 file: `<Action>Endpoint.cs` (FastEndpoints — auto-discover, KHÔNG cần đăng ký ở đâu), `<Action>Handler.cs` (Wolverine handler nhận command/query record — cũng auto-discover), `<Action>Validator.cs` (FluentValidation, chỉ khi có input). Tag endpoint bằng const trong `ApiTags`.
+3. **API endpoint**: tạo folder `Features/<Tên>/<Action>/` với tối đa 3 file: `<Action>Endpoint.cs` (FastEndpoints — auto-discover, KHÔNG cần đăng ký ở đâu), `<Action>Handler.cs` (Mediator handler nhận command/query record — cũng auto-discover), `<Action>Validator.cs` (FluentValidation, chỉ khi có input). Tag endpoint bằng const trong `ApiTags`.
 4. **Hằng số**: route, error code, limit, header… vào `Infrastructure/Constants/` — không hardcode.
 5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này và **hệ thị giác trong `DESIGN.md`** (xem mục Design System bên dưới). JS riêng của page vào `wwwroot/js/<tên>.js` và expose qua 1 object global (xem `download.js`). Chuỗi hiển thị cho người dùng vào `SharedLoc.{en,vi}.resx`, **không hardcode** — chuỗi mà JS cần thì truyền qua một block JSON trong page (xem `download-i18n`).
 6. **Service**: service chỉ 1 feature dùng → đặt ngay trong folder feature đó (vd `P2PQuotaService` nằm trong `Features/Shares/P2P/`). Chỉ khi ≥2 feature dùng chung mới đưa vào `Infrastructure/`. Đăng ký DI trong `Program.cs`.

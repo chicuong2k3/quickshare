@@ -9,7 +9,8 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload);
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload)
+    : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
 
@@ -21,7 +22,9 @@ public sealed class CommitR2Handler(
     SenderEmailRateLimiter senderEmailRateLimiter,
     IOptions<EmailOptions> emailOptions,
     AnalyticsService analytics,
-    ILogger<CommitR2Handler> logger)
+    ILogger<CommitR2Handler> logger,
+    AppDbContext db)
+    : IRequestHandler<CommitR2Command, Result<CommitR2Response>>
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
     private const long EncryptionOverheadSlack = 1024;
@@ -29,9 +32,9 @@ public sealed class CommitR2Handler(
 
     private readonly EmailOptions _emailOptions = emailOptions.Value;
 
-    public async Task<Result<CommitR2Response>> Handle(CommitR2Command cmd, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<CommitR2Response>> Handle(CommitR2Command cmd, CancellationToken cancellationToken)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, cancellationToken);
         var plan = user?.Plan ?? PlanTierLimits.Anonymous;
         var quota = user is null ? null : new QuotaService(db);
 
@@ -47,7 +50,7 @@ public sealed class CommitR2Handler(
 
         // The commit must match the session created by start-r2, for the same owner —
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
-        var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], ct);
+        var session = await db.UploadSessions.FindAsync([cmd.DeliveryId], cancellationToken);
         if (session is null ||
             session.Status != UploadSessionStatus.InProgress ||
             session.R2UploadId != cmd.UploadId ||
@@ -62,7 +65,7 @@ public sealed class CommitR2Handler(
         try
         {
             completionResult = await storage.CompleteR2MultipartUploadAsync(
-                cmd.UploadId, cmd.ObjectKey, cmd.Parts, ct);
+                cmd.UploadId, cmd.ObjectKey, cmd.Parts, cancellationToken);
         }
         catch (R2StorageException ex)
         {
@@ -80,7 +83,7 @@ public sealed class CommitR2Handler(
         var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
         if (maxFileSize.HasValue)
         {
-            var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, ct);
+            var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, cancellationToken);
             if (stored >= 0)
                 actualSize = stored;
 
@@ -88,7 +91,7 @@ public sealed class CommitR2Handler(
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(cmd.ObjectKey, ct);
+                    await storage.DeleteObjectsAsync(cmd.ObjectKey, cancellationToken);
                 }
                 catch { /* best-effort cleanup; the sweeper handles leftovers */ }
                 return Result.Failure<CommitR2Response>(new LightResults.Error(
@@ -99,12 +102,12 @@ public sealed class CommitR2Handler(
         // Monthly quota: check the actual committed size, then record on success.
         if (quota is not null)
         {
-            var check = await quota.CheckAsync(user!.Id, plan, actualSize, ct);
+            var check = await quota.CheckAsync(user!.Id, plan, actualSize, cancellationToken);
             if (check.IsExceeded)
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(cmd.ObjectKey, ct);
+                    await storage.DeleteObjectsAsync(cmd.ObjectKey, cancellationToken);
                 }
                 catch { /* best-effort cleanup; the sweeper handles leftovers */ }
                 return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.MonthlyQuotaExceeded));
@@ -166,20 +169,20 @@ public sealed class CommitR2Handler(
         session.R2UploadId = null;
 
         if (quota is not null)
-            await quota.RecordAsync(user!.Id, plan, actualSize, ct);
+            await quota.RecordAsync(user!.Id, plan, actualSize, cancellationToken);
 
         if (user is not null)
-            await ReferralService.ReleaseOnFirstUploadAsync(user, db, ct);
+            await ReferralService.ReleaseOnFirstUploadAsync(user, db, cancellationToken);
 
         db.Deliveries.Add(delivery);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         await analytics.RecordAsync(AnalyticsEvents.UploadCompleted,
-            new AnalyticsEventData(delivery.FileName, delivery.FileSize, delivery.ContentType, plan), ct);
+            new AnalyticsEventData(delivery.FileName, delivery.FileSize, delivery.ContentType, plan), cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
         {
-            await SendLinkEmailAsync(delivery, shareCode, ct);
+            await SendLinkEmailAsync(delivery, shareCode, cancellationToken);
         }
 
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
@@ -243,7 +246,7 @@ public sealed class CommitR2Handler(
     /// Emails the anonymous sender their share link, with a single-use confirm link and an
     /// unsubscribe link. Best-effort: a send failure or rate-limit hit must not fail the upload.
     /// </summary>
-    private async Task SendLinkEmailAsync(Delivery delivery, string shareCode, CancellationToken ct)
+    private async Task SendLinkEmailAsync(Delivery delivery, string shareCode, CancellationToken cancellationToken)
     {
         try
         {
@@ -274,7 +277,7 @@ public sealed class CommitR2Handler(
                 </div>
                 """;
 
-            await emailSender.SendAsync(delivery.SenderEmail!, "QuickShare", LinkEmailSubject, body, ct);
+            await emailSender.SendAsync(delivery.SenderEmail!, "QuickShare", LinkEmailSubject, body, cancellationToken);
             logger.LogInformation("Sent sender link email to {Email} for delivery {DeliveryId}", delivery.SenderEmail, delivery.Id);
         }
         catch (Exception ex)

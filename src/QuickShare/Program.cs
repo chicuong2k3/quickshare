@@ -25,9 +25,7 @@ using QuickShare.Infrastructure.Telemetry;
 using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
-using System.Net.Sockets;
 using System.Security.Claims;
-using Wolverine.ErrorHandling;
 using ZiggyCreatures.Caching.Fusion;
 
 
@@ -111,12 +109,6 @@ const string MissingConnectionStringError = "ConnectionStrings:DefaultConnection
 const int DatabaseKeepAliveSeconds = 30;
 const int DatabaseRetryAttemptCount = 5;
 var databaseMaxRetryDelay = TimeSpan.FromSeconds(10);
-var databaseRetrySchedule = new[]
-{
-    TimeSpan.FromSeconds(2),
-    TimeSpan.FromSeconds(5),
-    TimeSpan.FromSeconds(15)
-};
 
 var configuredConnectionString = builder.Configuration.GetConnectionString(DefaultConnectionName)
     ?? throw new InvalidOperationException(MissingConnectionStringError);
@@ -240,21 +232,12 @@ builder.Services.Configure<SecurityHeaderOptions>(builder.Configuration.GetSecti
 builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(AnalyticsOptions.Section));
 builder.Services.AddScoped<AnalyticsService>();
 
-builder.Host.UseWolverine(opts =>
+// ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
+builder.Services.AddMediator(options =>
 {
-    // In-memory DB (tests) runs Wolverine without durable Postgres persistence.
-    if (!useInMemoryDb)
-    {
-        opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
-
-        // Single-instance app: Solo avoids Balanced-mode leader election and the
-        // wolverine_nodes agent registry, so no stale-node StopAgent timeouts on health checks.
-        opts.Durability.Mode = DurabilityMode.Solo;
-        opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
-        opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
-        opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
-    }
-}, ExtensionDiscovery.ManualOnly);
+    options.Assemblies = [typeof(Program).Assembly];
+    options.ServiceLifetime = ServiceLifetime.Scoped;
+});
 
 // ── Hangfire background jobs — recurring maintenance + dashboard ──
 if (!useInMemoryDb)

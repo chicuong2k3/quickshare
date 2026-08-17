@@ -3,21 +3,19 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.Message;
 
-public record UpdateDeliveryMessageCommand(Guid DeliveryId, string? Message);
+public record UpdateDeliveryMessageCommand(Guid DeliveryId, string? Message) : IRequest<Result>;
 
-public sealed class UpdateDeliveryMessageHandler
+public sealed class UpdateDeliveryMessageHandler(AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<UpdateDeliveryMessageCommand, Result>
 {
-    public async Task<Result> Handle(
+    public async ValueTask<Result> Handle(
         UpdateDeliveryMessageCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CacheService cache,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -31,8 +29,8 @@ public sealed class UpdateDeliveryMessageHandler
 
         delivery.Message = normalized;
 
-        await db.SaveChangesAsync(ct);
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }

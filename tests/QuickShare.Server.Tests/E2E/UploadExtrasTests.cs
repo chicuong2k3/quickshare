@@ -106,8 +106,8 @@ public sealed class UploadExtrasTests : IClassFixture<TestWebAppFactory>
     private async Task<InfoResult?> InfoAsync(string shareCode)
     {
         using var scope = _factory.Services.CreateScope();
-        var bus = scope.ServiceProvider.GetRequiredService<Wolverine.IMessageBus>();
-        var result = await bus.InvokeAsync<LightResults.Result<QuickShare.Features.Downloads.Info.DownloadInfoResponse>>(
+        var bus = scope.ServiceProvider.GetRequiredService<Mediator.IMediator>();
+        var result = await bus.Send<LightResults.Result<QuickShare.Features.Downloads.Info.DownloadInfoResponse>>(
             new QuickShare.Features.Downloads.Info.DownloadInfoQuery(shareCode), CancellationToken.None);
         return result.IsSuccess(out var value) ? new InfoResult(value.ExpiresAt, value.Message) : null;
     }

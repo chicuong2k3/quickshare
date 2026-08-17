@@ -4,11 +4,11 @@
 
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
-| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Wolverine, Hangfire, EF Core, Npgsql, Htmxor, DAUB |
+| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Mediator, Hangfire, EF Core, Npgsql, Htmxor, DAUB |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 
-> **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMessageBus` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
+> **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMediator` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
 >
 > In Docker the app listens on `8080` (`ASPNETCORE_URLS=http://+:8080`) and runs as non-root `appuser`. See [Deployment — Dev (self-hosted runner)](deployment-dev.md).
 
@@ -47,11 +47,11 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
   - Password gate (if `HasPassword`)
   - Ad interstitial (free plan)
   - Download limit enforcement
-  - Called in-process via `IMessageBus` from `Download.razor` (no API endpoint)
+  - Called in-process via `IMediator` from `Download.razor` (no API endpoint)
 - **Download** (`DownloadDeliveryEndpoint` + `Handler`) — Stream file from storage to client, supports AES-GCM client-side decryption. All uploads are now AES-256-GCM encrypted by default (no toggle).
 
 ### Files (`Features/Files/`)
-- **List** — `ListFilesHandler` called via `IMessageBus` from `Files.razor` (in-process, no API endpoint)
+- **List** — `ListFilesHandler` called via `IMediator` from `Files.razor` (in-process, no API endpoint)
 - **Move** — `PATCH /api/files/{id}/folder` — drag-drop between folders (called from files.js)
 - **Download** — Direct file download by ID
 - `Shared/Errors.cs` — File-specific error types
@@ -63,8 +63,8 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | Create | POST | `/api/folders` | files.js |
 | Update | PUT | `/api/folders/{id}` | files.js |
 | Delete | DELETE | `/api/folders/{id}` | files.js |
-| List | — | (in-process) | `Files.razor` via `IMessageBus` → `ListFoldersHandler` |
-| GetInfo | — | (in-process) | `Files.razor` via `IMessageBus` → `GetFolderInfoHandler` |
+| List | — | (in-process) | `Files.razor` via `IMediator` → `ListFoldersHandler` |
+| GetInfo | — | (in-process) | `Files.razor` via `IMediator` → `GetFolderInfoHandler` |
 
 ### Deliveries (`Features/Deliveries/`)
 - **List** — `GET /api/deliveries` — user's delivery history
@@ -101,7 +101,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 - See [analytics-architecture.md](analytics-architecture.md)
 
 ### Users (`Features/Users/`)
-- **Profile** — `Account.razor` `<form method="post">` handler reads name/avatar, re-signs cookie. In-process via `IMessageBus` or `AppDbContext`.
+- **Profile** — `Account.razor` `<form method="post">` handler reads name/avatar, re-signs cookie. In-process via `IMediator` or `AppDbContext`.
 - **Registration** — `UserRegistrationService.RegisterAsync()` called in-process from Google OAuth `OnCreatingTicket` (DRY — same service used by all providers)
 - `Shared/UserRegistrationService.cs` — Registration logic shared between OAuth providers
 
@@ -114,7 +114,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | **PostgreSQL** | Users, logins, files metadata, folders, deliveries, usage tracking. EF Core + Npgsql |
 | **Cloudflare R2** (`R2StorageProvider.cs`) | S3-compatible file blob storage, presigned URLs, multipart upload |
 | **Local Disk** (`LocalDiskStorageProvider.cs`) | Fallback/development disk storage |
-| **Wolverine** | Message bus + transactional outbox (request/response mediator with durable Postgres inbox/outbox) |
+| **Mediator** | In-process request/response dispatch (martinothamar/Mediator source-generated handlers, scoped lifetime) — replaces the former Wolverine message bus |
 | **FastEndpoints** | REPR-pattern (Request-Endpoint-Response) minimal API framework |
 | **FastEndpoints Swagger** | OpenAPI/Swagger document generation at `/swagger` |
 | **QuotaEnforcer** | Per-plan limits: file size caps, monthly upload quota, transfer counts |
@@ -152,12 +152,12 @@ SSR pages that previously called the API via HTTP (`IQuickShareApi`/Refit) now a
 
 | Page | Old (HTTP) | New (in-process) |
 |------|-----------|------------------|
-| `Files.razor` | `Api.GetFoldersAsync()`, `Api.GetFilesAsync()` | Inject `IMessageBus`, call `ListFoldersQuery`, `ListFilesQuery` directly |
-| `Account.razor` | `Api.GetMyProfileAsync()`, `Api.UpdateMyProfileAsync()` | `<form method="post">` handler updates profile via `AppDbContext`; data loaded via `IMessageBus` |
+| `Files.razor` | `Api.GetFoldersAsync()`, `Api.GetFilesAsync()` | Inject `IMediator`, call `ListFoldersQuery`, `ListFilesQuery` directly |
+| `Account.razor` | `Api.GetMyProfileAsync()`, `Api.UpdateMyProfileAsync()` | `<form method="post">` handler updates profile via `AppDbContext`; data loaded via `IMediator` |
 | `AccountBilling.razor` | `Api.GetBillingHistoryAsync()`, `Api.CancelSubscriptionAsync()` | Inject `BillingHistoryService`, `SubscriptionService` — call directly in `OnInitializedAsync` and form handler |
-| `Upgrade.razor` | `Api.InitiateUpgradeAsync()`, `Api.GetMyProfileAsync()` | `<form method="post">` handler creates `PaymentIntent` via `AppDbContext` directly; profile loaded via `IMessageBus` |
+| `Upgrade.razor` | `Api.InitiateUpgradeAsync()`, `Api.GetMyProfileAsync()` | `<form method="post">` handler creates `PaymentIntent` via `AppDbContext` directly; profile loaded via `IMediator` |
 
-**Rule:** If the endpoint's handler goes through `IMessageBus.InvokeAsync<Result<T>>(cmd)`, the page injects `IMessageBus` and calls the same command/query. If the endpoint uses `AppDbContext` inline, the page injects `AppDbContext` and queries directly with Mapperly mappers.
+**Rule:** If the endpoint's handler goes through `IMediator.Send<T>(cmd, ct)`, the page injects `IMediator` and calls the same command/query. If the endpoint uses `AppDbContext` inline, the page injects `AppDbContext` and queries directly with Mapperly mappers.
 
 JS-based pages (Upload, Download, P2PTransfer, P2PDownload) call `/api/*` via `fetch()`/`XMLHttpRequest` — these use **relative URLs** (empty `apiBaseUrl` in `window.ZAPDROP_CONFIG`), so they work same-origin with no CORS.
 
@@ -177,7 +177,7 @@ JS-based pages (Upload, Download, P2PTransfer, P2PDownload) call `/api/*` via `f
 | **CSS Variables** | `--color-foreground`, `--color-background`, `--color-primary`, `--color-accent`, `--color-border`, `--color-muted`, `--color-destructive`, `--color-warning`, `--color-success`, `--color-ring` |
 | **P2P** | Custom `RTCPeerConnection` + data channels (`/wwwroot/js/p2p/`): `signaling.js`, `peerConnection.js`, `fileTransfer.js`, `fileReceiver.js` |
 | **QR** | `qrcode-generator` (npm vendor-copied to `wwwroot/lib/qrcode/qrcode.min.js`) |
-| **API** | JS pages call relative `/api/*` (same origin); SSR pages use in-process `IMessageBus` or `AppDbContext` |
+| **API** | JS pages call relative `/api/*` (same origin); SSR pages use in-process `IMediator` or `AppDbContext` |
 | **Auth** | `AuthorizeRouteView` + `[Authorize]` on protected pages; cookie auth with dual `/api` vs page redirect behavior |
 | **Anti-forgery** | `app.UseAntiforgery()` + `app.UseHtmxAntiforgery()` |
 
@@ -379,7 +379,7 @@ src/QuickShare/
 ├── Components/            # Layout/ (MainLayout, HtmxorLayout)
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor, Entities/
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
-├── Features/              # FastEndpoints + Wolverine handlers
+├── Features/              # FastEndpoints + Mediator handlers
 │   ├── Deliveries/        # Brand, List, Password, Otp, DeliveryService
 │   ├── Downloads/         # Download
 │   ├── Files/             # Move + Shared mappers (List handler in-process)

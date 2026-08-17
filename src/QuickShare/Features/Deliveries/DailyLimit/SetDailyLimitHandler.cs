@@ -3,30 +3,28 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.DailyLimit;
 
-public record SetDailyLimitCommand(Guid DeliveryId, int? Limit);
+public record SetDailyLimitCommand(Guid DeliveryId, int? Limit) : IRequest<Result>;
 
 /// <summary>
 /// Anti-leech per-link daily download cap (issue #227). Paid plans only —
 /// it's a bandwidth-protection feature for senders who pay for it.
 /// </summary>
-public sealed class SetDailyLimitHandler
+public sealed class SetDailyLimitHandler(AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<SetDailyLimitCommand, Result>
 {
     public const int MaxDailyLimit = 10_000;
 
-    public async Task<Result> Handle(
+    public async ValueTask<Result> Handle(
         SetDailyLimitCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CacheService cache,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         if (user.Plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
             return Result.Failure(new LightResults.Error(ErrorCodes.RequiresPaidPlan));
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -35,8 +33,8 @@ public sealed class SetDailyLimitHandler
             return Result.Failure(new LightResults.Error(ErrorCodes.DailyLimitInvalid));
 
         delivery.DailyDownloadLimit = cmd.Limit;
-        await db.SaveChangesAsync(ct);
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }

@@ -3,25 +3,24 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.Rename;
 
-public record RenameDeliveryCommand(Guid DeliveryId, string FileName);
+public record RenameDeliveryCommand(Guid DeliveryId, string FileName) : IRequest<Result>;
 
 /// <summary>
 /// Renames a delivery after upload (issue #318). Only the DB row changes — the R2
 /// object key stays; the download name comes from Delivery.FileName.
 /// </summary>
-public sealed class RenameDeliveryHandler
+public sealed class RenameDeliveryHandler(
+    AppDbContext db,
+    IHttpContextAccessor http,
+    CacheService cache)
+    : IRequestHandler<RenameDeliveryCommand, Result>
 {
-    public async Task<Result> Handle(
-        RenameDeliveryCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CacheService cache,
-        CancellationToken ct)
+    public async ValueTask<Result> Handle(RenameDeliveryCommand cmd, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -36,8 +35,8 @@ public sealed class RenameDeliveryHandler
         }
 
         delivery.FileName = name;
-        await db.SaveChangesAsync(ct);
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }

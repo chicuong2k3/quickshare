@@ -22,7 +22,7 @@ public sealed class AbortR2Endpoint : Endpoint<AbortR2Request>
     public override async Task HandleAsync(AbortR2Request req, CancellationToken ct)
     {
         var cmd = new AbortR2Command(req.DeliveryId, req.UploadId, req.ObjectKey);
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(cmd, ct);
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(cmd, ct);
 
         if (result.IsSuccess())
             await Send.OkAsync(cancellation: ct);

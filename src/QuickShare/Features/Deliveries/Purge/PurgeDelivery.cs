@@ -1,23 +1,24 @@
-using LightResults;
+﻿using LightResults;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Deliveries.Purge;
 
-public record PurgeDeliveryCommand(Guid DeliveryId);
+public record PurgeDeliveryCommand(Guid DeliveryId) : IRequest<Result>;
 
 /// <summary>
 /// "Delete forever" (issue #157): removes the R2 object and the row immediately,
 /// bypassing the 24h trash grace (#99). GDPR right-to-erasure path.
 /// </summary>
-public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<PurgeDeliveryHandler> logger)
+public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<PurgeDeliveryHandler> logger, AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<PurgeDeliveryCommand, Result>
 {
-    public async Task<Result> Handle(PurgeDeliveryCommand cmd, AppDbContext db, IHttpContextAccessor http, CacheService cache, CancellationToken ct)
+    public async ValueTask<Result> Handle(PurgeDeliveryCommand cmd, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
@@ -26,7 +27,7 @@ public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<Purge
         {
             try
             {
-                await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -35,8 +36,8 @@ public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<Purge
         }
 
         db.Deliveries.Remove(delivery);
-        await db.SaveChangesAsync(ct);
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success();
     }
@@ -58,7 +59,7 @@ public sealed class PurgeDeliveryEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(new PurgeDeliveryCommand(id), ct);
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(new PurgeDeliveryCommand(id), ct);
 
         if (result.IsSuccess())
             await Send.NoContentAsync(ct);

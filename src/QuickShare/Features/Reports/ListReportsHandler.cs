@@ -1,10 +1,10 @@
 namespace QuickShare.Features.Reports;
 
-public record ListReportsQuery;
+public record ListReportsQuery : IRequest<List<ReportListItem>>;
 
-public sealed class ListReportsHandler
+public sealed class ListReportsHandler(AppDbContext db) : IRequestHandler<ListReportsQuery, List<ReportListItem>>
 {
-    public async Task<List<ReportListItem>> Handle(ListReportsQuery query, AppDbContext db, CancellationToken ct)
+    public async ValueTask<List<ReportListItem>> Handle(ListReportsQuery query, CancellationToken cancellationToken)
     {
         return await db.AbuseReports
             .AsNoTracking()
@@ -17,6 +17,6 @@ public sealed class ListReportsHandler
                 r.Note,
                 r.CreatedAt
             ))
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
     }
 }

@@ -1,6 +1,7 @@
 global using System.Globalization;
 global using FastEndpoints;
 global using FluentValidation;
+global using Mediator;
 global using Microsoft.EntityFrameworkCore;
 global using QuickShare.Data;
 global using QuickShare.Data.Entities;
@@ -10,5 +11,3 @@ global using QuickShare.Infrastructure;
 global using QuickShare.Infrastructure.Constants;
 global using QuickShare.Infrastructure.Storage;
 global using QuickShare.Querying;
-global using Wolverine;
-global using Wolverine.Postgresql;

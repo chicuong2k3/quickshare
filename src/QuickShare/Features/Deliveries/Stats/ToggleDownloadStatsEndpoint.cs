@@ -16,7 +16,7 @@ public sealed class ToggleDownloadStatsEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<bool>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<bool>>(
             new ToggleDownloadStatsCommand(id), ct);
 
         if (result.IsSuccess(out var hidden))

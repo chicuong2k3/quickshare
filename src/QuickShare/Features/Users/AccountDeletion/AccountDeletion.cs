@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using LightResults;
 using Microsoft.EntityFrameworkCore;
 using QuickShare.Infrastructure.Storage;
@@ -69,31 +69,27 @@ public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
     }
 }
 
-public record DeleteAccountCommand(string ConfirmEmail);
+public record DeleteAccountCommand(string ConfirmEmail) : IRequest<Result>;
 
 /// <summary>
 /// Permanently deletes the signed-in account and everything it owns (issue #59):
 /// R2 objects, deliveries (cascade to tracking/OTP/abuse rows), referral events,
 /// then the user (cascade to logins/usage/devices/payments/subscriptions).
 /// </summary>
-public sealed class DeleteAccountHandler
+public sealed class DeleteAccountHandler(AppDbContext db, IHttpContextAccessor http, IStorageProvider storage)
+    : IRequestHandler<DeleteAccountCommand, Result>
 {
-    public async Task<Result> Handle(
-        DeleteAccountCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        IStorageProvider storage,
-        CancellationToken ct)
+    public async ValueTask<Result> Handle(DeleteAccountCommand cmd, CancellationToken cancellationToken)
     {
-        var cached = await http.HttpContext!.User.GetUserAsync(db, ct);
-        var user = await db.Users.FirstAsync(u => u.Id == cached.Id, ct);
+        var cached = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
+        var user = await db.Users.FirstAsync(u => u.Id == cached.Id, cancellationToken);
 
         if (!string.Equals(cmd.ConfirmEmail?.Trim(), user.Email, StringComparison.OrdinalIgnoreCase))
             return Result.Failure(new LightResults.Error(ErrorCodes.AccountDeleteConfirmMismatch));
 
         var deliveries = await db.Deliveries
             .Where(d => d.SenderId == user.Id)
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
 
         foreach (var d in deliveries)
         {
@@ -101,7 +97,7 @@ public sealed class DeleteAccountHandler
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(d.StoragePath, ct);
+                    await storage.DeleteObjectsAsync(d.StoragePath, cancellationToken);
                 }
                 catch
                 {
@@ -115,10 +111,10 @@ public sealed class DeleteAccountHandler
         // ReferralEvent has plain Guid columns (no FK) — clean up explicitly.
         await db.ReferralEvents
             .Where(r => r.ReferrerUserId == user.Id || r.ReferredUserId == user.Id)
-            .ExecuteDeleteAsync(ct);
+            .ExecuteDeleteAsync(cancellationToken);
 
         db.Users.Remove(user);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -139,7 +135,7 @@ public sealed class DeleteAccountEndpoint : Endpoint<DeleteAccountRequest>
 
     public override async Task HandleAsync(DeleteAccountRequest req, CancellationToken ct)
     {
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(
             new DeleteAccountCommand(req.ConfirmEmail ?? string.Empty), ct);
 
         if (result.IsSuccess())

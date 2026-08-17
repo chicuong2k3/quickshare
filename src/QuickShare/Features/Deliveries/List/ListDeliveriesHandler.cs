@@ -7,7 +7,7 @@ public record ListDeliveriesQuery(
     int Limit = DeliveryPaging.DefaultLimit,
     string? Status = null,
     string? Search = null,
-    bool FavoritesOnly = false, bool DeletedOnly = false);
+    bool FavoritesOnly = false, bool DeletedOnly = false) : IRequest<Result<CursorPage<DeliveryItem>>>;
 
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
@@ -22,12 +22,13 @@ public static class DeliveryPaging
     public const int MaxLimit = 100;
 }
 
-public sealed class ListDeliveriesHandler
+public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor http)
+    : IRequestHandler<ListDeliveriesQuery, Result<CursorPage<DeliveryItem>>>
 {
-    public async Task<Result<CursorPage<DeliveryItem>>> Handle(
-        ListDeliveriesQuery query, AppDbContext db, IHttpContextAccessor http, CancellationToken ct)
+    public async ValueTask<Result<CursorPage<DeliveryItem>>> Handle(
+        ListDeliveriesQuery query, CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
         var userId = user.Id;
         var limit = Math.Clamp(query.Limit, 1, DeliveryPaging.MaxLimit);
 
@@ -63,7 +64,7 @@ public sealed class ListDeliveriesHandler
             .ToCursorPageAsync(query.Cursor, limit, d => new DeliveryItem(
                 d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode,
                 d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats,
-                d.IsFavorite, d.Alias, d.Tag), ct);
+                d.IsFavorite, d.Alias, d.Tag), cancellationToken);
 
         return Result.Success(page);
     }

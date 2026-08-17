@@ -23,7 +23,7 @@ public sealed class PartUrlsEndpoint : Endpoint<PartUrlsRequest, PartUrlsRespons
     public override async Task HandleAsync(PartUrlsRequest req, CancellationToken ct)
     {
         var cmd = new PartUrlsCommand(req.DeliveryId, req.UploadId, req.PartNumbers);
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<PartUrlsResponse>>(cmd, ct);
+        var result = await Resolve<IMediator>().Send<LightResults.Result<PartUrlsResponse>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);

@@ -26,7 +26,7 @@ public sealed class StartR2Endpoint : Endpoint<StartR2Request, StartR2Response>
     public override async Task HandleAsync(StartR2Request req, CancellationToken ct)
     {
         var cmd = new StartR2Command(req.FileName, req.FileSize, req.ContentType, req.PartNumbers, req.SenderEmail);
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<StartR2Response>>(cmd, ct);
+        var result = await Resolve<IMediator>().Send<LightResults.Result<StartR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);

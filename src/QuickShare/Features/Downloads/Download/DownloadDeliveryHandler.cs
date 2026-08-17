@@ -3,15 +3,20 @@ using QuickShare.Features.Deliveries.Otp;
 
 namespace QuickShare.Features.Downloads.Download;
 
-public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp);
+public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp) : IRequest;
 
-public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+public sealed class DownloadDeliveryHandler(
+    IStorageProvider storage,
+    IHttpContextAccessor httpContextAccessor,
+    AppDbContext db,
+    OtpLockoutService lockout)
+    : IRequestHandler<DownloadDeliveryQuery>
 {
     private static readonly TimeSpan FullDownloadTtl = TimeSpan.FromDays(7);
     private static readonly TimeSpan RangeRequestTtl = TimeSpan.FromHours(1);
     private const int BurnGraceMinutes = 10;
 
-    public async Task HandleAsync(DownloadDeliveryQuery query, AppDbContext db, OtpLockoutService lockout, CancellationToken ct)
+    public async ValueTask<Unit> Handle(DownloadDeliveryQuery query, CancellationToken cancellationToken)
     {
         var httpContext = httpContextAccessor.HttpContext!;
         var response = httpContext.Response;
@@ -20,30 +25,30 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
         var delivery = await db.Deliveries
             .AsNoTracking()
             .ByCode(query.ShareCode)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (delivery is null || delivery.DeletedAt is not null)
         {
             response.StatusCode = 404;
-            return;
+            return Unit.Value;
         }
 
         if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
         {
             response.StatusCode = StatusCodes.Status410Gone;
-            return;
+            return Unit.Value;
         }
 
         if (delivery.Status == DeliveryStatus.Scheduled && delivery.DeliverAt > DateTime.UtcNow)
         {
             response.StatusCode = StatusCodes.Status423Locked;
-            return;
+            return Unit.Value;
         }
 
         if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
         {
             response.StatusCode = 410;
-            return;
+            return Unit.Value;
         }
 
 
@@ -51,43 +56,43 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
         // unlocks the password first, then any sender-set code.
         if (!string.IsNullOrEmpty(delivery.PasswordHash))
         {
-            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, ct);
+            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, cancellationToken);
             if (isLocked)
             {
-                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, ct);
+                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, cancellationToken);
                 response.StatusCode = StatusCodes.Status423Locked;
                 response.Headers[HttpHeaders.RetryAfter] = retryAfter.ToString(CultureInfo.InvariantCulture);
-                return;
+                return Unit.Value;
             }
 
             if (string.IsNullOrEmpty(query.Password) || !BCrypt.Net.BCrypt.Verify(query.Password, delivery.PasswordHash))
             {
-                await lockout.RecordFailureAsync(db, delivery.Id, ct);
+                await lockout.RecordFailureAsync(db, delivery.Id, cancellationToken);
                 response.StatusCode = 403;
-                return;
+                return Unit.Value;
             }
 
-            await lockout.ResetAsync(db, delivery.Id, ct);
+            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
         }
         if (!string.IsNullOrEmpty(delivery.OtpHash))
         {
-            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, ct);
+            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, cancellationToken);
             if (isLocked)
             {
-                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, ct);
+                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, cancellationToken);
                 response.StatusCode = StatusCodes.Status423Locked;
                 response.Headers[HttpHeaders.RetryAfter] = retryAfter.ToString(CultureInfo.InvariantCulture);
-                return;
+                return Unit.Value;
             }
 
             if (string.IsNullOrEmpty(query.Otp) || !BCrypt.Net.BCrypt.Verify(query.Otp, delivery.OtpHash))
             {
-                await lockout.RecordFailureAsync(db, delivery.Id, ct);
+                await lockout.RecordFailureAsync(db, delivery.Id, cancellationToken);
                 response.StatusCode = 403;
-                return;
+                return Unit.Value;
             }
 
-            await lockout.ResetAsync(db, delivery.Id, ct);
+            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
         }
 
         if (delivery.DownloadCount >= delivery.MaxDownloads)
@@ -95,17 +100,17 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             // Burn-after-download grace (issue #12): a network drop mid-transfer must not
             // burn the single download — the same IP may retry within a short window.
             var withinBurnGrace = delivery.MaxDownloads == 1
-                && await IsWithinBurnGraceAsync(db, delivery.Id, remoteIp, ct);
+                && await IsWithinBurnGraceAsync(db, delivery.Id, remoteIp, cancellationToken);
             if (!withinBurnGrace)
             {
                 response.StatusCode = 403;
-                return;
+                return Unit.Value;
             }
         }
         if (string.IsNullOrEmpty(delivery.StoragePath))
         {
             response.StatusCode = 500;
-            return;
+            return Unit.Value;
         }
 
         var hasRangeHeader = httpContext.Request.Headers.ContainsKey(HttpHeaders.Range);
@@ -118,11 +123,11 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
             var todayStart = DateTime.UtcNow.Date;
             var todayCount = await db.DownloadTrackings
                 .AsNoTracking()
-                .CountAsync(t => t.DeliveryId == delivery.Id && t.DownloadedAt >= todayStart, ct);
+                .CountAsync(t => t.DeliveryId == delivery.Id && t.DownloadedAt >= todayStart, cancellationToken);
             if (todayCount >= dailyLimit)
             {
                 response.StatusCode = StatusCodes.Status429TooManyRequests;
-                return;
+                return Unit.Value;
             }
         }
         var ttl = hasRangeHeader ? RangeRequestTtl : FullDownloadTtl;
@@ -137,12 +142,12 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
         Uri presignedUrl;
         try
         {
-            presignedUrl = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath, ttl, ct);
+            presignedUrl = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath, ttl, cancellationToken);
         }
         catch
         {
             response.StatusCode = 502;
-            return;
+            return Unit.Value;
         }
 
         // Recipient download history (issue #220): capture the signed-in user's
@@ -150,7 +155,7 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
         Guid? trackUserId = null;
         if (!hasRangeHeader && httpContext.User.Identity?.IsAuthenticated == true)
         {
-            var signedIn = await httpContext.User.GetUserOrDefaultAsync(db, ct);
+            var signedIn = await httpContext.User.GetUserOrDefaultAsync(db, cancellationToken);
             if (signedIn is { TrackMyDownloads: true })
                 trackUserId = signedIn.Id;
         }
@@ -198,6 +203,8 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
                 catch { /* counter update failure shouldn't break the download */ }
             }, CancellationToken.None);
         }
+
+        return Unit.Value;
     }
 
     /// <summary>
@@ -205,13 +212,13 @@ public sealed class DownloadDeliveryHandler(IStorageProvider storage, IHttpConte
     /// burn-after-download grace window — i.e. the recipient is retrying a
     /// download that already started, not consuming a fresh one.
     /// </summary>
-    private static async Task<bool> IsWithinBurnGraceAsync(AppDbContext db, Guid deliveryId, string remoteIp, CancellationToken ct)
+    private static async Task<bool> IsWithinBurnGraceAsync(AppDbContext db, Guid deliveryId, string remoteIp, CancellationToken cancellationToken)
     {
         var cutoff = DateTime.UtcNow.AddMinutes(-BurnGraceMinutes);
         return await db.DownloadTrackings
             .AsNoTracking()
             .AnyAsync(t => t.DeliveryId == deliveryId
                 && t.IpAddress == remoteIp
-                && t.DownloadedAt >= cutoff, ct);
+                && t.DownloadedAt >= cutoff, cancellationToken);
     }
 }

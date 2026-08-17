@@ -25,7 +25,7 @@ public sealed class GetAnalyticsDashboardEndpoint : Endpoint<AnalyticsDashboardQ
             return;
         }
 
-        var data = await Resolve<IMessageBus>().InvokeAsync<AnalyticsDashboardResponse>(req, ct);
+        var data = await Resolve<IMediator>().Send<AnalyticsDashboardResponse>(req, ct);
         await Send.OkAsync(data, ct);
     }
 }

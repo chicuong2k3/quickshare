@@ -3,22 +3,23 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.Calendar;
 
-public record DeliveryCalendarQuery(string ShareCode);
+public record DeliveryCalendarQuery(string ShareCode) : IRequest<Result<string>>;
 
 /// <summary>
 /// Builds a minimal VCALENDAR for a delivery's expiry (issue #232): one VEVENT at the
 /// expiry instant plus a VALARM 24h before, so a recipient never loses a link unnoticed.
 /// </summary>
-public sealed class DeliveryCalendarHandler(IHttpContextAccessor http)
+public sealed class DeliveryCalendarHandler(IHttpContextAccessor http, AppDbContext db)
+    : IRequestHandler<DeliveryCalendarQuery, Result<string>>
 {
     private const string IcsTimestampFormat = "yyyyMMdd'T'HHmmss'Z'";
 
-    public async Task<Result<string>> Handle(DeliveryCalendarQuery query, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<string>> Handle(DeliveryCalendarQuery query, CancellationToken cancellationToken)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
             .ByCode(query.ShareCode)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (delivery is null || delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
             return Result.Failure<string>(new LightResults.Error(ErrorCodes.DeliveryNotFound));

@@ -3,7 +3,7 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Deliveries.Extend;
 
-public record ExtendDeliveryCommand(Guid DeliveryId);
+public record ExtendDeliveryCommand(Guid DeliveryId) : IRequest<Result<ExtendDeliveryResponse>>;
 
 public record ExtendDeliveryResponse(DateTime ExpiresAt);
 
@@ -12,24 +12,22 @@ public record ExtendDeliveryResponse(DateTime ExpiresAt);
 /// Free plans may only extend near (or just after) expiry; paid plans anytime,
 /// both capped at the plan's maximum expiry.
 /// </summary>
-public sealed class ExtendDeliveryHandler
+public sealed class ExtendDeliveryHandler(AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<ExtendDeliveryCommand, Result<ExtendDeliveryResponse>>
 {
     private const double ExtendDays = 7.0;
     private const int FreeExtendWindowHours = 24;
     private const int ExpiredGraceHours = 72;
 
-    public async Task<Result<ExtendDeliveryResponse>> Handle(
+    public async ValueTask<Result<ExtendDeliveryResponse>> Handle(
         ExtendDeliveryCommand cmd,
-        AppDbContext db,
-        IHttpContextAccessor http,
-        CacheService cache,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        var user = await http.HttpContext!.User.GetUserAsync(db, ct);
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
         var plan = user.Plan;
 
         var delivery = await db.Deliveries
-            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, ct);
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
 
         if (delivery is null)
             return Result.Failure<ExtendDeliveryResponse>(new LightResults.Error(ErrorCodes.NotFound));
@@ -61,9 +59,9 @@ public sealed class ExtendDeliveryHandler
 
         delivery.ExpiresAt = newExpiry;
         delivery.Status = DeliveryStatus.Active;
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
 
-        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", ct);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
 
         return Result.Success(new ExtendDeliveryResponse(newExpiry));
     }

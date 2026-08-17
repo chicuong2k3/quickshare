@@ -3,18 +3,19 @@ using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Downloads.Preview;
 
-public record PreviewDeliveryQuery(string ShareCode);
+public record PreviewDeliveryQuery(string ShareCode) : IRequest<Result<Uri>>;
 
-public sealed class PreviewDeliveryHandler(IStorageProvider storage)
+public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContext db)
+    : IRequestHandler<PreviewDeliveryQuery, Result<Uri>>
 {
     private static readonly TimeSpan PreviewUrlTtl = TimeSpan.FromHours(1);
 
-    public async Task<Result<Uri>> Handle(PreviewDeliveryQuery query, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<Uri>> Handle(PreviewDeliveryQuery query, CancellationToken cancellationToken)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
             .ByCode(query.ShareCode)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (delivery is null || delivery.DeletedAt is not null)
             return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.NotFound));
@@ -35,7 +36,7 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage)
 
         try
         {
-            var url = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath, PreviewUrlTtl, ct);
+            var url = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath, PreviewUrlTtl, cancellationToken);
             return Result.Success(url);
         }
         catch

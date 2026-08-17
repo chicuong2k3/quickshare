@@ -17,7 +17,7 @@ public sealed class ExportDeliveriesEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var days = int.TryParse(HttpContext.Request.Query["days"], out var parsed) ? parsed : 30;
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<string>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<string>>(
             new ExportDeliveriesQuery(days), ct);
 
         if (result.IsSuccess(out var csv))

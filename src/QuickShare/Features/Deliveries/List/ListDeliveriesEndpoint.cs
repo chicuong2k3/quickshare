@@ -27,8 +27,8 @@ public sealed class ListDeliveriesEndpoint : EndpointWithoutRequest
         var search = Query<string>(SearchQueryKey, isRequired: false);
         var favorite = Query<bool?>(FavoriteQueryKey, isRequired: false) ?? false;
 
-        var result = await Resolve<IMessageBus>()
-            .InvokeAsync<LightResults.Result<CursorPage<DeliveryItem>>>(new ListDeliveriesQuery(cursor, limit, status, search, favorite), ct);
+        var result = await Resolve<IMediator>().Send<LightResults.Result<CursorPage<DeliveryItem>>>(
+            new ListDeliveriesQuery(cursor, limit, status, search, favorite), ct);
 
         if (result.IsSuccess(out var page))
             await Send.OkAsync(page, ct);

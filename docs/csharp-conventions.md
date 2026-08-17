@@ -6,13 +6,13 @@
 
 1. **Options pattern for config** — Use `IOptions<T>` + `BindConfiguration()` + `ValidateDataAnnotations()` + `ValidateOnStart()`. Never scatter `IConfiguration["key"]` across the codebase. Config classes carry `[Required]` annotations; app fails at startup if config is missing.
 
-2. **Endpoints are thin delegates** — Endpoints extract transport data (form fields, headers, query params) and dispatch commands/queries via `IMessageBus`. No business logic, no range parsing, no null checking, no `IResult` wrapping — those live in handlers.
+2. **Endpoints are thin delegates** — Endpoints extract transport data (form fields, headers, query params) and dispatch commands/queries via `IMediator`. No business logic, no range parsing, no null checking, no `IResult` wrapping — those live in handlers.
 
-3. **Use command/query DTOs directly as endpoint parameters** — Instead of extracting individual fields (`string folder, string search, int limit, int offset`), accept `ListFilesQuery query` and let Wolverine auto-bind from route/query string.
+3. **Use command/query DTOs directly as endpoint parameters** — Instead of extracting individual fields (`string folder, string search, int limit, int offset`), accept `ListFilesQuery query` and let FastEndpoints bind from route/query string.
 
-4. **Handler pattern with Wolverine** — One handler per operation. Handlers inject dependencies directly (`Client`, `StorageChannel`); no intermediate service layer.
+4. **Handler pattern with Mediator** — One handler per operation. Handlers implement `IRequest<TReq, TResp>` (via `Mediator` package) and inject dependencies directly (`AppDbContext`, `CacheService`, storage provider); no intermediate service layer. The source generator auto-registers public handlers (scoped lifetime — see AGENTS.md).
 
-5. **Wolverine inbox/outbox** — `PersistMessagesWithPostgresql()` + `AutoApplyTransactions()` ensures messages are durably stored before execution with automatic retry on transient failures.
+5. **Mediator dispatch** — `Resolve<IMediator>().Send<T>(cmd, ct)` from endpoints; void handlers return `ValueTask<Unit>` + `return Unit.Value;`. No inbox/outbox, no durable messaging — Mediator is an in-process request/response mediator only. (Former Wolverine inbox/outbox was removed; background/polling work is Hangfire's job.)
 
 6. **Result pattern with LightResults** — Handlers return `Result` or `Result<T>` instead of null/bool/exception. Endpoints map `result.IsSuccess(out var value)` to HTTP responses (Ok/NotFound). Custom errors extend `Error`.
 
@@ -30,7 +30,7 @@
 
 9. **Use primary constructors** — `UploadFileHandler(Client client, StorageChannel channel)` over explicit constructor + `private readonly` fields.
 
-10. **Check GlobalUsings.cs before adding using directives** — Do not add redundant usings already covered by global imports (`QuickShare.Data`, `QuickShare.Data.Entities`, `QuickShare.Infrastructure`, `QuickShare.Features.Files.Shared`, `QuickShare.Features.Folders.Shared`, `QuickShare.Querying`, `QuickShare.Extensions`, `Wolverine`, `Wolverine.EntityFrameworkCore`, `Wolverine.Postgresql`, `Microsoft.EntityFrameworkCore`, `FastEndpoints`, `FluentValidation`).
+10. **Check GlobalUsings.cs before adding using directives** — Do not add redundant usings already covered by global imports (`QuickShare.Data`, `QuickShare.Data.Entities`, `QuickShare.Infrastructure`, `QuickShare.Infrastructure.Constants`, `QuickShare.Infrastructure.Storage`, `QuickShare.Extensions`, `QuickShare.Features.Analytics`, `QuickShare.Querying`, `Mediator`, `Microsoft.EntityFrameworkCore`, `FastEndpoints`, `FluentValidation`).
 
 11. **Use `string.Empty`, never `""`** — empty string literals are banned except where the language requires a compile-time constant (`const` declarations, attribute arguments, default parameter values, `case` labels).
 

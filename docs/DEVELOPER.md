@@ -33,8 +33,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
 ## 3. Architecture (10 min)
 
 - [`architecture.md`](architecture.md) — the spine: FastEndpoints + Blazor Static SSR +
-  Wolverine (inbox/outbox) + EF Core/Npgsql + Htmxor + DAUB. Monolith; SSR pages call
-  `IMessageBus` or `AppDbContext` in-process (no API round-trip).
+  Mediator (martinothamar/Mediator) + EF Core/Npgsql + Htmxor + DAUB. Monolith; SSR pages call
+  `IMediator` or `AppDbContext` in-process (no API round-trip).
 - Feature flows: [`send-architecture.md`](send-architecture.md),
   [`payment-architecture.md`](payment-architecture.md),
   [`p2p-architecture.md`](p2p-architecture.md),
@@ -62,7 +62,7 @@ rules:
 
 | Rule | Where |
 |---|---|
-| Vertical-slice folders; thin endpoint → `IMessageBus` → handler | csharp-conventions §Architecture |
+| Vertical-slice folders; thin endpoint → `IMediator` → handler | csharp-conventions §Architecture |
 | LightResults `Result`/`Result<T>` (no null/bool/exception) | csharp-conventions #6 |
 | Mapperly `[Mapper]` for entity→DTO | csharp-conventions #8 |
 | Audit fields auto-set by `AuditableEntityInterceptor` — never set manually | AGENTS.md |

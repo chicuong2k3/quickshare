@@ -1,7 +1,7 @@
 @layout MainLayout
 @page "/d/{ShareCode}"
 @attribute [StreamRendering]
-@inject IMessageBus Bus
+@inject IMediator Bus
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @using System.Text.Json
@@ -533,7 +533,7 @@
 
         try
         {
-            var result = await Bus.InvokeAsync<LightResults.Result<DownloadInfoResponse>>(
+            var result = await Bus.Send<LightResults.Result<DownloadInfoResponse>>(
                 new DownloadInfoQuery(ShareCode), CancellationToken.None);
 
             if (!result.IsSuccess(out var value))

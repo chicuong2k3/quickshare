@@ -32,7 +32,7 @@ public sealed class VerifyPasswordEndpoint : Endpoint<VerifyPasswordRequest>
             return;
         }
 
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result<VerifyPasswordResponse>>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result<VerifyPasswordResponse>>(
             new VerifyPasswordCommand(shareCode, req.Password), ct);
 
         if (result.IsSuccess(out var value))

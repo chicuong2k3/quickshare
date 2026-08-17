@@ -1,10 +1,10 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using LightResults;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Downloads.ZipContents;
 
-public record ZipContentsQuery(string ShareCode);
+public record ZipContentsQuery(string ShareCode) : IRequest<Result<IReadOnlyList<ZipEntryResponse>>>;
 
 public record ZipEntryResponse(string Name, long Size, long CompressedSize, bool IsDirectory);
 
@@ -13,17 +13,18 @@ public record ZipEntryResponse(string Name, long Size, long CompressedSize, bool
 /// directory, never the decompressed bytes. Gated like the media preview (#21):
 /// password/OTP-gated and exhausted deliveries don't expose their contents.
 /// </summary>
-public sealed class ZipContentsHandler(IStorageProvider storage)
+public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db)
+    : IRequestHandler<ZipContentsQuery, Result<IReadOnlyList<ZipEntryResponse>>>
 {
     private const long MaxZipBytes = 200 * 1024 * 1024;
     private const int MaxZipEntries = 10_000;
 
-    public async Task<Result<IReadOnlyList<ZipEntryResponse>>> Handle(ZipContentsQuery query, AppDbContext db, CancellationToken ct)
+    public async ValueTask<Result<IReadOnlyList<ZipEntryResponse>>> Handle(ZipContentsQuery query, CancellationToken cancellationToken)
     {
         var delivery = await db.Deliveries
             .AsNoTracking()
             .ByCode(query.ShareCode)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (delivery is null || delivery.DeletedAt is not null)
             return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.NotFound));
@@ -51,7 +52,7 @@ public sealed class ZipContentsHandler(IStorageProvider storage)
         Stream? stream;
         try
         {
-            stream = await storage.OpenReadAsync(delivery.StoragePath, ct);
+            stream = await storage.OpenReadAsync(delivery.StoragePath, cancellationToken);
         }
         catch
         {
@@ -98,7 +99,7 @@ public sealed class ZipContentsEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var code = Route<string>("Code") ?? string.Empty;
-        var result = await Resolve<IMessageBus>().InvokeAsync<Result<IReadOnlyList<ZipEntryResponse>>>(
+        var result = await Resolve<IMediator>().Send<Result<IReadOnlyList<ZipEntryResponse>>>(
             new ZipContentsQuery(code), ct);
 
         if (result.IsSuccess(out var entries))

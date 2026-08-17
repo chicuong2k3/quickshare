@@ -16,7 +16,7 @@ public sealed class UpdateDeliveryMessageEndpoint : Endpoint<UpdateDeliveryMessa
     public override async Task HandleAsync(UpdateDeliveryMessageRequest req, CancellationToken ct)
     {
         var id = Route<Guid>("Id");
-        var result = await Resolve<IMessageBus>().InvokeAsync<LightResults.Result>(
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(
             new UpdateDeliveryMessageCommand(id, req.Message), ct);
 
         if (result.IsSuccess())
