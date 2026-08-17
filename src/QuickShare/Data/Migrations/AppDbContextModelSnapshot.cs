@@ -278,6 +278,9 @@ namespace QuickShare.Migrations
                     b.Property<bool>("PrivacyMode")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("RequireRecipientEmail")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("SenderEmail")
                         .HasColumnType("text");
 
@@ -350,8 +353,14 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("MarketingConsent")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("Notified")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("RecipientEmail")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");

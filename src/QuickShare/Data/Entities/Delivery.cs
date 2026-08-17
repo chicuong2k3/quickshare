@@ -54,6 +54,8 @@ public record Delivery : BaseAuditEntity
     public DateTime? EmailOtpExpiresAt { get; set; }
     public DateTime? EmailOtpUsedAt { get; set; }
     public DateTime? EmailOtpLastSentAt { get; set; }
+    /// <summary>Recipient email gate (issue #324): anonymous recipients must enter an email before downloading.</summary>
+    public bool RequireRecipientEmail { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }

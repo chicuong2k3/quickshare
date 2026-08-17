@@ -780,6 +780,11 @@
   <data name="upload_password_breached" xml:space="preserve"><value>Mật khẩu này xuất hiện trong {0} vụ lộ dữ liệu. Hãy chọn mật khẩu mạnh hơn.</value></data>
   <data name="upload_password_safe" xml:space="preserve"><value>Mật khẩu không nằm trong các vụ lộ dữ liệu đã biết.</value></data>
   <data name="upload_password_generate" xml:space="preserve"><value>Tạo mật khẩu mạnh</value></data>
+  <data name="upload_recipient_email_label" xml:space="preserve"><value>Yêu cầu email người nhận</value></data>
+  <data name="upload_recipient_email_hint" xml:space="preserve"><value>Người nhận phải nhập email trước khi tải.</value></data>
+  <data name="dl_recipient_email_title" xml:space="preserve"><value>Nhập email để tải xuống</value></data>
+  <data name="dl_recipient_email_placeholder" xml:space="preserve"><value>your@email.com</value></data>
+  <data name="dl_recipient_consent" xml:space="preserve"><value>Gửi cho tôi thông tin sản phẩm (tuỳ chọn)</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Xoá metadata ảnh (vị trí, máy ảnh)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Gỡ tag GPS/máy ảnh/thiết bị khỏi ảnh. Bật sẵn theo mặc định.</value></data>
   <data name="upload_compress_label" xml:space="preserve"><value>Nén ảnh lớn</value></data>

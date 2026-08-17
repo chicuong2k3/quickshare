@@ -27,7 +27,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         var cmd = new CommitR2Command(
             req.DeliveryId, req.UploadId, req.ObjectKey,
-            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled);
+            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail);
         var result = await Resolve<IMediator>().Send<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -61,4 +61,5 @@ public class CommitR2Request
     public List<string>? RecipientEmails { get; set; }
     public bool PrivacyMode { get; set; }
     public bool EmailOtpEnabled { get; set; }
+    public bool RequireRecipientEmail { get; set; }
 }

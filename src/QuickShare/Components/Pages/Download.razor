@@ -266,6 +266,20 @@
                         }
 
 
+                        @* Recipient email gate (issue #324) — anonymous downloaders surrender an email first *@
+                        @if (Info?.RequireRecipientEmail == true)
+                        {
+                            <div id="dl-recipient-gate" style="margin-top: 2rem">
+                                <p class="db-p">@Loc["dl_recipient_email_title"]</p>
+                                <input type="email" id="dl-recipient-email" class="db-field__input db-input" placeholder="@Loc["dl_recipient_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_recipient_email_placeholder"]" />
+                                <label class="burn-toggle" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem">
+                                    <input type="checkbox" id="dl-recipient-consent" />
+                                    <span>@Loc["dl_recipient_consent"]</span>
+                                </label>
+                                <button type="button" id="dl-recipient-download" class="btn" onclick="recipientGate.download()" data-ai-action="download.recipientGate.download">@Loc["dl_download"]</button>
+                            </div>
+                        }
+
                         @* Email OTP gate (issue #291) — recipient requests a single-use emailed code *@
                         @if (Info?.EmailOtpEnabled == true)
                         {
@@ -282,7 +296,7 @@
                         }
 
                         <div style="margin-top: 2rem">
-                            @if (Info?.EmailOtpEnabled != true)
+                            @if (Info?.EmailOtpEnabled != true && Info?.RequireRecipientEmail != true)
                             {
                                 <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
                                     <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -490,6 +504,17 @@
     <script src="/js/download.js"></script>
 
 <script>
+    window.recipientGate = {
+        download: function () {
+            var email = document.getElementById('dl-recipient-email').value.trim();
+            if (!email) return;
+            var consent = document.getElementById('dl-recipient-consent').checked;
+            window.location.href = '/api/downloads/' + '@ShareCode' + '?recipientEmail=' + encodeURIComponent(email) + '&marketingConsent=' + (consent ? 'true' : 'false');
+        }
+    };
+</script>
+
+<script>
     window.emailOtp = {
         send: function () {
             var email = document.getElementById('dl-email-otp-email');
@@ -665,7 +690,8 @@
                 BurnAfterDownload = value.BurnAfterDownload,
                 AllowExtensionRequests = value.AllowExtensionRequests,
                 PrivacyMode = value.PrivacyMode,
-                EmailOtpEnabled = value.EmailOtpEnabled
+                EmailOtpEnabled = value.EmailOtpEnabled,
+                RequireRecipientEmail = value.RequireRecipientEmail
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -737,6 +763,7 @@
         public bool AllowExtensionRequests { get; set; }
         public bool PrivacyMode { get; set; }
         public bool EmailOtpEnabled { get; set; }
+        public bool RequireRecipientEmail { get; set; }
     }
 }
 

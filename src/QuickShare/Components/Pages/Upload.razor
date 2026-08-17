@@ -196,6 +196,15 @@
                     <span class="otp-hint">@Loc["upload_email_otp_hint"]</span>
                 </div>
 
+                @* Recipient email gate (issue #324) — anonymous recipients surrender an email first *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-recipient-email" />
+                        <span>@Loc["upload_recipient_email_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_recipient_email_hint"]</span>
+                </div>
+
                 @* Metadata strip (issue #170) — privacy-first, on by default *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

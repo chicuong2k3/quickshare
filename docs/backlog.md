@@ -151,6 +151,10 @@ the Have I Been Pwned range API (SHA-1 prefix only, never the full hash) with a 
 inline warning + "generate strong password" helper. Fail-open when the API is unreachable.
 Client-side only; manual browser test (no automated C# coverage).
 
+Tier 5 batch 4, 2026-08-18: `#324` recipient email gate — anonymous downloaders surrender an
+email (stored on `DownloadTracking` with a marketing-consent flag) before download, gated by
+`Delivery.RequireRecipientEmail`. Upload toggle + download-page gate.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

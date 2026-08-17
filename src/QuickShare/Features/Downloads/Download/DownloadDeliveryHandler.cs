@@ -3,7 +3,7 @@ using QuickShare.Features.Deliveries.Otp;
 
 namespace QuickShare.Features.Downloads.Download;
 
-public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp, string? EmailOtp, string? Email) : IRequest;
+public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp, string? EmailOtp, string? Email, string? RecipientEmail, bool MarketingConsent) : IRequest;
 
 public sealed class DownloadDeliveryHandler(
     IStorageProvider storage,
@@ -110,6 +110,17 @@ public sealed class DownloadDeliveryHandler(
                 .ExecuteUpdateAsync(s => s.SetProperty(d => d.EmailOtpUsedAt, DateTime.UtcNow), cancellationToken);
         }
 
+        // Recipient email gate (issue #324): anonymous downloaders surrender an email first.
+        if (delivery.RequireRecipientEmail)
+        {
+            var recipientEmail = query.RecipientEmail?.Trim();
+            if (string.IsNullOrEmpty(recipientEmail) || !recipientEmail.Contains('@'))
+            {
+                response.StatusCode = 403;
+                return Unit.Value;
+            }
+        }
+
         if (delivery.DownloadCount >= delivery.MaxDownloads)
         {
             // Burn-after-download grace (issue #12): a network drop mid-transfer must not
@@ -206,7 +217,9 @@ public sealed class DownloadDeliveryHandler(
                                 DeliveryId = delivery.Id,
                                 IpAddress = remoteIp,
                                 DownloadedAt = DateTime.UtcNow,
-                                UserId = trackUserId
+                                UserId = trackUserId,
+                                RecipientEmail = delivery.RequireRecipientEmail ? query.RecipientEmail?.Trim() : null,
+                                MarketingConsent = delivery.RequireRecipientEmail && query.MarketingConsent,
                             });
                         }
 

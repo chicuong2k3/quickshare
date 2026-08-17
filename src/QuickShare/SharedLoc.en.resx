@@ -779,6 +779,11 @@
   <data name="upload_password_breached" xml:space="preserve"><value>This password appears in {0} known breaches. Pick a stronger one.</value></data>
   <data name="upload_password_safe" xml:space="preserve"><value>Password not found in known breaches.</value></data>
   <data name="upload_password_generate" xml:space="preserve"><value>Generate strong password</value></data>
+  <data name="upload_recipient_email_label" xml:space="preserve"><value>Require recipient email</value></data>
+  <data name="upload_recipient_email_hint" xml:space="preserve"><value>Recipients must enter an email before downloading.</value></data>
+  <data name="dl_recipient_email_title" xml:space="preserve"><value>Enter your email to download</value></data>
+  <data name="dl_recipient_email_placeholder" xml:space="preserve"><value>your@email.com</value></data>
+  <data name="dl_recipient_consent" xml:space="preserve"><value>Send me product updates (optional)</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>

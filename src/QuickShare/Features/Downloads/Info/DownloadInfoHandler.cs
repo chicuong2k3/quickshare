@@ -24,7 +24,8 @@ public record DownloadInfoResponse(
     bool BurnAfterDownload,
     bool AllowExtensionRequests,
     bool PrivacyMode,
-    bool EmailOtpEnabled
+    bool EmailOtpEnabled,
+    bool RequireRecipientEmail
 );
 
 public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
@@ -91,7 +92,8 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
                     BurnAfterDownload: delivery.MaxDownloads == 1,
                     AllowExtensionRequests: delivery.AllowExtensionRequests,
                     PrivacyMode: delivery.PrivacyMode,
-                    EmailOtpEnabled: delivery.EmailOtpEnabled
+                    EmailOtpEnabled: delivery.EmailOtpEnabled,
+                    RequireRecipientEmail: delivery.RequireRecipientEmail
                 ));
             },
             duration: TimeSpan.FromSeconds(30),
