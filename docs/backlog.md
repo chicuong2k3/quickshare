@@ -127,6 +127,10 @@ server-extracted, HTML-escaped text (no macros executed) via `OfficeTextExtracto
 (ZipArchive + LINQ-to-XML, no new dependency). `GET /api/downloads/{code}/office-preview`,
 20MB cap, gated like the media preview. Download page preview tab for office types.
 
+Tier 4 batch 10, 2026-08-17: `#37` multi-recipient share — "send link to" field at upload
+emails the link to N recipients (`CommitR2.RecipientEmails`), capped per plan (Free 3,
+Pro/Studio 20), deduped + validated server-side.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

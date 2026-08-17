@@ -57,6 +57,7 @@ browser download needed.
 | Upload from URL (#57) — Pro-gate/full-flow + SSRF guard | `UploadFromUrlTests`, `IpAddressSafetyTests` |
 | Extension requests (#233) — request/dedup/approve/reject/toggle | `ExtensionRequestTests` |
 | Office document preview (#94) — docx/xlsx/pptx extraction + gating | `OfficeTextExtractorTests`, `OfficePreviewTests` |
+| Multi-recipient share (#37) — recipient limit + normalization | `MultiRecipientTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |

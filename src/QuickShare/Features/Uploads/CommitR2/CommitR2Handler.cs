@@ -10,7 +10,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -31,6 +31,11 @@ public sealed class CommitR2Handler(
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
     private const long EncryptionOverheadSlack = 1024;
     private const string LinkEmailSubject = "Link tải file của bạn trên QuickShare";
+    private const int FreeRecipientLimit = 3;
+    private const int PaidRecipientLimit = 20;
+
+    internal static int RecipientLimit(string plan) =>
+        plan is PlanTierLimits.Pro or PlanTierLimits.Studio ? PaidRecipientLimit : FreeRecipientLimit;
 
     private readonly EmailOptions _emailOptions = emailOptions.Value;
 
@@ -48,6 +53,11 @@ public sealed class CommitR2Handler(
             if (cmd.DeliverAt.Value <= DateTime.UtcNow)
                 return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.DeliverAtMustBeFuture));
         }
+
+        // Multi-recipient share (issue #37): the link can be emailed to N people, capped per plan.
+        var recipients = NormalizeRecipients(cmd.RecipientEmails);
+        if (recipients.Count > RecipientLimit(plan))
+            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.RecipientLimitExceeded));
 
         // The commit must match the session created by start-r2, for the same owner —
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
@@ -225,6 +235,11 @@ public sealed class CommitR2Handler(
             await SendLinkEmailAsync(delivery, shareCode, cancellationToken);
         }
 
+        if (recipients.Count > 0 && emailSender.IsConfigured)
+        {
+            await SendRecipientEmailsAsync(delivery, shareCode, recipients, cancellationToken);
+        }
+
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
         var shareLink = $"{baseUrl}/d/{shareCode}";
         if (!string.IsNullOrEmpty(user?.ReferralCode))
@@ -347,6 +362,45 @@ public sealed class CommitR2Handler(
         {
             // ponytail: log and drop — a failed sender email isn't worth a retry queue.
             logger.LogWarning(ex, "Failed to send sender link email to {Email} for delivery {DeliveryId}", delivery.SenderEmail, delivery.Id);
+        }
+    }
+
+    internal static List<string> NormalizeRecipients(IReadOnlyList<string>? emails)
+    {
+        if (emails is null)
+            return [];
+
+        return emails
+            .Select(e => e.Trim())
+            .Where(e => e.Contains('@') && e.Length <= 254)
+            .Select(e => e.ToLowerInvariant())
+            .Distinct()
+            .ToList();
+    }
+
+    private async Task SendRecipientEmailsAsync(Delivery delivery, string shareCode, List<string> recipients, CancellationToken cancellationToken)
+    {
+        var baseUrl = _emailOptions.BaseUrl.TrimEnd('/');
+        var shareUrl = $"{baseUrl}{RoutePaths.DeliveryPage}{shareCode}";
+
+        var body = $"""
+            <div style="font-family:system-ui,sans-serif;font-size:15px;color:#1f2937">
+              <p>Chào bạn,</p>
+              <p>Có một file được gửi cho bạn qua QuickShare:</p>
+              <p><a href="{shareUrl}" style="color:#2563eb">{shareUrl}</a></p>
+            </div>
+            """;
+
+        foreach (var email in recipients)
+        {
+            try
+            {
+                await emailSender.SendAsync(email, "QuickShare", LinkEmailSubject, body, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send recipient link email to {Email} for delivery {DeliveryId}", email, delivery.Id);
+            }
         }
     }
 }

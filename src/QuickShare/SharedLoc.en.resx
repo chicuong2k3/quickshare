@@ -647,6 +647,9 @@
   <data name="upload_sender_email_label" xml:space="preserve"><value>Email me the link + updates</value></data>
   <data name="upload_sender_email_placeholder" xml:space="preserve"><value>you@example.com</value></data>
   <data name="upload_sender_email_hint" xml:space="preserve"><value>Optional — get your share link and download updates by email. Unsubscribe anytime.</value></data>
+  <data name="upload_recipients_label" xml:space="preserve"><value>Send link to</value></data>
+  <data name="upload_recipients_placeholder" xml:space="preserve"><value>a@example.com, b@example.com</value></data>
+  <data name="upload_recipients_hint" xml:space="preserve"><value>Email the link to up to 3 people (Pro: 20).</value></data>
   <data name="dl_suspended_h1" xml:space="preserve"><value>This file is unavailable</value></data>
   <data name="dl_suspended_sub" xml:space="preserve"><value>This link has been disabled. Contact the sender for an alternative.</value></data>
   <data name="dl_report_link" xml:space="preserve"><value>Report</value></data>

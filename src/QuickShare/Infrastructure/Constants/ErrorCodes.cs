@@ -51,4 +51,5 @@ public static class ErrorCodes
     public const string ExtensionRequestsDisabled = "extension_requests_disabled";
     public const string DeliveryNotExpired = "delivery_not_expired";
     public const string ExtensionRequestNotFound = "extension_request_not_found";
+    public const string RecipientLimitExceeded = "recipient_limit_exceeded";
 }

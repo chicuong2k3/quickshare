@@ -648,6 +648,9 @@
   <data name="upload_sender_email_label" xml:space="preserve"><value>Gửi link và cập nhật qua email cho tôi</value></data>
   <data name="upload_sender_email_placeholder" xml:space="preserve"><value>ban@example.com</value></data>
   <data name="upload_sender_email_hint" xml:space="preserve"><value>Tuỳ chọn — nhận link chia sẻ và thông báo khi file được tải. Huỷ bất cứ lúc nào.</value></data>
+  <data name="upload_recipients_label" xml:space="preserve"><value>Gửi link tới</value></data>
+  <data name="upload_recipients_placeholder" xml:space="preserve"><value>a@example.com, b@example.com</value></data>
+  <data name="upload_recipients_hint" xml:space="preserve"><value>Gửi link qua email tới tối đa 3 người (Pro: 20).</value></data>
   <data name="dl_suspended_h1" xml:space="preserve"><value>File này hiện không khả dụng</value></data>
   <data name="dl_suspended_sub" xml:space="preserve"><value>Liên kết này đã bị vô hiệu hoá. Hãy liên hệ người gửi để có cách khác.</value></data>
   <data name="dl_report_link" xml:space="preserve"><value>Báo cáo</value></data>

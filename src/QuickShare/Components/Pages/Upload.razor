@@ -229,6 +229,13 @@
                     </div>
                 }
 
+                @* Multi-recipient share (issue #37) — email the link to N people at upload *@
+                <div class="sender-email-wrap">
+                    <label for="upload-recipients" class="otp-label">@Loc["upload_recipients_label"]</label>
+                    <input type="text" id="upload-recipients" class="sender-email-input" autocomplete="off" placeholder="@Loc["upload_recipients_placeholder"]" />
+                    <span class="otp-hint">@Loc["upload_recipients_hint"]</span>
+                </div>
+
                 @if (canSchedule)
                 {
                     <div class="sender-email-wrap">
