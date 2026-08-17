@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<AnalyticsEvent> AnalyticsEvents => Set<AnalyticsEvent>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ExtensionRequest> ExtensionRequests => Set<ExtensionRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -315,6 +316,21 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ExtensionRequest>(entity =>
+        {
+            entity.ToTable("extension_requests");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RequesterToken).IsRequired().HasMaxLength(ExtensionRequest.RequesterTokenMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.RejectMessage).HasMaxLength(ExtensionRequest.RejectMessageMaxLength);
+            entity.HasIndex(e => new { e.DeliveryId, e.RequesterToken });
+            entity.HasIndex(e => new { e.DeliveryId, e.Status });
+            entity.HasOne(e => e.Delivery)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -163,6 +163,15 @@
                     <span class="otp-hint">@Loc["upload_burn_hint"]</span>
                 </div>
 
+                @* Extension requests (issue #233) — recipients may ask for more time *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-allow-requests" />
+                        <span>@Loc["upload_allow_requests_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_allow_requests_hint"]</span>
+                </div>
+
                 @* Metadata strip (issue #170) — privacy-first, on by default *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

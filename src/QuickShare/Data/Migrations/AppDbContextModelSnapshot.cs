@@ -192,6 +192,9 @@ namespace QuickShare.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<bool>("AllowExtensionRequests")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 
@@ -343,6 +346,47 @@ namespace QuickShare.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("download_tracking", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.ExtensionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RejectMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RequesterToken")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId", "RequesterToken");
+
+                    b.HasIndex("DeliveryId", "Status");
+
+                    b.ToTable("extension_requests", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.FeatureFlagOverride", b =>
@@ -1016,6 +1060,17 @@ namespace QuickShare.Migrations
                         .HasForeignKey("DeliveryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.ExtensionRequest", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.FileRequest", b =>

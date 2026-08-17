@@ -43,6 +43,8 @@ public record Delivery : BaseAuditEntity
     public DateTime? ExpiryReminderSentAt { get; set; }
     /// <summary>When the file-request digest email mentioning this delivery was sent (issue #16); null = not yet included in a digest.</summary>
     public DateTime? DigestNotifiedAt { get; set; }
+    /// <summary>Whether recipients may ask for more time after expiry (issue #233). Default off for privacy.</summary>
+    public bool AllowExtensionRequests { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }

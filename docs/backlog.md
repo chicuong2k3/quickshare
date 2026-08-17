@@ -116,6 +116,12 @@ Tier 4 batch 7, 2026-08-17: `#57` upload from URL — Pro/Studio server-side rem
 private/loopback/link-local/CGNAT/reserved ranges at connect time via `RemoteUrlFetcher`),
 size-capped streaming, quota-checked. Send page "Upload from URL" input for paid plans.
 
+Tier 4 batch 8, 2026-08-17: `#233` recipient extension request — anonymous recipient asks
+for more time on an expired delivery (`POST /api/deliveries/{code}/extension-request`),
+one per recipient, sender opt-in toggle (`AllowExtensionRequests`, default off). Sender
+gets in-app + email notification and approves (extends) or rejects from
+`/account/deliveries/{id}/extension-requests`. Expired page shows "Request more time" when enabled.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

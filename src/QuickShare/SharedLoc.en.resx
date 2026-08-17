@@ -760,6 +760,8 @@
   <data name="dl_sha_copy" xml:space="preserve"><value>Copy</value></data>
   <data name="upload_burn_label" xml:space="preserve"><value>Self-destruct after 1 download</value></data>
   <data name="upload_burn_hint" xml:space="preserve"><value>The link works once, then expires. Best for sensitive files.</value></data>
+  <data name="upload_allow_requests_label" xml:space="preserve"><value>Allow extension requests</value></data>
+  <data name="upload_allow_requests_hint" xml:space="preserve"><value>Recipients can ask you to extend the link after it expires.</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>
@@ -788,6 +790,18 @@
   <data name="nav_notifications" xml:space="preserve"><value>Notifications</value></data>
   <data name="notif_delivery_expired" xml:space="preserve"><value>Your file expired: {0}</value></data>
   <data name="notif_delivery_downloaded" xml:space="preserve"><value>Your file was downloaded: {0}</value></data>
+  <data name="dl_ext_request_btn" xml:space="preserve"><value>Request more time</value></data>
+  <data name="dl_ext_request_sent" xml:space="preserve"><value>Request sent. The sender will be notified.</value></data>
+  <data name="notif_extension_requested" xml:space="preserve"><value>Extension requested: {0}</value></data>
+  <data name="ext_requests_title" xml:space="preserve"><value>Extension requests — QuickShareCloud</value></data>
+  <data name="ext_requests_h1" xml:space="preserve"><value>Extension requests</value></data>
+  <data name="ext_requests_lead" xml:space="preserve"><value>Recipients asking for more time on this file.</value></data>
+  <data name="ext_requests_empty" xml:space="preserve"><value>No requests yet.</value></data>
+  <data name="ext_requests_approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="ext_requests_reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="ext_requests_status_pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="ext_requests_status_approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="ext_requests_status_rejected" xml:space="preserve"><value>Rejected</value></data>
   <data name="account_downloads_title" xml:space="preserve"><value>Downloaded files</value></data>
   <data name="account_downloads_empty" xml:space="preserve"><value>Nothing here yet — files you download while signed in (with tracking on) appear here.</value></data>
   <data name="deliveries_replace" xml:space="preserve"><value>Replace file</value></data>

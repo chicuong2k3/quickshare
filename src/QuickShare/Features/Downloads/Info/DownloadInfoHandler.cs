@@ -21,7 +21,8 @@ public record DownloadInfoResponse(
     string? Sha256,
     DateTime? FirstDownloadedAt,
     bool HideDownloadStats,
-    bool BurnAfterDownload
+    bool BurnAfterDownload,
+    bool AllowExtensionRequests
 );
 
 public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
@@ -83,7 +84,8 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
                     Sha256: delivery.Sha256,
                     FirstDownloadedAt: delivery.FirstDownloadedAt,
                     HideDownloadStats: delivery.HideDownloadStats,
-                    BurnAfterDownload: delivery.MaxDownloads == 1
+                    BurnAfterDownload: delivery.MaxDownloads == 1,
+                    AllowExtensionRequests: delivery.AllowExtensionRequests
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

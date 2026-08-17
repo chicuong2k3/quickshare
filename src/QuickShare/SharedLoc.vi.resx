@@ -761,6 +761,8 @@
   <data name="dl_sha_copy" xml:space="preserve"><value>Sao chép</value></data>
   <data name="upload_burn_label" xml:space="preserve"><value>Tự huỷ sau 1 lần tải</value></data>
   <data name="upload_burn_hint" xml:space="preserve"><value>Liên kết chỉ dùng một lần rồi hết hạn. Phù hợp cho file nhạy cảm.</value></data>
+  <data name="upload_allow_requests_label" xml:space="preserve"><value>Cho phép yêu cầu gia hạn</value></data>
+  <data name="upload_allow_requests_hint" xml:space="preserve"><value>Người nhận có thể yêu cầu bạn gia hạn liên kết sau khi hết hạn.</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Xoá metadata ảnh (vị trí, máy ảnh)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Gỡ tag GPS/máy ảnh/thiết bị khỏi ảnh. Bật sẵn theo mặc định.</value></data>
   <data name="upload_compress_label" xml:space="preserve"><value>Nén ảnh lớn</value></data>
@@ -807,7 +809,19 @@
   <data name="notifications_badge_aria" xml:space="preserve"><value>{0} thông báo chưa đọc</value></data>
   <data name="nav_notifications" xml:space="preserve"><value>Thông báo</value></data>
   <data name="notif_delivery_expired" xml:space="preserve"><value>File của bạn đã hết hạn: {0}</value></data>
-  <data name="notif_delivery_downloaded" xml:space="preserve"><value>File của bạn vừa được tải: {0}</value></data>  <data name="account_downloads_title" xml:space="preserve"><value>File đã tải</value></data>
+  <data name="notif_delivery_downloaded" xml:space="preserve"><value>File của bạn vừa được tải: {0}</value></data>
+  <data name="dl_ext_request_btn" xml:space="preserve"><value>Yêu cầu gia hạn</value></data>
+  <data name="dl_ext_request_sent" xml:space="preserve"><value>Đã gửi yêu cầu. Người gửi sẽ được thông báo.</value></data>
+  <data name="notif_extension_requested" xml:space="preserve"><value>Yêu cầu gia hạn: {0}</value></data>
+  <data name="ext_requests_title" xml:space="preserve"><value>Yêu cầu gia hạn — QuickShareCloud</value></data>
+  <data name="ext_requests_h1" xml:space="preserve"><value>Yêu cầu gia hạn</value></data>
+  <data name="ext_requests_lead" xml:space="preserve"><value>Người nhận đang yêu cầu thêm thời gian cho file này.</value></data>
+  <data name="ext_requests_empty" xml:space="preserve"><value>Chưa có yêu cầu nào.</value></data>
+  <data name="ext_requests_approve" xml:space="preserve"><value>Duyệt</value></data>
+  <data name="ext_requests_reject" xml:space="preserve"><value>Từ chối</value></data>
+  <data name="ext_requests_status_pending" xml:space="preserve"><value>Đang chờ</value></data>
+  <data name="ext_requests_status_approved" xml:space="preserve"><value>Đã duyệt</value></data>
+  <data name="ext_requests_status_rejected" xml:space="preserve"><value>Đã từ chối</value></data>  <data name="account_downloads_title" xml:space="preserve"><value>File đã tải</value></data>
   <data name="account_downloads_empty" xml:space="preserve"><value>Chưa có gì — các file bạn tải khi đăng nhập (bật theo dõi) sẽ hiện ở đây.</value></data>
   <data name="deliveries_replace" xml:space="preserve"><value>Thay file</value></data>
   <data name="deliveries_replace_error" xml:space="preserve"><value>Thay file thất bại. File có thể quá lớn so với gói của bạn.</value></data>

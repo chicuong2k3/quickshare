@@ -1,0 +1,142 @@
+@layout MainLayout
+@page "/account/deliveries/{Id:guid}/extension-requests"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Deliveries.ExtensionRequests
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ext_requests_title"]</PageTitle>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["ext_requests_h1"]</h1>
+        <p class="db-p db-text-muted">@Loc["ext_requests_lead"]</p>
+    </section>
+
+    @if (!isLoaded)
+    {
+        <section id="ext-body"
+                 hx-get="@BodyUrl"
+                 hx-trigger="load"
+                 hx-target="#ext-body"
+                 hx-select="#ext-body"
+                 hx-swap="outerHTML"
+                 aria-busy="true">
+            <p class="db-text-muted">@Loc["notifications_center_loading"]</p>
+        </section>
+    }
+    else
+    {
+        <section id="ext-body">@Chunk</section>
+    }
+
+</PageWrapper>
+}
+
+<script>
+    window.approveExtension = function (btn) {
+        var card = btn.closest('article');
+        var id = card.id.replace('ext-', '');
+        btn.disabled = true;
+        fetch('/api/extension-requests/' + id + '/approve', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                card.classList.add('notif--read');
+                card.querySelectorAll('button').forEach(function (b) { b.remove(); });
+                var status = card.querySelector('.notif__time');
+                if (status) status.textContent = btn.getAttribute('data-approved-label');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.rejectExtension = function (btn) {
+        var card = btn.closest('article');
+        var id = card.id.replace('ext-', '');
+        btn.disabled = true;
+        fetch('/api/extension-requests/' + id + '/reject', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                card.classList.add('notif--read');
+                card.querySelectorAll('button').forEach(function (b) { b.remove(); });
+                var status = card.querySelector('.notif__time');
+                if (status) status.textContent = btn.getAttribute('data-rejected-label');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+</script>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private bool isLoaded;
+    private bool isChunkRequest;
+    private IReadOnlyList<ExtensionRequestItem> items = [];
+
+    private string BodyUrl => $"{RoutePaths.AccountDeliveries}/{Id}/extension-requests";
+
+    private RenderFragment Chunk => @<div class="notif-list">
+        @if (items.Count == 0)
+        {
+            <div class="account-deliveries-empty">
+                <p class="db-p">@Loc["ext_requests_empty"]</p>
+            </div>
+        }
+        @foreach (var item in items)
+        {
+            var pending = item.Status == ExtensionRequestStatus.Pending;
+            var statusLabel = item.Status switch
+            {
+                ExtensionRequestStatus.Approved => Loc["ext_requests_status_approved"],
+                ExtensionRequestStatus.Rejected => Loc["ext_requests_status_rejected"],
+                _ => Loc["ext_requests_status_pending"],
+            };
+
+            <article id="ext-@item.Id" class="notif @(pending ? "notif--unread" : "notif--read")">
+                <div class="notif__body">
+                    <time class="db-text-muted notif__time" datetime="@item.CreatedAt.ToString("o")">@statusLabel · @item.CreatedAt.ToLocalTime().ToString("g")</time>
+                </div>
+                @if (pending)
+                {
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            data-approved-label="@Loc["ext_requests_status_approved"]"
+                            onclick="approveExtension(this)" data-ai-action="extension.approve">@Loc["ext_requests_approve"]</button>
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            data-rejected-label="@Loc["ext_requests_status_rejected"]"
+                            onclick="rejectExtension(this)" data-ai-action="extension.reject">@Loc["ext_requests_reject"]</button>
+                }
+            </article>
+        }
+    </div>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isLoaded = true;
+        isChunkRequest = true;
+
+        var result = await Bus.Send<LightResults.Result<IReadOnlyList<ExtensionRequestItem>>>(
+            new ListExtensionRequestsQuery(Id), CancellationToken.None);
+
+        if (result.IsSuccess(out var value))
+            items = value;
+    }
+}

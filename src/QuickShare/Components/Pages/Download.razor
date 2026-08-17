@@ -8,6 +8,7 @@
 @using System.Text.Json.Serialization
 @using QuickShare.Infrastructure
 @using QuickShare.Features.Downloads.Info
+@using QuickShare.Features.Deliveries.ExtensionRequests
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @{
@@ -344,6 +345,13 @@
                             <div class="db-h1" role="heading" aria-level="1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</div>
                             <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
                             <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                            @if (Info?.AllowExtensionRequests == true)
+                            {
+                                <div id="dl-ext-request" style="margin-top: 1.5rem">
+                                    <button type="button" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
+                                    <p id="dl-ext-request-done" class="db-p hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
+                                </div>
+                            }
                         </div>
                     </div>
                     break;
@@ -374,6 +382,13 @@
                         <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</h1>
                         <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                        @if (allowExtensionRequests)
+                        {
+                            <div id="dl-ext-request" style="margin-top: 1.5rem">
+                                <button type="button" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
+                                <p id="dl-ext-request-done" class="db-p hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
+                            </div>
+                        }
                     </div>
                     break;
 
@@ -450,6 +465,23 @@
 
     <script src="/js/download.js"></script>
 
+<script>
+    window.requestExtension = function () {
+        var btn = document.getElementById('dl-ext-request-btn');
+        if (!btn) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + '@ShareCode' + '/extension-request', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                btn.classList.add('hidden');
+                var done = document.getElementById('dl-ext-request-done');
+                if (done) done.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+</script>
+
 </PageWrapper>
 
 @code {
@@ -504,6 +536,7 @@
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
     private string ExpiryLabel { get; set; } = string.Empty;
+    private bool allowExtensionRequests;
     private bool IsScheduled => Info?.Status == DeliveryStatus.Scheduled && Info.DeliverAt > DateTime.UtcNow;
     private string ScheduledLabel => Info?.DeliverAt is { } d ? d.ToLocalTime().ToString("f") : string.Empty;
     private string RequestBase => $"{HttpContextAccessor.HttpContext!.Request.Scheme}://{HttpContextAccessor.HttpContext.Request.Host}";
@@ -541,7 +574,13 @@
                 result.IsFailure(out var error);
                 var msg = error?.Message ?? string.Empty;
                 if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
+                {
                     RenderState = DownloadRenderState.Expired;
+                    var extStatus = await Bus.Send<LightResults.Result<ExtensionStatusResponse>>(
+                        new GetExtensionStatusQuery(ShareCode), CancellationToken.None);
+                    if (extStatus.IsSuccess(out var extValue))
+                        allowExtensionRequests = extValue.Allowed;
+                }
                 else if (msg.Contains("daily", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.DailyLimit;
                 else if (msg.Contains("limit", StringComparison.OrdinalIgnoreCase))
@@ -572,7 +611,8 @@
                 Sha256 = value.Sha256,
                 FirstDownloadedAt = value.FirstDownloadedAt,
                 HideDownloadStats = value.HideDownloadStats,
-                BurnAfterDownload = value.BurnAfterDownload
+                BurnAfterDownload = value.BurnAfterDownload,
+                AllowExtensionRequests = value.AllowExtensionRequests
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -641,6 +681,7 @@
         public DateTime? FirstDownloadedAt { get; set; }
         public bool HideDownloadStats { get; set; }
         public bool BurnAfterDownload { get; set; }
+        public bool AllowExtensionRequests { get; set; }
     }
 }
 

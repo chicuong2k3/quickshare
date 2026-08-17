@@ -170,6 +170,7 @@ else
     {
         NotificationType.DeliveryExpired => string.Format(Loc["notif_delivery_expired"], item.Title),
         NotificationType.DeliveryDownloaded => string.Format(Loc["notif_delivery_downloaded"], item.Title),
+        NotificationType.ExtensionRequested => string.Format(Loc["notif_extension_requested"], item.Title),
         _ => item.Title,
     };
 
