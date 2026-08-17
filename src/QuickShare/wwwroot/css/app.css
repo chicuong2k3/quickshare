@@ -811,6 +811,12 @@ body::after,
     display: none !important;
 }
 
+/* Alpine x-cloak: keep pre-init content hidden until Alpine strips the
+   attribute — without it both billing periods render at once. */
+[x-cloak] {
+    display: none !important;
+}
+
 .sr-only {
     position: absolute;
     width: 1px;

@@ -1,0 +1,24 @@
+/* ─── 404 — a card of the stack that matches nothing ─── */
+
+.nf-card {
+    width: 100%;
+    max-width: 28rem;
+    margin: var(--db-space-8) auto 0;
+}
+
+.nf-body {
+    text-align: center;
+    padding: var(--db-space-7) var(--db-space-6);
+}
+
+.nf-title {
+    margin-bottom: var(--db-space-3);
+}
+
+.nf-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--db-space-4);
+    margin-top: var(--db-space-6);
+}
