@@ -41,6 +41,8 @@ public record Delivery : BaseAuditEntity
     public DateTime? FirstDownloadedAt { get; set; }
     /// <summary>When the sender-expiry reminder email was sent (issue #29); null = not yet reminded.</summary>
     public DateTime? ExpiryReminderSentAt { get; set; }
+    /// <summary>When the file-request digest email mentioning this delivery was sent (issue #16); null = not yet included in a digest.</summary>
+    public DateTime? DigestNotifiedAt { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }
@@ -48,6 +50,9 @@ public record Delivery : BaseAuditEntity
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }
     public User? Sender { get; init; }
+    /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
+    public Guid? FileRequestId { get; set; }
+    public FileRequest? FileRequest { get; init; }
 }
 
 public static class DeliveryStatus

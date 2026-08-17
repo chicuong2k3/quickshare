@@ -211,6 +211,9 @@ namespace QuickShare.Migrations
                     b.Property<DateTime?>("DeliverAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DigestNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("DownloadCount")
                         .HasColumnType("integer");
 
@@ -223,6 +226,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("FileRequestId")
+                        .HasColumnType("uuid");
 
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
@@ -293,6 +299,8 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("FileRequestId");
 
                     b.HasIndex("SenderId");
 
@@ -391,6 +399,64 @@ namespace QuickShare.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Feedbacks");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.FileRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("MaxFiles")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("MaxTotalBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("file_requests", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.OtpLockout", b =>
@@ -673,6 +739,9 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("FileRequestId")
+                        .HasColumnType("uuid");
+
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
@@ -701,6 +770,8 @@ namespace QuickShare.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("FileRequestId");
 
                     b.HasIndex("SenderId");
 
@@ -881,10 +952,17 @@ namespace QuickShare.Migrations
 
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
+                    b.HasOne("QuickShare.Data.Entities.FileRequest", "FileRequest")
+                        .WithMany("Deliveries")
+                        .HasForeignKey("FileRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuickShare.Data.Entities.User", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("FileRequest");
 
                     b.Navigation("Sender");
                 });
@@ -896,6 +974,17 @@ namespace QuickShare.Migrations
                         .HasForeignKey("DeliveryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.FileRequest", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.OtpLockout", b =>
@@ -942,6 +1031,11 @@ namespace QuickShare.Migrations
 
             modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
+                    b.HasOne("QuickShare.Data.Entities.FileRequest", null)
+                        .WithMany()
+                        .HasForeignKey("FileRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuickShare.Data.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("SenderId")
@@ -977,6 +1071,11 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.FileRequest", b =>
+                {
+                    b.Navigation("Deliveries");
                 });
 #pragma warning restore 612, 618
         }

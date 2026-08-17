@@ -4,7 +4,7 @@ using QuickShare.Features.Uploads.Shared;
 
 namespace QuickShare.Features.Uploads.StartR2;
 
-public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail)
+public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode)
     : IRequest<Result<StartR2Response>>;
 
 public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
@@ -31,18 +31,31 @@ public sealed class StartR2Handler(
         var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, cancellationToken);
         var plan = user?.Plan ?? PlanTierLimits.Anonymous;
 
-        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
-        if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
-
-        // Monthly quota check (authenticated users only; anonymous keeps the per-file cap).
-        if (user is not null)
+        Guid? fileRequestId = null;
+        if (!string.IsNullOrWhiteSpace(cmd.RequestCode))
         {
-            var quota = new QuotaService(db);
-            var check = await quota.CheckAsync(user.Id, plan, cmd.FileSize, cancellationToken);
-            if (check.IsExceeded)
-                return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.MonthlyQuotaExceeded));
+            var (requestId, failure) = await ValidateRequestAsync(cmd.RequestCode, cmd.FileSize, cancellationToken);
+            if (failure is not null)
+                return Result.Failure<StartR2Response>(failure);
+            fileRequestId = requestId;
+        }
+
+        // File-request submissions are capped by the request budget, never the submitter plan.
+        if (fileRequestId is null)
+        {
+            var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
+            if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
+                return Result.Failure<StartR2Response>(new LightResults.Error(
+                    $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
+
+            // Monthly quota check (authenticated users only; anonymous keeps the per-file cap).
+            if (user is not null)
+            {
+                var quota = new QuotaService(db);
+                var check = await quota.CheckAsync(user.Id, plan, cmd.FileSize, cancellationToken);
+                if (check.IsExceeded)
+                    return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.MonthlyQuotaExceeded));
+            }
         }
 
         var deliveryId = Guid.CreateVersion7();
@@ -75,7 +88,8 @@ public sealed class StartR2Handler(
             Status = UploadSessionStatus.InProgress,
             ExpiresAt = DateTime.UtcNow.Add(maxExpiry),
             R2UploadId = initResult.UploadId,
-            StoragePath = initResult.ObjectKey
+            StoragePath = initResult.ObjectKey,
+            FileRequestId = fileRequestId
         };
 
         db.UploadSessions.Add(session);
@@ -86,5 +100,41 @@ public sealed class StartR2Handler(
 
         return Result.Success(new StartR2Response(
             deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls));
+    }
+
+    private async Task<(Guid? RequestId, LightResults.Error? Failure)> ValidateRequestAsync(
+        string code, long fileSize, CancellationToken cancellationToken)
+    {
+        var request = await db.FileRequests
+            .AsNoTracking()
+            .Where(r => r.Code == code)
+            .Select(r => new
+            {
+                r.Id,
+                r.ClosedAt,
+                r.ExpiresAt,
+                r.MaxTotalBytes,
+                r.MaxFiles,
+                CurrentTotalBytes = r.Deliveries
+                    .Where(d => d.Status == DeliveryStatus.Active)
+                    .Sum(d => (long?)d.TotalBytes) ?? 0,
+                CurrentFileCount = r.Deliveries.Count(d => d.Status == DeliveryStatus.Active),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (request is null)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestNotFound));
+
+        if (request.ClosedAt is not null)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestClosed));
+
+        if (request.ExpiresAt < DateTime.UtcNow)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestExpired));
+
+        if (request.CurrentTotalBytes + fileSize > request.MaxTotalBytes ||
+            request.CurrentFileCount >= request.MaxFiles)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestLimitReached));
+
+        return (request.Id, null);
     }
 }

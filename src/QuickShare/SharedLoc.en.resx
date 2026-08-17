@@ -990,4 +990,79 @@
   <data name="labels_no_expiry" xml:space="preserve">
     <value>No expiry</value>
   </data>
+  <data name="request_page_title" xml:space="preserve">
+    <value>{0} is requesting files from you</value>
+  </data>
+  <data name="request_page_message" xml:space="preserve">
+    <value>Upload files straight to them — no account needed. Everything is encrypted in your browser before it leaves.</value>
+  </data>
+  <data name="request_caps" xml:space="preserve">
+    <value>Up to {0} files, {1} total, until {2}</value>
+  </data>
+  <data name="request_expired" xml:space="preserve">
+    <value>This request has expired</value>
+  </data>
+  <data name="request_closed" xml:space="preserve">
+    <value>This request has been closed</value>
+  </data>
+  <data name="request_upload_button" xml:space="preserve">
+    <value>Send files</value>
+  </data>
+  <data name="request_success_title" xml:space="preserve">
+    <value>Done!</value>
+  </data>
+  <data name="request_success_body" xml:space="preserve">
+    <value>Your files are on their way to {0}.</value>
+  </data>
+  <data name="request_success_create_own" xml:space="preserve">
+    <value>Create your own file request →</value>
+  </data>
+  <data name="account_tab_requests" xml:space="preserve">
+    <value>Files received</value>
+  </data>
+  <data name="account_requests_empty" xml:space="preserve">
+    <value>No file requests yet. Create one from the Send page to collect files from anyone.</value>
+  </data>
+  <data name="account_requests_open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="account_requests_closed" xml:space="preserve">
+    <value>Closed</value>
+  </data>
+  <data name="account_requests_expired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="account_requests_close" xml:space="preserve">
+    <value>Close request</value>
+  </data>
+  <data name="account_requests_files" xml:space="preserve">
+    <value>{0} of {1} files</value>
+  </data>
+  <data name="account_requests_title" xml:space="preserve">
+    <value>File requests — QuickShareCloud</value>
+  </data>
+  <data name="account_requests_h1" xml:space="preserve">
+    <value>Files received</value>
+  </data>
+  <data name="account_requests_lead" xml:space="preserve">
+    <value>Files people sent to your request links.</value>
+  </data>
+  <data name="account_requests_loading" xml:space="preserve">
+    <value>Loading file requests...</value>
+  </data>
+  <data name="account_requests_close_confirm" xml:space="preserve">
+    <value>Close this request? People won't be able to send more files.</value>
+  </data>
+  <data name="account_requests_copied" xml:space="preserve">
+    <value>Link copied!</value>
+  </data>
+  <data name="account_requests_bytes" xml:space="preserve">
+    <value>{0} of {1} used</value>
+  </data>
+  <data name="stranger_warning" xml:space="preserve">
+    <value>File from a stranger — be careful opening</value>
+  </data>
+  <data name="labels_delete_file" xml:space="preserve">
+    <value>Delete</value>
+  </data>
 </root>

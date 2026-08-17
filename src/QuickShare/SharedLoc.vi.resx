@@ -994,4 +994,79 @@
   <data name="labels_no_expiry" xml:space="preserve">
     <value>Không hết hạn</value>
   </data>
+  <data name="request_page_title" xml:space="preserve">
+    <value>{0} đang yêu cầu gửi file cho họ</value>
+  </data>
+  <data name="request_page_message" xml:space="preserve">
+    <value>Gửi file trực tiếp cho họ — không cần tài khoản. Mọi thứ được mã hóa trong trình duyệt trước khi rời khỏi máy bạn.</value>
+  </data>
+  <data name="request_caps" xml:space="preserve">
+    <value>Tối đa {0} file, tổng {1}, đến {2}</value>
+  </data>
+  <data name="request_expired" xml:space="preserve">
+    <value>Yêu cầu này đã hết hạn</value>
+  </data>
+  <data name="request_closed" xml:space="preserve">
+    <value>Yêu cầu này đã bị đóng</value>
+  </data>
+  <data name="request_upload_button" xml:space="preserve">
+    <value>Gửi file</value>
+  </data>
+  <data name="request_success_title" xml:space="preserve">
+    <value>Xong!</value>
+  </data>
+  <data name="request_success_body" xml:space="preserve">
+    <value>File của bạn đang trên đường đến {0}.</value>
+  </data>
+  <data name="request_success_create_own" xml:space="preserve">
+    <value>Tạo yêu cầu gửi file của riêng bạn →</value>
+  </data>
+  <data name="account_tab_requests" xml:space="preserve">
+    <value>File đã nhận</value>
+  </data>
+  <data name="account_requests_empty" xml:space="preserve">
+    <value>Chưa có yêu cầu gửi file nào. Tạo một yêu cầu từ trang Gửi để nhận file từ bất kỳ ai.</value>
+  </data>
+  <data name="account_requests_open" xml:space="preserve">
+    <value>Đang mở</value>
+  </data>
+  <data name="account_requests_closed" xml:space="preserve">
+    <value>Đã đóng</value>
+  </data>
+  <data name="account_requests_expired" xml:space="preserve">
+    <value>Hết hạn</value>
+  </data>
+  <data name="account_requests_close" xml:space="preserve">
+    <value>Đóng yêu cầu</value>
+  </data>
+  <data name="account_requests_files" xml:space="preserve">
+    <value>{0} trên {1} file</value>
+  </data>
+  <data name="account_requests_title" xml:space="preserve">
+    <value>Yêu cầu gửi file — QuickShareCloud</value>
+  </data>
+  <data name="account_requests_h1" xml:space="preserve">
+    <value>File đã nhận</value>
+  </data>
+  <data name="account_requests_lead" xml:space="preserve">
+    <value>File mọi người gửi đến liên kết yêu cầu của bạn.</value>
+  </data>
+  <data name="account_requests_loading" xml:space="preserve">
+    <value>Đang tải yêu cầu gửi file...</value>
+  </data>
+  <data name="account_requests_close_confirm" xml:space="preserve">
+    <value>Đóng yêu cầu này? Mọi người sẽ không thể gửi thêm file.</value>
+  </data>
+  <data name="account_requests_copied" xml:space="preserve">
+    <value>Đã sao chép liên kết!</value>
+  </data>
+  <data name="account_requests_bytes" xml:space="preserve">
+    <value>{0} trên {1} đã dùng</value>
+  </data>
+  <data name="stranger_warning" xml:space="preserve">
+    <value>File từ người lạ — cẩn thận khi mở</value>
+  </data>
+  <data name="labels_delete_file" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
 </root>

@@ -25,13 +25,19 @@ public sealed class StartR2Endpoint : Endpoint<StartR2Request, StartR2Response>
 
     public override async Task HandleAsync(StartR2Request req, CancellationToken ct)
     {
-        var cmd = new StartR2Command(req.FileName, req.FileSize, req.ContentType, req.PartNumbers, req.SenderEmail);
+        var cmd = new StartR2Command(req.FileName, req.FileSize, req.ContentType, req.PartNumbers, req.SenderEmail, req.RequestCode);
         var result = await Resolve<IMediator>().Send<LightResults.Result<StartR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
             await Send.OkAsync(value, ct);
         else if (result.IsFailure(out var error))
-            ThrowError(error.Message, error.Message.StartsWith(UploadErrors.R2Upstream, StringComparison.Ordinal) ? 502 : 400);
+            ThrowError(error.Message, error.Message switch
+            {
+                ErrorCodes.FileRequestExpired or ErrorCodes.FileRequestClosed => 410,
+                ErrorCodes.FileRequestNotFound => 404,
+                var m when m.StartsWith(UploadErrors.R2Upstream, StringComparison.Ordinal) => 502,
+                _ => 400
+            });
     }
 }
 
@@ -42,4 +48,5 @@ public class StartR2Request
     public string ContentType { get; set; } = string.Empty;
     public IReadOnlyList<int> PartNumbers { get; set; } = [];
     public string? SenderEmail { get; set; }
+    public string? RequestCode { get; set; }
 }

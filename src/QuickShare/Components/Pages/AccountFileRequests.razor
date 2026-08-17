@@ -1,0 +1,242 @@
+@layout MainLayout
+@page "/account/requests"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.FileRequests.List
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["account_requests_title"]</PageTitle>
+
+@if (isChunkRequest)
+{
+    @* Infinite-scroll append: only the chunk is selected out of this response. *@
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["account_requests_h1"]</h1>
+        <p class="db-p db-text-muted">@Loc["account_requests_lead"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountFileRequests" />
+
+    @if (!isLoaded)
+    {
+        @* Shell skeleton — rendered instantly, no DB calls. *@
+        <section id="requests-body"
+                 hx-get="@RoutePaths.AccountFileRequests"
+                 hx-trigger="load"
+                 hx-target="#requests-body"
+                 hx-select="#requests-body"
+                 hx-swap="outerHTML"
+                 aria-busy="true">
+            <p class="db-text-muted">@Loc["account_requests_loading"]</p>
+        </section>
+    }
+    else
+    {
+        <section id="requests-body">
+            @if (items.Count == 0)
+            {
+                <div class="account-deliveries-empty">
+                    <p class="db-p">@Loc["account_requests_empty"]</p>
+                    <a href="@RoutePaths.Send" class="db-btn db-btn--primary">@Loc["deliveries_empty_cta"]</a>
+                </div>
+            }
+            else
+            {
+                @Chunk
+            }
+        </section>
+    }
+
+</PageWrapper>
+}
+
+<script>
+    window.closeRequest = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('request-', '');
+        var msg = btn.getAttribute('data-confirm');
+        if (msg && !window.confirm(msg)) return;
+        btn.disabled = true;
+        fetch('/api/file-requests/' + id + '/close', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                article.classList.add('account-delivery--spent');
+                article.querySelectorAll('button').forEach(function (b) { b.remove(); });
+                var expiry = article.querySelector('.account-delivery__expiry');
+                if (expiry) expiry.textContent = btn.getAttribute('data-closed-label');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.copyRequestLink = function (btn) {
+        var url = btn.getAttribute('data-url');
+        var done = function () {
+            var label = btn.textContent;
+            btn.textContent = btn.getAttribute('data-copied-label');
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(done, function () { copyRequestFallback(btn, url); });
+        } else {
+            copyRequestFallback(btn, url);
+        }
+    };
+    function copyRequestFallback(btn, value) {
+        var input = document.createElement('input');
+        input.value = value;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        try {
+            input.select();
+            document.execCommand('copy');
+            var label = btn.textContent;
+            btn.textContent = btn.getAttribute('data-copied-label');
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        } catch (_) { /* clipboard unavailable — leave the label as-is */ }
+        finally {
+            document.body.removeChild(input);
+        }
+    }
+</script>
+
+@code {
+    private const string CursorQueryKey = "cursor";
+    private const string ChunkClass = "requests-chunk";
+    private const int GaugeFullPercent = 100;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = CursorQueryKey)]
+    public string? Cursor { get; set; }
+
+    private bool isLoaded;
+    private bool isChunkRequest;
+    private List<FileRequestItem> items = [];
+    private string? nextCursor;
+
+    /// <summary>Request rows plus the sentinel that pulls the next page into view — appended to itself.</summary>
+    private RenderFragment Chunk => @<div class="@ChunkClass account-deliveries">
+        @foreach (var item in items)
+        {
+            var closed = item.ClosedAt is not null;
+            var expired = !closed && item.ExpiresAt < DateTime.UtcNow;
+            var used = Math.Min(item.CurrentFileCount, item.MaxFiles);
+            var percent = item.MaxFiles > 0 ? used * GaugeFullPercent / item.MaxFiles : GaugeFullPercent;
+            var exhausted = item.MaxFiles > 0 && item.CurrentFileCount >= item.MaxFiles;
+            var spent = closed || expired || exhausted;
+            var link = RoutePaths.FileRequestPage + item.Code;
+
+            <article id="request-@item.Id" class="account-delivery @(spent ? "account-delivery--spent" : "")">
+                <div class="account-delivery__head">
+                    <span class="account-delivery__name" title="@item.Title">@item.Title</span>
+                    <a class="db-link account-delivery__code" href="@link" data-ai-action="request.open">/r/@item.Code</a>
+                    <span class="account-delivery__expiry db-text-muted">
+                        @if (closed)
+                        {
+                            @Loc["account_requests_closed"]
+                        }
+                        else if (expired)
+                        {
+                            @Loc["account_requests_expired"]
+                        }
+                        else
+                        {
+                            @Loc["account_requests_open"] <text>·</text> @ExpiryLabel(item.ExpiresAt)
+                        }
+                    </span>
+                </div>
+                <div class="account-delivery__gauge" role="img"
+                     aria-label="@string.Format(Loc["account_requests_files"], item.CurrentFileCount, item.MaxFiles)">
+                    <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>
+                </div>
+                <p class="account-delivery__meta db-text-muted">
+                    @string.Format(Loc["account_requests_files"], item.CurrentFileCount, item.MaxFiles)
+                    <text> · </text>@string.Format(Loc["account_requests_bytes"], FormatBytes(item.CurrentTotalBytes), FormatBytes(item.MaxTotalBytes))
+                    @if (!closed && !expired)
+                    {
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-url="@link"
+                                data-copied-label="@Loc["account_requests_copied"]"
+                                onclick="copyRequestLink(this)" data-ai-action="request.copyLink">@Loc["upload_copy_link"]</button>
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-confirm="@Loc["account_requests_close_confirm"]"
+                                data-closed-label="@Loc["account_requests_closed"]"
+                                onclick="closeRequest(this)" data-ai-action="request.close">@Loc["account_requests_close"]</button>
+                    }
+                </p>
+            </article>
+        }
+
+        @if (nextCursor is not null)
+        {
+            <div class="account-deliveries-more"
+                 hx-get="@BodyUrl(nextCursor)"
+                 hx-trigger="revealed"
+                 hx-target="this"
+                 hx-select=".@ChunkClass"
+                 hx-swap="outerHTML"
+                 aria-busy="true"></div>
+        }
+    </div>;
+
+    private string BodyUrl(string? cursor)
+    {
+        return string.IsNullOrEmpty(cursor)
+            ? RoutePaths.AccountFileRequests
+            : $"{RoutePaths.AccountFileRequests}?{CursorQueryKey}={Uri.EscapeDataString(cursor)}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        // Shell render: return immediately, no DB calls.
+        if (!isHtmxRequest) return;
+
+        isLoaded = true;
+        isChunkRequest = !string.IsNullOrEmpty(Cursor);
+
+        var result = await Bus.Send<LightResults.Result<CursorPage<FileRequestItem>>>(
+            new ListFileRequestsQuery(Cursor), CancellationToken.None);
+
+        if (result.IsSuccess(out var page))
+        {
+            items = page.Items;
+            nextCursor = page.NextCursor;
+        }
+    }
+
+    private string ExpiryLabel(DateTime expiresAt)
+    {
+        var remaining = expiresAt - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero) return Loc["deliveries_expired"];
+        if (remaining.TotalHours < 1) return string.Format(Loc["deliveries_expires_minutes"], (int)remaining.TotalMinutes + 1);
+        if (remaining.TotalHours < HoursPerDay) return string.Format(Loc["deliveries_expires_hours"], (int)remaining.TotalHours);
+        return string.Format(Loc["deliveries_expires_days"], (int)remaining.TotalDays);
+    }
+
+    private const int HoursPerDay = 24;
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        var magnitude = (int)Math.Floor(Math.Log(bytes, 1024));
+        if (magnitude >= units.Length) magnitude = units.Length - 1;
+        var size = bytes / Math.Pow(1024, magnitude);
+        return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
+    }
+}

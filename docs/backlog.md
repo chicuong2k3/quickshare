@@ -99,6 +99,14 @@ Tier 4 batch 4, 2026-08-17: `#248` code diff preview (`.patch`/`.diff` files ren
 unified/split diff in the download text preview — `parseDiff` + `renderDiff` in
 `download.ts`, `+/-` markers + line numbers, raw fallback, copy).
 
+Tier 4 batch 5, 2026-08-17: `#16` file request — owner-side half done: `FileRequest`
+entity + `UploadSession.FileRequestId`, create/list/close/get endpoints
+(`/api/file-requests`), the `/account/requests` tab + lazy-loaded page
+(`AccountFileRequests.razor`), and `FileRequestDigestJob` (Hangfire, `DigestNotifiedAt`
+on `Delivery`, migration `AddDeliveryDigestNotifiedAt`). **Blocked remainder**: the
+`/r/{code}` submission page + anonymous upload wiring — paused on the E2E-encryption
+decision (key-in-URL-fragment) for request uploads.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

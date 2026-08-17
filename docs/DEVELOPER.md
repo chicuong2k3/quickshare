@@ -16,7 +16,7 @@ Start here. Read top-to-bottom once (~15 min), then follow the pointers. This is
 src/QuickShare/                 # monolith (FastEndpoints API + Blazor Static SSR)
   Features/<Feature>/           # vertical slice: endpoint + handler + DTOs in one folder
     Uploads/  Deliveries/  Downloads/  Shares/  Payments/  Users/  Analytics/
-    Notifications/  Ads/  Admin/  ClientErrors/  Reports/
+    Notifications/  Ads/  Admin/  ClientErrors/  Reports/  FileRequests/
   Data/                         # AppDbContext, Entities/, Migrations/, AuditableEntityInterceptor
   Infrastructure/               # Storage/, Email/, Jobs/, FeatureFlags/, Telemetry/,
                                 # Caching/, Middleware/, Constants/

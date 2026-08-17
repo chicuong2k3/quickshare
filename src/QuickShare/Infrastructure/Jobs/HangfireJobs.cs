@@ -24,6 +24,7 @@ public static class HangfireJobs
     public const string TrialReminder = "trial-reminder";
     public const string TempUploadCleanup = "temp-upload-cleanup";
     public const string WeeklyDigest = "weekly-digest";
+    public const string FileRequestDigest = "file-request-digest";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -51,6 +52,8 @@ public static class HangfireJobs
             recurring.AddOrUpdate<TrialReminderJob>(TrialReminder, j => j.NotifyAsync(), Cron.Daily());
             recurring.AddOrUpdate<DeliveryExpiryReminderJob>(DeliveryExpiryReminder, j => j.RemindAsync(), Cron.Hourly());
             recurring.AddOrUpdate<WeeklyDigestJob>(WeeklyDigest, j => j.NotifyAsync(), Cron.Weekly());
+            recurring.AddOrUpdate<FileRequestDigestJob>(FileRequestDigest, j => j.NotifyAsync(),
+                Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
         }
 
         if (hasR2)

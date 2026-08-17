@@ -30,5 +30,9 @@ public sealed class StartR2Validator : Validator<StartR2Request>
             .WithMessage("A valid email address is required when provided.")
             .MaximumLength(320)
             .WithMessage("Email address must be 320 characters or fewer.");
+
+        RuleFor(x => x.RequestCode)
+            .MaximumLength(FileRequest.CodeMaxLength)
+            .WithMessage($"Request code must be at most {FileRequest.CodeMaxLength} characters.");
     }
 }

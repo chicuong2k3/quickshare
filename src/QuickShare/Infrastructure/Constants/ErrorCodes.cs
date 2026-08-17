@@ -38,4 +38,10 @@ public static class ErrorCodes
     public const string NotZip = "not_a_zip";
     public const string ZipTooLarge = "zip_too_large";
     public const string ZipTooManyEntries = "zip_too_many_entries";
+    public const string FileRequestNotFound = "file_request_not_found";
+    public const string FileRequestExpired = "file_request_expired";
+    public const string FileRequestClosed = "file_request_closed";
+    public const string FileRequestLimitReached = "file_request_limit_reached";
+    public const string FileRequestTitleInvalid = "file_request_title_invalid";
+    public const string FileRequestExpiryInvalid = "file_request_expiry_invalid";
 }

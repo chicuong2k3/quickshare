@@ -9,6 +9,7 @@ public class AppDbContext : DbContext
     public DbSet<UserLogin> UserLogins => Set<UserLogin>();
     public DbSet<UserUsage> UserUsages => Set<UserUsage>();
     public DbSet<Delivery> Deliveries => Set<Delivery>();
+    public DbSet<FileRequest> FileRequests => Set<FileRequest>();
     public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
     public DbSet<DownloadTracking> DownloadTrackings => Set<DownloadTracking>();
     public DbSet<OtpLockout> OtpLockouts => Set<OtpLockout>();
@@ -77,6 +78,28 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.FileRequestId);
+            entity.HasOne(e => e.FileRequest)
+                .WithMany(e => e.Deliveries)
+                .HasForeignKey(e => e.FileRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<FileRequest>(entity =>
+        {
+            entity.ToTable("file_requests");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(FileRequest.CodeMaxLength);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(FileRequest.TitleMaxLength);
+            entity.Property(e => e.Message).HasMaxLength(FileRequest.MessageMaxLength);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(16);
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UploadSession>(entity =>
@@ -90,6 +113,11 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.FileRequestId);
+            entity.HasOne<FileRequest>()
+                .WithMany()
+                .HasForeignKey(e => e.FileRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<DownloadTracking>(entity =>

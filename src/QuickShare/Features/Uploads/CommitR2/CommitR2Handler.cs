@@ -2,6 +2,7 @@ using LightResults;
 using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
 using QuickShare.Features.Users.Shared;
+using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Constants;
 using QuickShare.Infrastructure.Email;
 using System.Security.Cryptography;
@@ -23,7 +24,8 @@ public sealed class CommitR2Handler(
     IOptions<EmailOptions> emailOptions,
     AnalyticsService analytics,
     ILogger<CommitR2Handler> logger,
-    AppDbContext db)
+    AppDbContext db,
+    CacheService cache)
     : IRequestHandler<CommitR2Command, Result<CommitR2Response>>
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
@@ -36,7 +38,6 @@ public sealed class CommitR2Handler(
     {
         var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, cancellationToken);
         var plan = user?.Plan ?? PlanTierLimits.Anonymous;
-        var quota = user is null ? null : new QuotaService(db);
 
         // Scheduled send — Pro/Studio only. Reject before touching R2 so a disallowed
         // schedule never leaves an orphaned object behind.
@@ -61,6 +62,11 @@ public sealed class CommitR2Handler(
                 "No matching in-progress upload session"));
         }
 
+        // File-request submissions are capped by the request budget, never the submitter
+        // plan or monthly quota — the owner pre-paid for these with their own limits.
+        var requestId = session.FileRequestId;
+        var quota = user is null || requestId is not null ? null : new QuotaService(db);
+
         CompletionResult completionResult;
         try
         {
@@ -77,25 +83,45 @@ public sealed class CommitR2Handler(
             return Result.Failure<CommitR2Response>(new LightResults.Error(
                 completionResult.ErrorMessage ?? "R2 commit returned failure"));
 
-        // Enforce the plan limit on what actually landed in storage, not the declared size —
+        // Enforce the size cap on what actually landed in storage, not the declared size —
         // the declared size is client-controlled and part uploads are not size-constrained.
         long actualSize = session.FileSize;
-        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
-        if (maxFileSize.HasValue)
+        if (requestId is { } fileRequestId)
         {
             var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, cancellationToken);
             if (stored >= 0)
                 actualSize = stored;
 
-            if (stored > maxFileSize.Value + EncryptionOverheadSlack)
+            var overBudget = await ExceedsRequestBudgetAsync(fileRequestId, actualSize, cancellationToken);
+            if (overBudget)
             {
                 try
                 {
                     await storage.DeleteObjectsAsync(cmd.ObjectKey, cancellationToken);
                 }
                 catch { /* best-effort cleanup; the sweeper handles leftovers */ }
-                return Result.Failure<CommitR2Response>(new LightResults.Error(
-                    $"Uploaded size {stored} exceeds {plan} plan limit of {maxFileSize} bytes"));
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.FileRequestLimitReached));
+            }
+        }
+        else
+        {
+            var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
+            if (maxFileSize.HasValue)
+            {
+                var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, cancellationToken);
+                if (stored >= 0)
+                    actualSize = stored;
+
+                if (stored > maxFileSize.Value + EncryptionOverheadSlack)
+                {
+                    try
+                    {
+                        await storage.DeleteObjectsAsync(cmd.ObjectKey, cancellationToken);
+                    }
+                    catch { /* best-effort cleanup; the sweeper handles leftovers */ }
+                    return Result.Failure<CommitR2Response>(new LightResults.Error(
+                        $"Uploaded size {stored} exceeds {plan} plan limit of {maxFileSize} bytes"));
+                }
             }
         }
 
@@ -143,7 +169,7 @@ public sealed class CommitR2Handler(
         var delivery = new Delivery
         {
             Id = cmd.DeliveryId,
-            SenderId = user?.Id,
+            SenderId = requestId is null ? user?.Id : null,
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.
@@ -162,7 +188,8 @@ public sealed class CommitR2Handler(
             PasswordHash = password is not null ? BCrypt.Net.BCrypt.HashPassword(password) : null,
             Message = message,
             Sha256 = sha256,
-            Source = DeliverySources.Normalize(cmd.Source)
+            Source = DeliverySources.Normalize(cmd.Source),
+            FileRequestId = requestId
         };
 
         session.Status = UploadSessionStatus.Committed;
@@ -171,11 +198,23 @@ public sealed class CommitR2Handler(
         if (quota is not null)
             await quota.RecordAsync(user!.Id, plan, actualSize, cancellationToken);
 
-        if (user is not null)
+        if (user is not null && requestId is null)
             await ReferralService.ReleaseOnFirstUploadAsync(user, db, cancellationToken);
 
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync(cancellationToken);
+
+        // The request info is cached — a commit just changed its remaining budget.
+        if (requestId is { } committedRequestId)
+        {
+            var requestCode = await db.FileRequests
+                .AsNoTracking()
+                .Where(r => r.Id == committedRequestId)
+                .Select(r => r.Code)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (requestCode is not null)
+                await cache.RemoveAsync($"file-request:info:{requestCode}", cancellationToken);
+        }
 
         await analytics.RecordAsync(AnalyticsEvents.UploadCompleted,
             new AnalyticsEventData(delivery.FileName, delivery.FileSize, delivery.ContentType, plan), cancellationToken);
@@ -191,6 +230,29 @@ public sealed class CommitR2Handler(
             shareLink += $"?{ReferralPolicy.QueryParam}={user.ReferralCode}";
 
         return Result.Success(new CommitR2Response(shareCode, shareLink, expiresAt));
+    }
+
+    private async Task<bool> ExceedsRequestBudgetAsync(Guid requestId, long actualSize, CancellationToken cancellationToken)
+    {
+        var request = await db.FileRequests
+            .AsNoTracking()
+            .Where(r => r.Id == requestId)
+            .Select(r => new
+            {
+                r.MaxTotalBytes,
+                r.MaxFiles,
+                CurrentTotalBytes = r.Deliveries
+                    .Where(d => d.Status == DeliveryStatus.Active)
+                    .Sum(d => (long?)d.TotalBytes) ?? 0,
+                CurrentFileCount = r.Deliveries.Count(d => d.Status == DeliveryStatus.Active),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (request is null)
+            return true;
+
+        return request.CurrentTotalBytes + actualSize > request.MaxTotalBytes ||
+               request.CurrentFileCount >= request.MaxFiles;
     }
 
     private static DateTime ResolveExpiry(CommitR2Command cmd, string plan)

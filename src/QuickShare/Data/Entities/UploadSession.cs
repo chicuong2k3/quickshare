@@ -14,6 +14,8 @@ public record UploadSession : BaseAuditEntity
     public string? StoragePath { get; set; }
     /// <summary>When set, this session replaces an existing delivery (issue #72) instead of creating a new one.</summary>
     public Guid? ReplaceDeliveryId { get; init; }
+    /// <summary>When set, this upload is a submission to a file request (issue #16).</summary>
+    public Guid? FileRequestId { get; init; }
 }
 
 public static class UploadSessionStatus
