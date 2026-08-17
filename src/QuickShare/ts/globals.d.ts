@@ -167,6 +167,7 @@ interface UploadPage {
     otpKeydown(event: KeyboardEvent, idx: number): void;
     readOtp(): void;
     passwordInput(event: Event): void;
+    generatePassword(): void;
     onDragOver(e: DragEvent): void;
     onDragLeave(e: DragEvent): void;
     onDrop(e: DragEvent): void;
@@ -241,4 +242,6 @@ interface Window {
     p2pSend?: P2pSendPage;
     p2pDownload?: P2pDownloadPage;
     qsPaste?: QsPaste;
+    checkPasswordBreach?: (password: string) => Promise<number | null>;
+    generateStrongPassword?: (length?: number) => string;
 }

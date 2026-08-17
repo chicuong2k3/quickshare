@@ -40,6 +40,27 @@
         encryptionKeyStr: string | null;
     }
 
+    let breachTimer: number | null = null;
+
+    function hideBreach() {
+        const el = document.getElementById('upload-password-breach');
+        if (el) el.classList.add('hidden');
+    }
+
+    function showBreach(count: number | null) {
+        const el = document.getElementById('upload-password-breach');
+        if (!el) return;
+        if (count === null) { el.classList.add('hidden'); return; }
+        el.classList.remove('hidden');
+        if (count === 0) {
+            el.textContent = el.getAttribute('data-safe') || '';
+            el.setAttribute('data-level', 'safe');
+            return;
+        }
+        el.textContent = (el.getAttribute('data-breached') || '').replace('{0}', String(count));
+        el.setAttribute('data-level', 'breached');
+    }
+
     const state: {
         phase: string;
         progress: number;
@@ -216,7 +237,7 @@
             const value = (event.target as HTMLInputElement).value;
             const meter = document.getElementById('upload-password-meter');
             if (!meter) return;
-            if (!value) { meter.classList.add('hidden'); return; }
+            if (!value) { meter.classList.add('hidden'); hideBreach(); return; }
             meter.classList.remove('hidden');
             let score = 0;
             if (value.length >= 8) score++;
@@ -230,6 +251,23 @@
             if (fill) fill.style.width = (score * 20) + '%';
             const label = meter.querySelector<HTMLElement>('.pw-meter__label');
             if (label) label.textContent = meter.getAttribute('data-' + level) || '';
+
+            // Breach check (issue #280): debounced k-anonymity lookup.
+            if (breachTimer) window.clearTimeout(breachTimer);
+            breachTimer = window.setTimeout(function () {
+                if (typeof window.checkPasswordBreach !== 'function') return;
+                window.checkPasswordBreach(value).then(function (count: number | null) {
+                    showBreach(count);
+                });
+            }, 500);
+        },
+
+        generatePassword: function () {
+            if (typeof window.generateStrongPassword !== 'function') return;
+            const input = document.getElementById('upload-password') as HTMLInputElement | null;
+            if (!input) return;
+            input.value = window.generateStrongPassword();
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         },
 
         onDragOver: function (e) {

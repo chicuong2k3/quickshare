@@ -146,6 +146,11 @@ emailed to them (`POST /api/deliveries/{code}/request-email-otp`, BCrypt-hashed,
 60s cooldown). Download verifies the code (`?emailOtp=&email=`) with a 10-min retry grace,
 then marks it used. Upload toggle "Require emailed code".
 
+Tier 5 batch 3, 2026-08-17: `#280` password breach check — client-side k-anonymity against
+the Have I Been Pwned range API (SHA-1 prefix only, never the full hash) with a debounced
+inline warning + "generate strong password" helper. Fail-open when the API is unreachable.
+Client-side only; manual browser test (no automated C# coverage).
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

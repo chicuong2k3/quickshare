@@ -61,6 +61,7 @@ browser download needed.
 | Web push (#103) — subscribe/upsert/unsubscribe/vapid-key | `PushSubscriptionTests` |
 | Privacy mode (#187) — no tracking/analytics, count hidden | `PrivacyModeTests` |
 | Email OTP gate (#291) — request/cooldown/verify/single-use | `EmailOtpTests` |
+| Password breach check (#280) — client-side HIBP k-anonymity | manual only (browser) |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
