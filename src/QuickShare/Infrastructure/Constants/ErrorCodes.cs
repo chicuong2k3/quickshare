@@ -45,4 +45,7 @@ public static class ErrorCodes
     public const string FileRequestTitleInvalid = "file_request_title_invalid";
     public const string FileRequestExpiryInvalid = "file_request_expiry_invalid";
     public const string NotificationNotFound = "notification_not_found";
+    public const string UrlInvalid = "url_invalid";
+    public const string UrlFetchFailed = "url_fetch_failed";
+    public const string UrlTooLarge = "url_too_large";
 }

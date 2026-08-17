@@ -415,6 +415,31 @@
     font-family: var(--db-font-mono, monospace);
 }
 
+/* Upload from URL (issue #57) — Pro/Studio remote fetch. */
+.upload-url-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.upload-url-row .sender-email-input {
+    flex: 1;
+}
+
+.upload-url-status {
+    font-size: 0.8125rem;
+    color: var(--db-color-text-muted, #6b7280);
+}
+
+.upload-url-success {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.upload-url-success .share-input {
+    flex: 1;
+}
+
 /* Password strength meter (issue #287) — valley = ok, mountain = weak. */
 .pw-meter {
     display: flex;

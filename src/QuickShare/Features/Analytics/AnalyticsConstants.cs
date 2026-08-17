@@ -13,6 +13,9 @@ public static class AnalyticsEvents
     public const string UploadCompleted = "upload_completed";
     public const string DownloadCompleted = "download_completed";
 
+    // Server-side remote fetch (issue #57) — a Pro user pulled a URL into R2.
+    public const string UploadFromUrl = "upload_from_url";
+
     // P2P sessions
     public const string P2pSessionCreated = "p2p_session_created";
     public const string P2pReceiverJoined = "p2p_receiver_joined";

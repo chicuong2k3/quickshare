@@ -787,6 +787,11 @@
   <data name="upload_share_text_toggle" xml:space="preserve"><value>Chia sẻ văn bản thay vì file</value></data>
   <data name="upload_share_text_placeholder" xml:space="preserve"><value>Dán văn bản vào đây — nó sẽ thành một liên kết chia sẻ.</value></data>
   <data name="upload_share_text_btn" xml:space="preserve"><value>Chia sẻ văn bản</value></data>
+  <data name="upload_url_toggle" xml:space="preserve"><value>Tải từ URL</value></data>
+  <data name="upload_url_placeholder" xml:space="preserve"><value>https://example.com/file.zip</value></data>
+  <data name="upload_url_fetch" xml:space="preserve"><value>Tải</value></data>
+  <data name="upload_url_fetching" xml:space="preserve"><value>Đang tải từ URL...</value></data>
+  <data name="upload_url_failed" xml:space="preserve"><value>Tải URL thất bại. Kiểm tra lại liên kết và thử lại.</value></data>
   <data name="account_notifications_track_label" xml:space="preserve"><value>Theo dõi lượt tải của tôi</value></data>
   <data name="account_notifications_track_desc" xml:space="preserve"><value>Giữ danh sách riêng các file bạn đã tải (tự chọn bật).</value></data>
   <data name="notifications_center_title" xml:space="preserve"><value>Thông báo — QuickShareCloud</value></data>

@@ -767,6 +767,11 @@
   <data name="upload_share_text_toggle" xml:space="preserve"><value>Share text instead</value></data>
   <data name="upload_share_text_placeholder" xml:space="preserve"><value>Paste your text here — it becomes a shareable link.</value></data>
   <data name="upload_share_text_btn" xml:space="preserve"><value>Share text</value></data>
+  <data name="upload_url_toggle" xml:space="preserve"><value>Upload from URL</value></data>
+  <data name="upload_url_placeholder" xml:space="preserve"><value>https://example.com/file.zip</value></data>
+  <data name="upload_url_fetch" xml:space="preserve"><value>Fetch</value></data>
+  <data name="upload_url_fetching" xml:space="preserve"><value>Fetching from URL...</value></data>
+  <data name="upload_url_failed" xml:space="preserve"><value>Failed to fetch the URL. Check the link and try again.</value></data>
   <data name="account_notifications_track_label" xml:space="preserve"><value>Track my downloads</value></data>
   <data name="account_notifications_track_desc" xml:space="preserve"><value>Keep a private list of files you've downloaded (opt-in).</value></data>
   <data name="notifications_center_title" xml:space="preserve"><value>Notifications — QuickShareCloud</value></data>

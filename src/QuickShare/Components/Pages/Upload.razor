@@ -108,6 +108,26 @@
                             onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
                 </div>
 
+                @* Upload from URL (issue #57) — Pro/Studio server-side remote fetch *@
+                @if (canSchedule)
+                {
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm upload-text-toggle"
+                            onclick="uploadUrl.toggle()" data-ai-action="upload.fromUrl.toggle">@Loc["upload_url_toggle"]</button>
+                    <div id="upload-url-mode" class="hidden upload-text-mode">
+                        <div class="upload-url-row">
+                            <input type="url" id="upload-url-input" class="sender-email-input" placeholder="@Loc["upload_url_placeholder"]" autocomplete="off" aria-label="@Loc["upload_url_toggle"]" />
+                            <button type="button" class="db-btn db-btn--primary" id="upload-url-btn"
+                                    onclick="uploadUrl.fetch()" data-ai-action="upload.fromUrl.submit">@Loc["upload_url_fetch"]</button>
+                        </div>
+                        <div id="upload-url-status" class="upload-url-status hidden" role="status"
+                             data-fetching="@Loc["upload_url_fetching"]" data-failed="@Loc["upload_url_failed"]"></div>
+                        <div id="upload-url-success" class="upload-url-success hidden">
+                            <input id="upload-url-link" type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="uploadUrl.copy()">@Loc["upload_copy_link"]</button>
+                        </div>
+                    </div>
+                }
+
                 @* Protect your link (issues #44 + OTP gate) — optional password and/or 6-digit code *@
                 <div class="sender-email-wrap">
                     <span class="otp-label">@Loc["upload_protect_label"]</span>
@@ -296,6 +316,51 @@
 
 <script src="/js/paste-anywhere.js"></script>
 <script src="/js/upload.js"></script>
+
+<script>
+    window.uploadUrl = {
+        toggle: function () {
+            document.getElementById('upload-url-mode').classList.toggle('hidden');
+        },
+        fetch: function () {
+            var input = document.getElementById('upload-url-input');
+            var url = input.value.trim();
+            if (!url) return;
+            var btn = document.getElementById('upload-url-btn');
+            var status = document.getElementById('upload-url-status');
+            var success = document.getElementById('upload-url-success');
+            success.classList.add('hidden');
+            btn.disabled = true;
+            status.textContent = status.dataset.fetching;
+            status.classList.remove('hidden');
+            fetch('/api/upload-from-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            }).then(function (r) {
+                return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+            }).then(function (res) {
+                btn.disabled = false;
+                if (res.ok) {
+                    status.classList.add('hidden');
+                    document.getElementById('upload-url-link').value = res.data.shareLink;
+                    success.classList.remove('hidden');
+                } else {
+                    status.textContent = status.dataset.failed;
+                }
+            }).catch(function () {
+                btn.disabled = false;
+                status.textContent = status.dataset.failed;
+            });
+        },
+        copy: function () {
+            var link = document.getElementById('upload-url-link');
+            link.focus();
+            link.select();
+            try { document.execCommand('copy'); } catch (_) { }
+        }
+    };
+</script>
 
 @code {
     private int maxExpiryDays = 30;

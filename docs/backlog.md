@@ -111,6 +111,11 @@ Tier 4 batch 6, 2026-08-17: `#246` in-app notification center — `Notification`
 scroll), navbar bell + unread badge, `NotificationCleanupJob` (30-day retention). Sources:
 delivery expired (`DeliveryExpiryJob`) + downloaded (`DownloadNotificationJob`).
 
+Tier 4 batch 7, 2026-08-17: `#57` upload from URL — Pro/Studio server-side remote fetch
+(`POST /api/upload-from-url`) into R2 as a delivery. SSRF-guarded (`IpAddressSafety` blocks
+private/loopback/link-local/CGNAT/reserved ranges at connect time via `RemoteUrlFetcher`),
+size-capped streaming, quota-checked. Send page "Upload from URL" input for paid plans.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

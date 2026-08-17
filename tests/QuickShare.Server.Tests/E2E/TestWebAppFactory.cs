@@ -79,6 +79,8 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
                 .AddScheme<TestAuthSchemeOptions, TestAuthHandler>(TestAuthDefaults.Scheme, _ => { });
 
             services.AddSingleton<IStorageProvider, LocalDiskStorageProviderStub>();
+            services.RemoveAll<IRemoteUrlFetcher>();
+            services.AddSingleton<IRemoteUrlFetcher, StubRemoteUrlFetcher>();
             services.AddScoped<PayOSService, StubPayOSService>();
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
@@ -200,6 +202,24 @@ internal sealed class StubPayOSService : PayOSService
         {
             return Task.FromResult(PaidOrderCodes.Contains(orderCode));
         }
+    }
+}
+
+internal sealed class StubRemoteUrlFetcher : IRemoteUrlFetcher
+{
+    public Task<RemoteUrlResult> FetchAsync(string url, long maxBytes, CancellationToken ct)
+    {
+        if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult(new RemoteUrlResult(RemoteUrlStatus.InvalidUrl));
+        }
+
+        return Task.FromResult(new RemoteUrlResult(
+            RemoteUrlStatus.Ok,
+            new MemoryStream(new byte[] { 1, 2, 3, 4 }),
+            "application/octet-stream",
+            "remote.bin"));
     }
 }
 
