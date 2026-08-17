@@ -6,7 +6,7 @@
 
 **Architecture:** Email is captured at `StartR2` (stored on `UploadSession.SenderEmail`), copied to `Delivery` at `CommitR2` (never from the commit request), then the link email is sent after the commit succeeds. Confirm/unsubscribe are DataProtection-signed tokens (pattern: existing `UnsubscribeTokens`) rendered as HTML pages (pattern: `UnsubscribeEndpoint`). Email capture is rate-limited in-memory per email + per IP; over the limit the email is skipped but the upload always succeeds.
 
-**Tech Stack:** ASP.NET Core 10 (Blazor SSR), FastEndpoints, Wolverine (message bus), EF Core 10 + Npgsql, MailKit/SMTP (Brevo), DataProtection, xUnit + TestWebAppFactory.
+**Tech Stack:** ASP.NET Core 10 (Blazor SSR), FastEndpoints, Mediator (martinothamar/Mediator), EF Core 10 + Npgsql, MailKit/SMTP (Brevo), DataProtection, xUnit + TestWebAppFactory.
 
 ## Global Constraints
 
