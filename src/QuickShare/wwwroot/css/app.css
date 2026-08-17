@@ -1514,6 +1514,31 @@ a.notif__message:hover {
     flex-shrink: 0;
 }
 
+/* Office document preview (issue #94) — server-extracted text, injected client-side
+   so these live in the global sheet (scoped attributes never reach injected markup). */
+.dl-text-body--office {
+    white-space: normal;
+}
+
+.office-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.8125rem;
+}
+
+.office-table td {
+    border: 1px solid var(--db-mountain);
+    padding: 0.35rem 0.5rem;
+}
+
+.office-slide {
+    margin-bottom: 1rem;
+}
+
+.office-slide p {
+    margin: 0.25rem 0;
+}
+
 /* Batch QR label sheet (issue #250). */
 .account-labels-toolbar {
     display: flex;

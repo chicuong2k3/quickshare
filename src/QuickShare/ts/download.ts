@@ -20,18 +20,20 @@ window.downloadApp = (function (): DownloadPage {
         expiresLabel: string;
         previewStarted: boolean;
         mediaPreviewStarted: boolean;
+        officePreviewStarted: boolean;
         fullText: string | null;
         bytes: ArrayBuffer | null;
         diffMode: 'unified' | 'split';
         diffRaw: boolean;
         diffTracked: boolean;
         previewTruncated: boolean;
-    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, fullText: null, bytes: null, diffMode: 'unified', diffRaw: false, diffTracked: false, previewTruncated: false };
+    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, officePreviewStarted: false, fullText: null, bytes: null, diffMode: 'unified', diffRaw: false, diffTracked: false, previewTruncated: false };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
     const TEXT_MIME_PREFIX = 'text/plain';
-    const PREVIEW_MAX_BYTES = 1024 * 1024;
-    const INLINE_FULL_BYTES = 10 * 1024;
+const PREVIEW_MAX_BYTES = 1024 * 1024;
+const INLINE_FULL_BYTES = 10 * 1024;
+const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
     const PREVIEW_LINE_LIMIT = 50;
 
     function apiBase(): string { return (window.ZAPDROP_CONFIG && window.ZAPDROP_CONFIG.apiBaseUrl || '').replace(/\/+$/, ''); }
@@ -89,6 +91,7 @@ window.downloadApp = (function (): DownloadPage {
             maybeRenderTextPreview();
             maybeRenderMediaPreview();
             maybeRenderZipPreview();
+            maybeRenderOfficePreview();
         }
     }
 
@@ -364,6 +367,44 @@ window.downloadApp = (function (): DownloadPage {
             renderText(i.fileSize > INLINE_FULL_BYTES);
         })['catch'](function () {
             // Preview is a nicety — fall back to the plain download button.
+            hide('dl-text-preview');
+        });
+    }
+
+    // Office preview (issue #94): docx/xlsx/pptx render server-extracted,
+    // HTML-escaped text into the same body as the text preview. Skipped for
+    // encrypted or gated payloads — the stored bytes there are not parseable.
+    function isOffice(i: any): boolean {
+        const ct = String(i.contentType || '').toLowerCase();
+        const name = String(i.fileName || '').toLowerCase();
+        if (ct.indexOf('wordprocessingml') === 0 || name.endsWith('.docx')) return true;
+        if (ct.indexOf('spreadsheetml') === 0 || name.endsWith('.xlsx')) return true;
+        if (ct.indexOf('presentationml') === 0 || name.endsWith('.pptx')) return true;
+        return false;
+    }
+
+    function maybeRenderOfficePreview() {
+        if (state.officePreviewStarted) return;
+        const i = infoFromDom();
+        if (!isOffice(i) || state.isEncrypted || i.hasOtp || i.hasPassword) return;
+        if (!i.fileSize || i.fileSize > OFFICE_PREVIEW_MAX_BYTES) return;
+
+        state.officePreviewStarted = true;
+        show('dl-text-preview');
+        text('dl-text-status', t('previewLoading'));
+
+        fetch(apiBase() + '/api/downloads/' + shareCode() + '/office-preview').then(function (r) {
+            if (!r.ok) throw new Error('office preview failed');
+            return r.json();
+        }).then(function (data) {
+            const body = document.getElementById('dl-text-body');
+            if (!body) return;
+            body.innerHTML = data.html;
+            body.classList.add('dl-text-body--office');
+            body.classList.remove('dl-text-body--diff', 'dl-text-body--markdown', 'dl-text-body--code');
+            hide('dl-diff-toolbar');
+            text('dl-text-status', '');
+        })['catch'](function () {
             hide('dl-text-preview');
         });
     }

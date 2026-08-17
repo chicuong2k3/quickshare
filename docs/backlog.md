@@ -122,6 +122,11 @@ one per recipient, sender opt-in toggle (`AllowExtensionRequests`, default off).
 gets in-app + email notification and approves (extends) or rejects from
 `/account/deliveries/{id}/extension-requests`. Expired page shows "Request more time" when enabled.
 
+Tier 4 batch 9, 2026-08-17: `#94` office document preview — docx/xlsx/pptx render
+server-extracted, HTML-escaped text (no macros executed) via `OfficeTextExtractor`
+(ZipArchive + LINQ-to-XML, no new dependency). `GET /api/downloads/{code}/office-preview`,
+20MB cap, gated like the media preview. Download page preview tab for office types.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
