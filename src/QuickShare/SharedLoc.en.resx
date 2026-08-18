@@ -734,6 +734,24 @@
   <data name="account_devices_last_seen" xml:space="preserve"><value>Last seen {0}</value></data>
   <data name="account_devices_remove" xml:space="preserve"><value>Remove</value></data>
   <data name="account_devices_remove_confirm" xml:space="preserve"><value>Remove this device? Its next sign-in will trigger a new-device alert.</value></data>
+  <data name="account_security_title" xml:space="preserve"><value>Security activity</value></data>
+  <data name="account_security_subtitle" xml:space="preserve"><value>Sign-ins and security-relevant actions on your account, newest first.</value></data>
+  <data name="account_security_empty" xml:space="preserve"><value>No security activity yet.</value></data>
+  <data name="account_security_filter_all" xml:space="preserve"><value>All</value></data>
+  <data name="account_security_filter_login" xml:space="preserve"><value>Sign-ins</value></data>
+  <data name="account_security_filter_device" xml:space="preserve"><value>New devices</value></data>
+  <data name="account_security_filter_revoked" xml:space="preserve"><value>Revoked</value></data>
+  <data name="account_security_event_Login" xml:space="preserve"><value>Signed in</value></data>
+  <data name="account_security_event_LoginFailed" xml:space="preserve"><value>Sign-in failed</value></data>
+  <data name="account_security_event_DeviceAdded" xml:space="preserve"><value>New device added</value></data>
+  <data name="account_security_event_SessionRevoked" xml:space="preserve"><value>Session revoked</value></data>
+  <data name="account_security_event_PasskeyAdded" xml:space="preserve"><value>Passkey added</value></data>
+  <data name="account_security_event_PasskeyRemoved" xml:space="preserve"><value>Passkey removed</value></data>
+  <data name="account_security_event_RecoveryUsed" xml:space="preserve"><value>Recovery code used</value></data>
+  <data name="account_security_event_ApiKeyCreated" xml:space="preserve"><value>API key created</value></data>
+  <data name="account_security_event_ApiKeyRevoked" xml:space="preserve"><value>API key revoked</value></data>
+  <data name="account_security_event_EmailChanged" xml:space="preserve"><value>Email changed</value></data>
+  <data name="account_security_event_PasswordChanged" xml:space="preserve"><value>Password changed</value></data>
   <data name="admin_reports_page_title" xml:space="preserve"><value>Abuse reports</value></data>
   <data name="admin_reports_title" xml:space="preserve"><value>Abuse reports</value></data>
   <data name="admin_reports_subtitle" xml:space="preserve"><value>Review, resolve, or suspend deliveries reported for abuse or copyright.</value></data>

@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ExtensionRequest> ExtensionRequests => Set<ExtensionRequest>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+    public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -346,6 +347,26 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.Endpoint).IsUnique();
             entity.HasIndex(e => e.UserId);
             entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SecurityEvent>(entity =>
+        {
+            entity.ToTable("security_events");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EventType)
+                .HasConversion(
+                    v => v.ToString().ToLowerInvariant(),
+                    v => Enum.Parse<SecurityEventType>(v, ignoreCase: true))
+                .IsRequired();
+            entity.Property(e => e.IpHash).IsRequired();
+            entity.Property(e => e.UserAgentLabel).IsRequired();
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+            entity.HasIndex(e => e.EventType);
+            // Shadow navigation — the record intentionally carries no User reference.
+            entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);

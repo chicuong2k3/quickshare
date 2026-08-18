@@ -735,6 +735,24 @@
   <data name="account_devices_last_seen" xml:space="preserve"><value>Lần cuối thấy {0}</value></data>
   <data name="account_devices_remove" xml:space="preserve"><value>Gỡ bỏ</value></data>
   <data name="account_devices_remove_confirm" xml:space="preserve"><value>Gỡ thiết bị này? Lần đăng nhập sau sẽ kích hoạt cảnh báo thiết bị mới.</value></data>
+  <data name="account_security_title" xml:space="preserve"><value>Hoạt động bảo mật</value></data>
+  <data name="account_security_subtitle" xml:space="preserve"><value>Lần đăng nhập và các hành động bảo mật trên tài khoản, mới nhất trước.</value></data>
+  <data name="account_security_empty" xml:space="preserve"><value>Chưa có hoạt động bảo mật nào.</value></data>
+  <data name="account_security_filter_all" xml:space="preserve"><value>Tất cả</value></data>
+  <data name="account_security_filter_login" xml:space="preserve"><value>Đăng nhập</value></data>
+  <data name="account_security_filter_device" xml:space="preserve"><value>Thiết bị mới</value></data>
+  <data name="account_security_filter_revoked" xml:space="preserve"><value>Đã thu hồi</value></data>
+  <data name="account_security_event_Login" xml:space="preserve"><value>Đã đăng nhập</value></data>
+  <data name="account_security_event_LoginFailed" xml:space="preserve"><value>Đăng nhập thất bại</value></data>
+  <data name="account_security_event_DeviceAdded" xml:space="preserve"><value>Thiết bị mới được thêm</value></data>
+  <data name="account_security_event_SessionRevoked" xml:space="preserve"><value>Phiên đã bị thu hồi</value></data>
+  <data name="account_security_event_PasskeyAdded" xml:space="preserve"><value>Passkey được thêm</value></data>
+  <data name="account_security_event_PasskeyRemoved" xml:space="preserve"><value>Passkey bị gỡ</value></data>
+  <data name="account_security_event_RecoveryUsed" xml:space="preserve"><value>Mã khôi phục được dùng</value></data>
+  <data name="account_security_event_ApiKeyCreated" xml:space="preserve"><value>API key được tạo</value></data>
+  <data name="account_security_event_ApiKeyRevoked" xml:space="preserve"><value>API key bị thu hồi</value></data>
+  <data name="account_security_event_EmailChanged" xml:space="preserve"><value>Email đã đổi</value></data>
+  <data name="account_security_event_PasswordChanged" xml:space="preserve"><value>Mật khẩu đã đổi</value></data>
   <data name="admin_reports_page_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
   <data name="admin_reports_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
   <data name="admin_reports_subtitle" xml:space="preserve"><value>Xem xét, xử lý hoặc tạm ngưng các liên kết bị báo cáo lạm dụng hoặc vi phạm bản quyền.</value></data>

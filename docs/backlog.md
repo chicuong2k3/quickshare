@@ -162,6 +162,13 @@ identity) behind `PublicStatsHandler` + anonymous `GET /api/deliveries/{code}/pu
 (30s cache). Privacy-mode deliveries never serve stats; any failure renders the same generic
 "not available" state so the page leaks nothing.
 
+Tier 5 batch 6, 2026-08-18: `#126` account security activity — `SecurityEvent` entity (append-only
+audit trail, raw IP never stored — SHA-256 hash only, privacy #26) + `SecurityEventType` enum.
+Wired events today: login + new-device (`FinalizeOAuthAsync`) and session revoke
+(`RemoveDeviceEndpoint`). `/account/security/activity` timeline card on the account page with
+query-string filter (all/sign-ins/new devices/revoked). `SecurityEventCleanupJob` (Hangfire,
+90-day retention). Events ride the GDPR export. Migration `AddSecurityEvents`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

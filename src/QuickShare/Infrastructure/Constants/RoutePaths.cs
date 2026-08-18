@@ -12,6 +12,7 @@ public static class RoutePaths
     public const string AccountDeliveryLabels = "/account/deliveries/labels";
     public const string AccountUsage = "/account/usage";
     public const string AccountDevices = "/account/devices";
+    public const string AccountSecurityActivity = "/account/security/activity";
     public const string AccountNotifications = "/account/notifications";
     public const string AccountNotificationCenter = "/account/notifications/inbox";
     public const string AccountOnboarding = "/account/onboarding";

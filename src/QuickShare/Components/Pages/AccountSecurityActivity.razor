@@ -1,0 +1,107 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/security/activity"
+@attribute [Authorize]
+@using QuickShare.Features.Users.Shared
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Nav
+
+<HtmxFragment>
+<div id="security-activity-card" class="db-card account-card">
+    <div class="db-card__body">
+        <div class="account-section-head">
+            <h2 class="db-h3">@Loc["account_security_title"]</h2>
+            <p class="db-p db-text-muted" style="margin-top: 0.25rem; font-size: 0.875rem">@Loc["account_security_subtitle"]</p>
+        </div>
+
+        @* Event-type filter — query-string driven, HTMX partial swap (issue #126) *@
+        <div class="account-security-filters" style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap">
+            <a href="@RoutePaths.AccountSecurityActivity"
+               hx-get="@RoutePaths.AccountSecurityActivity"
+               hx-target="#security-activity-card"
+               hx-select="#security-activity-card"
+               hx-swap="outerHTML"
+               hx-push-url="true"
+               data-ai-action="security.filter.all"
+               class="db-btn db-btn--sm @(Filter is null ? "db-btn--primary" : "db-btn--ghost")">@Loc["account_security_filter_all"]</a>
+            @foreach (var filter in Filters)
+            {
+                var isActive = Filter == filter.Key;
+                <a href="@RoutePaths.AccountSecurityActivity?type=@filter.Key"
+                   hx-get="@RoutePaths.AccountSecurityActivity?type=@filter.Key"
+                   hx-target="#security-activity-card"
+                   hx-select="#security-activity-card"
+                   hx-swap="outerHTML"
+                   hx-push-url="true"
+                   data-ai-action="security.filter.@filter.Key"
+                   class="db-btn db-btn--sm @(isActive ? "db-btn--primary" : "db-btn--ghost")">@Loc[filter.LabelKey]</a>
+            }
+        </div>
+
+        @if (events.Count == 0)
+        {
+            <p class="db-p db-text-muted" style="margin-top: 1rem">@Loc["account_security_empty"]</p>
+        }
+        else
+        {
+            <ul class="account-device-list" style="margin-top: 1rem">
+                @foreach (var evt in events)
+                {
+                    <li class="account-device-item">
+                        <div class="account-device-info">
+                            <span class="account-device-label">@Loc["account_security_event_" + evt.EventType]</span>
+                            <span class="account-device-meta">@evt.UserAgentLabel</span>
+                            <span class="account-device-meta">@evt.CreatedAt.ToLocalTime().ToString("g")</span>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+</HtmxFragment>
+
+@code {
+    private static readonly (string Key, SecurityEventType Type, string LabelKey)[] Filters = new[]
+    {
+        (Key: "login", Type: SecurityEventType.Login, LabelKey: "account_security_filter_login"),
+        (Key: "device", Type: SecurityEventType.DeviceAdded, LabelKey: "account_security_filter_device"),
+        (Key: "revoked", Type: SecurityEventType.SessionRevoked, LabelKey: "account_security_filter_revoked"),
+    };
+
+    private List<EventListItem> events = new();
+    private string? Filter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = HttpContextAccessor.HttpContext?.Request;
+        if (request is not null
+            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
+            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
+        {
+            Nav.NavigateTo(RoutePaths.Account);
+            return;
+        }
+
+        Filter = request?.Query["type"].FirstOrDefault();
+
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+
+        var query = Db.SecurityEvents
+            .AsNoTracking()
+            .Where(e => e.UserId == user.Id);
+
+        var filter = Filters.FirstOrDefault(f => f.Key == Filter);
+        if (filter.Key is not null)
+            query = query.Where(e => e.EventType == filter.Type);
+
+        events = await query
+            .OrderByDescending(e => e.CreatedAt)
+            .Take(50)
+            .Select(e => new EventListItem(e.EventType, e.UserAgentLabel, e.CreatedAt))
+            .ToListAsync(CancellationToken.None);
+    }
+
+    private sealed record EventListItem(SecurityEventType EventType, string UserAgentLabel, DateTime CreatedAt);
+}

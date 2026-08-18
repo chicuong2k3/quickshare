@@ -316,8 +316,14 @@ static async Task FinalizeOAuthAsync(Microsoft.AspNetCore.Authentication.OAuth.O
 
     var (device, isNew) = await deviceTracker.RecordLoginAsync(db, profile.Id, userAgent, ip, ctx.HttpContext.RequestAborted);
 
+    // Security audit trail (issue #126): every sign-in is recorded; a first-seen
+    // device additionally records a device_added event. The IP is hashed server-side.
+    await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.Login, userAgent, ip, ctx.HttpContext.RequestAborted);
+
     if (isNew)
     {
+        await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.DeviceAdded, userAgent, ip, ctx.HttpContext.RequestAborted);
+
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == profile.Id, ctx.HttpContext.RequestAborted);
         if (user is not null)
             await alertSender.SendAsync(user, device, DateTime.UtcNow, ctx.HttpContext.RequestAborted);

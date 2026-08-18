@@ -45,6 +45,16 @@ public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
             .OrderBy(d => d.CreatedAt)
             .ToListAsync(ct);
 
+        // Security audit trail (issue #126) — exported as part of GDPR data export.
+        var securityEvents = (await db.SecurityEvents
+                .AsNoTracking()
+                .Where(e => e.UserId == user.Id)
+                .OrderBy(e => e.CreatedAt)
+                .Select(e => new { e.EventType, e.UserAgentLabel, e.MetadataJson, e.CreatedAt })
+                .ToListAsync(ct))
+            .Select(e => new SecurityEventExportRow(e.EventType.ToString(), e.UserAgentLabel, e.MetadataJson, e.CreatedAt))
+            .ToList();
+
         var payload = new
         {
             ExportedAt = DateTime.UtcNow,
@@ -59,7 +69,8 @@ public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
                 user.ReferralCode,
                 user.BonusQuotaBytes
             },
-            Deliveries = deliveries
+            Deliveries = deliveries,
+            SecurityEvents = securityEvents
         };
 
         var json = JsonSerializer.Serialize(payload, IndentedOptions);
@@ -68,6 +79,9 @@ public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
         await Send.StringAsync(json, StatusCodes.Status200OK, "application/json; charset=utf-8", ct);
     }
 }
+
+/// <summary>Security audit event row included in the GDPR data export (issue #126).</summary>
+public record SecurityEventExportRow(string Type, string UserAgentLabel, string? MetadataJson, DateTime CreatedAt);
 
 public record DeleteAccountCommand(string ConfirmEmail) : IRequest<Result>;
 

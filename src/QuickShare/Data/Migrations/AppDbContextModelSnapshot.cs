@@ -278,6 +278,9 @@ namespace QuickShare.Migrations
                     b.Property<bool>("PrivacyMode")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("PublicStatsEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("RequireRecipientEmail")
                         .HasColumnType("boolean");
 
@@ -795,6 +798,42 @@ namespace QuickShare.Migrations
                     b.ToTable("referral_events", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.SecurityEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IpHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserAgentLabel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("security_events", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Subscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1209,6 +1248,15 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.SecurityEvent", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.Subscription", b =>

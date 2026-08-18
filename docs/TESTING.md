@@ -78,6 +78,7 @@ browser download needed.
 | OTP brute-force lockout | `OtpLockoutTests` |
 | Share password (download gate) | `DeliveryPasswordTests` |
 | New-device login tracking | `DeviceTrackerTests` |
+| Security activity audit trail | `SecurityEventTests` |
 | Abuse/DMCA reports + admin | `AbuseReportTests` |
 | Localization vi/en | `LocalizationTests`, `LanguageSwitchTests` |
 | HTMX lazy-load / cache / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `PageCoverageTests` |
