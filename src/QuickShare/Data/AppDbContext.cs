@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
     public DbSet<ExtensionRequest> ExtensionRequests => Set<ExtensionRequest>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
+    public DbSet<RecipientContact> RecipientContacts => Set<RecipientContact>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -366,6 +367,19 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.UserId, e.CreatedAt });
             entity.HasIndex(e => e.EventType);
             // Shadow navigation — the record intentionally carries no User reference.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RecipientContact>(entity =>
+        {
+            entity.ToTable("recipient_contacts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(254);
+            entity.HasIndex(e => new { e.UserId, e.Email }).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.LastUsedAt });
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

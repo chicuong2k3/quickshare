@@ -244,6 +244,16 @@ public sealed class CommitR2Handler(
             await SendRecipientEmailsAsync(delivery, shareCode, recipients, cancellationToken);
         }
 
+        // Recent-recipients + address book (issue #316): remember who this user
+        // sent to so the upload page can offer quick-pick. Captured only for
+        // signed-in users and never in privacy mode — a private share must not
+        // leave any recipient breadcrumbs. Best-effort: a failure here must not
+        // fail the upload.
+        if (user is not null && !cmd.PrivacyMode && recipients.Count > 0)
+        {
+            await CaptureRecipientsAsync(user.Id, recipients, cancellationToken);
+        }
+
         var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
         var shareLink = $"{baseUrl}/d/{shareCode}";
         if (!string.IsNullOrEmpty(user?.ReferralCode))
@@ -380,6 +390,44 @@ public sealed class CommitR2Handler(
             .Select(e => e.ToLowerInvariant())
             .Distinct()
             .ToList();
+    }
+
+    private async Task CaptureRecipientsAsync(Guid userId, List<string> recipients, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+            var existing = await db.RecipientContacts
+                .Where(c => c.UserId == userId && recipients.Contains(c.Email))
+                .ToDictionaryAsync(c => c.Email, cancellationToken);
+
+            foreach (var email in recipients)
+            {
+                if (existing.TryGetValue(email, out var contact))
+                {
+                    contact.LastUsedAt = now;
+                    contact.UseCount++;
+                }
+                else
+                {
+                    db.RecipientContacts.Add(new RecipientContact
+                    {
+                        Id = Guid.CreateVersion7(),
+                        UserId = userId,
+                        Email = email,
+                        LastUsedAt = now,
+                        UseCount = 1,
+                    });
+                }
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+            await cache.RemoveAsync($"user:recipients:{userId}", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to capture recipient contacts for user {UserId}", userId);
+        }
     }
 
     private async Task SendRecipientEmailsAsync(Delivery delivery, string shareCode, List<string> recipients, CancellationToken cancellationToken)

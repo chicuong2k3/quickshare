@@ -766,6 +766,39 @@ namespace QuickShare.Migrations
                     b.ToTable("push_subscriptions", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.RecipientContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<DateTime>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<int>("UseCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "LastUsedAt");
+
+                    b.ToTable("recipient_contacts", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.ReferralEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1248,6 +1281,15 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.RecipientContact", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.SecurityEvent", b =>

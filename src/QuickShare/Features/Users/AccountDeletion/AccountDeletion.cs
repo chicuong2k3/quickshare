@@ -55,6 +55,14 @@ public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
             .Select(e => new SecurityEventExportRow(e.EventType.ToString(), e.UserAgentLabel, e.MetadataJson, e.CreatedAt))
             .ToList();
 
+        // Recipient contacts (issue #316) — recent recipients + address book, part of GDPR export.
+        var recipientContacts = await db.RecipientContacts
+            .AsNoTracking()
+            .Where(c => c.UserId == user.Id)
+            .OrderBy(c => c.Email)
+            .Select(c => new { c.Email, c.Name, c.LastUsedAt, c.UseCount })
+            .ToListAsync(ct);
+
         var payload = new
         {
             ExportedAt = DateTime.UtcNow,
@@ -70,7 +78,8 @@ public sealed class ExportMyDataEndpoint : EndpointWithoutRequest
                 user.BonusQuotaBytes
             },
             Deliveries = deliveries,
-            SecurityEvents = securityEvents
+            SecurityEvents = securityEvents,
+            RecipientContacts = recipientContacts
         };
 
         var json = JsonSerializer.Serialize(payload, IndentedOptions);

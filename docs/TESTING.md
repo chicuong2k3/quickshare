@@ -64,6 +64,7 @@ browser download needed.
 | Password breach check (#280) — client-side HIBP k-anonymity | manual only (browser) |
 | Recipient email gate (#324) — require/store email + consent | `RecipientEmailGateTests` |
 | Public delivery stats (#294) — opt-in stats page/API, privacy-mode hidden | `PublicStatsTests` |
+| Recent recipients + address book (#316) — capture-on-commit, list/upsert/delete, privacy/anonymous skip, isolation, export | `RecipientContactTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |

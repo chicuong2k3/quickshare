@@ -17,6 +17,7 @@
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
     var plan = PlanTierLimits.Free;
     string idleSubtext;
+    var recentRecipients = new List<RecipientContact>();
     if (isAuthenticated)
     {
         var userIdClaim = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -31,6 +32,19 @@
                     .FirstOrDefault() ?? PlanTierLimits.Free,
                 TimeSpan.FromMinutes(10)
             );
+
+            // Recent recipients + address book (issue #316) — same cache key the
+            // Recipients endpoints invalidate on write, so a fresh send shows up.
+            recentRecipients = StaticCache.Instance.GetOrSet(
+                $"user:recipients:{userId}",
+                () => Db.RecipientContacts
+                    .AsNoTracking()
+                    .Where(x => x.UserId == userId)
+                    .OrderByDescending(x => x.LastUsedAt)
+                    .Take(20)
+                    .ToList(),
+                TimeSpan.FromSeconds(30)
+            ) ?? new List<RecipientContact>();
         }
 
         idleSubtext = plan switch
@@ -277,6 +291,21 @@
                     <input type="text" id="upload-recipients" class="sender-email-input" autocomplete="off" placeholder="@Loc["upload_recipients_placeholder"]" />
                     <span class="otp-hint">@Loc["upload_recipients_hint"]</span>
                 </div>
+
+                @* Recent recipients + address book (issue #316) — signed-in users quick-pick *@
+                @if (isAuthenticated && recentRecipients.Count > 0)
+                {
+                    <div class="sender-email-wrap" id="upload-recent-recipients">
+                        <span class="otp-label">@Loc["upload_recent_recipients_label"]</span>
+                        <div class="recent-recipient-chips">
+                            @foreach (var r in recentRecipients)
+                            {
+                                <button type="button" class="recent-recipient-chip" data-email="@r.Email"
+                                        onclick="uploadPage.addRecipient(this)" data-ai-action="upload.recipients.recent">@r.Email</button>
+                            }
+                        </div>
+                    </div>
+                }
 
                 @if (canSchedule)
                 {

@@ -169,6 +169,13 @@ Wired events today: login + new-device (`FinalizeOAuthAsync`) and session revoke
 query-string filter (all/sign-ins/new devices/revoked). `SecurityEventCleanupJob` (Hangfire,
 90-day retention). Events ride the GDPR export. Migration `AddSecurityEvents`.
 
+Tier 5 batch 7, 2026-08-18: `#316` recent recipients + address book — `RecipientContact`
+entity (unique per user+email, `UseCount` + `LastUsedAt`). Commit-time capture
+(`CommitR2Handler.CaptureRecipientsAsync`) remembers who a signed-in user sent to — never in
+privacy mode, never anonymous, best-effort. Address-book CRUD via
+`GET/POST /api/me/recipients`, `DELETE /api/me/recipients/{id}` (30s cache), upload page
+quick-pick chips (auth only), GDPR export carries the list. Migration `AddRecipientContacts`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
