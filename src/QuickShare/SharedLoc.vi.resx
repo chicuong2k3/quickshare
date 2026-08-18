@@ -785,6 +785,15 @@
   <data name="dl_recipient_email_title" xml:space="preserve"><value>Nhập email để tải xuống</value></data>
   <data name="dl_recipient_email_placeholder" xml:space="preserve"><value>your@email.com</value></data>
   <data name="dl_recipient_consent" xml:space="preserve"><value>Gửi cho tôi thông tin sản phẩm (tuỳ chọn)</value></data>
+  <data name="upload_public_stats_label" xml:space="preserve"><value>Hiển thị trang thống kê công khai</value></data>
+  <data name="upload_public_stats_hint" xml:space="preserve"><value>Ai có link đều xem được số lượt tải tổng hợp.</value></data>
+  <data name="ps_title" xml:space="preserve"><value>Thống kê tải xuống</value></data>
+  <data name="ps_total" xml:space="preserve"><value>Tổng lượt tải</value></data>
+  <data name="ps_unique" xml:space="preserve"><value>Khách truy cập</value></data>
+  <data name="ps_timeline" xml:space="preserve"><value>7 ngày qua</value></data>
+  <data name="ps_empty" xml:space="preserve"><value>Chưa có lượt tải nào</value></data>
+  <data name="ps_first" xml:space="preserve"><value>Lượt tải đầu tiên: {0}</value></data>
+  <data name="ps_back" xml:space="preserve"><value>Quay lại file</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Xoá metadata ảnh (vị trí, máy ảnh)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Gỡ tag GPS/máy ảnh/thiết bị khỏi ảnh. Bật sẵn theo mặc định.</value></data>
   <data name="upload_compress_label" xml:space="preserve"><value>Nén ảnh lớn</value></data>

@@ -1,0 +1,131 @@
+@layout MainLayout
+@page "/d/{ShareCode}/stats"
+@attribute [StreamRendering]
+@using QuickShare.Features.Downloads.PublicStats
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ps_title"]</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper id="public-stats-app" Variant="PageVariant.Centered">
+    <div class="card db-card">
+        <div class="qs-titlebar">
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+            <span class="qs-titlebar__label">@Loc["ps_title"]</span>
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+        </div>
+        <div class="db-card__body">
+            @if (Unavailable)
+            {
+                <div class="db-text-center" style="padding: 2.5rem 0">
+                    <p class="db-h1" style="font-size: 1.25rem">@Loc["dl_notfound_h1"]</p>
+                    <p class="db-p db-text-muted" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_notfound_sub"]</p>
+                    <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                </div>
+            }
+            else if (Stats is null)
+            {
+                <div class="db-text-center" style="padding: 2.5rem 0">
+                    <div class="db-spinner"></div>
+                    <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">@Loc["dl_checking"]</p>
+                </div>
+            }
+            else
+            {
+                <div class="ps-stats">
+                    <div class="ps-stats__grid">
+                        <div class="ps-stats__card">
+                            <p class="ps-stats__label">@Loc["ps_total"]</p>
+                            <p class="ps-stats__value">@Stats.TotalDownloads</p>
+                        </div>
+                        <div class="ps-stats__card">
+                            <p class="ps-stats__label">@Loc["ps_unique"]</p>
+                            <p class="ps-stats__value">@Stats.UniqueVisitors</p>
+                        </div>
+                    </div>
+                    <div class="ps-stats__file">
+                        <p class="ps-stats__label">@Stats.FileName</p>
+                        <p class="ps-stats__meta">@FormatBytes(Stats.FileSize)</p>
+                    </div>
+                    <div class="ps-stats__timeline">
+                        <p class="ps-stats__label">@Loc["ps_timeline"]</p>
+                        @if (Stats.Timeline.Count == 0 || Stats.Timeline.All(t => t.Count == 0))
+                        {
+                            <p class="ps-stats__meta">@Loc["ps_empty"]</p>
+                        }
+                        else
+                        {
+                            <div class="ps-stats__bars" role="img" aria-label="@Loc["ps_timeline"]">
+                                @foreach (var day in Stats.Timeline)
+                                {
+                                    var max = Math.Max(1, Stats.Timeline.Max(t => t.Count));
+                                    var height = (int)Math.Round(day.Count * 100.0 / max);
+                                    <div class="ps-stats__bar-col" title="@day.Day · @day.Count">
+                                        <div class="ps-stats__bar" style="height: @(day.Count == 0 ? "2px" : $"{Math.Max(4, height)}%")"></div>
+                                        <span class="ps-stats__day">@DayLabel(day.Day)</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (Stats.FirstDownloadedAt is { } first)
+                    {
+                        <p class="ps-stats__meta">@Loc["ps_first", first.ToLocalTime().ToString("g")]</p>
+                    }
+                    <div class="ps-stats__back">
+                        <a href="/d/@ShareCode" class="link" hx-boost="false">@Loc["ps_back"]</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</PageWrapper>
+
+@code {
+    [Parameter] public string ShareCode { get; set; } = string.Empty;
+
+    private PublicStatsResponse? Stats { get; set; }
+    private bool Unavailable { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var result = await Bus.Send<LightResults.Result<PublicStatsResponse>>(
+                new PublicStatsQuery(ShareCode), CancellationToken.None);
+
+            if (!result.IsSuccess(out var value))
+            {
+                // Any failure (not found, disabled, privacy mode, expired, suspended,
+                // revoked) renders the same generic "not available" state — the page
+                // must not leak whether a delivery exists or its current status.
+                Unavailable = true;
+                return;
+            }
+
+            Stats = value;
+        }
+        catch
+        {
+            Unavailable = true;
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        var magnitude = (int)Math.Floor(Math.Log(bytes, 1024));
+        if (magnitude >= units.Length) magnitude = units.Length - 1;
+        var size = bytes / Math.Pow(1024, magnitude);
+        return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
+    }
+
+    private static string DayLabel(string day)
+    {
+        return DateTime.TryParse(day, out var parsed) ? parsed.ToString("d MMM") : day;
+    }
+}

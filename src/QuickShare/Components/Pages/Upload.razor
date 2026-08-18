@@ -205,6 +205,15 @@
                     <span class="otp-hint">@Loc["upload_recipient_email_hint"]</span>
                 </div>
 
+                @* Public stats page (issue #294) — shareable aggregated download stats *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-public-stats" />
+                        <span>@Loc["upload_public_stats_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_public_stats_hint"]</span>
+                </div>
+
                 @* Metadata strip (issue #170) — privacy-first, on by default *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

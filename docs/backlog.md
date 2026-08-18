@@ -155,6 +155,13 @@ Tier 5 batch 4, 2026-08-18: `#324` recipient email gate — anonymous downloader
 email (stored on `DownloadTracking` with a marketing-consent flag) before download, gated by
 `Delivery.RequireRecipientEmail`. Upload toggle + download-page gate.
 
+Tier 5 batch 5, 2026-08-18: `#294` public delivery stats — opt-in `Delivery.PublicStatsEnabled`
+upload toggle exposes an aggregated stats page at `/d/{code}/stats` (total downloads, unique
+visitors via distinct IP, 7-day daily timeline, first-downloaded date; never per-recipient
+identity) behind `PublicStatsHandler` + anonymous `GET /api/deliveries/{code}/public-stats`
+(30s cache). Privacy-mode deliveries never serve stats; any failure renders the same generic
+"not available" state so the page leaks nothing.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

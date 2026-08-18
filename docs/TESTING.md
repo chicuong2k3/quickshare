@@ -63,6 +63,7 @@ browser download needed.
 | Email OTP gate (#291) — request/cooldown/verify/single-use | `EmailOtpTests` |
 | Password breach check (#280) — client-side HIBP k-anonymity | manual only (browser) |
 | Recipient email gate (#324) — require/store email + consent | `RecipientEmailGateTests` |
+| Public delivery stats (#294) — opt-in stats page/API, privacy-mode hidden | `PublicStatsTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |

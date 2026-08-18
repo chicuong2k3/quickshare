@@ -784,6 +784,15 @@
   <data name="dl_recipient_email_title" xml:space="preserve"><value>Enter your email to download</value></data>
   <data name="dl_recipient_email_placeholder" xml:space="preserve"><value>your@email.com</value></data>
   <data name="dl_recipient_consent" xml:space="preserve"><value>Send me product updates (optional)</value></data>
+  <data name="upload_public_stats_label" xml:space="preserve"><value>Show public stats page</value></data>
+  <data name="upload_public_stats_hint" xml:space="preserve"><value>Anyone with the link can view aggregated download counts.</value></data>
+  <data name="ps_title" xml:space="preserve"><value>Download stats</value></data>
+  <data name="ps_total" xml:space="preserve"><value>Total downloads</value></data>
+  <data name="ps_unique" xml:space="preserve"><value>Unique visitors</value></data>
+  <data name="ps_timeline" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="ps_empty" xml:space="preserve"><value>No downloads yet</value></data>
+  <data name="ps_first" xml:space="preserve"><value>First download: {0}</value></data>
+  <data name="ps_back" xml:space="preserve"><value>Back to file</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>
