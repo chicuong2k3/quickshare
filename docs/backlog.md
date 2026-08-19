@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 2 done: `#250` QR label sheet, `#282` announcement banner |
+| Tier 6 | B2B / enterprise / far-future | 3 done: `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -175,6 +175,16 @@ entity (unique per user+email, `UseCount` + `LastUsedAt`). Commit-time capture
 privacy mode, never anonymous, best-effort. Address-book CRUD via
 `GET/POST /api/me/recipients`, `DELETE /api/me/recipients/{id}` (30s cache), upload page
 quick-pick chips (auth only), GDPR export carries the list. Migration `AddRecipientContacts`.
+
+Tier 6 batch 1, 2026-08-19: `#308` file lock/checkout — `FileLock` entity (checkout lock on a
+delivery; active while `ReleasedAt == null` and `ExpiresAt` in future). Sender locks via
+`POST /api/deliveries/{id}/lock` (optional `DurationMinutes` 1–10080, default 24h, `Reason`
+≤200 chars), force-break any foreign lock (notifying the holder), unlocks via
+`POST /api/deliveries/{id}/unlock`. Replacement while another user holds the lock →
+`423` (`delivery_locked`), holder exempt. Lock state enriches the delivery list
+(`DeliveryItem.Lock`). `FileLockExpiryJob` (Hangfire minutely) auto-releases expired locks.
+Lock/force-break/expire events ride the account activity trail (SecurityEvent) and analytics.
+Migration `AddFileLock`.
 
 ## 9. Local artifact map (feature area → design doc)
 
