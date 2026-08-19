@@ -865,6 +865,7 @@
   <data name="dl_ext_request_btn" xml:space="preserve"><value>Yêu cầu gia hạn</value></data>
   <data name="dl_ext_request_sent" xml:space="preserve"><value>Đã gửi yêu cầu. Người gửi sẽ được thông báo.</value></data>
   <data name="notif_extension_requested" xml:space="preserve"><value>Yêu cầu gia hạn: {0}</value></data>
+  <data name="notif_file_lock_broken" xml:space="preserve"><value>Khóa thay file của bạn đã bị gỡ: {0}</value></data>
   <data name="ext_requests_title" xml:space="preserve"><value>Yêu cầu gia hạn — QuickShareCloud</value></data>
   <data name="ext_requests_h1" xml:space="preserve"><value>Yêu cầu gia hạn</value></data>
   <data name="ext_requests_lead" xml:space="preserve"><value>Người nhận đang yêu cầu thêm thời gian cho file này.</value></data>
@@ -877,6 +878,13 @@
   <data name="account_downloads_empty" xml:space="preserve"><value>Chưa có gì — các file bạn tải khi đăng nhập (bật theo dõi) sẽ hiện ở đây.</value></data>
   <data name="deliveries_replace" xml:space="preserve"><value>Thay file</value></data>
   <data name="deliveries_replace_error" xml:space="preserve"><value>Thay file thất bại. File có thể quá lớn so với gói của bạn.</value></data>
+  <data name="deliveries_lock" xml:space="preserve"><value>Khóa</value></data>
+  <data name="deliveries_unlock" xml:space="preserve"><value>Mở khóa</value></data>
+  <data name="deliveries_lock_takeover" xml:space="preserve"><value>Tiếp quản</value></data>
+  <data name="deliveries_lock_badge" xml:space="preserve"><value>Đã khóa</value></data>
+  <data name="deliveries_lock_self_tooltip" xml:space="preserve"><value>Bạn đã khóa file này để thay thế. Người khác không thể thay file cho đến khi bạn mở khóa.</value></data>
+  <data name="deliveries_lock_other_tooltip" xml:space="preserve"><value>Người dùng khác đang thay file này. Tính năng thay file tạm thời bị khóa.</value></data>
+  <data name="deliveries_lock_error" xml:space="preserve"><value>Khóa thất bại. Thử lại.</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>

@@ -338,6 +338,28 @@ else
             else btn.disabled = false;
         }).catch(function () { btn.disabled = false; });
     };
+    // File lock / checkout (issue #308): locking reserves the delivery for one user's
+    // replace; the server rejects a foreign replace while the lock is active.
+    window.lockDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/lock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.unlockDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/unlock', { method: 'POST' }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else btn.disabled = false;
+        }).catch(function () { btn.disabled = false; });
+    };
     window.bulkSelectedIds = function () {
         return Array.prototype.slice.call(document.querySelectorAll('.account-delivery__select:checked'))
             .map(function (el) { return el.value; });
@@ -497,6 +519,12 @@ else
                             @ExpiryLabel(item.ExpiresAt)
                         }
                     </span>
+                    @if (item.Lock is not null)
+                    {
+                        <span class="account-delivery__lock @(item.Lock.LockedBySelf ? "account-delivery__lock--self" : "")"
+                              title="@(item.Lock.LockedBySelf ? Loc["deliveries_lock_self_tooltip"] : Loc["deliveries_lock_other_tooltip"])"
+                              data-ai-action="delivery.lockBadge">@Loc["deliveries_lock_badge"]</span>
+                    }
                 </div>
                 <div class="account-delivery__gauge" role="img"
                      aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
@@ -536,11 +564,11 @@ else
                         <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__extend"
                                 onclick="extendDelivery(this)" data-ai-action="delivery.extend">@Loc["deliveries_extend"]</button>
                     }
-                    @if (item.Status == DeliveryStatus.Active)
+@if (item.Status == DeliveryStatus.Active && (item.Lock is null || item.Lock.LockedBySelf))
                     {
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__revoke"
-                                data-confirm="@Loc["deliveries_revoke_confirm"]" data-revoked-label="@Loc["deliveries_revoked"]"
-                                onclick="revokeDelivery(this)" data-ai-action="delivery.revoke">@Loc["deliveries_revoke"]</button>
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__replace"
+                                data-error="@Loc["deliveries_replace_error"]"
+                                onclick="replaceDeliveryFile(this)" data-ai-action="delivery.replace">@Loc["deliveries_replace"]</button>
                     }
                     @if (item.Status != DeliveryStatus.Revoked)
                     {
@@ -563,6 +591,23 @@ else
                                 data-prompt="@Loc["deliveries_daily_limit_prompt"]"
                                 data-error="@Loc["deliveries_daily_limit_error"]"
                                 onclick="setDailyLimit(this)" data-ai-action="delivery.dailyLimit">@Loc["deliveries_daily_limit"]</button>
+                        @if (item.Lock is null)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__lock-btn"
+                                    data-error="@Loc["deliveries_lock_error"]"
+                                    onclick="lockDelivery(this)" data-ai-action="delivery.lock">@Loc["deliveries_lock"]</button>
+                        }
+                        else if (item.Lock.LockedBySelf)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__unlock-btn"
+                                    onclick="unlockDelivery(this)" data-ai-action="delivery.unlock">@Loc["deliveries_unlock"]</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__lock-btn"
+                                    data-error="@Loc["deliveries_lock_error"]"
+                                    onclick="lockDelivery(this)" data-ai-action="delivery.takeover">@Loc["deliveries_lock_takeover"]</button>
+                        }
                     }
                     @if (item.Status == DeliveryStatus.Active && item.ExpiresAt.HasValue)
                     {

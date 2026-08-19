@@ -44,6 +44,13 @@ public static class AnalyticsEvents
     // In-product feedback (issue #35) — anonymous sentiment.
     public const string FeedbackSubmitted = "feedback_submitted";
 
+    // File lock / checkout (issue #308)
+    public const string FileLockAcquired = "file_lock_acquired";
+    public const string FileLockReleased = "file_lock_released";
+    public const string FileLockForceBroken = "file_lock_force_broken";
+    public const string FileLockExpired = "file_lock_expired";
+    public const string ReplaceBlocked = "replace_blocked";
+
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)
     {

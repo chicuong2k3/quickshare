@@ -1369,6 +1369,23 @@ body::after,
     white-space: nowrap;
 }
 
+/* File lock / checkout badge (issue #308): marks a delivery reserved for one user's replace. */
+.account-delivery__lock {
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--db-color-accent-text);
+    color: var(--db-color-accent-text);
+    padding: 0 var(--db-space-2);
+    white-space: nowrap;
+}
+
+.account-delivery__lock--self {
+    border-color: var(--db-valley-ink);
+    color: var(--db-valley-ink);
+}
+
 .account-delivery__gauge {
     height: 6px;
     border: 1px solid var(--db-mountain);

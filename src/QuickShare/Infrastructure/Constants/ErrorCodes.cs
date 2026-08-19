@@ -20,6 +20,8 @@ public static class ErrorCodes
     public const string SchedulingRequiresPaidPlan = "scheduling_requires_paid_plan";
     public const string DeliverAtMustBeFuture = "deliver_at_must_be_future";
     public const string DeliveryNotActive = "delivery_not_active";
+    public const string DeliveryLocked = "delivery_locked";
+    public const string LockDurationInvalid = "lock_duration_invalid";
     public const string DeliveryNotScheduled = "delivery_not_scheduled";
     public const string MessageTooLong = "message_too_long";
     public const string DeliveryAlreadyDownloaded = "delivery_already_downloaded";

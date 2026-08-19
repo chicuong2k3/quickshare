@@ -14,7 +14,13 @@ public record DeliveryItem(
     string ShareCode, int DownloadCount, int MaxDownloads,
     DateTime? ExpiresAt, DateTime CreatedAt, string Status, DateTime? DeliverAt,
     bool HideDownloadStats, bool IsFavorite, string? Alias, string? Tag
-);
+)
+{
+    /// <summary>Active file lock (issue #308). Null when the delivery is not locked.</summary>
+    public FileLockInfo? Lock { get; init; }
+}
+
+public record FileLockInfo(Guid LockedById, bool LockedBySelf, DateTime ExpiresAt);
 
 public static class DeliveryPaging
 {
@@ -66,6 +72,31 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
                 d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats,
                 d.IsFavorite, d.Alias, d.Tag), cancellationToken);
 
-        return Result.Success(page);
+        // Batched lock enrichment (issue #308). ToCursorPageAsync materializes the page
+        // before applying the selector, so a correlated per-row lock query would be N+1 —
+        // fetch every active lock for the page's deliveries in one round-trip instead.
+        var now = DateTime.UtcNow;
+        var pageIds = page.Items.Select(i => i.Id).ToArray();
+        var activeLocks = await db.FileLocks
+            .AsNoTracking()
+            .Where(l => pageIds.Contains(l.DeliveryId)
+                && l.ReleasedAt == null
+                && l.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+
+        var lockByDelivery = activeLocks
+            .GroupBy(l => l.DeliveryId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.CreatedAt).First());
+
+        var items = page.Items
+            .Select(item => lockByDelivery.TryGetValue(item.Id, out var lockInfo)
+                ? item with
+                {
+                    Lock = new FileLockInfo(lockInfo.LockedById, lockInfo.LockedById == userId, lockInfo.ExpiresAt)
+                }
+                : item)
+            .ToList();
+
+        return Result.Success(new CursorPage<DeliveryItem>(items, page.NextCursor));
     }
 }

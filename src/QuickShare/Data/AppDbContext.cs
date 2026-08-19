@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
     public DbSet<RecipientContact> RecipientContacts => Set<RecipientContact>();
+    public DbSet<FileLock> FileLocks => Set<FileLock>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -383,6 +384,22 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FileLock>(entity =>
+        {
+            entity.ToTable("file_locks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(FileLock.ReasonMaxLength);
+            entity.HasIndex(e => new { e.DeliveryId, e.ReleasedAt });
+            entity.HasOne<Delivery>()
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.LockedById)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -28,4 +28,5 @@ public static class NotificationType
     public const string DeliveryExpired = "delivery_expired";
     public const string DeliveryDownloaded = "delivery_downloaded";
     public const string ExtensionRequested = "extension_requested";
+    public const string FileLockBroken = "file_lock_broken";
 }

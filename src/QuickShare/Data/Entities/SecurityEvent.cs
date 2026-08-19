@@ -35,4 +35,8 @@ public enum SecurityEventType
     ApiKeyRevoked,
     EmailChanged,
     PasswordChanged,
+    FileLockAcquired,
+    FileLockReleased,
+    FileLockForceBroken,
+    FileLockExpired,
 }

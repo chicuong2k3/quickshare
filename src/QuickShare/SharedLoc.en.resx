@@ -845,6 +845,7 @@
   <data name="dl_ext_request_btn" xml:space="preserve"><value>Request more time</value></data>
   <data name="dl_ext_request_sent" xml:space="preserve"><value>Request sent. The sender will be notified.</value></data>
   <data name="notif_extension_requested" xml:space="preserve"><value>Extension requested: {0}</value></data>
+  <data name="notif_file_lock_broken" xml:space="preserve"><value>Your replace lock was broken: {0}</value></data>
   <data name="ext_requests_title" xml:space="preserve"><value>Extension requests — QuickShareCloud</value></data>
   <data name="ext_requests_h1" xml:space="preserve"><value>Extension requests</value></data>
   <data name="ext_requests_lead" xml:space="preserve"><value>Recipients asking for more time on this file.</value></data>
@@ -858,6 +859,13 @@
   <data name="account_downloads_empty" xml:space="preserve"><value>Nothing here yet — files you download while signed in (with tracking on) appear here.</value></data>
   <data name="deliveries_replace" xml:space="preserve"><value>Replace file</value></data>
   <data name="deliveries_replace_error" xml:space="preserve"><value>Replace failed. The file may be too large for your plan.</value></data>
+  <data name="deliveries_lock" xml:space="preserve"><value>Lock</value></data>
+  <data name="deliveries_unlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="deliveries_lock_takeover" xml:space="preserve"><value>Take over</value></data>
+  <data name="deliveries_lock_badge" xml:space="preserve"><value>Locked</value></data>
+  <data name="deliveries_lock_self_tooltip" xml:space="preserve"><value>You locked this file for replacement. Others cannot replace it until you unlock.</value></data>
+  <data name="deliveries_lock_other_tooltip" xml:space="preserve"><value>Another user is replacing this file. Replace is temporarily blocked.</value></data>
+  <data name="deliveries_lock_error" xml:space="preserve"><value>Lock failed. Try again.</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
   <data name="deliveries_tag" xml:space="preserve"><value>Label</value></data>

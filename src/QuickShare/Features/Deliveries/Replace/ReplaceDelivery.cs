@@ -18,7 +18,7 @@ public record ReplaceDeliveryCommitCommand(Guid DeliveryId, Guid SessionId, stri
 /// delivery so the share link, password, expiry, branding and download cap all
 /// stay unchanged; only the bytes (and size/hash/download-count) change.
 /// </summary>
-public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpContextAccessor http, AppDbContext db)
+public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpContextAccessor http, AppDbContext db, AnalyticsService analytics)
     : IRequestHandler<ReplaceDeliveryStartCommand, Result<ReplaceDeliveryStartResponse>>
 {
     public async ValueTask<Result<ReplaceDeliveryStartResponse>> Handle(ReplaceDeliveryStartCommand cmd, CancellationToken cancellationToken)
@@ -34,6 +34,21 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
 
         if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked or DeliveryStatus.Scheduled)
             return Result.Failure<ReplaceDeliveryStartResponse>(new LightResults.Error(ErrorCodes.DeliveryNotActive));
+
+        // File lock/checkout (issue #308): another user holds the lock — block replacement.
+        var now = DateTime.UtcNow;
+        var lockedByOther = await db.FileLocks
+            .AnyAsync(l => l.DeliveryId == delivery.Id
+                && l.ReleasedAt == null
+                && l.ExpiresAt > now
+                && l.LockedById != user.Id, cancellationToken);
+
+        if (lockedByOther)
+        {
+            await analytics.RecordAsync(AnalyticsEvents.ReplaceBlocked,
+                new AnalyticsEventData(FileName: delivery.FileName), cancellationToken);
+            return Result.Failure<ReplaceDeliveryStartResponse>(new LightResults.Error(ErrorCodes.DeliveryLocked));
+        }
 
         var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
         if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
@@ -182,6 +197,7 @@ public sealed class ReplaceDeliveryStartEndpoint : Endpoint<ReplaceDeliveryStart
             {
                 ErrorCodes.NotFound => 404,
                 ErrorCodes.DeliveryNotActive => 400,
+                ErrorCodes.DeliveryLocked => 423,
                 _ => 400
             });
     }

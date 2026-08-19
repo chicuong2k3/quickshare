@@ -478,6 +478,43 @@ namespace QuickShare.Migrations
                     b.ToTable("Feedbacks");
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.FileLock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LockedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LockedById");
+
+                    b.HasIndex("DeliveryId", "ReleasedAt");
+
+                    b.ToTable("file_locks", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.FileRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1217,6 +1254,21 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.FileLock", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuickShare.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("LockedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.FileRequest", b =>
