@@ -2,15 +2,112 @@
 
 @page "/account/security/activity"
 @attribute [Authorize]
+@using QuickShare.Features.Users.Retention
 @using QuickShare.Features.Users.Shared
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
 @inject NavigationManager Nav
 
 <HtmxFragment>
 <div id="security-activity-card" class="db-card account-card">
     <div class="db-card__body">
-        <div class="account-section-head">
+        @* Retention policy (issue #161) — lives inside this card because /account swaps it
+           in with hx-select="#security-activity-card"; anything outside would be dropped. *@
+        <section>
+            <div class="account-section-head">
+                <h2 class="db-h3">@Loc["account_retention_title"]</h2>
+                <p class="db-p db-text-muted account-retention__subtitle">@Loc["account_retention_subtitle"]</p>
+            </div>
+
+            @if (!retentionAllowed)
+            {
+                <p class="db-p db-text-muted account-retention__locked">
+                    @Loc["account_retention_upgrade_hint"]
+                    <a class="db-link" href="@RoutePaths.Upgrade" data-ai-action="retention.upgrade">@Loc["account_retention_upgrade_link"]</a>
+                </p>
+            }
+
+            @if (!string.IsNullOrEmpty(retentionError))
+            {
+                <div class="db-alert db-alert--error account-retention__alert" role="alert">@retentionError</div>
+            }
+            else if (retentionSaved)
+            {
+                <div class="db-alert db-alert--success account-retention__alert" role="status">@Loc["account_retention_saved"]</div>
+            }
+
+            <form class="account-retention__form"
+                  hx-post="@RoutePaths.AccountSecurityActivity"
+                  hx-target="#security-activity-card"
+                  hx-select="#security-activity-card"
+                  hx-swap="outerHTML"
+                  onpost="@HandleRetentionSave">
+                <label class="db-field">
+                    <span class="db-label">@Loc["account_retention_window_label"]</span>
+                    <select name="@RetentionDaysField"
+                            class="db-field__input db-input"
+                            disabled="@(!retentionAllowed)"
+                            hx-get="@RoutePaths.AccountSecurityActivity"
+                            hx-trigger="change"
+                            hx-target="#account-retention-preview"
+                            hx-select="#account-retention-preview"
+                            hx-swap="outerHTML"
+                            data-ai-action="retention.window.select">
+                        <option value="" selected="@(retentionDays is null)">@Loc["account_retention_window_none"]</option>
+                        @foreach (var preset in RetentionPolicy.Presets)
+                        {
+                            <option value="@preset" selected="@(retentionDays == preset)">@string.Format(Loc["account_retention_window_days"], preset)</option>
+                        }
+                    </select>
+                </label>
+
+                <label class="account-retention__toggle">
+                    <input type="checkbox" name="@RetentionNoExtendField" checked="@retentionNoExtend" disabled="@(!retentionAllowed)" />
+                    <span>
+                        <span class="account-retention__label">@Loc["account_retention_no_extend_label"]</span>
+                        <span class="db-text-muted account-retention__desc">@Loc["account_retention_no_extend_desc"]</span>
+                    </span>
+                </label>
+
+                @* Stable live region: HTMX swaps the inner node, so the announcer must outlive it. *@
+                <div aria-live="polite">
+                    <div id="account-retention-preview" class="account-retention__preview">
+                        @if (preview is null || preview.Days is null)
+                        {
+                            <span class="db-text-muted">@Loc["account_retention_preview_none"]</span>
+                        }
+                        else if (preview.Affected == 0)
+                        {
+                            <span class="db-text-muted">@Loc["account_retention_preview_clear"]</span>
+                        }
+                        else
+                        {
+                            <span class="account-retention__preview-count">@string.Format(Loc["account_retention_preview_count"], preview.Affected)</span>
+                            @if (preview.EarliestExpiry is { } earliest && preview.LatestExpiry is { } latest)
+                            {
+                                <span class="db-text-muted">@string.Format(Loc["account_retention_preview_range"], earliest.ToLocalTime().ToString("d"), latest.ToLocalTime().ToString("d"))</span>
+                            }
+                            <ul class="account-retention__samples">
+                                @foreach (var sample in preview.Samples)
+                                {
+                                    <li class="account-retention__sample">
+                                        <span class="account-retention__sample-name">@sample.FileName</span>
+                                        <span class="db-text-muted account-retention__sample-meta">@sample.ShareCode · @(sample.ExpiresAt is { } at ? at.ToLocalTime().ToString("d") : Loc["account_retention_sample_no_expiry"])</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                <button type="submit" class="db-btn db-btn--primary account-retention__save"
+                        disabled="@(!retentionAllowed)"
+                        data-ai-action="retention.save.submit">@Loc["account_retention_save_btn"]</button>
+            </form>
+        </section>
+
+        <div class="account-section-head account-retention__divider">
             <h2 class="db-h3">@Loc["account_security_title"]</h2>
             <p class="db-p db-text-muted" style="margin-top: 0.25rem; font-size: 0.875rem">@Loc["account_security_subtitle"]</p>
         </div>
@@ -63,6 +160,12 @@
 </HtmxFragment>
 
 @code {
+    private const string RetentionDaysField = "retentionDays";
+    private const string RetentionNoExtendField = "retentionNoExtend";
+    private const string ErrorKeyPrefix = "account_retention_error_";
+    private const string FilterQueryKey = "type";
+    private const int EventPageSize = 50;
+
     private static readonly (string Key, SecurityEventType Type, string LabelKey)[] Filters = new[]
     {
         (Key: "login", Type: SecurityEventType.Login, LabelKey: "account_security_filter_login"),
@@ -72,6 +175,19 @@
 
     private List<EventListItem> events = new();
     private string? Filter;
+
+    private bool retentionAllowed;
+    private int? retentionDays;
+    private bool retentionNoExtend;
+    private bool retentionSaved;
+    private string? retentionError;
+    private RetentionPreviewResponse? preview;
+
+    [SupplyParameterFromForm(Name = RetentionDaysField)]
+    private string? FormRetentionDays { get; set; }
+
+    [SupplyParameterFromForm(Name = RetentionNoExtendField)]
+    private bool FormRetentionNoExtend { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,9 +200,36 @@
             return;
         }
 
-        Filter = request?.Query["type"].FirstOrDefault();
-
         var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+        retentionAllowed = user.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+
+        // Read the window straight from the row — GetUserAsync is cache-backed and can still
+        // hold the previous policy for up to five minutes after a save.
+        var policy = await Db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == user.Id)
+            .Select(u => new { u.RetentionDays, u.RetentionNoExtend })
+            .FirstAsync(CancellationToken.None);
+        retentionDays = policy.RetentionDays;
+        retentionNoExtend = policy.RetentionNoExtend;
+
+        // Dry-run request from the window select: only #account-retention-preview is swapped
+        // back, so the activity list would be built and thrown away. Skip it.
+        var proposed = request?.Query[RetentionDaysField].FirstOrDefault();
+        if (proposed is not null)
+        {
+            retentionDays = ParseWindow(proposed);
+            await LoadPreviewAsync();
+            return;
+        }
+
+        // A save reloads the preview from the form handler afterwards, against the window
+        // that actually landed — computing it here would only be discarded.
+        var isPost = request is not null && Microsoft.AspNetCore.Http.HttpMethods.IsPost(request.Method);
+        if (!isPost)
+            await LoadPreviewAsync();
+
+        Filter = request?.Query[FilterQueryKey].FirstOrDefault();
 
         var query = Db.SecurityEvents
             .AsNoTracking()
@@ -98,10 +241,46 @@
 
         events = await query
             .OrderByDescending(e => e.CreatedAt)
-            .Take(50)
+            .Take(EventPageSize)
             .Select(e => new EventListItem(e.EventType, e.UserAgentLabel, e.CreatedAt))
             .ToListAsync(CancellationToken.None);
     }
+
+    private async Task HandleRetentionSave()
+    {
+        retentionError = null;
+        retentionSaved = false;
+
+        var result = await Bus.Send<LightResults.Result<UpdateRetentionPolicyResponse>>(
+            new UpdateRetentionPolicyCommand(ParseWindow(FormRetentionDays), FormRetentionNoExtend),
+            CancellationToken.None);
+
+        if (result.IsSuccess(out var response))
+        {
+            retentionDays = response.RetentionDays;
+            retentionNoExtend = response.NoExtend;
+            retentionSaved = true;
+        }
+        else if (result.IsFailure(out var error))
+        {
+            retentionError = Loc[ErrorKeyPrefix + error.Message];
+        }
+
+        // Either outcome: the line must describe the window the account actually holds now.
+        await LoadPreviewAsync();
+    }
+
+    private async Task LoadPreviewAsync()
+    {
+        var result = await Bus.Send<LightResults.Result<RetentionPreviewResponse>>(
+            new RetentionPreviewQuery(retentionDays), CancellationToken.None);
+
+        preview = result.IsSuccess(out var value) ? value : null;
+    }
+
+    /// <summary>Empty option means "no policy"; anything unparseable is treated the same.</summary>
+    private static int? ParseWindow(string? raw) =>
+        int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var days) ? days : null;
 
     private sealed record EventListItem(SecurityEventType EventType, string UserAgentLabel, DateTime CreatedAt);
 }

@@ -195,6 +195,18 @@ namespace QuickShare.Migrations
                     b.Property<bool>("AllowExtensionRequests")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("AllowedCountries")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("AllowedIpRanges")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("BlockedCountries")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 
@@ -262,6 +274,16 @@ namespace QuickShare.Migrations
 
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LegalHoldAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LegalHoldById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LegalHoldReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("MaxDownloads")
                         .HasColumnType("integer");
@@ -331,6 +353,8 @@ namespace QuickShare.Migrations
                     b.HasIndex("ExpiresAt");
 
                     b.HasIndex("FileRequestId");
+
+                    b.HasIndex("LegalHoldAt");
 
                     b.HasIndex("SenderId");
 
@@ -1083,6 +1107,12 @@ namespace QuickShare.Migrations
 
                     b.Property<Guid?>("ReferredByUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("RetentionDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("RetentionNoExtend")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("TrackMyDownloads")
                         .HasColumnType("boolean");

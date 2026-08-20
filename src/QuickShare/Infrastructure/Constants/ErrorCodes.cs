@@ -55,4 +55,12 @@ public static class ErrorCodes
     public const string ExtensionRequestNotFound = "extension_request_not_found";
     public const string RecipientLimitExceeded = "recipient_limit_exceeded";
     public const string EmailOtpCooldown = "email_otp_cooldown";
+    /// <summary>Caller is outside the delivery's IP allowlist or country rules (issues #142/#166).</summary>
+    public const string DeliveryRestricted = "delivery_restricted";
+    /// <summary>Operation refused because a legal hold freezes the delivery (issue #266).</summary>
+    public const string LegalHoldActive = "legal_hold_active";
+    public const string LegalHoldNotActive = "legal_hold_not_active";
+    public const string LegalHoldReasonRequired = "legal_hold_reason_required";
+    public const string RetentionDaysInvalid = "retention_days_invalid";
+    public const string RetentionPolicyLocked = "retention_policy_locked";
 }

@@ -23,8 +23,10 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var purgeBefore = DateTime.UtcNow - TrashRetention;
 
+        // Legal hold (issue #266): a held row never leaves the trash queue and its bytes
+        // are never deleted. The hold outlives the 24h grace by design.
         var trashed = await db.Deliveries
-            .Where(d => d.DeletedAt != null && d.DeletedAt < purgeBefore)
+            .Where(d => d.DeletedAt != null && d.DeletedAt < purgeBefore && d.LegalHoldAt == null)
             .ToListAsync(ct);
 
         if (trashed.Count == 0) return;
@@ -64,8 +66,9 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var purgeBefore = DateTime.UtcNow - ExpiredRowRetention;
 
+        // Legal hold (issue #266): held rows stay, bytes and all, however long ago they expired.
         var expired = await db.Deliveries
-            .Where(d => d.ExpiresAt != null && d.ExpiresAt < purgeBefore)
+            .Where(d => d.ExpiresAt != null && d.ExpiresAt < purgeBefore && d.LegalHoldAt == null)
             .ToListAsync(ct);
 
         if (expired.Count == 0) return;

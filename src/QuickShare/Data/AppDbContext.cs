@@ -79,6 +79,12 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.ShareCode).IsUnique();
             entity.Property(e => e.Alias).HasMaxLength(Delivery.AliasMaxLength);
             entity.HasIndex(e => e.Alias).IsUnique();
+            entity.Property(e => e.AllowedIpRanges).HasMaxLength(Delivery.AccessRuleMaxLength);
+            entity.Property(e => e.AllowedCountries).HasMaxLength(Delivery.AccessRuleMaxLength);
+            entity.Property(e => e.BlockedCountries).HasMaxLength(Delivery.AccessRuleMaxLength);
+            entity.Property(e => e.LegalHoldReason).HasMaxLength(Delivery.LegalHoldReasonMaxLength);
+            // The retention sweep and every purge path filter on the hold flag.
+            entity.HasIndex(e => e.LegalHoldAt);
             entity.HasIndex(e => e.ExpiresAt);
             entity.HasOne(e => e.Sender)
                 .WithMany()

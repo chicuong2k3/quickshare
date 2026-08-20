@@ -23,6 +23,7 @@ else
     <section class="hero">
         <h1 class="db-h1">@Loc["deliveries_h1"]</h1>
         <p class="db-p db-text-muted">@Loc["deliveries_lead"] <a class="db-link" href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a>
+            <text>·</text> <a class="db-link" href="/api/deliveries/legal-hold/export" data-ai-action="deliveries.holdExport">@Loc["deliveries_hold_export"]</a>
             @if (DeletedOnly)
             {
                 <text>·</text> <a class="db-link" href="/account/deliveries">@Loc["deliveries_back"]</a>
@@ -360,6 +361,33 @@ else
             else btn.disabled = false;
         }).catch(function () { btn.disabled = false; });
     };
+    // Legal hold (issue #266): freezes the delivery against every deletion path until the
+    // owner lifts it. Placing requires a case reference; lifting is double-confirmed
+    // because releasing evidence mid-probe is the destructive direction here.
+    window.holdDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var reason = window.prompt(btn.getAttribute('data-prompt'));
+        if (!reason || !reason.trim()) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/legal-hold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason.trim() })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.liftHoldDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        if (!window.confirm(btn.getAttribute('data-confirm-again'))) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/legal-hold/lift', { method: 'POST' }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
+        }).catch(function () { btn.disabled = false; });
+    };
     window.bulkSelectedIds = function () {
         return Array.prototype.slice.call(document.querySelectorAll('.account-delivery__select:checked'))
             .map(function (el) { return el.value; });
@@ -525,6 +553,12 @@ else
                               title="@(item.Lock.LockedBySelf ? Loc["deliveries_lock_self_tooltip"] : Loc["deliveries_lock_other_tooltip"])"
                               data-ai-action="delivery.lockBadge">@Loc["deliveries_lock_badge"]</span>
                     }
+                    @if (item.IsUnderLegalHold)
+                    {
+                        <span class="account-delivery__hold"
+                              title="@string.Format(Loc["deliveries_hold_tooltip"], item.LegalHoldReason)"
+                              data-ai-action="delivery.holdBadge">@Loc["deliveries_hold_badge"]</span>
+                    }
                 </div>
                 <div class="account-delivery__gauge" role="img"
                      aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
@@ -607,6 +641,21 @@ else
                             <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__lock-btn"
                                     data-error="@Loc["deliveries_lock_error"]"
                                     onclick="lockDelivery(this)" data-ai-action="delivery.takeover">@Loc["deliveries_lock_takeover"]</button>
+                        }
+                        @if (item.IsUnderLegalHold)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__hold-lift"
+                                    data-confirm="@Loc["deliveries_hold_lift_confirm"]"
+                                    data-confirm-again="@Loc["deliveries_hold_lift_confirm_again"]"
+                                    data-error="@Loc["deliveries_hold_error"]"
+                                    onclick="liftHoldDelivery(this)" data-ai-action="delivery.holdLift">@Loc["deliveries_hold_lift"]</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm account-delivery__hold-btn"
+                                    data-prompt="@Loc["deliveries_hold_prompt"]"
+                                    data-error="@Loc["deliveries_hold_error"]"
+                                    onclick="holdDelivery(this)" data-ai-action="delivery.hold">@Loc["deliveries_hold"]</button>
                         }
                     }
                     @if (item.Status == DeliveryStatus.Active && item.ExpiresAt.HasValue)

@@ -168,6 +168,14 @@ protected override async Task OnInitializedAsync()
 - **Mediator (martinothamar/Mediator) is the in-process request/response dispatcher** — source-generated `IRequestHandler` implementations, registered scoped (`AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)` in `Program.cs`). Endpoints dispatch via `Resolve<IMediator>().Send<T>(cmd, ct)`. No durable messaging — background/polling jobs stay on Hangfire; do not reintroduce an outbox.
 - **Gate all Hangfire wiring on `!useInMemoryDb`** so the in-memory/SQLite test factories never boot a Hangfire server or Postgres storage.
 
+### Compliance Invariants (legal hold #266, retention policy #161, scope rules #142/#166)
+
+See `docs/compliance-architecture.md` for the full subsystem. Three rules bind all future work:
+
+- **Any new code path that deletes delivery rows or R2 objects MUST filter `LegalHoldAt == null`.** A hold outranks retention, the trash grace, the expiry sweep, and right-to-erasure — deleting held bytes is evidence loss during litigation. Held rows are *skipped*, not failed: a bulk operation reports them in `skipped` and continues. Single-target endpoints refuse with `ErrorCodes.LegalHoldActive` → 409.
+- **Any new code path that computes a delivery expiry MUST pass it through `RetentionPolicy.Clamp`, after the plan cap.** The policy is a ceiling, never a floor — a sender's shorter choice always survives, and clamping is not a validation error.
+- **Delivery scope rules (`DeliveryAccessPolicy`) are fail-closed.** A rule that exists refuses anyone it does not explicitly satisfy, and a malformed rule means "does not match" — never "matches everything". Rule snapshots may be cached per share code; a per-caller verdict MUST NEVER enter a shared cache.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

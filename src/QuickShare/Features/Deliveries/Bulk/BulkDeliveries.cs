@@ -50,6 +50,14 @@ public sealed class BulkDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
                         continue;
                     }
 
+                    // Legal hold (issue #266): held rows are reported as skipped rather
+                    // than failing the batch — one frozen file must not block the rest.
+                    if (d.LegalHoldAt is not null)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
                     d.DeletedAt = now;
                     affected++;
                 }

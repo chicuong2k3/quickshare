@@ -52,10 +52,26 @@ public sealed class ExtendDeliveryHandler(AppDbContext db, IHttpContextAccessor 
                 return Result.Failure<ExtendDeliveryResponse>(new LightResults.Error(ErrorCodes.ExtendTooLate));
         }
 
+        // Retention policy (issue #161) belongs to the delivery's owner, not the caller,
+        // and is read fresh: the cached User entity can still hold the previous window.
+        var policy = await db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == delivery.SenderId)
+            .Select(u => new { u.RetentionDays, u.RetentionNoExtend })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // Regulated mode: refuse rather than hand back an expiry the clamp already pinned
+        // to the ceiling — a silent no-op reads as "extended" to the caller.
+        if (policy is { RetentionNoExtend: true } && RetentionPolicy.Exceeds(delivery.ExpiresAt, policy.RetentionDays))
+            return Result.Failure<ExtendDeliveryResponse>(new LightResults.Error(ErrorCodes.RetentionPolicyLocked));
+
         var newExpiry = now.AddDays(ExtendDays);
         var cap = now.Add(PlanTierLimits.GetMaxExpiry(plan));
         if (newExpiry > cap)
             newExpiry = cap;
+
+        // The account window is a ceiling over the plan cap, so it clamps last.
+        newExpiry = RetentionPolicy.Clamp(newExpiry, policy?.RetentionDays);
 
         delivery.ExpiresAt = newExpiry;
         delivery.Status = DeliveryStatus.Active;

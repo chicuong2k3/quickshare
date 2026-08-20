@@ -1,5 +1,6 @@
 ﻿using System.IO.Compression;
 using LightResults;
+using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Downloads.ZipContents;
@@ -13,7 +14,7 @@ public record ZipEntryResponse(string Name, long Size, long CompressedSize, bool
 /// directory, never the decompressed bytes. Gated like the media preview (#21):
 /// password/OTP-gated and exhausted deliveries don't expose their contents.
 /// </summary>
-public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db)
+public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access)
     : IRequestHandler<ZipContentsQuery, Result<IReadOnlyList<ZipEntryResponse>>>
 {
     private const long MaxZipBytes = 200 * 1024 * 1024;
@@ -28,6 +29,10 @@ public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db
 
         if (delivery is null || delivery.DeletedAt is not null)
             return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.NotFound));
+
+        // Same scope rules as the byte path (issues #142/#166): the entry list is content.
+        if (await access.CheckAsync(delivery, cancellationToken) != DeliveryAccessDecision.Allowed)
+            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.DeliveryRestricted));
 
         if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked or DeliveryStatus.Expired
             || (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow))

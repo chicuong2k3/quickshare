@@ -1,4 +1,5 @@
 using LightResults;
+using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Downloads.Info;
@@ -28,11 +29,16 @@ public record DownloadInfoResponse(
     bool RequireRecipientEmail
 );
 
-public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache)
+public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, DeliveryAccessService access)
     : IRequestHandler<DownloadInfoQuery, Result<DownloadInfoResponse>>
 {
     public async ValueTask<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, CancellationToken cancellationToken)
     {
+        // Scope rules (issues #142/#166) are evaluated per caller, so they run OUTSIDE
+        // the share-code cache below — a verdict for one visitor must never be reused.
+        if (await access.CheckByCodeAsync(query.ShareCode, cancellationToken) != DeliveryAccessDecision.Allowed)
+            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryRestricted));
+
         return await cache.GetOrSetAsync(
             $"download:info:{query.ShareCode}",
             async ct2 =>

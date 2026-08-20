@@ -51,6 +51,16 @@ public static class AnalyticsEvents
     public const string FileLockExpired = "file_lock_expired";
     public const string ReplaceBlocked = "replace_blocked";
 
+    // Delivery scope control (issues #142 IP allowlist, #166 country rules)
+    public const string DeliveryAccessBlockedIp = "delivery_access_blocked_ip";
+    public const string DeliveryAccessBlockedCountry = "delivery_access_blocked_country";
+
+    // Compliance lifecycle (issues #266 legal hold, #161 retention policy)
+    public const string LegalHoldPlaced = "legal_hold_placed";
+    public const string LegalHoldLifted = "legal_hold_lifted";
+    public const string RetentionPolicyChanged = "retention_policy_changed";
+    public const string RetentionEnforced = "retention_enforced";
+
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)
     {

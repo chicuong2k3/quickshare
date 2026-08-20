@@ -39,4 +39,9 @@ public enum SecurityEventType
     FileLockReleased,
     FileLockForceBroken,
     FileLockExpired,
+    LegalHoldPlaced,
+    LegalHoldLifted,
+    RetentionPolicyChanged,
+    RetentionEnforced,
+    DeliveryAccessBlocked,
 }

@@ -754,6 +754,26 @@
   <data name="account_security_event_ApiKeyRevoked" xml:space="preserve"><value>API key bị thu hồi</value></data>
   <data name="account_security_event_EmailChanged" xml:space="preserve"><value>Email đã đổi</value></data>
   <data name="account_security_event_PasswordChanged" xml:space="preserve"><value>Mật khẩu đã đổi</value></data>
+  <data name="account_security_event_RetentionPolicyChanged" xml:space="preserve"><value>Chính sách lưu trữ đã đổi</value></data>
+  <data name="account_security_event_RetentionEnforced" xml:space="preserve"><value>Đã áp dụng chính sách lưu trữ</value></data>
+  <data name="account_retention_title" xml:space="preserve"><value>Chính sách lưu trữ</value></data>
+  <data name="account_retention_subtitle" xml:space="preserve"><value>Giới hạn cho toàn bộ tài khoản: mọi liên kết bạn tạo sẽ hết hạn trong khoảng thời gian này, và các liên kết cũ cũng bị kéo về đúng mốc đó.</value></data>
+  <data name="account_retention_upgrade_hint" xml:space="preserve"><value>Chính sách lưu trữ là tính năng của gói Pro và Studio.</value></data>
+  <data name="account_retention_upgrade_link" xml:space="preserve"><value>Nâng cấp để thiết lập</value></data>
+  <data name="account_retention_window_label" xml:space="preserve"><value>Thời gian sống tối đa của liên kết</value></data>
+  <data name="account_retention_window_none" xml:space="preserve"><value>Không áp dụng — chỉ dùng hạn của từng liên kết</value></data>
+  <data name="account_retention_window_days" xml:space="preserve"><value>{0} ngày</value></data>
+  <data name="account_retention_no_extend_label" xml:space="preserve"><value>Chặn gia hạn vượt quá giới hạn</value></data>
+  <data name="account_retention_no_extend_desc" xml:space="preserve"><value>Yêu cầu gia hạn sẽ bị từ chối khi liên kết đã nằm đúng mốc giới hạn, thay vì âm thầm không thêm được thời gian nào.</value></data>
+  <data name="account_retention_preview_none" xml:space="preserve"><value>Chọn một khoảng thời gian để xem những gì sẽ bị rút ngắn.</value></data>
+  <data name="account_retention_preview_clear" xml:space="preserve"><value>Không có gì thay đổi — mọi liên kết đang hoạt động đều đã nằm trong khoảng này.</value></data>
+  <data name="account_retention_preview_count" xml:space="preserve"><value>{0} liên kết sẽ hết hạn sớm hơn.</value></data>
+  <data name="account_retention_preview_range" xml:space="preserve"><value>Các hạn bị ảnh hưởng trải từ {0} đến {1}.</value></data>
+  <data name="account_retention_sample_no_expiry" xml:space="preserve"><value>không có hạn</value></data>
+  <data name="account_retention_save_btn" xml:space="preserve"><value>Lưu chính sách lưu trữ</value></data>
+  <data name="account_retention_saved" xml:space="preserve"><value>Đã lưu chính sách lưu trữ.</value></data>
+  <data name="account_retention_error_requires_paid_plan" xml:space="preserve"><value>Chính sách lưu trữ cần gói Pro hoặc Studio.</value></data>
+  <data name="account_retention_error_retention_days_invalid" xml:space="preserve"><value>Hãy chọn khoảng từ 1 đến 365 ngày.</value></data>
   <data name="admin_reports_page_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
   <data name="admin_reports_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
   <data name="admin_reports_subtitle" xml:space="preserve"><value>Xem xét, xử lý hoặc tạm ngưng các liên kết bị báo cáo lạm dụng hoặc vi phạm bản quyền.</value></data>
@@ -885,6 +905,15 @@
   <data name="deliveries_lock_self_tooltip" xml:space="preserve"><value>Bạn đã khóa file này để thay thế. Người khác không thể thay file cho đến khi bạn mở khóa.</value></data>
   <data name="deliveries_lock_other_tooltip" xml:space="preserve"><value>Người dùng khác đang thay file này. Tính năng thay file tạm thời bị khóa.</value></data>
   <data name="deliveries_lock_error" xml:space="preserve"><value>Khóa thất bại. Thử lại.</value></data>
+  <data name="deliveries_hold" xml:space="preserve"><value>Phong toả pháp lý</value></data>
+  <data name="deliveries_hold_lift" xml:space="preserve"><value>Bỏ phong toả</value></data>
+  <data name="deliveries_hold_badge" xml:space="preserve"><value>Phong toả pháp lý</value></data>
+  <data name="deliveries_hold_tooltip" xml:space="preserve"><value>Đang bị phong toả pháp lý ({0}). Được miễn khỏi chính sách lưu trữ, thùng rác, xoá và xoá tài khoản cho tới khi bỏ phong toả.</value></data>
+  <data name="deliveries_hold_prompt" xml:space="preserve"><value>Mã vụ việc cho lần phong toả này (bắt buộc)</value></data>
+  <data name="deliveries_hold_lift_confirm" xml:space="preserve"><value>Bỏ phong toả pháp lý cho lượt gửi này? File sẽ có thể bị xoá lại.</value></data>
+  <data name="deliveries_hold_lift_confirm_again" xml:space="preserve"><value>Hành động này được ghi vào dòng thời gian bảo mật. Xác nhận bạn đang giải phóng file khỏi phong toả.</value></data>
+  <data name="deliveries_hold_error" xml:space="preserve"><value>Thay đổi phong toả pháp lý thất bại. Thử lại.</value></data>
+  <data name="deliveries_hold_export" xml:space="preserve"><value>Báo cáo phong toả pháp lý</value></data>
   <data name="deliveries_revoke" xml:space="preserve">
     <value>Thu hồi</value>
   </data>
@@ -1160,5 +1189,52 @@
   </data>
   <data name="labels_delete_file" xml:space="preserve">
     <value>Xóa</value>
+  </data>
+  <!-- Download restrictions (issues #142 + #166) — sender controls on /send -->
+  <data name="upload_access_label" xml:space="preserve">
+    <value>Giới hạn ai được tải xuống</value>
+  </data>
+  <data name="upload_access_ip_label" xml:space="preserve">
+    <value>Dải IP được phép</value>
+  </data>
+  <data name="upload_access_ip_placeholder" xml:space="preserve">
+    <value>203.0.113.0/24, 198.51.100.7</value>
+  </data>
+  <data name="upload_access_ip_hint" xml:space="preserve">
+    <value>Dải CIDR hoặc từng địa chỉ, cách nhau bằng dấu phẩy — ví dụ 203.0.113.0/24. Để trống để cho phép mọi mạng.</value>
+  </data>
+  <data name="upload_access_allowed_countries_label" xml:space="preserve">
+    <value>Quốc gia được phép</value>
+  </data>
+  <data name="upload_access_countries_placeholder" xml:space="preserve">
+    <value>US, VN</value>
+  </data>
+  <data name="upload_access_allowed_countries_hint" xml:space="preserve">
+    <value>Mã quốc gia hai chữ cái, cách nhau bằng dấu phẩy — ví dụ US, VN. Để trống để cho phép mọi quốc gia.</value>
+  </data>
+  <data name="upload_access_blocked_countries_label" xml:space="preserve">
+    <value>Quốc gia bị chặn</value>
+  </data>
+  <data name="upload_access_blocked_countries_hint" xml:space="preserve">
+    <value>Mã quốc gia hai chữ cái, cách nhau bằng dấu phẩy — ví dụ US, VN. Được kiểm tra sau danh sách được phép.</value>
+  </data>
+  <data name="upload_access_combine_hint" xml:space="preserve">
+    <value>Các quy tắc này áp dụng cùng với mật khẩu và mã gửi qua email — người nhận phải vượt qua tất cả.</value>
+  </data>
+  <data name="upload_access_paid_hint" xml:space="preserve">
+    <value>Giới hạn tải xuống thuộc gói Pro và Studio.</value>
+  </data>
+  <data name="upload_access_upgrade" xml:space="preserve">
+    <value>Nâng cấp để mở khoá</value>
+  </data>
+  <!-- Download restrictions (issues #142 + #166) — recipient refusal on /d -->
+  <data name="dl_restricted_h1" xml:space="preserve">
+    <value>Bạn không thể tải file này từ đây</value>
+  </data>
+  <data name="dl_restricted_sub" xml:space="preserve">
+    <value>Người gửi đã giới hạn quyền truy cập theo một số mạng hoặc quốc gia.</value>
+  </data>
+  <data name="dl_restricted_notice" xml:space="preserve">
+    <value>Người gửi đặt ra các quy tắc này và chúng tôi không tiết lộ chúng. Hãy hỏi người gửi nếu bạn cho rằng mình cần được truy cập.</value>
   </data>
 </root>

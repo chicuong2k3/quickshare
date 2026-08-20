@@ -977,6 +977,109 @@ body::after,
     font-size: var(--db-text-sm);
 }
 
+/* Retention policy (issue #161) — global: rendered inside an HTMX partial. */
+/* The global `.db-p.db-text-muted` bottom margin over-gaps a section subtitle. */
+.account-retention__subtitle {
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+    font-size: var(--db-text-sm);
+}
+
+.account-retention__locked,
+.account-retention__alert {
+    margin-top: var(--db-space-3);
+}
+
+.account-retention__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-3);
+}
+
+.account-retention__toggle {
+    display: flex;
+    gap: var(--db-space-2);
+    align-items: flex-start;
+    padding: var(--db-space-3);
+    border: 1px solid var(--db-mountain);
+    cursor: pointer;
+}
+
+.account-retention__toggle input[type="checkbox"] {
+    margin-top: 0.25rem;
+    accent-color: var(--db-color-accent);
+}
+
+/* Free plan renders the whole control read-only rather than hiding it — the card has to
+   show what the upgrade buys. */
+.account-retention__form select:disabled,
+.account-retention__toggle input[type="checkbox"]:disabled,
+.account-retention__save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.account-retention__label {
+    display: block;
+    font-weight: var(--db-font-medium);
+}
+
+.account-retention__desc {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--db-text-sm);
+}
+
+.account-retention__preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: var(--db-text-sm);
+}
+
+.account-retention__preview-count {
+    font-weight: var(--db-font-medium);
+}
+
+.account-retention__samples {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    list-style: none;
+    margin: 0.25rem 0 0 0;
+    padding: 0;
+}
+
+.account-retention__sample {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--db-space-2);
+    min-width: 0;
+}
+
+.account-retention__sample-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-retention__sample-meta {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.account-retention__save {
+    align-self: flex-start;
+}
+
+/* Separates the policy control from the activity log inside the one security card. */
+.account-retention__divider {
+    margin-top: var(--db-space-5);
+    padding-top: var(--db-space-4);
+    border-top: 1px solid var(--db-mountain);
+}
+
 /* Data & privacy (issue #59). */
 .account-data-actions {
     display: flex;
@@ -1384,6 +1487,21 @@ body::after,
 .account-delivery__lock--self {
     border-color: var(--db-valley-ink);
     color: var(--db-valley-ink);
+}
+
+/* Legal hold badge (issue #266): the delivery is frozen against every deletion path.
+   Rendered inside the HTMX deliveries partial, so it must live here and not in the
+   component's scoped stylesheet. Text carries the state — the border is not the signal. */
+.account-delivery__hold {
+    font-family: var(--db-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--db-valley-ink);
+    background: var(--db-valley);
+    color: var(--db-valley-ink);
+    padding: 0 var(--db-space-2);
+    white-space: nowrap;
 }
 
 .account-delivery__gauge {
@@ -2305,6 +2423,40 @@ html, body {
     content: "\2022";
     margin-right: 0.5rem;
     opacity: 0.7;
+}
+
+/* ─── Download restrictions — sender controls (issues #142 + #166) ──
+   The rule group on /send. Kept in the global sheet rather than
+   Upload.razor.css so the same rules survive if the block is ever
+   delivered inside an HTMX partial, where scoped attributes never
+   reach the injected markup. ─────────────────────────────────────── */
+.upload-access__combine {
+    display: block;
+    margin-top: 0.75rem;
+}
+
+.upload-access input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.upload-access__locked {
+    margin: 0.75rem 0 0;
+}
+
+.upload-access__upgrade {
+    margin-left: 0.25rem;
+    color: var(--db-color-accent-text);
+    text-decoration: underline;
+}
+
+/* ─── Download restrictions — recipient refusal (issues #142 + #166) ─
+   The policy line under #download-phase-restricted, global for the
+   same reason the rest of the .dl-* family is. ───────────────────── */
+.dl-restricted__notice {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--db-color-text-muted);
 }
 
 /* ─── Admin: feature flags (shared for HTMX lazy-load) ─── */

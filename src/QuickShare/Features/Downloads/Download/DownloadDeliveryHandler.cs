@@ -1,5 +1,6 @@
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Features.Deliveries.Otp;
+using QuickShare.Features.Downloads.Shared;
 
 namespace QuickShare.Features.Downloads.Download;
 
@@ -9,7 +10,8 @@ public sealed class DownloadDeliveryHandler(
     IStorageProvider storage,
     IHttpContextAccessor httpContextAccessor,
     AppDbContext db,
-    OtpLockoutService lockout)
+    OtpLockoutService lockout,
+    DeliveryAccessService access)
     : IRequestHandler<DownloadDeliveryQuery>
 {
     private static readonly TimeSpan FullDownloadTtl = TimeSpan.FromDays(7);
@@ -48,6 +50,15 @@ public sealed class DownloadDeliveryHandler(
         if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
         {
             response.StatusCode = 410;
+            return Unit.Value;
+        }
+
+        // Scope control (issues #142 CIDR allowlist, #166 country rules) — AND-scoped with
+        // every other gate and evaluated before the password so a caller outside the
+        // sender's perimeter never gets a password oracle.
+        if (await access.CheckAsync(delivery, cancellationToken) != DeliveryAccessDecision.Allowed)
+        {
+            response.StatusCode = StatusCodes.Status403Forbidden;
             return Unit.Value;
         }
 

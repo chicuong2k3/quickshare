@@ -32,12 +32,27 @@ public sealed class ApproveExtensionRequestHandler(AppDbContext db, IHttpContext
         if (request.Status != ExtensionRequestStatus.Pending)
             return Result.Success(new ApproveExtensionRequestResponse(delivery.ExpiresAt ?? DateTime.UtcNow));
 
-        // Extend by 7 days, capped at the plan maximum (mirrors #45).
+        // Retention policy (issue #161): the approval is the owner's, but a recipient
+        // triggered the request — so the window is read off the delivery's sender, fresh,
+        // because the cached User entity can still hold the previous value.
+        var policy = await db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == delivery.SenderId)
+            .Select(u => new { u.RetentionDays, u.RetentionNoExtend })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // Regulated mode: approving would buy no time, so say so instead of no-op'ing.
+        if (policy is { RetentionNoExtend: true } && RetentionPolicy.Exceeds(delivery.ExpiresAt, policy.RetentionDays))
+            return Result.Failure<ApproveExtensionRequestResponse>(new LightResults.Error(ErrorCodes.RetentionPolicyLocked));
+
+        // Extend by 7 days, capped at the plan maximum (mirrors #45), then clamped to the
+        // account retention window — the compliance ceiling sits above the plan cap.
         var now = DateTime.UtcNow;
         var newExpiry = now.AddDays(ExtendDays);
         var cap = now.Add(PlanTierLimits.GetMaxExpiry(user.Plan));
         if (newExpiry > cap)
             newExpiry = cap;
+        newExpiry = RetentionPolicy.Clamp(newExpiry, policy?.RetentionDays);
 
         delivery.ExpiresAt = newExpiry;
         delivery.Status = DeliveryStatus.Active;

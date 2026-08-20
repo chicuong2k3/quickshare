@@ -30,6 +30,8 @@ public record Delivery : BaseAuditEntity
     /// <summary>Sender-side star (issue #242).</summary>
     public bool IsFavorite { get; set; }
     public const int TagMaxLength = 30;
+    public const int AccessRuleMaxLength = 500;
+    public const int LegalHoldReasonMaxLength = 200;
     /// <summary>Optional sender label (issue #321); color derived from the text.</summary>
     public string? Tag { get; set; }
     public DateTime? ExpiresAt { get; set; }
@@ -58,6 +60,25 @@ public record Delivery : BaseAuditEntity
     public bool RequireRecipientEmail { get; set; }
     /// <summary>Public stats page (issue #294): a shareable aggregated download-stats page. Default off for privacy.</summary>
     public bool PublicStatsEnabled { get; set; }
+    /// <summary>
+    /// IP allowlist (issue #142): comma-separated CIDR ranges or bare addresses.
+    /// Null/empty = reachable from any address. Studio-only at upload time.
+    /// </summary>
+    public string? AllowedIpRanges { get; set; }
+    /// <summary>Country allow-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Null = every country passes.</summary>
+    public string? AllowedCountries { get; set; }
+    /// <summary>Country deny-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Evaluated after the allow-list.</summary>
+    public string? BlockedCountries { get; set; }
+    /// <summary>
+    /// Legal hold (issue #266): freezes the row and its bytes against every deletion
+    /// path — retention sweep, trash purge, expiry purge, account deletion. Null = not held.
+    /// Lifting is manual only; there is no auto-expiry.
+    /// </summary>
+    public DateTime? LegalHoldAt { get; set; }
+    /// <summary>Case id / reference the hold was placed under (issue #266).</summary>
+    public string? LegalHoldReason { get; set; }
+    /// <summary>Who placed the active hold (issue #266). Transitions are audited on the security timeline.</summary>
+    public Guid? LegalHoldById { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }

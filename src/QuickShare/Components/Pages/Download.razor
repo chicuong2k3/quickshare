@@ -456,6 +456,23 @@
                     </div>
                     break;
 
+                case DownloadRenderState.Restricted:
+                    @* Access rules refused this caller (issues #142/#166). Deliberately says
+                       nothing about which rule, the sender's values, the file, or the counts —
+                       a refused visitor learns only that a restriction exists. *@
+                    <div id="download-phase-restricted" class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
+                        </div>
+                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_restricted_h1"]</h1>
+                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_restricted_sub"]</p>
+                        <p class="db-p dl-restricted__notice">@Loc["dl_restricted_notice"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
                 case DownloadRenderState.NotFound:
                     <div class="db-text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
@@ -649,7 +666,12 @@
             {
                 result.IsFailure(out var error);
                 var msg = error?.Message ?? string.Empty;
-                if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
+                // Access rules refused this caller (issues #142/#166). Matched on the exact
+                // code and placed ahead of the substring sniffs below — "delivery_restricted"
+                // contains none of their needles today, but the ordering is the guarantee.
+                if (string.Equals(msg, ErrorCodes.DeliveryRestricted, StringComparison.Ordinal))
+                    RenderState = DownloadRenderState.Restricted;
+                else if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
                 {
                     RenderState = DownloadRenderState.Expired;
                     var extStatus = await Bus.Send<LightResults.Result<ExtensionStatusResponse>>(
@@ -748,7 +770,7 @@
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, Revoked, NotFound, LimitReached, DailyLimit, Error }
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, Revoked, Restricted, NotFound, LimitReached, DailyLimit, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }

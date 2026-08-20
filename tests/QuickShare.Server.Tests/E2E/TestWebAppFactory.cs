@@ -263,8 +263,14 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
         => Task.FromResult(new Uri("http://stub.local/download"));
 
+    /// <summary>Prefixes DeleteObjectsAsync was asked to remove — lets a sweep test assert what survived.</summary>
+    public List<string> DeletedPrefixes { get; } = [];
+
     public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
-        => Task.CompletedTask;
+    {
+        DeletedPrefixes.Add(prefix);
+        return Task.CompletedTask;
+    }
 
     public Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
         => Task.CompletedTask;

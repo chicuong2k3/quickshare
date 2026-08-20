@@ -96,6 +96,9 @@
         emailOtpEnabled: boolean;
         requireRecipientEmail: boolean;
         publicStatsEnabled: boolean;
+        allowedIpRanges: string | null;
+        allowedCountries: string | null;
+        blockedCountries: string | null;
         stripMetadata: boolean;
         compressImages: boolean;
         expiryHours: number | null;
@@ -122,6 +125,9 @@
         emailOtpEnabled: false,
         requireRecipientEmail: false,
         publicStatsEnabled: false,
+        allowedIpRanges: null,
+        allowedCountries: null,
+        blockedCountries: null,
         stripMetadata: true,
         compressImages: true,
         expiryHours: null,
@@ -384,6 +390,14 @@
 
     function sleep(ms: number): Promise<void> { return new Promise<void>(function (res) { setTimeout(res, ms); }); }
 
+    // Access rules (issues #142/#166). The server normalizes each value and drops
+    // whatever it cannot parse, so the client only trims. Blank must stay null —
+    // an empty string would read as "an allowlist that matches nothing".
+    function accessRule(id: string): string | null {
+        const raw = (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? '';
+        return raw.length > 0 ? raw : null;
+    }
+
     function startUpload(file: File, source?: string): void {
         if (!file) return;
         if (file.size > MAX_FILE_BYTES) { state.phase = 'error'; state.error = t('sizeExceeded'); render(); return; }
@@ -394,13 +408,16 @@
         state.message = (document.getElementById('upload-message') as HTMLTextAreaElement | null)?.value.trim() ?? '';
         state.password = (document.getElementById('upload-password') as HTMLInputElement | null)?.value ?? '';
         state.burnAfterDownload = (document.getElementById('upload-burn') as HTMLInputElement | null)?.checked ?? false;
-state.allowExtensionRequests = (document.getElementById('upload-allow-requests') as HTMLInputElement | null)?.checked ?? false;
-state.recipientEmails = String((document.getElementById('upload-recipients') as HTMLInputElement | null)?.value || '')
-    .split(',').map(function (e) { return e.trim(); }).filter(function (e) { return e.length > 0; });
-state.privacyMode = (document.getElementById('upload-privacy') as HTMLInputElement | null)?.checked ?? false;
-state.emailOtpEnabled = (document.getElementById('upload-email-otp') as HTMLInputElement | null)?.checked ?? false;
-state.requireRecipientEmail = (document.getElementById('upload-recipient-email') as HTMLInputElement | null)?.checked ?? false;
-state.publicStatsEnabled = (document.getElementById('upload-public-stats') as HTMLInputElement | null)?.checked ?? false;
+        state.allowExtensionRequests = (document.getElementById('upload-allow-requests') as HTMLInputElement | null)?.checked ?? false;
+        state.recipientEmails = String((document.getElementById('upload-recipients') as HTMLInputElement | null)?.value || '')
+            .split(',').map(function (e) { return e.trim(); }).filter(function (e) { return e.length > 0; });
+        state.privacyMode = (document.getElementById('upload-privacy') as HTMLInputElement | null)?.checked ?? false;
+        state.emailOtpEnabled = (document.getElementById('upload-email-otp') as HTMLInputElement | null)?.checked ?? false;
+        state.requireRecipientEmail = (document.getElementById('upload-recipient-email') as HTMLInputElement | null)?.checked ?? false;
+        state.publicStatsEnabled = (document.getElementById('upload-public-stats') as HTMLInputElement | null)?.checked ?? false;
+        state.allowedIpRanges = accessRule('upload-allowed-ip-ranges');
+        state.allowedCountries = accessRule('upload-allowed-countries');
+        state.blockedCountries = accessRule('upload-blocked-countries');
         state.stripMetadata = (document.getElementById('upload-strip-metadata') as HTMLInputElement | null)?.checked ?? true;
         state.compressImages = (document.getElementById('upload-compress') as HTMLInputElement | null)?.checked ?? true;
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
@@ -615,7 +632,7 @@ state.publicStatsEnabled = (document.getElementById('upload-public-stats') as HT
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

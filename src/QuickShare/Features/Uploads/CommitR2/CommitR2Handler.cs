@@ -10,7 +10,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -58,6 +58,16 @@ public sealed class CommitR2Handler(
         var recipients = NormalizeRecipients(cmd.RecipientEmails);
         if (recipients.Count > RecipientLimit(plan))
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.RecipientLimitExceeded));
+
+        // Scope rules (issues #142 CIDR allowlist, #166 country rules) are a paid control.
+        // Normalize first: an all-garbage list collapses to null, which is "no rule" and
+        // must not trip the plan gate.
+        var allowedIpRanges = DeliveryAccessPolicy.NormalizeIpRanges(cmd.AllowedIpRanges);
+        var allowedCountries = DeliveryAccessPolicy.NormalizeCountries(cmd.AllowedCountries);
+        var blockedCountries = DeliveryAccessPolicy.NormalizeCountries(cmd.BlockedCountries);
+        var hasAccessRules = allowedIpRanges is not null || allowedCountries is not null || blockedCountries is not null;
+        if (hasAccessRules && plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
+            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.RequiresPaidPlan));
 
         // The commit must match the session created by start-r2, for the same owner —
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
@@ -174,7 +184,10 @@ public sealed class CommitR2Handler(
                 return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ExpiryTooLong));
         }
 
-        var expiresAt = ResolveExpiry(cmd, plan);
+        // Retention policy (issue #161): the sender's own choice is clamped to the
+        // account-wide window. Clamping, not rejecting — the upload already landed in R2,
+        // and a compliance window is a ceiling, not a validation error.
+        var expiresAt = RetentionPolicy.Clamp(ResolveExpiry(cmd, plan), user?.RetentionDays);
 
         var delivery = new Delivery
         {
@@ -205,6 +218,9 @@ public sealed class CommitR2Handler(
             EmailOtpEnabled = cmd.EmailOtpEnabled,
             RequireRecipientEmail = cmd.RequireRecipientEmail,
             PublicStatsEnabled = cmd.PublicStatsEnabled,
+            AllowedIpRanges = allowedIpRanges,
+            AllowedCountries = allowedCountries,
+            BlockedCountries = blockedCountries,
         };
 
         session.Status = UploadSessionStatus.Committed;

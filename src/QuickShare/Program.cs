@@ -235,6 +235,9 @@ builder.Services.Configure<SecurityHeaderOptions>(builder.Configuration.GetSecti
 builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(AnalyticsOptions.Section));
 builder.Services.AddScoped<AnalyticsService>();
 
+// ── Delivery scope control (issues #142 IP allowlist, #166 country rules) ──
+builder.Services.AddScoped<QuickShare.Features.Downloads.Shared.DeliveryAccessService>();
+
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
 builder.Services.AddMediator(options =>
 {

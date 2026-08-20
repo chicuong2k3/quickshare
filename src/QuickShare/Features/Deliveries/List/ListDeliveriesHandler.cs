@@ -13,11 +13,15 @@ public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
     string ShareCode, int DownloadCount, int MaxDownloads,
     DateTime? ExpiresAt, DateTime CreatedAt, string Status, DateTime? DeliverAt,
-    bool HideDownloadStats, bool IsFavorite, string? Alias, string? Tag
+    bool HideDownloadStats, bool IsFavorite, string? Alias, string? Tag,
+    DateTime? LegalHoldAt = null, string? LegalHoldReason = null
 )
 {
     /// <summary>Active file lock (issue #308). Null when the delivery is not locked.</summary>
     public FileLockInfo? Lock { get; init; }
+
+    /// <summary>Legal hold (issue #266): frozen against every deletion path until lifted.</summary>
+    public bool IsUnderLegalHold => LegalHoldAt is not null;
 }
 
 public record FileLockInfo(Guid LockedById, bool LockedBySelf, DateTime ExpiresAt);
@@ -70,7 +74,7 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
             .ToCursorPageAsync(query.Cursor, limit, d => new DeliveryItem(
                 d.Id, d.FileName, d.ContentType, d.FileSize, d.ShareCode,
                 d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats,
-                d.IsFavorite, d.Alias, d.Tag), cancellationToken);
+                d.IsFavorite, d.Alias, d.Tag, d.LegalHoldAt, d.LegalHoldReason), cancellationToken);
 
         // Batched lock enrichment (issue #308). ToCursorPageAsync materializes the page
         // before applying the selector, so a correlated per-row lock query would be N+1 —

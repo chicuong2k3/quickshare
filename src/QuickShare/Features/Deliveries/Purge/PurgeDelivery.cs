@@ -23,6 +23,11 @@ public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<Purge
         if (delivery is null)
             return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
 
+        // Legal hold (issue #266) outranks right-to-erasure: an active hold means a
+        // regulator or court is relying on these bytes existing. Lift the hold first.
+        if (delivery.LegalHoldAt is not null)
+            return Result.Failure(new LightResults.Error(ErrorCodes.LegalHoldActive));
+
         if (!string.IsNullOrEmpty(delivery.StoragePath))
         {
             try
@@ -64,6 +69,11 @@ public sealed class PurgeDeliveryEndpoint : EndpointWithoutRequest
         if (result.IsSuccess())
             await Send.NoContentAsync(ct);
         else if (result.IsFailure(out var error))
-            ThrowError(error.Message, error.Message == ErrorCodes.NotFound ? 404 : 400);
+            ThrowError(error.Message, error.Message switch
+            {
+                ErrorCodes.NotFound => StatusCodes.Status404NotFound,
+                ErrorCodes.LegalHoldActive => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            });
     }
 }

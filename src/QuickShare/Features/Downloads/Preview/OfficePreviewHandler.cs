@@ -1,4 +1,5 @@
 using LightResults;
+using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Downloads.Preview;
@@ -11,7 +12,7 @@ public record OfficePreviewResponse(string Html, string Format);
 /// Server-side office document preview (issue #94): opens the object stream, extracts
 /// text from docx/xlsx/pptx, and returns escaped HTML for the download page preview tab.
 /// </summary>
-public sealed class OfficePreviewHandler(IStorageProvider storage, AppDbContext db)
+public sealed class OfficePreviewHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access)
     : IRequestHandler<OfficePreviewQuery, Result<OfficePreviewResponse>>
 {
     private const long MaxPreviewBytes = 20 * 1024 * 1024;
@@ -26,6 +27,10 @@ public sealed class OfficePreviewHandler(IStorageProvider storage, AppDbContext 
 
         if (delivery is null || delivery.DeletedAt is not null)
             return Result.Failure<OfficePreviewResponse>(new LightResults.Error(ErrorCodes.NotFound));
+
+        // Same scope rules as the byte path (issues #142/#166): a preview is the file.
+        if (await access.CheckAsync(delivery, cancellationToken) != DeliveryAccessDecision.Allowed)
+            return Result.Failure<OfficePreviewResponse>(new LightResults.Error(ErrorCodes.DeliveryRestricted));
 
         if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked or DeliveryStatus.Expired
             || (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow))

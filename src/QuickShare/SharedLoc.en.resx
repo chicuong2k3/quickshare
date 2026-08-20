@@ -753,6 +753,26 @@
   <data name="account_security_event_ApiKeyRevoked" xml:space="preserve"><value>API key revoked</value></data>
   <data name="account_security_event_EmailChanged" xml:space="preserve"><value>Email changed</value></data>
   <data name="account_security_event_PasswordChanged" xml:space="preserve"><value>Password changed</value></data>
+  <data name="account_security_event_RetentionPolicyChanged" xml:space="preserve"><value>Retention policy changed</value></data>
+  <data name="account_security_event_RetentionEnforced" xml:space="preserve"><value>Retention policy enforced</value></data>
+  <data name="account_retention_title" xml:space="preserve"><value>Retention policy</value></data>
+  <data name="account_retention_subtitle" xml:space="preserve"><value>An account-wide ceiling: every share you create expires within this window, and older shares are pulled back to it.</value></data>
+  <data name="account_retention_upgrade_hint" xml:space="preserve"><value>Retention policies are a Pro and Studio feature.</value></data>
+  <data name="account_retention_upgrade_link" xml:space="preserve"><value>Upgrade to set one</value></data>
+  <data name="account_retention_window_label" xml:space="preserve"><value>Maximum share lifetime</value></data>
+  <data name="account_retention_window_none" xml:space="preserve"><value>No policy — per-share expiry only</value></data>
+  <data name="account_retention_window_days" xml:space="preserve"><value>{0} days</value></data>
+  <data name="account_retention_no_extend_label" xml:space="preserve"><value>Block extensions past the window</value></data>
+  <data name="account_retention_no_extend_desc" xml:space="preserve"><value>Extend requests are refused once a share already sits at the ceiling, instead of quietly buying no time.</value></data>
+  <data name="account_retention_preview_none" xml:space="preserve"><value>Pick a window to see what it would shorten.</value></data>
+  <data name="account_retention_preview_clear" xml:space="preserve"><value>Nothing would change — every live share already fits this window.</value></data>
+  <data name="account_retention_preview_count" xml:space="preserve"><value>{0} shares would expire sooner.</value></data>
+  <data name="account_retention_preview_range" xml:space="preserve"><value>Affected expiry dates run from {0} to {1}.</value></data>
+  <data name="account_retention_sample_no_expiry" xml:space="preserve"><value>no expiry</value></data>
+  <data name="account_retention_save_btn" xml:space="preserve"><value>Save retention policy</value></data>
+  <data name="account_retention_saved" xml:space="preserve"><value>Retention policy saved.</value></data>
+  <data name="account_retention_error_requires_paid_plan" xml:space="preserve"><value>Retention policies need a Pro or Studio plan.</value></data>
+  <data name="account_retention_error_retention_days_invalid" xml:space="preserve"><value>Pick a window between 1 and 365 days.</value></data>
   <data name="admin_reports_page_title" xml:space="preserve"><value>Abuse reports</value></data>
   <data name="admin_reports_title" xml:space="preserve"><value>Abuse reports</value></data>
   <data name="admin_reports_subtitle" xml:space="preserve"><value>Review, resolve, or suspend deliveries reported for abuse or copyright.</value></data>
@@ -814,6 +834,9 @@
   <data name="ps_back" xml:space="preserve"><value>Back to file</value></data>
   <data name="upload_strip_metadata_label" xml:space="preserve"><value>Strip photo metadata (location, camera)</value></data>
   <data name="upload_strip_metadata_hint" xml:space="preserve"><value>Removes GPS/camera/device tags from photos. On by default.</value></data>
+  <data name="upload_compress_label" xml:space="preserve"><value>Compress large photos</value></data>
+  <data name="upload_compress_hint" xml:space="preserve"><value>Scales down to 1920px and converts to JPEG. Saves bandwidth.</value></data>
+  <data name="deliveries_extend" xml:space="preserve"><value>Extend 7 days</value></data>
   <data name="deliveries_purge" xml:space="preserve"><value>Delete forever</value></data>
   <data name="deliveries_purge_confirm" xml:space="preserve"><value>Permanently delete this delivery and its file? This cannot be undone.</value></data>
   <data name="upload_share_text_toggle" xml:space="preserve"><value>Share text instead</value></data>
@@ -866,6 +889,15 @@
   <data name="deliveries_lock_self_tooltip" xml:space="preserve"><value>You locked this file for replacement. Others cannot replace it until you unlock.</value></data>
   <data name="deliveries_lock_other_tooltip" xml:space="preserve"><value>Another user is replacing this file. Replace is temporarily blocked.</value></data>
   <data name="deliveries_lock_error" xml:space="preserve"><value>Lock failed. Try again.</value></data>
+  <data name="deliveries_hold" xml:space="preserve"><value>Legal hold</value></data>
+  <data name="deliveries_hold_lift" xml:space="preserve"><value>Lift hold</value></data>
+  <data name="deliveries_hold_badge" xml:space="preserve"><value>Legal hold</value></data>
+  <data name="deliveries_hold_tooltip" xml:space="preserve"><value>Under legal hold ({0}). Exempt from retention, trash, delete and account deletion until the hold is lifted.</value></data>
+  <data name="deliveries_hold_prompt" xml:space="preserve"><value>Case reference for this hold (required)</value></data>
+  <data name="deliveries_hold_lift_confirm" xml:space="preserve"><value>Lift the legal hold on this delivery? It becomes deletable again.</value></data>
+  <data name="deliveries_hold_lift_confirm_again" xml:space="preserve"><value>This is recorded on your security timeline. Confirm you are releasing this file from hold.</value></data>
+  <data name="deliveries_hold_error" xml:space="preserve"><value>Legal hold change failed. Try again.</value></data>
+  <data name="deliveries_hold_export" xml:space="preserve"><value>Legal hold report</value></data>
   <data name="deliveries_hide_stats" xml:space="preserve"><value>Hide stats</value></data>
   <data name="deliveries_show_stats" xml:space="preserve"><value>Show stats</value></data>
   <data name="deliveries_tag" xml:space="preserve"><value>Label</value></data>
@@ -1157,5 +1189,52 @@
   </data>
   <data name="labels_delete_file" xml:space="preserve">
     <value>Delete</value>
+  </data>
+  <!-- Download restrictions (issues #142 + #166) — sender controls on /send -->
+  <data name="upload_access_label" xml:space="preserve">
+    <value>Restrict who can download</value>
+  </data>
+  <data name="upload_access_ip_label" xml:space="preserve">
+    <value>Allowed IP ranges</value>
+  </data>
+  <data name="upload_access_ip_placeholder" xml:space="preserve">
+    <value>203.0.113.0/24, 198.51.100.7</value>
+  </data>
+  <data name="upload_access_ip_hint" xml:space="preserve">
+    <value>CIDR ranges or single addresses, comma-separated — e.g. 203.0.113.0/24. Leave blank to allow every network.</value>
+  </data>
+  <data name="upload_access_allowed_countries_label" xml:space="preserve">
+    <value>Allowed countries</value>
+  </data>
+  <data name="upload_access_countries_placeholder" xml:space="preserve">
+    <value>US, VN</value>
+  </data>
+  <data name="upload_access_allowed_countries_hint" xml:space="preserve">
+    <value>Two-letter country codes, comma-separated — e.g. US, VN. Leave blank to allow every country.</value>
+  </data>
+  <data name="upload_access_blocked_countries_label" xml:space="preserve">
+    <value>Blocked countries</value>
+  </data>
+  <data name="upload_access_blocked_countries_hint" xml:space="preserve">
+    <value>Two-letter country codes, comma-separated — e.g. US, VN. Checked after the allowed list.</value>
+  </data>
+  <data name="upload_access_combine_hint" xml:space="preserve">
+    <value>These rules apply on top of the password and emailed code — a recipient has to pass all of them.</value>
+  </data>
+  <data name="upload_access_paid_hint" xml:space="preserve">
+    <value>Download restrictions are part of Pro and Studio.</value>
+  </data>
+  <data name="upload_access_upgrade" xml:space="preserve">
+    <value>Upgrade to unlock</value>
+  </data>
+  <!-- Download restrictions (issues #142 + #166) — recipient refusal on /d -->
+  <data name="dl_restricted_h1" xml:space="preserve">
+    <value>You can't download this from here</value>
+  </data>
+  <data name="dl_restricted_sub" xml:space="preserve">
+    <value>The sender limited access to certain networks or countries.</value>
+  </data>
+  <data name="dl_restricted_notice" xml:space="preserve">
+    <value>The sender sets these rules and we don't disclose them. Ask the sender if you believe you should have access.</value>
   </data>
 </root>

@@ -60,6 +60,10 @@
     }
 
     var canSchedule = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+
+    // Download restrictions (issues #142 + #166) are Pro/Studio only — the
+    // commit endpoint refuses lower plans with requires_paid_plan.
+    var canRestrictAccess = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
     maxExpiryDays = (int)Math.Max(1, Math.Round(PlanTierLimits.GetMaxExpiry(plan ?? PlanTierLimits.Free).TotalDays));
 }
 
@@ -172,6 +176,49 @@
                         <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
                     </div>
                     <span class="otp-hint">@Loc["upload_otp_hint"]</span>
+                </div>
+
+                @* Download restrictions (issues #142 + #166) — CIDR allowlist plus country
+                   allow/deny rules. These AND with the password/OTP gate above. Pro/Studio
+                   only; the commit endpoint normalizes each value and silently drops
+                   entries it cannot parse, so nothing is validated client-side. *@
+                <div class="sender-email-wrap upload-access" id="upload-access-rules">
+                    <span class="otp-label">@Loc["upload_access_label"]</span>
+
+                    <label for="upload-allowed-ip-ranges" class="protect-sub">@Loc["upload_access_ip_label"]</label>
+                    <input type="text" id="upload-allowed-ip-ranges" class="sender-email-input"
+                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
+                           placeholder="@Loc["upload_access_ip_placeholder"]"
+                           aria-describedby="upload-access-ip-hint"
+                           disabled="@(!canRestrictAccess)" />
+                    <span class="otp-hint" id="upload-access-ip-hint">@Loc["upload_access_ip_hint"]</span>
+
+                    <label for="upload-allowed-countries" class="protect-sub">@Loc["upload_access_allowed_countries_label"]</label>
+                    <input type="text" id="upload-allowed-countries" class="sender-email-input"
+                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
+                           placeholder="@Loc["upload_access_countries_placeholder"]"
+                           aria-describedby="upload-access-allowed-countries-hint"
+                           disabled="@(!canRestrictAccess)" />
+                    <span class="otp-hint" id="upload-access-allowed-countries-hint">@Loc["upload_access_allowed_countries_hint"]</span>
+
+                    <label for="upload-blocked-countries" class="protect-sub">@Loc["upload_access_blocked_countries_label"]</label>
+                    <input type="text" id="upload-blocked-countries" class="sender-email-input"
+                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
+                           placeholder="@Loc["upload_access_countries_placeholder"]"
+                           aria-describedby="upload-access-blocked-countries-hint"
+                           disabled="@(!canRestrictAccess)" />
+                    <span class="otp-hint" id="upload-access-blocked-countries-hint">@Loc["upload_access_blocked_countries_hint"]</span>
+
+                    <span class="otp-hint upload-access__combine">@Loc["upload_access_combine_hint"]</span>
+
+                    @if (!canRestrictAccess)
+                    {
+                        <p class="otp-hint upload-access__locked" id="upload-access-locked">
+                            @Loc["upload_access_paid_hint"]
+                            <a href="@RoutePaths.Upgrade" class="upload-access__upgrade"
+                               data-ai-action="upload.accessRules.upgrade">@Loc["upload_access_upgrade"]</a>
+                        </p>
+                    }
                 </div>
 
                 @* Burn-after-download (issue #12) — single-use link *@
