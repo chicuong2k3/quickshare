@@ -17,9 +17,16 @@ src/QuickShare/                 # monolith (FastEndpoints API + Blazor Static SS
   Features/<Feature>/           # vertical slice: endpoint + handler + DTOs in one folder
     Uploads/  Deliveries/  Downloads/  Shares/  Payments/  Users/  Analytics/
     Notifications/  Ads/  Admin/  ClientErrors/  Reports/  FileRequests/
+    Deliveries/LegalHold/       # #266: place/lift/CSV export; every deletion path filters the hold
+    Users/Retention/            # #161: PUT policy + dry-run preview
+    Downloads/Shared/           # DeliveryAccessService.cs, the #142/#166 scope gate that every
+                                # recipient-facing content path routes through
   Data/                         # AppDbContext, Entities/, Migrations/, AuditableEntityInterceptor
   Infrastructure/               # Storage/, Email/, Jobs/, FeatureFlags/, Telemetry/,
                                 # Caching/, Middleware/, Constants/
+                                # RetentionPolicy.cs (#161), DeliveryAccessPolicy.cs (#142/#166):
+                                # dependency-free static classes, so they unit-test without the
+                                # web factory - that is why the rules live here, not in a handler
   Components/                   # Pages/, Layout/, Shared/ (Blazor)
   ts/                           # TypeScript: download.ts, upload.ts, p2p/, ad-component.ts
   wwwroot/                      # css/ (app.css), js/, lib/
@@ -40,7 +47,9 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
-  [`profile-architecture.md`](profile-architecture.md).
+  [`profile-architecture.md`](profile-architecture.md),
+  [`compliance-architecture.md`](compliance-architecture.md) - legal hold (#266), workspace
+  retention policy (#161), delivery scope rules (#142/#166).
 - Ops: [`observability-setup.md`](observability-setup.md),
   [`feature-flags.md`](feature-flags.md),
   [`deployment-dev.md`](deployment-dev.md),
@@ -50,8 +59,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
 
 ```bash
 dotnet run --project src/QuickShare                     # localhost:9000 (dev auto-signin on)
-dotnet test tests/QuickShare.Server.Tests               # ~23s, 125 tests
-dotnet test tests/QuickShare.Browser.Tests              # ~31s, 15 tests
+dotnet test tests/QuickShare.Server.Tests               # 556 tests
+dotnet test tests/QuickShare.Browser.Tests              # 31 tests
 # browser tests need chromium once: tests/.../playwright.ps1 install chromium
 ```
 
@@ -72,6 +81,9 @@ rules:
 | `string.Empty` not `""`; no magic strings (centralize in `static class` consts) | AGENTS.md |
 | User-facing copy in `SharedLoc.{en,vi}.resx` (never hardcoded) | AGENTS.md |
 | One statement per line | AGENTS.md |
+| New code deleting delivery rows or R2 objects MUST filter `LegalHoldAt == null` (held bytes are evidence) | compliance-architecture.md (#266) |
+| New code computing a delivery expiry MUST pass it through `RetentionPolicy.Clamp` (the policy is a ceiling) | compliance-architecture.md (#161) |
+| New recipient-facing content path MUST route through `DeliveryAccessService` (scope rules are fail-closed) | compliance-architecture.md (#142/#166) |
 
 ## 6. Workflow (issue → done)
 

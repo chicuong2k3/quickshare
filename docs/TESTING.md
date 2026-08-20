@@ -20,8 +20,8 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 dotnet run --project src/QuickShare
 
 # automated suites (prove the basics before manual work)
-dotnet test tests/QuickShare.Server.Tests    # ~23s, 125 tests
-dotnet test tests/QuickShare.Browser.Tests   # ~31s, 15 tests (install chromium once: playwright.ps1 install)
+dotnet test tests/QuickShare.Server.Tests    # ~280s, 556 tests
+dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
 ```
 
 Browser tests drive the **installed Chrome** via a real process (`BrowserAppFixture`) — no
@@ -66,6 +66,9 @@ browser download needed.
 | Public delivery stats (#294) — opt-in stats page/API, privacy-mode hidden | `PublicStatsTests` |
 | Recent recipients + address book (#316) — capture-on-commit, list/upsert/delete, privacy/anonymous skip, isolation, export | `RecipientContactTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
+| Legal hold (#266) — hold/lift/report + every deletion path refusing | `LegalHoldTests` |
+| Retention policy (#161) — window math + clamp sites, sweep, dry-run preview | `RetentionPolicyTests`, `RetentionPolicyApiTests` |
+| Delivery scope rules (#142 IP allowlist, #166 country allow/deny) | `DeliveryAccessPolicyTests`, `DeliveryAccessScopeTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -99,6 +102,9 @@ checklist of the touched issue. Minimum regression set per change:
 | Payment / billing | `PaymentFlowTests`, `PayOSWebhookSignatureTests`, `UpgradeFlowTests` | PayOS sandbox (real money) |
 | Auth / login | `AuthFlowTests` | Google OAuth (real screen) |
 | P2P | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests` | NAT/4G real devices |
+| Any code that deletes a delivery or an R2 object | `LegalHoldTests` | held row survives the new path |
+| Any code that computes an expiry (upload, extend, approve, sweep) | `RetentionPolicyTests`, `RetentionPolicyApiTests` | clamped date is the ceiling, not a shortening |
+| Any recipient-facing content path (page, byte stream, preview, ZIP) | `DeliveryAccessScopeTests`, `DeliveryAccessPolicyTests` | refused caller sees no file name |
 | Analytics | `AnalyticsTrackingTests` | — |
 | Localization | `LocalizationTests`, `LanguageSwitchTests` | — |
 | HTMX / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `SmokeTests` | — |

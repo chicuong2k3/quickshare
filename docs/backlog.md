@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 3 done: `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout |
+| Tier 6 | B2B / enterprise / far-future | 7 done (08-20): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -186,6 +186,59 @@ delivery; active while `ReleasedAt == null` and `ExpiresAt` in future). Sender l
 Lock/force-break/expire events ride the account activity trail (SecurityEvent) and analytics.
 Migration `AddFileLock`.
 
+Tier 6 batch 2 (compliance series), 2026-08-20: `#266` legal hold, `#161` workspace retention
+policy, `#142` delivery IP allowlist, `#166` geo-restriction — one migration
+`AddLegalHoldAndScopeRulesAndRetention` (3 legal-hold + 3 scope-rule columns on `deliveries`,
+2 retention columns on `users`, `IX_deliveries_LegalHoldAt`). Tests: `LegalHoldTests` (15),
+`DeliveryAccessScopeTests` (10), `DeliveryAccessPolicyTests`, `RetentionPolicyTests`,
+`RetentionPolicyApiTests` (14). Full suite after the batch: 556 server + 31 browser.
+
+`#266` legal hold — `Delivery.LegalHoldAt` / `LegalHoldReason` (max 200) / `LegalHoldById`;
+sender-only `POST /api/deliveries/{id}/legal-hold`, `.../legal-hold/lift`, and a counsel CSV at
+`GET /api/deliveries/legal-hold/export`. A hold never expires on its own — a lapsed hold is
+evidence loss mid-litigation — so there is no expiry field and no sweeper that clears one; only the
+owner lifts. Every deletion path therefore checks it: trash, purge, bulk (row counted in
+`skipped`), account deletion (all-or-nothing 409), `DeliveryExpiryJob` (link expires, R2 objects
+survive), both `DeliveryCleanupService` sweeps, and the `#161` retention sweep. Errors
+`legal_hold_active`, `legal_hold_not_active`, `legal_hold_reason_required`; audited as
+`SecurityEventType.LegalHoldPlaced` / `LegalHoldLifted`. Design:
+[`docs/compliance-architecture.md`](compliance-architecture.md).
+
+`#161` workspace retention policy — `User.RetentionDays` (null = no policy) + `RetentionNoExtend`,
+Pro/Studio only, window 1–365 days (`Infrastructure/RetentionPolicy.cs`, presets 1/7/14/30/90).
+The policy is a ceiling, never a floor: a sender's shorter choice always survives and clamping is
+not a validation error, so every write site applies the plan cap first and the policy clamp second
+(commit, extend, approve-extension, plus `DeliveryExpiryJob.EnforceRetentionAsync` to converge rows
+created before the policy existed). `RetentionNoExtend` turns both extend paths into refusals
+(`retention_policy_locked`) against the *delivery owner's* window, not the caller's — a recipient
+can ask, but the owner's policy answers. `PUT /api/account/retention` sets it;
+`GET /api/account/retention/preview?days=N` is a read-only dry-run (affected count + at most 20
+samples, 30s cache). Errors `retention_days_invalid`, `retention_policy_locked`. Design:
+[`docs/compliance-architecture.md`](compliance-architecture.md).
+
+`#142` delivery IP allowlist — `Delivery.AllowedIpRanges` (comma-separated CIDR or bare address,
+max 500 chars) evaluated by pure `Infrastructure/DeliveryAccessPolicy.cs`; caller IP is
+`Connection.RemoteIpAddress`, already rewritten by `UseForwardedHeaders`. Fail-closed: a rule that
+exists refuses anyone it does not explicitly satisfy, and a malformed rule counts as "no match",
+never "matches everything" — a typo must not silently open a restricted link. One scoped
+`DeliveryAccessService` carries the check for every recipient-facing path (info, download, preview,
+office preview, zip contents) so the page, the byte stream and each preview cannot disagree; its
+30s cache holds the rule snapshot only, because a per-caller verdict must never enter a shared
+cache. Refusals return `ErrorCodes.DeliveryRestricted` and render `#download-phase-restricted`,
+which leaks no file name, size or download count and stays `noindex, nofollow`; blocked attempts
+are audited on the *sender's* timeline (`SecurityEventType.DeliveryAccessBlocked`) because the
+recipient is anonymous and the sender is who needs to see rejects. Design:
+[`docs/compliance-architecture.md`](compliance-architecture.md).
+
+`#166` geo-restriction — `Delivery.AllowedCountries` / `BlockedCountries` (same 500-char limit),
+country from the Cloudflare `CF-IPCountry` edge header, decision `CountryNotAllowed`. Shares the
+primitive, the service, the restricted panel and the audit trail with `#142`; rule sets are
+AND-scoped, so a caller must satisfy every configured rule, and rules left unset refuse nobody.
+Both features are Pro/Studio, but normalisation runs before the gate: an all-garbage list collapses
+to null, which is "no rule" and must never trip `requires_paid_plan`, so free senders send three
+nulls and never meet the gate. Design:
+[`docs/compliance-architecture.md`](compliance-architecture.md).
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -208,6 +261,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Observability | `docs/observability-setup.md`, `docs/observability-theory.md` |
 | Send flow | `docs/send-architecture.md` |
 | Profile | `docs/profile-architecture.md` |
+| Compliance (legal hold / retention / delivery scope) | `docs/compliance-architecture.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -224,3 +278,7 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
+- [ ] Tier 6: 7 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20, see section 8);
+  `#323` SOC 2, `#300` admin usage report, `#289` delivery comments, `#286` custom fonts,
+  `#285` branded upload page, `#278` team seats, `#119` data residency, `#112` e-invoice,
+  `#106` team workspaces, `#81` white-label and the rest still open
