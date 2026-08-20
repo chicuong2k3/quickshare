@@ -300,6 +300,101 @@ public sealed class RetentionPolicyApiTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SettingsCard_ForPaidAccount_OffersEveryPresetAndPreselectsTheSavedWindow()
+    {
+        var (client, _) = await PaidClientAsync();
+        await SetPolicyAsync(client, WindowDays, noExtend: true);
+
+        var html = await GetHtmxAsync(client, RoutePaths.AccountSecurityActivity);
+
+        Assert.Contains("account-retention__form", html, StringComparison.Ordinal);
+        foreach (var preset in RetentionPolicy.Presets)
+            Assert.Contains($"value=\"{preset}\"", html, StringComparison.Ordinal);
+
+        // The saved state must come back selected, or a reload silently offers to clear it.
+        Assert.Contains($"value=\"{WindowDays}\" selected", html, StringComparison.Ordinal);
+        Assert.Contains("checked", html, StringComparison.Ordinal);
+
+        // Paid: the controls are live and the upgrade hint is gone.
+        Assert.DoesNotContain("Retention policies are a Pro and Studio feature.", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("account-retention__locked", html, StringComparison.Ordinal);
+
+        // Copy is localized on the way out, not left as resx keys.
+        Assert.Contains("Maximum share lifetime", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("account_retention_", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SettingsCard_ForFreeAccount_IsInertWithAnUpgradePath()
+    {
+        var providerKey = Guid.NewGuid().ToString();
+        await _factory.SeedUserAsync(providerKey);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var html = await GetHtmxAsync(client, RoutePaths.AccountSecurityActivity);
+
+        Assert.Contains("account-retention__locked", html, StringComparison.Ordinal);
+        Assert.Contains("Retention policies are a Pro and Studio feature.", html, StringComparison.Ordinal);
+        // Inert, not hidden: a free owner should see the control they would be buying.
+        Assert.Contains("account-retention__form", html, StringComparison.Ordinal);
+        Assert.Contains("disabled", html, StringComparison.Ordinal);
+        Assert.Contains(RoutePaths.Upgrade, html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PreviewPanel_ForProposedWindow_NamesTheRowsItWouldShorten()
+    {
+        var (client, userId) = await PaidClientAsync();
+        await SeedDeliveryAsync(userId, DateTime.UtcNow.AddDays(60));
+
+        var html = await GetHtmxAsync(client, $"{RoutePaths.AccountSecurityActivity}?retentionDays={WindowDays}");
+
+        Assert.Contains("account-retention__preview", html, StringComparison.Ordinal);
+        Assert.Contains("1 shares would expire sooner.", html, StringComparison.Ordinal);
+        Assert.Contains(TestFileName, html, StringComparison.Ordinal);
+
+        // Selecting a window is a dry run: the panel may claim the rows would move, but
+        // nothing is saved until the owner submits the form.
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Null((await db.Users.AsNoTracking().SingleAsync(u => u.Id == userId)).RetentionDays);
+    }
+
+    [Fact]
+    public async Task PreviewPanel_WhenNothingWouldMove_SaysSoRatherThanShowingAnEmptyList()
+    {
+        var (client, userId) = await PaidClientAsync();
+        await SeedDeliveryAsync(userId, DateTime.UtcNow.AddDays(2));
+
+        var html = await GetHtmxAsync(client, $"{RoutePaths.AccountSecurityActivity}?retentionDays={WindowDays}");
+
+        Assert.Contains("Nothing would change", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("would expire sooner", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SettingsCard_WithoutTheHtmxHeader_RedirectsToAccount()
+    {
+        var (client, _) = await PaidClientAsync();
+
+        var response = await client.GetAsync(RoutePaths.AccountSecurityActivity);
+
+        // The page only exists as a partial; a direct hit must land on the tab that hosts it
+        // instead of rendering a card with no shell around it.
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("account-retention__form", html, StringComparison.Ordinal);
+    }
+
+    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadAsStringAsync();
+    }
+
     private async Task<(HttpClient Client, Guid UserId)> PaidClientAsync()
     {
         // Own account per case: the policy is account-wide, so a shared user would leak

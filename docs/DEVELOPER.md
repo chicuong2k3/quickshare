@@ -58,8 +58,9 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
 ## 4. Run it
 
 ```bash
-dotnet run --project src/QuickShare                     # localhost:9000 (dev auto-signin on)
-dotnet test tests/QuickShare.Server.Tests               # 556 tests
+dotnet run --project src/QuickShare                     # localhost:9000 — no dev auto-signin;
+                                                        # /account/* needs real Google OAuth creds
+dotnet test tests/QuickShare.Server.Tests               # 561 tests
 dotnet test tests/QuickShare.Browser.Tests              # 31 tests
 # browser tests need chromium once: tests/.../playwright.ps1 install chromium
 ```

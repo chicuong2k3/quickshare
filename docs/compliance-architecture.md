@@ -427,4 +427,4 @@ plus one index.
 | `DeliveryAccessScopeTests` | `tests/QuickShare.Server.Tests/E2E/DeliveryAccessScopeTests.cs` | Scope enforcement end to end across info, download, preview, zip |
 | `DeliveryAccessPolicyTests` | `tests/QuickShare.Server.Tests/Infrastructure/DeliveryAccessPolicyTests.cs` | Fail-closed rule evaluation, AND-scoping, malformed rules |
 | `RetentionPolicyTests` | `tests/QuickShare.Server.Tests/Infrastructure/RetentionPolicyTests.cs` | Ceiling-not-floor clamp, preset validity |
-| `RetentionPolicyApiTests` | `tests/QuickShare.Server.Tests/E2E/RetentionPolicyApiTests.cs` | Policy mutation (paid gate, range, lock cleared with window); clamp at upload and extend; regulated-mode refusal; sweep convergence and held-row exemption; dry-run preview |
+| `RetentionPolicyApiTests` | `tests/QuickShare.Server.Tests/E2E/RetentionPolicyApiTests.cs` | Policy mutation (paid gate, range, lock cleared with window); clamp at upload and extend; regulated-mode refusal; sweep convergence and held-row exemption; dry-run preview; settings-card and preview-panel render through the HTMX pipeline |

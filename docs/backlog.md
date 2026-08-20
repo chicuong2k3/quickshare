@@ -191,7 +191,7 @@ policy, `#142` delivery IP allowlist, `#166` geo-restriction — one migration
 `AddLegalHoldAndScopeRulesAndRetention` (3 legal-hold + 3 scope-rule columns on `deliveries`,
 2 retention columns on `users`, `IX_deliveries_LegalHoldAt`). Tests: `LegalHoldTests` (15),
 `DeliveryAccessScopeTests` (10), `DeliveryAccessPolicyTests`, `RetentionPolicyTests`,
-`RetentionPolicyApiTests` (14). Full suite after the batch: 556 server + 31 browser.
+`RetentionPolicyApiTests` (19). Full suite after the batch: 561 server + 31 browser.
 
 `#266` legal hold — `Delivery.LegalHoldAt` / `LegalHoldReason` (max 200) / `LegalHoldById`;
 sender-only `POST /api/deliveries/{id}/legal-hold`, `.../legal-hold/lift`, and a counsel CSV at

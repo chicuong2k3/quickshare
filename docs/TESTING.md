@@ -16,13 +16,19 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 ## Environment
 
 ```bash
-# run the app (local dev, auto-signin middleware in Program.cs)
+# run the app (local dev)
 dotnet run --project src/QuickShare
 
 # automated suites (prove the basics before manual work)
-dotnet test tests/QuickShare.Server.Tests    # ~280s, 556 tests
+dotnet test tests/QuickShare.Server.Tests    # ~220s, 561 tests
 dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
 ```
+
+**There is no dev auto-signin.** Signing in locally goes through the real Google consent
+screen, so `Authentication:Google:ClientId` + `ClientSecret` must be configured (see
+[`SETUP.md`](SETUP.md)). Without them, every `/account/*` page renders **Page not found** —
+that is the auth gate, not a bug. Anonymous pages (`/`, `/send`, `/d/{code}`, `/pricing`)
+need no credentials.
 
 Browser tests drive the **installed Chrome** via a real process (`BrowserAppFixture`) — no
 browser download needed.
