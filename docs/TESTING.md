@@ -89,6 +89,7 @@ browser download needed.
 | B2B screens carry their data — approval queue, schedule list, channel config, comment thread | `B2BUiTests` |
 | Enterprise identity — authenticator, SSO directory proof, SCIM lifecycle, MFA policy | `EnterpriseIdentityTests` |
 | SAML sign-in — signature, issuer, replay, domain filter | `SamlSsoTests` |
+| Multi-file deliveries — the one-row invariant, key ownership, zip behaviour | `MultiFileDeliveryTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -133,6 +134,7 @@ checklist of the touched issue. Minimum regression set per change:
 | **Any new service, notifier or gate** | `AuditRegressionTests` | something actually calls it — assert an observable side effect, not just the function's return value |
 | **Any new endpoint a person is meant to use** | `B2BUiTests` | a page renders its data — assert the rendered HTML, because a passing endpoint test says nothing about whether a screen exists |
 | **Any code implementing a published standard** (TOTP, SCIM, OIDC) | `EnterpriseIdentityTests` | anchor to the spec's own reference vector or wire format — a broken implementation is still self-consistent |
+| **Any change that adds a shape to an existing entity** | `MultiFileDeliveryTests` | the *old* shape still behaves identically — additive means the previous case is untouched, and only a test says so |
 | **Any signature or token check** | `SamlSsoTests` | mint a real valid artefact, then change one attacker-controlled thing and require rejection — a checker that rejects everything passes every negative test |
 | **Any provisioning or offboarding path** | `EnterpriseIdentityTests` | it revokes as well as creates — half a lifecycle is exactly what procurement is asking about |
 | Analytics | `AnalyticsTrackingTests` | — |

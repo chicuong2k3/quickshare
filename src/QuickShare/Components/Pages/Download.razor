@@ -608,6 +608,29 @@
     };
 </script>
 
+    @if (Files.Count > 1)
+    {
+        @* Server-rendered, like the comment thread and for the same reason: the recipient page
+           has to work with scripting off (DownloadNoScriptTests), and a bundle whose contents
+           only appear after a fetch is an empty page to that reader. *@
+        <section id="dl-files" class="dl-files" data-share-code="@ShareCode">
+            <h2 class="db-h3 dl-files__title">@Loc["dl_files_title", Files.Count]</h2>
+
+            <ul class="dl-files__list">
+                @foreach (var file in Files)
+                {
+                    <li class="dl-file">
+                        <a class="dl-file__name" href="/api/downloads/@ShareCode/files/@file.Id">@file.FileName</a>
+                        <span class="dl-file__size">@FormatBytes(file.FileSize)</span>
+                    </li>
+                }
+            </ul>
+
+            <a class="db-btn db-btn--primary dl-files__all" href="/api/downloads/@ShareCode/zip"
+               data-ai-action="download.zip">@Loc["dl_files_download_all", FormatBytes(TotalFileBytes)]</a>
+        </section>
+    }
+
     @if (CommentsOpen)
     {
         @* Posting needs JS; the thread does not. Hide only the controls, natively. *@
@@ -774,6 +797,11 @@
     /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
     private string? RegionLabel { get; set; }
 
+    /// <summary>The files in this delivery (issue #79). Always at least one.</summary>
+    private List<DeliveryFile> Files { get; set; } = [];
+
+    private long TotalFileBytes => Files.Sum(f => f.FileSize);
+
     /// <summary>Thread state (issue #289), resolved through the same gate the API uses.</summary>
     private bool CommentsOpen { get; set; }
     private bool CanPost { get; set; }
@@ -786,6 +814,25 @@
     /// close a declaration and open something else.
     /// </summary>
     private static MarkupString RawCss(string css) => new(css);
+
+    /// <summary>
+    /// Loads the file list (issue #79).
+    ///
+    /// Only for a share that is already showing its contents: a password- or OTP-gated delivery
+    /// keeps its file names to itself until the gate is passed, because names and sizes are part
+    /// of what the gate exists to withhold.
+    /// </summary>
+    private async Task LoadFilesAsync(Guid? deliveryId, bool gated, CancellationToken ct)
+    {
+        if (deliveryId is null || gated)
+            return;
+
+        Files = await Db.DeliveryFiles
+            .AsNoTracking()
+            .Where(f => f.DeliveryId == deliveryId.Value)
+            .OrderBy(f => f.SortOrder)
+            .ToListAsync(ct);
+    }
 
     /// <summary>
     /// Loads the thread through <see cref="CommentGate"/> — the same resolver the API uses, so
@@ -851,10 +898,15 @@
         var stored = await Db.Deliveries
             .AsNoTracking()
             .Where(d => d.ShareCode == ShareCode)
-            .Select(d => new { d.WorkspaceId, d.StorageRegion })
+            // Id and the two gate hashes join the projection for the file list (issue #79):
+            // it needs to know which delivery, and whether the share is still behind a gate.
+            // Still deliberately narrow — none of this reaches the recipient payload.
+            .Select(d => new { d.Id, d.WorkspaceId, d.StorageRegion, d.PasswordHash, d.OtpHash })
             .FirstOrDefaultAsync(CancellationToken.None);
 
         Brand = await Brands.ForWorkspaceAsync(stored?.WorkspaceId, CancellationToken.None);
+        var gated = !string.IsNullOrEmpty(stored?.PasswordHash) || !string.IsNullOrEmpty(stored?.OtpHash);
+        await LoadFilesAsync(stored?.Id, gated, CancellationToken.None);
         await LoadCommentsAsync(CancellationToken.None);
         // Null when the delivery has no region, or when the region it was written to is no
         // longer configured — a label we cannot resolve is worse than no badge at all.

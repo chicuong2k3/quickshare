@@ -73,7 +73,13 @@
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
     <script id="upload-i18n" type="application/json">@RawJson(Strings())</script>
         <div class="container">
-            <input type="file" name="file" class="sr-only" aria-label="@Loc["upload_file_input_label"]" onchange="uploadPage.onFileInput(event)" />
+            @* multiple: file #1 drives the existing flow, the rest ride along as a bundle (#79). *@
+            <input type="file" name="file" multiple class="sr-only" aria-label="@Loc["upload_file_input_label"]" onchange="uploadPage.onFileInput(event)" />
+
+            @* Folder upload (#43): the same handler — webkitdirectory only changes what the
+               browser puts in .files, and the relative paths ride along in webkitRelativePath. *@
+            <input type="file" id="upload-folder-input" webkitdirectory multiple class="sr-only"
+                   aria-label="@Loc["upload_folder_input_label"]" onchange="uploadPage.onFileInput(event)" />
 
             @* IDLE / DRAGGING *@
             <section id="upload-idle" class="section">

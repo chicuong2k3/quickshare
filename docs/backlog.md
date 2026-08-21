@@ -752,6 +752,38 @@ multiple bindings per workspace.
 
 Design and invariants: `docs/saml-sso.md`.
 
+## Tier 4 — batch 14: multi-file deliveries and folder upload (#79, #43)
+
+WeTransfer parity, and the largest shape change to `Delivery` since it was written.
+
+Additive on purpose: `Delivery` keeps describing file #1 exactly as before, two new columns
+describe the bundle, and a new `delivery_files` table holds the contents. Every path written
+before multi-file — previews, virus scan, expiry, backup, SIEM, the download page's single-file
+phase — keeps working untouched and keeps being correct for the single-file case that is still
+almost every delivery.
+
+The invariant that makes it work: **every delivery has at least one file row, including the ones
+that predate the feature.** The migration backfills them. Without that, every consumer needs a
+fallback and the ones that forget show an empty list for most deliveries in the system.
+
+**The security property**: a committed object key must belong to the delivery claiming it. Commit
+is client-supplied, so without `R2ObjectKey.BelongsTo` a caller could name somebody else's object
+and have it served under a share code they control. There is a test that tries exactly that with
+a real victim key.
+
+**Two things learned the hard way**, both now in `docs/multi-file-deliveries.md`: writing to
+`Response.Body` directly under FastEndpoints silently discards the bytes (the caller gets an empty
+200 that presents as a corrupt archive), and duplicate zip entry names make most extractors drop
+all but the first file.
+
+**Also this batch — six tier-4 issues closed on verification, not rebuilt.** #16 file requests,
+#233 extension requests, #103 web push, #246 notification center, #57 upload-from-URL and #94
+Office preview were all already shipped with UI and tests. Each was checked the way the audit
+taught — that a person can reach it, not just that the code exists — before closing.
+
+**Not shipped**: per-file expiry, adding files after commit (that is versioning, #110), reordering
+(#275), Zip64, bundle-aware previews.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

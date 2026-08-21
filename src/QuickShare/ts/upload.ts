@@ -218,6 +218,94 @@
         return l;
     }
 
+
+    // ── Bundle upload (issues #79 multi-file, #43 folder) ───────────────────────
+    //
+    // Everything after file #1. Each extra is presigned against the same delivery, uploaded part by
+    // part, and handed to commit as `additionalFiles`. The server refuses any object key that is not
+    // under the delivery's own prefix, so this list cannot be used to attach somebody else's object.
+
+    interface CommitFilePayload {
+        objectKey: string;
+        uploadId: string;
+        fileName: string;
+        contentType: string;
+        fileSize: number;
+        parts: { partNumber: number; etag: string }[];
+    }
+
+    let extraFiles: File[] = [];
+
+    /** Uploads one extra file and returns what commit needs to claim it. */
+    async function uploadExtraFile(
+        deliveryId: string, file: File, signal: AbortSignal): Promise<CommitFilePayload> {
+        // webkitRelativePath is set only for a folder pick; it is what preserves the structure.
+        const name = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+        const size = file.size;
+        const totalParts = size <= PART_TARGET ? 1 : Math.ceil(size / PART_TARGET);
+        const partSize = Math.ceil(size / totalParts) || 1;
+
+        const partNumbers: number[] = [];
+        for (let p = 1; p <= totalParts; p++) partNumbers.push(p);
+
+        const response = await fetch(apiBase() + '/api/uploads/' + deliveryId + '/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: signal,
+            body: JSON.stringify({
+                fileName: name,
+                contentType: file.type || 'application/octet-stream',
+                fileSize: size,
+                partNumbers: partNumbers,
+            }),
+        });
+
+        if (!response.ok) throw new Error(t('finalizeFailed'));
+
+        const presigned = await response.json() as {
+            uploadId: string;
+            objectKey: string;
+            parts: { partNumber: number; url: string }[];
+        };
+
+        const urlByPart: Record<number, string> = {};
+        for (const part of presigned.parts) urlByPart[part.partNumber] = part.url;
+
+        const etags: { partNumber: number; etag: string }[] = [];
+        for (let index = 0; index < totalParts; index++) {
+            const partNumber = index + 1;
+            const start = index * partSize;
+            const end = Math.min(start + partSize, size);
+
+            const put = await fetch(urlByPart[partNumber], {
+                method: 'PUT',
+                body: file.slice(start, end),
+                signal: signal,
+            });
+
+            if (!put.ok) throw new Error(t('finalizeFailed'));
+            etags.push({ partNumber: partNumber, etag: (put.headers.get('ETag') || '').replace(/"/g, '') });
+        }
+
+        return {
+            objectKey: presigned.objectKey,
+            uploadId: presigned.uploadId,
+            fileName: name,
+            contentType: file.type || 'application/octet-stream',
+            fileSize: size,
+            parts: etags,
+        };
+    }
+
+    /** Uploads every extra in order. The sender's order becomes the zip's order. */
+    async function uploadExtraFiles(deliveryId: string, signal: AbortSignal): Promise<CommitFilePayload[]> {
+        const payloads: CommitFilePayload[] = [];
+        for (const file of extraFiles) {
+            payloads.push(await uploadExtraFile(deliveryId, file, signal));
+        }
+        return payloads;
+    }
+
     window.uploadPage = {
         otpInput: function (event, idx) {
             const target = event.target as HTMLInputElement;
@@ -635,7 +723,8 @@
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
+        const additionalFiles = await uploadExtraFiles(ctx.deliveryId, signal);
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ additionalFiles: additionalFiles, deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

@@ -52,6 +52,22 @@ public record Delivery : BaseAuditEntity
     public const int FileNameMaxLength = 255;
 
     public string FileName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// How many files this delivery carries (issue #79). 1 for everything that predates
+    /// multi-file, so the common path stays the common path.
+    /// </summary>
+    public int FileCount { get; set; } = 1;
+
+    /// <summary>
+    /// Sum of every file's size (issue #79). <see cref="FileSize"/> stays file #1's size so the
+    /// paths written before multi-file keep meaning what they meant; this is what quota,
+    /// the bundle label and the zip estimate read.
+    /// </summary>
+    public long TotalFileBytes { get; set; }
+
+    /// <summary>True when this delivery is a bundle rather than a single file.</summary>
+    public bool IsMultiFile => FileCount > 1;
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }
     public long TotalBytes { get; init; }

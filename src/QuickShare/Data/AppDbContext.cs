@@ -50,6 +50,7 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
     public DbSet<SamlAssertionSeen> SamlAssertionsSeen => Set<SamlAssertionSeen>();
+    public DbSet<DeliveryFile> DeliveryFiles => Set<DeliveryFile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -524,6 +525,23 @@ public class AppDbContext : DbContext
             entity.Property(e => e.AdminGroupId).HasMaxLength(WorkspaceSsoConfig.GroupIdMaxLength);
             entity.Property(e => e.SamlSsoUrl).HasMaxLength(WorkspaceSsoConfig.SamlUrlMaxLength);
             entity.Property(e => e.SamlCertificate).HasMaxLength(WorkspaceSsoConfig.SamlCertificateMaxLength);
+        });
+
+        modelBuilder.Entity<DeliveryFile>(entity =>
+        {
+            entity.ToTable("delivery_files");
+            entity.HasKey(e => e.Id);
+            // Listing a bundle is always "every file of one delivery, in the sender's order".
+            entity.HasIndex(e => new { e.DeliveryId, e.SortOrder });
+            entity.Property(e => e.FileName).IsRequired().HasMaxLength(DeliveryFile.FileNameMaxLength);
+            entity.Property(e => e.ContentType).HasMaxLength(DeliveryFile.ContentTypeMaxLength);
+            entity.Property(e => e.Sha256).HasMaxLength(DeliveryFile.Sha256Length);
+            entity.Property(e => e.ObjectKey).IsRequired();
+            // The rows are the delivery's contents; they have no meaning without it.
+            entity.HasOne(e => e.Delivery)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<SamlAssertionSeen>(entity =>

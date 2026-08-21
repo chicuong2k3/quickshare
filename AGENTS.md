@@ -100,6 +100,12 @@ protected override async Task OnInitializedAsync()
   #181). `hd` / `tid` establish it; `AllowedEmailDomains` only ever narrows what the claim already
   established. Reversing that order hands a workspace seat to anyone who buys a convincing domain.
   A directory belongs to exactly one workspace, or the proof gets handed to the wrong tenant.
+- **An object key named by a client must be proved to belong to the resource claiming it**
+  (issue #79). `R2ObjectKey.BelongsTo` exists because a commit request is attacker-controlled;
+  without it a caller attaches somebody else's object to a share code they own.
+- **Additive means the old case is untouched.** When adding a shape to an existing entity, keep
+  the original columns meaning what they meant and test that the previous behaviour is identical —
+  otherwise every path written before the change starts quietly lying.
 - **Never hand-roll a signature check** (issue #139). XML digital signature in particular has a
   history of implementations that validate *a* signature rather than the one over the element they
   then read — a class of bug that is an authentication bypass and fails silently. Use the library,

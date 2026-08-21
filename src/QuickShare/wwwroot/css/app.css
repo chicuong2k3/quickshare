@@ -3071,3 +3071,42 @@ html, body {
     padding: var(--db-space-1) var(--db-space-2);
     user-select: all;
 }
+
+
+/* ── Bundle file list on the recipient page (issues #79, #43) ───────────────
+   Global, not scoped: the same markup is reachable from an HTMX partial. */
+.dl-files {
+    margin-top: var(--db-space-5);
+    border-top: 1px solid var(--db-color-border);
+    padding-top: var(--db-space-4);
+}
+
+.dl-files__title {
+    margin-bottom: var(--db-space-3);
+}
+
+.dl-files__list {
+    list-style: none;
+    margin: 0 0 var(--db-space-4);
+    padding: 0;
+}
+
+.dl-file {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--db-space-3);
+    padding: var(--db-space-2) 0;
+    border-bottom: 1px solid var(--db-color-border-subtle, var(--db-color-border));
+}
+
+.dl-file__name {
+    overflow-wrap: anywhere;
+}
+
+.dl-file__size {
+    flex: none;
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted);
+    font-variant-numeric: tabular-nums;
+}

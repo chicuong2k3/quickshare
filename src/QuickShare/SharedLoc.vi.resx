@@ -2082,4 +2082,13 @@
   <data name="saml_sp_metadata" xml:space="preserve">
     <value>Metadata</value>
   </data>
+  <data name="upload_folder_input_label" xml:space="preserve">
+    <value>Chọn thư mục để gửi</value>
+  </data>
+  <data name="dl_files_title" xml:space="preserve">
+    <value>{0} tệp</value>
+  </data>
+  <data name="dl_files_download_all" xml:space="preserve">
+    <value>Tải tất cả ({0})</value>
+  </data>
 </root>

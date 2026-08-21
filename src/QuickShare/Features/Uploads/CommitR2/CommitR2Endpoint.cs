@@ -27,7 +27,9 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         var cmd = new CommitR2Command(
             req.DeliveryId, req.UploadId, req.ObjectKey,
-            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId, req.CommentsEnabled);
+            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId, req.CommentsEnabled,
+            req.AdditionalFiles?.Select(f => new CommitFile(
+                f.ObjectKey, f.UploadId, f.FileName, f.ContentType, f.FileSize, f.Parts, f.Sha256)).ToList());
         var result = await Resolve<IMediator>().Send<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -73,4 +75,23 @@ public class CommitR2Request
     public Guid? FolderId { get; set; }
     /// <summary>Let recipients and the team discuss this share (issue #289). Off by default.</summary>
     public bool CommentsEnabled { get; set; }
+
+    /// <summary>
+    /// Files beyond the first, each already uploaded via <c>POST /api/uploads/{id}/files</c>
+    /// (issue #79). Absent or empty means a single-file delivery, which behaves exactly as it
+    /// always has.
+    /// </summary>
+    public List<CommitFileRequest>? AdditionalFiles { get; set; }
+}
+
+/// <summary>One extra file of a bundle, as posted at commit (issue #79).</summary>
+public sealed class CommitFileRequest
+{
+    public string ObjectKey { get; set; } = string.Empty;
+    public string UploadId { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public IReadOnlyList<R2PartEtag> Parts { get; set; } = [];
+    public string? Sha256 { get; set; }
 }

@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -148,6 +148,36 @@ public sealed class CommitR2Handler(
             }
         }
 
+        // Extra files of a bundle (issue #79). Completed after the primary so a bundle failure
+        // never leaves a delivery that exists but has no first file; the delivery either carries
+        // all of its files or is refused outright.
+        var bundle = await BundleCommitter.CompleteAsync(
+            cmd.DeliveryId,
+            cmd.AdditionalFiles ?? [],
+            requestId is null ? PlanTierLimits.GetMaxFileSize(plan) : null,
+            storage,
+            logger,
+            cancellationToken);
+
+        if (bundle.Error is not null)
+        {
+            // Everything under this delivery's prefix goes, including the primary: a
+            // half-committed bundle is worse than none, because the recipient cannot tell.
+            try
+            {
+                await storage.DeleteObjectsAsync(cmd.ObjectKey, cancellationToken);
+                foreach (var claimed in cmd.AdditionalFiles ?? [])
+                    await storage.DeleteObjectsAsync(claimed.ObjectKey, cancellationToken);
+            }
+            catch { /* best-effort cleanup; the sweeper handles leftovers */ }
+
+            return Result.Failure<CommitR2Response>(new LightResults.Error(bundle.Error));
+        }
+
+        // Quota is charged on the whole bundle. Charging only file #1 would make a hundred-file
+        // upload free after the first, which is the obvious way to walk around a monthly cap.
+        actualSize += bundle.TotalBytes;
+
         // Monthly quota: check the actual committed size, then record on success.
         if (quota is not null)
         {
@@ -271,6 +301,10 @@ public sealed class CommitR2Handler(
             ContentType = session.ContentType,
             FileSize = session.FileSize,
             TotalBytes = session.FileSize,
+            // The Delivery row keeps describing file #1 exactly as before (issue #79); these two
+            // describe the bundle, so nothing written before multi-file has to change meaning.
+            FileCount = 1 + bundle.Files.Count,
+            TotalFileBytes = actualSize,
             ChunkCount = cmd.Parts.Count,
             ShareCode = shareCode,
             MaxDownloads = cmd.BurnAfterDownload ? 1 : PlanTierLimits.GetMaxDownloads(plan),
@@ -312,6 +346,13 @@ public sealed class CommitR2Handler(
             await ReferralService.ReleaseOnFirstUploadAsync(user, db, cancellationToken);
 
         db.Deliveries.Add(delivery);
+
+        // Every delivery gets a row for file #1 too, so "at least one DeliveryFile" holds without
+        // exception and no reader has to branch on which shape it is looking at.
+        db.DeliveryFiles.Add(BundleCommitter.PrimaryRow(delivery, actualSize - bundle.TotalBytes));
+        foreach (var file in bundle.Files)
+            db.DeliveryFiles.Add(file);
+
         await db.SaveChangesAsync(cancellationToken);
 
         // The request info is cached — a commit just changed its remaining budget.

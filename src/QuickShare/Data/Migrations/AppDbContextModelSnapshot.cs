@@ -329,6 +329,9 @@ namespace QuickShare.Migrations
                     b.Property<DateTime?>("ExpiryReminderSentAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("FileCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -426,6 +429,9 @@ namespace QuickShare.Migrations
                     b.Property<long>("TotalBytes")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("TotalFileBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -508,6 +514,49 @@ namespace QuickShare.Migrations
                     b.HasIndex("DeliveryId", "CreatedAt");
 
                     b.ToTable("delivery_comments", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId", "SortOrder");
+
+                    b.ToTable("delivery_files", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
@@ -2387,6 +2436,17 @@ namespace QuickShare.Migrations
                         .WithMany()
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryFile", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Delivery");
                 });

@@ -157,6 +157,13 @@ public static class ErrorCodes
     public const string SsoDirectoryTaken = "sso_directory_taken";
     public const string SamlSsoUrlInvalid = "saml_sso_url_invalid";
     public const string SamlCertificateInvalid = "saml_certificate_invalid";
+    // Multi-file deliveries (#79) and folder upload (#43).
+    public const string UploadSessionNotFound = "upload_session_not_found";
+    public const string DeliveryTooManyFiles = "delivery_too_many_files";
+    /// <summary>A committed object key did not belong to the delivery claiming it (issue #79).</summary>
+    public const string DeliveryFileKeyMismatch = "delivery_file_key_mismatch";
+    public const string DeliveryFileNotFound = "delivery_file_not_found";
+    public const string FileTooLarge = "file_too_large";
     /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
     public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
     public const string ScimTokenNotFound = "scim_token_not_found";
