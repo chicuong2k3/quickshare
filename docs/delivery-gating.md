@@ -131,14 +131,30 @@ feature against it rather than by anybody noticing in production.
 - **New workspace-wide policy?** Follow the tighten-only rule: workspace OR folder, never a
   folder loosening the workspace.
 
+## The screens
+
+**Approval queue** — `/account/workspace/approvals`, admins only, `noindex` (it lists unreleased
+shares and who sent them). Two cards: the policy switches, then the queue ordered by
+`ApprovalRequestedAt`, oldest first — the same order the API returns, for the same reason.
+`AllowSelfApproval` is disabled for anyone but the owner: an admin lifting their own review is
+the thing review exists to prevent. Deny prompts for a reason before sending, because the API
+requires one and a request without it is a guaranteed 400.
+
+The policy switches ride `PATCH /api/workspace`, whose three new nullable fields
+(`RequireDeliveryApproval`, `AllowSelfApproval`, `CommentPolicy`) mean *leave alone* when null —
+so the approvals screen can set approval policy without also having to send the workspace name
+and seat count it does not display.
+
+**Schedule list** — `/account/recurring`, Pro and Studio only, `noindex` (recipient lists).
+Pause, skip-next, run-now and delete per row, plus a create form seeded from the caller's live
+`Active` deliveries. Skip and pause are separate buttons because they answer different questions:
+"not this week" is a one-off, "not for now" is indefinite.
+
 ## Not shipped
 
 - **An approval SLA timer with escalation to a second approver.** `#162` lists it; it needs an
   escalation chain and a notion of "next approver" that the seat model does not have, and a
   timer that escalates to nobody is worse than no timer.
-- **Admin UI switches for `RequireDeliveryApproval` / `AllowSelfApproval`.** The columns and the
-  enforcement are real and tested; the settings toggles are not built, so today they are set
-  directly. Flagged on the issue rather than left to be discovered.
 - **Content refresh per cycle beyond replace-file.** Replacing the source file (`#72`) already
   changes what the next cycle sends, which is the behaviour the issue describes; there is no
   separate versioned-content pipeline.

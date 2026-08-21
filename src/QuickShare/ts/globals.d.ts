@@ -222,6 +222,28 @@ interface QsPaste {
     takeStashed(): File | null;
 }
 
+
+/** A page-scoped action object: methods are called from inline onclick in the markup. */
+type QsPageActions = Record<string, (...args: any[]) => void>;
+
+interface QsPageModule {
+    value(id: string): string;
+    checked(id: string): boolean;
+    attr(el: Element | null, name: string): string;
+    reload(body?: string): void;
+    send(url: string, method: string, payload: unknown, options?: QsSendOptions): Promise<void>;
+}
+
+interface HtmxSwapOptions {
+    target: string;
+    select?: string;
+    swap?: string;
+}
+
+interface HtmxModule {
+    ajax(method: string, url: string, options: HtmxSwapOptions): void;
+}
+
 interface Window {
     ZAPDROP_CONFIG?: ZapDropConfig;
     P2P: P2PNamespace;
@@ -242,6 +264,18 @@ interface Window {
     p2pSend?: P2pSendPage;
     p2pDownload?: P2pDownloadPage;
     qsPaste?: QsPaste;
+    htmx?: HtmxModule;
+    qsPage: QsPageModule;
+    quickShareApprovals: QsPageActions;
+    quickShareBackup: QsPageActions;
+    quickShareBilling: QsPageActions;
+    quickShareBrand: QsPageActions;
+    quickShareChannel: QsPageActions;
+    quickShareComments: QsPageActions;
+    quickShareDpa: QsPageActions;
+    quickShareRecurring: QsPageActions;
+    quickShareSiem: QsPageActions;
+    quickShareWorkspace: QsPageActions;
     checkPasswordBreach?: (password: string) => Promise<number | null>;
     generateStrongPassword?: (length?: number) => string;
 }

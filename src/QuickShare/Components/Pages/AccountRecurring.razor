@@ -1,0 +1,235 @@
+@layout MainLayout
+@page "/account/recurring"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Deliveries.Recurring
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["recurring_title"]</PageTitle>
+
+@* Recipient lists and schedules — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["recurring_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["recurring_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountDeliveries" />
+
+    <section id="recurring-body"
+             hx-get="@RoutePaths.AccountRecurring"
+             hx-trigger="load, recurringUpdated from:body"
+             hx-target="#recurring-body"
+             hx-select="#recurring-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/recurring.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool canSchedule;
+    private List<RecurringDelivery> schedules = [];
+    private List<Delivery> sources = [];
+    private Dictionary<Guid, string> sourceNames = [];
+
+    private RenderFragment Chunk => @<section id="recurring-body">
+        @if (!canSchedule)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["recurring_requires_paid"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["recurring_list_title"]</h2>
+
+                    @if (schedules.Count == 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["recurring_empty"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-member-list">
+                            @foreach (var schedule in schedules)
+                            {
+                                <li class="workspace-member" id="recurring-@schedule.Id">
+                                    <div class="workspace-member__info">
+                                        <span class="workspace-member__name">
+                                            @schedule.Name
+                                            @if (!schedule.Enabled)
+                                            {
+                                                <span class="workspace-badge">@Loc["recurring_paused"]</span>
+                                            }
+                                        </span>
+                                        <span class="workspace-member__meta">
+                                            @FrequencyLabel(schedule) · @Loc["recurring_next", schedule.NextRunAt.ToLocalTime().ToString("g")]
+                                        </span>
+                                        <span class="workspace-member__meta">
+                                            @SourceName(schedule.SourceDeliveryId) · @Loc["recurring_runs", schedule.RunCount]
+                                        </span>
+                                        <span class="workspace-member__meta">@schedule.Recipients</span>
+                                        @if (!string.IsNullOrEmpty(schedule.LastError))
+                                        {
+                                            <span class="workspace-member__meta">@Loc["recurring_last_error", schedule.LastError]</span>
+                                        }
+                                    </div>
+                                    <div class="workspace-member__actions">
+                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                data-id="@schedule.Id" data-enabled="@schedule.Enabled.ToString().ToLowerInvariant()"
+                                                onclick="window.quickShareRecurring.togglePause(this)"
+                                                data-ai-action="recurring.pause">
+                                            @(schedule.Enabled ? Loc["recurring_pause"] : Loc["recurring_resume"])
+                                        </button>
+                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                data-id="@schedule.Id"
+                                                onclick="window.quickShareRecurring.skipNext(this)"
+                                                data-ai-action="recurring.skip">@Loc["recurring_skip"]</button>
+                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                data-id="@schedule.Id"
+                                                onclick="window.quickShareRecurring.runNow(this)"
+                                                data-ai-action="recurring.run">@Loc["recurring_run_now"]</button>
+                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                data-id="@schedule.Id"
+                                                data-confirm="@Loc["recurring_delete_confirm"]"
+                                                onclick="window.quickShareRecurring.remove(this)"
+                                                data-ai-action="recurring.delete">@Loc["recurring_delete"]</button>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["recurring_new_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["recurring_new_hint"]</p>
+
+                    @if (sources.Count == 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["recurring_no_sources"]</p>
+                    }
+                    else
+                    {
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="recurring-name">@Loc["recurring_name"]</label>
+                            <input id="recurring-name" class="db-input" type="text"
+                                   maxlength="@RecurringDelivery.NameMaxLength" />
+
+                            <label class="workspace-label" for="recurring-source">@Loc["recurring_source"]</label>
+                            <select id="recurring-source" class="db-input">
+                                @foreach (var source in sources)
+                                {
+                                    <option value="@source.Id">@source.FileName</option>
+                                }
+                            </select>
+
+                            <label class="workspace-label" for="recurring-frequency">@Loc["recurring_frequency"]</label>
+                            <select id="recurring-frequency" class="db-input">
+                                <option value="@RecurrenceFrequency.Daily">@Loc["recurring_daily"]</option>
+                                <option value="@RecurrenceFrequency.Weekly" selected>@Loc["recurring_weekly"]</option>
+                                <option value="@RecurrenceFrequency.Monthly">@Loc["recurring_monthly"]</option>
+                            </select>
+
+                            <label class="workspace-label" for="recurring-hour">@Loc["recurring_hour"]</label>
+                            <input id="recurring-hour" class="db-input" type="number"
+                                   min="@RecurringDelivery.MinHour" max="@RecurringDelivery.MaxHour" value="8" />
+
+                            <label class="workspace-label" for="recurring-day">@Loc["recurring_day"]</label>
+                            <select id="recurring-day" class="db-input">
+                                @foreach (var day in Enum.GetValues<DayOfWeek>())
+                                {
+                                    <option value="@((int)day)" selected="@(day == DayOfWeek.Monday)">@day</option>
+                                }
+                            </select>
+
+                            <label class="workspace-label" for="recurring-recipients">@Loc["recurring_recipients"]</label>
+                            <input id="recurring-recipients" class="db-input" type="text"
+                                   maxlength="@RecurringDelivery.RecipientsMaxLength" />
+
+                            <button type="button" class="db-btn db-btn--primary"
+                                    onclick="window.quickShareRecurring.create(this)"
+                                    data-ai-action="recurring.create">@Loc["recurring_create"]</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </section>;
+
+    private string SourceName(Guid id) =>
+        sourceNames.TryGetValue(id, out var name) ? name : Loc["recurring_source_gone"];
+
+    private string FrequencyLabel(RecurringDelivery schedule) => schedule.Frequency switch
+    {
+        RecurrenceFrequency.Daily => Loc["recurring_daily"],
+        RecurrenceFrequency.Monthly => Loc["recurring_monthly"],
+        _ => Loc["recurring_weekly"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+        canSchedule = user.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+        if (!canSchedule) return;
+
+        schedules = await Db.RecurringDeliveries
+            .AsNoTracking()
+            .Where(r => r.OwnerId == user.Id)
+            .OrderBy(r => r.NextRunAt)
+            .ToListAsync(CancellationToken.None);
+
+        // Only live shares can seed a schedule — the cycle copies their bytes.
+        sources = await Db.Deliveries
+            .AsNoTracking()
+            .Where(d => d.SenderId == user.Id && d.DeletedAt == null && d.Status == DeliveryStatus.Active)
+            .OrderByDescending(d => d.CreatedAt)
+            .Take(50)
+            .ToListAsync(CancellationToken.None);
+
+        var ids = schedules.Select(s => s.SourceDeliveryId).ToList();
+        sourceNames = await Db.Deliveries
+            .AsNoTracking()
+            .Where(d => ids.Contains(d.Id))
+            .ToDictionaryAsync(d => d.Id, d => d.FileName, CancellationToken.None);
+    }
+}

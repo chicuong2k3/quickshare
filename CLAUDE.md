@@ -74,7 +74,7 @@ protected override async Task OnInitializedAsync()
 
 - **One statement per line** — không gộp nhiều câu lệnh trên cùng một dòng. Mỗi câu lệnh phải nằm trên dòng riêng của nó.
 - **No magic strings** — không dùng hardcoded string/number literal trực tiếp. Phải dùng `const` hoặc `enum` (strongly typed).
-- **CSS scoped, JS theo page** — CSS dùng scoped (`.razor.css`) cho mỗi component (trừ HTML trả về từ HTMX partial — xem mục HTMX ở trên, dùng global `app.css` với prefix). JS riêng của page đặt tại `wwwroot/js/<page>.js`, expose qua 1 object global (xem `download.js`).
+- **CSS scoped, JS theo page** — CSS dùng scoped (`.razor.css`) cho mỗi component (trừ HTML trả về từ HTMX partial — xem mục HTMX ở trên, dùng global `app.css` với prefix). JS riêng của page viết bằng TypeScript tại `src/QuickShare/ts/<page>.ts`, expose qua 1 object global (xem `download.ts`). **`wwwroot/js/**` là output do `tsc` sinh ra và bị `.gitignore` — file viết thẳng vào đó sẽ không có trong repo và biến mất ở lần clone kế tiếp.** Helper dùng chung cho các màn hình config nhỏ đã có sẵn ở `ts/page-actions.ts` (`window.qsPage`), nạp toàn cục từ `App.razor`.
 
 ## Cấu trúc dự án
 
@@ -112,7 +112,7 @@ Làm theo thứ tự con người sẽ làm:
 2. **Cần entity mới?** Thêm class vào `Data/Entities/`, thêm `DbSet` vào `AppDbContext`, chạy `dotnet ef migrations add <Tên>` (output vào `Data/Migrations/`).
 3. **API endpoint**: tạo folder `Features/<Tên>/<Action>/` với tối đa 3 file: `<Action>Endpoint.cs` (FastEndpoints — auto-discover, KHÔNG cần đăng ký ở đâu), `<Action>Handler.cs` (Mediator handler nhận command/query record — cũng auto-discover), `<Action>Validator.cs` (FluentValidation, chỉ khi có input). Tag endpoint bằng const trong `ApiTags`.
 4. **Hằng số**: route, error code, limit, header… vào `Infrastructure/Constants/` — không hardcode.
-5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này và **hệ thị giác trong `DESIGN.md`** (xem mục Design System bên dưới). JS riêng của page vào `wwwroot/js/<tên>.js` và expose qua 1 object global (xem `download.js`). Chuỗi hiển thị cho người dùng vào `SharedLoc.{en,vi}.resx`, **không hardcode** — chuỗi mà JS cần thì truyền qua một block JSON trong page (xem `download-i18n`).
+5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này và **hệ thị giác trong `DESIGN.md`** (xem mục Design System bên dưới). JS riêng của page vào `ts/<tên>.ts` (KHÔNG phải `wwwroot/js/` — đó là output bị gitignore) và expose qua 1 object global; khai báo object đó trong `ts/globals.d.ts`. Chuỗi hiển thị cho người dùng vào `SharedLoc.{en,vi}.resx`, **không hardcode** — chuỗi mà JS cần thì truyền qua một block JSON trong page (xem `download-i18n`).
 6. **Service**: service chỉ 1 feature dùng → đặt ngay trong folder feature đó (vd `P2PQuotaService` nằm trong `Features/Shares/P2P/`). Chỉ khi ≥2 feature dùng chung mới đưa vào `Infrastructure/`. Đăng ký DI trong `Program.cs`.
 7. **Test**: E2E phía server vào `tests/QuickShare.Server.Tests/E2E/`, dùng `TestWebAppFactory` (xem `DeliveryExtrasApiTests` làm mẫu seed data + client). Logic **chỉ tồn tại trong trình duyệt** (clipboard, sessionStorage, chuyển phase bằng JS) thì dùng `BrowserAppFixture` + Playwright (xem `PasteBrowserTests`) — nó chạy app như process thật và lái Chrome đã cài, không tải browser bundle.
 8. **Xoá feature**: xoá folder `Features/<Tên>/` là endpoint + handler tự biến mất (auto-discovery), sau đó grep tên feature để dọn UI/JS/CSS/test còn tham chiếu.

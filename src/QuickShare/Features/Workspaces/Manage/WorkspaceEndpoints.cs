@@ -82,6 +82,12 @@ public sealed class UpdateWorkspaceRequest
 {
     public string? Name { get; set; }
     public int? Seats { get; set; }
+    /// <summary>Every share waits for an admin (issue #162). Null leaves the current setting.</summary>
+    public bool? RequireDeliveryApproval { get; set; }
+    /// <summary>Let an admin clear their own share (issue #162). Null leaves the current setting.</summary>
+    public bool? AllowSelfApproval { get; set; }
+    /// <summary>disabled / recipients / members (issue #289). Null leaves the current setting.</summary>
+    public string? CommentPolicy { get; set; }
 }
 
 /// <summary>PATCH /api/workspace — rename or resize the seat pool (issue #106).</summary>
@@ -101,7 +107,8 @@ public sealed class UpdateWorkspaceEndpoint : Endpoint<UpdateWorkspaceRequest, W
     public override async Task HandleAsync(UpdateWorkspaceRequest req, CancellationToken ct)
     {
         var result = await Resolve<IMediator>().Send<Result<WorkspaceDto>>(
-            new UpdateWorkspaceCommand(req.Name, req.Seats), ct);
+            new UpdateWorkspaceCommand(
+                req.Name, req.Seats, req.RequireDeliveryApproval, req.AllowSelfApproval, req.CommentPolicy), ct);
 
         if (result.IsSuccess(out var response))
             await Send.OkAsync(response, ct);

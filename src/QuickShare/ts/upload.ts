@@ -93,6 +93,7 @@
         allowExtensionRequests: boolean;
         recipientEmails: string[];
         privacyMode: boolean;
+        commentsEnabled: boolean;
         emailOtpEnabled: boolean;
         requireRecipientEmail: boolean;
         publicStatsEnabled: boolean;
@@ -122,6 +123,7 @@
         allowExtensionRequests: false,
         recipientEmails: [],
         privacyMode: false,
+        commentsEnabled: false,
         emailOtpEnabled: false,
         requireRecipientEmail: false,
         publicStatsEnabled: false,
@@ -412,6 +414,7 @@
         state.recipientEmails = String((document.getElementById('upload-recipients') as HTMLInputElement | null)?.value || '')
             .split(',').map(function (e) { return e.trim(); }).filter(function (e) { return e.length > 0; });
         state.privacyMode = (document.getElementById('upload-privacy') as HTMLInputElement | null)?.checked ?? false;
+        state.commentsEnabled = (document.getElementById('upload-comments') as HTMLInputElement | null)?.checked ?? false;
         state.emailOtpEnabled = (document.getElementById('upload-email-otp') as HTMLInputElement | null)?.checked ?? false;
         state.requireRecipientEmail = (document.getElementById('upload-recipient-email') as HTMLInputElement | null)?.checked ?? false;
         state.publicStatsEnabled = (document.getElementById('upload-public-stats') as HTMLInputElement | null)?.checked ?? false;
@@ -632,7 +635,7 @@
             for (let r = 0; r < results.length; r++) { const res = results[r]; if (res.status === 'rejected') throw res.reason; }
         }
 
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

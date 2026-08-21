@@ -1,0 +1,188 @@
+@layout MainLayout
+@page "/account/workspace/approvals"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Deliveries.Approval
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["approvals_title"]</PageTitle>
+
+@* Unreleased shares and who sent them — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["approvals_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["approvals_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceApprovals" />
+
+    <section id="workspace-approvals-body"
+             hx-get="@RoutePaths.AccountWorkspaceApprovals"
+             hx-trigger="load, approvalsUpdated from:body"
+             hx-target="#workspace-approvals-body"
+             hx-select="#workspace-approvals-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/approvals.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private bool isOwner;
+    private Workspace? workspace;
+    private List<PendingApprovalDto> pending = [];
+
+    private RenderFragment Chunk => @<section id="workspace-approvals-body">
+        @if (!isAdmin || workspace is null)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @* The policy switches. Until now these columns could only be set in the database. *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["approvals_policy_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["approvals_policy_hint"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-checkbox">
+                            <input id="approvals-require" type="checkbox" checked="@workspace.RequireDeliveryApproval" />
+                            <span>@Loc["approvals_require_label"]</span>
+                        </label>
+
+                        <label class="workspace-checkbox">
+                            <input id="approvals-self" type="checkbox" checked="@workspace.AllowSelfApproval"
+                                   disabled="@(!isOwner)" />
+                            <span>@Loc["approvals_self_label"]</span>
+                        </label>
+                        <p class="db-p db-text-muted workspace-hint">@Loc["approvals_self_hint"]</p>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["approvals_saved"]"
+                                onclick="window.quickShareApprovals.savePolicy(this)"
+                                data-ai-action="approvals.policy.save">@Loc["approvals_policy_save"]</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["approvals_queue_title", pending.Count]</h2>
+
+                    @if (pending.Count == 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["approvals_queue_empty"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-member-list">
+                            @foreach (var item in pending)
+                            {
+                                <li class="workspace-member" id="approval-@item.Id">
+                                    <div class="workspace-member__info">
+                                        <span class="workspace-member__name">@item.FileName</span>
+                                        <span class="workspace-member__meta">
+                                            @Loc["approvals_from", string.IsNullOrEmpty(item.SenderName) ? item.SenderEmail : item.SenderName]
+                                            · @Bytes(item.FileSize)
+                                        </span>
+                                        <span class="workspace-member__meta">
+                                            <time datetime="@item.RequestedAt.ToString("o")">@item.RequestedAt.ToLocalTime().ToString("g")</time>
+                                        </span>
+                                    </div>
+                                    <div class="workspace-member__actions">
+                                        <button type="button" class="db-btn db-btn--primary db-btn--sm"
+                                                data-delivery-id="@item.Id"
+                                                onclick="window.quickShareApprovals.approve(this)"
+                                                data-ai-action="approval.approve">@Loc["approvals_approve"]</button>
+                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                data-delivery-id="@item.Id"
+                                                data-prompt="@Loc["approvals_deny_prompt"]"
+                                                onclick="window.quickShareApprovals.deny(this)"
+                                                data-ai-action="approval.deny">@Loc["approvals_deny"]</button>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        }
+    </section>;
+
+    private static string Bytes(long value)
+    {
+        const long Megabyte = 1024L * 1024;
+        return value >= Megabyte
+            ? $"{value / (double)Megabyte:F1} MB"
+            : $"{value / 1024d:F0} KB";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        isOwner = seat.Role == WorkspaceRole.Owner;
+        workspace = seat.Workspace;
+
+        // Oldest first — the same order the API returns, for the same reason.
+        pending = await Db.Deliveries
+            .AsNoTracking()
+            .Where(d => d.WorkspaceId == seat.WorkspaceId
+                && d.Status == DeliveryStatus.PendingApproval
+                && d.DeletedAt == null)
+            .OrderBy(d => d.ApprovalRequestedAt)
+            .Select(d => new PendingApprovalDto(
+                d.Id,
+                d.FileName,
+                d.FileSize,
+                Db.Users.Where(u => u.Id == d.SenderId).Select(u => u.Name).FirstOrDefault() ?? string.Empty,
+                Db.Users.Where(u => u.Id == d.SenderId).Select(u => u.Email).FirstOrDefault() ?? string.Empty,
+                d.FolderId,
+                d.ApprovalRequestedAt ?? d.CreatedAt))
+            .ToListAsync(CancellationToken.None);
+    }
+}

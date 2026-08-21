@@ -248,6 +248,15 @@
                     <span class="otp-hint">@Loc["upload_privacy_hint"]</span>
                 </div>
 
+                @* Comments (issue #289) — off by default; a share is one-way unless opened *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-comments" />
+                        <span>@Loc["upload_comments_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_comments_hint"]</span>
+                </div>
+
                 @* Email OTP (issue #291) — recipient requests a single-use emailed code *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

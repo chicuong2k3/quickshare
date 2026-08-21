@@ -639,14 +639,52 @@ nine batches were order-dependent assertions on the shared default user; scoped 
 accounts. A permanently red run is worse than no test, because it trains everyone to skim past
 red — which is how the `#119` defects survived.
 
-**Found, not fixed — UI gap.** `#162` (approval queue), `#176` (schedule list), `#180` (channel
-config) and `#289` (comment thread) shipped API-only. The endpoints are complete and tested; the
-screens a user would touch do not exist. Those four issues were reopened rather than left closed.
+**Found, then fixed — UI gap.** `#162` (approval queue), `#176` (schedule list), `#180` (channel
+config) and `#289` (comment thread) shipped API-only. The endpoints were complete and tested; the
+screens a user would touch did not exist. Those four issues were reopened, and the batch below
+built them.
 
 **Root cause across all of it**: unit tests prove a function computes the right answer and say
 nothing about whether anything calls it. `AuditRegressionTests` asserts reachability through
 observable side effects, and page render coverage now exists for the eleven pages the suite had
 never loaded.
+
+## Tier 6 — batch 11: the four missing screens (#162, #176, #180, #289)
+
+The audit's own finding, closed out. Four pages, no new subsystems:
+
+- `/account/workspace/approvals` — policy switches and the pending queue (`#162`)
+- `/account/workspace/channel` — Slack/Teams webhook and its health (`#180`)
+- `/account/recurring` — schedule list and create form (`#176`)
+- the comment thread on `Download.razor`, plus the `upload-comments` toggle that makes
+  `CommentsEnabled` settable by a sender for the first time (`#289`)
+
+Two API gaps had to close before the screens could work. `PATCH /api/workspace` gained
+`RequireDeliveryApproval`, `AllowSelfApproval` and `CommentPolicy` as *nullable* fields — null
+means leave alone, so a screen can change one policy without resending the workspace name and
+seat count it does not show. And `CommitR2Request` now carries `CommentsEnabled`.
+
+The comment thread is server-rendered rather than HTMX-fetched. That is a deliberate exception to
+the lazy-load default: `DownloadNoScriptTests` requires the recipient page to work without
+scripting, and a thread that arrives over `hx-get` would be a blank section for a reader who has
+JS off. Only the posting form needs JS, and `<noscript>` hides it.
+
+**Not shipped**: real-time updates (the thread is as fresh as the page load — polling a recipient
+page nobody is watching is cost with no reader), comment editing from the UI (the endpoint
+exists; a delete-and-repost covers it), and approval bulk actions (a queue that needs bulk
+approve is a queue whose policy is wrong).
+
+**Found while building them — ten dead page scripts.** `wwwroot/js/**` is `tsc` output and is
+gitignored; `CLAUDE.md` said to write page JS there. Six earlier tier-6 screens (workspace, brand,
+billing, backup, SIEM, DPA) had their JS written straight into that folder, so it was never
+committed: on a fresh clone every button on those pages did nothing. All ten scripts — the six
+plus this batch's four — are now TypeScript in `ts/`, and both instruction files were corrected.
+Collapsing their duplicated `send`/`reload`/`value` helpers into `ts/page-actions.ts`
+(`window.qsPage`, loaded globally) made the ten of them shorter than the six had been.
+
+**What the audit's lesson looks like in tests here**: `B2BUiTests` asserts the *page* carries the
+data, not that a handler returns it. A 200 would not have caught the defect being fixed — every
+one of these endpoints already returned 200 to nobody.
 
 ## 9. Local artifact map (feature area → design doc)
 

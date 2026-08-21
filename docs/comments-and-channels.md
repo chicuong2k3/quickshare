@@ -154,13 +154,30 @@ feature untestable without anything looking wrong.**
 - **Test stubs must produce the same shapes as production.** If a stub invents a value, it is
   hiding whatever reads that value.
 
+## The screens
+
+Both surfaces now exist. They were built after the audit found this subsystem was API-only.
+
+**Comment thread** — server-rendered inside `Download.razor`, below the file card. It is not
+fetched: a recipient with scripting off still reads the conversation, because the conversation is
+the part that carries the information. Only the posting controls need JS, and they are marked
+`.dl-comments__js`, hidden by a `<noscript>` style block. The page resolves what to show through
+`CommentGate` — the same object the endpoint uses — so the page cannot display a thread the API
+would refuse. One level of replies is rendered; deeper nesting is a threading model nobody asked
+for. `wwwroot/js/comments.js` reloads after a successful post rather than splicing the new
+comment in, because ordering, tombstones and the team badge are server decisions and re-deriving
+them in the browser would be a second implementation to keep in step.
+
+**Channel config** — `/account/workspace/channel`, admins only, `noindex`. The webhook field is
+never populated with the stored URL; when a hook exists the placeholder says one is stored and a
+blank submit keeps it. That is asserted by `B2BUiTests.ChannelPage_ShowsStoredHookWithoutLeakingUrl`, which posts a recognisable secret and greps the rendered page for it. The health card shows
+last-posted, consecutive failures and the parked notice.
+
+Sender-side, `Upload.razor` now has the `upload-comments` toggle that sets `CommentsEnabled` at
+commit. Before it, the flag existed on the entity and in the API and no sender could set it.
+
 ## Not shipped
 
-- **The comment UI.** This subsystem is API-only: there is no comment thread on the delivery
-  page and no channel-configuration screen. The endpoints are complete and tested; the surface a
-  user would touch is not. The same is true of `#162`'s approval queue and `#176`'s schedule
-  list — flagged here because closing those issues without saying so was a mistake the audit
-  corrected.
 - **Comment attachments.** `#289` mentions them; they need an upload path with its own quota,
   scanning and retention story, which is a second file feature hiding inside a comment box.
 - **@-mentions with notification routing.** The sender is notified of every comment on their

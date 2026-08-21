@@ -1,0 +1,174 @@
+@layout MainLayout
+@page "/account/workspace/channel"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Channels
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["channel_title"]</PageTitle>
+
+@* Contains a webhook credential and its health — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["channel_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["channel_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceChannel" />
+
+    <section id="workspace-channel-body"
+             hx-get="@RoutePaths.AccountWorkspaceChannel"
+             hx-trigger="load"
+             hx-target="#workspace-channel-body"
+             hx-select="#workspace-channel-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/channel.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private WorkspaceChannelHook? hook;
+
+    private RenderFragment Chunk => @<section id="workspace-channel-body">
+        @if (!isAdmin)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["channel_config_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["channel_config_hint"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="channel-kind">@Loc["channel_kind"]</label>
+                        <select id="channel-kind" class="db-input">
+                            <option value="@ChannelKind.Slack" selected="@(Kind == ChannelKind.Slack)">@Loc["channel_kind_slack"]</option>
+                            <option value="@ChannelKind.Teams" selected="@(Kind == ChannelKind.Teams)">@Loc["channel_kind_teams"]</option>
+                        </select>
+
+                        <label class="workspace-label" for="channel-url">@Loc["channel_url"]</label>
+                        <input id="channel-url" class="db-input" type="url" autocomplete="off"
+                               maxlength="@WorkspaceChannelHook.UrlMaxLength"
+                               placeholder="@(hook is not null ? Loc["channel_url_set"].Value : "https://")" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["channel_url_hint"]</p>
+
+                        <label class="workspace-checkbox">
+                            <input id="channel-on-delivery" type="checkbox" checked="@(hook?.NotifyOnDelivery ?? true)" />
+                            <span>@Loc["channel_on_delivery"]</span>
+                        </label>
+
+                        <label class="workspace-checkbox">
+                            <input id="channel-on-comment" type="checkbox" checked="@(hook?.NotifyOnComment ?? true)" />
+                            <span>@Loc["channel_on_comment"]</span>
+                        </label>
+
+                        <label class="workspace-checkbox">
+                            <input id="channel-enabled" type="checkbox" checked="@(hook?.Enabled ?? true)" />
+                            <span>@Loc["channel_enabled"]</span>
+                        </label>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["channel_saved"]"
+                                onclick="window.quickShareChannel.save(this)"
+                                data-ai-action="channel.save">@Loc["channel_save"]</button>
+
+                        @if (hook is not null)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    data-confirm="@Loc["channel_remove_confirm"]"
+                                    onclick="window.quickShareChannel.remove(this)"
+                                    data-ai-action="channel.remove">@Loc["channel_remove"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (hook is not null)
+            {
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["channel_health_title"]</h2>
+
+                        @if (hook.IsParked)
+                        {
+                            <p class="db-p workspace-notice">@Loc["channel_parked", WorkspaceChannelHook.MaxConsecutiveFailures]</p>
+                        }
+
+                        <dl class="workspace-stats">
+                            <div class="workspace-stat">
+                                <dt>@Loc["channel_last_posted"]</dt>
+                                <dd>@(hook.LastPostedAt is { } at ? at.ToLocalTime().ToString("g") : "—")</dd>
+                            </div>
+                            <div class="workspace-stat">
+                                <dt>@Loc["channel_failures"]</dt>
+                                <dd>@hook.ConsecutiveFailures</dd>
+                            </div>
+                        </dl>
+
+                        @if (!string.IsNullOrEmpty(hook.LastError))
+                        {
+                            <p class="db-p db-text-muted workspace-hint">@Loc["channel_last_error", hook.LastError]</p>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </section>;
+
+    private string Kind => hook?.Kind ?? ChannelKind.Slack;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        hook = await Db.WorkspaceChannelHooks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.WorkspaceId == seat.WorkspaceId, CancellationToken.None);
+    }
+}

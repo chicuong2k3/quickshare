@@ -195,6 +195,9 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
     [InlineData("/account/workspace/brand")]
     [InlineData("/account/workspace/backup")]
     [InlineData("/account/workspace/streaming")]
+    [InlineData("/account/workspace/approvals")]
+    [InlineData("/account/workspace/channel")]
+    [InlineData("/account/recurring")]
     [InlineData("/account/invoices")]
     [InlineData("/workspace/join")]
     public async Task WorkspacePage_ShellRenders(string url)
@@ -212,6 +215,9 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
     [InlineData("/account/workspace/folders")]
     [InlineData("/account/workspace/seats")]
     [InlineData("/account/workspace/brand")]
+    [InlineData("/account/workspace/approvals")]
+    [InlineData("/account/workspace/channel")]
+    [InlineData("/account/recurring")]
     public async Task WorkspacePage_HtmxFragmentRenders(string url)
     {
         // The half the shell test cannot reach: the fragment request actually runs the page's

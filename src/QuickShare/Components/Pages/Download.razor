@@ -11,9 +11,11 @@
 @using QuickShare.Features.Deliveries.ExtensionRequests
 @using QuickShare.Features.Workspaces.Branding
 @using QuickShare.Features.Uploads.Shared
+@using QuickShare.Features.Deliveries.Comments
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject BrandReader Brands
 @inject StorageRegionResolver Regions
+@inject CommentGate Gate
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
@@ -606,11 +608,97 @@
     };
 </script>
 
+    @if (CommentsOpen)
+    {
+        @* Posting needs JS; the thread does not. Hide only the controls, natively. *@
+        <noscript><style>.dl-comments__js { display: none; }</style></noscript>
+
+        <section id="dl-comments" class="dl-comments" data-share-code="@ShareCode">
+            <h2 class="db-h3 dl-comments__title">@Loc["dl_comments_title"]</h2>
+
+            @if (Comments.Count == 0)
+            {
+                <p class="db-p db-text-muted" id="dl-comments-empty">@Loc["dl_comments_empty"]</p>
+            }
+
+            <ul class="dl-comments__list" id="dl-comments-list">
+                @foreach (var comment in Comments.Where(c => c.ParentId is null))
+                {
+                    <li class="dl-comment" id="dl-comment-@comment.Id">
+                        <p class="dl-comment__meta">
+                            <strong>@comment.AuthorName</strong>
+                            @if (comment.IsTeamMember)
+                            {
+                                @* Marked because an anonymous display name is a claim, not an identity. *@
+                                <span class="dl-comment__badge">@Loc["dl_comments_team"]</span>
+                            }
+                            <time datetime="@comment.CreatedAt.ToString("o")">@comment.CreatedAt.ToLocalTime().ToString("g")</time>
+                        </p>
+                        <p class="dl-comment__body">@(comment.IsDeleted ? Loc["dl_comments_removed"].Value : comment.Body)</p>
+
+                        @foreach (var reply in Comments.Where(c => c.ParentId == comment.Id))
+                        {
+                            <div class="dl-comment dl-comment--reply" id="dl-comment-@reply.Id">
+                                <p class="dl-comment__meta">
+                                    <strong>@reply.AuthorName</strong>
+                                    @if (reply.IsTeamMember)
+                                    {
+                                        <span class="dl-comment__badge">@Loc["dl_comments_team"]</span>
+                                    }
+                                    <time datetime="@reply.CreatedAt.ToString("o")">@reply.CreatedAt.ToLocalTime().ToString("g")</time>
+                                </p>
+                                <p class="dl-comment__body">@(reply.IsDeleted ? Loc["dl_comments_removed"].Value : reply.Body)</p>
+                            </div>
+                        }
+
+                        @if (CanPost)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm dl-comments__js"
+                                    data-parent-id="@comment.Id"
+                                    onclick="window.quickShareComments.reply(this)"
+                                    data-ai-action="comment.reply">@Loc["dl_comments_reply"]</button>
+                        }
+                    </li>
+                }
+            </ul>
+
+            @if (CanPost)
+            {
+                @* Posting needs JS. The thread above does not — a reader with scripts off still
+                   sees the conversation, which is the part that carries the information. *@
+                <div class="dl-comments__form dl-comments__js">
+                    @if (!IsSignedIn)
+                    {
+                        <label class="workspace-label" for="dl-comment-name">@Loc["dl_comments_name"]</label>
+                        <input id="dl-comment-name" class="db-input" type="text" maxlength="@DeliveryComment.AuthorNameMaxLength" />
+                    }
+
+                    <label class="workspace-label" for="dl-comment-body">@Loc["dl_comments_body"]</label>
+                    <textarea id="dl-comment-body" class="db-input" rows="3" maxlength="@DeliveryComment.BodyMaxLength"></textarea>
+
+                    <p class="db-p db-text-muted dl-comments__hint" id="dl-comment-replying" hidden>
+                        @Loc["dl_comments_replying"]
+                        <button type="button" class="dl-comments__cancel"
+                                onclick="window.quickShareComments.cancelReply()"
+                                data-ai-action="comment.reply.cancel">@Loc["dl_comments_cancel_reply"]</button>
+                    </p>
+
+                    <button type="button" class="db-btn db-btn--primary db-btn--sm"
+                            data-error-label="@Loc["dl_comments_failed"]"
+                            onclick="window.quickShareComments.post(this)"
+                            data-ai-action="comment.post">@Loc["dl_comments_post"]</button>
+                </div>
+            }
+        </section>
+    }
+
     @if (Brand?.FooterText is { } brandFooter)
     {
         <p class="dl-brand__footer">@brandFooter</p>
     }
 </PageWrapper>
+
+<script src="/js/comments.js" defer></script>
 
 @code {
     private const string PhasePassword = "password";
@@ -686,12 +774,60 @@
     /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
     private string? RegionLabel { get; set; }
 
+    /// <summary>Thread state (issue #289), resolved through the same gate the API uses.</summary>
+    private bool CommentsOpen { get; set; }
+    private bool CanPost { get; set; }
+    private bool IsSignedIn { get; set; }
+    private List<CommentDto> Comments { get; set; } = [];
+
     /// <summary>
     /// Emits the brand stylesheet unescaped. Safe because every interpolated value is validated
     /// on save — hex colours and a restricted font-name character set — so nothing here can
     /// close a declaration and open something else.
     /// </summary>
     private static MarkupString RawCss(string css) => new(css);
+
+    /// <summary>
+    /// Loads the thread through <see cref="CommentGate"/> — the same resolver the API uses, so
+    /// the page cannot show a conversation the endpoint would refuse. Server-rendered rather
+    /// than fetched, so a reader with scripts disabled still sees it.
+    /// </summary>
+    private async Task LoadCommentsAsync(CancellationToken ct)
+    {
+        var delivery = await Db.Deliveries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.ShareCode == ShareCode && d.DeletedAt == null, ct);
+
+        if (delivery is null)
+            return;
+
+        IsSignedIn = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+
+        var member = await CommentAuthor.IsWorkspaceMemberAsync(
+            Db, HttpContextAccessor.HttpContext!, delivery.WorkspaceId, ct);
+
+        var verdict = await Gate.EvaluateAsync(delivery, member, ct);
+        CommentsOpen = verdict.CanRead;
+        CanPost = verdict.CanPost;
+
+        if (!CommentsOpen)
+            return;
+
+        Comments = await Db.DeliveryComments
+            .AsNoTracking()
+            .Where(c => c.DeliveryId == delivery.Id)
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new CommentDto(
+                c.Id,
+                c.ParentId,
+                c.AuthorName,
+                c.AuthorUserId != null,
+                c.DeletedAt == null ? c.Body : string.Empty,
+                c.DeletedAt != null,
+                c.CreatedAt,
+                c.EditedAt))
+            .ToListAsync(ct);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -719,6 +855,7 @@
             .FirstOrDefaultAsync(CancellationToken.None);
 
         Brand = await Brands.ForWorkspaceAsync(stored?.WorkspaceId, CancellationToken.None);
+        await LoadCommentsAsync(CancellationToken.None);
         // Null when the delivery has no region, or when the region it was written to is no
         // longer configured — a label we cannot resolve is worse than no badge at all.
         RegionLabel = Regions.LabelFor(stored?.StorageRegion);
@@ -854,5 +991,3 @@
         public bool RequireRecipientEmail { get; set; }
     }
 }
-
-

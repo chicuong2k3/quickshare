@@ -1569,4 +1569,250 @@
   <data name="region_studio_note" xml:space="preserve"><value>Với gói Studio bạn còn chọn được vùng cho từng lần tải lên; gói Pro cố định một vùng cho cả tài khoản.</value></data>
   <data name="region_unavailable" xml:space="preserve"><value>Bản triển khai này chưa cấu hình vùng lưu trữ.</value></data>
   <data name="region_requires_paid" xml:space="preserve"><value>Chọn vùng lưu trữ có ở gói Pro và Studio.</value></data>
+  <data name="ws_tab_approvals" xml:space="preserve">
+    <value>Phê duyệt</value>
+  </data>
+  <data name="ws_tab_channel" xml:space="preserve">
+    <value>Kênh chat</value>
+  </data>
+  <data name="account_tab_recurring" xml:space="preserve">
+    <value>Lịch gửi</value>
+  </data>
+  <data name="approvals_title" xml:space="preserve">
+    <value>Phê duyệt</value>
+  </data>
+  <data name="approvals_subtitle" xml:space="preserve">
+    <value>Các lượt chia sẻ đang chờ duyệt, cũ nhất trước.</value>
+  </data>
+  <data name="approvals_policy_title" xml:space="preserve">
+    <value>Chính sách</value>
+  </data>
+  <data name="approvals_policy_hint" xml:space="preserve">
+    <value>Khi bật, mọi lượt chia sẻ mới trong workspace phải chờ duyệt trước khi link hoạt động.</value>
+  </data>
+  <data name="approvals_require_label" xml:space="preserve">
+    <value>Yêu cầu duyệt mọi lượt chia sẻ</value>
+  </data>
+  <data name="approvals_self_label" xml:space="preserve">
+    <value>Cho phép admin tự duyệt chia sẻ của mình</value>
+  </data>
+  <data name="approvals_self_hint" xml:space="preserve">
+    <value>Chỉ chủ sở hữu đổi được — admin tự bỏ khâu duyệt chính là điều mà khâu duyệt sinh ra để ngăn.</value>
+  </data>
+  <data name="approvals_policy_save" xml:space="preserve">
+    <value>Lưu chính sách</value>
+  </data>
+  <data name="approvals_saved" xml:space="preserve">
+    <value>Đã lưu chính sách.</value>
+  </data>
+  <data name="approvals_queue_title" xml:space="preserve">
+    <value>Đang chờ ({0})</value>
+  </data>
+  <data name="approvals_queue_empty" xml:space="preserve">
+    <value>Không có gì đang chờ duyệt.</value>
+  </data>
+  <data name="approvals_from" xml:space="preserve">
+    <value>từ {0}</value>
+  </data>
+  <data name="approvals_approve" xml:space="preserve">
+    <value>Duyệt</value>
+  </data>
+  <data name="approvals_deny" xml:space="preserve">
+    <value>Từ chối</value>
+  </data>
+  <data name="approvals_deny_prompt" xml:space="preserve">
+    <value>Lý do từ chối? Người gửi sẽ thấy nội dung này.</value>
+  </data>
+  <data name="channel_title" xml:space="preserve">
+    <value>Kênh chat</value>
+  </data>
+  <data name="channel_subtitle" xml:space="preserve">
+    <value>Đăng thông báo giao hàng và bình luận vào Slack hoặc Teams.</value>
+  </data>
+  <data name="channel_config_title" xml:space="preserve">
+    <value>Webhook</value>
+  </data>
+  <data name="channel_config_hint" xml:space="preserve">
+    <value>Tạo incoming webhook trong Slack hoặc Teams rồi dán URL vào đây. Chỉ chấp nhận HTTPS.</value>
+  </data>
+  <data name="channel_kind" xml:space="preserve">
+    <value>Nền tảng</value>
+  </data>
+  <data name="channel_kind_slack" xml:space="preserve">
+    <value>Slack</value>
+  </data>
+  <data name="channel_kind_teams" xml:space="preserve">
+    <value>Microsoft Teams</value>
+  </data>
+  <data name="channel_url" xml:space="preserve">
+    <value>URL webhook</value>
+  </data>
+  <data name="channel_url_hint" xml:space="preserve">
+    <value>Để trống để giữ webhook đã lưu. URL không bao giờ được hiển thị lại sau khi lưu.</value>
+  </data>
+  <data name="channel_url_set" xml:space="preserve">
+    <value>Đã lưu một webhook — để trống để giữ nguyên</value>
+  </data>
+  <data name="channel_on_delivery" xml:space="preserve">
+    <value>Đăng khi có lượt gửi mới</value>
+  </data>
+  <data name="channel_on_comment" xml:space="preserve">
+    <value>Đăng khi có bình luận</value>
+  </data>
+  <data name="channel_enabled" xml:space="preserve">
+    <value>Đang bật</value>
+  </data>
+  <data name="channel_save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="channel_saved" xml:space="preserve">
+    <value>Đã lưu kênh.</value>
+  </data>
+  <data name="channel_remove" xml:space="preserve">
+    <value>Xoá webhook</value>
+  </data>
+  <data name="channel_remove_confirm" xml:space="preserve">
+    <value>Xoá webhook? Sẽ không có gì được đăng lên chat cho đến khi lưu webhook mới.</value>
+  </data>
+  <data name="channel_health_title" xml:space="preserve">
+    <value>Tình trạng</value>
+  </data>
+  <data name="channel_parked" xml:space="preserve">
+    <value>Đã tạm dừng đăng sau {0} lần lỗi liên tiếp. Lưu webhook hợp lệ để chạy lại.</value>
+  </data>
+  <data name="channel_last_posted" xml:space="preserve">
+    <value>Lần đăng gần nhất</value>
+  </data>
+  <data name="channel_failures" xml:space="preserve">
+    <value>Số lỗi liên tiếp</value>
+  </data>
+  <data name="channel_last_error" xml:space="preserve">
+    <value>Lỗi gần nhất: {0}</value>
+  </data>
+  <data name="recurring_title" xml:space="preserve">
+    <value>Lịch gửi</value>
+  </data>
+  <data name="recurring_subtitle" xml:space="preserve">
+    <value>Gửi lại một delivery theo chu kỳ.</value>
+  </data>
+  <data name="recurring_requires_paid" xml:space="preserve">
+    <value>Lịch gửi có ở gói Pro và Studio.</value>
+  </data>
+  <data name="recurring_list_title" xml:space="preserve">
+    <value>Lịch của bạn</value>
+  </data>
+  <data name="recurring_empty" xml:space="preserve">
+    <value>Chưa có lịch nào.</value>
+  </data>
+  <data name="recurring_paused" xml:space="preserve">
+    <value>Đang tạm dừng</value>
+  </data>
+  <data name="recurring_next" xml:space="preserve">
+    <value>kế tiếp {0}</value>
+  </data>
+  <data name="recurring_runs" xml:space="preserve">
+    <value>{0} lần chạy</value>
+  </data>
+  <data name="recurring_last_error" xml:space="preserve">
+    <value>Lỗi gần nhất: {0}</value>
+  </data>
+  <data name="recurring_source_gone" xml:space="preserve">
+    <value>nguồn đã bị xoá</value>
+  </data>
+  <data name="recurring_pause" xml:space="preserve">
+    <value>Tạm dừng</value>
+  </data>
+  <data name="recurring_resume" xml:space="preserve">
+    <value>Chạy lại</value>
+  </data>
+  <data name="recurring_skip" xml:space="preserve">
+    <value>Bỏ lần kế</value>
+  </data>
+  <data name="recurring_run_now" xml:space="preserve">
+    <value>Chạy ngay</value>
+  </data>
+  <data name="recurring_delete" xml:space="preserve">
+    <value>Xoá</value>
+  </data>
+  <data name="recurring_delete_confirm" xml:space="preserve">
+    <value>Xoá lịch này? Các lượt đã gửi không bị ảnh hưởng.</value>
+  </data>
+  <data name="recurring_new_title" xml:space="preserve">
+    <value>Lịch mới</value>
+  </data>
+  <data name="recurring_new_hint" xml:space="preserve">
+    <value>Mỗi lần chạy sẽ gửi một bản sao mới của delivery nguồn tới danh sách bên dưới.</value>
+  </data>
+  <data name="recurring_no_sources" xml:space="preserve">
+    <value>Bạn cần có một delivery đang hoạt động trước khi tạo lịch.</value>
+  </data>
+  <data name="recurring_name" xml:space="preserve">
+    <value>Tên</value>
+  </data>
+  <data name="recurring_source" xml:space="preserve">
+    <value>Delivery nguồn</value>
+  </data>
+  <data name="recurring_frequency" xml:space="preserve">
+    <value>Chu kỳ</value>
+  </data>
+  <data name="recurring_daily" xml:space="preserve">
+    <value>Hằng ngày</value>
+  </data>
+  <data name="recurring_weekly" xml:space="preserve">
+    <value>Hằng tuần</value>
+  </data>
+  <data name="recurring_monthly" xml:space="preserve">
+    <value>Hằng tháng</value>
+  </data>
+  <data name="recurring_hour" xml:space="preserve">
+    <value>Giờ (UTC)</value>
+  </data>
+  <data name="recurring_day" xml:space="preserve">
+    <value>Thứ trong tuần</value>
+  </data>
+  <data name="recurring_recipients" xml:space="preserve">
+    <value>Người nhận (phân tách bằng dấu phẩy)</value>
+  </data>
+  <data name="recurring_create" xml:space="preserve">
+    <value>Tạo lịch</value>
+  </data>
+  <data name="dl_comments_title" xml:space="preserve">
+    <value>Bình luận</value>
+  </data>
+  <data name="dl_comments_empty" xml:space="preserve">
+    <value>Chưa có bình luận nào.</value>
+  </data>
+  <data name="dl_comments_team" xml:space="preserve">
+    <value>Nội bộ</value>
+  </data>
+  <data name="dl_comments_removed" xml:space="preserve">
+    <value>Bình luận này đã bị gỡ.</value>
+  </data>
+  <data name="dl_comments_reply" xml:space="preserve">
+    <value>Trả lời</value>
+  </data>
+  <data name="dl_comments_replying" xml:space="preserve">
+    <value>Đang trả lời một bình luận.</value>
+  </data>
+  <data name="dl_comments_cancel_reply" xml:space="preserve">
+    <value>Huỷ</value>
+  </data>
+  <data name="dl_comments_name" xml:space="preserve">
+    <value>Tên của bạn</value>
+  </data>
+  <data name="dl_comments_body" xml:space="preserve">
+    <value>Bình luận</value>
+  </data>
+  <data name="dl_comments_post" xml:space="preserve">
+    <value>Gửi</value>
+  </data>
+  <data name="dl_comments_failed" xml:space="preserve">
+    <value>Không gửi được bình luận.</value>
+  </data>
+  <data name="upload_comments_label" xml:space="preserve">
+    <value>Cho phép bình luận</value>
+  </data>
+  <data name="upload_comments_hint" xml:space="preserve">
+    <value>Người nhận có thể để lại ghi chú trên delivery này.</value>
+  </data>
 </root>

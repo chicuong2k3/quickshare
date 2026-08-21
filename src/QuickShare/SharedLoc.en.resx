@@ -1569,4 +1569,250 @@
   <data name="region_studio_note" xml:space="preserve"><value>On Studio you can also pick a region per upload; Pro pins one region for the account.</value></data>
   <data name="region_unavailable" xml:space="preserve"><value>Storage regions are not configured on this deployment.</value></data>
   <data name="region_requires_paid" xml:space="preserve"><value>Choosing a storage region is available on Pro and Studio.</value></data>
+  <data name="ws_tab_approvals" xml:space="preserve">
+    <value>Approvals</value>
+  </data>
+  <data name="ws_tab_channel" xml:space="preserve">
+    <value>Chat channel</value>
+  </data>
+  <data name="account_tab_recurring" xml:space="preserve">
+    <value>Schedules</value>
+  </data>
+  <data name="approvals_title" xml:space="preserve">
+    <value>Approvals</value>
+  </data>
+  <data name="approvals_subtitle" xml:space="preserve">
+    <value>Shares waiting on a reviewer, oldest first.</value>
+  </data>
+  <data name="approvals_policy_title" xml:space="preserve">
+    <value>Policy</value>
+  </data>
+  <data name="approvals_policy_hint" xml:space="preserve">
+    <value>When approval is required, every new share in this workspace waits here before its link works.</value>
+  </data>
+  <data name="approvals_require_label" xml:space="preserve">
+    <value>Require approval for every share</value>
+  </data>
+  <data name="approvals_self_label" xml:space="preserve">
+    <value>Let admins approve their own shares</value>
+  </data>
+  <data name="approvals_self_hint" xml:space="preserve">
+    <value>Only the owner can change this — an admin lifting their own review is the thing review exists to prevent.</value>
+  </data>
+  <data name="approvals_policy_save" xml:space="preserve">
+    <value>Save policy</value>
+  </data>
+  <data name="approvals_saved" xml:space="preserve">
+    <value>Policy saved.</value>
+  </data>
+  <data name="approvals_queue_title" xml:space="preserve">
+    <value>Waiting ({0})</value>
+  </data>
+  <data name="approvals_queue_empty" xml:space="preserve">
+    <value>Nothing is waiting for review.</value>
+  </data>
+  <data name="approvals_from" xml:space="preserve">
+    <value>from {0}</value>
+  </data>
+  <data name="approvals_approve" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="approvals_deny" xml:space="preserve">
+    <value>Deny</value>
+  </data>
+  <data name="approvals_deny_prompt" xml:space="preserve">
+    <value>Why is this share being denied? The sender will see this.</value>
+  </data>
+  <data name="channel_title" xml:space="preserve">
+    <value>Chat channel</value>
+  </data>
+  <data name="channel_subtitle" xml:space="preserve">
+    <value>Post deliveries and comments into Slack or Teams.</value>
+  </data>
+  <data name="channel_config_title" xml:space="preserve">
+    <value>Webhook</value>
+  </data>
+  <data name="channel_config_hint" xml:space="preserve">
+    <value>Create an incoming webhook in Slack or Teams and paste its URL here. HTTPS only.</value>
+  </data>
+  <data name="channel_kind" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="channel_kind_slack" xml:space="preserve">
+    <value>Slack</value>
+  </data>
+  <data name="channel_kind_teams" xml:space="preserve">
+    <value>Microsoft Teams</value>
+  </data>
+  <data name="channel_url" xml:space="preserve">
+    <value>Webhook URL</value>
+  </data>
+  <data name="channel_url_hint" xml:space="preserve">
+    <value>Leave blank to keep the stored webhook. It is never shown again after saving.</value>
+  </data>
+  <data name="channel_url_set" xml:space="preserve">
+    <value>A webhook is stored — leave blank to keep it</value>
+  </data>
+  <data name="channel_on_delivery" xml:space="preserve">
+    <value>Post when a delivery goes out</value>
+  </data>
+  <data name="channel_on_comment" xml:space="preserve">
+    <value>Post when someone comments</value>
+  </data>
+  <data name="channel_enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="channel_save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="channel_saved" xml:space="preserve">
+    <value>Channel saved.</value>
+  </data>
+  <data name="channel_remove" xml:space="preserve">
+    <value>Remove webhook</value>
+  </data>
+  <data name="channel_remove_confirm" xml:space="preserve">
+    <value>Remove the webhook? Nothing will be posted to chat until a new one is saved.</value>
+  </data>
+  <data name="channel_health_title" xml:space="preserve">
+    <value>Health</value>
+  </data>
+  <data name="channel_parked" xml:space="preserve">
+    <value>Posting is parked after {0} consecutive failures. Save a working webhook to resume.</value>
+  </data>
+  <data name="channel_last_posted" xml:space="preserve">
+    <value>Last posted</value>
+  </data>
+  <data name="channel_failures" xml:space="preserve">
+    <value>Consecutive failures</value>
+  </data>
+  <data name="channel_last_error" xml:space="preserve">
+    <value>Last error: {0}</value>
+  </data>
+  <data name="recurring_title" xml:space="preserve">
+    <value>Schedules</value>
+  </data>
+  <data name="recurring_subtitle" xml:space="preserve">
+    <value>Re-send a delivery on a cadence.</value>
+  </data>
+  <data name="recurring_requires_paid" xml:space="preserve">
+    <value>Schedules are available on Pro and Studio.</value>
+  </data>
+  <data name="recurring_list_title" xml:space="preserve">
+    <value>Your schedules</value>
+  </data>
+  <data name="recurring_empty" xml:space="preserve">
+    <value>No schedules yet.</value>
+  </data>
+  <data name="recurring_paused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="recurring_next" xml:space="preserve">
+    <value>next {0}</value>
+  </data>
+  <data name="recurring_runs" xml:space="preserve">
+    <value>{0} runs</value>
+  </data>
+  <data name="recurring_last_error" xml:space="preserve">
+    <value>Last error: {0}</value>
+  </data>
+  <data name="recurring_source_gone" xml:space="preserve">
+    <value>source deleted</value>
+  </data>
+  <data name="recurring_pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="recurring_resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="recurring_skip" xml:space="preserve">
+    <value>Skip next</value>
+  </data>
+  <data name="recurring_run_now" xml:space="preserve">
+    <value>Run now</value>
+  </data>
+  <data name="recurring_delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="recurring_delete_confirm" xml:space="preserve">
+    <value>Delete this schedule? Deliveries already sent are unaffected.</value>
+  </data>
+  <data name="recurring_new_title" xml:space="preserve">
+    <value>New schedule</value>
+  </data>
+  <data name="recurring_new_hint" xml:space="preserve">
+    <value>Each run sends a fresh copy of the source delivery to the recipients below.</value>
+  </data>
+  <data name="recurring_no_sources" xml:space="preserve">
+    <value>You need a live delivery before you can schedule one.</value>
+  </data>
+  <data name="recurring_name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="recurring_source" xml:space="preserve">
+    <value>Source delivery</value>
+  </data>
+  <data name="recurring_frequency" xml:space="preserve">
+    <value>Frequency</value>
+  </data>
+  <data name="recurring_daily" xml:space="preserve">
+    <value>Daily</value>
+  </data>
+  <data name="recurring_weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="recurring_monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="recurring_hour" xml:space="preserve">
+    <value>Hour (UTC)</value>
+  </data>
+  <data name="recurring_day" xml:space="preserve">
+    <value>Day of week</value>
+  </data>
+  <data name="recurring_recipients" xml:space="preserve">
+    <value>Recipients (comma separated)</value>
+  </data>
+  <data name="recurring_create" xml:space="preserve">
+    <value>Create schedule</value>
+  </data>
+  <data name="dl_comments_title" xml:space="preserve">
+    <value>Comments</value>
+  </data>
+  <data name="dl_comments_empty" xml:space="preserve">
+    <value>No comments yet.</value>
+  </data>
+  <data name="dl_comments_team" xml:space="preserve">
+    <value>Team</value>
+  </data>
+  <data name="dl_comments_removed" xml:space="preserve">
+    <value>This comment was removed.</value>
+  </data>
+  <data name="dl_comments_reply" xml:space="preserve">
+    <value>Reply</value>
+  </data>
+  <data name="dl_comments_replying" xml:space="preserve">
+    <value>Replying to a comment.</value>
+  </data>
+  <data name="dl_comments_cancel_reply" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="dl_comments_name" xml:space="preserve">
+    <value>Your name</value>
+  </data>
+  <data name="dl_comments_body" xml:space="preserve">
+    <value>Comment</value>
+  </data>
+  <data name="dl_comments_post" xml:space="preserve">
+    <value>Post</value>
+  </data>
+  <data name="dl_comments_failed" xml:space="preserve">
+    <value>Your comment could not be posted.</value>
+  </data>
+  <data name="upload_comments_label" xml:space="preserve">
+    <value>Allow comments</value>
+  </data>
+  <data name="upload_comments_hint" xml:space="preserve">
+    <value>Recipients can leave notes on this delivery.</value>
+  </data>
 </root>

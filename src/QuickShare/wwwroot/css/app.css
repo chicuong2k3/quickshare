@@ -2956,3 +2956,84 @@ html, body {
     text-transform: uppercase;
     color: var(--db-color-text-muted);
 }
+
+/* ── Delivery comment thread (issue #289) ────────────────────────────────────
+   Global rather than scoped: the thread renders inside Download.razor but the
+   markup is shared with the HTMX chunk, and scoped CSS does not reach that. */
+.dl-comments {
+    margin-top: var(--db-space-6);
+    border-top: 1px solid var(--db-color-border);
+    padding-top: var(--db-space-5);
+}
+
+.dl-comments__title {
+    margin-bottom: var(--db-space-3);
+}
+
+.dl-comments__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dl-comment {
+    padding: var(--db-space-3) 0;
+    border-bottom: 1px solid var(--db-color-border);
+}
+
+.dl-comment--reply {
+    margin-left: var(--db-space-5);
+    border-bottom: 0;
+    border-left: 2px solid var(--db-color-border);
+    padding-left: var(--db-space-3);
+}
+
+.dl-comment__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    font-size: var(--db-text-sm);
+    color: var(--db-color-text-muted);
+    margin: 0 0 var(--db-space-1);
+}
+
+.dl-comment__badge {
+    background: var(--db-mountain-deep);
+    color: var(--db-color-text-muted);
+    font-size: 0.6875rem;
+    padding: 0 var(--db-space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.dl-comment__body {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.dl-comments__form {
+    margin-top: var(--db-space-4);
+    display: grid;
+    gap: var(--db-space-2);
+    justify-items: start;
+}
+
+.dl-comments__form .db-input {
+    width: 100%;
+}
+
+.dl-comments__hint {
+    font-size: var(--db-text-sm);
+    margin: 0;
+}
+
+.dl-comments__cancel {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--db-color-accent-text);
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+}
