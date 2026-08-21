@@ -141,4 +141,22 @@ public static class ErrorCodes
     public const string ChannelUrlInvalid = "channel_url_invalid";
     public const string ChannelKindInvalid = "channel_kind_invalid";
     public const string ChannelNotFound = "channel_not_found";
+    // Authenticator (#128), enterprise SSO (#181), SCIM (#146), MFA policy (#219).
+    public const string TotpAlreadyEnrolled = "totp_already_enrolled";
+    public const string TotpNotEnrolled = "totp_not_enrolled";
+    public const string TotpCodeInvalid = "totp_code_invalid";
+    /// <summary>A workspace policy requires the authenticator that is being removed (issue #219).</summary>
+    public const string MfaPolicyLocked = "mfa_policy_locked";
+    /// <summary>The caller must answer the second-factor challenge before this operation.</summary>
+    public const string MfaRequired = "mfa_required";
+    public const string MfaGraceInvalid = "mfa_grace_invalid";
+    public const string SsoProviderInvalid = "sso_provider_invalid";
+    public const string SsoDirectoryRequired = "sso_directory_required";
+    public const string SsoNotConfigured = "sso_not_configured";
+    /// <summary>Another workspace already federates to this directory (issue #181).</summary>
+    public const string SsoDirectoryTaken = "sso_directory_taken";
+    /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
+    public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
+    public const string ScimTokenNotFound = "scim_token_not_found";
+    public const string ScimUnauthorized = "scim_unauthorized";
 }

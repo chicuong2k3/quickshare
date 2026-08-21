@@ -25,6 +25,8 @@ public record Workspace : BaseAuditEntity
     public const int NameMaxLength = 80;
     public const int MinSeats = 2;
     public const int MaxSeats = 25;
+    public const int DefaultMfaGraceDays = 7;
+    public const int MaxMfaGraceDays = 90;
 
     public string Name { get; set; } = string.Empty;
     public Guid OwnerId { get; set; }
@@ -48,6 +50,22 @@ public record Workspace : BaseAuditEntity
     /// conversation a sender opened; it can never open one they did not.
     /// </summary>
     public string CommentPolicy { get; set; } = Entities.CommentPolicy.Recipients;
+
+    /// <summary>
+    /// Every member must hold a second factor — an authenticator app (issue #128) or a seat in
+    /// the workspace's SSO directory (issue #181) — before they can use the workspace (#219).
+    /// </summary>
+    public bool MfaRequired { get; set; }
+
+    /// <summary>
+    /// Days a member has to enrol after the policy starts applying to them. Enforcement without
+    /// a grace period locks out the whole team the moment an admin ticks the box, which is how
+    /// a security control gets switched back off and never returned to.
+    /// </summary>
+    public int MfaGraceDays { get; set; } = DefaultMfaGraceDays;
+
+    /// <summary>When the policy was last switched on. The grace window is measured from here.</summary>
+    public DateTime? MfaRequiredAt { get; set; }
 
     public User Owner { get; init; } = null!;
 }

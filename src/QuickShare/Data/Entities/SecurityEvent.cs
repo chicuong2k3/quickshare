@@ -82,4 +82,18 @@ public enum SecurityEventType
     RecurringDeliveryRan,
     ChannelHookChanged,
     DeliveryCommentPosted,
+    // Enterprise identity (#128 TOTP, #181 SSO, #146 SCIM, #219 MFA policy).
+    TotpEnrolled,
+    TotpRemoved,
+    SsoConfigChanged,
+    SsoMemberProvisioned,
+    /// <summary>A directory account qualified but the workspace had no free seat (issue #181).</summary>
+    SsoProvisionRefused,
+    MfaPolicyChanged,
+    /// <summary>A member out of grace was held out of a workspace operation (issue #219).</summary>
+    MfaBlocked,
+    ScimTokenIssued,
+    ScimTokenRevoked,
+    ScimUserProvisioned,
+    ScimUserDeprovisioned,
 }

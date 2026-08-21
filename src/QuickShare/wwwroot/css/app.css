@@ -3037,3 +3037,37 @@ html, body {
     cursor: pointer;
     font: inherit;
 }
+
+
+/* ── Enterprise identity (#128 authenticator, #146 SCIM) ─────────────────────
+   A secret shown exactly once needs to be readable and selectable, and to look
+   like something to copy rather than something to skim past. */
+.security-secret code {
+    display: inline-block;
+    font-family: var(--db-font-mono, monospace);
+    font-size: var(--db-text-sm);
+    letter-spacing: 0.08em;
+    word-break: break-all;
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-color-border);
+    padding: var(--db-space-2) var(--db-space-3);
+    user-select: all;
+}
+
+.security-recovery-list {
+    list-style: none;
+    margin: var(--db-space-2) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: var(--db-space-2);
+    font-family: var(--db-font-mono, monospace);
+    font-size: var(--db-text-sm);
+}
+
+.security-recovery-list li {
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-color-border);
+    padding: var(--db-space-1) var(--db-space-2);
+    user-select: all;
+}

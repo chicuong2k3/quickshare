@@ -1,0 +1,271 @@
+@layout MainLayout
+@page "/account/workspace/sso"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Auth.Mfa
+@using QuickShare.Features.Auth.Sso
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject MfaPolicyService Policies
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["sso_title"]</PageTitle>
+
+@* Directory ids, provisioning tokens and enrolment posture — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["sso_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["sso_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceSso" />
+
+    <section id="workspace-sso-body"
+             hx-get="@RoutePaths.AccountWorkspaceSso"
+             hx-trigger="load"
+             hx-target="#workspace-sso-body"
+             hx-select="#workspace-sso-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/sso.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private Workspace? workspace;
+    private WorkspaceSsoConfig? config;
+    private List<WorkspaceScimToken> tokens = [];
+    private int members;
+    private int covered;
+
+    private RenderFragment Chunk => @<section id="workspace-sso-body">
+        @if (!isAdmin || workspace is null)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @* ── #181 directory binding ── *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["sso_directory_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["sso_directory_hint"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="sso-provider">@Loc["sso_provider"]</label>
+                        <select id="sso-provider" class="db-input">
+                            <option value="@SsoProvider.GoogleWorkspace" selected="@(Provider == SsoProvider.GoogleWorkspace)">@Loc["sso_provider_google"]</option>
+                            <option value="@SsoProvider.Entra" selected="@(Provider == SsoProvider.Entra)">@Loc["sso_provider_entra"]</option>
+                        </select>
+
+                        <label class="workspace-label" for="sso-directory">@Loc["sso_directory"]</label>
+                        <input id="sso-directory" class="db-input" type="text"
+                               maxlength="@WorkspaceSsoConfig.DirectoryIdMaxLength"
+                               value="@config?.DirectoryId" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_directory_note"]</p>
+
+                        <label class="workspace-label" for="sso-domains">@Loc["sso_domains"]</label>
+                        <input id="sso-domains" class="db-input" type="text"
+                               maxlength="@WorkspaceSsoConfig.DomainsMaxLength"
+                               value="@config?.AllowedEmailDomains" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_domains_hint"]</p>
+
+                        <label class="workspace-label" for="sso-jit-role">@Loc["sso_jit_role"]</label>
+                        <select id="sso-jit-role" class="db-input">
+                            <option value="">@Loc["sso_jit_off"]</option>
+                            <option value="@nameof(WorkspaceRole.Member)" selected="@(config?.JitRole == WorkspaceRole.Member)">@Loc["sso_role_member"]</option>
+                            <option value="@nameof(WorkspaceRole.Viewer)" selected="@(config?.JitRole == WorkspaceRole.Viewer)">@Loc["sso_role_viewer"]</option>
+                            <option value="@nameof(WorkspaceRole.Admin)" selected="@(config?.JitRole == WorkspaceRole.Admin)">@Loc["sso_role_admin"]</option>
+                        </select>
+
+                        <label class="workspace-label" for="sso-admin-group">@Loc["sso_admin_group"]</label>
+                        <input id="sso-admin-group" class="db-input" type="text"
+                               maxlength="@WorkspaceSsoConfig.GroupIdMaxLength"
+                               value="@config?.AdminGroupId" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_admin_group_hint"]</p>
+
+                        <label class="workspace-checkbox">
+                            <input id="sso-enabled" type="checkbox" checked="@(config?.Enabled ?? true)" />
+                            <span>@Loc["sso_enabled"]</span>
+                        </label>
+
+                        <label class="workspace-checkbox">
+                            <input id="sso-require" type="checkbox" checked="@(config?.RequireSso ?? false)" />
+                            <span>@Loc["sso_require"]</span>
+                        </label>
+                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_require_hint"]</p>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["sso_saved"]"
+                                onclick="window.quickShareSso.save(this)"
+                                data-ai-action="sso.save">@Loc["sso_save"]</button>
+
+                        @if (config is not null)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    data-confirm="@Loc["sso_remove_confirm"]"
+                                    onclick="window.quickShareSso.remove(this)"
+                                    data-ai-action="sso.remove">@Loc["sso_remove"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @* ── #219 MFA policy and posture ── *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["mfa_policy_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["mfa_policy_hint"]</p>
+
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["mfa_posture"]</dt>
+                            <dd id="mfa-posture">@covered / @members</dd>
+                        </div>
+                        @if (workspace.MfaRequiredAt is { } since)
+                        {
+                            <div class="workspace-stat">
+                                <dt>@Loc["mfa_since"]</dt>
+                                <dd>@since.ToLocalTime().ToString("g")</dd>
+                            </div>
+                        }
+                    </dl>
+
+                    <div class="workspace-form">
+                        <label class="workspace-checkbox">
+                            <input id="mfa-required" type="checkbox" checked="@workspace.MfaRequired" />
+                            <span>@Loc["mfa_require_label"]</span>
+                        </label>
+
+                        <label class="workspace-label" for="mfa-grace">@Loc["mfa_grace"]</label>
+                        <input id="mfa-grace" class="db-input" type="number"
+                               min="0" max="@Workspace.MaxMfaGraceDays" value="@workspace.MfaGraceDays" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["mfa_grace_hint"]</p>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["mfa_policy_saved"]"
+                                onclick="window.quickShareSso.savePolicy(this)"
+                                data-ai-action="mfa.policy.save">@Loc["mfa_policy_save"]</button>
+                    </div>
+                </div>
+            </div>
+
+            @* ── #146 SCIM provisioning ── *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["scim_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["scim_hint", ScimBaseUrl]</p>
+
+                    @if (tokens.Count == 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["scim_none"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-member-list">
+                            @foreach (var token in tokens)
+                            {
+                                <li class="workspace-member" id="scim-@token.Id">
+                                    <div class="workspace-member__info">
+                                        <span class="workspace-member__name">@token.Label</span>
+                                        <span class="workspace-member__meta">
+                                            @Loc["scim_created", token.CreatedAt.ToLocalTime().ToString("g")]
+                                            · @(token.LastUsedAt is { } used
+                                                ? Loc["scim_last_used", used.ToLocalTime().ToString("g")].Value
+                                                : Loc["scim_never_used"].Value)
+                                        </span>
+                                    </div>
+                                    <div class="workspace-member__actions">
+                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                data-id="@token.Id"
+                                                data-confirm="@Loc["scim_revoke_confirm"]"
+                                                onclick="window.quickShareSso.revokeToken(this)"
+                                                data-ai-action="scim.token.revoke">@Loc["scim_revoke"]</button>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="scim-label">@Loc["scim_label"]</label>
+                        <input id="scim-label" class="db-input" type="text"
+                               maxlength="@WorkspaceScimToken.LabelMaxLength" />
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-once-label="@Loc["scim_shown_once"]"
+                                onclick="window.quickShareSso.createToken(this)"
+                                data-ai-action="scim.token.create">@Loc["scim_create"]</button>
+
+                        @* Filled in by script: the raw token exists in exactly one response. *@
+                        <p class="db-p security-secret" id="scim-new" hidden><code id="scim-new-value"></code></p>
+                    </div>
+                </div>
+            </div>
+        }
+    </section>;
+
+    private const string ScimBaseUrl = "/scim/v2";
+
+    private string Provider => config?.Provider ?? SsoProvider.GoogleWorkspace;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        workspace = seat.Workspace;
+
+        config = await Db.WorkspaceSsoConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.WorkspaceId == seat.WorkspaceId, CancellationToken.None);
+
+        tokens = await Db.WorkspaceScimTokens
+            .AsNoTracking()
+            .Where(t => t.WorkspaceId == seat.WorkspaceId && t.RevokedAt == null)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        (members, covered) = await Policies.PostureAsync(seat.WorkspaceId, CancellationToken.None);
+    }
+}

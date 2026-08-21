@@ -1815,4 +1815,244 @@
   <data name="upload_comments_hint" xml:space="preserve">
     <value>Recipients can leave notes on this delivery.</value>
   </data>
+  <data name="ws_tab_sso" xml:space="preserve">
+    <value>SSO &amp; MFA</value>
+  </data>
+  <data name="account_tab_security" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="mfa_title" xml:space="preserve">
+    <value>Two-step verification</value>
+  </data>
+  <data name="mfa_subtitle_code" xml:space="preserve">
+    <value>Enter the code from your authenticator app.</value>
+  </data>
+  <data name="mfa_subtitle_enrol" xml:space="preserve">
+    <value>Your workspace requires an authenticator.</value>
+  </data>
+  <data name="mfa_code_label" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="mfa_code_hint" xml:space="preserve">
+    <value>Six digits from your app, or one of your recovery codes.</value>
+  </data>
+  <data name="mfa_verify" xml:space="preserve">
+    <value>Verify</value>
+  </data>
+  <data name="mfa_code_failed" xml:space="preserve">
+    <value>That code was not accepted.</value>
+  </data>
+  <data name="mfa_enrol_required" xml:space="preserve">
+    <value>Your workspace requires a second factor and the grace period has passed. Set up an authenticator to continue.</value>
+  </data>
+  <data name="mfa_go_enrol" xml:space="preserve">
+    <value>Set up an authenticator</value>
+  </data>
+  <data name="mfa_sign_out" xml:space="preserve">
+    <value>Sign out instead</value>
+  </data>
+  <data name="security_title" xml:space="preserve">
+    <value>Security</value>
+  </data>
+  <data name="security_subtitle" xml:space="preserve">
+    <value>Two-step verification for this account.</value>
+  </data>
+  <data name="security_totp_title" xml:space="preserve">
+    <value>Authenticator app</value>
+  </data>
+  <data name="security_totp_hint" xml:space="preserve">
+    <value>Use Google Authenticator, Authy, 1Password or any other TOTP app.</value>
+  </data>
+  <data name="security_enrol" xml:space="preserve">
+    <value>Set up</value>
+  </data>
+  <data name="security_enrol_step" xml:space="preserve">
+    <value>Add this secret to your authenticator app, then enter the code it shows.</value>
+  </data>
+  <data name="security_open_app" xml:space="preserve">
+    <value>Open in your authenticator app</value>
+  </data>
+  <data name="security_confirm_code" xml:space="preserve">
+    <value>Code from the app</value>
+  </data>
+  <data name="security_confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="security_confirm_saved" xml:space="preserve">
+    <value>Two-step verification is on. Save your recovery codes now.</value>
+  </data>
+  <data name="security_confirm_failed" xml:space="preserve">
+    <value>That code was not accepted.</value>
+  </data>
+  <data name="security_totp_enrolled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="security_recovery_left" xml:space="preserve">
+    <value>Recovery codes left</value>
+  </data>
+  <data name="security_recovery_warning" xml:space="preserve">
+    <value>Save these now. Each works once, and they are the only way in if you lose your device.</value>
+  </data>
+  <data name="security_remove" xml:space="preserve">
+    <value>Remove authenticator</value>
+  </data>
+  <data name="security_remove_code" xml:space="preserve">
+    <value>Current code</value>
+  </data>
+  <data name="security_remove_confirm" xml:space="preserve">
+    <value>Remove two-step verification from this account?</value>
+  </data>
+  <data name="security_remove_locked" xml:space="preserve">
+    <value>Your workspace requires a second factor, so it cannot be removed.</value>
+  </data>
+  <data name="security_policy_title" xml:space="preserve">
+    <value>Workspace policy</value>
+  </data>
+  <data name="security_policy_sso" xml:space="preserve">
+    <value>Your workspace signs in through its identity provider, which already enforces a second factor.</value>
+  </data>
+  <data name="security_policy_met" xml:space="preserve">
+    <value>Your workspace requires a second factor. Yours is set up.</value>
+  </data>
+  <data name="security_policy_grace" xml:space="preserve">
+    <value>Your workspace requires a second factor. Set one up before {0}.</value>
+  </data>
+  <data name="security_policy_blocked" xml:space="preserve">
+    <value>Your workspace requires a second factor and the grace period has passed. Set one up to continue.</value>
+  </data>
+  <data name="sso_title" xml:space="preserve">
+    <value>SSO &amp; MFA</value>
+  </data>
+  <data name="sso_subtitle" xml:space="preserve">
+    <value>Sign-in, provisioning and second-factor policy for this workspace.</value>
+  </data>
+  <data name="sso_directory_title" xml:space="preserve">
+    <value>Identity provider</value>
+  </data>
+  <data name="sso_directory_hint" xml:space="preserve">
+    <value>Members who sign in through this directory get a seat automatically.</value>
+  </data>
+  <data name="sso_provider" xml:space="preserve">
+    <value>Provider</value>
+  </data>
+  <data name="sso_provider_google" xml:space="preserve">
+    <value>Google Workspace</value>
+  </data>
+  <data name="sso_provider_entra" xml:space="preserve">
+    <value>Microsoft Entra ID</value>
+  </data>
+  <data name="sso_directory" xml:space="preserve">
+    <value>Directory</value>
+  </data>
+  <data name="sso_directory_note" xml:space="preserve">
+    <value>Your Google Workspace domain (acme.com) or your Entra tenant ID. This is what the provider proves — not the email address.</value>
+  </data>
+  <data name="sso_domains" xml:space="preserve">
+    <value>Restrict to email domains</value>
+  </data>
+  <data name="sso_domains_hint" xml:space="preserve">
+    <value>Optional, comma separated. Narrows the directory further; it never grants access on its own.</value>
+  </data>
+  <data name="sso_jit_role" xml:space="preserve">
+    <value>Role for new members</value>
+  </data>
+  <data name="sso_jit_off" xml:space="preserve">
+    <value>Do not create seats automatically</value>
+  </data>
+  <data name="sso_role_member" xml:space="preserve">
+    <value>Member</value>
+  </data>
+  <data name="sso_role_viewer" xml:space="preserve">
+    <value>Viewer</value>
+  </data>
+  <data name="sso_role_admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="sso_admin_group" xml:space="preserve">
+    <value>Admin group ID</value>
+  </data>
+  <data name="sso_admin_group_hint" xml:space="preserve">
+    <value>Entra only — members of this group get Admin. Google does not put group membership in an ID token.</value>
+  </data>
+  <data name="sso_enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="sso_require" xml:space="preserve">
+    <value>Members may only sign in through this provider</value>
+  </data>
+  <data name="sso_require_hint" xml:space="preserve">
+    <value>Refused if your own account would not pass the directory check — otherwise nobody could turn it back off.</value>
+  </data>
+  <data name="sso_save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="sso_saved" xml:space="preserve">
+    <value>Identity provider saved.</value>
+  </data>
+  <data name="sso_remove" xml:space="preserve">
+    <value>Unbind directory</value>
+  </data>
+  <data name="sso_remove_confirm" xml:space="preserve">
+    <value>Unbind this directory? Seats already created stay; new sign-ins stop being provisioned.</value>
+  </data>
+  <data name="mfa_policy_title" xml:space="preserve">
+    <value>Second-factor policy</value>
+  </data>
+  <data name="mfa_policy_hint" xml:space="preserve">
+    <value>Members without a second factor are held out once their grace period ends.</value>
+  </data>
+  <data name="mfa_posture" xml:space="preserve">
+    <value>Members covered</value>
+  </data>
+  <data name="mfa_since" xml:space="preserve">
+    <value>Required since</value>
+  </data>
+  <data name="mfa_require_label" xml:space="preserve">
+    <value>Require a second factor for every member</value>
+  </data>
+  <data name="mfa_grace" xml:space="preserve">
+    <value>Grace period (days)</value>
+  </data>
+  <data name="mfa_grace_hint" xml:space="preserve">
+    <value>Counted from whichever came last: the policy starting, or the member joining.</value>
+  </data>
+  <data name="mfa_policy_save" xml:space="preserve">
+    <value>Save policy</value>
+  </data>
+  <data name="mfa_policy_saved" xml:space="preserve">
+    <value>Policy saved.</value>
+  </data>
+  <data name="scim_title" xml:space="preserve">
+    <value>SCIM provisioning</value>
+  </data>
+  <data name="scim_hint" xml:space="preserve">
+    <value>Point your identity provider at {0} and paste a token below.</value>
+  </data>
+  <data name="scim_none" xml:space="preserve">
+    <value>No provisioning tokens yet.</value>
+  </data>
+  <data name="scim_label" xml:space="preserve">
+    <value>Label</value>
+  </data>
+  <data name="scim_create" xml:space="preserve">
+    <value>Issue token</value>
+  </data>
+  <data name="scim_shown_once" xml:space="preserve">
+    <value>Copy this token now. It is never shown again.</value>
+  </data>
+  <data name="scim_created" xml:space="preserve">
+    <value>created {0}</value>
+  </data>
+  <data name="scim_last_used" xml:space="preserve">
+    <value>last used {0}</value>
+  </data>
+  <data name="scim_never_used" xml:space="preserve">
+    <value>never used</value>
+  </data>
+  <data name="scim_revoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="scim_revoke_confirm" xml:space="preserve">
+    <value>Revoke this token? Your identity provider will stop being able to provision.</value>
+  </data>
 </root>

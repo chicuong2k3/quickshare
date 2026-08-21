@@ -68,6 +68,10 @@ public static class RoutePaths
     public const string AccountWorkspaceApprovals = "/account/workspace/approvals";
     public const string AccountWorkspaceChannel = "/account/workspace/channel";
     public const string AccountRecurring = "/account/recurring";
+    public const string AccountSecurity = "/account/security";
+    public const string AccountWorkspaceSso = "/account/workspace/sso";
+    /// <summary>The second-factor challenge (issue #128).</summary>
+    public const string MfaChallenge = "/mfa";
     public const string Dpa = "/dpa";
     public const string Soc2 = "/soc2";
     /// <summary>Invite and transfer accept landing page — the token rides in the query string.</summary>

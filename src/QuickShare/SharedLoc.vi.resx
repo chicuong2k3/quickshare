@@ -1815,4 +1815,244 @@
   <data name="upload_comments_hint" xml:space="preserve">
     <value>Người nhận có thể để lại ghi chú trên delivery này.</value>
   </data>
+  <data name="ws_tab_sso" xml:space="preserve">
+    <value>SSO &amp; MFA</value>
+  </data>
+  <data name="account_tab_security" xml:space="preserve">
+    <value>Bảo mật</value>
+  </data>
+  <data name="mfa_title" xml:space="preserve">
+    <value>Xác thực hai bước</value>
+  </data>
+  <data name="mfa_subtitle_code" xml:space="preserve">
+    <value>Nhập mã từ ứng dụng xác thực của bạn.</value>
+  </data>
+  <data name="mfa_subtitle_enrol" xml:space="preserve">
+    <value>Workspace của bạn yêu cầu ứng dụng xác thực.</value>
+  </data>
+  <data name="mfa_code_label" xml:space="preserve">
+    <value>Mã</value>
+  </data>
+  <data name="mfa_code_hint" xml:space="preserve">
+    <value>Sáu chữ số từ ứng dụng, hoặc một mã khôi phục.</value>
+  </data>
+  <data name="mfa_verify" xml:space="preserve">
+    <value>Xác nhận</value>
+  </data>
+  <data name="mfa_code_failed" xml:space="preserve">
+    <value>Mã không hợp lệ.</value>
+  </data>
+  <data name="mfa_enrol_required" xml:space="preserve">
+    <value>Workspace yêu cầu lớp xác thực thứ hai và thời gian gia hạn đã hết. Hãy thiết lập ứng dụng xác thực để tiếp tục.</value>
+  </data>
+  <data name="mfa_go_enrol" xml:space="preserve">
+    <value>Thiết lập ứng dụng xác thực</value>
+  </data>
+  <data name="mfa_sign_out" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="security_title" xml:space="preserve">
+    <value>Bảo mật</value>
+  </data>
+  <data name="security_subtitle" xml:space="preserve">
+    <value>Xác thực hai bước cho tài khoản này.</value>
+  </data>
+  <data name="security_totp_title" xml:space="preserve">
+    <value>Ứng dụng xác thực</value>
+  </data>
+  <data name="security_totp_hint" xml:space="preserve">
+    <value>Dùng Google Authenticator, Authy, 1Password hoặc bất kỳ ứng dụng TOTP nào.</value>
+  </data>
+  <data name="security_enrol" xml:space="preserve">
+    <value>Thiết lập</value>
+  </data>
+  <data name="security_enrol_step" xml:space="preserve">
+    <value>Thêm khoá này vào ứng dụng xác thực, rồi nhập mã ứng dụng hiển thị.</value>
+  </data>
+  <data name="security_open_app" xml:space="preserve">
+    <value>Mở trong ứng dụng xác thực</value>
+  </data>
+  <data name="security_confirm_code" xml:space="preserve">
+    <value>Mã từ ứng dụng</value>
+  </data>
+  <data name="security_confirm" xml:space="preserve">
+    <value>Xác nhận</value>
+  </data>
+  <data name="security_confirm_saved" xml:space="preserve">
+    <value>Đã bật xác thực hai bước. Hãy lưu mã khôi phục ngay.</value>
+  </data>
+  <data name="security_confirm_failed" xml:space="preserve">
+    <value>Mã không hợp lệ.</value>
+  </data>
+  <data name="security_totp_enrolled" xml:space="preserve">
+    <value>Đã bật</value>
+  </data>
+  <data name="security_recovery_left" xml:space="preserve">
+    <value>Mã khôi phục còn lại</value>
+  </data>
+  <data name="security_recovery_warning" xml:space="preserve">
+    <value>Hãy lưu ngay. Mỗi mã dùng được một lần, và đây là cách duy nhất để vào lại nếu bạn mất thiết bị.</value>
+  </data>
+  <data name="security_remove" xml:space="preserve">
+    <value>Gỡ ứng dụng xác thực</value>
+  </data>
+  <data name="security_remove_code" xml:space="preserve">
+    <value>Mã hiện tại</value>
+  </data>
+  <data name="security_remove_confirm" xml:space="preserve">
+    <value>Gỡ xác thực hai bước khỏi tài khoản này?</value>
+  </data>
+  <data name="security_remove_locked" xml:space="preserve">
+    <value>Workspace yêu cầu lớp xác thực thứ hai nên không thể gỡ.</value>
+  </data>
+  <data name="security_policy_title" xml:space="preserve">
+    <value>Chính sách workspace</value>
+  </data>
+  <data name="security_policy_sso" xml:space="preserve">
+    <value>Workspace đăng nhập qua nhà cung cấp danh tính, nơi đã bắt buộc lớp xác thực thứ hai.</value>
+  </data>
+  <data name="security_policy_met" xml:space="preserve">
+    <value>Workspace yêu cầu lớp xác thực thứ hai. Bạn đã thiết lập.</value>
+  </data>
+  <data name="security_policy_grace" xml:space="preserve">
+    <value>Workspace yêu cầu lớp xác thực thứ hai. Hãy thiết lập trước {0}.</value>
+  </data>
+  <data name="security_policy_blocked" xml:space="preserve">
+    <value>Workspace yêu cầu lớp xác thực thứ hai và thời gian gia hạn đã hết. Hãy thiết lập để tiếp tục.</value>
+  </data>
+  <data name="sso_title" xml:space="preserve">
+    <value>SSO &amp; MFA</value>
+  </data>
+  <data name="sso_subtitle" xml:space="preserve">
+    <value>Đăng nhập, cấp phát tài khoản và chính sách xác thực cho workspace này.</value>
+  </data>
+  <data name="sso_directory_title" xml:space="preserve">
+    <value>Nhà cung cấp danh tính</value>
+  </data>
+  <data name="sso_directory_hint" xml:space="preserve">
+    <value>Thành viên đăng nhập qua thư mục này sẽ được cấp ghế tự động.</value>
+  </data>
+  <data name="sso_provider" xml:space="preserve">
+    <value>Nhà cung cấp</value>
+  </data>
+  <data name="sso_provider_google" xml:space="preserve">
+    <value>Google Workspace</value>
+  </data>
+  <data name="sso_provider_entra" xml:space="preserve">
+    <value>Microsoft Entra ID</value>
+  </data>
+  <data name="sso_directory" xml:space="preserve">
+    <value>Thư mục</value>
+  </data>
+  <data name="sso_directory_note" xml:space="preserve">
+    <value>Tên miền Google Workspace (acme.com) hoặc Entra tenant ID. Đây là thứ nhà cung cấp chứng thực — không phải địa chỉ email.</value>
+  </data>
+  <data name="sso_domains" xml:space="preserve">
+    <value>Giới hạn theo tên miền email</value>
+  </data>
+  <data name="sso_domains_hint" xml:space="preserve">
+    <value>Tuỳ chọn, phân tách bằng dấu phẩy. Chỉ thu hẹp thêm; không bao giờ tự nó cấp quyền.</value>
+  </data>
+  <data name="sso_jit_role" xml:space="preserve">
+    <value>Vai trò cho thành viên mới</value>
+  </data>
+  <data name="sso_jit_off" xml:space="preserve">
+    <value>Không tự động tạo ghế</value>
+  </data>
+  <data name="sso_role_member" xml:space="preserve">
+    <value>Thành viên</value>
+  </data>
+  <data name="sso_role_viewer" xml:space="preserve">
+    <value>Người xem</value>
+  </data>
+  <data name="sso_role_admin" xml:space="preserve">
+    <value>Quản trị</value>
+  </data>
+  <data name="sso_admin_group" xml:space="preserve">
+    <value>ID nhóm quản trị</value>
+  </data>
+  <data name="sso_admin_group_hint" xml:space="preserve">
+    <value>Chỉ dành cho Entra — thành viên nhóm này nhận vai trò Quản trị. Google không đưa thông tin nhóm vào ID token.</value>
+  </data>
+  <data name="sso_enabled" xml:space="preserve">
+    <value>Đang bật</value>
+  </data>
+  <data name="sso_require" xml:space="preserve">
+    <value>Thành viên chỉ được đăng nhập qua nhà cung cấp này</value>
+  </data>
+  <data name="sso_require_hint" xml:space="preserve">
+    <value>Bị từ chối nếu chính tài khoản của bạn không qua được kiểm tra thư mục — nếu không sẽ không ai tắt lại được.</value>
+  </data>
+  <data name="sso_save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="sso_saved" xml:space="preserve">
+    <value>Đã lưu nhà cung cấp danh tính.</value>
+  </data>
+  <data name="sso_remove" xml:space="preserve">
+    <value>Huỷ liên kết thư mục</value>
+  </data>
+  <data name="sso_remove_confirm" xml:space="preserve">
+    <value>Huỷ liên kết thư mục này? Ghế đã tạo vẫn giữ nguyên; các lần đăng nhập mới sẽ không được cấp phát.</value>
+  </data>
+  <data name="mfa_policy_title" xml:space="preserve">
+    <value>Chính sách xác thực hai bước</value>
+  </data>
+  <data name="mfa_policy_hint" xml:space="preserve">
+    <value>Thành viên chưa có lớp xác thực thứ hai sẽ bị chặn khi hết thời gian gia hạn.</value>
+  </data>
+  <data name="mfa_posture" xml:space="preserve">
+    <value>Thành viên đã đạt</value>
+  </data>
+  <data name="mfa_since" xml:space="preserve">
+    <value>Bắt buộc từ</value>
+  </data>
+  <data name="mfa_require_label" xml:space="preserve">
+    <value>Bắt buộc mọi thành viên có lớp xác thực thứ hai</value>
+  </data>
+  <data name="mfa_grace" xml:space="preserve">
+    <value>Thời gian gia hạn (ngày)</value>
+  </data>
+  <data name="mfa_grace_hint" xml:space="preserve">
+    <value>Tính từ mốc muộn hơn: lúc bật chính sách, hoặc lúc thành viên tham gia.</value>
+  </data>
+  <data name="mfa_policy_save" xml:space="preserve">
+    <value>Lưu chính sách</value>
+  </data>
+  <data name="mfa_policy_saved" xml:space="preserve">
+    <value>Đã lưu chính sách.</value>
+  </data>
+  <data name="scim_title" xml:space="preserve">
+    <value>Cấp phát SCIM</value>
+  </data>
+  <data name="scim_hint" xml:space="preserve">
+    <value>Trỏ nhà cung cấp danh tính tới {0} và dán token bên dưới.</value>
+  </data>
+  <data name="scim_none" xml:space="preserve">
+    <value>Chưa có token cấp phát nào.</value>
+  </data>
+  <data name="scim_label" xml:space="preserve">
+    <value>Nhãn</value>
+  </data>
+  <data name="scim_create" xml:space="preserve">
+    <value>Tạo token</value>
+  </data>
+  <data name="scim_shown_once" xml:space="preserve">
+    <value>Hãy sao chép token ngay. Nó sẽ không bao giờ hiển thị lại.</value>
+  </data>
+  <data name="scim_created" xml:space="preserve">
+    <value>tạo lúc {0}</value>
+  </data>
+  <data name="scim_last_used" xml:space="preserve">
+    <value>dùng gần nhất {0}</value>
+  </data>
+  <data name="scim_never_used" xml:space="preserve">
+    <value>chưa dùng</value>
+  </data>
+  <data name="scim_revoke" xml:space="preserve">
+    <value>Thu hồi</value>
+  </data>
+  <data name="scim_revoke_confirm" xml:space="preserve">
+    <value>Thu hồi token này? Nhà cung cấp danh tính sẽ không cấp phát được nữa.</value>
+  </data>
 </root>

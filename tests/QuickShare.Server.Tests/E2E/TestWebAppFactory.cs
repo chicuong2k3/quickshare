@@ -107,6 +107,17 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
     /// </summary>
     public HttpClient CreateAuthenticatedClient(string userId)
     {
+        var client = CreateUnverifiedClient(userId);
+        // Second-factor-verified by default (issue #128): the gate only challenges accounts that
+        // enrolled or are out of policy grace, and a suite that silently ran every request as
+        // un-verified would be testing the gate rather than the feature under test.
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.MfaVerifiedHeader, "1");
+        return client;
+    }
+
+    /// <summary>A session that has not answered the second-factor challenge (issue #128).</summary>
+    public HttpClient CreateUnverifiedClient(string userId)
+    {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, userId);
         client.DefaultRequestHeaders.Add(TestAuthDefaults.EmailHeader, TestUserEmail);

@@ -46,6 +46,9 @@ public class AppDbContext : DbContext
     public DbSet<RecurringDelivery> RecurringDeliveries => Set<RecurringDelivery>();
     public DbSet<DeliveryComment> DeliveryComments => Set<DeliveryComment>();
     public DbSet<WorkspaceChannelHook> WorkspaceChannelHooks => Set<WorkspaceChannelHook>();
+    public DbSet<UserTotp> UserTotps => Set<UserTotp>();
+    public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
+    public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -498,6 +501,34 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserTotp>(entity =>
+        {
+            // One enrolment per account: a second authenticator would be a second thing to
+            // revoke on offboarding, and nobody asked for one.
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.Property(e => e.Secret).IsRequired().HasMaxLength(UserTotp.SecretLength);
+            entity.Property(e => e.RecoveryCodeHashes).IsRequired().HasMaxLength(UserTotp.RecoveryCodesMaxLength);
+        });
+
+        modelBuilder.Entity<WorkspaceSsoConfig>(entity =>
+        {
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
+            // Sign-in looks the directory up by claim, so this is the hot path, not WorkspaceId.
+            entity.HasIndex(e => new { e.Provider, e.DirectoryId });
+            entity.Property(e => e.Provider).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.DirectoryId).IsRequired().HasMaxLength(WorkspaceSsoConfig.DirectoryIdMaxLength);
+            entity.Property(e => e.AllowedEmailDomains).HasMaxLength(WorkspaceSsoConfig.DomainsMaxLength);
+            entity.Property(e => e.AdminGroupId).HasMaxLength(WorkspaceSsoConfig.GroupIdMaxLength);
+        });
+
+        modelBuilder.Entity<WorkspaceScimToken>(entity =>
+        {
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => e.WorkspaceId);
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(WorkspaceScimToken.TokenHashLength);
+            entity.Property(e => e.Label).IsRequired().HasMaxLength(WorkspaceScimToken.LabelMaxLength);
         });
 
         modelBuilder.Entity<WorkspaceChannelHook>(entity =>

@@ -1,0 +1,174 @@
+@layout MainLayout
+@page "/account/security"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Auth.Mfa
+@using QuickShare.Features.Auth.Totp
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject MfaPolicyService Policies
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["security_title"]</PageTitle>
+
+@* Enrolment state and recovery codes — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["security_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["security_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountSecurity" />
+
+    <section id="security-body"
+             hx-get="@RoutePaths.AccountSecurity"
+             hx-trigger="load"
+             hx-target="#security-body"
+             hx-select="#security-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/security.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private UserTotp? totp;
+    private MfaVerdict verdict;
+
+    private RenderFragment Chunk => @<section id="security-body">
+        @if (verdict.Required)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["security_policy_title"]</h2>
+                    @if (verdict.SsoExempt)
+                    {
+                        <p class="db-p db-text-muted">@Loc["security_policy_sso"]</p>
+                    }
+                    else if (verdict.Enrolled)
+                    {
+                        <p class="db-p db-text-muted">@Loc["security_policy_met"]</p>
+                    }
+                    else if (verdict.GraceEndsAt is { } deadline && verdict.InGrace)
+                    {
+                        <p class="db-p workspace-notice">@Loc["security_policy_grace", deadline.ToLocalTime().ToString("g")]</p>
+                    }
+                    else
+                    {
+                        <p class="db-p workspace-notice">@Loc["security_policy_blocked"]</p>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["security_totp_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["security_totp_hint"]</p>
+
+                @if (totp?.IsConfirmed == true)
+                {
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["security_totp_enrolled"]</dt>
+                            <dd>@totp.ConfirmedAt!.Value.ToLocalTime().ToString("g")</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["security_recovery_left"]</dt>
+                            <dd>@RecoveryLeft</dd>
+                        </div>
+                    </dl>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="security-remove-code">@Loc["security_remove_code"]</label>
+                        <input id="security-remove-code" class="db-input" type="text" inputmode="numeric" maxlength="32" />
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-confirm="@Loc["security_remove_confirm"]"
+                                data-locked-label="@Loc["security_remove_locked"]"
+                                onclick="window.quickShareSecurity.remove(this)"
+                                data-ai-action="security.totp.remove">@Loc["security_remove"]</button>
+                    </div>
+                }
+                else
+                {
+                    @*
+                        The secret is fetched, shown once and never re-read — so this block is
+                        filled in by script rather than server-rendered. A secret in the page
+                        source is a secret in the browser cache and in every proxy log.
+                    *@
+                    <div class="workspace-form">
+                        <button type="button" class="db-btn db-btn--primary"
+                                onclick="window.quickShareSecurity.start(this)"
+                                data-ai-action="security.totp.start">@Loc["security_enrol"]</button>
+
+                        <div id="security-enrolment" hidden>
+                            <p class="db-p db-text-muted workspace-hint">@Loc["security_enrol_step"]</p>
+                            <p class="db-p security-secret"><code id="security-secret"></code></p>
+                            <p class="db-p db-text-muted workspace-hint">
+                                <a id="security-uri" href="#" rel="nofollow">@Loc["security_open_app"]</a>
+                            </p>
+
+                            <label class="workspace-label" for="security-confirm-code">@Loc["security_confirm_code"]</label>
+                            <input id="security-confirm-code" class="db-input" type="text" inputmode="numeric" maxlength="6" />
+                            <button type="button" class="db-btn db-btn--primary"
+                                    data-error-label="@Loc["security_confirm_failed"]"
+                                    data-saved-label="@Loc["security_confirm_saved"]"
+                                    onclick="window.quickShareSecurity.confirm(this)"
+                                    data-ai-action="security.totp.confirm">@Loc["security_confirm"]</button>
+                        </div>
+
+                        <div id="security-recovery" hidden>
+                            <p class="db-p workspace-notice">@Loc["security_recovery_warning"]</p>
+                            <ul id="security-recovery-list" class="security-recovery-list"></ul>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>;
+
+    private int RecoveryLeft => totp is null ? 0 : TotpService.CountRecoveryCodes(totp.RecoveryCodeHashes);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
+        if (user is null) return;
+
+        totp = await Db.UserTotps
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.UserId == user.Id, CancellationToken.None);
+
+        verdict = await Policies.EvaluateAsync(user.Id, CancellationToken.None);
+    }
+}

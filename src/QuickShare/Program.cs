@@ -26,6 +26,7 @@ using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
 using System.Security.Claims;
+using QuickShare.Features.Auth.Sso;
 using ZiggyCreatures.Caching.Fusion;
 
 
@@ -267,6 +268,10 @@ builder.Services.AddScoped<RecurringDeliveryJob>();
 // Delivery comments (issue #289) and Slack/Teams posting (issue #180).
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Comments.CommentGate>();
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Channels.ChannelNotifier>();
+// Enterprise identity (#128 authenticator, #181 SSO, #219 MFA policy).
+builder.Services.AddScoped<QuickShare.Features.Auth.Sso.SsoLoginService>();
+builder.Services.AddScoped<QuickShare.Features.Auth.Mfa.MfaPolicyService>();
+builder.Services.AddScoped<QuickShare.Features.Auth.Scim.ScimAuthenticator>();
 
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
@@ -346,6 +351,12 @@ static async Task FinalizeOAuthAsync(Microsoft.AspNetCore.Authentication.OAuth.O
     var profile = await UserRegistrationService.RegisterAsync(
         provider, subject, name ?? email, email, avatar, db, ctx.HttpContext.RequestAborted, analytics, referralCode);
 
+    // Enterprise SSO (issue #181): if the identity provider vouched for a directory this
+    // deployment has a workspace bound to, the account gets its seat here. Best-effort by
+    // design — a broken workspace binding must not be able to break sign-in for everyone.
+    var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
+    await sso.ApplyAsync(profile.Id, email, provider, ctx.Identity?.Claims ?? [], ctx.HttpContext.RequestAborted);
+
     var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();
     var alertSender = ctx.HttpContext.RequestServices.GetRequiredService<NewDeviceAlertSender>();
     var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
@@ -408,9 +419,76 @@ var authBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefault
         options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
         options.Events.OnCreatingTicket = ctx =>
-            FinalizeOAuthAsync(ctx, AuthConstants.GoogleProvider,
+        {
+            // The hosted-domain claim is what separates a Google Workspace account from a
+            // consumer one (issue #181). The handler does not map it, so capture it here —
+            // without it there is no proof of directory membership, only an email address.
+            if (ctx.User.TryGetProperty(SsoLoginService.HostedDomainClaim, out var hd)
+                && hd.GetString() is { Length: > 0 } hostedDomain)
+            {
+                ctx.Identity?.AddClaim(new Claim(SsoLoginService.HostedDomainClaim, hostedDomain));
+            }
+
+            return FinalizeOAuthAsync(ctx, AuthConstants.GoogleProvider,
                 ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null);
+        };
     });
+
+// Microsoft Entra ID (issue #181) — OIDC, registered only when configured. A tenant-specific
+// authority is deliberate: the /common endpoint would let any Entra tenant on earth sign in and
+// leave the tenant check as the only thing standing between them and a workspace binding.
+var entraTenantId = builder.Configuration["Authentication:Entra:TenantId"];
+var entraClientId = builder.Configuration["Authentication:Entra:ClientId"];
+var entraClientSecret = builder.Configuration["Authentication:Entra:ClientSecret"];
+
+if (!string.IsNullOrEmpty(entraTenantId) && !string.IsNullOrEmpty(entraClientId) && !string.IsNullOrEmpty(entraClientSecret))
+{
+    authBuilder.AddOpenIdConnect(AuthConstants.EntraProvider, options =>
+    {
+        options.Authority = $"https://login.microsoftonline.com/{entraTenantId}/v2.0";
+        options.ClientId = entraClientId;
+        options.ClientSecret = entraClientSecret;
+        options.ResponseType = "code";
+        options.UsePkce = true;
+        options.SaveTokens = false;
+        options.CallbackPath = "/signin-entra";
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        options.GetClaimsFromUserInfoEndpoint = true;
+        options.TokenValidationParameters.NameClaimType = ClaimTypes.Name;
+
+        options.Events.OnTokenValidated = async ctx =>
+        {
+            ctx.Principal?.Identities.FirstOrDefault()?.AddClaim(
+                new Claim(AuthConstants.ProviderClaimType, AuthConstants.EntraProvider));
+
+            var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value
+                ?? ctx.Principal?.FindFirst("preferred_username")?.Value;
+            var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(subject))
+                return;
+
+            var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
+            var profile = await UserRegistrationService.RegisterAsync(
+                AuthConstants.EntraProvider, subject, name ?? email, email, null, db,
+                ctx.HttpContext.RequestAborted, analytics, null);
+
+            var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
+            await sso.ApplyAsync(profile.Id, email, AuthConstants.EntraProvider,
+                ctx.Principal?.Claims ?? [], ctx.HttpContext.RequestAborted);
+
+            await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.Login,
+                ctx.HttpContext.Request.Headers.UserAgent.ToString(),
+                ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                ctx.HttpContext.RequestAborted);
+        };
+    });
+}
 
 // GitHub OAuth (issue #97) — registered only when configured, so an unconfigured
 // deployment does not fail startup (aspnet-contrib validates ClientId eagerly).
@@ -537,6 +615,10 @@ if (!useInMemoryDb)
         Authorization = [new AdminDashboardAuthorizationFilter()]
     });
 }
+
+// Second-factor gate (#128, #219). After UseAuthorization so the principal exists, before the
+// endpoints it protects. It lets the enrolment and challenge routes through by name.
+app.UseMiddleware<MfaEnforcementMiddleware>();
 
 app.UseMiddleware<RobotsNoIndexMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();

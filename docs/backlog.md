@@ -686,6 +686,42 @@ Collapsing their duplicated `send`/`reload`/`value` helpers into `ts/page-action
 data, not that a handler returns it. A 200 would not have caught the defect being fixed — every
 one of these endpoints already returned 200 to nobody.
 
+## Tier 6 — batch 12: enterprise identity (#128, #146, #181, #219)
+
+The identity cluster, built as one subsystem because it answers one question in four places:
+*who is this, and does the organisation still say they belong here?*
+
+- `#181` OIDC SSO — Google Workspace via the `hd` claim, Entra ID via `tid`, JIT seat provisioning
+- `#146` SCIM 2.0 — `/scim/v2/Users`, bearer token per workspace, deprovision revokes the seat
+- `#128` TOTP — RFC 6238, no dependency, recovery codes, single-use codes
+- `#219` MFA policy — workspace-wide requirement, grace window, SSO exemption, posture number
+
+**`#128` was not on the tier-6 list, and was built anyway.** `#219` asks to enforce "TOTP or SSO",
+and there was no TOTP in the codebase — the issue's own evidence said `#128` was per-user opt-in,
+which was not true either. Shipping the enforcement alone would have been a policy with nothing
+to enforce: exactly the defect the previous batch's audit spent its time correcting. So `#128`
+was built as its prerequisite and closed with it.
+
+**`#139` SAML was deliberately left.** It needs a signing library, certificate handling and IdP
+metadata parsing. Folding it in would have meant doing it thinly, and a thin SAML implementation
+is a security surface rather than a feature.
+
+**One design hole found by a failing test.** Two test workspaces both bound `acme.com`, and the
+seat landed in whichever registered first. That is not a test bug — in production it means any
+workspace could bind itself to a directory it does not own and absorb everyone who signs in from
+it. A directory is now claimable by exactly one workspace (`sso_directory_taken`).
+
+**Two bugs found by the FK.** `SecurityEvent.UserId` is a foreign key, and both the SSO and SCIM
+audit paths were writing `Guid.Empty` for a seat with no account behind it yet, plus an unset
+`Id`. SCIM now attributes a pending-seat event to the workspace owner with the address in
+metadata, so the workspace audit lens stays complete instead of silently dropping those rows.
+
+**Not shipped**: SAML (`#139`), SCIM `/Groups`, session revocation on deprovision (needs the
+session store from `#105` — the seat dies at once, but a personal-account cookie outlives it),
+and per-user MFA exemptions.
+
+Design and invariants: `docs/enterprise-identity.md`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

@@ -87,6 +87,7 @@ browser download needed.
 | Delivery comments (#289) + Slack/Teams posting (#180) | `CommentsAndChannelTests` |
 | Wiring regressions found by audit — gates actually applied, notifiers actually called, pages actually render | `AuditRegressionTests` |
 | B2B screens carry their data — approval queue, schedule list, channel config, comment thread | `B2BUiTests` |
+| Enterprise identity — authenticator, SSO directory proof, SCIM lifecycle, MFA policy | `EnterpriseIdentityTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -130,6 +131,8 @@ checklist of the touched issue. Minimum regression set per change:
 | Any code that publishes a delivery to recipients, or copies one | `ApprovalAndRecurringTests` | a held share still 404s on both recipient paths; a copy keeps its region and drops the original's hold |
 | **Any new service, notifier or gate** | `AuditRegressionTests` | something actually calls it — assert an observable side effect, not just the function's return value |
 | **Any new endpoint a person is meant to use** | `B2BUiTests` | a page renders its data — assert the rendered HTML, because a passing endpoint test says nothing about whether a screen exists |
+| **Any code implementing a published standard** (TOTP, SCIM, OIDC) | `EnterpriseIdentityTests` | anchor to the spec's own reference vector or wire format — a broken implementation is still self-consistent |
+| **Any provisioning or offboarding path** | `EnterpriseIdentityTests` | it revokes as well as creates — half a lifecycle is exactly what procurement is asking about |
 | Analytics | `AnalyticsTrackingTests` | — |
 | Localization | `LocalizationTests`, `LanguageSwitchTests` | — |
 | HTMX / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `SmokeTests` | — |

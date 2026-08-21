@@ -1,0 +1,97 @@
+@layout MainLayout
+@page "/mfa"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Auth.Mfa
+@using QuickShare.Features.Auth.Totp
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject MfaPolicyService Policies
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["mfa_title"]</PageTitle>
+
+@* A challenge screen is never something to index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@*
+    Deliberately NOT HTMX lazy-loaded, unlike every other page here.
+
+    This is the wall. Its whole job is to be the first thing a held session sees, and a skeleton
+    that fills in a moment later would mean the gate briefly renders as an empty page — which
+    reads as "the site is broken", which is how somebody ends up filing a ticket instead of
+    typing six digits. The queries behind it are two indexed lookups on the current account.
+*@
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["mfa_title"]</h1>
+        <p class="db-p db-text-muted">@Subtitle</p>
+    </section>
+
+    <div class="db-card account-card workspace-card">
+        <div class="db-card__body">
+            @if (NeedsEnrolment)
+            {
+                @* Out of grace and not enrolled: the way out is enrolment, not a code. *@
+                <p class="db-p">@Loc["mfa_enrol_required"]</p>
+                <a class="db-btn db-btn--primary" href="@RoutePaths.AccountSecurity">@Loc["mfa_go_enrol"]</a>
+            }
+            else
+            {
+                <div class="workspace-form">
+                    <label class="workspace-label" for="mfa-code">@Loc["mfa_code_label"]</label>
+                    <input id="mfa-code" class="db-input" type="text" inputmode="numeric"
+                           autocomplete="one-time-code" maxlength="@RecoveryCodeMaxLength" autofocus />
+                    <p class="db-p db-text-muted workspace-hint">@Loc["mfa_code_hint"]</p>
+
+                    <button type="button" class="db-btn db-btn--primary"
+                            data-error-label="@Loc["mfa_code_failed"]"
+                            onclick="window.quickShareMfa.verify(this)"
+                            data-ai-action="mfa.verify">@Loc["mfa_verify"]</button>
+                </div>
+            }
+
+            <p class="db-p db-text-muted workspace-hint">
+                <a href="@RoutePaths.Logout">@Loc["mfa_sign_out"]</a>
+            </p>
+        </div>
+    </div>
+
+</PageWrapper>
+
+<script src="/js/mfa.js" defer></script>
+
+@code {
+    /// <summary>A recovery code is longer than a TOTP code; the field has to admit both.</summary>
+    private const int RecoveryCodeMaxLength = 32;
+
+    private bool NeedsEnrolment { get; set; }
+
+    private string Subtitle => NeedsEnrolment ? Loc["mfa_subtitle_enrol"] : Loc["mfa_subtitle_code"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is null)
+            return;
+
+        var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
+        if (user is null)
+            return;
+
+        var enrolled = await Db.UserTotps
+            .AsNoTracking()
+            .AnyAsync(t => t.UserId == user.Id && t.ConfirmedAt != null, CancellationToken.None);
+
+        if (enrolled)
+            return;
+
+        // Not enrolled: the only reason to be here is a workspace policy past its grace window.
+        var verdict = await Policies.EvaluateAsync(user.Id, CancellationToken.None);
+        NeedsEnrolment = verdict.Blocked;
+    }
+}
