@@ -49,6 +49,7 @@ public class AppDbContext : DbContext
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
+    public DbSet<SamlAssertionSeen> SamlAssertionsSeen => Set<SamlAssertionSeen>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -521,6 +522,16 @@ public class AppDbContext : DbContext
             entity.Property(e => e.DirectoryId).IsRequired().HasMaxLength(WorkspaceSsoConfig.DirectoryIdMaxLength);
             entity.Property(e => e.AllowedEmailDomains).HasMaxLength(WorkspaceSsoConfig.DomainsMaxLength);
             entity.Property(e => e.AdminGroupId).HasMaxLength(WorkspaceSsoConfig.GroupIdMaxLength);
+            entity.Property(e => e.SamlSsoUrl).HasMaxLength(WorkspaceSsoConfig.SamlUrlMaxLength);
+            entity.Property(e => e.SamlCertificate).HasMaxLength(WorkspaceSsoConfig.SamlCertificateMaxLength);
+        });
+
+        modelBuilder.Entity<SamlAssertionSeen>(entity =>
+        {
+            // The unique index is the replay check itself, not an optimisation for it.
+            entity.HasIndex(e => e.AssertionId).IsUnique();
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.Property(e => e.AssertionId).IsRequired().HasMaxLength(SamlAssertionSeen.AssertionIdMaxLength);
         });
 
         modelBuilder.Entity<WorkspaceScimToken>(entity =>

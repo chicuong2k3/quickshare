@@ -49,6 +49,28 @@ public sealed class SsoLoginService(AppDbContext db, ILogger<SsoLoginService> lo
     }
 
     /// <summary>
+    /// Provisioning for a SAML assertion whose signature has already been validated (issue #139).
+    ///
+    /// Separate entry point, same provisioning: SAML proves the directory with a signature rather
+    /// than with a claim, so the binding is resolved by the caller and handed in. Everything
+    /// after that — seat limits, Owner immunity, admin-group mapping, rehire — is the code the
+    /// OIDC path already uses, because two provisioning implementations would drift and only one
+    /// of them would get the next fix.
+    /// </summary>
+    public async Task ApplySamlAsync(
+        Guid userId, string email, WorkspaceSsoConfig binding, IReadOnlyCollection<Claim> claims, CancellationToken ct)
+    {
+        try
+        {
+            await ProvisionAsync(binding, userId, email, claims, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "SAML provisioning failed for {UserId}", userId);
+        }
+    }
+
+    /// <summary>
     /// The workspace binding this ticket qualifies for, or null. Public so the login page and
     /// the tests can ask the same question the sign-in hook asks.
     /// </summary>

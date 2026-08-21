@@ -14,7 +14,9 @@ public sealed record SsoConfigDto(
     bool Enabled,
     bool RequireSso,
     string? JitRole,
-    string? AdminGroupId);
+    string? AdminGroupId,
+    string? SamlSsoUrl,
+    bool SamlCertificateConfigured);
 
 /// <summary>MFA policy plus the posture numbers a SOC 2 reviewer asks for (issue #219).</summary>
 public sealed record MfaPolicyDto(
@@ -37,6 +39,10 @@ public sealed class SsoConfigRequest
     /// <summary>Owner / Admin / Member / Viewer, or null to switch JIT provisioning off.</summary>
     public string? JitRole { get; set; } = nameof(WorkspaceRole.Member);
     public string? AdminGroupId { get; set; }
+    /// <summary>SAML only: the identity provider's single-sign-on destination.</summary>
+    public string? SamlSsoUrl { get; set; }
+    /// <summary>SAML only: the identity provider's signing certificate, PEM or bare base64.</summary>
+    public string? SamlCertificate { get; set; }
 }
 
 public sealed class MfaPolicyRequest
@@ -85,7 +91,11 @@ public sealed class GetSsoConfigEndpoint : EndpointWithoutRequest<SsoConfigDto?>
         config.Enabled,
         config.RequireSso,
         config.JitRole?.ToString(),
-        config.AdminGroupId);
+        config.AdminGroupId,
+        config.SamlSsoUrl,
+        // Reported as present, never returned. It is a public key, but echoing configuration back
+        // invites somebody to diff it instead of re-pasting from the identity provider.
+        !string.IsNullOrEmpty(config.SamlCertificate));
 }
 
 /// <summary>
@@ -158,6 +168,27 @@ public sealed class UpdateSsoConfigEndpoint : Endpoint<SsoConfigRequest, SsoConf
             return;
         }
 
+        // SAML proves the directory with a signature instead of a claim, so its binding needs a
+        // destination and a trust anchor. Both are validated here rather than at the first
+        // sign-in attempt, which would surface as an outage during somebody's rollout.
+        if (provider == SsoProvider.Saml)
+        {
+            if (!Uri.TryCreate(req.SamlSsoUrl, UriKind.Absolute, out var ssoUri)
+                || ssoUri.Scheme != Uri.UriSchemeHttps)
+            {
+                ThrowError(ErrorCodes.SamlSsoUrlInvalid, StatusCodes.Status400BadRequest);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(req.SamlCertificate)
+                || req.SamlCertificate.Length > WorkspaceSsoConfig.SamlCertificateMaxLength
+                || !Saml.SamlService.IsUsableCertificate(req.SamlCertificate))
+            {
+                ThrowError(ErrorCodes.SamlCertificateInvalid, StatusCodes.Status400BadRequest);
+                return;
+            }
+        }
+
         var config = await db.WorkspaceSsoConfigs.FirstOrDefaultAsync(c => c.WorkspaceId == seat.WorkspaceId, ct);
         var isNew = config is null;
 
@@ -169,6 +200,8 @@ public sealed class UpdateSsoConfigEndpoint : Endpoint<SsoConfigRequest, SsoConf
         config.RequireSso = req.RequireSso;
         config.JitRole = jitRole;
         config.AdminGroupId = string.IsNullOrWhiteSpace(req.AdminGroupId) ? null : req.AdminGroupId.Trim();
+        config.SamlSsoUrl = provider == SsoProvider.Saml ? req.SamlSsoUrl!.Trim() : null;
+        config.SamlCertificate = provider == SsoProvider.Saml ? req.SamlCertificate!.Trim() : null;
 
         if (config.RequireSso && !await OwnerPassesAsync(db, seat.WorkspaceId, config, ct))
         {

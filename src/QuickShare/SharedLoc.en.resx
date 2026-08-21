@@ -2055,4 +2055,31 @@
   <data name="scim_revoke_confirm" xml:space="preserve">
     <value>Revoke this token? Your identity provider will stop being able to provision.</value>
   </data>
+  <data name="sso_provider_saml" xml:space="preserve">
+    <value>SAML 2.0 (Okta, ADFS, others)</value>
+  </data>
+  <data name="saml_sso_url" xml:space="preserve">
+    <value>Sign-on URL</value>
+  </data>
+  <data name="saml_sso_url_hint" xml:space="preserve">
+    <value>SAML only. The identity provider’s HTTP-Redirect single sign-on endpoint. HTTPS.</value>
+  </data>
+  <data name="saml_certificate" xml:space="preserve">
+    <value>Signing certificate</value>
+  </data>
+  <data name="saml_certificate_hint" xml:space="preserve">
+    <value>SAML only. Paste the identity provider’s X.509 certificate, with or without the BEGIN/END lines. This is the trust anchor.</value>
+  </data>
+  <data name="saml_certificate_set" xml:space="preserve">
+    <value>A certificate is stored — leave blank to keep it</value>
+  </data>
+  <data name="saml_sp_entity" xml:space="preserve">
+    <value>Entity ID (paste into your IdP)</value>
+  </data>
+  <data name="saml_sp_acs" xml:space="preserve">
+    <value>Reply URL / ACS (paste into your IdP)</value>
+  </data>
+  <data name="saml_sp_metadata" xml:space="preserve">
+    <value>Metadata</value>
+  </data>
 </root>

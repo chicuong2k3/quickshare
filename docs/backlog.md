@@ -722,6 +722,36 @@ and per-user MFA exemptions.
 
 Design and invariants: `docs/enterprise-identity.md`.
 
+## Tier 6 — batch 13: SAML 2.0 SSO (#139)
+
+The batch deferred last time, done on its own because it deserved to be.
+
+SP metadata, SP- and IdP-initiated sign-in, signature/issuer/audience/window validation, durable
+replay protection, and the same JIT seat provisioning the OIDC path uses.
+
+**The library does the crypto.** XML digital signatures have a long history of implementations
+that validate *a* signature rather than the signature over the element they then read, and every
+one of those bugs is an authentication bypass that fails silently. ITfoxtec handles signature,
+canonicalisation and parsing; what is ours is which workspace an assertion belongs to, whether its
+issuer is accepted, and whether it has been seen before.
+
+**The dependency brought a real finding.** ITfoxtec pulls `System.Security.Cryptography.Xml`
+10.0.7 transitively — five high-severity advisories, in XML signature handling, the exact code
+this feature trusts. The NuGet audit failed the build, correctly. It is suppressed rather than
+pinned because the assembly ships in the shared framework and NuGet prunes the package (NU1510
+refuses an explicit reference), so the real mitigation is a patched runtime. That is now written
+down as a deployment obligation rather than left implicit.
+
+**Replay protection is a table, not a cache.** `CacheService` no-ops when caching is disabled,
+which would have let a config flag silently switch off a security control, and a per-process cache
+would not see a replay aimed at a second instance. A unique index on the assertion id makes
+consuming an assertion an insert and a replay an insert failure — atomic across instances.
+
+**Not shipped**: single logout, signed AuthnRequests, encrypted assertions, IdP metadata import,
+multiple bindings per workspace.
+
+Design and invariants: `docs/saml-sso.md`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

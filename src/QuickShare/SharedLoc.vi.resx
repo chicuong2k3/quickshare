@@ -2055,4 +2055,31 @@
   <data name="scim_revoke_confirm" xml:space="preserve">
     <value>Thu hồi token này? Nhà cung cấp danh tính sẽ không cấp phát được nữa.</value>
   </data>
+  <data name="sso_provider_saml" xml:space="preserve">
+    <value>SAML 2.0 (Okta, ADFS, ...)</value>
+  </data>
+  <data name="saml_sso_url" xml:space="preserve">
+    <value>URL đăng nhập</value>
+  </data>
+  <data name="saml_sso_url_hint" xml:space="preserve">
+    <value>Chỉ dành cho SAML. Endpoint HTTP-Redirect single sign-on của nhà cung cấp danh tính. Bắt buộc HTTPS.</value>
+  </data>
+  <data name="saml_certificate" xml:space="preserve">
+    <value>Chứng thư ký</value>
+  </data>
+  <data name="saml_certificate_hint" xml:space="preserve">
+    <value>Chỉ dành cho SAML. Dán chứng thư X.509 của nhà cung cấp danh tính, có hoặc không có dòng BEGIN/END. Đây là gốc tin cậy.</value>
+  </data>
+  <data name="saml_certificate_set" xml:space="preserve">
+    <value>Đã lưu một chứng thư — để trống để giữ nguyên</value>
+  </data>
+  <data name="saml_sp_entity" xml:space="preserve">
+    <value>Entity ID (dán vào IdP của bạn)</value>
+  </data>
+  <data name="saml_sp_acs" xml:space="preserve">
+    <value>Reply URL / ACS (dán vào IdP của bạn)</value>
+  </data>
+  <data name="saml_sp_metadata" xml:space="preserve">
+    <value>Metadata</value>
+  </data>
 </root>

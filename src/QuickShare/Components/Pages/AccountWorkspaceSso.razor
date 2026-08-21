@@ -3,6 +3,7 @@
 @attribute [Authorize]
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Auth.Mfa
+@using QuickShare.Features.Auth.Saml
 @using QuickShare.Features.Auth.Sso
 @using QuickShare.Features.Workspaces.Audit
 @using QuickShare.Features.Workspaces.Shared
@@ -11,6 +12,7 @@
 @inject AppDbContext Db
 @inject WorkspaceService Workspaces
 @inject MfaPolicyService Policies
+@inject SamlService Saml
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["sso_title"]</PageTitle>
@@ -85,6 +87,7 @@ else
                         <select id="sso-provider" class="db-input">
                             <option value="@SsoProvider.GoogleWorkspace" selected="@(Provider == SsoProvider.GoogleWorkspace)">@Loc["sso_provider_google"]</option>
                             <option value="@SsoProvider.Entra" selected="@(Provider == SsoProvider.Entra)">@Loc["sso_provider_entra"]</option>
+                            <option value="@SsoProvider.Saml" selected="@(Provider == SsoProvider.Saml)">@Loc["sso_provider_saml"]</option>
                         </select>
 
                         <label class="workspace-label" for="sso-directory">@Loc["sso_directory"]</label>
@@ -92,6 +95,38 @@ else
                                maxlength="@WorkspaceSsoConfig.DirectoryIdMaxLength"
                                value="@config?.DirectoryId" />
                         <p class="db-p db-text-muted workspace-hint">@Loc["sso_directory_note"]</p>
+
+                        @* SAML only. Shown always rather than toggled by script: a field that
+                           appears on a dropdown change is a field somebody fills in and loses. *@
+                        <label class="workspace-label" for="sso-saml-url">@Loc["saml_sso_url"]</label>
+                        <input id="sso-saml-url" class="db-input" type="url"
+                               maxlength="@WorkspaceSsoConfig.SamlUrlMaxLength"
+                               value="@config?.SamlSsoUrl" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["saml_sso_url_hint"]</p>
+
+                        <label class="workspace-label" for="sso-saml-cert">@Loc["saml_certificate"]</label>
+                        <textarea id="sso-saml-cert" class="db-input" rows="4"
+                                  maxlength="@WorkspaceSsoConfig.SamlCertificateMaxLength"
+                                  placeholder="@(HasCertificate ? Loc["saml_certificate_set"].Value : "-----BEGIN CERTIFICATE-----")"></textarea>
+                        <p class="db-p db-text-muted workspace-hint">@Loc["saml_certificate_hint"]</p>
+
+                        @if (Provider == SsoProvider.Saml)
+                        {
+                            <dl class="workspace-stats">
+                                <div class="workspace-stat">
+                                    <dt>@Loc["saml_sp_entity"]</dt>
+                                    <dd><code>@SpEntityId</code></dd>
+                                </div>
+                                <div class="workspace-stat">
+                                    <dt>@Loc["saml_sp_acs"]</dt>
+                                    <dd><code>@SpAcsUrl</code></dd>
+                                </div>
+                                <div class="workspace-stat">
+                                    <dt>@Loc["saml_sp_metadata"]</dt>
+                                    <dd><a href="@SamlRoutes.Metadata">@SamlRoutes.Metadata</a></dd>
+                                </div>
+                            </dl>
+                        }
 
                         <label class="workspace-label" for="sso-domains">@Loc["sso_domains"]</label>
                         <input id="sso-domains" class="db-input" type="text"
@@ -237,6 +272,12 @@ else
     private const string ScimBaseUrl = "/scim/v2";
 
     private string Provider => config?.Provider ?? SsoProvider.GoogleWorkspace;
+
+    private bool HasCertificate => !string.IsNullOrEmpty(config?.SamlCertificate);
+
+    /// <summary>What the identity provider admin has to paste on their side.</summary>
+    private string SpEntityId => Saml.EntityId;
+    private string SpAcsUrl => Saml.AssertionConsumerUrl;
 
     protected override async Task OnInitializedAsync()
     {

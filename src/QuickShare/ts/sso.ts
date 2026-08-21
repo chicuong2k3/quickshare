@@ -12,6 +12,9 @@ window.quickShareSso = (function () {
                 adminGroupId: qsPage.value('sso-admin-group'),
                 enabled: qsPage.checked('sso-enabled'),
                 requireSso: qsPage.checked('sso-require'),
+                samlSsoUrl: qsPage.value('sso-saml-url'),
+                // Blank keeps the stored certificate — it is never populated back into the field.
+                samlCertificate: qsPage.value('sso-saml-cert'),
             }, { btn: btn, doneLabel: qsPage.attr(btn, 'data-saved-label'), body: BODY });
         },
 

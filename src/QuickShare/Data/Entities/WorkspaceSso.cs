@@ -7,8 +7,15 @@ public static class SsoProvider
     public const string GoogleWorkspace = "google";
     /// <summary>Microsoft Entra ID. Restricted by the `tid` (tenant) claim.</summary>
     public const string Entra = "entra";
+    /// <summary>
+    /// SAML 2.0 (issue #139) — Okta, Entra, Google Workspace, ADFS, anything that speaks it.
+    /// Here the directory is proved by a signature rather than by a claim in an OIDC token, so
+    /// <see cref="WorkspaceSsoConfig.DirectoryId"/> holds the IdP entity id and the trust anchor
+    /// is <see cref="WorkspaceSsoConfig.SamlCertificate"/>.
+    /// </summary>
+    public const string Saml = "saml";
 
-    public static readonly string[] All = [GoogleWorkspace, Entra];
+    public static readonly string[] All = [GoogleWorkspace, Entra, Saml];
 }
 
 /// <summary>
@@ -29,6 +36,9 @@ public record WorkspaceSsoConfig : BaseAuditEntity
     public const int DirectoryIdMaxLength = 128;
     public const int DomainsMaxLength = 512;
     public const int GroupIdMaxLength = 128;
+    public const int SamlUrlMaxLength = 512;
+    /// <summary>A base64 DER certificate with room for a 4096-bit key and a long subject.</summary>
+    public const int SamlCertificateMaxLength = 8192;
 
     public Guid WorkspaceId { get; set; }
     /// <summary>See <see cref="SsoProvider"/>.</summary>
@@ -70,7 +80,28 @@ public record WorkspaceSsoConfig : BaseAuditEntity
     /// </summary>
     public string? AdminGroupId { get; set; }
 
+    /// <summary>
+    /// Where to send an authentication request (SAML only). The identity provider publishes it
+    /// as the HTTP-Redirect single-sign-on location.
+    /// </summary>
+    public string? SamlSsoUrl { get; set; }
+
+    /// <summary>
+    /// The identity provider's signing certificate, base64 DER (SAML only). This is the trust
+    /// anchor: an assertion is accepted only when it is signed by this exact key *and* issued by
+    /// <see cref="DirectoryId"/>. Either check alone is decorative — a signature from a
+    /// certificate we trust for somebody else's tenant is not proof of anything about this one.
+    /// </summary>
+    public string? SamlCertificate { get; set; }
+
     public Workspace Workspace { get; init; } = null!;
+
+    /// <summary>Everything SAML needs is present. A half-filled binding must never be live.</summary>
+    public bool IsSamlUsable =>
+        Provider == SsoProvider.Saml
+        && !string.IsNullOrWhiteSpace(SamlSsoUrl)
+        && !string.IsNullOrWhiteSpace(SamlCertificate)
+        && !string.IsNullOrWhiteSpace(DirectoryId);
 }
 
 /// <summary>

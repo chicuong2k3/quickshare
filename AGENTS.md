@@ -100,6 +100,12 @@ protected override async Task OnInitializedAsync()
   #181). `hd` / `tid` establish it; `AllowedEmailDomains` only ever narrows what the claim already
   established. Reversing that order hands a workspace seat to anyone who buys a convincing domain.
   A directory belongs to exactly one workspace, or the proof gets handed to the wrong tenant.
+- **Never hand-roll a signature check** (issue #139). XML digital signature in particular has a
+  history of implementations that validate *a* signature rather than the one over the element they
+  then read — a class of bug that is an authentication bypass and fails silently. Use the library,
+  and keep ours to the questions a library cannot answer: which tenant, which issuer, seen before?
+- **Prove a checker works by giving it something that should fail.** A validator that rejects
+  everything passes every negative test; the positive case is what keeps the negatives honest.
 - **A provisioning path must revoke as well as create** (issue #146). "What happens at
   offboarding" is the question the feature is bought to answer; a deactivate that returns 200 and
   leaves access live is the precise failure it exists to prevent.

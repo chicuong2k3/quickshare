@@ -155,6 +155,8 @@ public static class ErrorCodes
     public const string SsoNotConfigured = "sso_not_configured";
     /// <summary>Another workspace already federates to this directory (issue #181).</summary>
     public const string SsoDirectoryTaken = "sso_directory_taken";
+    public const string SamlSsoUrlInvalid = "saml_sso_url_invalid";
+    public const string SamlCertificateInvalid = "saml_certificate_invalid";
     /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
     public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
     public const string ScimTokenNotFound = "scim_token_not_found";

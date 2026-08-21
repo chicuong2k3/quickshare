@@ -6,4 +6,28 @@
     <!-- CA1716 ("Shared" namespace keyword clash): library-author rule, app is not a consumed library -->
     <NoWarn>$(NoWarn);CA1848;CA1873;CA1716</NoWarn>
   </PropertyGroup>
+
+  <!--
+    SAML sign-in (#139) brings ITfoxtec.Identity.Saml2, which declares a transitive dependency on
+    System.Security.Cryptography.Xml 10.0.7. That version carries five high-severity advisories in
+    XML signature handling — the code SAML trusts to tell a real assertion from a forged one — so
+    the audit failing the build here was the right call and worth reading twice.
+
+    It is suppressed rather than fixed with a version pin because that assembly ships *in the .NET
+    shared framework*: NuGet prunes the package reference entirely (NU1510 refuses an explicit
+    one), so the 10.0.7 package is never restored, never deployed, and never loaded. What actually
+    executes is whatever System.Security.Cryptography.Xml the installed runtime provides.
+
+    Which means the real mitigation is a patched runtime, not a line in a csproj. That is a
+    deployment obligation, and it is written down in docs/saml-sso.md rather than left implicit
+    here. Re-check this block whenever ITfoxtec is upgraded: if it ever stops being prunable, the
+    suppression stops being honest and has to become a pin.
+  -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-23rf-6693-g89p" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8q5v-6pqq-x66h" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cvvh-rhrc-wg4q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g8r8-53c2-pm3f" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-mmjf-rqrv-855v" />
+  </ItemGroup>
 </Project>

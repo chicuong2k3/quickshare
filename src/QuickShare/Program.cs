@@ -26,6 +26,7 @@ using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
 using System.Security.Claims;
+using QuickShare.Features.Auth.Saml;
 using QuickShare.Features.Auth.Sso;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -272,6 +273,7 @@ builder.Services.AddScoped<QuickShare.Features.Workspaces.Channels.ChannelNotifi
 builder.Services.AddScoped<QuickShare.Features.Auth.Sso.SsoLoginService>();
 builder.Services.AddScoped<QuickShare.Features.Auth.Mfa.MfaPolicyService>();
 builder.Services.AddScoped<QuickShare.Features.Auth.Scim.ScimAuthenticator>();
+builder.Services.AddScoped<QuickShare.Features.Auth.Saml.SamlService>();
 
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
@@ -638,6 +640,9 @@ app.UseFastEndpoints()
 // ── Web (Blazor SSR) ──
 app.MapStaticAssets();
 app.MapRazorComponents<App>();
+
+// SAML 2.0 (issue #139): metadata, SP-initiated login and the assertion consumer.
+app.MapSamlEndpoints();
 
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>

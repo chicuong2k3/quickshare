@@ -19,6 +19,15 @@
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="FastEndpoints" Version="8.2.0" />
     <PackageReference Include="FastEndpoints.Swagger" Version="8.2.0" />
+    <PackageReference Include="ITfoxtec.Identity.Saml2" Version="4.20.1" />
+    <!--
+      Pinned, not incidental. ITfoxtec pulls System.Security.Cryptography.Xml 10.0.7 transitively,
+      and that version carries known high-severity advisories in XML signature handling — which is
+      the exact code SAML sign-in (#139) trusts to tell a real assertion from a forged one. The
+      NuGet audit caught it at build time; 10.0.11 is the patched line. Do not drop this pin
+      because "nothing references it directly": that is precisely why it needs to be here.
+    -->
+    <PackageReference Include="ITfoxtec.Identity.Saml2.MvcCore" Version="4.20.1" />
     <PackageReference Include="LightResults" Version="10.0.4" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.10" />
@@ -61,6 +70,7 @@
     <PackageReference Include="AspNetCore.HealthChecks.Npgsql" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="10.0.652802" />
     <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.*" />
   </ItemGroup>
 

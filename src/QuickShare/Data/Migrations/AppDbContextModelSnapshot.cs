@@ -1293,6 +1293,33 @@ namespace QuickShare.Migrations
                     b.ToTable("referral_events", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.SamlAssertionSeen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AssertionId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssertionId")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("SamlAssertionsSeen");
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.SecurityEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2216,6 +2243,14 @@ namespace QuickShare.Migrations
 
                     b.Property<bool>("RequireSso")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("SamlCertificate")
+                        .HasMaxLength(8192)
+                        .HasColumnType("character varying(8192)");
+
+                    b.Property<string>("SamlSsoUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
