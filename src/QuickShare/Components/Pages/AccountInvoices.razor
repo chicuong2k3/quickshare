@@ -1,0 +1,253 @@
+@layout MainLayout
+@page "/account/invoices"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Payments
+@using QuickShare.Features.Payments.Billing
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["invoices_title"]</PageTitle>
+
+@* Financial documents — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["invoices_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["invoices_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountBilling" />
+
+    <section id="invoices-body"
+             hx-get="@RoutePaths.AccountInvoices"
+             hx-trigger="load, invoicesUpdated from:body"
+             hx-target="#invoices-body"
+             hx-select="#invoices-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/billing.js" defer></script>
+
+@code {
+    private const int TermsNone = 0;
+    private const int Terms30 = 30;
+
+    private bool isChunkRequest;
+    private List<Invoice> invoices = [];
+    private BillingProfile? profile;
+
+    private RenderFragment Chunk => @<section id="invoices-body">
+        @* Billing identity (issues #112 VAT fields, #192 PO + terms). *@
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["billing_profile_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["billing_profile_subtitle"]</p>
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="bill-company">@Loc["billing_company"]</label>
+                    <input id="bill-company" class="db-input" type="text"
+                           maxlength="@BillingProfile.CompanyNameMaxLength" value="@profile?.CompanyName" />
+
+                    <label class="workspace-label" for="bill-taxcode">@Loc["billing_taxcode"]</label>
+                    <input id="bill-taxcode" class="db-input" type="text"
+                           maxlength="@BillingProfile.TaxCodeMaxLength" value="@profile?.TaxCode" />
+
+                    <label class="workspace-label" for="bill-address">@Loc["billing_address"]</label>
+                    <input id="bill-address" class="db-input" type="text"
+                           maxlength="@BillingProfile.AddressMaxLength" value="@profile?.Address" />
+
+                    <label class="workspace-label" for="bill-email">@Loc["billing_email"]</label>
+                    <input id="bill-email" class="db-input" type="email" value="@profile?.BillingEmail" />
+
+                    <label class="workspace-label" for="bill-po">@Loc["billing_po"]</label>
+                    <input id="bill-po" class="db-input" type="text"
+                           maxlength="@BillingProfile.PoNumberMaxLength" value="@profile?.PoNumber" />
+
+                    <label class="workspace-label" for="bill-terms">@Loc["billing_terms"]</label>
+                    <select id="bill-terms" class="db-input">
+                        <option value="0" selected="@(RequestedTerms == TermsNone)">@Loc["billing_terms_none"]</option>
+                        <option value="30" selected="@(RequestedTerms == Terms30)">@Loc["billing_terms_30"]</option>
+                        <option value="60" selected="@(RequestedTerms > Terms30)">@Loc["billing_terms_60"]</option>
+                    </select>
+
+                    @if (RequestedTerms > TermsNone)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">
+                            @(profile?.NetTermsApprovedAt is null ? Loc["billing_terms_pending"] : Loc["billing_terms_approved"])
+                        </p>
+                    }
+
+                    <button type="button" class="db-btn db-btn--primary"
+                            data-saved-label="@Loc["billing_saved"]"
+                            onclick="window.quickShareBilling.saveProfile(this)"
+                            data-ai-action="billing.profile.save">@Loc["billing_save"]</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["invoices_title"]</h2>
+
+                @if (invoices.Count == 0)
+                {
+                    <p class="db-p db-text-muted workspace-hint">@Loc["invoices_empty"]</p>
+                }
+                else
+                {
+                    <p class="workspace-filters">
+                        <a class="db-btn db-btn--ghost" href="/api/billing/invoices/export"
+                           data-ai-action="invoices.export">@Loc["invoices_export"]</a>
+                    </p>
+
+                    <div class="workspace-table-wrap">
+                        <table class="workspace-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">@Loc["invoices_col_number"]</th>
+                                    <th scope="col">@Loc["invoices_col_period"]</th>
+                                    <th scope="col">@Loc["invoices_col_status"]</th>
+                                    <th scope="col">@Loc["invoices_col_due"]</th>
+                                    <th scope="col">@Loc["invoices_col_total"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in invoices)
+                                {
+                                    <tr>
+                                        <td>@(invoice.IsDraft ? Loc["invoices_draft"].Value : invoice.Number)</td>
+                                        <td>@invoice.PeriodStart.ToString("yyyy-MM")</td>
+                                        <td>@StatusLabel(invoice)</td>
+                                        <td>@(invoice.DueAt is { } due ? due.ToLocalTime().ToString("d") : string.Empty)</td>
+                                        <td>@PlanCatalog.FormatPrice((int)invoice.Total, invoice.Currency)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Printable document for the newest issued invoice — the browser makes the PDF. *@
+        @if (Printable is { } printable)
+        {
+            <div class="db-card account-card workspace-card invoice-print">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@printable.Number</h2>
+                    <p class="db-p db-text-muted workspace-hint">
+                        @printable.CompanyName
+                        @if (!string.IsNullOrEmpty(printable.TaxCode))
+                        {
+                            <text> · MST @printable.TaxCode</text>
+                        }
+                        @if (!string.IsNullOrEmpty(printable.PoNumber))
+                        {
+                            <text> · PO @printable.PoNumber</text>
+                        }
+                    </p>
+
+                    <div class="workspace-table-wrap">
+                        <table class="workspace-table">
+                            <tbody>
+                                @foreach (var line in printable.Lines.OrderBy(l => l.CreatedAt))
+                                {
+                                    <tr>
+                                        <td>@LineLabel(line.Kind)</td>
+                                        <td>@line.Description</td>
+                                        <td>@PlanCatalog.FormatPrice((int)line.Amount, printable.Currency)</td>
+                                    </tr>
+                                }
+                                <tr>
+                                    <td colspan="2">@Loc["invoices_subtotal"]</td>
+                                    <td>@PlanCatalog.FormatPrice((int)printable.Subtotal, printable.Currency)</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">@Loc["invoices_tax"]</td>
+                                    <td>@PlanCatalog.FormatPrice((int)printable.TaxAmount, printable.Currency)</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"><strong>@Loc["invoices_total"]</strong></td>
+                                    <td><strong>@PlanCatalog.FormatPrice((int)printable.Total, printable.Currency)</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p class="db-p db-text-muted workspace-hint">@Loc["invoices_not_certified"]</p>
+
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm invoice-print__hide"
+                            onclick="window.print()" data-ai-action="invoice.print">@Loc["invoices_print"]</button>
+                </div>
+            </div>
+        }
+    </section>;
+
+    private int RequestedTerms => profile?.NetTermsDays ?? TermsNone;
+
+    private Invoice? Printable => invoices.FirstOrDefault(i => !i.IsDraft);
+
+    private string StatusLabel(Invoice invoice) => invoice.Status switch
+    {
+        InvoiceStatus.Paid => Loc["invoices_status_paid"],
+        InvoiceStatus.Overdue => Loc["invoices_status_overdue"],
+        InvoiceStatus.Issued => Loc["invoices_status_issued"],
+        _ => Loc["invoices_status_draft"],
+    };
+
+    private string LineLabel(string kind) => kind switch
+    {
+        InvoiceLineKind.Seat => Loc["invoices_line_seat"],
+        InvoiceLineKind.Overage => Loc["invoices_line_overage"],
+        _ => Loc["invoices_line_plan"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+
+        profile = await Db.BillingProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == user.Id, CancellationToken.None);
+
+        invoices = await Db.Invoices
+            .AsNoTracking()
+            .Include(i => i.Lines)
+            .Where(i => i.UserId == user.Id && i.Status != InvoiceStatus.Void)
+            .OrderByDescending(i => i.PeriodStart)
+            .ThenByDescending(i => i.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+    }
+}

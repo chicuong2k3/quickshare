@@ -186,6 +186,14 @@ See `docs/workspaces-architecture.md` for the full subsystem. Three rules bind a
 - **Any new upload path that can target a folder MUST resolve `FolderDefaults.ResolveAsync` and enforce the result when `Locked`.** Unlocked folder defaults are a prefill the sender may override; locked ones are policy (expiry replaced, privacy forced on, commit refused without a password). An upload path that ignores a locked folder is a compliance rule with a hole in it.
 - **Folder creation goes through `FolderWriter.CreateAsync`, and deleting a folder never deletes content.** That function owns the two-level depth cap, the per-workspace ceiling and sibling-name uniqueness; the delete guard refuses while any delivery (soft-deleted included) or child folder is still filed under it.
 
+### Billing Invariants (seats #278, overage #141, e-invoice #112, PO/net terms #192)
+
+See `docs/billing-ledger.md` for the full subsystem. Three rules bind all future work:
+
+- **Every charge goes through `InvoiceService.AddOrUpdateLineAsync`, never a direct `InvoiceLine` insert.** That method owns the draft-per-period lookup (which checks the change tracker before the database), the overage line-rewrite rule, and the retotal. A charge written around it lands on a second draft and disappears from the issued invoice.
+- **`IsExceeded` means blocked; `IsMetered` means allowed and billable.** Studio keeps uploading past its quota and pays per GB; Free and Pro still hard-block. Treating `IsMetered` as a block silently reinstates the hard stop for the tier that pays to avoid it.
+- **Never mutate an issued invoice's totals or buyer details — issue a new one.** Issuing freezes a copy of the buyer's company, tax code and PO reference on purpose: an invoice has to keep saying what it said when it was issued.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

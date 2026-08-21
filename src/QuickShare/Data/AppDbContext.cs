@@ -36,6 +36,9 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceTransfer> WorkspaceTransfers => Set<WorkspaceTransfer>();
     public DbSet<WorkspaceFolder> WorkspaceFolders => Set<WorkspaceFolder>();
     public DbSet<WorkspaceFolderTemplate> WorkspaceFolderTemplates => Set<WorkspaceFolderTemplate>();
+    public DbSet<BillingProfile> BillingProfiles => Set<BillingProfile>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -461,6 +464,57 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BillingProfile>(entity =>
+        {
+            entity.ToTable("billing_profiles");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.Property(e => e.CompanyName).HasMaxLength(BillingProfile.CompanyNameMaxLength);
+            entity.Property(e => e.TaxCode).HasMaxLength(BillingProfile.TaxCodeMaxLength);
+            entity.Property(e => e.Address).HasMaxLength(BillingProfile.AddressMaxLength);
+            entity.Property(e => e.BillingEmail).HasMaxLength(BillingProfile.CompanyNameMaxLength);
+            entity.Property(e => e.PoNumber).HasMaxLength(BillingProfile.PoNumberMaxLength);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.ToTable("invoices");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Number).HasMaxLength(Invoice.NumberMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(Invoice.StatusMaxLength);
+            entity.Property(e => e.CompanyName).HasMaxLength(BillingProfile.CompanyNameMaxLength);
+            entity.Property(e => e.TaxCode).HasMaxLength(BillingProfile.TaxCodeMaxLength);
+            entity.Property(e => e.Address).HasMaxLength(BillingProfile.AddressMaxLength);
+            entity.Property(e => e.PoNumber).HasMaxLength(BillingProfile.PoNumberMaxLength);
+            // An invoice number is a legal identifier — two rows sharing one is a filing error.
+            entity.HasIndex(e => e.Number)
+                .IsUnique()
+                .HasFilter("\"Number\" <> ''");
+            entity.HasIndex(e => new { e.UserId, e.Status });
+            entity.HasIndex(e => e.DueAt);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<InvoiceLine>(entity =>
+        {
+            entity.ToTable("invoice_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(InvoiceLine.KindMaxLength);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(InvoiceLine.DescriptionMaxLength);
+            entity.HasIndex(e => e.InvoiceId);
+            entity.HasOne(e => e.Invoice)
+                .WithMany(e => e.Lines)
+                .HasForeignKey(e => e.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

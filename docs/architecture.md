@@ -73,6 +73,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 - **OTP** — `POST /api/deliveries/{code}/verify-otp` — verify 6-digit OTP code set by sender on upload
 - `DeliveryService.cs` — Shared delivery coordination logic
 - **Compliance controls** — legal hold (#266), account retention policy (#161), delivery IP allowlist + country rules (#142/#166). See [docs/compliance-architecture.md](compliance-architecture.md)
+- **Billing ledger** — per-seat billing (#278), Studio overage metering (#141), VAT invoices (#112), purchase orders + net terms (#192). See [docs/billing-ledger.md](billing-ledger.md)
 - **Team workspaces** — seats + pooled quota + shared history (#106), ownership transfer (#252), workspace audit log (#145), admin usage report (#300), shared folders + per-folder upload defaults + folder templates (#151/#245/#234). See [docs/workspaces-architecture.md](workspaces-architecture.md)
 
 ### Payments (`Features/Payments/`)

@@ -123,7 +123,7 @@ public sealed class PayOSWebhookEndpoint : EndpointWithoutRequest
 
         if (!alreadyRecorded)
         {
-            db.PaymentEvents.Add(new PaymentEvent
+            var paymentEvent = new PaymentEvent
             {
                 UserId = user.Id,
                 EventType = PaymentEventTypes.Payment,
@@ -134,7 +134,24 @@ public sealed class PayOSWebhookEndpoint : EndpointWithoutRequest
                 Currency = intent.Currency,
                 InvoiceId = invoiceId,
                 InvoiceUrl = string.Empty
-            });
+            };
+            db.PaymentEvents.Add(paymentEvent);
+
+            // Issue the period's bill (issue #112). The plan line joins whatever seat (#278)
+            // and overage (#141) charges already accrued on the draft, so the buyer gets one
+            // document rather than three. Gated on the same idempotency check as the payment
+            // event: PayOS retries webhooks, and two invoices for one payment is a filing
+            // error, not a cosmetic one.
+            var billing = new Billing.InvoiceService(db);
+            await billing.AddOrUpdateLineAsync(
+                user.Id,
+                InvoiceLineKind.Plan,
+                $"{PlanCatalog.Get(intent.Plan).Display} ({intent.Billing})",
+                1m,
+                intent.Amount,
+                ct);
+
+            await billing.IssueAsync(user.Id, paymentEvent.Id, alreadyPaid: true, ct);
         }
 
         // Activate subscription

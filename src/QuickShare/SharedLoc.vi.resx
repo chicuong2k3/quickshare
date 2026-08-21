@@ -1344,4 +1344,62 @@
   <data name="ws_templates_delete" xml:space="preserve"><value>Xoá</value></data>
   <data name="ws_templates_delete_confirm" xml:space="preserve"><value>Xoá mẫu này? Các thư mục đã tạo từ mẫu không bị ảnh hưởng.</value></data>
   <data name="ws_templates_count" xml:space="preserve"><value>{0} thư mục</value></data>
+  <data name="ws_tab_seats" xml:space="preserve"><value>Ghế</value></data>
+  <data name="seats_title" xml:space="preserve"><value>Ghế &amp; thanh toán</value></data>
+  <data name="seats_subtitle" xml:space="preserve"><value>Không gian nhóm đang trả cho những gì, và ai đang ngồi ở đó.</value></data>
+  <data name="seats_none" xml:space="preserve"><value>Bạn chưa thuộc không gian nhóm nào.</value></data>
+  <data name="seats_included" xml:space="preserve"><value>Đã bao gồm trong {0}</value></data>
+  <data name="seats_purchased" xml:space="preserve"><value>Ghế đã mua</value></data>
+  <data name="seats_claimed" xml:space="preserve"><value>Ghế đã dùng</value></data>
+  <data name="seats_billable" xml:space="preserve"><value>Ghế tính phí</value></data>
+  <data name="seats_monthly" xml:space="preserve"><value>Mỗi tháng</value></data>
+  <data name="seats_next" xml:space="preserve"><value>Thêm một ghế nữa tốn {0} cho phần còn lại của kỳ này</value></data>
+  <data name="seats_export" xml:space="preserve"><value>Xuất danh sách (CSV)</value></data>
+  <data name="seats_status_active" xml:space="preserve"><value>Đang hoạt động</value></data>
+  <data name="seats_status_pending" xml:space="preserve"><value>Đang chờ nhận lời mời</value></data>
+  <data name="seats_col_member" xml:space="preserve"><value>Thành viên</value></data>
+  <data name="seats_col_role" xml:space="preserve"><value>Vai trò</value></data>
+  <data name="seats_col_status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="seats_col_joined" xml:space="preserve"><value>Tham gia</value></data>
+  <data name="billing_profile_title" xml:space="preserve"><value>Thông tin xuất hoá đơn</value></data>
+  <data name="billing_profile_subtitle" xml:space="preserve"><value>Dùng cho mọi hoá đơn. Có tên công ty và mã số thuế thì biên nhận trở thành hoá đơn GTGT.</value></data>
+  <data name="billing_company" xml:space="preserve"><value>Tên công ty</value></data>
+  <data name="billing_taxcode" xml:space="preserve"><value>Mã số thuế (MST)</value></data>
+  <data name="billing_address" xml:space="preserve"><value>Địa chỉ đăng ký</value></data>
+  <data name="billing_email" xml:space="preserve"><value>Email nhận hoá đơn</value></data>
+  <data name="billing_po" xml:space="preserve"><value>Số đơn đặt hàng (PO)</value></data>
+  <data name="billing_terms" xml:space="preserve"><value>Điều khoản thanh toán</value></data>
+  <data name="billing_terms_none" xml:space="preserve"><value>Thanh toán ngay khi phát hành</value></data>
+  <data name="billing_terms_30" xml:space="preserve"><value>Nợ 30 ngày</value></data>
+  <data name="billing_terms_60" xml:space="preserve"><value>Nợ 60 ngày</value></data>
+  <data name="billing_terms_pending" xml:space="preserve"><value>Đã yêu cầu — đang chờ duyệt</value></data>
+  <data name="billing_terms_approved" xml:space="preserve"><value>Đã duyệt</value></data>
+  <data name="billing_save" xml:space="preserve"><value>Lưu thông tin</value></data>
+  <data name="billing_saved" xml:space="preserve"><value>Đã lưu.</value></data>
+  <data name="invoices_title" xml:space="preserve"><value>Hoá đơn</value></data>
+  <data name="invoices_subtitle" xml:space="preserve"><value>Mỗi kỳ thanh toán một chứng từ, gồm cả ghế và phần vượt hạn mức.</value></data>
+  <data name="invoices_empty" xml:space="preserve"><value>Chưa có hoá đơn nào.</value></data>
+  <data name="invoices_export" xml:space="preserve"><value>Xuất CSV</value></data>
+  <data name="invoices_draft" xml:space="preserve"><value>Kỳ hiện tại (đang mở)</value></data>
+  <data name="invoices_col_number" xml:space="preserve"><value>Số</value></data>
+  <data name="invoices_col_period" xml:space="preserve"><value>Kỳ</value></data>
+  <data name="invoices_col_status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="invoices_col_due" xml:space="preserve"><value>Hạn thanh toán</value></data>
+  <data name="invoices_col_total" xml:space="preserve"><value>Tổng cộng</value></data>
+  <data name="invoices_status_draft" xml:space="preserve"><value>Đang mở</value></data>
+  <data name="invoices_status_issued" xml:space="preserve"><value>Đã phát hành</value></data>
+  <data name="invoices_status_paid" xml:space="preserve"><value>Đã thanh toán</value></data>
+  <data name="invoices_status_overdue" xml:space="preserve"><value>Quá hạn</value></data>
+  <data name="invoices_line_plan" xml:space="preserve"><value>Gói thuê bao</value></data>
+  <data name="invoices_line_seat" xml:space="preserve"><value>Ghế</value></data>
+  <data name="invoices_line_overage" xml:space="preserve"><value>Vượt hạn mức</value></data>
+  <data name="invoices_subtotal" xml:space="preserve"><value>Tạm tính</value></data>
+  <data name="invoices_tax" xml:space="preserve"><value>VAT (10%)</value></data>
+  <data name="invoices_total" xml:space="preserve"><value>Tổng cộng</value></data>
+  <data name="invoices_print" xml:space="preserve"><value>In / lưu PDF</value></data>
+  <data name="invoices_not_certified" xml:space="preserve"><value>Chứng từ này do QuickShare tạo để bạn lưu trữ. Đây không phải hoá đơn điện tử được phát hành qua nhà cung cấp được cấp phép.</value></data>
+  <data name="overage_title" xml:space="preserve"><value>Vượt hạn mức</value></data>
+  <data name="overage_none" xml:space="preserve"><value>Kỳ này chưa vượt hạn mức.</value></data>
+  <data name="overage_used" xml:space="preserve"><value>Đã vượt {0} so với hạn mức, tính {1} mỗi GB</value></data>
+  <data name="overage_blocked" xml:space="preserve"><value>Gói này dừng tải lên ở mức 100%. Studio vẫn chạy tiếp và tính phần vượt.</value></data>
 </root>

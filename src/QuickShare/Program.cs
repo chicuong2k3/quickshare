@@ -241,6 +241,10 @@ builder.Services.AddScoped<QuickShare.Features.Downloads.Shared.DeliveryAccessSe
 // ── Team workspaces (issue #106): seats, pooled quota, workspace audit (#145) ──
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceService>();
 
+// ── Billing ledger (issues #278 seats, #141 overage, #112 e-invoice, #192 PO/net terms) ──
+builder.Services.AddScoped<QuickShare.Features.Payments.Billing.InvoiceService>();
+builder.Services.AddScoped<QuickShare.Features.Payments.Billing.BillingAccountResolver>();
+
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
 builder.Services.AddMediator(options =>
 {

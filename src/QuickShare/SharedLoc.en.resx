@@ -1344,4 +1344,62 @@
   <data name="ws_templates_delete" xml:space="preserve"><value>Delete</value></data>
   <data name="ws_templates_delete_confirm" xml:space="preserve"><value>Delete this template? Folders already created from it are not affected.</value></data>
   <data name="ws_templates_count" xml:space="preserve"><value>{0} folder(s)</value></data>
+  <data name="ws_tab_seats" xml:space="preserve"><value>Seats</value></data>
+  <data name="seats_title" xml:space="preserve"><value>Seats &amp; billing</value></data>
+  <data name="seats_subtitle" xml:space="preserve"><value>What the workspace pays for, and who is sitting in it.</value></data>
+  <data name="seats_none" xml:space="preserve"><value>You are not in a workspace yet.</value></data>
+  <data name="seats_included" xml:space="preserve"><value>Included in {0}</value></data>
+  <data name="seats_purchased" xml:space="preserve"><value>Seats purchased</value></data>
+  <data name="seats_claimed" xml:space="preserve"><value>Seats claimed</value></data>
+  <data name="seats_billable" xml:space="preserve"><value>Billed seats</value></data>
+  <data name="seats_monthly" xml:space="preserve"><value>Per month</value></data>
+  <data name="seats_next" xml:space="preserve"><value>One more seat costs {0} for the rest of this period</value></data>
+  <data name="seats_export" xml:space="preserve"><value>Export roster (CSV)</value></data>
+  <data name="seats_status_active" xml:space="preserve"><value>Active</value></data>
+  <data name="seats_status_pending" xml:space="preserve"><value>Invitation pending</value></data>
+  <data name="seats_col_member" xml:space="preserve"><value>Member</value></data>
+  <data name="seats_col_role" xml:space="preserve"><value>Role</value></data>
+  <data name="seats_col_status" xml:space="preserve"><value>Status</value></data>
+  <data name="seats_col_joined" xml:space="preserve"><value>Joined</value></data>
+  <data name="billing_profile_title" xml:space="preserve"><value>Billing details</value></data>
+  <data name="billing_profile_subtitle" xml:space="preserve"><value>Used on every invoice. A company name and tax code turn receipts into VAT invoices.</value></data>
+  <data name="billing_company" xml:space="preserve"><value>Company name</value></data>
+  <data name="billing_taxcode" xml:space="preserve"><value>Tax code (MST)</value></data>
+  <data name="billing_address" xml:space="preserve"><value>Registered address</value></data>
+  <data name="billing_email" xml:space="preserve"><value>Billing email</value></data>
+  <data name="billing_po" xml:space="preserve"><value>Purchase order reference</value></data>
+  <data name="billing_terms" xml:space="preserve"><value>Payment terms</value></data>
+  <data name="billing_terms_none" xml:space="preserve"><value>Due on issue</value></data>
+  <data name="billing_terms_30" xml:space="preserve"><value>Net 30</value></data>
+  <data name="billing_terms_60" xml:space="preserve"><value>Net 60</value></data>
+  <data name="billing_terms_pending" xml:space="preserve"><value>Requested — awaiting approval</value></data>
+  <data name="billing_terms_approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="billing_save" xml:space="preserve"><value>Save billing details</value></data>
+  <data name="billing_saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="invoices_title" xml:space="preserve"><value>Invoices</value></data>
+  <data name="invoices_subtitle" xml:space="preserve"><value>One document per billing period, including seats and any overage.</value></data>
+  <data name="invoices_empty" xml:space="preserve"><value>No invoices yet.</value></data>
+  <data name="invoices_export" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="invoices_draft" xml:space="preserve"><value>Current period (open)</value></data>
+  <data name="invoices_col_number" xml:space="preserve"><value>Number</value></data>
+  <data name="invoices_col_period" xml:space="preserve"><value>Period</value></data>
+  <data name="invoices_col_status" xml:space="preserve"><value>Status</value></data>
+  <data name="invoices_col_due" xml:space="preserve"><value>Due</value></data>
+  <data name="invoices_col_total" xml:space="preserve"><value>Total</value></data>
+  <data name="invoices_status_draft" xml:space="preserve"><value>Open</value></data>
+  <data name="invoices_status_issued" xml:space="preserve"><value>Issued</value></data>
+  <data name="invoices_status_paid" xml:space="preserve"><value>Paid</value></data>
+  <data name="invoices_status_overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="invoices_line_plan" xml:space="preserve"><value>Subscription</value></data>
+  <data name="invoices_line_seat" xml:space="preserve"><value>Seats</value></data>
+  <data name="invoices_line_overage" xml:space="preserve"><value>Overage</value></data>
+  <data name="invoices_subtotal" xml:space="preserve"><value>Subtotal</value></data>
+  <data name="invoices_tax" xml:space="preserve"><value>VAT (10%)</value></data>
+  <data name="invoices_total" xml:space="preserve"><value>Total</value></data>
+  <data name="invoices_print" xml:space="preserve"><value>Print / save as PDF</value></data>
+  <data name="invoices_not_certified" xml:space="preserve"><value>This document is generated by QuickShare for your records. It is not a certified Vietnamese e-invoice issued through a licensed provider.</value></data>
+  <data name="overage_title" xml:space="preserve"><value>Overage</value></data>
+  <data name="overage_none" xml:space="preserve"><value>No overage this period.</value></data>
+  <data name="overage_used" xml:space="preserve"><value>{0} past the included pool, billed at {1} per GB</value></data>
+  <data name="overage_blocked" xml:space="preserve"><value>Uploads stop at 100% on this plan. Studio keeps going and bills the overflow.</value></data>
 </root>

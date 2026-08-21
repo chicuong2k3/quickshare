@@ -2822,3 +2822,27 @@ html, body {
     font-size: 0.875rem;
     color: var(--db-color-text);
 }
+
+
+/* ─── Invoice print view (issue #112) ─── */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .invoice-print,
+    .invoice-print * {
+        visibility: visible;
+    }
+
+    .invoice-print {
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        border: 0;
+    }
+
+    .invoice-print__hide {
+        display: none;
+    }
+}

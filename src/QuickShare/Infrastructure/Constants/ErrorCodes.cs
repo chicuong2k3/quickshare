@@ -94,4 +94,11 @@ public static class ErrorCodes
     public const string TemplateNameInvalid = "template_name_invalid";
     public const string TemplateNameTaken = "template_name_taken";
     public const string TemplateStructureInvalid = "template_structure_invalid";
+    // Seats (#278), overage (#141), e-invoice (#112), PO + net terms (#192).
+    public const string BillingProfileInvalid = "billing_profile_invalid";
+    public const string TaxCodeInvalid = "tax_code_invalid";
+    public const string NetTermsInvalid = "net_terms_invalid";
+    public const string InvoiceNotFound = "invoice_not_found";
+    public const string InvoiceNotIssued = "invoice_not_issued";
+    public const string SeatsRequireWorkspace = "seats_require_workspace";
 }

@@ -2,6 +2,8 @@ using System.Text.Json;
 using LightResults;
 using Microsoft.Extensions.Options;
 using QuickShare.Extensions;
+using QuickShare.Features.Payments;
+using QuickShare.Features.Payments.Billing;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Features.Workspaces.Shared;
 using QuickShare.Infrastructure.Email;
@@ -119,13 +121,19 @@ public sealed class GetWorkspaceHandler(AppDbContext db, IHttpContextAccessor ht
 }
 
 /// <summary>
-/// Renames the workspace or resizes the seat pool (issue #106). Seats may never be cut
+/// Renames the workspace or resizes the seat pool (issues #106, #278). Seats may never be cut
 /// below what is already claimed — silently evicting whoever sorted last is not a setting.
+///
+/// Growing past the seats the plan includes is a charge, recorded here and prorated to the rest
+/// of the period. It lands on the open draft invoice rather than taking a payment: the buyer
+/// already has a subscription, and interrupting "add a colleague" with a checkout is how a team
+/// ends up sharing one login instead.
 /// </summary>
 public sealed class UpdateWorkspaceHandler(
     AppDbContext db,
     IHttpContextAccessor http,
-    WorkspaceService workspaces)
+    WorkspaceService workspaces,
+    InvoiceService invoices)
     : IRequestHandler<UpdateWorkspaceCommand, Result<WorkspaceDto>>
 {
     public async ValueTask<Result<WorkspaceDto>> Handle(UpdateWorkspaceCommand cmd, CancellationToken cancellationToken)
@@ -147,6 +155,7 @@ public sealed class UpdateWorkspaceHandler(
             workspace.Name = name;
         }
 
+        var billableDelta = 0;
         if (cmd.Seats is { } seats)
         {
             if (seats < Workspace.MinSeats || seats > Workspace.MaxSeats)
@@ -156,10 +165,35 @@ public sealed class UpdateWorkspaceHandler(
             if (seats < held)
                 return Result.Failure<WorkspaceDto>(new LightResults.Error(ErrorCodes.WorkspaceSeatsFull));
 
+            // Only the growth past the included pool is billable, and only growth: shrinking
+            // frees seats for the next period rather than generating a credit note, which is a
+            // refund flow this codebase does not have and should not fake.
+            var plan = seat.Workspace.Owner.Plan;
+            billableDelta = SeatBilling.BillableSeats(plan, seats)
+                - SeatBilling.BillableSeats(plan, workspace.Seats);
+
             workspace.Seats = seats;
         }
 
         workspace.UpdatedAt = DateTime.UtcNow;
+
+        if (billableDelta > 0)
+        {
+            var plan = seat.Workspace.Owner.Plan;
+            var now = DateTime.UtcNow;
+            var periodEnd = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+            var unit = PlanCatalog.SeatMonthlyAmount(plan);
+            var prorated = SeatBilling.Prorate(unit, billableDelta, now, periodEnd);
+
+            await invoices.AddOrUpdateLineAsync(
+                workspace.OwnerId,
+                InvoiceLineKind.Seat,
+                $"{billableDelta} seat(s) added, prorated to {periodEnd:yyyy-MM-dd}",
+                billableDelta,
+                billableDelta == 0 ? 0m : decimal.Round(prorated / billableDelta, 0, MidpointRounding.AwayFromZero),
+                cancellationToken);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
 
         await workspaces.AuditAsync(workspace.Id, user.Id,

@@ -29,4 +29,8 @@ public static class NotificationType
     public const string DeliveryDownloaded = "delivery_downloaded";
     public const string ExtensionRequested = "extension_requested";
     public const string FileLockBroken = "file_lock_broken";
+    /// <summary>Monthly quota usage crossed 80/100/120% (issue #141).</summary>
+    public const string QuotaThreshold = "quota_threshold";
+    /// <summary>A net-terms invoice passed its due date (issue #192).</summary>
+    public const string InvoiceOverdue = "invoice_overdue";
 }

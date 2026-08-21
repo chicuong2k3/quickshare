@@ -1,3 +1,6 @@
+using QuickShare.Features.Payments;
+using QuickShare.Features.Payments.Billing;
+
 namespace QuickShare.Features.Uploads.Shared;
 
 /// <summary>
@@ -9,6 +12,11 @@ namespace QuickShare.Features.Uploads.Shared;
 /// the pooling lives here, in the one function both the check and the record path go
 /// through, because a member who checked against the pool but recorded against a private
 /// row would have an unlimited quota in practice.
+///
+/// Studio meters instead of blocking (issue #141): a hard stop mid-delivery is the wrong
+/// failure for a team on a deadline, so bytes past the pool are tallied and priced per
+/// GB-month onto the open draft invoice. Free and Pro still block at 100% — an unbounded bill
+/// is a worse surprise than a refused upload when nobody agreed to pay for overflow.
 /// </summary>
 public sealed class QuotaService(AppDbContext db)
 {
@@ -31,7 +39,11 @@ public sealed class QuotaService(AppDbContext db)
 
         var used = usage?.TotalBytesUploaded ?? 0;
         if (size > quota - used)
-            return QuotaCheckResult.Exceeded(used, quota);
+        {
+            return PlanCatalog.AllowsOverage(plan)
+                ? QuotaCheckResult.Metered(used, quota)
+                : QuotaCheckResult.Exceeded(used, quota);
+        }
 
         return QuotaCheckResult.Allowed(used, quota);
     }
@@ -47,10 +59,74 @@ public sealed class QuotaService(AppDbContext db)
         if (planQuota is null)
             return;
 
-        var usage = await GetOrCreateAsync(await ResolveBucketAsync(userId, ct), ct);
+        var bucketId = await ResolveBucketAsync(userId, ct);
+        var usage = await GetOrCreateAsync(bucketId, ct);
         usage.TotalBytesUploaded += size;
         usage.TransferCount++;
+
+        var quota = planQuota.Value + await BonusAsync(bucketId, ct);
+        await MeterOverageAsync(bucketId, plan, usage, quota, ct);
+        await AlertThresholdAsync(bucketId, usage, quota, ct);
     }
+
+    /// <summary>
+    /// Prices whatever sits past the pool onto the open draft invoice (issue #141). The overage
+    /// line is rewritten rather than appended, because a member uploading all afternoon should
+    /// produce one charge on the bill, not two hundred.
+    /// </summary>
+    private async Task MeterOverageAsync(
+        Guid bucketId, string plan, UserUsage usage, long quota, CancellationToken ct)
+    {
+        if (!PlanCatalog.AllowsOverage(plan))
+            return;
+
+        var overage = Math.Max(0, usage.TotalBytesUploaded - quota);
+        if (overage == usage.OverageBytes)
+            return;
+
+        usage.OverageBytes = overage;
+
+        var gb = InvoiceService.OverageGb(overage);
+        var rate = PlanCatalog.OverageGbAmount(plan);
+        await new InvoiceService(db).AddOrUpdateLineAsync(
+            bucketId,
+            InvoiceLineKind.Overage,
+            $"Overage {gb:0.##} GB @ {rate:N0}/GB",
+            gb,
+            rate,
+            ct);
+    }
+
+    /// <summary>
+    /// Notifies the payer when usage crosses 80/100/120% (issue #141). The highest threshold
+    /// already sent is stored on the usage row so each one fires once — an alert that repeats
+    /// on every upload past the line is an alert people mute.
+    /// </summary>
+    private async Task AlertThresholdAsync(Guid bucketId, UserUsage usage, long quota, CancellationToken ct)
+    {
+        if (quota <= 0)
+            return;
+
+        var percent = (int)(usage.TotalBytesUploaded * 100 / quota);
+        var crossed = QuotaAlertThresholds.LastOrDefault(t => percent >= t);
+        if (crossed == 0 || crossed <= usage.AlertedThresholdPercent)
+            return;
+
+        usage.AlertedThresholdPercent = crossed;
+
+        db.Notifications.Add(new Notification
+        {
+            UserId = bucketId,
+            Type = NotificationType.QuotaThreshold,
+            Title = $"{crossed}%",
+            LinkUrl = RoutePaths.AccountUsage,
+        });
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>Ascending, so the highest crossed threshold is the one reported.</summary>
+    private static readonly int[] QuotaAlertThresholds = [80, 100, 120];
 
     /// <summary>
     /// The account whose monthly usage row this upload counts against (issue #106): the
@@ -111,6 +187,8 @@ public sealed class QuotaCheckResult
 {
     public bool IsUnlimited { get; private init; }
     public bool IsExceeded { get; private init; }
+    /// <summary>Past the pool but allowed to continue, billed per GB (issue #141, Studio only).</summary>
+    public bool IsMetered { get; private init; }
     public long Used { get; private init; }
     public long Quota { get; private init; }
     public long Remaining => Math.Max(0, Quota - Used);
@@ -123,4 +201,7 @@ public sealed class QuotaCheckResult
 
     public static QuotaCheckResult Exceeded(long used, long quota)
         => new() { IsExceeded = true, Used = used, Quota = quota };
+
+    public static QuotaCheckResult Metered(long used, long quota)
+        => new() { IsMetered = true, Used = used, Quota = quota };
 }

@@ -1,0 +1,191 @@
+@layout MainLayout
+@page "/account/workspace/seats"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Payments
+@using QuickShare.Features.Workspaces.Seats
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["seats_title"]</PageTitle>
+
+@* Seat roster and pricing — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["seats_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["seats_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceSeats" />
+
+    <section id="workspace-seats-body"
+             hx-get="@RoutePaths.AccountWorkspaceSeats"
+             hx-trigger="load"
+             hx-target="#workspace-seats-body"
+             hx-select="#workspace-seats-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+@code {
+    private const string StatusPending = "pending";
+
+    private bool isChunkRequest;
+    private bool inWorkspace;
+    private bool canManage;
+    private SeatReportDto? report;
+    private long overageBytes;
+    private string plan = PlanTierLimits.Free;
+
+    private RenderFragment Chunk => @<section id="workspace-seats-body">
+        @if (!inWorkspace || report is null)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["seats_none"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["seats_purchased"]</dt>
+                            <dd>@report.Seats</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["seats_claimed"]</dt>
+                            <dd>@report.ClaimedSeats</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["seats_billable"]</dt>
+                            <dd>@report.BillableSeats</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["seats_monthly"]</dt>
+                            <dd>@PlanCatalog.FormatPrice((int)report.MonthlySeatAmount, null)</dd>
+                        </div>
+                    </dl>
+
+                    <p class="db-p db-text-muted workspace-hint">
+                        @Loc["seats_included", $"{report.IncludedSeats} ({report.Plan})"]
+                        ·
+                        @Loc["seats_next", PlanCatalog.FormatPrice((int)report.ProratedNextSeatAmount, null)]
+                    </p>
+
+                    @if (canManage)
+                    {
+                        <p class="workspace-filters">
+                            <a class="db-btn db-btn--ghost" href="/api/workspace/seats/export"
+                               data-ai-action="seats.export">@Loc["seats_export"]</a>
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body workspace-table-wrap">
+                    <table class="workspace-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Loc["seats_col_member"]</th>
+                                <th scope="col">@Loc["seats_col_role"]</th>
+                                <th scope="col">@Loc["seats_col_status"]</th>
+                                <th scope="col">@Loc["seats_col_joined"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var member in report.Members)
+                            {
+                                <tr>
+                                    <td>@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</td>
+                                    <td>@member.Role</td>
+                                    <td>@(member.Status == StatusPending ? Loc["seats_status_pending"] : Loc["seats_status_active"])</td>
+                                    <td>@(member.JoinedAt is { } at ? at.ToLocalTime().ToString("d") : string.Empty)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @* Overage (issue #141) — Studio meters, everyone else hard-stops. *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["overage_title"]</h2>
+                    @if (!PlanCatalog.AllowsOverage(plan))
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["overage_blocked"]</p>
+                    }
+                    else if (overageBytes <= 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["overage_none"]</p>
+                    }
+                    else
+                    {
+                        <p class="db-p workspace-hint">
+                            @Loc["overage_used",
+                                $"{QuickShare.Features.Payments.Billing.InvoiceService.OverageGb(overageBytes):0.##} GB",
+                                PlanCatalog.FormatPrice((int)PlanCatalog.OverageGbAmount(plan), null)]
+                        </p>
+                    }
+                </div>
+            </div>
+        }
+    </section>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+        var seat = await Workspaces.GetSeatAsync(user.Id, CancellationToken.None);
+        if (seat is null) return;
+
+        inWorkspace = true;
+        canManage = seat.CanAdminister;
+        plan = seat.Workspace.Owner.Plan;
+        report = await GetSeatReportEndpoint.BuildAsync(Db, seat, CancellationToken.None);
+
+        // Overage is metered against the owner's pooled usage row, so that is the one to read.
+        var periodStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        overageBytes = await Db.UserUsages
+            .AsNoTracking()
+            .Where(u => u.UserId == seat.Workspace.OwnerId && u.PeriodStart == periodStart)
+            .Select(u => u.OverageBytes)
+            .FirstOrDefaultAsync(CancellationToken.None);
+    }
+}

@@ -44,6 +44,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   `IMediator` or `AppDbContext` in-process (no API round-trip).
 - Feature flows: [`send-architecture.md`](send-architecture.md),
   [`payment-architecture.md`](payment-architecture.md),
+  [`billing-ledger.md`](billing-ledger.md) - team seats (#278), Studio overage (#141),
+  e-invoice (#112), PO + net terms (#192),
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
@@ -92,6 +94,8 @@ rules:
 | New upload path MUST use `QuotaService` (it pools a member's bytes onto the workspace owner) | workspaces-architecture.md (#106) |
 | New upload path that can target a folder MUST enforce locked folder defaults | workspaces-architecture.md (#245) |
 | Folder creation goes through `FolderWriter.CreateAsync`; deleting a folder never deletes content | workspaces-architecture.md (#151) |
+| Every charge goes through `InvoiceService.AddOrUpdateLineAsync` (never a direct `InvoiceLine` insert) | billing-ledger.md (#278/#141) |
+| `IsMetered` is allowed-and-billable, not blocked; never mutate an issued invoice | billing-ledger.md (#141/#112) |
 
 ## 6. Workflow (issue → done)
 

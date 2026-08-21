@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 14 done (08-21): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates |
+| Tier 6 | B2B / enterprise / far-future | 18 done (08-21): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -336,6 +336,54 @@ its own; a bulk path with its own copy of the depth and uniqueness checks will e
 one. Routes `GET/POST /api/workspace/templates`, `POST /api/workspace/templates/{id}/apply`,
 `DELETE /api/workspace/templates/{id}`.
 
+
+Tier 6 batch 5 (billing series), 2026-08-21: `#278` team seats, `#141` Studio overage,
+`#112` e-invoice, `#192` PO + net terms — one migration `AddBillingProfilesAndInvoices`
+(3 new tables `billing_profiles` / `invoices` / `invoice_lines`, plus `user_usage.OverageBytes`
+and `AlertedThresholdPercent`). Tests: `BillingLedgerTests` (18). Design:
+[`docs/billing-ledger.md`](billing-ledger.md).
+
+The model is a **draft invoice per period**: mid-cycle seat and overage charges append to an
+open draft as they happen, rather than being reconstructed from history at billing time.
+Issuing freezes it — number, due date, and a copy of the buyer's company details, because an
+invoice has to keep saying what it said when it was issued. An empty draft is never issued.
+`GetOrCreateDraftAsync` checks the change tracker before the database: a caller that charges and
+issues in one unit of work would otherwise create a second draft and issue an invoice with none
+of the lines just recorded (a real bug, caught by the tests).
+
+`#278` team seats — `PlanCatalog.IncludedSeats` (Free 1 / Pro 3 / Studio 10) with per-seat
+pricing beside the plan prices, deliberately not in `PlanTierLimits` (usage caps read on every
+upload should not depend on numbers only accounting cares about). `SeatBilling` is pure so the
+seat meter, the finance CSV and the invoice line cannot disagree. Growth is charged and prorated
+to the end of the period, never rounded to zero; shrinking frees seats for next period but is
+not credited, because there is no refund flow and faking one is worse. A pending invite counts
+as a claimed seat, or a workspace could park invites on seats it never pays for. Adding a seat
+does not interrupt with a checkout. `GET /api/workspace/seats` is readable by any seat holder;
+the roster export is admin-only. UI `/account/workspace/seats`.
+
+`#141` Studio overage — `QuotaCheckResult.Metered` replaces `Exceeded` where
+`PlanCatalog.AllowsOverage`, so Studio stopped hard-blocking with zero call-site changes while
+Free and Pro still stop at 100% (an unbounded bill is a worse surprise than a refused upload
+when nobody agreed to pay for overflow). `RecordAsync` tallies `OverageBytes` and rewrites a
+single running overage line — an afternoon of uploading produces one charge, not two hundred.
+Thresholds at 80/100/120% raise one notification each, with `AlertedThresholdPercent` making it
+once rather than on every upload past the line.
+
+`#112` e-invoice — `billing_profiles` captures company, MST and address; a company name *and* a
+valid tax code (`^\d{10}(-\d{3})?$`) turn receipts into VAT invoices. Numbers are
+`QS-{year}-{000001}`, with the unique index as the real collision guard so a concurrent issue
+fails loudly. VAT 10% computed at issue and stored. The PayOS webhook adds the plan line and
+issues under the same idempotency check as the payment event. **Not shipped: a certified VN
+e-invoice** — Decree 123/2020 requires a licensed provider (Viettel/MISA); what ships is a
+print-ready page plus CSV export, and the page says so in both locales. UI `/account/invoices`.
+
+`#192` PO + net terms — PO reference on the profile, copied onto every invoice at issue. Terms
+(0/30/60 only) are a request until a platform admin approves them; `EffectiveNetTermsDays`
+returns 0 otherwise, so an unapproved request bills on issue like a card, and changing the
+request clears a prior approval. `InvoiceOverdueJob` (hourly) flips issued to overdue once,
+notifies and emails; only terms invoices can be late. `POST /api/admin/billing/invoices/{id}/paid`
+reconciles a bank transfer manually, idempotently.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -360,6 +408,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Profile | `docs/profile-architecture.md` |
 | Compliance (legal hold / retention / delivery scope) | `docs/compliance-architecture.md` |
 | Team workspaces (seats / transfer / audit / report / folders) | `docs/workspaces-architecture.md` |
+| Billing ledger (seats / overage / invoices / PO + net terms) | `docs/billing-ledger.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -376,8 +425,8 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 14 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
-  `#106`/`#252`/`#145`/`#300` (08-21) and folder batch `#151`/`#245`/`#234` (08-21, see
-  section 8); `#323` SOC 2, `#289` delivery comments, `#286` custom fonts, `#285` branded upload
-  page, `#278` team seats (unblocked by `#106`), `#119` data residency, `#112` e-invoice,
-  `#81` white-label and the rest still open
+- [ ] Tier 6: 18 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+  `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
+  `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
+  `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,
+  `#139` SAML SSO and the rest still open
