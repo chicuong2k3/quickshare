@@ -243,7 +243,7 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
         => Task.FromResult(NextObjectSize);
 
-    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
         => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));
 
     public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)

@@ -29,7 +29,7 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
 
     // ── R2 methods (not supported on local disk) ───────────────────────────
 
-    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 multipart upload.");
 
     public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)

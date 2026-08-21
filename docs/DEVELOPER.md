@@ -49,7 +49,7 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   [`enterprise-trust.md`](enterprise-trust.md) - tenant isolation (#190), SIEM streaming (#191),
   self-serve DPA (#184), SOC 2 readiness (#147/#323),
   [`object-storage-and-backup.md`](object-storage-and-backup.md) - S3-compatible object store
-  (#171), scheduled workspace backup (#271),
+  (#171), data residency (#119), scheduled workspace backup (#271),
   [`workspace-branding.md`](workspace-branding.md) - branded recipient page (#285),
   custom typography (#286),
   [`p2p-architecture.md`](p2p-architecture.md),
@@ -106,6 +106,8 @@ rules:
 | A cross-tenant miss returns the same response as a nonexistent id; never edit published DPA terms or a `/soc2` status in place | enterprise-trust.md (#190/#184/#147) |
 | Object store config lives under `ObjectStore`; the legacy `R2` section must keep binding | object-storage-and-backup.md (#171) |
 | Backup manifests carry metadata + storage keys, never bytes; prune only after a successful upload | object-storage-and-backup.md (#271) |
+| Upload keys go through `R2ObjectKey.For` with the region; a key with no region segment must resolve to the default bucket | object-storage-and-backup.md (#119) |
+| Never move stored bytes across regions as a side effect of a settings change or a file replace | object-storage-and-backup.md (#119) |
 | A brand overrides token values only — never token names, never a type size | workspace-branding.md (#285/#286) |
 | Brand CSS inputs are validated at the write boundary; uploaded assets are sniffed by magic bytes and SVG is refused | workspace-branding.md (#285/#286) |
 

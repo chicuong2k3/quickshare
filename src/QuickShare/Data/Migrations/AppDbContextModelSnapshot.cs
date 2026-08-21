@@ -396,6 +396,10 @@ namespace QuickShare.Migrations
                     b.Property<string>("StoragePath")
                         .HasColumnType("text");
 
+                    b.Property<string>("StorageRegion")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
                     b.Property<string>("Tag")
                         .HasColumnType("text");
 
@@ -1417,6 +1421,9 @@ namespace QuickShare.Migrations
 
                     b.Property<string>("Plan")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PreferredStorageRegion")
                         .HasColumnType("text");
 
                     b.Property<string>("ReferralCode")

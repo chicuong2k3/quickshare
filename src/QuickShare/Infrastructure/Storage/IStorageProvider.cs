@@ -22,8 +22,14 @@ public sealed record R2MultipartInfo(string UploadId, string ObjectKey, DateTime
 public interface IStorageProvider
 {
     // ── R2 multipart upload ────────────────────────────────────────────────
+    /// <summary>
+    /// Starts a multipart upload. <paramref name="region"/> pins the object to a configured
+    /// storage location (issue #119); null uses the default bucket. It is a parameter only
+    /// here, because this is the one call that *creates* the key — every later operation finds
+    /// the right bucket from the key itself.
+    /// </summary>
     Task<R2InitResult> InitR2MultipartUploadAsync(
-        Guid deliveryId, string fileName, CancellationToken ct = default);
+        Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default);
 
     Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(
         string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default);

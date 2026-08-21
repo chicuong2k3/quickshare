@@ -19,6 +19,12 @@ public record Delivery : BaseAuditEntity
     /// from another workspace is refused at commit, not silently ignored.
     /// </summary>
     public Guid? FolderId { get; set; }
+    /// <summary>
+    /// Storage region the object was written to (issue #119); null = default bucket. Recorded
+    /// rather than derived so the recipient badge and any compliance question can be answered
+    /// without re-parsing the storage key.
+    /// </summary>
+    public string? StorageRegion { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }

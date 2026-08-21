@@ -174,7 +174,7 @@ public sealed class OrphanSweepJobTests : IClassFixture<TestWebAppFactory>
             return Task.CompletedTask;
         }
 
-        public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+        public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
             => throw new NotSupportedException();
 
         public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)

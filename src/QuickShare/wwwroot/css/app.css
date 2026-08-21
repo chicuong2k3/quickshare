@@ -2944,3 +2944,15 @@ html, body {
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
+
+
+/* ─── Data residency badge on the recipient page (issue #119) ─── */
+.dl-region {
+    margin: 0 0 var(--db-space-3);
+    text-align: center;
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--db-color-text-muted);
+}

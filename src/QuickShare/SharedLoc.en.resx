@@ -1559,4 +1559,14 @@
   <data name="brand_preview_heading" xml:space="preserve"><value>A heading in your type</value></data>
   <data name="brand_preview_body" xml:space="preserve"><value>Body copy, at the size the design system fixes, in the family you chose.</value></data>
   <data name="brand_preview_chip" xml:space="preserve"><value>Download</value></data>
+  <data name="dl_stored_in" xml:space="preserve"><value>Stored in {0}</value></data>
+  <data name="region_title" xml:space="preserve"><value>Storage region</value></data>
+  <data name="region_subtitle" xml:space="preserve"><value>Where the files you upload are stored.</value></data>
+  <data name="region_default" xml:space="preserve"><value>Default region</value></data>
+  <data name="region_save" xml:space="preserve"><value>Save region</value></data>
+  <data name="region_saved" xml:space="preserve"><value>Saved. This applies to future uploads.</value></data>
+  <data name="region_future_only" xml:space="preserve"><value>Changing this does not move deliveries you have already sent. Relocating stored bytes across jurisdictions is a copy, a verification and a delete — not a side effect of a settings change.</value></data>
+  <data name="region_studio_note" xml:space="preserve"><value>On Studio you can also pick a region per upload; Pro pins one region for the account.</value></data>
+  <data name="region_unavailable" xml:space="preserve"><value>Storage regions are not configured on this deployment.</value></data>
+  <data name="region_requires_paid" xml:space="preserve"><value>Choosing a storage region is available on Pro and Studio.</value></data>
 </root>

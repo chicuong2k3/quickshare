@@ -1,4 +1,4 @@
-﻿using LightResults;
+using LightResults;
 using QuickShare.Features.Uploads.Shared;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Storage;
@@ -60,7 +60,10 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
         R2InitResult initResult;
         try
         {
-            initResult = await storage.InitR2MultipartUploadAsync(sessionId, cmd.FileName, cancellationToken);
+            // Same region as the delivery being replaced: swapping a file must not silently
+            // move the bytes to another jurisdiction (issue #119).
+            initResult = await storage.InitR2MultipartUploadAsync(
+                sessionId, cmd.FileName, delivery.StorageRegion, cancellationToken);
         }
         catch (R2StorageException)
         {

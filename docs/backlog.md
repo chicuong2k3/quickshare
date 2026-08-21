@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 27 done (08-22): `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 28 done (08-22): `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -497,6 +497,45 @@ for a setting changed once a year), and custom-domain-carried branding — `#67`
 so `#81` white-label stays open too, since brand control without domain control is not
 white-label.
 
+
+Tier 6 batch 9 (residency), 2026-08-22: `#119` data residency — one migration
+`AddStorageResidency` (`users.PreferredStorageRegion`, `deliveries.StorageRegion`). Tests:
+`StorageResidencyTests` (19). Design:
+[`docs/object-storage-and-backup.md`](object-storage-and-backup.md).
+
+Deferred twice from the storage batches, and taken alone here because it is a routing change to
+the path every upload and download goes through.
+
+Routing is **derived from the object key** (`uploads/{region}/{user}/{delivery}/{name}`) rather
+than passed through `IStorageProvider` on every call. The explicit alternative — a region
+argument on ten signatures and ~25 call sites — is more visible, but it means every present and
+future path that touches an object has to thread it correctly, and one that forgets reads the
+wrong bucket and reports "not found" for a file that exists. `Delivery.StoragePath` already
+travels everywhere, so deriving the bucket from the key means an object is always findable from
+the one thing that is always present. `InitR2MultipartUploadAsync` is the sole method taking a
+region, because it is the sole call that creates a key.
+
+**Backward compatibility is what makes the scheme safe rather than merely convenient**: every
+pre-residency key has a user GUID where the region segment now sits, and region codes are
+`^[a-z0-9]{2,12}$` so a 32-char hex string can never match one. Old objects resolve to the
+default bucket exactly as before, and a test asserts precisely that. Only `uploads/` is
+partitioned — avatars and brand assets stay put rather than scattering a logo across
+jurisdictions.
+
+Regions are configured per deployment as bucket-only (the R2 shape, one endpoint) or with an
+endpoint override (the AWS and multi-site MinIO shape, where a region genuinely is a different
+host); a region without its own endpoint reuses the default client. Half-configured regions are
+dropped rather than failing startup. Entitlement follows the plans: **Studio routes per
+delivery**, **Pro pins one region** on the account and its per-request override is deliberately
+ignored (honouring it would hand Pro the Studio feature), Free and anonymous get the default.
+An unknown or removed code **degrades to the default bucket instead of erroring** — residency is
+a deployment capability, not a user input to validate.
+
+**Nothing moves.** Changing the setting applies to future uploads only, and replacing a file
+keeps the delivery's original region: relocating bytes across jurisdictions is a copy, a
+verification and a delete, not a side effect of a settings save. The recipient page shows a
+"Stored in {region}" badge, and shows nothing when the region is no longer configured.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -541,7 +580,7 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 27 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 28 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
   `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,

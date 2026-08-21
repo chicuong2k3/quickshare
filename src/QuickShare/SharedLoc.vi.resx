@@ -1559,4 +1559,14 @@
   <data name="brand_preview_heading" xml:space="preserve"><value>Một tiêu đề bằng phông của bạn</value></data>
   <data name="brand_preview_body" xml:space="preserve"><value>Nội dung, ở cỡ chữ mà hệ thiết kế cố định, bằng họ chữ bạn chọn.</value></data>
   <data name="brand_preview_chip" xml:space="preserve"><value>Tải xuống</value></data>
+  <data name="dl_stored_in" xml:space="preserve"><value>Lưu tại {0}</value></data>
+  <data name="region_title" xml:space="preserve"><value>Vùng lưu trữ</value></data>
+  <data name="region_subtitle" xml:space="preserve"><value>Nơi các tệp bạn tải lên được lưu.</value></data>
+  <data name="region_default" xml:space="preserve"><value>Vùng mặc định</value></data>
+  <data name="region_save" xml:space="preserve"><value>Lưu vùng</value></data>
+  <data name="region_saved" xml:space="preserve"><value>Đã lưu. Áp dụng cho các lần tải lên sau.</value></data>
+  <data name="region_future_only" xml:space="preserve"><value>Thay đổi này không di chuyển các lượt gửi đã có. Chuyển dữ liệu đã lưu giữa các vùng tài phán là một chuỗi sao chép, kiểm chứng rồi xoá — không phải hệ quả phụ của một thao tác đổi cài đặt.</value></data>
+  <data name="region_studio_note" xml:space="preserve"><value>Với gói Studio bạn còn chọn được vùng cho từng lần tải lên; gói Pro cố định một vùng cho cả tài khoản.</value></data>
+  <data name="region_unavailable" xml:space="preserve"><value>Bản triển khai này chưa cấu hình vùng lưu trữ.</value></data>
+  <data name="region_requires_paid" xml:space="preserve"><value>Chọn vùng lưu trữ có ở gói Pro và Studio.</value></data>
 </root>

@@ -16,5 +16,7 @@ public static partial class UserMapper
     // Workspace seat plan override (issue #106) — bookkeeping for restoring the account's
     // own plan when a seat ends, never part of the profile it shows.
     [MapperIgnoreSource(nameof(User.PersonalPlan))]
+    // Storage residency (issue #119) is an account setting, not profile identity.
+    [MapperIgnoreSource(nameof(User.PreferredStorageRegion))]
     public static partial ProfileResponse ToProfileResponse(this User source);
 }

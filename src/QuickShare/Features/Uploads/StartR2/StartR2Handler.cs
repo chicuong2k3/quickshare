@@ -4,17 +4,18 @@ using QuickShare.Features.Uploads.Shared;
 
 namespace QuickShare.Features.Uploads.StartR2;
 
-public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode)
+public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null)
     : IRequest<Result<StartR2Response>>;
 
-public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
+public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, string? StorageRegion = null);
 
 public sealed class StartR2Handler(
     IStorageProvider storage,
     IHttpContextAccessor httpContextAccessor,
     AnalyticsService analytics,
     ILogger<StartR2Handler> logger,
-    AppDbContext db)
+    AppDbContext db,
+    StorageRegionResolver regions)
     : IRequestHandler<StartR2Command, Result<StartR2Response>>
 {
     // S3/R2 minimum part size (all parts except the last). Caps how many presigned
@@ -60,10 +61,14 @@ public sealed class StartR2Handler(
 
         var deliveryId = Guid.CreateVersion7();
 
+        // Data residency (issue #119). Resolved before the key exists, because the key is what
+        // carries the region for every later operation on this object.
+        var region = regions.Resolve(user, plan, cmd.StorageRegion);
+
         R2InitResult initResult;
         try
         {
-            initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, cancellationToken);
+            initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, region, cancellationToken);
         }
         catch (R2StorageException ex)
         {

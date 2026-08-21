@@ -103,6 +103,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.WorkspaceId);
+            entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
             entity.HasIndex(e => e.FolderId);
             // Restrict, not cascade: deleting a folder must never take its deliveries with it.
             // The folder delete handler refuses while anything is still filed under it.

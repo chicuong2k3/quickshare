@@ -122,4 +122,6 @@ public static class ErrorCodes
     public const string BrandAssetMissing = "brand_asset_missing";
     public const string BrandAssetTooLarge = "brand_asset_too_large";
     public const string BrandAssetTypeInvalid = "brand_asset_type_invalid";
+    /// <summary>Requested storage region is not configured on this deployment (issue #119).</summary>
+    public const string StorageRegionInvalid = "storage_region_invalid";
 }

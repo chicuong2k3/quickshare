@@ -257,6 +257,12 @@ builder.Services.AddScoped<WorkspaceBackupJob>();
 
 // Recipient-facing workspace branding (issues #285, #286).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>();
+
+// Data residency (issue #119): which storage region an upload is pinned to.
+builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
+
+// Data residency (issue #119): which storage region an upload is pinned to.
+builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
 builder.Services.AddHttpClient();
 
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──

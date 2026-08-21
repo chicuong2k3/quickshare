@@ -47,6 +47,23 @@ public sealed class ObjectStoreOptions
 
     public PresignedUrlExpirySettings PresignedUrlExpiry { get; init; } = new();
 
+    /// <summary>
+    /// Storage locations a sender may pin a delivery to (issue #119). Empty means residency is
+    /// not offered and every object lives in <see cref="BucketName"/> — which is what every
+    /// deployment configured before this feature keeps doing.
+    /// </summary>
+    public List<StorageRegionOption> Regions { get; init; } = [];
+
+    /// <summary>Configured regions that are actually usable.</summary>
+    public IReadOnlyList<StorageRegionOption> UsableRegions =>
+        Regions.Where(r => r.IsConfigured).ToList();
+
+    /// <summary>Residency is on offer only once more than nothing is configured.</summary>
+    public bool SupportsResidency => UsableRegions.Count > 0;
+
+    public StorageRegionOption? FindRegion(string? code) =>
+        code is null ? null : UsableRegions.FirstOrDefault(r => r.Code == code);
+
     /// <summary>Enough to talk to a store: an endpoint we can derive, credentials, and a bucket.</summary>
     public bool IsConfigured =>
         !string.IsNullOrEmpty(ResolvedEndpoint)

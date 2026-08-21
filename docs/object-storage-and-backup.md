@@ -1,8 +1,8 @@
 # Object storage and workspace backup
 
-Issues `#171` (S3-compatible storage backend) and `#271` (scheduled workspace backup). They
-ship together because they answer the same two questions: where the bytes live, and how a
-customer gets their data out without asking us.
+Issues `#171` (S3-compatible storage backend), `#119` (data residency) and `#271` (scheduled
+workspace backup). They answer the same two questions: where the bytes live, and how a customer
+gets their data out without asking us.
 
 ## S3-compatible storage (`#171`)
 
@@ -48,13 +48,90 @@ style, so the default is safe everywhere.
 Without a configured store the app still starts on `LocalDiskStorageProvider`, and upload paths
 throw `NotSupportedException` as before.
 
-### What is not here
+## Data residency (`#119`)
 
-**Data residency (`#119`) is not part of this.** Choosing an EU or APAC bucket per delivery
-means the region has to travel with every object through `IStorageProvider` — roughly ten method
-signatures and every call site — plus a `StorageRegion` column and a migration path for existing
-objects. That is a separate change with its own risk, and doing it as a footnote to a config
-generalization would be the wrong way to touch the download path.
+Pinning a delivery's bytes to a storage location — an EU bucket, a US bucket, an APAC bucket.
+
+### Routing is derived from the object key
+
+This is the load-bearing decision, and it is a trade rather than an obvious win.
+
+The explicit alternative is a `region` argument on every `IStorageProvider` method and every call
+site. That is more visible, but it means the region has to be threaded correctly through every
+present *and future* path that touches an object, and a path that forgets it reads from the
+wrong bucket and reports "not found" for a file that plainly exists.
+
+Instead the region lives in the key, directly under `uploads/`:
+
+```
+uploads/eu/{userId}/{deliveryId}/{name}      pinned
+uploads/{userId}/{deliveryId}/{name}         default bucket
+```
+
+`Delivery.StoragePath` already travels everywhere, so the bucket can always be found from the
+one thing that is always present. `StorageRegions.FromKey` reads the segment back out, and
+`S3CompatibleStorageProvider.Route` maps it to a client and bucket.
+
+**Backward compatibility is the reason the scheme is safe rather than merely convenient.** Every
+key written before residency existed has a user GUID where the region segment now sits, and a
+32-character hex string can never match a region code — codes are `^[a-z0-9]{2,12}$`. Old
+objects resolve to the default bucket exactly as before. That is asserted directly in the tests.
+
+`InitR2MultipartUploadAsync` is the one method that takes a region parameter, because it is the
+one call that *creates* the key. Everything after it agrees by construction.
+
+Only `uploads/` is partitioned. Avatars and brand assets stay in the default bucket — scattering
+a workspace logo across jurisdictions would be cost without meaning.
+
+### Regions are a deployment capability
+
+```json
+"ObjectStore": {
+  "Regions": [
+    { "Code": "eu", "Label": "European Union (Frankfurt)", "BucketName": "qs-eu" },
+    { "Code": "us", "Label": "United States", "BucketName": "qs-us", "Endpoint": "https://s3.us-east-1.amazonaws.com" }
+  ]
+}
+```
+
+Bucket-only covers R2, where buckets carry a location hint and share one endpoint. The endpoint
+override covers AWS and multi-site MinIO, where a region genuinely is a different host — without
+it this would not be residency for those deployments, just one datacentre with several folder
+names. A region with no endpoint reuses the default client rather than opening a second
+connection pool.
+
+Half-configured regions are dropped, not rejected at startup: a typo in one region should not
+take the whole store offline.
+
+### Entitlement follows what the plans promise
+
+| Plan | Behaviour |
+|---|---|
+| Studio | routes **per delivery** — an agency holds clients under different regimes |
+| Pro | pins **one region** on the account; every upload follows it |
+| Free / anonymous | default bucket |
+
+Pro's per-request override is deliberately ignored rather than honoured, because honouring it
+would quietly hand Pro the Studio feature.
+
+An unknown or removed region code **degrades to the default bucket instead of failing**.
+Residency is a deployment capability, and an operator who has not configured regions should see
+uploads keep working rather than a validation error on a control the UI never showed.
+
+### What it does not do
+
+**Changing the setting does not move existing deliveries.** Relocating stored bytes across
+jurisdictions is a copy, a verification and a delete on infrastructure we may not control;
+doing it silently as a side effect of a settings change is the opposite of what a residency
+control is for. The setting applies to the next upload, and the account page says so.
+
+**Replacing a file keeps the delivery's original region.** Swapping an attachment must not
+quietly move the bytes to another jurisdiction.
+
+The recipient page shows a "Stored in {region}" badge, resolved from the delivery's recorded
+region — and shows nothing when that region is no longer configured, because a label we cannot
+resolve is worse than no badge.
+
 
 ## Scheduled workspace backup (`#271`)
 
@@ -121,6 +198,11 @@ than a format an operator can read.
 
 - **Adding a storage backend?** If it speaks S3, it needs no code — just config. If it does not,
   implement `IStorageProvider` and register it in the same block in `Program.cs`.
+- **New code that builds an upload key?** Go through `R2ObjectKey.For` and pass the region.
+  A hand-rolled key skips residency routing and lands the object in the default bucket.
+- **New code that moves or copies an object?** Keep it inside its region unless the user has
+  explicitly asked otherwise. Silent cross-jurisdiction movement is the failure this feature
+  exists to prevent.
 - **Changing the manifest?** Bump `ManifestVersion`. Anything reading an old manifest must keep
   working, because customers hold copies we cannot migrate.
 - **Adding data to a workspace that a customer would need after a disaster?** Add it to
@@ -139,3 +221,10 @@ recorded rather than thrown, run-without-policy 404, and delete.
 Round-tripping bytes against a live MinIO belongs in CI with a container, not in an in-memory
 suite — what changed in `#171` is which endpoint the SDK is handed, and that is what these cases
 pin.
+
+`tests/QuickShare.Server.Tests/E2E/StorageResidencyTests.cs` (19) — key format with and without
+a region, region codes that must be rejected, and the case the whole scheme rests on: a
+pre-residency key with a user GUID in the region slot resolving to the default bucket.
+Half-configured regions dropped; Studio routing per delivery, Pro pinned to one and ignoring a
+per-request override, Free and anonymous unaffected; unknown regions degrading rather than
+failing; labels resolved only for regions that still exist.

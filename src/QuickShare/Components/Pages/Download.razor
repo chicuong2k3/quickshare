@@ -10,8 +10,10 @@
 @using QuickShare.Features.Downloads.Info
 @using QuickShare.Features.Deliveries.ExtensionRequests
 @using QuickShare.Features.Workspaces.Branding
+@using QuickShare.Features.Uploads.Shared
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject BrandReader Brands
+@inject StorageRegionResolver Regions
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
@@ -59,6 +61,11 @@
                 <p class="dl-brand__header">@header</p>
             }
         </div>
+    }
+    @if (RegionLabel is { } regionLabel)
+    {
+        @* Residency badge (issue #119) — a trust signal the recipient can see without asking. *@
+        <p class="dl-region">@Loc["dl_stored_in", regionLabel]</p>
     }
     <div class="card db-card">
         @* The delivery's own card chrome; the label is the real share code. *@
@@ -676,6 +683,9 @@
     /// </summary>
     private BrandView? Brand { get; set; }
 
+    /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
+    private string? RegionLabel { get; set; }
+
     /// <summary>
     /// Emits the brand stylesheet unescaped. Safe because every interpolated value is validated
     /// on save — hex colours and a restricted font-name character set — so nothing here can
@@ -702,13 +712,16 @@
         // Brand of the sending workspace (issues #285, #286). Read straight from the delivery
         // rather than widened into DownloadInfoResponse: that payload is serialized to the
         // recipient, and the workspace id has no business being in it.
-        var brandWorkspaceId = await Db.Deliveries
+        var stored = await Db.Deliveries
             .AsNoTracking()
             .Where(d => d.ShareCode == ShareCode)
-            .Select(d => d.WorkspaceId)
+            .Select(d => new { d.WorkspaceId, d.StorageRegion })
             .FirstOrDefaultAsync(CancellationToken.None);
 
-        Brand = await Brands.ForWorkspaceAsync(brandWorkspaceId, CancellationToken.None);
+        Brand = await Brands.ForWorkspaceAsync(stored?.WorkspaceId, CancellationToken.None);
+        // Null when the delivery has no region, or when the region it was written to is no
+        // longer configured — a label we cannot resolve is worse than no badge at all.
+        RegionLabel = Regions.LabelFor(stored?.StorageRegion);
 
         try
         {

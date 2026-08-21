@@ -14,6 +14,11 @@ public record User : BaseAuditEntity
     /// Null means Plan has never been overridden by a workspace.
     /// </summary>
     public string? PersonalPlan { get; set; }
+    /// <summary>
+    /// Storage region this account's uploads are pinned to (issue #119). Pro picks one and every
+    /// upload follows it; Studio may override per delivery. Null = the default bucket.
+    /// </summary>
+    public string? PreferredStorageRegion { get; set; }
     public bool EmailOnDownload { get; set; } = true;
     public string? ReferralCode { get; set; }
     public Guid? ReferredByUserId { get; set; }
