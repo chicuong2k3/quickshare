@@ -37,4 +37,6 @@ public static class NotificationType
     public const string ApprovalPending = "approval_pending";
     /// <summary>An approver cleared or refused the sender's share (issue #162).</summary>
     public const string ApprovalDecided = "approval_decided";
+    /// <summary>Somebody commented on a delivery this account sent (issue #289).</summary>
+    public const string DeliveryCommented = "delivery_commented";
 }

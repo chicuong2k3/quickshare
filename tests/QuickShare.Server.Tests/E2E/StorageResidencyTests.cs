@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using QuickShare.Data.Entities;
 using QuickShare.Features.Uploads.Shared;
@@ -113,6 +114,32 @@ public sealed class StorageResidencyTests
         Assert.Equal("eu", usable[0].Code);
         Assert.Null(options.FindRegion("us"));
         Assert.Null(options.FindRegion(null));
+    }
+
+    [Fact]
+    public void Options_CarryRegionsEvenWhenConnectionDetailsComeFromTheLegacySection()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["R2:AccountId"] = "legacy-account",
+                ["R2:BucketName"] = "legacy-bucket",
+                ["R2:AccessKeyId"] = "legacy-key",
+                ["R2:AccessKeySecret"] = "legacy-secret",
+                ["ObjectStore:Regions:0:Code"] = "eu",
+                ["ObjectStore:Regions:0:Label"] = "European Union",
+                ["ObjectStore:Regions:0:BucketName"] = EuBucket,
+            })
+            .Build();
+
+        var resolved = ObjectStoreResolver.Resolve(configuration);
+
+        // Regions are a separate concern from which section holds the credentials. Dropping
+        // them on fallback silently disabled residency with no error anywhere — exactly the
+        // failure the fallback exists to prevent.
+        Assert.Equal("https://legacy-account.r2.cloudflarestorage.com", resolved.ResolvedEndpoint);
+        Assert.True(resolved.SupportsResidency);
+        Assert.Equal(EuBucket, resolved.FindRegion("eu")!.BucketName);
     }
 
     [Fact]

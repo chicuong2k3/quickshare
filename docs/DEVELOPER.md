@@ -54,6 +54,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   custom typography (#286),
   [`delivery-gating.md`](delivery-gating.md) - approval workflow (#162),
   recurring delivery (#176),
+  [`comments-and-channels.md`](comments-and-channels.md) - delivery comments (#289),
+  Slack/Teams posting (#180),
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
@@ -114,6 +116,8 @@ rules:
 | Brand CSS inputs are validated at the write boundary; uploaded assets are sniffed by magic bytes and SVG is refused | workspace-branding.md (#285/#286) |
 | Any path publishing a delivery checks `PendingApproval`; it must be indistinguishable from not-found to recipients | delivery-gating.md (#162) |
 | Any code copying a delivery carries `StorageRegion` and drops legal hold, approval state and `DeletedAt` | delivery-gating.md (#162/#176/#119) |
+| Comment surfaces resolve all three gates via `CommentGate`; a chat webhook URL is never returned or audited | comments-and-channels.md (#289/#180) |
+| Test stubs produce production shapes — a stub that invents a value hides whatever reads it | comments-and-channels.md |
 
 ## 6. Workflow (issue → done)
 

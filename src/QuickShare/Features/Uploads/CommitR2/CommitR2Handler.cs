@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -256,6 +256,12 @@ public sealed class CommitR2Handler(
             // the shared history. A file-request submission has no sender and no workspace.
             WorkspaceId = requestId is null ? workspaceId : null,
             FolderId = folderId,
+            // Read back out of the key rather than carried through the request: the key is
+            // where the bytes actually went, so this cannot disagree with reality (issue #119).
+            StorageRegion = StorageRegions.FromKey(cmd.ObjectKey),
+            // Privacy mode wins: a share that keeps no download record should not grow a
+            // thread instead (issues #289/#187).
+            CommentsEnabled = cmd.CommentsEnabled && !cmd.PrivacyMode,
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.

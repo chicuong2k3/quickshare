@@ -276,6 +276,9 @@ namespace QuickShare.Migrations
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("CommentsEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -434,6 +437,8 @@ namespace QuickShare.Migrations
                     b.HasIndex("Alias")
                         .IsUnique();
 
+                    b.HasIndex("CommentsEnabled");
+
                     b.HasIndex("ExpiresAt");
 
                     b.HasIndex("FileRequestId");
@@ -450,6 +455,59 @@ namespace QuickShare.Migrations
                     b.HasIndex("WorkspaceId");
 
                     b.ToTable("deliveries", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AuthorIpHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("AuthorName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid?>("AuthorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("AuthorIpHash", "CreatedAt");
+
+                    b.HasIndex("DeliveryId", "CreatedAt");
+
+                    b.ToTable("delivery_comments", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
@@ -1650,6 +1708,10 @@ namespace QuickShare.Migrations
                     b.Property<bool>("AllowSelfApproval")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("CommentPolicy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1830,6 +1892,58 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("workspace_brands", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceChannelHook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ConsecutiveFailures")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<DateTime?>("LastPostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("NotifyOnComment")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("NotifyOnDelivery")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WebhookUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId")
+                        .IsUnique();
+
+                    b.ToTable("workspace_channel_hooks", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceFolder", b =>
@@ -2083,6 +2197,22 @@ namespace QuickShare.Migrations
                     b.Navigation("FileRequest");
 
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryComment", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuickShare.Data.Entities.DeliveryComment", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Delivery");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
@@ -2341,6 +2471,17 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceBrand", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceChannelHook", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.Workspace", "Workspace")
                         .WithMany()

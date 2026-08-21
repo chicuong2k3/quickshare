@@ -131,4 +131,14 @@ public static class ErrorCodes
     public const string RecurrenceInvalid = "recurrence_invalid";
     public const string RecurrenceNotFound = "recurrence_not_found";
     public const string RecurrenceRecipientsRequired = "recurrence_recipients_required";
+    // Delivery comments (#289) and channel posting (#180).
+    public const string CommentsDisabled = "comments_disabled";
+    public const string CommentBodyRequired = "comment_body_required";
+    public const string CommentAuthorRequired = "comment_author_required";
+    public const string CommentNotFound = "comment_not_found";
+    public const string CommentTooDeep = "comment_too_deep";
+    public const string CommentRateLimited = "comment_rate_limited";
+    public const string ChannelUrlInvalid = "channel_url_invalid";
+    public const string ChannelKindInvalid = "channel_kind_invalid";
+    public const string ChannelNotFound = "channel_not_found";
 }

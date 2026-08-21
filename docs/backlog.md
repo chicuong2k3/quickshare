@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 30 done (08-22): `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 32 done (08-22): `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -578,6 +578,46 @@ does not have, and a timer that escalates to nobody is worse than none), and adm
 the two workspace approval flags — the columns and enforcement are real and tested, the switches
 are not built.
 
+
+Tier 6 batch 11 (conversation series), 2026-08-22: `#289` delivery comments, `#180` Slack/Teams
+posting — one migration `AddCommentsAndChannelHooks` (new tables `delivery_comments` /
+`workspace_channel_hooks`, `deliveries.CommentsEnabled`, `workspaces.CommentPolicy`). Tests:
+`CommentsAndChannelTests` (18). Design:
+[`docs/comments-and-channels.md`](comments-and-channels.md).
+
+`#289` comments — three independent gates, **all of which only close**: the sender's per-delivery
+switch (off by default, because a share is one-way unless they say otherwise), the workspace
+`CommentPolicy` ceiling, and privacy mode, which wins outright — a share that keeps no download
+record must not accumulate a public thread instead, so the column is forced false at commit
+rather than resolved later. `MembersOnly` restricts posting, not reading, which is the
+distinction the policy is actually asked for. Anonymous recipients supply a display name and are
+rate-limited by hashed address; the thread marks which authors are real accounts, because a
+supplied name is a claim rather than an identity. Deletes are soft **and blank the body** — the
+row stays so replies keep their context, and keeping the text would mean the delete was not one.
+An anonymous author cannot delete their own: "same hashed address" is not proof of authorship and
+would let anyone behind the same NAT remove somebody else's words. Replies are one level deep.
+
+`#180` Slack/Teams — one `{"text": …}` body serves both platforms; per-platform cards would be
+two renderers to keep in step for a difference no channel reader notices. The webhook URL is
+treated as the credential it is: stored, never returned, blank-on-save preserves it, and the
+audit records the **host** rather than the URL. HTTPS only. Posts are best-effort with a
+5-second timeout and can never fail a share or a comment — the same inline pattern the recipient
+emails in that handler already use, chosen over new queue infrastructure for a call that
+normally takes tens of milliseconds. A hook failing ten times running is parked and un-parks on
+save.
+
+**Two `#119` defects found and fixed here**, both invisible to a green suite: `Delivery.StorageRegion`
+was never assigned at commit (routing worked, the recorded region was always null, so the badge
+never showed and every copy path passed null), and `ObjectStoreResolver` dropped the region table
+whenever store config fell back to the legacy `R2` section. The suite could not have caught
+either, because the test storage stub returned a made-up object key instead of the real shape
+and no test configured a region. Both fixed, plus the stub now builds real keys and the factory
+configures two regions, so residency is exercised end to end.
+
+**Not shipped**: comment attachments (a second file feature hiding in a comment box), @-mention
+routing (needs a participant directory recipients are not in), download events posted to the
+channel, and comments in the GDPR export.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -607,6 +647,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Object storage & backup (S3-compatible / scheduled export) | `docs/object-storage-and-backup.md` |
 | Workspace branding (recipient page / typography) | `docs/workspace-branding.md` |
 | Delivery gating (approval / recurrence) | `docs/delivery-gating.md` |
+| Comments & chat channels | `docs/comments-and-channels.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -623,7 +664,7 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 30 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 32 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
   `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,

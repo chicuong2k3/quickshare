@@ -39,6 +39,13 @@ public record Delivery : BaseAuditEntity
     /// the whole point of a gate is that nobody outside learns the link exists until it clears.
     /// </summary>
     public string? PendingRecipients { get; set; }
+
+    /// <summary>
+    /// Recipients and the sender's team may discuss this share (issue #289). Off by default: a
+    /// share is one-way unless the sender opens it, and a comment box nobody asked for on a
+    /// contract is a place for things to be said that the sender never sees.
+    /// </summary>
+    public bool CommentsEnabled { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }

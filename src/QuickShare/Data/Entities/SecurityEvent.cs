@@ -80,4 +80,6 @@ public enum SecurityEventType
     DeliveryDenied,
     RecurringDeliveryChanged,
     RecurringDeliveryRan,
+    ChannelHookChanged,
+    DeliveryCommentPosted,
 }

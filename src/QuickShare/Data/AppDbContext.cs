@@ -44,6 +44,8 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceBackupPolicy> WorkspaceBackupPolicies => Set<WorkspaceBackupPolicy>();
     public DbSet<WorkspaceBrand> WorkspaceBrands => Set<WorkspaceBrand>();
     public DbSet<RecurringDelivery> RecurringDeliveries => Set<RecurringDelivery>();
+    public DbSet<DeliveryComment> DeliveryComments => Set<DeliveryComment>();
+    public DbSet<WorkspaceChannelHook> WorkspaceChannelHooks => Set<WorkspaceChannelHook>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -107,6 +109,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
             entity.Property(e => e.DenyReason).HasMaxLength(Delivery.MessageMaxLength);
             entity.Property(e => e.PendingRecipients).HasMaxLength(RecurringDelivery.RecipientsMaxLength);
+            entity.HasIndex(e => e.CommentsEnabled);
             entity.HasIndex(e => e.FolderId);
             // Restrict, not cascade: deleting a folder must never take its deliveries with it.
             // The folder delete handler refuses while anything is still filed under it.
@@ -472,6 +475,43 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DeliveryComment>(entity =>
+        {
+            entity.ToTable("delivery_comments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Body).IsRequired().HasMaxLength(DeliveryComment.BodyMaxLength);
+            entity.Property(e => e.AuthorName).IsRequired().HasMaxLength(DeliveryComment.AuthorNameMaxLength);
+            entity.Property(e => e.AuthorIpHash).HasMaxLength(64);
+            // The thread view reads a delivery in creation order; the rate check reads by author.
+            entity.HasIndex(e => new { e.DeliveryId, e.CreatedAt });
+            entity.HasIndex(e => new { e.AuthorIpHash, e.CreatedAt });
+            entity.HasOne(e => e.Delivery)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // A reply belongs to its parent; deleting the parent row would orphan it, but the
+            // delete path is soft precisely so that never happens.
+            entity.HasOne<DeliveryComment>()
+                .WithMany()
+                .HasForeignKey(e => e.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkspaceChannelHook>(entity =>
+        {
+            entity.ToTable("workspace_channel_hooks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.WebhookUrl).IsRequired().HasMaxLength(WorkspaceChannelHook.UrlMaxLength);
+            entity.Property(e => e.LastError).HasMaxLength(WorkspaceChannelHook.ErrorMaxLength);
+            // One channel per workspace. Fan-out to several is a router's job, as with the SIEM sink.
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

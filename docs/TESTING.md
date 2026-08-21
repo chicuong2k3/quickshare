@@ -20,7 +20,7 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 dotnet run --project src/QuickShare
 
 # automated suites (prove the basics before manual work)
-dotnet test tests/QuickShare.Server.Tests    # ~340s, 706 tests
+dotnet test tests/QuickShare.Server.Tests    # ~340s, 725 tests
 dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
 ```
 
@@ -84,6 +84,7 @@ browser download needed.
 | Data residency (#119) — key format, entitlement, backward compatibility | `StorageResidencyTests` |
 | Workspace branding (#285) + custom fonts (#286) | `WorkspaceBrandTests` |
 | Approval gating (#162) + recurring delivery (#176) | `ApprovalAndRecurringTests` |
+| Delivery comments (#289) + Slack/Teams posting (#180) | `CommentsAndChannelTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |

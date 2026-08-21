@@ -16,7 +16,15 @@ internal static class ObjectStoreResolver
         if (current.IsConfigured)
             return current;
 
+        // Connection details fall back to the legacy section, but the **region table does not**
+        // (issue #119). Regions are a separate concern from which section holds the credentials:
+        // a deployment still configured under `R2` that adds `ObjectStore:Regions` expects
+        // residency to work, and dropping the table here would silently disable it with no error
+        // anywhere — the same class of silent failure the fallback exists to prevent.
         var legacy = configuration.GetSection(R2Options.Section).Get<R2Options>() ?? new();
-        return ObjectStoreOptions.FromR2(legacy);
+        var resolved = ObjectStoreOptions.FromR2(legacy);
+        resolved.Regions.AddRange(current.Regions);
+
+        return resolved;
     }
 }

@@ -7,7 +7,7 @@ namespace QuickShare.Features.Uploads.StartR2;
 public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null)
     : IRequest<Result<StartR2Response>>;
 
-public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, string? StorageRegion = null);
+public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
 
 public sealed class StartR2Handler(
     IStorageProvider storage,

@@ -132,6 +132,13 @@ The recipient page shows a "Stored in {region}" badge, resolved from the deliver
 region — and shows nothing when that region is no longer configured, because a label we cannot
 resolve is worse than no badge.
 
+> **Corrected 2026-08-22.** As first shipped, `Delivery.StorageRegion` was never assigned at
+> commit and the region table was dropped whenever store config fell back to the legacy `R2`
+> section. Routing worked, so bytes reached the right bucket, but the *recorded* region was
+> always null — no badge, and null passed on by every copy path. Both are fixed, and the end-to-end
+> assertion that would have caught them now lives in `CommentsAndChannelTests`. See
+> [`comments-and-channels.md`](comments-and-channels.md) for why the suite could not catch them.
+
 
 ## Scheduled workspace backup (`#271`)
 

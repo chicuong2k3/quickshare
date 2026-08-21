@@ -43,6 +43,12 @@ public record Workspace : BaseAuditEntity
     /// </summary>
     public bool AllowSelfApproval { get; set; }
 
+    /// <summary>
+    /// Ceiling on delivery comments across the workspace (issue #289). It can close a
+    /// conversation a sender opened; it can never open one they did not.
+    /// </summary>
+    public string CommentPolicy { get; set; } = Entities.CommentPolicy.Recipients;
+
     public User Owner { get; init; } = null!;
 }
 

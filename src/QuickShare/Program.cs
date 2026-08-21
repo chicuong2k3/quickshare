@@ -265,6 +265,10 @@ builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResol
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Approval.ApprovalNotifier>();
 builder.Services.AddScoped<RecurringDeliveryJob>();
 
+// Delivery comments (issue #289) and Slack/Teams posting (issue #180).
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Comments.CommentGate>();
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Channels.ChannelNotifier>();
+
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
 builder.Services.AddHttpClient();

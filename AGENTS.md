@@ -234,6 +234,14 @@ See `docs/delivery-gating.md` for the full subsystem. Three rules bind all futur
 - **`PendingApproval` MUST be indistinguishable from not-found on every recipient-facing path.** Never add a distinct status code for it: whether a sender's organisation reviews its shares is a fact about that organisation, not about the recipient, and a separate code turns the endpoint into an oracle for internal process.
 - **Any code that copies a delivery MUST carry `StorageRegion` and MUST NOT carry legal hold, approval state or `DeletedAt`.** A copy is a new share, not a clone of the original's compliance state. `CloneDeliveryHandler` was silently moving copies across jurisdictions until this batch; assume the next copy path will too unless it is written deliberately.
 
+### Conversation Invariants (delivery comments #289, chat channels #180)
+
+See `docs/comments-and-channels.md` for the full subsystem. Three rules bind all future work:
+
+- **Comments are gated by three independent switches, all of which only close**: the sender's `Delivery.CommentsEnabled`, the `Workspace.CommentPolicy` ceiling, and privacy mode (#187). Any new comment surface MUST resolve them through `CommentGate.EvaluateAsync` — a path that checks only the delivery flag ignores workspace policy, and none of the three may ever open a conversation the sender did not.
+- **A chat webhook URL is a credential.** Never return it from an endpoint, never put it in an audit payload (record the host), and post over HTTPS only. Channel posts are best-effort with a short timeout and MUST NOT be able to fail a share or a comment — a chat outage is not an upload error.
+- **Test stubs MUST produce the same shapes as production.** The storage stub returned a made-up object key, which made an entire residency feature untestable while everything looked green. If a stub invents a value, it is hiding whatever reads that value.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

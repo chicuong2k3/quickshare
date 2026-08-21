@@ -36,6 +36,15 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         // FusionCache backs process-wide statics (StaticCache, PlanTierLimits._cache);
         // parallel test factories would leak cached users/pages into each other.
         builder.UseSetting("FusionCache:Enabled", "false");
+        // Storage regions (issue #119). Configured here so residency is exercised end to end:
+        // without a region table the resolver returns null for everyone and the whole feature
+        // silently no-ops in tests, which is exactly how its commit-path stamp went missing.
+        builder.UseSetting("ObjectStore:Regions:0:Code", "eu");
+        builder.UseSetting("ObjectStore:Regions:0:Label", "European Union");
+        builder.UseSetting("ObjectStore:Regions:0:BucketName", "quickshare-eu");
+        builder.UseSetting("ObjectStore:Regions:1:Code", "us");
+        builder.UseSetting("ObjectStore:Regions:1:Label", "United States");
+        builder.UseSetting("ObjectStore:Regions:1:BucketName", "quickshare-us");
         builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
         builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
         builder.UseSetting("Authentication:GitHub:ClientId", "test-client-id");
@@ -243,8 +252,13 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
         => Task.FromResult(NextObjectSize);
 
+    /// <summary>
+    /// Builds the *real* key shape rather than a stub-specific one. The old "stub/{id}/{name}"
+    /// key meant nothing downstream could read a region out of it, which is precisely why the
+    /// missing commit-time region stamp (issue #119) survived a green suite.
+    /// </summary>
     public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
-        => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));
+        => Task.FromResult(new R2InitResult("stub-upload-id", R2ObjectKey.For(Guid.Empty, deliveryId, fileName, region)));
 
     public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<R2PartUrl>>(partNumbers
