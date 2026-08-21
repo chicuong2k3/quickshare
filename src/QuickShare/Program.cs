@@ -261,6 +261,10 @@ builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>(
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
 
+// Approval gate (issue #162) and recurring send (issue #176).
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Approval.ApprovalNotifier>();
+builder.Services.AddScoped<RecurringDeliveryJob>();
+
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
 builder.Services.AddHttpClient();

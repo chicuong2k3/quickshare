@@ -52,6 +52,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   (#171), data residency (#119), scheduled workspace backup (#271),
   [`workspace-branding.md`](workspace-branding.md) - branded recipient page (#285),
   custom typography (#286),
+  [`delivery-gating.md`](delivery-gating.md) - approval workflow (#162),
+  recurring delivery (#176),
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
@@ -110,6 +112,8 @@ rules:
 | Never move stored bytes across regions as a side effect of a settings change or a file replace | object-storage-and-backup.md (#119) |
 | A brand overrides token values only — never token names, never a type size | workspace-branding.md (#285/#286) |
 | Brand CSS inputs are validated at the write boundary; uploaded assets are sniffed by magic bytes and SVG is refused | workspace-branding.md (#285/#286) |
+| Any path publishing a delivery checks `PendingApproval`; it must be indistinguishable from not-found to recipients | delivery-gating.md (#162) |
+| Any code copying a delivery carries `StorageRegion` and drops legal hold, approval state and `DeletedAt` | delivery-gating.md (#162/#176/#119) |
 
 ## 6. Workflow (issue → done)
 

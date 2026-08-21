@@ -43,6 +43,7 @@ public class AppDbContext : DbContext
     public DbSet<DpaSignature> DpaSignatures => Set<DpaSignature>();
     public DbSet<WorkspaceBackupPolicy> WorkspaceBackupPolicies => Set<WorkspaceBackupPolicy>();
     public DbSet<WorkspaceBrand> WorkspaceBrands => Set<WorkspaceBrand>();
+    public DbSet<RecurringDelivery> RecurringDeliveries => Set<RecurringDelivery>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -104,6 +105,8 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.WorkspaceId);
             entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
+            entity.Property(e => e.DenyReason).HasMaxLength(Delivery.MessageMaxLength);
+            entity.Property(e => e.PendingRecipients).HasMaxLength(RecurringDelivery.RecipientsMaxLength);
             entity.HasIndex(e => e.FolderId);
             // Restrict, not cascade: deleting a folder must never take its deliveries with it.
             // The folder delete handler refuses while anything is still filed under it.
@@ -470,6 +473,29 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RecurringDelivery>(entity =>
+        {
+            entity.ToTable("recurring_deliveries");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(RecurringDelivery.NameMaxLength);
+            entity.Property(e => e.Frequency).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Recipients).HasMaxLength(RecurringDelivery.RecipientsMaxLength);
+            entity.Property(e => e.LastError).HasMaxLength(RecurringDelivery.ErrorMaxLength);
+            // The job scans by due time, so that is the index that matters.
+            entity.HasIndex(e => new { e.Enabled, e.NextRunAt });
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // Restrict, not cascade: deleting the source delivery should surface as a stopped
+            // schedule the owner can see, not a schedule that silently disappears.
+            entity.HasOne<Delivery>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceDeliveryId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<WorkspaceBrand>(entity =>

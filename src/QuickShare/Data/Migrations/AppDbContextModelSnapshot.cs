@@ -260,6 +260,15 @@ namespace QuickShare.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<DateTime?>("ApprovalRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("BlockedCountries")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -282,6 +291,10 @@ namespace QuickShare.Migrations
 
                     b.Property<DateTime?>("DeliverAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DenyReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("DigestNotifiedAt")
                         .HasColumnType("timestamp with time zone");
@@ -356,6 +369,10 @@ namespace QuickShare.Migrations
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
+
+                    b.Property<string>("PendingRecipients")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<bool>("PrivacyMode")
                         .HasColumnType("boolean");
@@ -1111,6 +1128,81 @@ namespace QuickShare.Migrations
                     b.ToTable("recipient_contacts", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.RecurringDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DayOfMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("HourUtc")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("LastDeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<DateTime?>("LastRunAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime>("NextRunAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Recipients")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("RunCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SourceDeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("SourceDeliveryId");
+
+                    b.HasIndex("Enabled", "NextRunAt");
+
+                    b.ToTable("recurring_deliveries", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.ReferralEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1555,6 +1647,9 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AllowSelfApproval")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1565,6 +1660,9 @@ namespace QuickShare.Migrations
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("RequireDeliveryApproval")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Seats")
                         .HasColumnType("integer");
@@ -1757,6 +1855,9 @@ namespace QuickShare.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("DefaultPrivacyMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("DefaultRequireApproval")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("DefaultsLocked")
@@ -2123,6 +2224,23 @@ namespace QuickShare.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.RecurringDelivery", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuickShare.Data.Entities.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("SourceDeliveryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.SecurityEvent", b =>

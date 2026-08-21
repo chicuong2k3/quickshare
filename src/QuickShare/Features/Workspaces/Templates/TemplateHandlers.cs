@@ -281,7 +281,8 @@ public sealed class ApplyTemplateHandler(
         CancellationToken ct)
         => FolderWriter.CreateAsync(db, workspaceId, userId, node.Name, parentId,
             new WorkspaceFolder.EffectiveDefaults(
-                node.ExpiryHours, node.PasswordRequired, node.PasswordHint, node.PrivacyMode, Locked: false),
+                node.ExpiryHours, node.PasswordRequired, node.PasswordHint, node.PrivacyMode,
+                Locked: false, RequireApproval: false),
             ct);
 }
 

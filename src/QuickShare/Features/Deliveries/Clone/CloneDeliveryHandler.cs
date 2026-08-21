@@ -33,8 +33,9 @@ public sealed class CloneDeliveryHandler(IStorageProvider storage, AppDbContext 
             return Result.Failure<CloneDeliveryResponse>(new LightResults.Error(ErrorCodes.DeliveryNotActive));
 
         var newId = Guid.CreateVersion7();
-        // Same key shape InitR2MultipartUploadAsync uses.
-        var newKey = R2ObjectKey.For(Guid.Empty, newId, delivery.FileName);
+        // Same key shape InitR2MultipartUploadAsync uses — including the region, so a clone
+        // stays in the jurisdiction the original was pinned to (issue #119).
+        var newKey = R2ObjectKey.For(Guid.Empty, newId, delivery.FileName, delivery.StorageRegion);
         await storage.CopyObjectAsync(delivery.StoragePath, newKey, cancellationToken);
 
         var now = DateTime.UtcNow;

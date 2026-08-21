@@ -25,6 +25,20 @@ public record Delivery : BaseAuditEntity
     /// without re-parsing the storage key.
     /// </summary>
     public string? StorageRegion { get; set; }
+
+    // ── Approval workflow (issue #162) ──
+
+    /// <summary>When the share entered review. Null = it never needed approval.</summary>
+    public DateTime? ApprovalRequestedAt { get; set; }
+    public Guid? ApprovedById { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    /// <summary>Why an approver refused. Shown to the sender, never to a recipient.</summary>
+    public string? DenyReason { get; set; }
+    /// <summary>
+    /// Recipients to notify once approved, comma-separated. Held rather than mailed at commit:
+    /// the whole point of a gate is that nobody outside learns the link exists until it clears.
+    /// </summary>
+    public string? PendingRecipients { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }
@@ -112,6 +126,8 @@ public record Delivery : BaseAuditEntity
 public static class DeliveryStatus
 {
     public const string Active = "Active";
+    /// <summary>Held for a workspace admin to review before the link goes live (issue #162).</summary>
+    public const string PendingApproval = "PendingApproval";
     public const string Scheduled = "Scheduled";
     public const string Expired = "Expired";
     public const string Suspended = "Suspended";

@@ -124,4 +124,11 @@ public static class ErrorCodes
     public const string BrandAssetTypeInvalid = "brand_asset_type_invalid";
     /// <summary>Requested storage region is not configured on this deployment (issue #119).</summary>
     public const string StorageRegionInvalid = "storage_region_invalid";
+    // Approval workflow (#162) and recurring delivery (#176).
+    public const string ApprovalNotPending = "approval_not_pending";
+    public const string ApprovalSelfNotAllowed = "approval_self_not_allowed";
+    public const string DenyReasonRequired = "deny_reason_required";
+    public const string RecurrenceInvalid = "recurrence_invalid";
+    public const string RecurrenceNotFound = "recurrence_not_found";
+    public const string RecurrenceRecipientsRequired = "recurrence_recipients_required";
 }

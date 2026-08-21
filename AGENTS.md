@@ -226,6 +226,14 @@ See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind
 - **A key without a recognised region segment MUST keep resolving to the default bucket.** Every object written before residency existed has a user GUID in that slot; region codes are `^[a-z0-9]{2,12}$` precisely so a 32-char hex string can never match one. Changing the code pattern without checking that property breaks every existing object.
 - **Never move stored bytes across regions as a side effect.** Changing the account setting applies to future uploads only, and replacing a file keeps the delivery's original region. Relocation is a copy, a verification and a delete — it is a deliberate operation, not a consequence of a settings save.
 
+### Gating Invariants (approval workflow #162, recurring delivery #176)
+
+See `docs/delivery-gating.md` for the full subsystem. Three rules bind all future work:
+
+- **Any new path that publishes a delivery to recipients MUST check `PendingApproval` first.** The status column is not self-enforcing. At commit the recipient list is parked on `Delivery.PendingRecipients` and no mail goes out — not even the sender's own link mail — because a gate that mails the link and then asks permission is not a gate.
+- **`PendingApproval` MUST be indistinguishable from not-found on every recipient-facing path.** Never add a distinct status code for it: whether a sender's organisation reviews its shares is a fact about that organisation, not about the recipient, and a separate code turns the endpoint into an oracle for internal process.
+- **Any code that copies a delivery MUST carry `StorageRegion` and MUST NOT carry legal hold, approval state or `DeletedAt`.** A copy is a new share, not a clone of the original's compliance state. `CloneDeliveryHandler` was silently moving copies across jurisdictions until this batch; assume the next copy path will too unless it is written deliberately.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

@@ -20,7 +20,7 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 dotnet run --project src/QuickShare
 
 # automated suites (prove the basics before manual work)
-dotnet test tests/QuickShare.Server.Tests    # ~300s, 687 tests
+dotnet test tests/QuickShare.Server.Tests    # ~340s, 706 tests
 dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
 ```
 
@@ -83,6 +83,7 @@ browser download needed.
 | S3-compatible object store (#171) + scheduled workspace backup (#271) | `StorageAndBackupTests` |
 | Data residency (#119) — key format, entitlement, backward compatibility | `StorageResidencyTests` |
 | Workspace branding (#285) + custom fonts (#286) | `WorkspaceBrandTests` |
+| Approval gating (#162) + recurring delivery (#176) | `ApprovalAndRecurringTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -123,6 +124,7 @@ checklist of the touched issue. Minimum regression set per change:
 | Any code creating or deleting folders, or any upload path that can target one | `WorkspaceFolderTests` | locked defaults still bind; a non-empty folder still refuses deletion |
 | Any code that adds a charge, reads a quota result, or touches invoice state | `BillingLedgerTests` | the charge reaches the issued invoice; Studio still meters while Pro still blocks |
 | **Any new workspace-scoped route that takes an id** | `TenantIsolationTests` | another tenant holding a real id still gets nothing, and the response is indistinguishable from a plain 404 |
+| Any code that publishes a delivery to recipients, or copies one | `ApprovalAndRecurringTests` | a held share still 404s on both recipient paths; a copy keeps its region and drops the original's hold |
 | Analytics | `AnalyticsTrackingTests` | — |
 | Localization | `LocalizationTests`, `LanguageSwitchTests` | — |
 | HTMX / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `SmokeTests` | — |

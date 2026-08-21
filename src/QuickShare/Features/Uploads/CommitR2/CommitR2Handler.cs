@@ -201,6 +201,18 @@ public sealed class CommitR2Handler(
             folderId = requestedFolderId;
         }
 
+        // Approval gate (issue #162): the workspace switch, or any folder above this one, and
+        // it only ever tightens. Deliberately independent of DefaultsLocked — a review gate the
+        // sender can switch off is not a gate.
+        var requiresApproval = workspaceId is not null
+            && user is not null
+            && ((folderDefaults?.RequireApproval ?? false)
+                || await db.Workspaces
+                    .AsNoTracking()
+                    .Where(w => w.Id == workspaceId)
+                    .Select(w => w.RequireDeliveryApproval)
+                    .FirstOrDefaultAsync(cancellationToken));
+
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
 
         // Locked folder defaults are policy, not prefill (issue #245). Unlocked ones never
@@ -257,7 +269,15 @@ public sealed class CommitR2Handler(
             StoragePath = cmd.ObjectKey,
             ExpiresAt = expiresAt,
             DeliverAt = cmd.DeliverAt,
-            Status = cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
+            Status = requiresApproval
+                ? DeliveryStatus.PendingApproval
+                : cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
+            ApprovalRequestedAt = requiresApproval ? DateTime.UtcNow : null,
+            // Held, not sent: the point of a gate is that nobody outside learns the link
+            // exists until a reviewer clears it (issue #162).
+            PendingRecipients = requiresApproval && recipients.Count > 0
+                ? string.Join(',', recipients)
+                : null,
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             PasswordHash = password is not null ? BCrypt.Net.BCrypt.HashPassword(password) : null,
             Message = message,
@@ -301,12 +321,14 @@ public sealed class CommitR2Handler(
         await analytics.RecordAsync(AnalyticsEvents.UploadCompleted,
             new AnalyticsEventData(delivery.FileName, delivery.FileSize, delivery.ContentType, plan), cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
+        // The sender's own copy of the link waits too (issue #162): a mail saying the file is
+        // ready to share, for a link that refuses everyone, is worse than no mail.
+        if (!requiresApproval && !string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
         {
             await SendLinkEmailAsync(delivery, shareCode, cancellationToken);
         }
 
-        if (recipients.Count > 0 && emailSender.IsConfigured)
+        if (!requiresApproval && recipients.Count > 0 && emailSender.IsConfigured)
         {
             await SendRecipientEmailsAsync(delivery, shareCode, recipients, cancellationToken);
         }

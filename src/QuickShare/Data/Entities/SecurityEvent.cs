@@ -75,4 +75,9 @@ public enum SecurityEventType
     WorkspaceBackupRun,
     WorkspaceBackupPolicyChanged,
     WorkspaceBrandChanged,
+    DeliveryApprovalRequested,
+    DeliveryApproved,
+    DeliveryDenied,
+    RecurringDeliveryChanged,
+    RecurringDeliveryRan,
 }

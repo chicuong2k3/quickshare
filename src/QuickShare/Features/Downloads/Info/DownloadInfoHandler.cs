@@ -52,6 +52,13 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                 if (delivery is null || delivery.DeletedAt is not null)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
 
+                // Held for review (issue #162). Reported as not-found rather than as a distinct
+                // state: a recipient who was sent the link early should learn nothing about an
+                // internal approval process, and "this file is awaiting sign-off" is a fact
+                // about the sender's organisation, not about the recipient.
+                if (delivery.Status == DeliveryStatus.PendingApproval)
+                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
+
                 if (delivery.Status == DeliveryStatus.Suspended)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliverySuspended));
 

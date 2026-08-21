@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 28 done (08-22): `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 30 done (08-22): `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -536,6 +536,48 @@ keeps the delivery's original region: relocating bytes across jurisdictions is a
 verification and a delete, not a side effect of a settings save. The recipient page shows a
 "Stored in {region}" badge, and shows nothing when the region is no longer configured.
 
+
+Tier 6 batch 10 (gating series), 2026-08-22: `#162` approval workflow, `#176` recurring delivery
+— one migration `AddApprovalAndRecurringDelivery` (new table `recurring_deliveries`, approval
+columns on `deliveries`, two policy flags on `workspaces`, `DefaultRequireApproval` on
+`workspace_folders`). Tests: `ApprovalAndRecurringTests` (19). Design:
+[`docs/delivery-gating.md`](delivery-gating.md).
+
+`#162` approval workflow — **ordering is the feature**. A held share gets
+`Status = PendingApproval`, its recipient list parked on `Delivery.PendingRecipients` rather than
+mailed, and the *sender's own* link mail withheld too: a mail saying "ready to share" for a link
+that refuses everyone is worse than no mail. Approving is the moment anybody outside first learns
+the link exists, which is why the release mails live in `ApprovalNotifier` next to the code that
+withheld them. Both recipient paths report **404, not a distinct state** — whether a sender's
+organisation reviews its shares is a fact about that organisation, and a separate status code
+would make the endpoint an oracle for internal process. The requirement comes from the workspace
+flag OR any folder above the delivery (tighten-only, riding the existing `#245` chain) and is
+deliberately independent of `DefaultsLocked`, since a gate the sender can switch off is not a
+gate. Self-approval is off by default; denial requires a reason and goes to trash rather than
+destruction; a second approve is a 409; the queue is a query rather than a parallel table, oldest
+first. Personal deliveries are never gated — there is no reviewer they could be waiting on.
+
+`#176` recurring delivery — each cycle copies the source to a **new object with a new share
+code** instead of re-mailing the original link, because a link that never rotates is a link that
+leaks and last week's recipients should not open this week's numbers. Catch-up is **skipped, not
+batched**: `ComputeNextRun` always moves strictly forward from now, so a week-long outage sends
+one report on recovery rather than seven, and the next run is advanced *before* the attempt so a
+throwing schedule does not hammer storage hourly. Monthly is clamped to day 28. Skip and pause
+are separate controls ("not this week" vs "not for now"), resume re-bases on now, a missing
+source disables the schedule with a readable reason, and recipients are normalised so the mail
+loop cannot double-send. Generated cycles are never themselves gated: the schedule was approved
+when it was created.
+
+**Defect fixed in passing**: `CloneDeliveryHandler` built its key without a region, so after
+`#119` cloning a region-pinned delivery silently moved the copy across a jurisdiction boundary.
+Both the clone path and the recurrence job now carry `StorageRegion` — found by writing the next
+feature against the rule rather than in production.
+
+**Not shipped**: approval SLA timers with escalation (needs an escalation chain the seat model
+does not have, and a timer that escalates to nobody is worse than none), and admin UI toggles for
+the two workspace approval flags — the columns and enforcement are real and tested, the switches
+are not built.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -564,6 +606,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Enterprise trust (isolation / SIEM / DPA / SOC 2) | `docs/enterprise-trust.md` |
 | Object storage & backup (S3-compatible / scheduled export) | `docs/object-storage-and-backup.md` |
 | Workspace branding (recipient page / typography) | `docs/workspace-branding.md` |
+| Delivery gating (approval / recurrence) | `docs/delivery-gating.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -580,7 +623,7 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 28 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 30 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
   `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,

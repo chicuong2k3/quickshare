@@ -33,4 +33,8 @@ public static class NotificationType
     public const string QuotaThreshold = "quota_threshold";
     /// <summary>A net-terms invoice passed its due date (issue #192).</summary>
     public const string InvoiceOverdue = "invoice_overdue";
+    /// <summary>A share is waiting for this admin to review it (issue #162).</summary>
+    public const string ApprovalPending = "approval_pending";
+    /// <summary>An approver cleared or refused the sender's share (issue #162).</summary>
+    public const string ApprovalDecided = "approval_decided";
 }

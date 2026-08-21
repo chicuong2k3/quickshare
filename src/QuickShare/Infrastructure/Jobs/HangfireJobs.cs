@@ -32,6 +32,7 @@ public static class HangfireJobs
     public const string InvoiceOverdue = "invoice-overdue";
     public const string SiemShipping = "siem-shipping";
     public const string WorkspaceBackup = "workspace-backup";
+    public const string RecurringDelivery = "recurring-delivery";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -52,6 +53,7 @@ public static class HangfireJobs
         recurring.AddOrUpdate<SiemShippingJob>(SiemShipping, j => j.ShipAsync(), Cron.MinuteInterval(5));
         // Hourly tick, but each policy only runs once its own interval has elapsed.
         recurring.AddOrUpdate<WorkspaceBackupJob>(WorkspaceBackup, j => j.RunAsync(), Cron.Hourly());
+        recurring.AddOrUpdate<RecurringDeliveryJob>(RecurringDelivery, j => j.RunAsync(), Cron.Hourly());
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
         recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),

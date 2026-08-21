@@ -31,6 +31,18 @@ public record Workspace : BaseAuditEntity
     /// <summary>Seats bought, owner included. Invites are refused once seats are full.</summary>
     public int Seats { get; set; } = MinSeats;
 
+    /// <summary>
+    /// Every share from this workspace waits for an admin before its link works (issue #162).
+    /// Folder defaults can tighten this on individual folders; nothing can loosen it.
+    /// </summary>
+    public bool RequireDeliveryApproval { get; set; }
+
+    /// <summary>
+    /// Lets an admin clear their own share. Off by default — the control exists because
+    /// somebody wanted a second pair of eyes, and self-approval is not a second pair of eyes.
+    /// </summary>
+    public bool AllowSelfApproval { get; set; }
+
     public User Owner { get; init; } = null!;
 }
 

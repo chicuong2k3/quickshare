@@ -44,6 +44,14 @@ public record WorkspaceFolder : BaseAuditEntity
     /// </summary>
     public bool DefaultsLocked { get; set; }
 
+    /// <summary>
+    /// Shares filed here wait for an admin (issue #162). Like the other protections it only
+    /// ever tightens: a folder can require approval where the workspace does not, never the
+    /// other way round, and it applies whether or not the defaults are locked — a review gate
+    /// that a sender can switch off is not a gate.
+    /// </summary>
+    public bool DefaultRequireApproval { get; set; }
+
     public Workspace Workspace { get; init; } = null!;
 
     /// <summary>Resolved settings for uploads into this folder, after walking the parent chain.</summary>
@@ -52,7 +60,8 @@ public record WorkspaceFolder : BaseAuditEntity
         bool PasswordRequired,
         string? PasswordHint,
         bool PrivacyMode,
-        bool Locked);
+        bool Locked,
+        bool RequireApproval);
 }
 
 /// <summary>

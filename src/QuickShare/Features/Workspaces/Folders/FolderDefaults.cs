@@ -32,6 +32,7 @@ public static class FolderDefaults
         string? passwordHint = null;
         var privacyMode = false;
         var locked = false;
+        var requireApproval = false;
 
         foreach (var folder in chain)
         {
@@ -43,13 +44,14 @@ public static class FolderDefaults
             passwordRequired |= folder.DefaultPasswordRequired;
             privacyMode |= folder.DefaultPrivacyMode;
             locked |= folder.DefaultsLocked;
+            requireApproval |= folder.DefaultRequireApproval;
 
             if (passwordHint is null && !string.IsNullOrWhiteSpace(folder.DefaultPasswordHint))
                 passwordHint = folder.DefaultPasswordHint;
         }
 
         return new WorkspaceFolder.EffectiveDefaults(
-            expiryHours, passwordRequired, passwordHint, privacyMode, locked);
+            expiryHours, passwordRequired, passwordHint, privacyMode, locked, requireApproval);
     }
 
     /// <summary>
