@@ -2,6 +2,7 @@ using LightResults;
 using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
 using QuickShare.Features.Users.Shared;
+using QuickShare.Features.Workspaces.Folders;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Constants;
 using QuickShare.Infrastructure.Email;
@@ -10,7 +11,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -184,7 +185,43 @@ public sealed class CommitR2Handler(
                 .Select(m => (Guid?)m.WorkspaceId)
                 .FirstOrDefaultAsync(cancellationToken);
 
+        // Shared folder (issue #151): must belong to the sender's own workspace. A folder id
+        // from somewhere else is refused, not quietly dropped — silently filing a share
+        // somewhere other than where the sender asked is worse than failing the commit.
+        Guid? folderId = null;
+        WorkspaceFolder.EffectiveDefaults? folderDefaults = null;
+        if (requestId is null && workspaceId is { } folderWorkspaceId && cmd.FolderId is { } requestedFolderId)
+        {
+            folderDefaults = await FolderDefaults.ResolveAsync(
+                db, folderWorkspaceId, requestedFolderId, cancellationToken);
+
+            if (folderDefaults is null)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.FolderNotFound));
+
+            folderId = requestedFolderId;
+        }
+
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
+
+        // Locked folder defaults are policy, not prefill (issue #245). Unlocked ones never
+        // reach here: they are served to the upload form and the sender stays in control.
+        if (folderDefaults is { Locked: true })
+        {
+            if (folderDefaults.PasswordRequired && password is null)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.FolderPasswordRequired));
+
+            if (folderDefaults.ExpiryHours is { } lockedHours)
+            {
+                // The plan cap still applies first — a folder rule may tighten the ceiling,
+                // never raise it, so a locked window longer than the plan allows is clamped
+                // rather than turned into an ExpiryTooLong the uploader cannot act on.
+                cmd = cmd with { ExpiryHours = Math.Min(lockedHours, maxExpiry.TotalHours) };
+            }
+
+            if (folderDefaults.PrivacyMode)
+                cmd = cmd with { PrivacyMode = true };
+        }
+
         if (cmd.ExpiryHours is { } requestedHours)
         {
             if (requestedHours <= 0)
@@ -206,6 +243,7 @@ public sealed class CommitR2Handler(
             // Stamped from the sender's live seat (issue #106) so team-mates see the share in
             // the shared history. A file-request submission has no sender and no workspace.
             WorkspaceId = requestId is null ? workspaceId : null,
+            FolderId = folderId,
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.

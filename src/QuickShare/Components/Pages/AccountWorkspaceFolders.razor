@@ -1,0 +1,308 @@
+@layout MainLayout
+@page "/account/workspace/folders"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Folders
+@using QuickShare.Features.Workspaces.Templates
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ws_folders_title"]</PageTitle>
+
+@* Team content — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["ws_folders_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["ws_folders_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceFolders" />
+
+    <section id="workspace-folders-body"
+             hx-get="@RoutePaths.AccountWorkspaceFolders"
+             hx-trigger="load, foldersUpdated from:body"
+             hx-target="#workspace-folders-body"
+             hx-select="#workspace-folders-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/workspace.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool inWorkspace;
+    private FolderListDto folders = new([], false);
+    private TemplateListDto templates = new([], false);
+
+    private RenderFragment Chunk => @<section id="workspace-folders-body">
+        @if (!inWorkspace)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_none"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["ws_folders_title"]</h2>
+
+                    @if (folders.Folders.Count == 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_folders_empty"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-member-list">
+                            @foreach (var folder in RootsFirst)
+                            {
+                                <li class="workspace-member @(folder.ParentId is null ? string.Empty : "workspace-folder--child")"
+                                    id="ws-folder-@folder.Id">
+                                    <div class="workspace-member__info">
+                                        <span class="workspace-member__name">
+                                            @folder.Name
+                                            @if (folder.DefaultsLocked)
+                                            {
+                                                <span class="workspace-badge">@Loc["ws_folders_locked_badge"]</span>
+                                            }
+                                        </span>
+                                        <span class="workspace-member__meta">@Loc["ws_folders_contents", folder.Deliveries, Bytes(folder.Bytes)]</span>
+                                        <span class="workspace-member__meta">@DefaultsSummary(folder)</span>
+                                    </div>
+                                    @if (folders.CanManage)
+                                    {
+                                        <div class="workspace-member__actions">
+                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                    data-folder-id="@folder.Id"
+                                                    data-prompt="@Loc["ws_folders_rename_prompt"]"
+                                                    data-current="@folder.Name"
+                                                    onclick="window.quickShareWorkspace.renameFolder(this)"
+                                                    data-ai-action="folder.rename">@Loc["ws_folders_rename"]</button>
+                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                    data-folder-id="@folder.Id"
+                                                    data-confirm="@Loc["ws_folders_delete_confirm"]"
+                                                    onclick="window.quickShareWorkspace.deleteFolder(this)"
+                                                    data-ai-action="folder.delete">@Loc["ws_folders_delete"]</button>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+
+            @if (folders.CanManage)
+            {
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["ws_folders_new"]</h2>
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="ws-folder-name">@Loc["ws_folders_name"]</label>
+                            <input id="ws-folder-name" class="db-input" type="text" maxlength="@WorkspaceFolder.NameMaxLength" />
+
+                            <label class="workspace-label" for="ws-folder-parent">@Loc["ws_folders_parent"]</label>
+                            <select id="ws-folder-parent" class="db-input">
+                                <option value="">@Loc["ws_folders_parent_root"]</option>
+                                @foreach (var root in folders.Folders.Where(f => f.ParentId is null))
+                                {
+                                    <option value="@root.Id">@root.Name</option>
+                                }
+                            </select>
+
+                            <button type="button" class="db-btn db-btn--primary"
+                                    onclick="window.quickShareWorkspace.createFolder(this)"
+                                    data-ai-action="folder.create">@Loc["ws_folders_create"]</button>
+                        </div>
+                    </div>
+                </div>
+
+                @* Defaults editor (issue #245) — one folder at a time, chosen from the list. *@
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["ws_folders_defaults"]</h2>
+                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_folders_defaults_hint"]</p>
+
+                        @if (folders.Folders.Count > 0)
+                        {
+                            <div class="workspace-form">
+                                <label class="workspace-label" for="ws-defaults-folder">@Loc["ws_folders_name"]</label>
+                                <select id="ws-defaults-folder" class="db-input"
+                                        onchange="window.quickShareWorkspace.loadDefaults()">
+                                    @foreach (var folder in RootsFirst)
+                                    {
+                                        <option value="@folder.Id"
+                                                data-expiry="@(folder.DefaultExpiryHours?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
+                                                data-password="@folder.DefaultPasswordRequired.ToString().ToLowerInvariant()"
+                                                data-hint="@folder.DefaultPasswordHint"
+                                                data-privacy="@folder.DefaultPrivacyMode.ToString().ToLowerInvariant()"
+                                                data-locked="@folder.DefaultsLocked.ToString().ToLowerInvariant()">@folder.Name</option>
+                                    }
+                                </select>
+
+                                <label class="workspace-label" for="ws-defaults-expiry">@Loc["ws_folders_default_expiry"]</label>
+                                <input id="ws-defaults-expiry" class="db-input" type="number" min="1" step="1" />
+
+                                <label class="workspace-checkbox">
+                                    <input id="ws-defaults-password" type="checkbox" />
+                                    <span>@Loc["ws_folders_default_password"]</span>
+                                </label>
+
+                                <label class="workspace-label" for="ws-defaults-hint">@Loc["ws_folders_default_hint"]</label>
+                                <input id="ws-defaults-hint" class="db-input" type="text" maxlength="@WorkspaceFolder.HintMaxLength" />
+
+                                <label class="workspace-checkbox">
+                                    <input id="ws-defaults-privacy" type="checkbox" />
+                                    <span>@Loc["ws_folders_default_privacy"]</span>
+                                </label>
+
+                                <label class="workspace-checkbox">
+                                    <input id="ws-defaults-locked" type="checkbox" @(isOwner ? string.Empty : "disabled") />
+                                    <span>@Loc["ws_folders_default_locked"]</span>
+                                </label>
+
+                                <button type="button" class="db-btn db-btn--primary"
+                                        data-saved-label="@Loc["ws_folders_saved"]"
+                                        onclick="window.quickShareWorkspace.saveDefaults(this)"
+                                        data-ai-action="folder.defaults.save">@Loc["ws_folders_save_defaults"]</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* Templates (issue #234). *@
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["ws_templates_title"]</h2>
+                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_templates_subtitle"]</p>
+
+                        @if (templates.Templates.Count == 0)
+                        {
+                            <p class="db-p db-text-muted workspace-hint">@Loc["ws_templates_empty"]</p>
+                        }
+                        else
+                        {
+                            <ul class="workspace-member-list">
+                                @foreach (var template in templates.Templates)
+                                {
+                                    <li class="workspace-member">
+                                        <div class="workspace-member__info">
+                                            <span class="workspace-member__name">@template.Name</span>
+                                            <span class="workspace-member__meta">@Loc["ws_templates_count", template.FolderCount]</span>
+                                        </div>
+                                        <div class="workspace-member__actions">
+                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                    data-template-id="@template.Id"
+                                                    data-prompt="@Loc["ws_templates_apply_root"]"
+                                                    data-applied-label="@Loc["ws_templates_applied", "{0}", "{1}"]"
+                                                    onclick="window.quickShareWorkspace.applyTemplate(this)"
+                                                    data-ai-action="template.apply">@Loc["ws_templates_apply"]</button>
+                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                    data-template-id="@template.Id"
+                                                    data-confirm="@Loc["ws_templates_delete_confirm"]"
+                                                    onclick="window.quickShareWorkspace.deleteTemplate(this)"
+                                                    data-ai-action="template.delete">@Loc["ws_templates_delete"]</button>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="ws-template-name">@Loc["ws_templates_name"]</label>
+                            <input id="ws-template-name" class="db-input" type="text" maxlength="@WorkspaceFolderTemplate.NameMaxLength" />
+                            <button type="button" class="db-btn db-btn--primary"
+                                    onclick="window.quickShareWorkspace.saveTemplate(this)"
+                                    data-ai-action="template.save">@Loc["ws_templates_save"]</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>;
+
+    /// <summary>Children render directly under their parent so the two levels read as a tree.</summary>
+    private IEnumerable<FolderDto> RootsFirst =>
+        folders.Folders
+            .Where(f => f.ParentId is null)
+            .SelectMany(root => new[] { root }.Concat(folders.Folders.Where(f => f.ParentId == root.Id)));
+
+    private string DefaultsSummary(FolderDto folder)
+    {
+        var parts = new List<string>();
+        if (folder.DefaultExpiryHours is { } hours)
+            parts.Add($"{hours:0}h");
+        if (folder.DefaultPasswordRequired)
+            parts.Add(Loc["ws_folders_default_password"]);
+        if (folder.DefaultPrivacyMode)
+            parts.Add(Loc["ws_folders_default_privacy"]);
+
+        return parts.Count == 0 ? string.Empty : string.Join(" · ", parts);
+    }
+
+    private static string Bytes(long value)
+    {
+        const long Gigabyte = 1024L * 1024 * 1024;
+        const long Megabyte = 1024L * 1024;
+        return value >= Gigabyte
+            ? $"{value / (double)Gigabyte:F1} GB"
+            : $"{value / (double)Megabyte:F1} MB";
+    }
+
+    private bool isOwner;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var folderResult = await Bus.Send<LightResults.Result<FolderListDto>>(
+            new ListFoldersQuery(), CancellationToken.None);
+
+        if (!folderResult.IsSuccess(out var folderValue)) return;
+
+        inWorkspace = true;
+        folders = folderValue;
+
+        var templateResult = await Bus.Send<LightResults.Result<TemplateListDto>>(
+            new ListTemplatesQuery(), CancellationToken.None);
+        if (templateResult.IsSuccess(out var templateValue))
+            templates = templateValue;
+
+        var workspaceResult = await Bus.Send<LightResults.Result<QuickShare.Features.Workspaces.Manage.WorkspaceDto>>(
+            new QuickShare.Features.Workspaces.Manage.GetWorkspaceQuery(), CancellationToken.None);
+        if (workspaceResult.IsSuccess(out var workspace))
+            isOwner = workspace.IsOwner;
+    }
+}

@@ -61,4 +61,11 @@ public enum SecurityEventType
     WorkspaceTransferAccepted,
     WorkspaceTransferCancelled,
     WorkspaceReportGenerated,
+    WorkspaceFolderCreated,
+    WorkspaceFolderRenamed,
+    WorkspaceFolderDeleted,
+    WorkspaceFolderDefaultsChanged,
+    WorkspaceTemplateSaved,
+    WorkspaceTemplateApplied,
+    WorkspaceTemplateDeleted,
 }

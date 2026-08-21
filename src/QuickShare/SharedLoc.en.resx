@@ -1309,4 +1309,39 @@
   <data name="ws_join_ok" xml:space="preserve"><value>Done. You are in.</value></data>
   <data name="ws_join_error" xml:space="preserve"><value>That link is no longer valid.</value></data>
   <data name="ws_join_missing" xml:space="preserve"><value>This link is missing its token.</value></data>
+  <data name="ws_tab_folders" xml:space="preserve"><value>Folders</value></data>
+  <data name="ws_folders_title" xml:space="preserve"><value>Shared folders</value></data>
+  <data name="ws_folders_subtitle" xml:space="preserve"><value>Where the team files its work. Every seat sees the same folders.</value></data>
+  <data name="ws_folders_empty" xml:space="preserve"><value>No folders yet.</value></data>
+  <data name="ws_folders_new" xml:space="preserve"><value>New folder</value></data>
+  <data name="ws_folders_name" xml:space="preserve"><value>Folder name</value></data>
+  <data name="ws_folders_parent" xml:space="preserve"><value>Inside</value></data>
+  <data name="ws_folders_parent_root" xml:space="preserve"><value>Top level</value></data>
+  <data name="ws_folders_create" xml:space="preserve"><value>Create folder</value></data>
+  <data name="ws_folders_delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="ws_folders_delete_confirm" xml:space="preserve"><value>Delete this folder? Only empty folders can be deleted — files are never removed with it.</value></data>
+  <data name="ws_folders_rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="ws_folders_rename_prompt" xml:space="preserve"><value>New folder name</value></data>
+  <data name="ws_folders_contents" xml:space="preserve"><value>{0} files · {1}</value></data>
+  <data name="ws_folders_defaults" xml:space="preserve"><value>Upload defaults</value></data>
+  <data name="ws_folders_defaults_hint" xml:space="preserve"><value>These prefill the upload form. The sender can change them — unless the owner locks them.</value></data>
+  <data name="ws_folders_default_expiry" xml:space="preserve"><value>Default link lifetime (hours)</value></data>
+  <data name="ws_folders_default_password" xml:space="preserve"><value>Ask for a password</value></data>
+  <data name="ws_folders_default_hint" xml:space="preserve"><value>Password hint for the team</value></data>
+  <data name="ws_folders_default_privacy" xml:space="preserve"><value>Private mode by default</value></data>
+  <data name="ws_folders_default_locked" xml:space="preserve"><value>Lock these defaults (owner only)</value></data>
+  <data name="ws_folders_locked_badge" xml:space="preserve"><value>Locked</value></data>
+  <data name="ws_folders_save_defaults" xml:space="preserve"><value>Save defaults</value></data>
+  <data name="ws_folders_saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="ws_templates_title" xml:space="preserve"><value>Folder templates</value></data>
+  <data name="ws_templates_subtitle" xml:space="preserve"><value>Save a folder layout once, apply it to every new client or project.</value></data>
+  <data name="ws_templates_empty" xml:space="preserve"><value>No templates yet.</value></data>
+  <data name="ws_templates_name" xml:space="preserve"><value>Template name</value></data>
+  <data name="ws_templates_save" xml:space="preserve"><value>Save current layout</value></data>
+  <data name="ws_templates_apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="ws_templates_apply_root" xml:space="preserve"><value>Create inside a new folder named (optional)</value></data>
+  <data name="ws_templates_applied" xml:space="preserve"><value>Created {0} folder(s), skipped {1} that already existed.</value></data>
+  <data name="ws_templates_delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="ws_templates_delete_confirm" xml:space="preserve"><value>Delete this template? Folders already created from it are not affected.</value></data>
+  <data name="ws_templates_count" xml:space="preserve"><value>{0} folder(s)</value></data>
 </root>

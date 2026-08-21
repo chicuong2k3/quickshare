@@ -81,4 +81,17 @@ public static class ErrorCodes
     public const string WorkspaceTransferSelf = "workspace_transfer_self";
     /// <summary>Account deletion refused while the caller still owns a workspace (issues #59/#252).</summary>
     public const string WorkspaceTransferRequired = "workspace_transfer_required";
+    // Shared folders (#151), per-folder defaults (#245), folder templates (#234).
+    public const string FolderNotFound = "folder_not_found";
+    public const string FolderNameInvalid = "folder_name_invalid";
+    public const string FolderNameTaken = "folder_name_taken";
+    public const string FolderTooDeep = "folder_too_deep";
+    public const string FolderNotEmpty = "folder_not_empty";
+    public const string FolderLimitReached = "folder_limit_reached";
+    /// <summary>Locked folder defaults require a password and the commit did not carry one (#245).</summary>
+    public const string FolderPasswordRequired = "folder_password_required";
+    public const string TemplateNotFound = "template_not_found";
+    public const string TemplateNameInvalid = "template_name_invalid";
+    public const string TemplateNameTaken = "template_name_taken";
+    public const string TemplateStructureInvalid = "template_structure_invalid";
 }

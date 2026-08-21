@@ -1309,4 +1309,39 @@
   <data name="ws_join_ok" xml:space="preserve"><value>Xong. Bạn đã tham gia.</value></data>
   <data name="ws_join_error" xml:space="preserve"><value>Liên kết này không còn hiệu lực.</value></data>
   <data name="ws_join_missing" xml:space="preserve"><value>Liên kết thiếu mã xác thực.</value></data>
+  <data name="ws_tab_folders" xml:space="preserve"><value>Thư mục</value></data>
+  <data name="ws_folders_title" xml:space="preserve"><value>Thư mục dùng chung</value></data>
+  <data name="ws_folders_subtitle" xml:space="preserve"><value>Nơi cả nhóm lưu công việc. Mọi ghế đều thấy cùng một cây thư mục.</value></data>
+  <data name="ws_folders_empty" xml:space="preserve"><value>Chưa có thư mục nào.</value></data>
+  <data name="ws_folders_new" xml:space="preserve"><value>Thư mục mới</value></data>
+  <data name="ws_folders_name" xml:space="preserve"><value>Tên thư mục</value></data>
+  <data name="ws_folders_parent" xml:space="preserve"><value>Nằm trong</value></data>
+  <data name="ws_folders_parent_root" xml:space="preserve"><value>Cấp cao nhất</value></data>
+  <data name="ws_folders_create" xml:space="preserve"><value>Tạo thư mục</value></data>
+  <data name="ws_folders_delete" xml:space="preserve"><value>Xoá</value></data>
+  <data name="ws_folders_delete_confirm" xml:space="preserve"><value>Xoá thư mục này? Chỉ xoá được thư mục rỗng — tệp không bao giờ bị xoá theo.</value></data>
+  <data name="ws_folders_rename" xml:space="preserve"><value>Đổi tên</value></data>
+  <data name="ws_folders_rename_prompt" xml:space="preserve"><value>Tên thư mục mới</value></data>
+  <data name="ws_folders_contents" xml:space="preserve"><value>{0} tệp · {1}</value></data>
+  <data name="ws_folders_defaults" xml:space="preserve"><value>Mặc định khi tải lên</value></data>
+  <data name="ws_folders_defaults_hint" xml:space="preserve"><value>Các giá trị này điền sẵn vào biểu mẫu tải lên. Người gửi vẫn đổi được — trừ khi chủ sở hữu khoá lại.</value></data>
+  <data name="ws_folders_default_expiry" xml:space="preserve"><value>Thời hạn liên kết mặc định (giờ)</value></data>
+  <data name="ws_folders_default_password" xml:space="preserve"><value>Yêu cầu mật khẩu</value></data>
+  <data name="ws_folders_default_hint" xml:space="preserve"><value>Gợi ý mật khẩu cho cả nhóm</value></data>
+  <data name="ws_folders_default_privacy" xml:space="preserve"><value>Mặc định chế độ riêng tư</value></data>
+  <data name="ws_folders_default_locked" xml:space="preserve"><value>Khoá các mặc định này (chỉ chủ sở hữu)</value></data>
+  <data name="ws_folders_locked_badge" xml:space="preserve"><value>Đã khoá</value></data>
+  <data name="ws_folders_save_defaults" xml:space="preserve"><value>Lưu mặc định</value></data>
+  <data name="ws_folders_saved" xml:space="preserve"><value>Đã lưu.</value></data>
+  <data name="ws_templates_title" xml:space="preserve"><value>Mẫu thư mục</value></data>
+  <data name="ws_templates_subtitle" xml:space="preserve"><value>Lưu bố cục thư mục một lần, áp dụng cho mọi khách hàng hoặc dự án mới.</value></data>
+  <data name="ws_templates_empty" xml:space="preserve"><value>Chưa có mẫu nào.</value></data>
+  <data name="ws_templates_name" xml:space="preserve"><value>Tên mẫu</value></data>
+  <data name="ws_templates_save" xml:space="preserve"><value>Lưu bố cục hiện tại</value></data>
+  <data name="ws_templates_apply" xml:space="preserve"><value>Áp dụng</value></data>
+  <data name="ws_templates_apply_root" xml:space="preserve"><value>Tạo bên trong thư mục mới tên là (tuỳ chọn)</value></data>
+  <data name="ws_templates_applied" xml:space="preserve"><value>Đã tạo {0} thư mục, bỏ qua {1} thư mục đã tồn tại.</value></data>
+  <data name="ws_templates_delete" xml:space="preserve"><value>Xoá</value></data>
+  <data name="ws_templates_delete_confirm" xml:space="preserve"><value>Xoá mẫu này? Các thư mục đã tạo từ mẫu không bị ảnh hưởng.</value></data>
+  <data name="ws_templates_count" xml:space="preserve"><value>{0} thư mục</value></data>
 </root>

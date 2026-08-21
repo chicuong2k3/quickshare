@@ -7,7 +7,8 @@ public record ListDeliveriesQuery(
     int Limit = DeliveryPaging.DefaultLimit,
     string? Status = null,
     string? Search = null,
-    bool FavoritesOnly = false, bool DeletedOnly = false) : IRequest<Result<CursorPage<DeliveryItem>>>;
+    bool FavoritesOnly = false, bool DeletedOnly = false,
+    Guid? FolderId = null) : IRequest<Result<CursorPage<DeliveryItem>>>;
 
 public record DeliveryItem(
     Guid Id, string FileName, string ContentType, long FileSize,
@@ -58,6 +59,11 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
             .AsNoTracking()
             .Where(d => d.SenderId == userId
                 || (workspaceId != null && d.WorkspaceId == workspaceId));
+
+        // Folder filter (issue #151). Only meaningful inside a workspace; a personal caller
+        // asking for a folder gets nothing rather than someone else's shared files.
+        if (query.FolderId is { } folder)
+            source = source.Where(d => d.FolderId == folder && d.WorkspaceId == workspaceId);
 
         source = query.DeletedOnly
             ? source.Where(d => d.DeletedAt != null)

@@ -269,6 +269,9 @@ namespace QuickShare.Migrations
                     b.Property<DateTime?>("FirstDownloadedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("HideDownloadStats")
                         .HasColumnType("boolean");
 
@@ -356,6 +359,8 @@ namespace QuickShare.Migrations
                     b.HasIndex("ExpiresAt");
 
                     b.HasIndex("FileRequestId");
+
+                    b.HasIndex("FolderId");
 
                     b.HasIndex("LegalHoldAt");
 
@@ -1262,6 +1267,96 @@ namespace QuickShare.Migrations
                     b.ToTable("workspaces", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceFolder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("DefaultExpiryHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("DefaultPasswordHint")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<bool>("DefaultPasswordRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("DefaultPrivacyMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("DefaultsLocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("WorkspaceId", "ParentId");
+
+                    b.HasIndex("WorkspaceId", "ParentId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("workspace_folders", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceFolderTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("StructureJson")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("workspace_folder_templates", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1394,6 +1489,11 @@ namespace QuickShare.Migrations
                     b.HasOne("QuickShare.Data.Entities.FileRequest", "FileRequest")
                         .WithMany("Deliveries")
                         .HasForeignKey("FileRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("QuickShare.Data.Entities.WorkspaceFolder", null)
+                        .WithMany()
+                        .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("QuickShare.Data.Entities.User", "Sender")
@@ -1587,6 +1687,33 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceFolder", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.WorkspaceFolder", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("QuickShare.Data.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceFolderTemplate", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceMember", b =>

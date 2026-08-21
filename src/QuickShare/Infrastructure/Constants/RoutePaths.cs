@@ -59,6 +59,7 @@ public static class RoutePaths
     public const string AccountWorkspace = "/account/workspace";
     public const string AccountWorkspaceAudit = "/account/workspace/audit";
     public const string AccountWorkspaceReport = "/account/workspace/report";
+    public const string AccountWorkspaceFolders = "/account/workspace/folders";
     /// <summary>Invite and transfer accept landing page — the token rides in the query string.</summary>
     public const string WorkspaceJoin = "/workspace/join";
 }

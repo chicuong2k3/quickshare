@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 11 done (08-21): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report |
+| Tier 6 | B2B / enterprise / far-future | 14 done (08-21): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -292,6 +292,50 @@ accounts stay out (`#187`). Reading the report is itself audited
 (`WorkspaceReportGenerated`). Not shipped: PDF export (CSV only) and per-workspace report
 scheduling — weekly is the only cadence, and the on-demand endpoint covers every other window.
 
+
+Tier 6 batch 4 (folder series), 2026-08-21: `#151` shared workspace folders, `#245` per-folder
+default settings, `#234` folder templates — one migration `AddWorkspaceFolders` (2 new tables
+`workspace_folders` / `workspace_folder_templates` plus `deliveries.FolderId`). Tests:
+`WorkspaceFolderTests` (19). Design: [`docs/workspaces-architecture.md`](workspaces-architecture.md).
+
+`#151` shared folders — content organization on top of `#106`. Every seat sees the whole tree;
+per-folder membership would be a second permission system layered on the workspace roles that
+already exist, and two systems disagreeing is how someone gets locked out of a folder they can
+see in a list. Management (create/rename/delete/defaults) needs `CanAdminister`; browsing and
+uploading do not. Nesting stops at two levels — arbitrary depth needs breadcrumbs, move
+semantics, cycle checks and a recursive permission walk, and "client / project" is the shape
+agencies actually asked for. Deleting a folder never deletes files: refused while any delivery
+(soft-deleted rows included, since `#99` keeps them restorable for 24h) or child folder is still
+filed under it, with a `Restrict` FK from `deliveries.FolderId` as the database backstop.
+Sibling names are unique per parent. `GET /api/deliveries?folder={id}` filters the shared
+history; the folder list carries per-folder file count and bytes (live rows only). Routes
+`GET/POST /api/workspace/folders`, `PATCH|DELETE /api/workspace/folders/{id}`; errors
+`folder_*`; UI `/account/workspace/folders`. **Not shipped: public folder link / folder QR** —
+a new recipient-facing surface needs its own access-control design, not a footnote to CRUD.
+
+`#245` per-folder defaults — expiry hours, password-required + hint, privacy mode, and the lock.
+The whole feature is the difference between two of them: an **unlocked** default is a prefill
+served to the upload form (`GET /api/workspace/folders/{id}/prefill`) and the sender stays in
+control, because a default that silently overrides what the sender typed is policy wearing a
+friendlier word; a **locked** default is enforced in `CommitR2Handler` — expiry replaced,
+privacy forced on, and a commit without a password refused (`folder_password_required`) rather
+than silently generating one nobody can be told. Inheritance is nearest-first per setting, with
+booleans OR-ed up the chain (they have no "unset", and these settings only ever tighten) and the
+lock travelling *down* from any ancestor, so it cannot be escaped by uploading one level deeper.
+A locked expiry longer than the plan allows is clamped, not rejected — the plan cap applies
+first, same rule as `#161`. Admins set defaults; only the owner sets the lock.
+
+`#234` folder templates — a saved layout stored as a JSON snapshot (`StructureJson`), never as
+rows pointing at live folders: a template is a value, so editing or deleting it must not reach
+into folders already created from it. Apply is idempotent by name — an existing folder is
+counted in `skipped`, not failed — so a half-finished apply can be re-run and one template can
+serve a second client via the optional `rootName` that nests the structure one level down.
+Because depth caps at two, a template with its own children is applied flat under that root and
+the skipped count says so. Apply reuses `FolderWriter.CreateAsync` rather than inserting rows of
+its own; a bulk path with its own copy of the depth and uniqueness checks will eventually skip
+one. Routes `GET/POST /api/workspace/templates`, `POST /api/workspace/templates/{id}/apply`,
+`DELETE /api/workspace/templates/{id}`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -315,7 +359,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Send flow | `docs/send-architecture.md` |
 | Profile | `docs/profile-architecture.md` |
 | Compliance (legal hold / retention / delivery scope) | `docs/compliance-architecture.md` |
-| Team workspaces (seats / transfer / audit / report) | `docs/workspaces-architecture.md` |
+| Team workspaces (seats / transfer / audit / report / folders) | `docs/workspaces-architecture.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -332,7 +376,8 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 11 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20) and team
-  batch `#106`/`#252`/`#145`/`#300` (08-21, see section 8); `#323` SOC 2, `#289` delivery
-  comments, `#286` custom fonts, `#285` branded upload page, `#278` team seats (now unblocked by
-  `#106`), `#119` data residency, `#112` e-invoice, `#81` white-label and the rest still open
+- [ ] Tier 6: 14 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+  `#106`/`#252`/`#145`/`#300` (08-21) and folder batch `#151`/`#245`/`#234` (08-21, see
+  section 8); `#323` SOC 2, `#289` delivery comments, `#286` custom fonts, `#285` branded upload
+  page, `#278` team seats (unblocked by `#106`), `#119` data residency, `#112` e-invoice,
+  `#81` white-label and the rest still open

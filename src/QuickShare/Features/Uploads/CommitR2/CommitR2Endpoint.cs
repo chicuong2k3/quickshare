@@ -27,7 +27,7 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         var cmd = new CommitR2Command(
             req.DeliveryId, req.UploadId, req.ObjectKey,
-            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries);
+            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId);
         var result = await Resolve<IMediator>().Send<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -69,4 +69,6 @@ public class CommitR2Request
     public string? AllowedCountries { get; set; }
     /// <summary>Country deny-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Pro/Studio only.</summary>
     public string? BlockedCountries { get; set; }
+    /// <summary>Shared workspace folder to file this delivery under (issue #151); null = loose in the workspace.</summary>
+    public Guid? FolderId { get; set; }
 }

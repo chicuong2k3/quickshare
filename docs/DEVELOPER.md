@@ -51,7 +51,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   [`compliance-architecture.md`](compliance-architecture.md) - legal hold (#266), workspace
   retention policy (#161), delivery scope rules (#142/#166),
   [`workspaces-architecture.md`](workspaces-architecture.md) - team workspaces (#106),
-  ownership transfer (#252), workspace audit log (#145), admin usage report (#300).
+  ownership transfer (#252), workspace audit log (#145), admin usage report (#300),
+  shared folders (#151), per-folder defaults (#245), folder templates (#234).
 - Ops: [`observability-setup.md`](observability-setup.md),
   [`feature-flags.md`](feature-flags.md),
   [`deployment-dev.md`](deployment-dev.md),
@@ -89,6 +90,8 @@ rules:
 | New recipient-facing content path MUST route through `DeliveryAccessService` (scope rules are fail-closed) | compliance-architecture.md (#142/#166) |
 | New code writing `User.Plan` MUST re-push it to workspace seats (a seat borrows the owner's plan) | workspaces-architecture.md (#106) |
 | New upload path MUST use `QuotaService` (it pools a member's bytes onto the workspace owner) | workspaces-architecture.md (#106) |
+| New upload path that can target a folder MUST enforce locked folder defaults | workspaces-architecture.md (#245) |
+| Folder creation goes through `FolderWriter.CreateAsync`; deleting a folder never deletes content | workspaces-architecture.md (#151) |
 
 ## 6. Workflow (issue → done)
 

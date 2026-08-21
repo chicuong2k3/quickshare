@@ -34,6 +34,8 @@ public class AppDbContext : DbContext
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<WorkspaceTransfer> WorkspaceTransfers => Set<WorkspaceTransfer>();
+    public DbSet<WorkspaceFolder> WorkspaceFolders => Set<WorkspaceFolder>();
+    public DbSet<WorkspaceFolderTemplate> WorkspaceFolderTemplates => Set<WorkspaceFolderTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +96,13 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.WorkspaceId);
+            entity.HasIndex(e => e.FolderId);
+            // Restrict, not cascade: deleting a folder must never take its deliveries with it.
+            // The folder delete handler refuses while anything is still filed under it.
+            entity.HasOne<WorkspaceFolder>()
+                .WithMany()
+                .HasForeignKey(e => e.FolderId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.FileRequestId);
             entity.HasOne(e => e.FileRequest)
                 .WithMany(e => e.Deliveries)
@@ -452,6 +461,41 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkspaceFolder>(entity =>
+        {
+            entity.ToTable("workspace_folders");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(WorkspaceFolder.NameMaxLength);
+            entity.Property(e => e.DefaultPasswordHint).HasMaxLength(WorkspaceFolder.HintMaxLength);
+            entity.HasIndex(e => new { e.WorkspaceId, e.ParentId });
+            // Sibling names stay unique so a template applied twice cannot quietly produce
+            // two folders the team cannot tell apart.
+            entity.HasIndex(e => new { e.WorkspaceId, e.ParentId, e.Name }).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // Deleting a parent must not cascade away a child that still holds deliveries —
+            // the delete handler refuses a non-empty folder instead.
+            entity.HasOne<WorkspaceFolder>()
+                .WithMany()
+                .HasForeignKey(e => e.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkspaceFolderTemplate>(entity =>
+        {
+            entity.ToTable("workspace_folder_templates");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(WorkspaceFolderTemplate.NameMaxLength);
+            entity.Property(e => e.StructureJson).IsRequired().HasMaxLength(WorkspaceFolderTemplate.StructureMaxLength);
+            entity.HasIndex(e => new { e.WorkspaceId, e.Name }).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

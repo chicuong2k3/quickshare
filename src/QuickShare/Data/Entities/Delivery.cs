@@ -13,6 +13,12 @@ public record Delivery : BaseAuditEntity
     /// in the shared history, never each other's personal ones.
     /// </summary>
     public Guid? WorkspaceId { get; set; }
+    /// <summary>
+    /// Shared workspace folder this delivery was uploaded into (issue #151); null = loose in
+    /// the workspace, or a personal share. Always inside <see cref="WorkspaceId"/> — a folder
+    /// from another workspace is refused at commit, not silently ignored.
+    /// </summary>
+    public Guid? FolderId { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }

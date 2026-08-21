@@ -1,8 +1,9 @@
 # Team workspaces
 
 Issues `#106` (team workspaces), `#252` (ownership transfer), `#145` (workspace audit log),
-`#300` (admin usage report). Shipped as one subsystem because they share one migration
-(`AddTeamWorkspaces`), one authorization gate and one audit store.
+`#300` (admin usage report), `#151` (shared folders), `#245` (per-folder defaults),
+`#234` (folder templates). One subsystem: they share one authorization gate and one audit
+store, across two migrations (`AddTeamWorkspaces`, `AddWorkspaceFolders`).
 
 ## What a workspace is
 
@@ -21,9 +22,11 @@ Everything below exists to make one of those three true without a second source 
 | `workspaces` | name, `OwnerId` (FK `Restrict`), `Seats` (2–25) |
 | `workspace_members` | one seat: `WorkspaceId`, nullable `UserId`, `InviteEmail`, `Role`, `InviteTokenHash`, `InviteExpiresAt`, `JoinedAt`, `RevokedAt` |
 | `workspace_transfers` | one pending handover: `FromUserId`, `ToUserId`, `TokenHash`, `ExpiresAt`, `AcceptedAt`, `CancelledAt` |
+| `workspace_folders` | one shared folder: `WorkspaceId`, nullable `ParentId`, `Name`, plus the five default-settings columns |
+| `workspace_folder_templates` | one saved layout: `WorkspaceId`, `Name`, `StructureJson` |
 
-Plus three columns on existing tables: `users.PersonalPlan`, `deliveries.WorkspaceId`,
-`security_events.WorkspaceId`.
+Plus four columns on existing tables: `users.PersonalPlan`, `deliveries.WorkspaceId`,
+`deliveries.FolderId`, `security_events.WorkspaceId`.
 
 **The owner holds a real seat.** Creating a workspace writes a `workspace_members` row with
 `Role = Owner`. Seat counts, the audit log, the report and the transfer flow then all read one
@@ -106,6 +109,81 @@ owner nominates a member  →  successor accepts within 7 days  →  roles swap
 The FK is `Restrict`, so this is a guard with a message rather than a foreign-key crash — and
 deleting the owner would take the whole team's workspace with them.
 
+## Shared folders (`#151`)
+
+Content organization for `#106`: the team drops files into "Campaign Assets" and every seat
+sees them, instead of each member owning a private pile that happens to be in the same
+workspace.
+
+**Every seat sees the whole tree.** Per-folder membership would be a second permission system
+layered on the workspace roles that already exist, and two systems disagreeing is how someone
+ends up locked out of a folder they can see in a list. Management (create, rename, delete,
+defaults) needs `CanAdminister`; browsing and uploading do not.
+
+**Nesting stops at two levels.** Arbitrary depth needs breadcrumbs, move semantics, cycle
+checks and a recursive permission walk. Two levels covers "client / project" - the shape
+agencies actually asked for - with a parent chain short enough to resolve in one query.
+
+**Deleting a folder never deletes files.** Delete is refused while any delivery (including a
+soft-deleted one, restorable for 24h under `#99`) or any child folder is still filed under it.
+The FK from `deliveries.FolderId` is `Restrict`, so the guard has a database backstop rather
+than being the only thing standing between a tidy-up and data loss.
+
+Sibling names are unique per parent, so a template applied twice cannot quietly produce two
+folders the team cannot tell apart. `GET /api/deliveries?folder={id}` filters the shared
+history, and the folder list carries a per-folder file count and byte total (live rows only -
+a folder size should not count what is sitting in the trash).
+
+**Not shipped: a public folder link or folder QR.** That would be a new recipient-facing
+surface with its own access-control story (scope rules, expiry, password, indexing), and it
+belongs with a design pass rather than as a footnote to folder CRUD. Per-delivery share codes
+and QR are unchanged.
+
+## Per-folder upload defaults (`#245`)
+
+Five settings per folder: expiry hours, password-required, password hint, privacy mode, and
+the lock. The whole feature is the difference between two of them:
+
+- **Unlocked defaults are a prefill.** They reach the upload form via
+  `GET /api/workspace/folders/{id}/prefill`; the sender sees them and can change any of them.
+  The server does not second-guess an explicit choice - a "default" that silently overrides
+  what the sender typed is policy wearing a friendlier word, and the sender would have no way
+  to tell which one they got.
+- **Locked defaults are policy.** `CommitR2Handler` enforces them: the expiry is replaced,
+  privacy mode is forced on, and a commit with no password is refused
+  (`folder_password_required`). Refused, not silently generated - the server cannot invent a
+  password and then have nobody to tell it to.
+
+Inheritance walks child then parent and takes the first folder with an opinion **per setting**.
+Booleans are the exception: they have no "unset", so `PasswordRequired` and `PrivacyMode` are
+OR-ed up the chain. Those settings only ever tighten, which is the safe direction to be wrong
+in. The lock travels *down* from any ancestor, because a compliance rule a parent sets must not
+be escapable by uploading one level deeper.
+
+A locked expiry longer than the plan allows is **clamped**, not rejected: the plan cap applies
+first and a folder rule may tighten the ceiling, never raise it - the same rule the retention
+policy follows in `#161`. Admins set defaults; **only the owner may set the lock**, because a
+locked default stops being a convenience and starts being a rule the whole team lives under.
+
+## Folder templates (`#234`)
+
+A saved layout: names plus default settings, stored as a JSON snapshot in `StructureJson`.
+
+**A template is a value, not a live tree.** Editing it must not reach into folders already
+created from it, and deleting it must not touch them either. A JSON blob makes that impossible
+to get wrong; foreign keys to real folders would make it easy to get wrong.
+
+**Apply is idempotent by name.** A folder that already exists is counted in `skipped`, not
+failed, so a half-finished apply can be re-run and the same template can serve a second client.
+An optional `rootName` nests the whole structure one level down, which is how one "Client
+Project" template serves every client without collisions - and because depth caps at two, a
+template with children of its own is applied flat under that root, with the skipped count
+saying so rather than the apply half-failing.
+
+Apply reuses `FolderWriter.CreateAsync`, the same function the single-folder endpoint uses. A
+bulk path with its own copy of the depth and uniqueness checks is a bulk path that will
+eventually skip one.
+
 ## Workspace audit log (`#145`)
 
 The same append-only `security_events` store as the personal timeline (`#126`), stamped with
@@ -113,7 +191,7 @@ The same append-only `security_events` store as the personal timeline (`#126`), 
 with the first. Retention is the existing 90-day `SecurityEventCleanupJob` — old rows are gone,
 not hidden.
 
-Eleven workspace event types (`WorkspaceCreated` … `WorkspaceReportGenerated`). Filters
+Eighteen workspace event types (`WorkspaceCreated` … `WorkspaceTemplateDeleted`). Filters
 (member, action, date range) apply in SQL; `GET /api/workspace/audit/export` honours the same
 filters and emits CSV.
 
@@ -174,7 +252,13 @@ component's scoped CSS never applies.
 - **New workspace-scoped admin action?** Audit it through `WorkspaceService.AuditAsync` and add
   the event type to `AuditActions` in `AccountWorkspaceAudit.razor`.
 - **New upload path?** Use `QuotaService`; do not read `UserUsage` directly, or pooling stops
-  applying to it.
+  applying to it. If it can target a folder, it MUST resolve defaults through
+  `FolderDefaults.ResolveAsync` and enforce them when `Locked` - an upload path that ignores a
+  locked folder is a compliance rule with a hole in it.
+- **New code that creates folders?** Go through `FolderWriter.CreateAsync`, which owns the
+  depth cap, the per-workspace ceiling and sibling-name uniqueness.
+- **New code that deletes folders?** Keep the non-empty guard. Deleting structure must never
+  delete content.
 
 ## Tests
 
@@ -182,3 +266,11 @@ component's scoped CSS never applies.
 seat-shrink floor, invite accept/expiry, plan borrow + restore, member-cannot-administer,
 pooled quota, transfer (nomination is inert, accept moves ownership, self and non-owner
 refused), owner-deletion guard, audit admin-gating + filter + CSV, report scoping + gating.
+
+`tests/QuickShare.Server.Tests/E2E/WorkspaceFolderTests.cs` (19) - depth cap, sibling-name
+uniqueness, delete refused while non-empty (child folder *and* delivery), per-folder size
+excluding trash, member visibility vs management, the pure inheritance rule (nearest-first
+expiry, OR-ed protections, lock travelling down), owner-only lock, foreign-folder refusal, and
+the commit boundary: unlocked defaults leave the sender choice alone, locked ones replace it,
+a locked password requirement refuses a commit without one. Templates: snapshot + apply under a
+new root, re-apply reuses by name, delete leaves created folders alone, member refusal.

@@ -176,13 +176,15 @@ See `docs/compliance-architecture.md` for the full subsystem. Three rules bind a
 - **Any new code path that computes a delivery expiry MUST pass it through `RetentionPolicy.Clamp`, after the plan cap.** The policy is a ceiling, never a floor — a sender's shorter choice always survives, and clamping is not a validation error.
 - **Delivery scope rules (`DeliveryAccessPolicy`) are fail-closed.** A rule that exists refuses anyone it does not explicitly satisfy, and a malformed rule means "does not match" — never "matches everything". Rule snapshots may be cached per share code; a per-caller verdict MUST NEVER enter a shared cache.
 
-### Workspace Invariants (team workspaces #106, transfer #252, audit #145, report #300)
+### Workspace Invariants (team workspaces #106, transfer #252, audit #145, report #300, folders #151/#245/#234)
 
 See `docs/workspaces-architecture.md` for the full subsystem. Three rules bind all future work:
 
 - **Any new code path that writes `User.Plan` MUST re-push it to the owner's workspace seats** (`SubscriptionService.PushPlanToWorkspaceAsync` / `WorkspaceService.SyncMemberPlansAsync`). A seat borrows the owner's plan by copying it onto `User.Plan` so ~20 existing tier gates work unchanged; a plan write that skips the push leaves members on a plan nobody is paying for.
 - **Any new upload path MUST go through `QuotaService`.** It resolves the workspace owner as the usage bucket, so pooling applies to check and record alike. Reading or writing `UserUsage` directly gives every seat a private, uncapped allowance.
 - **Workspace data is admin-gated through one resolver** (`WorkspaceAuditReader.ResolveAdminSeatAsync`) and shared-history reads are read-only: every mutation path still matches on `SenderId`. Seeing a team-mate's share is not the same as being able to delete it.
+- **Any new upload path that can target a folder MUST resolve `FolderDefaults.ResolveAsync` and enforce the result when `Locked`.** Unlocked folder defaults are a prefill the sender may override; locked ones are policy (expiry replaced, privacy forced on, commit refused without a password). An upload path that ignores a locked folder is a compliance rule with a hole in it.
+- **Folder creation goes through `FolderWriter.CreateAsync`, and deleting a folder never deletes content.** That function owns the two-level depth cap, the per-workspace ceiling and sibling-name uniqueness; the delete guard refuses while any delivery (soft-deleted included) or child folder is still filed under it.
 
 @RTK.md
 
