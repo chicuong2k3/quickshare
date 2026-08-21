@@ -50,6 +50,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   self-serve DPA (#184), SOC 2 readiness (#147/#323),
   [`object-storage-and-backup.md`](object-storage-and-backup.md) - S3-compatible object store
   (#171), scheduled workspace backup (#271),
+  [`workspace-branding.md`](workspace-branding.md) - branded recipient page (#285),
+  custom typography (#286),
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
@@ -104,6 +106,8 @@ rules:
 | A cross-tenant miss returns the same response as a nonexistent id; never edit published DPA terms or a `/soc2` status in place | enterprise-trust.md (#190/#184/#147) |
 | Object store config lives under `ObjectStore`; the legacy `R2` section must keep binding | object-storage-and-backup.md (#171) |
 | Backup manifests carry metadata + storage keys, never bytes; prune only after a successful upload | object-storage-and-backup.md (#271) |
+| A brand overrides token values only — never token names, never a type size | workspace-branding.md (#285/#286) |
+| Brand CSS inputs are validated at the write boundary; uploaded assets are sniffed by magic bytes and SVG is refused | workspace-branding.md (#285/#286) |
 
 ## 6. Workflow (issue → done)
 

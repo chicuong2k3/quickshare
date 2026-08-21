@@ -9,7 +9,9 @@
 @using QuickShare.Infrastructure
 @using QuickShare.Features.Downloads.Info
 @using QuickShare.Features.Deliveries.ExtensionRequests
+@using QuickShare.Features.Workspaces.Branding
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject BrandReader Brands
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
@@ -26,6 +28,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@OgUrl" />
     <meta property="og:image" content="@OgImageUrl" />
+    @* Workspace brand (issues #285, #286) — token values only, never token names or type
+       sizes, and every value was validated on save. Rendered here so the client's first paint
+       is already the agency's, not a flash of ours. *@
+    @if (Brand is not null)
+    {
+        <style>@RawCss(BrandReader.ToCss(Brand))</style>
+    }
 </HeadContent>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
@@ -35,6 +44,21 @@
     @if (Info is not null)
     {
         <script id="download-info-data" type="application/json">@RawJson(Info)</script>
+    }
+    @if (Brand is not null && (Brand.HasLogo || Brand.HeaderText is not null))
+    {
+        <div class="dl-brand">
+            @if (Brand.HasLogo)
+            {
+                <img class="dl-brand__logo"
+                     src="@BrandReader.AssetUrl(Brand.WorkspaceId, BrandAssetKind.Logo)"
+                     alt="@(Brand.HeaderText ?? string.Empty)" />
+            }
+            @if (Brand.HeaderText is { } header)
+            {
+                <p class="dl-brand__header">@header</p>
+            }
+        </div>
     }
     <div class="card db-card">
         @* The delivery's own card chrome; the label is the real share code. *@
@@ -575,6 +599,10 @@
     };
 </script>
 
+    @if (Brand?.FooterText is { } brandFooter)
+    {
+        <p class="dl-brand__footer">@brandFooter</p>
+    }
 </PageWrapper>
 
 @code {
@@ -641,6 +669,20 @@
     private string OgImageUrl => $"{RequestBase}/og-cover.svg";
     private bool ShowViralCta => Info is not null && Info.SenderPlan is not (PlanTierLimits.Pro or PlanTierLimits.Studio);
 
+    /// <summary>
+    /// The sending workspace's brand, or null for a personal share. Resolved from the delivery
+    /// rather than from the viewer: the recipient has no account, and the brand they should see
+    /// is the sender's.
+    /// </summary>
+    private BrandView? Brand { get; set; }
+
+    /// <summary>
+    /// Emits the brand stylesheet unescaped. Safe because every interpolated value is validated
+    /// on save — hex colours and a restricted font-name character set — so nothing here can
+    /// close a declaration and open something else.
+    /// </summary>
+    private static MarkupString RawCss(string css) => new(css);
+
     protected override async Task OnInitializedAsync()
     {
         // Referral attribution (issue #15): visiting a link tagged ?r= records
@@ -656,6 +698,17 @@
                 SameSite = SameSiteMode.Lax
             });
         }
+
+        // Brand of the sending workspace (issues #285, #286). Read straight from the delivery
+        // rather than widened into DownloadInfoResponse: that payload is serialized to the
+        // recipient, and the workspace id has no business being in it.
+        var brandWorkspaceId = await Db.Deliveries
+            .AsNoTracking()
+            .Where(d => d.ShareCode == ShareCode)
+            .Select(d => d.WorkspaceId)
+            .FirstOrDefaultAsync(CancellationToken.None);
+
+        Brand = await Brands.ForWorkspaceAsync(brandWorkspaceId, CancellationToken.None);
 
         try
         {

@@ -20,7 +20,7 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 dotnet run --project src/QuickShare
 
 # automated suites (prove the basics before manual work)
-dotnet test tests/QuickShare.Server.Tests    # ~350s, 652 tests
+dotnet test tests/QuickShare.Server.Tests    # ~320s, 668 tests
 dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
 ```
 
@@ -81,6 +81,7 @@ browser download needed.
 | Tenant isolation (#190) — cross-tenant probes on every workspace-scoped surface | `TenantIsolationTests` |
 | SIEM streaming (#191) + self-serve DPA (#184) | `SiemAndDpaTests` |
 | S3-compatible object store (#171) + scheduled workspace backup (#271) | `StorageAndBackupTests` |
+| Workspace branding (#285) + custom fonts (#286) | `WorkspaceBrandTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |

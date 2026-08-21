@@ -1531,4 +1531,32 @@
   <data name="backup_status_never" xml:space="preserve"><value>Chưa chạy</value></data>
   <data name="backup_manifest_key" xml:space="preserve"><value>Bản mô tả mới nhất: {0}</value></data>
   <data name="backup_last_error" xml:space="preserve"><value>Lỗi gần nhất: {0}</value></data>
+  <data name="ws_tab_brand" xml:space="preserve"><value>Thương hiệu</value></data>
+  <data name="brand_title" xml:space="preserve"><value>Thương hiệu</value></data>
+  <data name="brand_subtitle" xml:space="preserve"><value>Khách hàng của bạn nhìn thấy lượt gửi của bạn như thế nào.</value></data>
+  <data name="brand_appearance_title" xml:space="preserve"><value>Giao diện</value></data>
+  <data name="brand_scope_note" xml:space="preserve"><value>Áp dụng cho các trang người nhận mở — trang tải xuống và trang báo gửi thành công. Không đổi giao diện ứng dụng bạn đang xem: người thuộc hai không gian nhóm cần biết chắc mình đang ở đâu.</value></data>
+  <data name="brand_enabled" xml:space="preserve"><value>Hiển thị thương hiệu này cho người nhận</value></data>
+  <data name="brand_accent" xml:space="preserve"><value>Màu nhấn</value></data>
+  <data name="brand_accent_text" xml:space="preserve"><value>Màu chữ trên nền nhấn</value></data>
+  <data name="brand_contrast_note" xml:space="preserve"><value>Cặp màu được kiểm tra ở mức tương phản 3:1. Thương hiệu làm trang của chính mình khó đọc chỉ tạo ra ticket hỗ trợ từ khách hàng không tìm thấy nút tải.</value></data>
+  <data name="brand_header" xml:space="preserve"><value>Dòng đầu trang</value></data>
+  <data name="brand_footer" xml:space="preserve"><value>Dòng chân trang</value></data>
+  <data name="brand_hide_qs" xml:space="preserve"><value>Ẩn thương hiệu QuickShare trên trang người nhận</value></data>
+  <data name="brand_save" xml:space="preserve"><value>Lưu thương hiệu</value></data>
+  <data name="brand_saved" xml:space="preserve"><value>Đã lưu.</value></data>
+  <data name="brand_logo_title" xml:space="preserve"><value>Logo</value></data>
+  <data name="brand_logo_hint" xml:space="preserve"><value>PNG, JPEG hoặc WebP, tối đa 512 KB. Không nhận SVG — định dạng này có thể chứa mã script, và một cái logo không đáng để đánh đổi trên trang khách hàng bạn mở.</value></data>
+  <data name="brand_upload" xml:space="preserve"><value>Tải lên</value></data>
+  <data name="brand_remove" xml:space="preserve"><value>Xoá</value></data>
+  <data name="brand_fonts_title" xml:space="preserve"><value>Kiểu chữ</value></data>
+  <data name="brand_fonts_hint" xml:space="preserve"><value>Chỉ woff2 tự lưu trữ, tối đa 512 KB mỗi tệp — không dùng CDN phông của bên thứ ba, nên trình duyệt khách hàng chỉ nói chuyện với chúng tôi. Cỡ chữ giữ nguyên; chỉ đổi họ chữ.</value></data>
+  <data name="brand_heading_font" xml:space="preserve"><value>Tên phông tiêu đề</value></data>
+  <data name="brand_body_font" xml:space="preserve"><value>Tên phông nội dung</value></data>
+  <data name="brand_license" xml:space="preserve"><value>Ghi chú giấy phép phông</value></data>
+  <data name="brand_license_note" xml:space="preserve"><value>Đây là cam kết của bạn rằng bạn được phép nhúng các tệp này. Chúng tôi không thể kiểm chứng.</value></data>
+  <data name="brand_preview_title" xml:space="preserve"><value>Xem trước</value></data>
+  <data name="brand_preview_heading" xml:space="preserve"><value>Một tiêu đề bằng phông của bạn</value></data>
+  <data name="brand_preview_body" xml:space="preserve"><value>Nội dung, ở cỡ chữ mà hệ thiết kế cố định, bằng họ chữ bạn chọn.</value></data>
+  <data name="brand_preview_chip" xml:space="preserve"><value>Tải xuống</value></data>
 </root>

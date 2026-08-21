@@ -42,6 +42,7 @@ public class AppDbContext : DbContext
     public DbSet<SiemSink> SiemSinks => Set<SiemSink>();
     public DbSet<DpaSignature> DpaSignatures => Set<DpaSignature>();
     public DbSet<WorkspaceBackupPolicy> WorkspaceBackupPolicies => Set<WorkspaceBackupPolicy>();
+    public DbSet<WorkspaceBrand> WorkspaceBrands => Set<WorkspaceBrand>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -467,6 +468,27 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkspaceBrand>(entity =>
+        {
+            entity.ToTable("workspace_brands");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AccentColor).HasMaxLength(WorkspaceBrand.ColorMaxLength);
+            entity.Property(e => e.AccentTextColor).HasMaxLength(WorkspaceBrand.ColorMaxLength);
+            entity.Property(e => e.HeaderText).HasMaxLength(WorkspaceBrand.HeaderMaxLength);
+            entity.Property(e => e.FooterText).HasMaxLength(WorkspaceBrand.FooterMaxLength);
+            entity.Property(e => e.HeadingFontName).HasMaxLength(WorkspaceBrand.FontNameMaxLength);
+            entity.Property(e => e.BodyFontName).HasMaxLength(WorkspaceBrand.FontNameMaxLength);
+            entity.Property(e => e.FontLicenseNote).HasMaxLength(WorkspaceBrand.LicenseNoteMaxLength);
+            entity.Property(e => e.LogoKey).HasMaxLength(WorkspaceBrand.AssetKeyMaxLength);
+            entity.Property(e => e.HeadingFontKey).HasMaxLength(WorkspaceBrand.AssetKeyMaxLength);
+            entity.Property(e => e.BodyFontKey).HasMaxLength(WorkspaceBrand.AssetKeyMaxLength);
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

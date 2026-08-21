@@ -2884,3 +2884,63 @@ html, body {
         display: none;
     }
 }
+
+
+/* ─── Workspace brand on recipient pages (issues #285 logo/colours, #286 fonts) ───
+   Global, not scoped: the download page renders these alongside HTMX-delivered markup. */
+.dl-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--db-space-2);
+    margin-bottom: var(--db-space-4);
+    text-align: center;
+}
+
+.dl-brand__logo {
+    /* Capped rather than cropped: the workspace picked this image, and a logo squashed to fit
+       is worse branding than a small one. */
+    max-height: 64px;
+    max-width: 240px;
+    height: auto;
+    width: auto;
+}
+
+.dl-brand__header {
+    margin: 0;
+    font-family: var(--db-font-display);
+    color: var(--db-color-text);
+}
+
+.dl-brand__footer {
+    margin-top: var(--db-space-4);
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--db-color-text-muted);
+}
+
+.brand-preview {
+    margin-top: var(--db-space-4);
+    padding: var(--db-space-4);
+    border: 1px solid var(--db-mountain-deep);
+}
+
+.brand-preview__heading {
+    font-family: var(--db-font-display);
+}
+
+.brand-preview__body {
+    font-family: var(--db-font-ui);
+}
+
+.brand-preview__chip {
+    display: inline-block;
+    margin-top: var(--db-space-3);
+    padding: var(--db-space-2) var(--db-space-4);
+    background: var(--db-color-accent);
+    color: var(--db-color-accent-text);
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}

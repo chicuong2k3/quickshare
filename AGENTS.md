@@ -210,6 +210,14 @@ See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind
 - **A backup manifest is metadata plus storage keys, never file bytes, and pruning happens only after a successful upload.** Deleting old copies on the strength of a run that produced nothing is how a retention policy deletes the last good backup. Adding workspace data a customer would need after a disaster means adding it to `BuildManifestAsync`, and changing the shape means bumping `ManifestVersion` — customers hold copies we cannot migrate.
 - **Run-now MUST go through the same method as the scheduled run.** A "test backup" on a separate code path proves nothing about the one that runs at 3am. It returns 200 with the failure in the body when the destination rejects it: the request was fine, the destination was not, and that distinction is the answer the admin asked for.
 
+### Branding Invariants (recipient-page brand #285, custom fonts #286)
+
+See `docs/workspace-branding.md` for the full subsystem. Three rules bind all future work:
+
+- **A brand overrides token *values* only — never token names, and never a type size.** `DESIGN.md` owns the typography scale; a brand swaps families. The CSS renderer emits no `font-size` at all, and the tests assert that, because it is the kind of constraint that erodes one convenient exception at a time.
+- **Everything interpolated into brand CSS MUST be validated at the write boundary** (hex colours by regex, font family names against a restricted character set). That is what makes rendering it as a `MarkupString` safe; validating at render time instead would leave every future call site to remember.
+- **Uploaded brand assets are sniffed by magic bytes, never by the declared content type, and SVG is refused.** SVG can carry script and a logo is not worth an XSS surface on a client's page. Replacing an asset MUST write a new key — the public route is immutably cached, so an in-place overwrite serves last month's logo.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

@@ -113,4 +113,13 @@ public static class ErrorCodes
     public const string BackupFrequencyInvalid = "backup_frequency_invalid";
     public const string BackupRetentionInvalid = "backup_retention_invalid";
     public const string BackupPolicyNotFound = "backup_policy_not_found";
+    // Workspace branding (#285) and custom fonts (#286).
+    public const string BrandNotFound = "brand_not_found";
+    public const string BrandColorInvalid = "brand_color_invalid";
+    public const string BrandContrastTooLow = "brand_contrast_too_low";
+    public const string BrandFontNameInvalid = "brand_font_name_invalid";
+    public const string BrandAssetKindInvalid = "brand_asset_kind_invalid";
+    public const string BrandAssetMissing = "brand_asset_missing";
+    public const string BrandAssetTooLarge = "brand_asset_too_large";
+    public const string BrandAssetTypeInvalid = "brand_asset_type_invalid";
 }

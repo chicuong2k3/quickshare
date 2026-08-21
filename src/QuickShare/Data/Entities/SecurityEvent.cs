@@ -74,4 +74,5 @@ public enum SecurityEventType
     SiemSinkChanged,
     WorkspaceBackupRun,
     WorkspaceBackupPolicyChanged,
+    WorkspaceBrandChanged,
 }

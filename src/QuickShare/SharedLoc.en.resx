@@ -1531,4 +1531,32 @@
   <data name="backup_status_never" xml:space="preserve"><value>Not run yet</value></data>
   <data name="backup_manifest_key" xml:space="preserve"><value>Latest manifest: {0}</value></data>
   <data name="backup_last_error" xml:space="preserve"><value>Last error: {0}</value></data>
+  <data name="ws_tab_brand" xml:space="preserve"><value>Brand</value></data>
+  <data name="brand_title" xml:space="preserve"><value>Brand</value></data>
+  <data name="brand_subtitle" xml:space="preserve"><value>How your clients see a delivery you send them.</value></data>
+  <data name="brand_appearance_title" xml:space="preserve"><value>Appearance</value></data>
+  <data name="brand_scope_note" xml:space="preserve"><value>Applies to the pages your recipients open — the delivery page and the upload success page. It does not re-skin the app you are looking at now: a member of two workspaces needs a stable idea of where they are.</value></data>
+  <data name="brand_enabled" xml:space="preserve"><value>Show this brand to recipients</value></data>
+  <data name="brand_accent" xml:space="preserve"><value>Accent colour</value></data>
+  <data name="brand_accent_text" xml:space="preserve"><value>Text on accent</value></data>
+  <data name="brand_contrast_note" xml:space="preserve"><value>The pair is checked at 3:1 contrast. A brand that makes its own page unreadable is a support ticket from the client who could not find the download button.</value></data>
+  <data name="brand_header" xml:space="preserve"><value>Header line</value></data>
+  <data name="brand_footer" xml:space="preserve"><value>Footer line</value></data>
+  <data name="brand_hide_qs" xml:space="preserve"><value>Hide QuickShare branding on recipient pages</value></data>
+  <data name="brand_save" xml:space="preserve"><value>Save brand</value></data>
+  <data name="brand_saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="brand_logo_title" xml:space="preserve"><value>Logo</value></data>
+  <data name="brand_logo_hint" xml:space="preserve"><value>PNG, JPEG or WebP, up to 512 KB. SVG is not accepted — it can carry script, and a logo is not worth that on a page your client opens.</value></data>
+  <data name="brand_upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="brand_remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="brand_fonts_title" xml:space="preserve"><value>Typography</value></data>
+  <data name="brand_fonts_hint" xml:space="preserve"><value>Self-hosted woff2 only, up to 512 KB each — no third-party font CDN, so your client's browser talks to nobody but us. Type sizes stay fixed; only the families change.</value></data>
+  <data name="brand_heading_font" xml:space="preserve"><value>Heading font name</value></data>
+  <data name="brand_body_font" xml:space="preserve"><value>Body font name</value></data>
+  <data name="brand_license" xml:space="preserve"><value>Font licence note</value></data>
+  <data name="brand_license_note" xml:space="preserve"><value>Your declaration that you may embed these files. We cannot verify it.</value></data>
+  <data name="brand_preview_title" xml:space="preserve"><value>Preview</value></data>
+  <data name="brand_preview_heading" xml:space="preserve"><value>A heading in your type</value></data>
+  <data name="brand_preview_body" xml:space="preserve"><value>Body copy, at the size the design system fixes, in the family you chose.</value></data>
+  <data name="brand_preview_chip" xml:space="preserve"><value>Download</value></data>
 </root>

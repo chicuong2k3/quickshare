@@ -1,0 +1,252 @@
+@layout MainLayout
+@page "/account/workspace/brand"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Branding
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["brand_title"]</PageTitle>
+
+@* Workspace settings — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["brand_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["brand_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceBrand" />
+
+    <section id="workspace-brand-body"
+             hx-get="@RoutePaths.AccountWorkspaceBrand"
+             hx-trigger="load, brandUpdated from:body"
+             hx-target="#workspace-brand-body"
+             hx-select="#workspace-brand-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/brand.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private WorkspaceBrand? brand;
+
+    private RenderFragment Chunk => @<section id="workspace-brand-body">
+        @if (!isAdmin)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["brand_appearance_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["brand_scope_note"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-checkbox">
+                            <input id="brand-enabled" type="checkbox" checked="@(brand?.Enabled ?? false)" />
+                            <span>@Loc["brand_enabled"]</span>
+                        </label>
+
+                        <label class="workspace-label" for="brand-accent">@Loc["brand_accent"]</label>
+                        <input id="brand-accent" class="db-input" type="text" placeholder="#c8a24a"
+                               maxlength="@WorkspaceBrand.ColorMaxLength" value="@brand?.AccentColor" />
+
+                        <label class="workspace-label" for="brand-accent-text">@Loc["brand_accent_text"]</label>
+                        <input id="brand-accent-text" class="db-input" type="text" placeholder="#101010"
+                               maxlength="@WorkspaceBrand.ColorMaxLength" value="@brand?.AccentTextColor" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["brand_contrast_note"]</p>
+
+                        <label class="workspace-label" for="brand-header">@Loc["brand_header"]</label>
+                        <input id="brand-header" class="db-input" type="text"
+                               maxlength="@WorkspaceBrand.HeaderMaxLength" value="@brand?.HeaderText" />
+
+                        <label class="workspace-label" for="brand-footer">@Loc["brand_footer"]</label>
+                        <input id="brand-footer" class="db-input" type="text"
+                               maxlength="@WorkspaceBrand.FooterMaxLength" value="@brand?.FooterText" />
+
+                        <label class="workspace-checkbox">
+                            <input id="brand-hide-qs" type="checkbox" checked="@(brand?.HideQuickShareBranding ?? false)" />
+                            <span>@Loc["brand_hide_qs"]</span>
+                        </label>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["brand_saved"]"
+                                onclick="window.quickShareBrand.save(this)"
+                                data-ai-action="brand.save">@Loc["brand_save"]</button>
+                    </div>
+                </div>
+            </div>
+
+            @* Logo (issue #285). *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["brand_logo_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["brand_logo_hint"]</p>
+
+                    @if (brand?.LogoKey is not null)
+                    {
+                        <img class="dl-brand__logo" alt=""
+                             src="@BrandReader.AssetUrl(brand.WorkspaceId, BrandAssetKind.Logo)" />
+                    }
+
+                    <div class="workspace-form">
+                        <input id="brand-logo-file" class="db-input" type="file"
+                               accept="image/png,image/jpeg,image/webp" />
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-kind="@BrandAssetKind.Logo"
+                                data-input="brand-logo-file"
+                                onclick="window.quickShareBrand.upload(this)"
+                                data-ai-action="brand.logo.upload">@Loc["brand_upload"]</button>
+
+                        @if (brand?.LogoKey is not null)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    data-kind="@BrandAssetKind.Logo"
+                                    onclick="window.quickShareBrand.removeAsset(this)"
+                                    data-ai-action="brand.logo.remove">@Loc["brand_remove"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @* Typography (issue #286). *@
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["brand_fonts_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["brand_fonts_hint"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="brand-heading-name">@Loc["brand_heading_font"]</label>
+                        <input id="brand-heading-name" class="db-input" type="text"
+                               maxlength="@WorkspaceBrand.FontNameMaxLength" value="@brand?.HeadingFontName" />
+                        <input id="brand-heading-file" class="db-input" type="file" accept="font/woff2,.woff2" />
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-kind="@BrandAssetKind.HeadingFont"
+                                data-input="brand-heading-file"
+                                onclick="window.quickShareBrand.upload(this)"
+                                data-ai-action="brand.font.heading">@Loc["brand_upload"]</button>
+
+                        <label class="workspace-label" for="brand-body-name">@Loc["brand_body_font"]</label>
+                        <input id="brand-body-name" class="db-input" type="text"
+                               maxlength="@WorkspaceBrand.FontNameMaxLength" value="@brand?.BodyFontName" />
+                        <input id="brand-body-file" class="db-input" type="file" accept="font/woff2,.woff2" />
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-kind="@BrandAssetKind.BodyFont"
+                                data-input="brand-body-file"
+                                onclick="window.quickShareBrand.upload(this)"
+                                data-ai-action="brand.font.body">@Loc["brand_upload"]</button>
+
+                        <label class="workspace-label" for="brand-license">@Loc["brand_license"]</label>
+                        <input id="brand-license" class="db-input" type="text"
+                               maxlength="@WorkspaceBrand.LicenseNoteMaxLength" value="@brand?.FontLicenseNote" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["brand_license_note"]</p>
+                    </div>
+                </div>
+            </div>
+
+            @* Preview: the same CSS the recipient page emits, scoped to this card. *@
+            @if (Preview is { } preview)
+            {
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["brand_preview_title"]</h2>
+                        <style>@PreviewCss(preview)</style>
+                        <div class="brand-preview">
+                            @if (preview.HasLogo)
+                            {
+                                <img class="dl-brand__logo" alt=""
+                                     src="@BrandReader.AssetUrl(preview.WorkspaceId, BrandAssetKind.Logo)" />
+                            }
+                            @if (preview.HeaderText is { } header)
+                            {
+                                <p class="dl-brand__header">@header</p>
+                            }
+                            <p class="db-h3 brand-preview__heading">@Loc["brand_preview_heading"]</p>
+                            <p class="db-p brand-preview__body">@Loc["brand_preview_body"]</p>
+                            <span class="brand-preview__chip">@Loc["brand_preview_chip"]</span>
+                            @if (preview.FooterText is { } footer)
+                            {
+                                <p class="dl-brand__footer">@footer</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>;
+
+    /// <summary>
+    /// The stored brand as the recipient page would see it. Built from the saved row rather
+    /// than the form, so the preview shows what a client would actually get — a preview of
+    /// unsaved input would be a different, more flattering thing.
+    /// </summary>
+    private BrandView? Preview => brand is null || !brand.IsApplicable
+        ? null
+        : new BrandView(
+            brand.WorkspaceId,
+            brand.LogoKey is not null,
+            brand.AccentColor,
+            brand.AccentTextColor,
+            brand.HeaderText,
+            brand.FooterText,
+            brand.HideQuickShareBranding,
+            brand.HeadingFontName,
+            brand.BodyFontName,
+            brand.HeadingFontKey is not null,
+            brand.BodyFontKey is not null);
+
+    private static MarkupString PreviewCss(BrandView view) => new(BrandReader.ToCss(view));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        brand = await Db.WorkspaceBrands
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.WorkspaceId == seat.WorkspaceId, CancellationToken.None);
+    }
+}

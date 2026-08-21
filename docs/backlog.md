@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 25 done (08-22): `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 27 done (08-22): `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -462,6 +462,41 @@ admin-only, write-only secret, one policy per workspace. **Restore is not automa
 manifest is a documented versioned JSON format, and a half-working import wizard would be worse
 than a format an operator can read.
 
+
+Tier 6 batch 8 (branding series), 2026-08-22: `#285` branded recipient page, `#286` custom
+typography — one migration `AddWorkspaceBrands` (new table `workspace_brands`). Tests:
+`WorkspaceBrandTests` (16). Design: [`docs/workspace-branding.md`](workspace-branding.md).
+
+`#285` branded recipient page — logo, accent pair, header and footer copy, and a white-label
+switch that drops the QuickShare wordmark (the brand half of `#81`). Scope is deliberately the
+pages a workspace's *clients* open, never the signed-in app: a member of two workspaces would
+lose any stable sense of where they are. The accent pair is contrast-checked at 3:1 using the
+real WCAG luminance formula, because a brand that makes its own page unreadable is a support
+ticket from the client who could not find the download button. Uploads are sniffed by magic
+bytes rather than the declared content type; **SVG is refused** (a document format that can
+carry script is not worth an XSS surface on a client's page) and so is GIF. Replacing an asset
+writes a new key, since the public `/brand/{workspaceId}/{kind}` route is immutably cached and
+an in-place overwrite would serve last month's logo. That route is anonymous by necessity — the
+audience has no account — and streams through the app rather than presigning, because a
+presigned URL expires while the page is open and a public bucket is not a given for a
+self-hoster. A disabled brand serves 404: switching it off has to take it off the page.
+UI `/account/workspace/brand`; brand cached 30 minutes with explicit eviction on every write.
+
+`#286` custom typography — self-hosted woff2 only (no third-party font CDN, so the client's
+browser talks to nobody but us), 512 KB per file, mapped to heading and body roles. **Type sizes
+stay fixed**: `DESIGN.md` owns the scale and a brand swaps families only, so the renderer emits
+no `font-size` at all and the tests assert it — that is the kind of constraint that erodes one
+convenient exception at a time. Family names are validated against a restricted character set at
+the write boundary, which is what makes rendering the stylesheet as a `MarkupString` safe;
+`font-display: swap` plus a fallback stack keeps the download button from hiding behind a font
+request that may never finish. The licence note is the uploader's own declaration and is
+labelled as unverifiable.
+
+**Not shipped**: per-folder brand override (a second resolution layer on every recipient page
+for a setting changed once a year), and custom-domain-carried branding — `#67` is still open,
+so `#81` white-label stays open too, since brand control without domain control is not
+white-label.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -489,6 +524,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Billing ledger (seats / overage / invoices / PO + net terms) | `docs/billing-ledger.md` |
 | Enterprise trust (isolation / SIEM / DPA / SOC 2) | `docs/enterprise-trust.md` |
 | Object storage & backup (S3-compatible / scheduled export) | `docs/object-storage-and-backup.md` |
+| Workspace branding (recipient page / typography) | `docs/workspace-branding.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -505,7 +541,7 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 25 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 27 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
   `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,

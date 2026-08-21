@@ -254,6 +254,9 @@ builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.TenantGuard>();
 // Scheduled workspace backup (issue #271). Registered unconditionally: the run-now endpoint
 // resolves it directly, and Hangfire only schedules the recurring tick when it is enabled.
 builder.Services.AddScoped<WorkspaceBackupJob>();
+
+// Recipient-facing workspace branding (issues #285, #286).
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>();
 builder.Services.AddHttpClient();
 
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
