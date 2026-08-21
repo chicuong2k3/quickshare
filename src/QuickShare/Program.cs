@@ -151,26 +151,29 @@ else
 builder.Services.Configure<StorageOptions>(
     builder.Configuration.GetSection(StorageOptions.Section));
 
+// Object store (issue #171): any S3-compatible endpoint. The `ObjectStore` section is the
+// current shape; the legacy `R2` section still binds so an upgrade does not break deployments
+// that were configured before the provider was generalized.
 var r2Section = builder.Configuration.GetSection(R2Options.Section);
 builder.Services.Configure<R2Options>(r2Section);
 
-var r2Options = r2Section.Get<R2Options>() ?? new();
-var hasR2 = !string.IsNullOrEmpty(r2Options.AccountId) &&
-            !string.IsNullOrEmpty(r2Options.AccessKeyId) &&
-            !string.IsNullOrEmpty(r2Options.AccessKeySecret);
+var objectStoreOptions = ObjectStoreResolver.Resolve(builder.Configuration);
+builder.Services.AddSingleton(Microsoft.Extensions.Options.Options.Create(objectStoreOptions));
+
+var hasR2 = objectStoreOptions.IsConfigured;
 
 if (hasR2)
 {
-    builder.Services.AddSingleton<R2StorageProvider>();
-    // IStorageProvider resolves to R2 by default.
-    // Consumers that specifically need local-disk should inject LocalDiskStorageProvider directly.
+    builder.Services.AddSingleton<S3CompatibleStorageProvider>();
+    // IStorageProvider resolves to the object store by default. Consumers that specifically
+    // need local disk should inject LocalDiskStorageProvider directly.
     builder.Services.AddSingleton<IStorageProvider>(sp =>
-        sp.GetRequiredService<R2StorageProvider>());
+        sp.GetRequiredService<S3CompatibleStorageProvider>());
 }
 else
 {
-    // R2 not configured — fall back to local disk so the app can still start.
-    // Upload/download features that require R2 will throw NotSupportedException.
+    // No object store configured — fall back to local disk so the app can still start.
+    // Upload/download features that require it will throw NotSupportedException.
     builder.Services.AddSingleton<IStorageProvider, LocalDiskStorageProvider>();
 }
 
@@ -247,6 +250,10 @@ builder.Services.AddScoped<QuickShare.Features.Payments.Billing.BillingAccountRe
 
 // Tenant-isolation observation (issue #190) and SIEM shipping transport (issue #191).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.TenantGuard>();
+
+// Scheduled workspace backup (issue #271). Registered unconditionally: the run-now endpoint
+// resolves it directly, and Hangfire only schedules the recurring tick when it is enabled.
+builder.Services.AddScoped<WorkspaceBackupJob>();
 builder.Services.AddHttpClient();
 
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
@@ -450,13 +457,13 @@ using (var scope = app.Services.CreateScope())
 
     if (hasR2)
     {
-        var r2 = scope.ServiceProvider.GetRequiredService<R2StorageProvider>();
-        await r2.EnsureBucketExistsAsync();
+        var objectStore = scope.ServiceProvider.GetRequiredService<S3CompatibleStorageProvider>();
+        await objectStore.EnsureBucketExistsAsync();
     }
     else
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning("R2 not configured — using LocalDiskStorageProvider. Upload/download via R2 will throw.");
+        logger.LogWarning("No object store configured — using LocalDiskStorageProvider. Upload/download will throw.");
     }
 }
 

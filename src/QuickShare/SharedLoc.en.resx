@@ -1500,4 +1500,35 @@
   <data name="soc2_ask_body" xml:space="preserve"><value>Everything we can share today is public:</value></data>
   <data name="soc2_link_security" xml:space="preserve"><value>Vulnerability disclosure</value></data>
   <data name="soc2_link_status" xml:space="preserve"><value>Status page</value></data>
+  <data name="ws_tab_backup" xml:space="preserve"><value>Backup</value></data>
+  <data name="backup_title" xml:space="preserve"><value>Scheduled backup</value></data>
+  <data name="backup_subtitle" xml:space="preserve"><value>Export this workspace on a schedule to storage you control.</value></data>
+  <data name="backup_destination_title" xml:space="preserve"><value>Destination</value></data>
+  <data name="backup_metadata_only" xml:space="preserve"><value>Backups contain metadata, not file bytes: workspace, seats, folders, and one record per delivery including its storage key, size and checksum. Copying terabytes on a schedule would be a bandwidth bill you did not agree to — the keys are what a restore needs, and you can pull the objects on your own terms.</value></data>
+  <data name="backup_endpoint" xml:space="preserve"><value>S3 endpoint (HTTPS)</value></data>
+  <data name="backup_bucket" xml:space="preserve"><value>Bucket</value></data>
+  <data name="backup_region" xml:space="preserve"><value>Region</value></data>
+  <data name="backup_prefix" xml:space="preserve"><value>Key prefix (optional)</value></data>
+  <data name="backup_access_key" xml:space="preserve"><value>Access key ID</value></data>
+  <data name="backup_secret" xml:space="preserve"><value>Secret access key</value></data>
+  <data name="backup_secret_set" xml:space="preserve"><value>A secret is set — leave blank to keep it</value></data>
+  <data name="backup_frequency" xml:space="preserve"><value>Frequency</value></data>
+  <data name="backup_daily" xml:space="preserve"><value>Daily</value></data>
+  <data name="backup_weekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="backup_retained" xml:space="preserve"><value>Copies to keep</value></data>
+  <data name="backup_enabled" xml:space="preserve"><value>Backups enabled</value></data>
+  <data name="backup_save" xml:space="preserve"><value>Save destination</value></data>
+  <data name="backup_saved" xml:space="preserve"><value>Saved. The first run happens on the next schedule tick — or press Run now.</value></data>
+  <data name="backup_run_now" xml:space="preserve"><value>Run now</value></data>
+  <data name="backup_remove" xml:space="preserve"><value>Remove backup policy</value></data>
+  <data name="backup_remove_confirm" xml:space="preserve"><value>Stop backing up and forget this destination? Manifests already in your bucket are left alone.</value></data>
+  <data name="backup_last_run_title" xml:space="preserve"><value>Last run</value></data>
+  <data name="backup_last_run" xml:space="preserve"><value>Ran at</value></data>
+  <data name="backup_status" xml:space="preserve"><value>Status</value></data>
+  <data name="backup_deliveries" xml:space="preserve"><value>Deliveries exported</value></data>
+  <data name="backup_status_ok" xml:space="preserve"><value>Succeeded</value></data>
+  <data name="backup_status_failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="backup_status_never" xml:space="preserve"><value>Not run yet</value></data>
+  <data name="backup_manifest_key" xml:space="preserve"><value>Latest manifest: {0}</value></data>
+  <data name="backup_last_error" xml:space="preserve"><value>Last error: {0}</value></data>
 </root>

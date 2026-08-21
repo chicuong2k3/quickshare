@@ -48,6 +48,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   e-invoice (#112), PO + net terms (#192),
   [`enterprise-trust.md`](enterprise-trust.md) - tenant isolation (#190), SIEM streaming (#191),
   self-serve DPA (#184), SOC 2 readiness (#147/#323),
+  [`object-storage-and-backup.md`](object-storage-and-backup.md) - S3-compatible object store
+  (#171), scheduled workspace backup (#271),
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
@@ -100,6 +102,8 @@ rules:
 | `IsMetered` is allowed-and-billable, not blocked; never mutate an issued invoice | billing-ledger.md (#141/#112) |
 | Every workspace-scoped route taking an id needs a `TenantIsolationTests` case (explicit `Where`, never a global query filter) | enterprise-trust.md (#190) |
 | A cross-tenant miss returns the same response as a nonexistent id; never edit published DPA terms or a `/soc2` status in place | enterprise-trust.md (#190/#184/#147) |
+| Object store config lives under `ObjectStore`; the legacy `R2` section must keep binding | object-storage-and-backup.md (#171) |
+| Backup manifests carry metadata + storage keys, never bytes; prune only after a successful upload | object-storage-and-backup.md (#271) |
 
 ## 6. Workflow (issue → done)
 

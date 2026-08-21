@@ -73,6 +73,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 - **OTP** — `POST /api/deliveries/{code}/verify-otp` — verify 6-digit OTP code set by sender on upload
 - `DeliveryService.cs` — Shared delivery coordination logic
 - **Compliance controls** — legal hold (#266), account retention policy (#161), delivery IP allowlist + country rules (#142/#166). See [docs/compliance-architecture.md](compliance-architecture.md)
+- **Object storage & backup** — any S3-compatible endpoint via `ObjectStore` config, R2/MinIO/Garage/Wasabi/AWS (#171); scheduled workspace manifest export to customer-controlled buckets (#271). See [docs/object-storage-and-backup.md](object-storage-and-backup.md)
 - **Enterprise trust** — tenant isolation + cross-tenant probe logging (#190), audit-log streaming to Splunk/Elastic/CEF (#191), self-serve DPA (#184), published SOC 2 control map (#147/#323). See [docs/enterprise-trust.md](enterprise-trust.md)
 - **Billing ledger** — per-seat billing (#278), Studio overage metering (#141), VAT invoices (#112), purchase orders + net terms (#192). See [docs/billing-ledger.md](billing-ledger.md)
 - **Team workspaces** — seats + pooled quota + shared history (#106), ownership transfer (#252), workspace audit log (#145), admin usage report (#300), shared folders + per-folder upload defaults + folder templates (#151/#245/#234). See [docs/workspaces-architecture.md](workspaces-architecture.md)

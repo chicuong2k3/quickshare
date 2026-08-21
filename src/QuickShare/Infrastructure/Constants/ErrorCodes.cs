@@ -107,4 +107,10 @@ public static class ErrorCodes
     public const string SinkNotFound = "sink_not_found";
     public const string DpaSignerRequired = "dpa_signer_required";
     public const string DpaAlreadySigned = "dpa_already_signed";
+    // Scheduled workspace backup (#271).
+    public const string BackupEndpointInvalid = "backup_endpoint_invalid";
+    public const string BackupBucketRequired = "backup_bucket_required";
+    public const string BackupFrequencyInvalid = "backup_frequency_invalid";
+    public const string BackupRetentionInvalid = "backup_retention_invalid";
+    public const string BackupPolicyNotFound = "backup_policy_not_found";
 }

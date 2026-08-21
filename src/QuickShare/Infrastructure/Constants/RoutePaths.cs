@@ -63,6 +63,7 @@ public static class RoutePaths
     public const string AccountWorkspaceSeats = "/account/workspace/seats";
     public const string AccountInvoices = "/account/invoices";
     public const string AccountWorkspaceStreaming = "/account/workspace/streaming";
+    public const string AccountWorkspaceBackup = "/account/workspace/backup";
     public const string Dpa = "/dpa";
     public const string Soc2 = "/soc2";
     /// <summary>Invite and transfer accept landing page — the token rides in the query string.</summary>

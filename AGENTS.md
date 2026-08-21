@@ -202,6 +202,14 @@ See `docs/enterprise-trust.md` for the full subsystem. Three rules bind all futu
 - **A cross-tenant miss and a nonexistent id MUST return the same response.** The reach is recorded server-side (`CrossTenantAccessBlocked`) but never revealed, or the error code becomes an existence oracle. A miss on an id that belongs to nobody is deliberately not recorded — the signal is a burst, and noise drowns it.
 - **Never edit published DPA terms or a `/soc2` control status in place to match what we wish were true.** Bump `DpaTerms.CurrentVersion` (existing signatures point at a version that must keep meaning what it meant); on the trust page, "partial" is the honest status for a control with no independent evidence behind it, and a page that drifts is worse than none because it is a claim somebody will check.
 
+### Storage & Backup Invariants (S3-compatible store #171, scheduled backup #271)
+
+See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind all future work:
+
+- **The object store is any S3-compatible endpoint, configured under `ObjectStore`; the legacy `R2` section MUST keep binding as a fallback.** `ObjectStoreResolver.Resolve` is the single place that decides which section wins — an options rename that silently breaks existing deployments on upgrade is not a feature.
+- **A backup manifest is metadata plus storage keys, never file bytes, and pruning happens only after a successful upload.** Deleting old copies on the strength of a run that produced nothing is how a retention policy deletes the last good backup. Adding workspace data a customer would need after a disaster means adding it to `BuildManifestAsync`, and changing the shape means bumping `ManifestVersion` — customers hold copies we cannot migrate.
+- **Run-now MUST go through the same method as the scheduled run.** A "test backup" on a separate code path proves nothing about the one that runs at 3am. It returns 200 with the failure in the body when the destination rejects it: the request was fine, the destination was not, and that distinction is the answer the admin asked for.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

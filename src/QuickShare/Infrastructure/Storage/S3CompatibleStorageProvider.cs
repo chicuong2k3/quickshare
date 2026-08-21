@@ -5,23 +5,38 @@ using Microsoft.Extensions.Options;
 
 namespace QuickShare.Infrastructure.Storage;
 
-public sealed class R2StorageProvider : IStorageProvider, IDisposable
+/// <summary>
+/// Object storage over any S3-compatible endpoint (issue #171): Cloudflare R2, MinIO, Garage,
+/// Ceph, Wasabi, or AWS S3 itself.
+///
+/// This was previously <c>R2StorageProvider</c>, but it always spoke S3 — R2 is S3-compatible,
+/// and the single R2-specific line was deriving the endpoint from a Cloudflare account id.
+/// Making the endpoint configuration explicit is the whole of the change; every request below
+/// is unchanged, because there was never anything to change. Self-hosters were previously
+/// stuck on local disk for want of one config value.
+/// </summary>
+public sealed class S3CompatibleStorageProvider : IStorageProvider, IDisposable
 {
     private readonly AmazonS3Client _s3;
-    private readonly R2Options _options;
-    private readonly ILogger<R2StorageProvider> _logger;
+    private readonly ObjectStoreOptions _options;
+    private readonly ILogger<S3CompatibleStorageProvider> _logger;
     private bool _bucketVerified;
 
-    public R2StorageProvider(IOptions<R2Options> options, ILogger<R2StorageProvider> logger)
+    public S3CompatibleStorageProvider(
+        IOptions<ObjectStoreOptions> options,
+        ILogger<S3CompatibleStorageProvider> logger)
     {
         _options = options.Value;
         _logger = logger;
 
         var config = new AmazonS3Config
         {
-            ServiceURL = $"https://{_options.AccountId}.r2.cloudflarestorage.com",
-            ForcePathStyle = true,
-            AuthenticationRegion = "auto",
+            ServiceURL = _options.ResolvedEndpoint,
+            // Path-style and a nominal auth region: what R2, MinIO and Garage all expect, and
+            // what AWS tolerates. Virtual-host style would additionally need wildcard DNS a
+            // self-hoster rarely has.
+            ForcePathStyle = _options.ForcePathStyle,
+            AuthenticationRegion = _options.Region,
         };
 
         _s3 = new AmazonS3Client(_options.AccessKeyId, _options.AccessKeySecret, config);
@@ -41,7 +56,7 @@ public sealed class R2StorageProvider : IStorageProvider, IDisposable
             {
                 BucketName = _options.BucketName,
             }, ct);
-            _logger.LogInformation("R2 bucket '{Bucket}' verified", _options.BucketName);
+            _logger.LogInformation("Object store bucket '{Bucket}' verified at {Endpoint}", _options.BucketName, _options.ResolvedEndpoint);
 
             _bucketVerified = true;
         }

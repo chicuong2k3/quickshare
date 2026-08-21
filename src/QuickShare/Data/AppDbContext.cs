@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
     public DbSet<SiemSink> SiemSinks => Set<SiemSink>();
     public DbSet<DpaSignature> DpaSignatures => Set<DpaSignature>();
+    public DbSet<WorkspaceBackupPolicy> WorkspaceBackupPolicies => Set<WorkspaceBackupPolicy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -466,6 +467,29 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkspaceBackupPolicy>(entity =>
+        {
+            entity.ToTable("workspace_backup_policies");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Frequency).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.LastStatus).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Endpoint).HasMaxLength(WorkspaceBackupPolicy.EndpointMaxLength);
+            entity.Property(e => e.Region).HasMaxLength(64);
+            entity.Property(e => e.BucketName).HasMaxLength(WorkspaceBackupPolicy.BucketMaxLength);
+            entity.Property(e => e.KeyPrefix).HasMaxLength(WorkspaceBackupPolicy.PrefixMaxLength);
+            entity.Property(e => e.AccessKeyId).HasMaxLength(WorkspaceBackupPolicy.SecretMaxLength);
+            entity.Property(e => e.AccessKeySecret).HasMaxLength(WorkspaceBackupPolicy.SecretMaxLength);
+            entity.Property(e => e.LastError).HasMaxLength(WorkspaceBackupPolicy.ErrorMaxLength);
+            entity.Property(e => e.LastManifestKey).HasMaxLength(WorkspaceBackupPolicy.KeyMaxLength);
+            // One policy per workspace. Several destinations is a replication problem, and
+            // solving it here would mean owning partial-failure semantics across them.
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -1500,4 +1500,35 @@
   <data name="soc2_ask_body" xml:space="preserve"><value>Mọi thứ chúng tôi có thể chia sẻ hôm nay đều công khai:</value></data>
   <data name="soc2_link_security" xml:space="preserve"><value>Báo cáo lỗ hổng</value></data>
   <data name="soc2_link_status" xml:space="preserve"><value>Trang trạng thái</value></data>
+  <data name="ws_tab_backup" xml:space="preserve"><value>Sao lưu</value></data>
+  <data name="backup_title" xml:space="preserve"><value>Sao lưu theo lịch</value></data>
+  <data name="backup_subtitle" xml:space="preserve"><value>Xuất không gian nhóm theo lịch sang nơi lưu trữ bạn kiểm soát.</value></data>
+  <data name="backup_destination_title" xml:space="preserve"><value>Đích đến</value></data>
+  <data name="backup_metadata_only" xml:space="preserve"><value>Bản sao lưu chứa dữ liệu mô tả, không chứa nội dung tệp: không gian nhóm, ghế, thư mục, và mỗi lượt gửi một bản ghi kèm khoá lưu trữ, dung lượng và checksum. Sao chép hàng terabyte theo lịch là khoản phí băng thông bạn chưa đồng ý — khoá lưu trữ mới là thứ cần để khôi phục, và bạn tự tải nội dung theo cách của mình.</value></data>
+  <data name="backup_endpoint" xml:space="preserve"><value>Endpoint S3 (HTTPS)</value></data>
+  <data name="backup_bucket" xml:space="preserve"><value>Bucket</value></data>
+  <data name="backup_region" xml:space="preserve"><value>Vùng</value></data>
+  <data name="backup_prefix" xml:space="preserve"><value>Tiền tố khoá (tuỳ chọn)</value></data>
+  <data name="backup_access_key" xml:space="preserve"><value>Access key ID</value></data>
+  <data name="backup_secret" xml:space="preserve"><value>Secret access key</value></data>
+  <data name="backup_secret_set" xml:space="preserve"><value>Đã có khoá — để trống nếu giữ nguyên</value></data>
+  <data name="backup_frequency" xml:space="preserve"><value>Tần suất</value></data>
+  <data name="backup_daily" xml:space="preserve"><value>Hằng ngày</value></data>
+  <data name="backup_weekly" xml:space="preserve"><value>Hằng tuần</value></data>
+  <data name="backup_retained" xml:space="preserve"><value>Số bản giữ lại</value></data>
+  <data name="backup_enabled" xml:space="preserve"><value>Bật sao lưu</value></data>
+  <data name="backup_save" xml:space="preserve"><value>Lưu đích đến</value></data>
+  <data name="backup_saved" xml:space="preserve"><value>Đã lưu. Lần chạy đầu diễn ra ở nhịp lịch kế tiếp — hoặc bấm Chạy ngay.</value></data>
+  <data name="backup_run_now" xml:space="preserve"><value>Chạy ngay</value></data>
+  <data name="backup_remove" xml:space="preserve"><value>Xoá chính sách sao lưu</value></data>
+  <data name="backup_remove_confirm" xml:space="preserve"><value>Dừng sao lưu và xoá đích đến này? Các bản đã có trong bucket của bạn vẫn được giữ nguyên.</value></data>
+  <data name="backup_last_run_title" xml:space="preserve"><value>Lần chạy gần nhất</value></data>
+  <data name="backup_last_run" xml:space="preserve"><value>Chạy lúc</value></data>
+  <data name="backup_status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="backup_deliveries" xml:space="preserve"><value>Số lượt gửi đã xuất</value></data>
+  <data name="backup_status_ok" xml:space="preserve"><value>Thành công</value></data>
+  <data name="backup_status_failed" xml:space="preserve"><value>Thất bại</value></data>
+  <data name="backup_status_never" xml:space="preserve"><value>Chưa chạy</value></data>
+  <data name="backup_manifest_key" xml:space="preserve"><value>Bản mô tả mới nhất: {0}</value></data>
+  <data name="backup_last_error" xml:space="preserve"><value>Lỗi gần nhất: {0}</value></data>
 </root>

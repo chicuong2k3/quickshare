@@ -1,0 +1,204 @@
+@layout MainLayout
+@page "/account/workspace/backup"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["backup_title"]</PageTitle>
+
+@* Destination credentials and run history — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["backup_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["backup_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceBackup" />
+
+    <section id="workspace-backup-body"
+             hx-get="@RoutePaths.AccountWorkspaceBackup"
+             hx-trigger="load"
+             hx-target="#workspace-backup-body"
+             hx-select="#workspace-backup-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/backup.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private WorkspaceBackupPolicy? policy;
+
+    private RenderFragment Chunk => @<section id="workspace-backup-body">
+        @if (!isAdmin)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["backup_destination_title"]</h2>
+                    @* Said here rather than discovered during an actual disaster. *@
+                    <p class="db-p workspace-notice">@Loc["backup_metadata_only"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="backup-endpoint">@Loc["backup_endpoint"]</label>
+                        <input id="backup-endpoint" class="db-input" type="url" placeholder="https://"
+                               maxlength="@WorkspaceBackupPolicy.EndpointMaxLength" value="@policy?.Endpoint" />
+
+                        <label class="workspace-label" for="backup-bucket">@Loc["backup_bucket"]</label>
+                        <input id="backup-bucket" class="db-input" type="text"
+                               maxlength="@WorkspaceBackupPolicy.BucketMaxLength" value="@policy?.BucketName" />
+
+                        <label class="workspace-label" for="backup-region">@Loc["backup_region"]</label>
+                        <input id="backup-region" class="db-input" type="text"
+                               value="@(policy?.Region ?? ObjectStoreDefaults.Region)" />
+
+                        <label class="workspace-label" for="backup-prefix">@Loc["backup_prefix"]</label>
+                        <input id="backup-prefix" class="db-input" type="text"
+                               maxlength="@WorkspaceBackupPolicy.PrefixMaxLength" value="@policy?.KeyPrefix" />
+
+                        <label class="workspace-label" for="backup-key">@Loc["backup_access_key"]</label>
+                        <input id="backup-key" class="db-input" type="text" autocomplete="off"
+                               maxlength="@WorkspaceBackupPolicy.SecretMaxLength" value="@policy?.AccessKeyId" />
+
+                        <label class="workspace-label" for="backup-secret">@Loc["backup_secret"]</label>
+                        <input id="backup-secret" class="db-input" type="password" autocomplete="off"
+                               maxlength="@WorkspaceBackupPolicy.SecretMaxLength"
+                               placeholder="@(policy is not null && !string.IsNullOrEmpty(policy.AccessKeySecret) ? Loc["backup_secret_set"] : string.Empty)" />
+
+                        <label class="workspace-label" for="backup-frequency">@Loc["backup_frequency"]</label>
+                        <select id="backup-frequency" class="db-input">
+                            <option value="@BackupFrequency.Daily" selected="@(Frequency == BackupFrequency.Daily)">@Loc["backup_daily"]</option>
+                            <option value="@BackupFrequency.Weekly" selected="@(Frequency == BackupFrequency.Weekly)">@Loc["backup_weekly"]</option>
+                        </select>
+
+                        <label class="workspace-label" for="backup-retained">@Loc["backup_retained"]</label>
+                        <input id="backup-retained" class="db-input" type="number"
+                               min="@WorkspaceBackupPolicy.MinRetainedCopies"
+                               max="@WorkspaceBackupPolicy.MaxRetainedCopies"
+                               value="@(policy?.RetainedCopies ?? 4)" />
+
+                        <label class="workspace-checkbox">
+                            <input id="backup-enabled" type="checkbox" checked="@(policy?.Enabled ?? true)" />
+                            <span>@Loc["backup_enabled"]</span>
+                        </label>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["backup_saved"]"
+                                onclick="window.quickShareBackup.save(this)"
+                                data-ai-action="backup.save">@Loc["backup_save"]</button>
+
+                        @if (policy is not null)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    onclick="window.quickShareBackup.runNow(this)"
+                                    data-ai-action="backup.run">@Loc["backup_run_now"]</button>
+
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    data-confirm="@Loc["backup_remove_confirm"]"
+                                    onclick="window.quickShareBackup.remove(this)"
+                                    data-ai-action="backup.remove">@Loc["backup_remove"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (policy is not null)
+            {
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["backup_last_run_title"]</h2>
+
+                        <dl class="workspace-stats">
+                            <div class="workspace-stat">
+                                <dt>@Loc["backup_last_run"]</dt>
+                                <dd>@(policy.LastRunAt is { } ran ? ran.ToLocalTime().ToString("g") : "—")</dd>
+                            </div>
+                            <div class="workspace-stat">
+                                <dt>@Loc["backup_status"]</dt>
+                                <dd>@StatusLabel(policy.LastStatus)</dd>
+                            </div>
+                            <div class="workspace-stat">
+                                <dt>@Loc["backup_deliveries"]</dt>
+                                <dd>@policy.LastDeliveryCount</dd>
+                            </div>
+                        </dl>
+
+                        @if (!string.IsNullOrEmpty(policy.LastManifestKey))
+                        {
+                            <p class="db-p db-text-muted workspace-hint">@Loc["backup_manifest_key", policy.LastManifestKey]</p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(policy.LastError))
+                        {
+                            <p class="db-p db-text-muted workspace-hint">@Loc["backup_last_error", policy.LastError]</p>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </section>;
+
+    private string Frequency => policy?.Frequency ?? BackupFrequency.Weekly;
+
+    private string StatusLabel(string status) => status switch
+    {
+        BackupRunStatus.Succeeded => Loc["backup_status_ok"],
+        BackupRunStatus.Failed => Loc["backup_status_failed"],
+        _ => Loc["backup_status_never"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        policy = await Db.WorkspaceBackupPolicies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.WorkspaceId == seat.WorkspaceId, CancellationToken.None);
+    }
+}

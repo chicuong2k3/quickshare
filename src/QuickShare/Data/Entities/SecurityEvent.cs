@@ -72,4 +72,6 @@ public enum SecurityEventType
     CrossTenantAccessBlocked,
     DpaSigned,
     SiemSinkChanged,
+    WorkspaceBackupRun,
+    WorkspaceBackupPolicyChanged,
 }

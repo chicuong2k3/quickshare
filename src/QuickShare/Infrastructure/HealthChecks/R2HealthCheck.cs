@@ -2,7 +2,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace QuickShare.Infrastructure.HealthChecks;
 
-public sealed class R2HealthCheck(R2StorageProvider storage) : IHealthCheck
+public sealed class R2HealthCheck(S3CompatibleStorageProvider storage) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
