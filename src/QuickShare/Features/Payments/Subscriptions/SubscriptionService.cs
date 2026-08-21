@@ -44,6 +44,7 @@ public static class SubscriptionService
         user.UpdatedAt = now;
 
         await db.SaveChangesAsync(ct);
+        await PushPlanToWorkspaceAsync(user.Id, db, ct);
 
         return Result.Success(subscription);
     }
@@ -114,6 +115,8 @@ public static class SubscriptionService
         user.Plan = plan;
         user.UpdatedAt = now;
 
+        await PushPlanToWorkspaceAsync(user.Id, db, ct);
+
         return subscription;
     }
 
@@ -167,6 +170,13 @@ public static class SubscriptionService
         if (stale.Count > 0)
             await db.SaveChangesAsync(ct);
 
+        // A downgraded owner downgrades their whole workspace — leaving members on the plan
+        // nobody is paying for any more is how a tier gate quietly stops meaning anything.
+        foreach (var sub in stale)
+        {
+            await PushPlanToWorkspaceAsync(sub.User.Id, db, ct);
+        }
+
         // Users downgraded to Free — evict their cached profile (plan display)
         // and billing history so the billing page stops showing the old plan.
         foreach (var sub in stale)
@@ -195,6 +205,25 @@ public static class SubscriptionService
             duration: TimeSpan.FromMinutes(2),
             token: ct
         );
+    }
+
+    /// <summary>
+    /// Re-pushes an owner's plan onto their workspace seats (issue #106). Membership copies
+    /// the plan onto <see cref="User.Plan"/> so existing tier gates need no changes; the copy
+    /// only stays honest if every plan write ends here, which is why this sits beside the
+    /// three places that write one.
+    /// </summary>
+    private static async Task PushPlanToWorkspaceAsync(Guid ownerId, AppDbContext db, CancellationToken ct)
+    {
+        var workspaceId = await db.Workspaces
+            .Where(w => w.OwnerId == ownerId)
+            .Select(w => (Guid?)w.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (workspaceId is null)
+            return;
+
+        await new QuickShare.Features.Workspaces.Shared.WorkspaceService(db).SyncMemberPlansAsync(workspaceId.Value, ct);
     }
 
     private static Subscription CreateSubscription(Guid userId, string plan, BillingPeriod billingPeriod)

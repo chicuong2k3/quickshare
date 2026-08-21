@@ -13,5 +13,8 @@ public static partial class UserMapper
     // security card, not profile identity — same treatment as the notification prefs above.
     [MapperIgnoreSource(nameof(User.RetentionDays))]
     [MapperIgnoreSource(nameof(User.RetentionNoExtend))]
+    // Workspace seat plan override (issue #106) — bookkeeping for restoring the account's
+    // own plan when a seat ends, never part of the profile it shows.
+    [MapperIgnoreSource(nameof(User.PersonalPlan))]
     public static partial ProfileResponse ToProfileResponse(this User source);
 }

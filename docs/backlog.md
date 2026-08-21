@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 7 done (08-20): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction |
+| Tier 6 | B2B / enterprise / far-future | 11 done (08-21): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -239,6 +239,59 @@ to null, which is "no rule" and must never trip `requires_paid_plan`, so free se
 nulls and never meet the gate. Design:
 [`docs/compliance-architecture.md`](compliance-architecture.md).
 
+
+Tier 6 batch 3 (team series), 2026-08-21: `#106` team workspaces, `#252` ownership transfer,
+`#145` workspace audit log, `#300` admin usage report — one migration `AddTeamWorkspaces`
+(3 new tables `workspaces` / `workspace_members` / `workspace_transfers`, plus
+`users.PersonalPlan`, `deliveries.WorkspaceId`, `security_events.WorkspaceId`). Tests:
+`WorkspaceTests` (18). Design: [`docs/workspaces-architecture.md`](workspaces-architecture.md).
+
+`#106` team workspaces — a workspace is one bill, one pooled monthly quota and one shared
+delivery history; everything else exists to keep those three true without a second source of
+truth. The owner holds a real `workspace_members` row (`Role = Owner`), so seat counts, audit,
+report and transfer all read one table. A pending invite holds its seat, or two admins racing
+for the last slot both win. Revoked seats are kept with `RevokedAt` set — the audit log needs
+its subject — and every seat query filters `RevokedAt == null`, so the slot frees immediately.
+Plan inheritance is deliberate denormalization: an active seat copies the owner's plan onto
+`User.Plan` and parks the member's own in `User.PersonalPlan`, which makes ~20 existing
+`user.Plan` gates correct with no call-site changes; the copy is refreshed from
+`SyncMemberPlansAsync` (accept/transfer) and `PushPlanToWorkspaceAsync` (all three plan writes
+in `SubscriptionService`), and reversed by `RestorePersonalPlanAsync` on revoke — restoring,
+not downgrading, so a member who pays for Pro personally keeps it. A filtered unique index on
+`workspace_members.UserId` allows one live seat per account, because two would give
+`User.Plan` two masters. Pooling lives inside `QuotaService.ResolveBucketAsync`, used by both
+`CheckAsync` and `RecordAsync` — a member who checked against the pool but recorded against a
+private row would have an unlimited quota. Shared history is read-only: `CommitR2Handler`
+stamps `Delivery.WorkspaceId`, `ListDeliveriesHandler` widens its filter, every mutation path
+still matches on `SenderId`. Routes `POST/GET/PATCH /api/workspace`,
+`POST /api/workspace/invites{,/accept}`, `PATCH|DELETE /api/workspace/members/{id}`; errors
+`workspace_*`; UI `/account/workspace` + `/workspace/join`.
+
+`#252` ownership transfer — the owner nominates an active member, and nothing moves until the
+successor accepts inside 7 days. Ownership carries billing, so consent is required: a workspace
+whose owner vanishes is the problem, but inheriting an invoice by surprise is not the cure.
+One open transfer at a time (two live tokens race and the second demotes an already-demoted
+owner). The successor qualifies on `PersonalPlan ?? Plan` — the seat plan they are wearing is
+the one about to disappear. The source owner is demoted to Admin rather than removed, so the
+workspace is never left unadministered. Assets stay with the workspace. Account deletion is
+refused while you still own one (`workspace_transfer_required` → 409) instead of crashing on the
+`Restrict` FK. Routes `POST /api/workspace/transfer{,/accept,/cancel}`; tokens SHA-256 at rest.
+
+`#145` workspace audit log — the same append-only `security_events` store as the personal
+timeline (`#126`), stamped with `WorkspaceId`, so the admin lens is a filter and not a second
+write path that could drift. Eleven workspace event types; filters (member, action, date) apply
+in SQL; `GET /api/workspace/audit` + `/export` (CSV) share one admin gate
+(`WorkspaceAuditReader.ResolveAdminSeatAsync`) so JSON and CSV cannot disagree. Retention is the
+existing 90-day `SecurityEventCleanupJob`. UI `/account/workspace/audit`, filters in the URL.
+
+`#300` admin usage report — `WorkspaceReportService.BuildAsync` is the single query set behind
+the on-demand view, the CSV export and the weekly `WorkspaceReportJob` email; a second
+implementation would be a second set of numbers. Rolling window (default 30d) for activity, the
+current billing month for quota. Workspace deliveries only — personal shares by the same
+accounts stay out (`#187`). Reading the report is itself audited
+(`WorkspaceReportGenerated`). Not shipped: PDF export (CSV only) and per-workspace report
+scheduling — weekly is the only cadence, and the on-demand endpoint covers every other window.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -262,6 +315,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Send flow | `docs/send-architecture.md` |
 | Profile | `docs/profile-architecture.md` |
 | Compliance (legal hold / retention / delivery scope) | `docs/compliance-architecture.md` |
+| Team workspaces (seats / transfer / audit / report) | `docs/workspaces-architecture.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -278,7 +332,7 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 7 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20, see section 8);
-  `#323` SOC 2, `#300` admin usage report, `#289` delivery comments, `#286` custom fonts,
-  `#285` branded upload page, `#278` team seats, `#119` data residency, `#112` e-invoice,
-  `#106` team workspaces, `#81` white-label and the rest still open
+- [ ] Tier 6: 11 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20) and team
+  batch `#106`/`#252`/`#145`/`#300` (08-21, see section 8); `#323` SOC 2, `#289` delivery
+  comments, `#286` custom fonts, `#285` branded upload page, `#278` team seats (now unblocked by
+  `#106`), `#119` data residency, `#112` e-invoice, `#81` white-label and the rest still open

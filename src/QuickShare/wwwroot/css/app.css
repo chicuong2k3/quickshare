@@ -2658,3 +2658,143 @@ html, body {
     white-space: nowrap;
 }
 
+
+/* ─── Team workspace (issues #106 seats, #145 audit, #252 transfer, #300 report) ───
+   Global, not scoped: this markup ships inside HTMX partials, where a .razor.css
+   scope attribute from another component never applies. */
+.workspace-card {
+    margin-top: var(--db-space-4);
+}
+
+.workspace-hint {
+    margin-top: var(--db-space-2);
+    font-size: 0.875rem;
+}
+
+.workspace-notice {
+    margin-top: var(--db-space-3);
+    padding: var(--db-space-3);
+    background: var(--db-valley);
+    color: var(--db-color-text);
+}
+
+.workspace-form {
+    display: grid;
+    gap: var(--db-space-2);
+    margin-top: var(--db-space-4);
+    max-width: 28rem;
+}
+
+.workspace-label {
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--db-color-text-muted);
+}
+
+.workspace-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--db-space-3);
+    margin-top: var(--db-space-4);
+}
+
+.workspace-member-list {
+    list-style: none;
+    margin: var(--db-space-4) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--db-space-3);
+}
+
+.workspace-member {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--db-space-3);
+    padding-bottom: var(--db-space-3);
+    border-bottom: 1px solid var(--db-mountain-deep);
+}
+
+.workspace-member__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.workspace-member__name {
+    font-family: var(--db-font-ui);
+    color: var(--db-color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.workspace-member__meta {
+    font-size: 0.8125rem;
+    color: var(--db-color-text-muted);
+}
+
+.workspace-member__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--db-space-2);
+}
+
+.workspace-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--db-space-5);
+    margin: var(--db-space-4) 0 0;
+}
+
+.workspace-stat dt {
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--db-color-text-muted);
+}
+
+.workspace-stat dd {
+    margin: 0.25rem 0 0;
+    font-size: 1.25rem;
+    color: var(--db-color-text);
+}
+
+/* Wide tables scroll inside their own box — the page body never scrolls sideways. */
+.workspace-table-wrap {
+    overflow-x: auto;
+}
+
+.workspace-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.workspace-table th,
+.workspace-table td {
+    padding: var(--db-space-2) var(--db-space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--db-mountain-deep);
+    white-space: nowrap;
+}
+
+.workspace-table th {
+    font-family: var(--db-font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--db-color-text-muted);
+}
+
+.workspace-table__detail {
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

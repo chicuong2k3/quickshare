@@ -63,4 +63,22 @@ public static class ErrorCodes
     public const string LegalHoldReasonRequired = "legal_hold_reason_required";
     public const string RetentionDaysInvalid = "retention_days_invalid";
     public const string RetentionPolicyLocked = "retention_policy_locked";
+    // Team workspaces (issue #106) and ownership transfer (issue #252).
+    public const string WorkspaceNotFound = "workspace_not_found";
+    public const string WorkspaceForbidden = "workspace_forbidden";
+    public const string WorkspaceAlreadyExists = "workspace_already_exists";
+    public const string WorkspaceNameInvalid = "workspace_name_invalid";
+    public const string WorkspaceSeatsInvalid = "workspace_seats_invalid";
+    public const string WorkspaceSeatsFull = "workspace_seats_full";
+    public const string WorkspaceEmailInvalid = "workspace_email_invalid";
+    public const string WorkspaceInviteInvalid = "workspace_invite_invalid";
+    public const string WorkspaceInviteExpired = "workspace_invite_expired";
+    public const string WorkspaceAlreadyMember = "workspace_already_member";
+    public const string WorkspaceMemberNotFound = "workspace_member_not_found";
+    public const string WorkspaceOwnerImmutable = "workspace_owner_immutable";
+    public const string WorkspaceTransferOpen = "workspace_transfer_open";
+    public const string WorkspaceTransferInvalid = "workspace_transfer_invalid";
+    public const string WorkspaceTransferSelf = "workspace_transfer_self";
+    /// <summary>Account deletion refused while the caller still owns a workspace (issues #59/#252).</summary>
+    public const string WorkspaceTransferRequired = "workspace_transfer_required";
 }

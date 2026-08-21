@@ -174,6 +174,16 @@ public sealed class CommitR2Handler(
 
         var shareCode = ShareCodes.Generate();
 
+        // The uploader's live workspace seat (issue #106), resolved once — null for personal
+        // shares and for anonymous uploads.
+        var workspaceId = user is null
+            ? null
+            : await db.WorkspaceMembers
+                .AsNoTracking()
+                .Where(m => m.UserId == user.Id && m.RevokedAt == null && m.JoinedAt != null)
+                .Select(m => (Guid?)m.WorkspaceId)
+                .FirstOrDefaultAsync(cancellationToken);
+
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
         if (cmd.ExpiryHours is { } requestedHours)
         {
@@ -193,6 +203,9 @@ public sealed class CommitR2Handler(
         {
             Id = cmd.DeliveryId,
             SenderId = requestId is null ? user?.Id : null,
+            // Stamped from the sender's live seat (issue #106) so team-mates see the share in
+            // the shared history. A file-request submission has no sender and no workspace.
+            WorkspaceId = requestId is null ? workspaceId : null,
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.

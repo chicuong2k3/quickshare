@@ -1,0 +1,190 @@
+@layout MainLayout
+@page "/account/workspace/audit"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ws_audit_title"]</PageTitle>
+
+@* Member activity — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["ws_audit_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["ws_audit_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceAudit" />
+
+    @* Filters drive the URL, so a filtered view is linkable and the back button works. *@
+    <form class="workspace-filters" method="get" action="@RoutePaths.AccountWorkspaceAudit"
+          hx-get="@RoutePaths.AccountWorkspaceAudit"
+          hx-target="#workspace-audit-body"
+          hx-select="#workspace-audit-body"
+          hx-swap="outerHTML"
+          hx-push-url="true">
+        <label class="workspace-label" for="ws-audit-action">@Loc["ws_audit_filter_action"]</label>
+        <select id="ws-audit-action" name="action" class="db-input">
+            <option value="">@Loc["ws_audit_all_actions"]</option>
+            @foreach (var action in AuditActions)
+            {
+                <option value="@action.ToString()" selected="@(string.Equals(Action, action.ToString(), StringComparison.OrdinalIgnoreCase))">@Humanize(action)</option>
+            }
+        </select>
+
+        <label class="workspace-label" for="ws-audit-from">@Loc["ws_audit_filter_from"]</label>
+        <input id="ws-audit-from" name="from" class="db-input" type="date" value="@From" />
+
+        <label class="workspace-label" for="ws-audit-to">@Loc["ws_audit_filter_to"]</label>
+        <input id="ws-audit-to" name="to" class="db-input" type="date" value="@To" />
+
+        <button type="submit" class="db-btn db-btn--primary" data-ai-action="workspace.audit.filter">@Loc["ws_audit_apply"]</button>
+        <a class="db-btn db-btn--ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
+    </form>
+
+    <section id="workspace-audit-body"
+             hx-get="@ListUrl"
+             hx-trigger="load"
+             hx-target="#workspace-audit-body"
+             hx-select="#workspace-audit-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+@code {
+    /// <summary>Only the workspace-scoped types can ever appear here — the rest are personal-timeline events.</summary>
+    private static readonly SecurityEventType[] AuditActions =
+    [
+        SecurityEventType.WorkspaceCreated,
+        SecurityEventType.WorkspaceRenamed,
+        SecurityEventType.WorkspaceSeatsChanged,
+        SecurityEventType.WorkspaceMemberInvited,
+        SecurityEventType.WorkspaceMemberJoined,
+        SecurityEventType.WorkspaceMemberRevoked,
+        SecurityEventType.WorkspaceMemberRoleChanged,
+        SecurityEventType.WorkspaceTransferInitiated,
+        SecurityEventType.WorkspaceTransferAccepted,
+        SecurityEventType.WorkspaceTransferCancelled,
+        SecurityEventType.WorkspaceReportGenerated,
+    ];
+
+    [SupplyParameterFromQuery(Name = "action")]
+    public string? Action { get; set; }
+
+    [SupplyParameterFromQuery(Name = "from")]
+    public string? From { get; set; }
+
+    [SupplyParameterFromQuery(Name = "to")]
+    public string? To { get; set; }
+
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private WorkspaceAuditPage page = new([], 0);
+
+    private string Query =>
+        $"?action={Uri.EscapeDataString(Action ?? string.Empty)}" +
+        $"&from={Uri.EscapeDataString(From ?? string.Empty)}" +
+        $"&to={Uri.EscapeDataString(To ?? string.Empty)}";
+
+    private string ListUrl => RoutePaths.AccountWorkspaceAudit + Query;
+    private string ExportUrl => "/api/workspace/audit/export" + Query;
+
+    private RenderFragment Chunk => @<section id="workspace-audit-body">
+        @if (!isAdmin)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else if (page.Rows.Count == 0)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p db-text-muted">@Loc["ws_audit_empty"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body workspace-table-wrap">
+                    <table class="workspace-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Loc["ws_audit_col_when"]</th>
+                                <th scope="col">@Loc["ws_audit_col_who"]</th>
+                                <th scope="col">@Loc["ws_audit_col_action"]</th>
+                                <th scope="col">@Loc["ws_audit_col_detail"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in page.Rows)
+                            {
+                                <tr>
+                                    <td><time datetime="@row.CreatedAt.ToString("o")">@row.CreatedAt.ToLocalTime().ToString("g")</time></td>
+                                    <td>@(string.IsNullOrEmpty(row.ActorName) ? row.ActorEmail : row.ActorName)</td>
+                                    <td>@row.Action</td>
+                                    <td class="workspace-table__detail">@row.MetadataJson</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </section>;
+
+    private static string Humanize(SecurityEventType type) => type.ToString();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        page = await new WorkspaceAuditReader(Db).ReadAsync(
+            seat.WorkspaceId,
+            actorId: null,
+            WorkspaceAuditReader.ParseAction(Action),
+            WorkspaceAuditReader.ParseDate(From),
+            WorkspaceAuditReader.ParseDate(To),
+            take: 50,
+            CancellationToken.None);
+    }
+}

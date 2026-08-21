@@ -42,11 +42,22 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
         var userId = user.Id;
         var limit = Math.Clamp(query.Limit, 1, DeliveryPaging.MaxLimit);
 
+        // Shared workspace history (issue #106): a seat holder sees their own shares plus
+        // everything sent into the workspace. Read-only — every mutation path still matches
+        // on SenderId, so seeing a team-mate's share is not the same as being able to
+        // delete it.
+        var workspaceId = await db.WorkspaceMembers
+            .AsNoTracking()
+            .Where(m => m.UserId == userId && m.RevokedAt == null && m.JoinedAt != null)
+            .Select(m => (Guid?)m.WorkspaceId)
+            .FirstOrDefaultAsync(cancellationToken);
+
         // Not cached: this list changes on every download, and a stale count here is exactly
         // the bug the page exists to avoid.
         var source = db.Deliveries
             .AsNoTracking()
-            .Where(d => d.SenderId == userId);
+            .Where(d => d.SenderId == userId
+                || (workspaceId != null && d.WorkspaceId == workspaceId));
 
         source = query.DeletedOnly
             ? source.Where(d => d.DeletedAt != null)

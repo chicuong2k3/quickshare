@@ -15,4 +15,5 @@ public static class ApiTags
     public const string Users = "Users";
     public const string Reports = "Reports";
     public const string FileRequests = "File Requests";
+    public const string Workspaces = "Workspaces";
 }

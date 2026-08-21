@@ -31,6 +31,9 @@ public class AppDbContext : DbContext
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
     public DbSet<RecipientContact> RecipientContacts => Set<RecipientContact>();
     public DbSet<FileLock> FileLocks => Set<FileLock>();
+    public DbSet<Workspace> Workspaces => Set<Workspace>();
+    public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
+    public DbSet<WorkspaceTransfer> WorkspaceTransfers => Set<WorkspaceTransfer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -90,6 +93,7 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.WorkspaceId);
             entity.HasIndex(e => e.FileRequestId);
             entity.HasOne(e => e.FileRequest)
                 .WithMany(e => e.Deliveries)
@@ -373,6 +377,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.UserAgentLabel).IsRequired();
             entity.HasIndex(e => new { e.UserId, e.CreatedAt });
             entity.HasIndex(e => e.EventType);
+            // The workspace audit view (issue #145) reads this store filtered by workspace.
+            entity.HasIndex(e => new { e.WorkspaceId, e.CreatedAt });
             // Shadow navigation — the record intentionally carries no User reference.
             entity.HasOne<User>()
                 .WithMany()
@@ -406,6 +412,59 @@ public class AppDbContext : DbContext
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(e => e.LockedById)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Workspace>(entity =>
+        {
+            entity.ToTable("workspaces");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(Workspace.NameMaxLength);
+            entity.HasIndex(e => e.OwnerId);
+            entity.HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkspaceMember>(entity =>
+        {
+            entity.ToTable("workspace_members");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.InviteEmail).IsRequired().HasMaxLength(WorkspaceMember.EmailMaxLength);
+            entity.Property(e => e.InviteTokenHash).HasMaxLength(WorkspaceMember.TokenHashLength);
+            entity.Property(e => e.Role)
+                .HasConversion(
+                    v => v.ToString().ToLowerInvariant(),
+                    v => Enum.Parse<WorkspaceRole>(v, ignoreCase: true))
+                .IsRequired();
+            entity.HasIndex(e => new { e.WorkspaceId, e.RevokedAt });
+            // One live seat per account across all workspaces — the plan override on
+            // User.Plan has exactly one source, so overlapping seats cannot fight over it.
+            entity.HasIndex(e => e.UserId)
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NOT NULL AND \"RevokedAt\" IS NULL");
+            entity.HasIndex(e => e.InviteTokenHash);
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkspaceTransfer>(entity =>
+        {
+            entity.ToTable("workspace_transfers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(WorkspaceMember.TokenHashLength);
+            entity.HasIndex(e => e.TokenHash);
+            entity.HasIndex(e => new { e.WorkspaceId, e.AcceptedAt });
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

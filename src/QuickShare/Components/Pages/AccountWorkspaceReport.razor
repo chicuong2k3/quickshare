@@ -1,0 +1,186 @@
+@layout MainLayout
+@page "/account/workspace/report"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Report
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ws_report_title"]</PageTitle>
+
+@* Org usage — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["ws_report_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["ws_report_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceReport" />
+
+    <p class="workspace-filters">
+        <a class="db-btn db-btn--ghost" href="@ExportUrl" data-ai-action="workspace.report.export">@Loc["ws_report_export"]</a>
+    </p>
+
+    <section id="workspace-report-body"
+             hx-get="@RoutePaths.AccountWorkspaceReport"
+             hx-trigger="load"
+             hx-target="#workspace-report-body"
+             hx-select="#workspace-report-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private WorkspaceReportDto? report;
+
+    private static string ExportUrl =>
+        $"/api/workspace/report/export?days={WorkspaceReportService.DefaultWindowDays}";
+
+    private RenderFragment Chunk => @<section id="workspace-report-body">
+        @if (!isAdmin || report is null)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@report.Name</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["ws_report_window", report.WindowDays]</p>
+
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["ws_report_deliveries"]</dt>
+                            <dd>@report.Deliveries</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["ws_report_uploaded"]</dt>
+                            <dd>@Bytes(report.BytesUploaded)</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["ws_report_downloads"]</dt>
+                            <dd>@report.Downloads</dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["ws_report_seats"]</dt>
+                            <dd>@report.SeatsUsed / @report.Seats</dd>
+                        </div>
+                    </dl>
+
+                    <p class="db-p db-text-muted workspace-hint">
+                        @Loc["ws_pooled_quota", Bytes(report.PooledUsedBytes), Bytes(report.PooledQuotaBytes)]
+                        ·
+                        @Loc["ws_report_inactive", report.InactiveMembers.Count]
+                    </p>
+                </div>
+            </div>
+
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body workspace-table-wrap">
+                    <table class="workspace-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">@Loc["ws_report_col_member"]</th>
+                                <th scope="col">@Loc["ws_report_col_role"]</th>
+                                <th scope="col">@Loc["ws_report_col_deliveries"]</th>
+                                <th scope="col">@Loc["ws_report_col_bytes"]</th>
+                                <th scope="col">@Loc["ws_report_col_downloads"]</th>
+                                <th scope="col">@Loc["ws_report_col_last"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var member in report.Members)
+                            {
+                                <tr>
+                                    <td>@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</td>
+                                    <td>@member.Role</td>
+                                    <td>@member.Deliveries</td>
+                                    <td>@Bytes(member.BytesUploaded)</td>
+                                    <td>@member.Downloads</td>
+                                    <td>@(member.LastActivityAt is { } at ? at.ToLocalTime().ToString("g") : Loc["ws_report_never"].Value)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if (report.FileTypes.Count > 0)
+            {
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["ws_report_filetypes"]</h2>
+                        <ul class="workspace-member-list">
+                            @foreach (var type in report.FileTypes)
+                            {
+                                <li class="workspace-member">
+                                    <span class="workspace-member__name">@type.ContentType</span>
+                                    <span class="workspace-member__meta">@type.Deliveries · @Bytes(type.Bytes)</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        }
+    </section>;
+
+    private static string Bytes(long value)
+    {
+        const long Gigabyte = 1024L * 1024 * 1024;
+        const long Megabyte = 1024L * 1024;
+        return value >= Gigabyte
+            ? $"{value / (double)Gigabyte:F1} GB"
+            : $"{value / (double)Megabyte:F1} MB";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        report = await new WorkspaceReportService(Db).BuildAsync(
+            seat.WorkspaceId, WorkspaceReportService.DefaultWindowDays, CancellationToken.None);
+    }
+}

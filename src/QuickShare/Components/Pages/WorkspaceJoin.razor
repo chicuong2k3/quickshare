@@ -1,0 +1,64 @@
+@layout MainLayout
+@page "/workspace/join"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ws_join_title"]</PageTitle>
+
+@* Token in the query string — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@*
+    Fully static: the token arrives in the URL and the accept is one POST. There is no
+    DB read to lazy-load, so the HTMX shell pattern would add a round trip and buy nothing.
+*@
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["ws_join_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["ws_join_hint"]</p>
+    </section>
+
+    <div class="db-card account-card workspace-card">
+        <div class="db-card__body">
+            @if (string.IsNullOrWhiteSpace(ActiveToken))
+            {
+                <p class="db-p">@Loc["ws_join_missing"]</p>
+            }
+            else
+            {
+                <p class="db-p" id="ws-join-status" aria-live="polite"></p>
+                <button type="button" class="db-btn db-btn--primary"
+                        data-token="@ActiveToken"
+                        data-kind="@Kind"
+                        data-next="@RoutePaths.AccountWorkspace"
+                        data-ok-label="@Loc["ws_join_ok"]"
+                        data-error-label="@Loc["ws_join_error"]"
+                        onclick="window.quickShareWorkspace.join(this)"
+                        data-ai-action="workspace.join">@Loc["ws_join_accept"]</button>
+            }
+        </div>
+    </div>
+
+</PageWrapper>
+
+<script src="/js/workspace.js" defer></script>
+
+@code {
+    private const string KindInvite = "invite";
+    private const string KindTransfer = "transfer";
+
+    [SupplyParameterFromQuery(Name = "token")]
+    public string? Token { get; set; }
+
+    [SupplyParameterFromQuery(Name = "transfer")]
+    public string? TransferToken { get; set; }
+
+    private string Kind => string.IsNullOrWhiteSpace(TransferToken) ? KindInvite : KindTransfer;
+
+    private string? ActiveToken => string.IsNullOrWhiteSpace(TransferToken) ? Token : TransferToken;
+}

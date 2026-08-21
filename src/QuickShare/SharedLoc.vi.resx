@@ -1237,4 +1237,76 @@
   <data name="dl_restricted_notice" xml:space="preserve">
     <value>Người gửi đặt ra các quy tắc này và chúng tôi không tiết lộ chúng. Hãy hỏi người gửi nếu bạn cho rằng mình cần được truy cập.</value>
   </data>
+  <data name="ws_title" xml:space="preserve"><value>Không gian nhóm</value></data>
+  <data name="ws_subtitle" xml:space="preserve"><value>Một hoá đơn, một hạn mức hằng tháng dùng chung, một lịch sử gửi chung.</value></data>
+  <data name="ws_none" xml:space="preserve"><value>Bạn chưa thuộc không gian nhóm nào.</value></data>
+  <data name="ws_create_title" xml:space="preserve"><value>Tạo không gian nhóm</value></data>
+  <data name="ws_create_hint" xml:space="preserve"><value>Bạn là chủ sở hữu và là người trả phí. Thành viên được mời dùng chung gói của bạn khi ghế còn hiệu lực.</value></data>
+  <data name="ws_requires_paid" xml:space="preserve"><value>Không gian nhóm chỉ có ở gói Pro và Studio.</value></data>
+  <data name="ws_name_label" xml:space="preserve"><value>Tên không gian</value></data>
+  <data name="ws_seats_label" xml:space="preserve"><value>Số ghế</value></data>
+  <data name="ws_create_btn" xml:space="preserve"><value>Tạo không gian</value></data>
+  <data name="ws_save_btn" xml:space="preserve"><value>Lưu</value></data>
+  <data name="ws_members_title" xml:space="preserve"><value>Thành viên</value></data>
+  <data name="ws_seats_used" xml:space="preserve"><value>Đã dùng {0}/{1} ghế</value></data>
+  <data name="ws_pooled_quota" xml:space="preserve"><value>Đã dùng {0}/{1} hạn mức chung trong tháng</value></data>
+  <data name="ws_role_owner" xml:space="preserve"><value>Chủ sở hữu</value></data>
+  <data name="ws_role_admin" xml:space="preserve"><value>Quản trị</value></data>
+  <data name="ws_role_member" xml:space="preserve"><value>Thành viên</value></data>
+  <data name="ws_role_viewer" xml:space="preserve"><value>Người xem</value></data>
+  <data name="ws_pending" xml:space="preserve"><value>Đang chờ nhận lời mời</value></data>
+  <data name="ws_invite_title" xml:space="preserve"><value>Mời thành viên</value></data>
+  <data name="ws_invite_email" xml:space="preserve"><value>Địa chỉ email</value></data>
+  <data name="ws_invite_role" xml:space="preserve"><value>Vai trò</value></data>
+  <data name="ws_invite_btn" xml:space="preserve"><value>Gửi lời mời</value></data>
+  <data name="ws_invite_sent" xml:space="preserve"><value>Đã gửi lời mời.</value></data>
+  <data name="ws_revoke" xml:space="preserve"><value>Thu hồi ghế</value></data>
+  <data name="ws_revoke_confirm" xml:space="preserve"><value>Thu hồi ghế này? Thành viên quay lại gói riêng của họ và ghế được giải phóng ngay.</value></data>
+  <data name="ws_transfer_title" xml:space="preserve"><value>Chuyển quyền sở hữu</value></data>
+  <data name="ws_transfer_hint" xml:space="preserve"><value>Người kế nhiệm có 7 ngày để chấp nhận. Quyền sở hữu và hoá đơn đi cùng nhau; bạn ở lại với vai trò quản trị.</value></data>
+  <data name="ws_transfer_btn" xml:space="preserve"><value>Đề cử làm chủ sở hữu</value></data>
+  <data name="ws_transfer_confirm" xml:space="preserve"><value>Đề cử thành viên này làm chủ sở hữu mới? Họ sẽ trả phí sau khi chấp nhận.</value></data>
+  <data name="ws_transfer_pending" xml:space="preserve"><value>Đang có một đề cử chuyển quyền chờ chấp nhận.</value></data>
+  <data name="ws_transfer_cancel" xml:space="preserve"><value>Huỷ chuyển quyền</value></data>
+  <data name="ws_transfer_sent" xml:space="preserve"><value>Đã gửi đề cử.</value></data>
+  <data name="ws_tab_workspace" xml:space="preserve"><value>Không gian</value></data>
+  <data name="ws_tab_audit" xml:space="preserve"><value>Nhật ký</value></data>
+  <data name="ws_tab_report" xml:space="preserve"><value>Báo cáo</value></data>
+  <data name="ws_audit_title" xml:space="preserve"><value>Nhật ký không gian nhóm</value></data>
+  <data name="ws_audit_subtitle" xml:space="preserve"><value>Ai đã làm gì trong không gian này. Chỉ ghi thêm, lưu 90 ngày.</value></data>
+  <data name="ws_audit_empty" xml:space="preserve"><value>Không có sự kiện nào khớp bộ lọc.</value></data>
+  <data name="ws_audit_export" xml:space="preserve"><value>Xuất CSV</value></data>
+  <data name="ws_audit_filter_action" xml:space="preserve"><value>Hành động</value></data>
+  <data name="ws_audit_filter_from" xml:space="preserve"><value>Từ ngày</value></data>
+  <data name="ws_audit_filter_to" xml:space="preserve"><value>Đến ngày</value></data>
+  <data name="ws_audit_apply" xml:space="preserve"><value>Áp dụng bộ lọc</value></data>
+  <data name="ws_audit_col_when" xml:space="preserve"><value>Thời điểm</value></data>
+  <data name="ws_audit_col_who" xml:space="preserve"><value>Thành viên</value></data>
+  <data name="ws_audit_col_action" xml:space="preserve"><value>Hành động</value></data>
+  <data name="ws_audit_col_detail" xml:space="preserve"><value>Chi tiết</value></data>
+  <data name="ws_audit_all_actions" xml:space="preserve"><value>Tất cả hành động</value></data>
+  <data name="ws_report_title" xml:space="preserve"><value>Báo cáo không gian nhóm</value></data>
+  <data name="ws_report_subtitle" xml:space="preserve"><value>Ghế, hạn mức chung và lượng gửi. Không tính các chia sẻ cá nhân.</value></data>
+  <data name="ws_report_export" xml:space="preserve"><value>Xuất CSV</value></data>
+  <data name="ws_report_window" xml:space="preserve"><value>{0} ngày gần nhất</value></data>
+  <data name="ws_report_deliveries" xml:space="preserve"><value>Lượt gửi</value></data>
+  <data name="ws_report_uploaded" xml:space="preserve"><value>Đã tải lên</value></data>
+  <data name="ws_report_downloads" xml:space="preserve"><value>Lượt tải về</value></data>
+  <data name="ws_report_seats" xml:space="preserve"><value>Ghế đã dùng</value></data>
+  <data name="ws_report_inactive" xml:space="preserve"><value>Số ghế không hoạt động trong kỳ: {0}</value></data>
+  <data name="ws_report_filetypes" xml:space="preserve"><value>Loại tệp phổ biến</value></data>
+  <data name="ws_report_col_member" xml:space="preserve"><value>Thành viên</value></data>
+  <data name="ws_report_col_role" xml:space="preserve"><value>Vai trò</value></data>
+  <data name="ws_report_col_deliveries" xml:space="preserve"><value>Lượt gửi</value></data>
+  <data name="ws_report_col_bytes" xml:space="preserve"><value>Đã tải lên</value></data>
+  <data name="ws_report_col_downloads" xml:space="preserve"><value>Lượt tải về</value></data>
+  <data name="ws_report_col_last" xml:space="preserve"><value>Hoạt động gần nhất</value></data>
+  <data name="ws_report_never" xml:space="preserve"><value>Chưa có</value></data>
+  <data name="ws_admin_only" xml:space="preserve"><value>Chỉ quản trị viên không gian nhóm mới xem được mục này.</value></data>
+  <data name="ws_join_title" xml:space="preserve"><value>Tham gia không gian nhóm</value></data>
+  <data name="ws_join_hint" xml:space="preserve"><value>Khi chấp nhận, tài khoản của bạn dùng gói của không gian. Gói riêng sẽ trở lại nếu ghế bị thu hồi.</value></data>
+  <data name="ws_join_accept" xml:space="preserve"><value>Chấp nhận</value></data>
+  <data name="ws_join_ok" xml:space="preserve"><value>Xong. Bạn đã tham gia.</value></data>
+  <data name="ws_join_error" xml:space="preserve"><value>Liên kết này không còn hiệu lực.</value></data>
+  <data name="ws_join_missing" xml:space="preserve"><value>Liên kết thiếu mã xác thực.</value></data>
 </root>

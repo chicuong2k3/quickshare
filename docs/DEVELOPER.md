@@ -49,7 +49,9 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   [`analytics-architecture.md`](analytics-architecture.md),
   [`profile-architecture.md`](profile-architecture.md),
   [`compliance-architecture.md`](compliance-architecture.md) - legal hold (#266), workspace
-  retention policy (#161), delivery scope rules (#142/#166).
+  retention policy (#161), delivery scope rules (#142/#166),
+  [`workspaces-architecture.md`](workspaces-architecture.md) - team workspaces (#106),
+  ownership transfer (#252), workspace audit log (#145), admin usage report (#300).
 - Ops: [`observability-setup.md`](observability-setup.md),
   [`feature-flags.md`](feature-flags.md),
   [`deployment-dev.md`](deployment-dev.md),
@@ -85,6 +87,8 @@ rules:
 | New code deleting delivery rows or R2 objects MUST filter `LegalHoldAt == null` (held bytes are evidence) | compliance-architecture.md (#266) |
 | New code computing a delivery expiry MUST pass it through `RetentionPolicy.Clamp` (the policy is a ceiling) | compliance-architecture.md (#161) |
 | New recipient-facing content path MUST route through `DeliveryAccessService` (scope rules are fail-closed) | compliance-architecture.md (#142/#166) |
+| New code writing `User.Plan` MUST re-push it to workspace seats (a seat borrows the owner's plan) | workspaces-architecture.md (#106) |
+| New upload path MUST use `QuotaService` (it pools a member's bytes onto the workspace owner) | workspaces-architecture.md (#106) |
 
 ## 6. Workflow (issue → done)
 

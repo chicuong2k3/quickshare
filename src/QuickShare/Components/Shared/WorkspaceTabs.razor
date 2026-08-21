@@ -1,0 +1,18 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@* Global (non-scoped) styles: this markup also ships inside HTMX partials. *@
+<nav class="account-tabs" aria-label="Workspace sections">
+    <a href="@RoutePaths.AccountWorkspace" class="account-tabs__item @Active(RoutePaths.AccountWorkspace)">@Loc["ws_tab_workspace"]</a>
+    <a href="@RoutePaths.AccountWorkspaceAudit" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceAudit)">@Loc["ws_tab_audit"]</a>
+    <a href="@RoutePaths.AccountWorkspaceReport" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceReport)">@Loc["ws_tab_report"]</a>
+</nav>
+
+@code {
+    private const string ActiveClass = "account-tabs__item--active";
+
+    [Parameter]
+    public string Current { get; set; } = RoutePaths.AccountWorkspace;
+
+    private string Active(string route) =>
+        string.Equals(Current, route, StringComparison.OrdinalIgnoreCase) ? ActiveClass : string.Empty;
+}

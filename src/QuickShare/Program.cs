@@ -238,6 +238,9 @@ builder.Services.AddScoped<AnalyticsService>();
 // ── Delivery scope control (issues #142 IP allowlist, #166 country rules) ──
 builder.Services.AddScoped<QuickShare.Features.Downloads.Shared.DeliveryAccessService>();
 
+// ── Team workspaces (issue #106): seats, pooled quota, workspace audit (#145) ──
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceService>();
+
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
 builder.Services.AddMediator(options =>
 {

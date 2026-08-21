@@ -10,6 +10,12 @@ public record SecurityEvent
 {
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
+    /// <summary>
+    /// Set when the action happened inside a team workspace (issue #145). The same
+    /// append-only store serves both lenses: the member sees their own timeline,
+    /// the workspace admin sees every row carrying their workspace id.
+    /// </summary>
+    public Guid? WorkspaceId { get; init; }
     public SecurityEventType EventType { get; init; }
     public string IpHash { get; init; } = string.Empty;
     public string UserAgentLabel { get; init; } = string.Empty;
@@ -44,4 +50,15 @@ public enum SecurityEventType
     RetentionPolicyChanged,
     RetentionEnforced,
     DeliveryAccessBlocked,
+    WorkspaceCreated,
+    WorkspaceRenamed,
+    WorkspaceSeatsChanged,
+    WorkspaceMemberInvited,
+    WorkspaceMemberJoined,
+    WorkspaceMemberRevoked,
+    WorkspaceMemberRoleChanged,
+    WorkspaceTransferInitiated,
+    WorkspaceTransferAccepted,
+    WorkspaceTransferCancelled,
+    WorkspaceReportGenerated,
 }

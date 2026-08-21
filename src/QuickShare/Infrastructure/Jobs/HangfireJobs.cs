@@ -28,6 +28,7 @@ public static class HangfireJobs
     public const string NotificationCleanup = "notification-cleanup";
     public const string SecurityEventCleanup = "security-event-cleanup";
     public const string FileLockExpiry = "file-lock-expiry";
+    public const string WorkspaceReport = "workspace-report";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -60,6 +61,7 @@ public static class HangfireJobs
             recurring.AddOrUpdate<WeeklyDigestJob>(WeeklyDigest, j => j.NotifyAsync(), Cron.Weekly());
             recurring.AddOrUpdate<FileRequestDigestJob>(FileRequestDigest, j => j.NotifyAsync(),
                 Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
+            recurring.AddOrUpdate<WorkspaceReportJob>(WorkspaceReport, j => j.NotifyAsync(), Cron.Weekly());
         }
 
         if (hasR2)

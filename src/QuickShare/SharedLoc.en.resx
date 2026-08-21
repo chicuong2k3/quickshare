@@ -1237,4 +1237,76 @@
   <data name="dl_restricted_notice" xml:space="preserve">
     <value>The sender sets these rules and we don't disclose them. Ask the sender if you believe you should have access.</value>
   </data>
+  <data name="ws_title" xml:space="preserve"><value>Team workspace</value></data>
+  <data name="ws_subtitle" xml:space="preserve"><value>One bill, one pooled monthly quota, one shared delivery history.</value></data>
+  <data name="ws_none" xml:space="preserve"><value>You are not in a workspace yet.</value></data>
+  <data name="ws_create_title" xml:space="preserve"><value>Create a workspace</value></data>
+  <data name="ws_create_hint" xml:space="preserve"><value>You become the owner and the bill payer. Members you invite inherit your plan while their seat is active.</value></data>
+  <data name="ws_requires_paid" xml:space="preserve"><value>Team workspaces are available on Pro and Studio.</value></data>
+  <data name="ws_name_label" xml:space="preserve"><value>Workspace name</value></data>
+  <data name="ws_seats_label" xml:space="preserve"><value>Seats</value></data>
+  <data name="ws_create_btn" xml:space="preserve"><value>Create workspace</value></data>
+  <data name="ws_save_btn" xml:space="preserve"><value>Save</value></data>
+  <data name="ws_members_title" xml:space="preserve"><value>Members</value></data>
+  <data name="ws_seats_used" xml:space="preserve"><value>{0} of {1} seats claimed</value></data>
+  <data name="ws_pooled_quota" xml:space="preserve"><value>{0} of {1} pooled quota used this month</value></data>
+  <data name="ws_role_owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="ws_role_admin" xml:space="preserve"><value>Admin</value></data>
+  <data name="ws_role_member" xml:space="preserve"><value>Member</value></data>
+  <data name="ws_role_viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="ws_pending" xml:space="preserve"><value>Invitation pending</value></data>
+  <data name="ws_invite_title" xml:space="preserve"><value>Invite someone</value></data>
+  <data name="ws_invite_email" xml:space="preserve"><value>Email address</value></data>
+  <data name="ws_invite_role" xml:space="preserve"><value>Role</value></data>
+  <data name="ws_invite_btn" xml:space="preserve"><value>Send invitation</value></data>
+  <data name="ws_invite_sent" xml:space="preserve"><value>Invitation sent.</value></data>
+  <data name="ws_revoke" xml:space="preserve"><value>Revoke seat</value></data>
+  <data name="ws_revoke_confirm" xml:space="preserve"><value>Revoke this seat? The member returns to their own plan and the slot frees up immediately.</value></data>
+  <data name="ws_transfer_title" xml:space="preserve"><value>Transfer ownership</value></data>
+  <data name="ws_transfer_hint" xml:space="preserve"><value>The successor has 7 days to accept. Ownership and billing move together; you stay on as an admin.</value></data>
+  <data name="ws_transfer_btn" xml:space="preserve"><value>Nominate as owner</value></data>
+  <data name="ws_transfer_confirm" xml:space="preserve"><value>Nominate this member as the new owner? They become the bill payer once they accept.</value></data>
+  <data name="ws_transfer_pending" xml:space="preserve"><value>An ownership transfer is already awaiting acceptance.</value></data>
+  <data name="ws_transfer_cancel" xml:space="preserve"><value>Cancel transfer</value></data>
+  <data name="ws_transfer_sent" xml:space="preserve"><value>Nomination sent.</value></data>
+  <data name="ws_tab_workspace" xml:space="preserve"><value>Workspace</value></data>
+  <data name="ws_tab_audit" xml:space="preserve"><value>Audit log</value></data>
+  <data name="ws_tab_report" xml:space="preserve"><value>Report</value></data>
+  <data name="ws_audit_title" xml:space="preserve"><value>Workspace audit log</value></data>
+  <data name="ws_audit_subtitle" xml:space="preserve"><value>Who did what in this workspace. Append-only and kept for 90 days.</value></data>
+  <data name="ws_audit_empty" xml:space="preserve"><value>No audit events match these filters.</value></data>
+  <data name="ws_audit_export" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="ws_audit_filter_action" xml:space="preserve"><value>Action</value></data>
+  <data name="ws_audit_filter_from" xml:space="preserve"><value>From</value></data>
+  <data name="ws_audit_filter_to" xml:space="preserve"><value>To</value></data>
+  <data name="ws_audit_apply" xml:space="preserve"><value>Apply filters</value></data>
+  <data name="ws_audit_col_when" xml:space="preserve"><value>When</value></data>
+  <data name="ws_audit_col_who" xml:space="preserve"><value>Member</value></data>
+  <data name="ws_audit_col_action" xml:space="preserve"><value>Action</value></data>
+  <data name="ws_audit_col_detail" xml:space="preserve"><value>Detail</value></data>
+  <data name="ws_audit_all_actions" xml:space="preserve"><value>All actions</value></data>
+  <data name="ws_report_title" xml:space="preserve"><value>Workspace report</value></data>
+  <data name="ws_report_subtitle" xml:space="preserve"><value>Seats, pooled quota and delivery volume. Personal shares are not included.</value></data>
+  <data name="ws_report_export" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="ws_report_window" xml:space="preserve"><value>Last {0} days</value></data>
+  <data name="ws_report_deliveries" xml:space="preserve"><value>Deliveries</value></data>
+  <data name="ws_report_uploaded" xml:space="preserve"><value>Uploaded</value></data>
+  <data name="ws_report_downloads" xml:space="preserve"><value>Downloads</value></data>
+  <data name="ws_report_seats" xml:space="preserve"><value>Seats claimed</value></data>
+  <data name="ws_report_inactive" xml:space="preserve"><value>Seats with no activity in this window: {0}</value></data>
+  <data name="ws_report_filetypes" xml:space="preserve"><value>Top file types</value></data>
+  <data name="ws_report_col_member" xml:space="preserve"><value>Member</value></data>
+  <data name="ws_report_col_role" xml:space="preserve"><value>Role</value></data>
+  <data name="ws_report_col_deliveries" xml:space="preserve"><value>Deliveries</value></data>
+  <data name="ws_report_col_bytes" xml:space="preserve"><value>Uploaded</value></data>
+  <data name="ws_report_col_downloads" xml:space="preserve"><value>Downloads</value></data>
+  <data name="ws_report_col_last" xml:space="preserve"><value>Last activity</value></data>
+  <data name="ws_report_never" xml:space="preserve"><value>Never</value></data>
+  <data name="ws_admin_only" xml:space="preserve"><value>Only workspace admins can see this.</value></data>
+  <data name="ws_join_title" xml:space="preserve"><value>Join workspace</value></data>
+  <data name="ws_join_hint" xml:space="preserve"><value>Accepting moves your account onto the workspace plan. Your own plan comes back if the seat is revoked.</value></data>
+  <data name="ws_join_accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="ws_join_ok" xml:space="preserve"><value>Done. You are in.</value></data>
+  <data name="ws_join_error" xml:space="preserve"><value>That link is no longer valid.</value></data>
+  <data name="ws_join_missing" xml:space="preserve"><value>This link is missing its token.</value></data>
 </root>

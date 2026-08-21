@@ -7,6 +7,12 @@ public record Delivery : BaseAuditEntity
     public const int PasswordMaxLength = 72;
 
     public Guid? SenderId { get; init; }
+    /// <summary>
+    /// Workspace this delivery belongs to (issue #106). Stamped at commit time from the
+    /// sender's active seat; null means a personal share. Team-mates see workspace rows
+    /// in the shared history, never each other's personal ones.
+    /// </summary>
+    public Guid? WorkspaceId { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }
