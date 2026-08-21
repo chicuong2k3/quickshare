@@ -30,6 +30,7 @@ public static class HangfireJobs
     public const string FileLockExpiry = "file-lock-expiry";
     public const string WorkspaceReport = "workspace-report";
     public const string InvoiceOverdue = "invoice-overdue";
+    public const string SiemShipping = "siem-shipping";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -47,6 +48,7 @@ public static class HangfireJobs
         recurring.AddOrUpdate<SecurityEventCleanupJob>(SecurityEventCleanup, j => j.CleanupAsync(), Cron.Daily());
         recurring.AddOrUpdate<FileLockExpiryJob>(FileLockExpiry, j => j.ReleaseExpiredLocksAsync(), Cron.Minutely());
         recurring.AddOrUpdate<InvoiceOverdueJob>(InvoiceOverdue, j => j.SweepAsync(), Cron.Hourly());
+        recurring.AddOrUpdate<SiemShippingJob>(SiemShipping, j => j.ShipAsync(), Cron.MinuteInterval(5));
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
         recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),

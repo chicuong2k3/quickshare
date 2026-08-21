@@ -245,6 +245,10 @@ builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceServic
 builder.Services.AddScoped<QuickShare.Features.Payments.Billing.InvoiceService>();
 builder.Services.AddScoped<QuickShare.Features.Payments.Billing.BillingAccountResolver>();
 
+// Tenant-isolation observation (issue #190) and SIEM shipping transport (issue #191).
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.TenantGuard>();
+builder.Services.AddHttpClient();
+
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
 builder.Services.AddMediator(options =>
 {

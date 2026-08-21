@@ -101,4 +101,10 @@ public static class ErrorCodes
     public const string InvoiceNotFound = "invoice_not_found";
     public const string InvoiceNotIssued = "invoice_not_issued";
     public const string SeatsRequireWorkspace = "seats_require_workspace";
+    // Tenant isolation (#190), SIEM streaming (#191), DPA (#184).
+    public const string SinkEndpointInvalid = "sink_endpoint_invalid";
+    public const string SinkFormatInvalid = "sink_format_invalid";
+    public const string SinkNotFound = "sink_not_found";
+    public const string DpaSignerRequired = "dpa_signer_required";
+    public const string DpaAlreadySigned = "dpa_already_signed";
 }

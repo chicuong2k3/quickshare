@@ -194,6 +194,14 @@ See `docs/billing-ledger.md` for the full subsystem. Three rules bind all future
 - **`IsExceeded` means blocked; `IsMetered` means allowed and billable.** Studio keeps uploading past its quota and pays per GB; Free and Pro still hard-block. Treating `IsMetered` as a block silently reinstates the hard stop for the tier that pays to avoid it.
 - **Never mutate an issued invoice's totals or buyer details — issue a new one.** Issuing freezes a copy of the buyer's company, tax code and PO reference on purpose: an invoice has to keep saying what it said when it was issued.
 
+### Trust Invariants (tenant isolation #190, SIEM streaming #191, DPA #184, SOC 2 #147/#323)
+
+See `docs/enterprise-trust.md` for the full subsystem. Three rules bind all future work:
+
+- **Tenant isolation is an explicit `Where` per query, never an EF global query filter, and every workspace-scoped route that takes an id MUST get a case in `TenantIsolationTests`.** A global filter is lost silently to `IgnoreQueryFilters`, raw SQL, or a projection built before it applies, and the failure mode is a cross-tenant read with nothing in the logs. That test suite is the actual control; probe with a real id from the other tenant, because a random GUID passes even with scoping removed.
+- **A cross-tenant miss and a nonexistent id MUST return the same response.** The reach is recorded server-side (`CrossTenantAccessBlocked`) but never revealed, or the error code becomes an existence oracle. A miss on an id that belongs to nobody is deliberately not recorded — the signal is a burst, and noise drowns it.
+- **Never edit published DPA terms or a `/soc2` control status in place to match what we wish were true.** Bump `DpaTerms.CurrentVersion` (existing signatures point at a version that must keep meaning what it meant); on the trust page, "partial" is the honest status for a control with no independent evidence behind it, and a page that drifts is worse than none because it is a claim somebody will check.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

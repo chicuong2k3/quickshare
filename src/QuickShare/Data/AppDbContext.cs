@@ -39,6 +39,8 @@ public class AppDbContext : DbContext
     public DbSet<BillingProfile> BillingProfiles => Set<BillingProfile>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+    public DbSet<SiemSink> SiemSinks => Set<SiemSink>();
+    public DbSet<DpaSignature> DpaSignatures => Set<DpaSignature>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -462,6 +464,40 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SiemSink>(entity =>
+        {
+            entity.ToTable("siem_sinks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Endpoint).IsRequired().HasMaxLength(SiemSink.EndpointMaxLength);
+            entity.Property(e => e.Format).IsRequired().HasMaxLength(SiemSink.FormatMaxLength);
+            entity.Property(e => e.Secret).HasMaxLength(SiemSink.SecretMaxLength);
+            entity.Property(e => e.EventFilter).HasMaxLength(SiemSink.EventFilterMaxLength);
+            entity.Property(e => e.LastError).HasMaxLength(SiemSink.ErrorMaxLength);
+            // One sink per workspace. Fan-out to several SIEMs is a router's job, not ours.
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DpaSignature>(entity =>
+        {
+            entity.ToTable("dpa_signatures");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Version).IsRequired().HasMaxLength(DpaSignature.VersionMaxLength);
+            entity.Property(e => e.CompanyName).IsRequired().HasMaxLength(DpaSignature.CompanyNameMaxLength);
+            entity.Property(e => e.SignerName).IsRequired().HasMaxLength(DpaSignature.SignerMaxLength);
+            entity.Property(e => e.SignerEmail).IsRequired().HasMaxLength(DpaSignature.SignerMaxLength);
+            // One signature per account per version; re-signing the same terms is a no-op,
+            // and a new version is a new row rather than an edit to the old evidence.
+            entity.HasIndex(e => new { e.UserId, e.Version }).IsUnique();
+            entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);

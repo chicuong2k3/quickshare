@@ -2846,3 +2846,41 @@ html, body {
         display: none;
     }
 }
+
+
+/* ─── SOC 2 readiness table (issues #147, #323) ─── */
+.soc2-banner {
+    padding: var(--db-space-3);
+    background: var(--db-valley);
+    color: var(--db-color-text);
+}
+
+.soc2-status {
+    font-family: var(--db-font-ui);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 var(--db-space-2);
+}
+
+.soc2-status--done {
+    background: var(--db-valley);
+    color: var(--db-color-text);
+}
+
+.soc2-status--partial {
+    background: var(--db-mountain-deep);
+    color: var(--db-color-text-muted);
+}
+
+.soc2-status--gap {
+    border: 1px solid var(--db-mountain-deep);
+    color: var(--db-color-text-muted);
+}
+
+/* The DPA page doubles as the signed record, so the form controls stay off paper. */
+@media print {
+    .dpa-print-hide {
+        display: none;
+    }
+}

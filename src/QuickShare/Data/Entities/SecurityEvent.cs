@@ -68,4 +68,8 @@ public enum SecurityEventType
     WorkspaceTemplateSaved,
     WorkspaceTemplateApplied,
     WorkspaceTemplateDeleted,
+    /// <summary>A caller reached for a resource belonging to another workspace (issue #190).</summary>
+    CrossTenantAccessBlocked,
+    DpaSigned,
+    SiemSinkChanged,
 }

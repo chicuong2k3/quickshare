@@ -261,7 +261,8 @@ public sealed class UpdateFolderDefaultsHandler(
 public sealed class GetFolderPrefillHandler(
     AppDbContext db,
     IHttpContextAccessor http,
-    WorkspaceService workspaces)
+    WorkspaceService workspaces,
+    TenantGuard tenants)
     : IRequestHandler<GetFolderPrefillQuery, Result<FolderPrefillDto>>
 {
     public async ValueTask<Result<FolderPrefillDto>> Handle(GetFolderPrefillQuery query, CancellationToken cancellationToken)
@@ -273,7 +274,15 @@ public sealed class GetFolderPrefillHandler(
 
         var defaults = await FolderDefaults.ResolveAsync(db, seat.WorkspaceId, query.FolderId, cancellationToken);
         if (defaults is null)
+        {
+            // The refusal is identical either way — the caller never learns whether the folder
+            // exists elsewhere — but a reach into another workspace is worth a timeline entry
+            // (issue #190). A burst of them is the signal, not any single one.
+            await tenants.NoteFolderProbeAsync(
+                user.Id, seat.WorkspaceId, query.FolderId, cancellationToken);
+
             return Result.Failure<FolderPrefillDto>(new LightResults.Error(ErrorCodes.FolderNotFound));
+        }
 
         return Result.Success(new FolderPrefillDto(
             query.FolderId,

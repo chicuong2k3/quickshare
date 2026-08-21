@@ -20,7 +20,7 @@ Read this first if you are testing QuickShare. You do **not** need to read `AGEN
 dotnet run --project src/QuickShare
 
 # automated suites (prove the basics before manual work)
-dotnet test tests/QuickShare.Server.Tests    # ~340s, 616 tests
+dotnet test tests/QuickShare.Server.Tests    # ~280s, 639 tests
 dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
 ```
 
@@ -78,6 +78,8 @@ browser download needed.
 | Team workspaces (#106 seats/pooled quota, #252 transfer, #145 audit, #300 report) | `WorkspaceTests` |
 | Shared folders (#151), per-folder upload defaults (#245), folder templates (#234) | `WorkspaceFolderTests` |
 | Billing ledger — seats (#278), overage (#141), invoices (#112), PO/net terms (#192) | `BillingLedgerTests` |
+| Tenant isolation (#190) — cross-tenant probes on every workspace-scoped surface | `TenantIsolationTests` |
+| SIEM streaming (#191) + self-serve DPA (#184) | `SiemAndDpaTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -117,6 +119,7 @@ checklist of the touched issue. Minimum regression set per change:
 | Any code writing `User.Plan`, or any new upload/quota path | `WorkspaceTests` | seats still inherit the owner plan; a member's bytes still land on the owner's usage row |
 | Any code creating or deleting folders, or any upload path that can target one | `WorkspaceFolderTests` | locked defaults still bind; a non-empty folder still refuses deletion |
 | Any code that adds a charge, reads a quota result, or touches invoice state | `BillingLedgerTests` | the charge reaches the issued invoice; Studio still meters while Pro still blocks |
+| **Any new workspace-scoped route that takes an id** | `TenantIsolationTests` | another tenant holding a real id still gets nothing, and the response is indistinguishable from a plain 404 |
 | Analytics | `AnalyticsTrackingTests` | — |
 | Localization | `LocalizationTests`, `LanguageSwitchTests` | — |
 | HTMX / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `SmokeTests` | — |

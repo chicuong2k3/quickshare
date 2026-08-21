@@ -1,0 +1,128 @@
+@layout MainLayout
+@page "/soc2"
+@using QuickShare.Components.Shared
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["soc2_title"]</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Loc["soc2_subtitle"]" />
+</HeadContent>
+
+@*
+    Static page (issues #147, #323). The honest version of a trust page: what is implemented,
+    what is planned, and what is missing — with "not certified" said first rather than buried.
+    A readiness page that reads like a certification is the thing that loses the deal in the
+    vendor review it was written to win.
+*@
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        <h1 class="db-h1">@Loc["soc2_title"]</h1>
+        <p class="db-p db-text-muted legal__version">@Loc["soc2_updated", DocDate]</p>
+
+        <p class="db-p soc2-banner">@Loc["soc2_not_certified"]</p>
+        <p class="db-p">@Loc["soc2_subtitle"]</p>
+
+        <h2 class="db-h2">@Loc["soc2_controls_title"]</h2>
+        <div class="workspace-table-wrap">
+            <table class="workspace-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@Loc["soc2_col_control"]</th>
+                        <th scope="col">@Loc["soc2_col_how"]</th>
+                        <th scope="col">@Loc["soc2_col_status"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Controls)
+                    {
+                        <tr>
+                            <td>@row.Control</td>
+                            <td>@row.How</td>
+                            <td><span class="soc2-status soc2-status--@row.Status">@StatusLabel(row.Status)</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="db-h2">@Loc["soc2_gaps_title"]</h2>
+        <p class="db-p">@Loc["soc2_gaps_body"]</p>
+        <ul class="db-p">
+            @foreach (var gap in Gaps)
+            {
+                <li>@gap</li>
+            }
+        </ul>
+
+        <h2 class="db-h2">@Loc["soc2_roadmap_title"]</h2>
+        <ol class="db-p">
+            @foreach (var phase in Roadmap)
+            {
+                <li>@phase</li>
+            }
+        </ol>
+
+        <h2 class="db-h2">@Loc["soc2_ask_title"]</h2>
+        <p class="db-p">
+            @Loc["soc2_ask_body"]
+            <a class="db-link" href="@RoutePaths.Dpa">@Loc["dpa_title"]</a> ·
+            <a class="db-link" href="@RoutePaths.Security">@Loc["soc2_link_security"]</a> ·
+            <a class="db-link" href="@RoutePaths.Status">@Loc["soc2_link_status"]</a>
+        </p>
+    </article>
+</PageWrapper>
+
+@code {
+    private const string StatusDone = "done";
+    private const string StatusPartial = "partial";
+    private const string StatusGap = "gap";
+
+    private static readonly string DocDate = new DateOnly(2026, 8, 21).ToString("yyyy-MM-dd");
+
+    private sealed record ControlRow(string Control, string How, string Status);
+
+    /// <summary>
+    /// Mapped to the Trust Services Criteria a buyer's questionnaire actually cites. Status is
+    /// deliberately three-valued: "partial" is the honest answer for a control that exists but
+    /// has no independent evidence behind it yet, and collapsing it into "done" is exactly the
+    /// overclaim an auditor finds.
+    /// </summary>
+    private List<ControlRow> Controls =>
+    [
+        new("CC6.1 " + Loc["soc2_cc61"], Loc["soc2_cc61_how"], StatusPartial),
+        new("CC6.2 " + Loc["soc2_cc62"], Loc["soc2_cc62_how"], StatusDone),
+        new("CC6.6 " + Loc["soc2_cc66"], Loc["soc2_cc66_how"], StatusDone),
+        new("CC6.7 " + Loc["soc2_cc67"], Loc["soc2_cc67_how"], StatusDone),
+        new("CC7.2 " + Loc["soc2_cc72"], Loc["soc2_cc72_how"], StatusDone),
+        new("CC7.3 " + Loc["soc2_cc73"], Loc["soc2_cc73_how"], StatusPartial),
+        new("CC8.1 " + Loc["soc2_cc81"], Loc["soc2_cc81_how"], StatusPartial),
+        new("A1.2 " + Loc["soc2_a12"], Loc["soc2_a12_how"], StatusPartial),
+        new("C1.1 " + Loc["soc2_c11"], Loc["soc2_c11_how"], StatusDone),
+        new("P4.2 " + Loc["soc2_p42"], Loc["soc2_p42_how"], StatusDone),
+    ];
+
+    private List<string> Gaps =>
+    [
+        Loc["soc2_gap_pentest"],
+        Loc["soc2_gap_policies"],
+        Loc["soc2_gap_drtest"],
+        Loc["soc2_gap_vendor"],
+        Loc["soc2_gap_auditor"],
+    ];
+
+    private List<string> Roadmap =>
+    [
+        Loc["soc2_phase1"],
+        Loc["soc2_phase2"],
+        Loc["soc2_phase3"],
+        Loc["soc2_phase4"],
+    ];
+
+    private string StatusLabel(string status) => status switch
+    {
+        StatusDone => Loc["soc2_status_done"],
+        StatusGap => Loc["soc2_status_gap"],
+        _ => Loc["soc2_status_partial"],
+    };
+}

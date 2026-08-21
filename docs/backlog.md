@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 18 done (08-21): `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 23 done (08-21): `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -384,6 +384,50 @@ request clears a prior approval. `InvoiceOverdueJob` (hourly) flips issued to ov
 notifies and emails; only terms invoices can be late. `POST /api/admin/billing/invoices/{id}/paid`
 reconciles a bank transfer manually, idempotently.
 
+
+Tier 6 batch 6 (trust series), 2026-08-21: `#190` tenant isolation, `#191` SIEM streaming,
+`#184` self-serve DPA, `#147`/`#323` SOC 2 readiness — one migration
+`AddSiemSinksAndDpaSignatures` (2 new tables `siem_sinks` / `dpa_signatures`). Tests:
+`TenantIsolationTests` (7) + `SiemAndDpaTests` (16). Design:
+[`docs/enterprise-trust.md`](enterprise-trust.md).
+
+`#190` tenant isolation — the mechanism is an explicit `Where` per query, at the call site,
+never an EF global query filter: a global filter is lost silently to `IgnoreQueryFilters`, raw
+SQL, or a projection built before it applies, and the failure mode is a cross-tenant read with
+nothing in the logs. `TenantIsolationTests` is therefore the actual control, probing folders,
+workspace management, audit, report, deliveries, invoices and streaming config with a *real id
+from the other tenant* (a random GUID would pass even with scoping removed). `TenantGuard`
+records `CrossTenantAccessBlocked` when the id exists but belongs to someone else, while the
+response stays identical to a plain 404 — otherwise the error code is an existence oracle — and
+a miss on an id belonging to nobody is deliberately not recorded, because the signal is a burst
+and noise drowns it.
+
+`#191` SIEM streaming — no outbox: `security_events` is already durable and append-only, so the
+sink stores a `(CreatedAt, Id)` cursor and advances it only on a successful POST. At-least-once
+by design; a SIEM de-duplicates on `externalId`, whereas a dropped audit event is unrecoverable.
+Three formats (json / cef / splunk_hec) over one field set, with CEF delimiter escaping tested
+because an unescaped `=` silently swallows the next field. HTTPS only, HMAC-SHA256 over
+`{timestamp}.{body}` with the timestamp inside the signed payload so a captured batch cannot be
+replayed as fresh. IPs ship hashed, as stored. A sink parks after 10 consecutive failures and
+un-parks on save; a new sink starts its cursor at *now* rather than back-filling history nobody
+asked for. The secret is write-only. Routes `GET/PUT/DELETE /api/workspace/streaming`;
+`SiemShippingJob` every 5 minutes; UI `/account/workspace/streaming`.
+
+`#184` self-serve DPA — the signature row *is* the artefact: the page renders the stored record
+beside the published terms, so evidence and document cannot disagree, and printing makes the
+PDF. Versioned, with `NeedsResign` flagging a signature against older terms — still a real
+agreement, just not agreement to what is published today. Signing the same version twice is
+refused, because a second row makes "when did they agree" ambiguous. Terms are public (a DPA
+behind a login is one their legal team cannot review); only the signing panel needs an account.
+IP hashed, signing audited. Routes `GET /api/dpa`, `POST /api/dpa/sign`; UI `/dpa`.
+
+`#147`/`#323` SOC 2 readiness — `/soc2` publishes the control map, opening with **not certified,
+no audit, no report**, because a readiness page that reads like a certification is what loses
+the vendor review it was written to win. Ten criteria mapped with a three-valued status
+("partial" is the honest answer for a control with no independent evidence yet), a named gap
+list (no pen test, no written policy set, no scheduled restore drill with evidence, no
+vendor-risk process, no auditor engaged) and a four-phase roadmap. Both locales.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -409,6 +453,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Compliance (legal hold / retention / delivery scope) | `docs/compliance-architecture.md` |
 | Team workspaces (seats / transfer / audit / report / folders) | `docs/workspaces-architecture.md` |
 | Billing ledger (seats / overage / invoices / PO + net terms) | `docs/billing-ledger.md` |
+| Enterprise trust (isolation / SIEM / DPA / SOC 2) | `docs/enterprise-trust.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -425,8 +470,9 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 18 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 23 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
   `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,
-  `#139` SAML SSO and the rest still open
+  `#139` SAML SSO, `#146` SCIM, `#219` MFA policy (blocked: no MFA exists yet) and the rest
+  still open

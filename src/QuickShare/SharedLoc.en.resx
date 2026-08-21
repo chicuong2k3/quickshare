@@ -1402,4 +1402,102 @@
   <data name="overage_none" xml:space="preserve"><value>No overage this period.</value></data>
   <data name="overage_used" xml:space="preserve"><value>{0} past the included pool, billed at {1} per GB</value></data>
   <data name="overage_blocked" xml:space="preserve"><value>Uploads stop at 100% on this plan. Studio keeps going and bills the overflow.</value></data>
+  <data name="ws_tab_streaming" xml:space="preserve"><value>Streaming</value></data>
+  <data name="siem_title" xml:space="preserve"><value>Audit-log streaming</value></data>
+  <data name="siem_subtitle" xml:space="preserve"><value>Push this workspace's audit trail into your own SIEM.</value></data>
+  <data name="siem_config_title" xml:space="preserve"><value>Destination</value></data>
+  <data name="siem_config_hint" xml:space="preserve"><value>HTTPS only. Batches are signed with HMAC-SHA256 over the timestamp and body, except for Splunk HEC, which authenticates with its own token.</value></data>
+  <data name="siem_endpoint" xml:space="preserve"><value>Endpoint URL</value></data>
+  <data name="siem_format" xml:space="preserve"><value>Format</value></data>
+  <data name="siem_format_json" xml:space="preserve"><value>JSON (generic webhook, Elastic)</value></data>
+  <data name="siem_format_cef" xml:space="preserve"><value>CEF (ArcSight, QRadar)</value></data>
+  <data name="siem_format_splunk" xml:space="preserve"><value>Splunk HTTP Event Collector</value></data>
+  <data name="siem_secret" xml:space="preserve"><value>Shared secret / HEC token</value></data>
+  <data name="siem_secret_set" xml:space="preserve"><value>A secret is set — leave blank to keep it</value></data>
+  <data name="siem_filter" xml:space="preserve"><value>Event filter</value></data>
+  <data name="siem_filter_placeholder" xml:space="preserve"><value>WorkspaceMemberJoined, WorkspaceTransferAccepted — blank sends everything</value></data>
+  <data name="siem_enabled" xml:space="preserve"><value>Streaming enabled</value></data>
+  <data name="siem_save" xml:space="preserve"><value>Save destination</value></data>
+  <data name="siem_saved" xml:space="preserve"><value>Saved. Shipping resumes within five minutes.</value></data>
+  <data name="siem_remove" xml:space="preserve"><value>Remove destination</value></data>
+  <data name="siem_remove_confirm" xml:space="preserve"><value>Stop streaming and forget this endpoint?</value></data>
+  <data name="siem_health_title" xml:space="preserve"><value>Shipping health</value></data>
+  <data name="siem_last_shipped" xml:space="preserve"><value>Last delivered</value></data>
+  <data name="siem_last_attempt" xml:space="preserve"><value>Last attempt</value></data>
+  <data name="siem_failures" xml:space="preserve"><value>Consecutive failures</value></data>
+  <data name="siem_last_error" xml:space="preserve"><value>Last error: {0}</value></data>
+  <data name="siem_parked" xml:space="preserve"><value>Paused after {0} consecutive failures. Fix the endpoint and save to resume — no events were lost.</value></data>
+  <data name="dpa_title" xml:space="preserve"><value>Data Processing Agreement</value></data>
+  <data name="dpa_subtitle" xml:space="preserve"><value>The controller–processor terms under which QuickShareCloud handles personal data on your behalf, per GDPR Article 28.</value></data>
+  <data name="dpa_version" xml:space="preserve"><value>Version {0} · published {1}</value></data>
+  <data name="dpa_s1_title" xml:space="preserve"><value>1. Roles</value></data>
+  <data name="dpa_s1_body" xml:space="preserve"><value>You are the data controller. QuickShareCloud is the processor, and processes personal data only on your documented instructions — which, in practice, are the actions you take in the product.</value></data>
+  <data name="dpa_s2_title" xml:space="preserve"><value>2. Subject matter and duration</value></data>
+  <data name="dpa_s2_body" xml:space="preserve"><value>Processing covers the files you upload and the account and recipient data attached to them, for as long as your account is active plus the retention window you configure. Deleting a delivery deletes its stored bytes; deleting your account removes the rest.</value></data>
+  <data name="dpa_s3_title" xml:space="preserve"><value>3. Security measures</value></data>
+  <data name="dpa_s3_body" xml:space="preserve"><value>Encryption in transit and at rest, per-link access controls (password, one-time code, IP and country rules), hashed IP addresses, an append-only audit trail, and least-privilege access for our own staff. The current control map is published on the SOC 2 readiness page.</value></data>
+  <data name="dpa_s4_title" xml:space="preserve"><value>4. Sub-processors</value></data>
+  <data name="dpa_s4_body" xml:space="preserve"><value>Cloudflare R2 (object storage), our email delivery provider, and PayOS (payments). We will give notice before adding a sub-processor that handles your content.</value></data>
+  <data name="dpa_s5_title" xml:space="preserve"><value>5. Data subject rights and breach notice</value></data>
+  <data name="dpa_s5_body" xml:space="preserve"><value>Export and erasure are self-service from your account. We will notify you without undue delay after becoming aware of a personal-data breach affecting your data, with what we know at the time.</value></data>
+  <data name="dpa_s6_title" xml:space="preserve"><value>6. International transfers</value></data>
+  <data name="dpa_s6_body" xml:space="preserve"><value>Storage region selection is not yet available; content is stored in our default region. If your obligations require a specific region, tell us before you sign.</value></data>
+  <data name="dpa_sign_title" xml:space="preserve"><value>Sign</value></data>
+  <data name="dpa_sign_login" xml:space="preserve"><value>Sign in to countersign this agreement against your account.</value></data>
+  <data name="dpa_company" xml:space="preserve"><value>Company (controller)</value></data>
+  <data name="dpa_signer" xml:space="preserve"><value>Signer name and title</value></data>
+  <data name="dpa_email" xml:space="preserve"><value>Signer email</value></data>
+  <data name="dpa_sign_button" xml:space="preserve"><value>Countersign</value></data>
+  <data name="dpa_signed_ok" xml:space="preserve"><value>Signed.</value></data>
+  <data name="dpa_signed_by" xml:space="preserve"><value>Countersigned by {0} for {1} on {2}.</value></data>
+  <data name="dpa_resign" xml:space="preserve"><value>You signed version {0}. The current terms are version {1} — countersign again to accept them.</value></data>
+  <data name="dpa_print" xml:space="preserve"><value>Print / save as PDF</value></data>
+  <data name="dpa_not_legal_advice" xml:space="preserve"><value>This page is the agreement and the record of your signature. It is not legal advice; have your counsel review it as you would any contract.</value></data>
+  <data name="soc2_title" xml:space="preserve"><value>SOC 2 readiness</value></data>
+  <data name="soc2_subtitle" xml:space="preserve"><value>Where we actually stand against the Trust Services Criteria, control by control.</value></data>
+  <data name="soc2_updated" xml:space="preserve"><value>Updated {0}</value></data>
+  <data name="soc2_not_certified" xml:space="preserve"><value>QuickShareCloud is not SOC 2 certified. No audit has been performed and no report exists. This page is a readiness map, published so a vendor review can see the real position rather than a marketing one.</value></data>
+  <data name="soc2_controls_title" xml:space="preserve"><value>Control map</value></data>
+  <data name="soc2_col_control" xml:space="preserve"><value>Criterion</value></data>
+  <data name="soc2_col_how" xml:space="preserve"><value>How it is met</value></data>
+  <data name="soc2_col_status" xml:space="preserve"><value>Status</value></data>
+  <data name="soc2_status_done" xml:space="preserve"><value>Implemented</value></data>
+  <data name="soc2_status_partial" xml:space="preserve"><value>Partial</value></data>
+  <data name="soc2_status_gap" xml:space="preserve"><value>Gap</value></data>
+  <data name="soc2_cc61" xml:space="preserve"><value>Logical access provisioning</value></data>
+  <data name="soc2_cc61_how" xml:space="preserve"><value>OAuth sign-in, workspace roles, per-seat provisioning and revocation. Enterprise SSO and SCIM are not built yet.</value></data>
+  <data name="soc2_cc62" xml:space="preserve"><value>Access removal</value></data>
+  <data name="soc2_cc62_how" xml:space="preserve"><value>Seat revocation is immediate and restores the member's own plan; account deletion purges content and cascades its records.</value></data>
+  <data name="soc2_cc66" xml:space="preserve"><value>Boundary protection</value></data>
+  <data name="soc2_cc66_how" xml:space="preserve"><value>TLS everywhere, security headers and CSP, per-delivery IP allowlist and country rules evaluated fail-closed.</value></data>
+  <data name="soc2_cc67" xml:space="preserve"><value>Data in transit and at rest</value></data>
+  <data name="soc2_cc67_how" xml:space="preserve"><value>HTTPS in transit, encrypted object storage, client-side AES-GCM for end-to-end deliveries, hashed IPs and hashed tokens at rest.</value></data>
+  <data name="soc2_cc72" xml:space="preserve"><value>Monitoring and logging</value></data>
+  <data name="soc2_cc72_how" xml:space="preserve"><value>Append-only security timeline per account and per workspace, 90-day retention, cross-tenant access attempts recorded.</value></data>
+  <data name="soc2_cc73" xml:space="preserve"><value>Anomaly detection and response</value></data>
+  <data name="soc2_cc73_how" xml:space="preserve"><value>New-device alerts, quota threshold alerts, error tracking, and audit streaming to your SIEM. There is no formal on-call rotation or documented incident response runbook.</value></data>
+  <data name="soc2_cc81" xml:space="preserve"><value>Change management</value></data>
+  <data name="soc2_cc81_how" xml:space="preserve"><value>Version control, automated test suite and CI on every change, feature flags for staged rollout. Change approvals are not independently evidenced.</value></data>
+  <data name="soc2_a12" xml:space="preserve"><value>Availability and recovery</value></data>
+  <data name="soc2_a12_how" xml:space="preserve"><value>Managed object storage with provider-level durability, automated database and object backups, public status page. Restore has not been exercised on a schedule with retained evidence.</value></data>
+  <data name="soc2_c11" xml:space="preserve"><value>Confidentiality of customer data</value></data>
+  <data name="soc2_c11_how" xml:space="preserve"><value>Workspace-scoped queries on every read, legal hold, retention policy, and right-to-erasure with byte-level purge.</value></data>
+  <data name="soc2_p42" xml:space="preserve"><value>Retention and disposal</value></data>
+  <data name="soc2_p42_how" xml:space="preserve"><value>Per-account retention policy, per-delivery expiry, trash grace period and sweeps that delete stored bytes rather than just rows.</value></data>
+  <data name="soc2_gaps_title" xml:space="preserve"><value>Known gaps</value></data>
+  <data name="soc2_gaps_body" xml:space="preserve"><value>These are the items an auditor would raise first. They are open issues, not oversights we are hoping nobody notices.</value></data>
+  <data name="soc2_gap_pentest" xml:space="preserve"><value>No annual third-party penetration test on record.</value></data>
+  <data name="soc2_gap_policies" xml:space="preserve"><value>Internal policy set (access control, incident response, vendor management, security training) is not written down.</value></data>
+  <data name="soc2_gap_drtest" xml:space="preserve"><value>Backup restore is automated but not exercised on a schedule with retained evidence.</value></data>
+  <data name="soc2_gap_vendor" xml:space="preserve"><value>No formal sub-processor review or vendor risk assessment process.</value></data>
+  <data name="soc2_gap_auditor" xml:space="preserve"><value>No auditor engaged and no observation window started.</value></data>
+  <data name="soc2_roadmap_title" xml:space="preserve"><value>Roadmap</value></data>
+  <data name="soc2_phase1" xml:space="preserve"><value>Phase 1 — close the evidence gaps: write the policy set, schedule a restore drill, run a penetration test.</value></data>
+  <data name="soc2_phase2" xml:space="preserve"><value>Phase 2 — ship the remaining access controls: enterprise SSO, SCIM provisioning, enforced MFA policy.</value></data>
+  <data name="soc2_phase3" xml:space="preserve"><value>Phase 3 — engage an auditor, agree scope, and begin the Type II observation window.</value></data>
+  <data name="soc2_phase4" xml:space="preserve"><value>Phase 4 — complete the observation window and publish the report under NDA on request.</value></data>
+  <data name="soc2_ask_title" xml:space="preserve"><value>For your vendor review</value></data>
+  <data name="soc2_ask_body" xml:space="preserve"><value>Everything we can share today is public:</value></data>
+  <data name="soc2_link_security" xml:space="preserve"><value>Vulnerability disclosure</value></data>
+  <data name="soc2_link_status" xml:space="preserve"><value>Status page</value></data>
 </root>

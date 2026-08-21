@@ -1402,4 +1402,102 @@
   <data name="overage_none" xml:space="preserve"><value>Kỳ này chưa vượt hạn mức.</value></data>
   <data name="overage_used" xml:space="preserve"><value>Đã vượt {0} so với hạn mức, tính {1} mỗi GB</value></data>
   <data name="overage_blocked" xml:space="preserve"><value>Gói này dừng tải lên ở mức 100%. Studio vẫn chạy tiếp và tính phần vượt.</value></data>
+  <data name="ws_tab_streaming" xml:space="preserve"><value>Luồng nhật ký</value></data>
+  <data name="siem_title" xml:space="preserve"><value>Luồng nhật ký kiểm toán</value></data>
+  <data name="siem_subtitle" xml:space="preserve"><value>Đẩy nhật ký kiểm toán của không gian nhóm sang hệ thống SIEM của bạn.</value></data>
+  <data name="siem_config_title" xml:space="preserve"><value>Đích đến</value></data>
+  <data name="siem_config_hint" xml:space="preserve"><value>Chỉ HTTPS. Mỗi lô được ký HMAC-SHA256 trên dấu thời gian và nội dung, trừ Splunk HEC vốn dùng token riêng.</value></data>
+  <data name="siem_endpoint" xml:space="preserve"><value>Địa chỉ endpoint</value></data>
+  <data name="siem_format" xml:space="preserve"><value>Định dạng</value></data>
+  <data name="siem_format_json" xml:space="preserve"><value>JSON (webhook chung, Elastic)</value></data>
+  <data name="siem_format_cef" xml:space="preserve"><value>CEF (ArcSight, QRadar)</value></data>
+  <data name="siem_format_splunk" xml:space="preserve"><value>Splunk HTTP Event Collector</value></data>
+  <data name="siem_secret" xml:space="preserve"><value>Khoá chia sẻ / token HEC</value></data>
+  <data name="siem_secret_set" xml:space="preserve"><value>Đã có khoá — để trống nếu giữ nguyên</value></data>
+  <data name="siem_filter" xml:space="preserve"><value>Lọc sự kiện</value></data>
+  <data name="siem_filter_placeholder" xml:space="preserve"><value>WorkspaceMemberJoined, WorkspaceTransferAccepted — để trống là gửi tất cả</value></data>
+  <data name="siem_enabled" xml:space="preserve"><value>Bật gửi luồng</value></data>
+  <data name="siem_save" xml:space="preserve"><value>Lưu đích đến</value></data>
+  <data name="siem_saved" xml:space="preserve"><value>Đã lưu. Việc gửi tiếp tục trong vòng năm phút.</value></data>
+  <data name="siem_remove" xml:space="preserve"><value>Xoá đích đến</value></data>
+  <data name="siem_remove_confirm" xml:space="preserve"><value>Dừng gửi luồng và xoá endpoint này?</value></data>
+  <data name="siem_health_title" xml:space="preserve"><value>Tình trạng gửi</value></data>
+  <data name="siem_last_shipped" xml:space="preserve"><value>Gửi thành công gần nhất</value></data>
+  <data name="siem_last_attempt" xml:space="preserve"><value>Lần thử gần nhất</value></data>
+  <data name="siem_failures" xml:space="preserve"><value>Số lần lỗi liên tiếp</value></data>
+  <data name="siem_last_error" xml:space="preserve"><value>Lỗi gần nhất: {0}</value></data>
+  <data name="siem_parked" xml:space="preserve"><value>Đã tạm dừng sau {0} lần lỗi liên tiếp. Sửa endpoint rồi lưu để tiếp tục — không sự kiện nào bị mất.</value></data>
+  <data name="dpa_title" xml:space="preserve"><value>Thoả thuận xử lý dữ liệu (DPA)</value></data>
+  <data name="dpa_subtitle" xml:space="preserve"><value>Điều khoản bên kiểm soát – bên xử lý mà QuickShareCloud áp dụng khi xử lý dữ liệu cá nhân thay bạn, theo Điều 28 GDPR.</value></data>
+  <data name="dpa_version" xml:space="preserve"><value>Phiên bản {0} · phát hành {1}</value></data>
+  <data name="dpa_s1_title" xml:space="preserve"><value>1. Vai trò</value></data>
+  <data name="dpa_s1_body" xml:space="preserve"><value>Bạn là bên kiểm soát dữ liệu. QuickShareCloud là bên xử lý, và chỉ xử lý dữ liệu cá nhân theo chỉ dẫn của bạn — trên thực tế là các thao tác bạn thực hiện trong sản phẩm.</value></data>
+  <data name="dpa_s2_title" xml:space="preserve"><value>2. Đối tượng và thời hạn</value></data>
+  <data name="dpa_s2_body" xml:space="preserve"><value>Phạm vi xử lý gồm tệp bạn tải lên cùng dữ liệu tài khoản và người nhận đi kèm, trong thời gian tài khoản còn hoạt động cộng với thời hạn lưu trữ bạn cấu hình. Xoá một lượt gửi là xoá dữ liệu đã lưu; xoá tài khoản là xoá phần còn lại.</value></data>
+  <data name="dpa_s3_title" xml:space="preserve"><value>3. Biện pháp bảo mật</value></data>
+  <data name="dpa_s3_body" xml:space="preserve"><value>Mã hoá khi truyền và khi lưu, kiểm soát truy cập theo liên kết (mật khẩu, mã dùng một lần, quy tắc IP và quốc gia), địa chỉ IP được băm, nhật ký chỉ ghi thêm, và quyền tối thiểu cho nhân sự của chúng tôi. Bản đồ kiểm soát hiện tại được đăng ở trang SOC 2.</value></data>
+  <data name="dpa_s4_title" xml:space="preserve"><value>4. Bên xử lý phụ</value></data>
+  <data name="dpa_s4_body" xml:space="preserve"><value>Cloudflare R2 (lưu trữ đối tượng), nhà cung cấp gửi email, và PayOS (thanh toán). Chúng tôi sẽ thông báo trước khi thêm bên xử lý phụ có tiếp xúc nội dung của bạn.</value></data>
+  <data name="dpa_s5_title" xml:space="preserve"><value>5. Quyền của chủ thể dữ liệu và thông báo sự cố</value></data>
+  <data name="dpa_s5_body" xml:space="preserve"><value>Xuất và xoá dữ liệu là thao tác tự phục vụ trong tài khoản. Chúng tôi sẽ thông báo cho bạn không chậm trễ sau khi phát hiện sự cố lộ dữ liệu cá nhân liên quan, kèm thông tin có được tại thời điểm đó.</value></data>
+  <data name="dpa_s6_title" xml:space="preserve"><value>6. Chuyển dữ liệu quốc tế</value></data>
+  <data name="dpa_s6_body" xml:space="preserve"><value>Chưa hỗ trợ chọn vùng lưu trữ; nội dung được lưu ở vùng mặc định. Nếu nghĩa vụ của bạn yêu cầu một vùng cụ thể, hãy trao đổi trước khi ký.</value></data>
+  <data name="dpa_sign_title" xml:space="preserve"><value>Ký</value></data>
+  <data name="dpa_sign_login" xml:space="preserve"><value>Đăng nhập để ký thoả thuận này gắn với tài khoản của bạn.</value></data>
+  <data name="dpa_company" xml:space="preserve"><value>Công ty (bên kiểm soát)</value></data>
+  <data name="dpa_signer" xml:space="preserve"><value>Người ký và chức danh</value></data>
+  <data name="dpa_email" xml:space="preserve"><value>Email người ký</value></data>
+  <data name="dpa_sign_button" xml:space="preserve"><value>Ký thoả thuận</value></data>
+  <data name="dpa_signed_ok" xml:space="preserve"><value>Đã ký.</value></data>
+  <data name="dpa_signed_by" xml:space="preserve"><value>Đã ký bởi {0} thay mặt {1} vào {2}.</value></data>
+  <data name="dpa_resign" xml:space="preserve"><value>Bạn đã ký phiên bản {0}. Điều khoản hiện tại là phiên bản {1} — hãy ký lại để chấp nhận.</value></data>
+  <data name="dpa_print" xml:space="preserve"><value>In / lưu PDF</value></data>
+  <data name="dpa_not_legal_advice" xml:space="preserve"><value>Trang này vừa là thoả thuận vừa là bằng chứng chữ ký của bạn. Đây không phải tư vấn pháp lý; hãy để bộ phận pháp chế rà soát như với mọi hợp đồng.</value></data>
+  <data name="soc2_title" xml:space="preserve"><value>Mức sẵn sàng SOC 2</value></data>
+  <data name="soc2_subtitle" xml:space="preserve"><value>Vị trí thực tế của chúng tôi so với bộ tiêu chí Trust Services, theo từng kiểm soát.</value></data>
+  <data name="soc2_updated" xml:space="preserve"><value>Cập nhật {0}</value></data>
+  <data name="soc2_not_certified" xml:space="preserve"><value>QuickShareCloud chưa có chứng nhận SOC 2. Chưa có cuộc kiểm toán nào và chưa có báo cáo. Trang này là bản đồ mức sẵn sàng, công bố để bên rà soát nhà cung cấp thấy đúng thực tế thay vì một bản quảng cáo.</value></data>
+  <data name="soc2_controls_title" xml:space="preserve"><value>Bản đồ kiểm soát</value></data>
+  <data name="soc2_col_control" xml:space="preserve"><value>Tiêu chí</value></data>
+  <data name="soc2_col_how" xml:space="preserve"><value>Được đáp ứng thế nào</value></data>
+  <data name="soc2_col_status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="soc2_status_done" xml:space="preserve"><value>Đã có</value></data>
+  <data name="soc2_status_partial" xml:space="preserve"><value>Một phần</value></data>
+  <data name="soc2_status_gap" xml:space="preserve"><value>Còn thiếu</value></data>
+  <data name="soc2_cc61" xml:space="preserve"><value>Cấp quyền truy cập</value></data>
+  <data name="soc2_cc61_how" xml:space="preserve"><value>Đăng nhập OAuth, vai trò trong không gian nhóm, cấp và thu hồi theo ghế. Chưa có SSO doanh nghiệp và SCIM.</value></data>
+  <data name="soc2_cc62" xml:space="preserve"><value>Thu hồi quyền</value></data>
+  <data name="soc2_cc62_how" xml:space="preserve"><value>Thu hồi ghế có hiệu lực ngay và trả lại gói riêng của thành viên; xoá tài khoản là xoá nội dung và các bản ghi liên quan.</value></data>
+  <data name="soc2_cc66" xml:space="preserve"><value>Bảo vệ vành đai</value></data>
+  <data name="soc2_cc66_how" xml:space="preserve"><value>TLS toàn hệ thống, security header và CSP, danh sách IP cho phép và quy tắc quốc gia theo từng lượt gửi, đánh giá theo nguyên tắc từ chối mặc định.</value></data>
+  <data name="soc2_cc67" xml:space="preserve"><value>Dữ liệu khi truyền và khi lưu</value></data>
+  <data name="soc2_cc67_how" xml:space="preserve"><value>HTTPS khi truyền, lưu trữ đối tượng có mã hoá, AES-GCM phía client cho lượt gửi đầu-cuối, IP và token đều băm khi lưu.</value></data>
+  <data name="soc2_cc72" xml:space="preserve"><value>Giám sát và ghi nhật ký</value></data>
+  <data name="soc2_cc72_how" xml:space="preserve"><value>Dòng thời gian bảo mật chỉ ghi thêm cho mỗi tài khoản và mỗi không gian nhóm, lưu 90 ngày, ghi lại các lần truy cập chéo tổ chức bị chặn.</value></data>
+  <data name="soc2_cc73" xml:space="preserve"><value>Phát hiện bất thường và ứng phó</value></data>
+  <data name="soc2_cc73_how" xml:space="preserve"><value>Cảnh báo thiết bị mới, cảnh báo ngưỡng hạn mức, theo dõi lỗi, và gửi nhật ký sang SIEM của bạn. Chưa có lịch trực và chưa có tài liệu quy trình ứng phó sự cố.</value></data>
+  <data name="soc2_cc81" xml:space="preserve"><value>Quản lý thay đổi</value></data>
+  <data name="soc2_cc81_how" xml:space="preserve"><value>Quản lý phiên bản, bộ kiểm thử tự động và CI cho mọi thay đổi, feature flag để triển khai từng bước. Việc phê duyệt thay đổi chưa có bằng chứng độc lập.</value></data>
+  <data name="soc2_a12" xml:space="preserve"><value>Khả dụng và khôi phục</value></data>
+  <data name="soc2_a12_how" xml:space="preserve"><value>Lưu trữ đối tượng có độ bền ở mức nhà cung cấp, sao lưu tự động cơ sở dữ liệu và đối tượng, trang trạng thái công khai. Việc khôi phục chưa được diễn tập định kỳ kèm bằng chứng lưu lại.</value></data>
+  <data name="soc2_c11" xml:space="preserve"><value>Bảo mật dữ liệu khách hàng</value></data>
+  <data name="soc2_c11_how" xml:space="preserve"><value>Mọi truy vấn đều giới hạn theo không gian nhóm, có legal hold, chính sách lưu trữ, và quyền xoá với việc xoá dữ liệu thật.</value></data>
+  <data name="soc2_p42" xml:space="preserve"><value>Lưu trữ và tiêu huỷ</value></data>
+  <data name="soc2_p42_how" xml:space="preserve"><value>Chính sách lưu trữ theo tài khoản, hạn dùng theo từng lượt gửi, thùng rác có thời gian ân hạn, và các tiến trình quét xoá dữ liệu thật chứ không chỉ xoá bản ghi.</value></data>
+  <data name="soc2_gaps_title" xml:space="preserve"><value>Những khoảng trống đã biết</value></data>
+  <data name="soc2_gaps_body" xml:space="preserve"><value>Đây là những mục kiểm toán viên sẽ nêu đầu tiên. Chúng là việc còn mở, không phải điều chúng tôi mong không ai để ý.</value></data>
+  <data name="soc2_gap_pentest" xml:space="preserve"><value>Chưa có kiểm thử xâm nhập hằng năm do bên thứ ba thực hiện.</value></data>
+  <data name="soc2_gap_policies" xml:space="preserve"><value>Bộ chính sách nội bộ (kiểm soát truy cập, ứng phó sự cố, quản lý nhà cung cấp, đào tạo bảo mật) chưa được viết thành văn bản.</value></data>
+  <data name="soc2_gap_drtest" xml:space="preserve"><value>Khôi phục sao lưu đã tự động nhưng chưa diễn tập định kỳ kèm bằng chứng lưu lại.</value></data>
+  <data name="soc2_gap_vendor" xml:space="preserve"><value>Chưa có quy trình rà soát bên xử lý phụ hay đánh giá rủi ro nhà cung cấp.</value></data>
+  <data name="soc2_gap_auditor" xml:space="preserve"><value>Chưa thuê kiểm toán viên và chưa bắt đầu kỳ quan sát.</value></data>
+  <data name="soc2_roadmap_title" xml:space="preserve"><value>Lộ trình</value></data>
+  <data name="soc2_phase1" xml:space="preserve"><value>Giai đoạn 1 — bù các khoảng trống bằng chứng: viết bộ chính sách, lên lịch diễn tập khôi phục, thực hiện kiểm thử xâm nhập.</value></data>
+  <data name="soc2_phase2" xml:space="preserve"><value>Giai đoạn 2 — hoàn tất các kiểm soát truy cập còn lại: SSO doanh nghiệp, cấp phát SCIM, chính sách bắt buộc MFA.</value></data>
+  <data name="soc2_phase3" xml:space="preserve"><value>Giai đoạn 3 — thuê kiểm toán viên, thống nhất phạm vi, bắt đầu kỳ quan sát Type II.</value></data>
+  <data name="soc2_phase4" xml:space="preserve"><value>Giai đoạn 4 — hoàn tất kỳ quan sát và cung cấp báo cáo theo NDA khi được yêu cầu.</value></data>
+  <data name="soc2_ask_title" xml:space="preserve"><value>Dành cho khâu rà soát nhà cung cấp</value></data>
+  <data name="soc2_ask_body" xml:space="preserve"><value>Mọi thứ chúng tôi có thể chia sẻ hôm nay đều công khai:</value></data>
+  <data name="soc2_link_security" xml:space="preserve"><value>Báo cáo lỗ hổng</value></data>
+  <data name="soc2_link_status" xml:space="preserve"><value>Trang trạng thái</value></data>
 </root>

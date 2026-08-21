@@ -46,6 +46,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   [`payment-architecture.md`](payment-architecture.md),
   [`billing-ledger.md`](billing-ledger.md) - team seats (#278), Studio overage (#141),
   e-invoice (#112), PO + net terms (#192),
+  [`enterprise-trust.md`](enterprise-trust.md) - tenant isolation (#190), SIEM streaming (#191),
+  self-serve DPA (#184), SOC 2 readiness (#147/#323),
   [`p2p-architecture.md`](p2p-architecture.md),
   [`login-architecture.md`](login-architecture.md),
   [`analytics-architecture.md`](analytics-architecture.md),
@@ -96,6 +98,8 @@ rules:
 | Folder creation goes through `FolderWriter.CreateAsync`; deleting a folder never deletes content | workspaces-architecture.md (#151) |
 | Every charge goes through `InvoiceService.AddOrUpdateLineAsync` (never a direct `InvoiceLine` insert) | billing-ledger.md (#278/#141) |
 | `IsMetered` is allowed-and-billable, not blocked; never mutate an issued invoice | billing-ledger.md (#141/#112) |
+| Every workspace-scoped route taking an id needs a `TenantIsolationTests` case (explicit `Where`, never a global query filter) | enterprise-trust.md (#190) |
+| A cross-tenant miss returns the same response as a nonexistent id; never edit published DPA terms or a `/soc2` status in place | enterprise-trust.md (#190/#184/#147) |
 
 ## 6. Workflow (issue → done)
 
