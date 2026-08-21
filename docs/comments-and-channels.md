@@ -9,18 +9,27 @@ into the room where the team already is.
 A share is one-way by default. A client who wants to ask "is section 3 final?" leaves the
 product to do it, and the answer ends up in somebody's inbox with no connection to the file.
 
-### Three gates, all of which only close
+### Five gates, all of which only close
 
 | Gate | Set by | Effect |
 |---|---|---|
 | `Delivery.CommentsEnabled` | sender, at upload | opens the thread; **off by default** |
 | `Workspace.CommentPolicy` | workspace admin | can close a thread the sender opened |
 | `Delivery.PrivacyMode` (`#187`) | sender | closes it outright |
+| delivery lifecycle | — | expired, revoked, suspended or awaiting approval closes it |
+| scope rules (`#142`/`#166`) | sender | a caller refused the file is refused the thread |
 
-None of them can open a conversation the sender did not. Privacy mode is decisive: a share that
-deliberately keeps no download record should not accumulate a public thread instead, so
-`CommentsEnabled` is forced false at commit when privacy mode is on rather than being resolved
-later — the column reflects reality.
+None of them can open a conversation the sender did not.
+
+**The last two were missing when this shipped.** Comments are a recipient-facing content path,
+and the project's own rule is that every such path routes through `DeliveryAccessService` — this
+one did not. A caller blocked by an IP allowlist or a country rule could read and post to the
+discussion about a file they could not open, and an expired or revoked share kept serving its
+thread. `CommentGate` now applies both before anything else. See the audit note below.
+
+Privacy mode is decisive: a share that deliberately keeps no download record should not
+accumulate a public thread instead, so `CommentsEnabled` is forced false at commit when privacy
+mode is on rather than being resolved later — the column reflects reality.
 
 `CommentPolicy.MembersOnly` restricts **posting**, not reading. Recipients can still follow the
 thread; that is the distinction the policy is actually asked for.
@@ -69,6 +78,14 @@ the credential lives.
 
 HTTPS only.
 
+### What gets posted
+
+New deliveries (`NotifyOnDelivery`) and comments (`NotifyOnComment`).
+
+A share held for approval (`#162`) is **not** announced at commit — it is announced when the
+reviewer clears it, for exactly the reason its recipient emails are held: a channel post is how
+somebody outside first learns the link exists.
+
 ### Posting never breaks a share
 
 Every post is best-effort inside a `try/catch` with a 5-second timeout. A chat outage must not
@@ -82,6 +99,27 @@ of milliseconds.
 A hook that fails ten times running is **parked** — a revoked webhook returns the same error
 forever, and retrying it on every upload is latency spent to learn nothing. Saving the hook
 clears the counter.
+
+## Audit findings (2026-08-22)
+
+An audit of the tier-6 batches found three defects in this subsystem's own code, all of the same
+species: **something written, documented, and never actually reached.**
+
+1. **Comments bypassed every delivery gate.** No scope rules, no lifecycle check — described
+   above. This is the serious one: it violated an invariant already written into `AGENTS.md` by
+   an earlier batch, which is worse than not having thought about it.
+2. **`ChannelNotifier.NotifyDeliveryAsync` was never called.** The method existed, the
+   `NotifyOnDelivery` flag was settable and documented, and posting a *new delivery* — the
+   headline of `#180` — did nothing. Only comments posted. Now wired into commit and into
+   approval release.
+3. **`BillingAccountResolver` was dead code**, DI-registered and documented as "the one place
+   that resolves whose bill a member's charges land on", while `QuotaService` did its own
+   resolution. Deleted.
+
+The common cause is that unit tests prove a function computes the right answer and say nothing
+about whether anything calls it. `AuditRegressionTests` is the counterweight: every case there
+asserts the *reaching* rather than the shape, using an observable side effect (an unreachable
+webhook leaving a failure counter behind) rather than a mock.
 
 ## Two defects this batch found in `#119`
 
@@ -108,7 +146,7 @@ feature untestable without anything looking wrong.**
 
 ## Extending this
 
-- **New comment surface?** Go through `CommentGate.EvaluateAsync`. The three gates are not
+- **New comment surface?** Go through `CommentGate.EvaluateAsync`. The five gates are not
   reproducible by hand, and a path that checks only `CommentsEnabled` ignores workspace policy.
 - **New channel event?** Add a method to `ChannelNotifier` and a flag on the hook. Keep it
   best-effort and keep the timeout.
@@ -118,6 +156,11 @@ feature untestable without anything looking wrong.**
 
 ## Not shipped
 
+- **The comment UI.** This subsystem is API-only: there is no comment thread on the delivery
+  page and no channel-configuration screen. The endpoints are complete and tested; the surface a
+  user would touch is not. The same is true of `#162`'s approval queue and `#176`'s schedule
+  list — flagged here because closing those issues without saying so was a mistake the audit
+  corrected.
 - **Comment attachments.** `#289` mentions them; they need an upload path with its own quota,
   scanning and retention story, which is a second file feature hiding inside a comment box.
 - **@-mentions with notification routing.** The sender is notified of every comment on their

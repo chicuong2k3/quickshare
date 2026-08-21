@@ -2,6 +2,7 @@ using LightResults;
 using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
 using QuickShare.Features.Users.Shared;
+using QuickShare.Features.Workspaces.Channels;
 using QuickShare.Features.Workspaces.Folders;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Constants;
@@ -26,7 +27,8 @@ public sealed class CommitR2Handler(
     AnalyticsService analytics,
     ILogger<CommitR2Handler> logger,
     AppDbContext db,
-    CacheService cache)
+    CacheService cache,
+    ChannelNotifier channels)
     : IRequestHandler<CommitR2Command, Result<CommitR2Response>>
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
@@ -337,6 +339,19 @@ public sealed class CommitR2Handler(
         if (!requiresApproval && recipients.Count > 0 && emailSender.IsConfigured)
         {
             await SendRecipientEmailsAsync(delivery, shareCode, recipients, cancellationToken);
+        }
+
+        // Announce it in the workspace's chat channel (issue #180). Held shares are announced
+        // on approval instead, for the same reason their recipient mails are: a channel post is
+        // how somebody outside first learns the link exists.
+        if (!requiresApproval)
+        {
+            await channels.NotifyDeliveryAsync(
+                delivery.WorkspaceId,
+                delivery.FileName,
+                $"{_emailOptions.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{shareCode}",
+                delivery.ExpiresAt,
+                cancellationToken);
         }
 
         // Recent-recipients + address book (issue #316): remember who this user

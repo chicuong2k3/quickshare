@@ -27,17 +27,30 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
 
     public RecipientContactTests(TestWebAppFactory factory) => _factory = factory;
 
+    /// <summary>
+    /// A fresh account per case. These tests assert absolute contact counts, and the in-memory
+    /// database is shared across the whole run — on the default user they were order-dependent
+    /// and permanently red, which is worse than no test: a run that is always red is a run
+    /// nobody reads.
+    /// </summary>
+    private async Task<(HttpClient Client, Guid UserId)> IsolatedClientAsync()
+    {
+        var providerKey = Guid.NewGuid().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        return (_factory.CreateAuthenticatedClient(providerKey), user.Id);
+    }
+
     [Fact]
     public async Task Commit_WithRecipients_CapturesContacts()
     {
-        var client = _factory.CreateAuthenticatedClient();
+        var (client, userId) = await IsolatedClientAsync();
         await UploadFileAsync(client, recipients: ["alice@example.com", "bob@example.com"]);
 
         await using (var scope = _factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var contacts = await db.RecipientContacts
-                .Where(c => c.UserId == _factory.TestUserId)
+                .Where(c => c.UserId == userId)
                 .OrderBy(c => c.Email)
                 .ToListAsync();
             Assert.Equal(2, contacts.Count);
@@ -51,7 +64,7 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Commit_RepeatedRecipient_BumpsUseCount()
     {
-        var client = _factory.CreateAuthenticatedClient();
+        var (client, userId) = await IsolatedClientAsync();
         await UploadFileAsync(client, recipients: ["alice@example.com"]);
         await UploadFileAsync(client, recipients: ["alice@example.com"]);
 
@@ -59,7 +72,7 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var contact = await db.RecipientContacts
-                .SingleAsync(c => c.UserId == _factory.TestUserId && c.Email == "alice@example.com");
+                .SingleAsync(c => c.UserId == userId && c.Email == "alice@example.com");
             Assert.Equal(2, contact.UseCount);
         }
     }
@@ -67,13 +80,13 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Commit_PrivacyMode_DoesNotCapture()
     {
-        var client = _factory.CreateAuthenticatedClient();
+        var (client, userId) = await IsolatedClientAsync();
         await UploadFileAsync(client, recipients: ["alice@example.com"], privacyMode: true);
 
         await using (var scope = _factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var count = await db.RecipientContacts.CountAsync(c => c.UserId == _factory.TestUserId);
+            var count = await db.RecipientContacts.CountAsync(c => c.UserId == userId);
             Assert.Equal(0, count);
         }
     }
@@ -103,15 +116,17 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task List_ReturnsRecentFirst()
     {
+        var (client, listUserId) = await IsolatedClientAsync();
+
         await using (var scope = _factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.RecipientContacts.RemoveRange(db.RecipientContacts.Where(c => c.UserId == _factory.TestUserId));
+            db.RecipientContacts.RemoveRange(db.RecipientContacts.Where(c => c.UserId == listUserId));
             db.RecipientContacts.AddRange(
                 new RecipientContact
                 {
                     Id = Guid.CreateVersion7(),
-                    UserId = _factory.TestUserId,
+                    UserId = listUserId,
                     Email = "old@example.com",
                     LastUsedAt = DateTime.UtcNow.AddDays(-2),
                     UseCount = 1,
@@ -119,7 +134,7 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
                 new RecipientContact
                 {
                     Id = Guid.CreateVersion7(),
-                    UserId = _factory.TestUserId,
+                    UserId = listUserId,
                     Email = "new@example.com",
                     LastUsedAt = DateTime.UtcNow,
                     UseCount = 3,
@@ -127,7 +142,6 @@ public sealed class RecipientContactTests : IClassFixture<TestWebAppFactory>
             await db.SaveChangesAsync();
         }
 
-        var client = _factory.CreateAuthenticatedClient();
         var contacts = await client.GetFromJsonAsync<List<RecipientDto>>("/api/me/recipients");
         Assert.NotNull(contacts);
         Assert.Equal(2, contacts.Count);

@@ -242,23 +242,3 @@ public sealed record SeatSummary(
     int FreeSeats,
     decimal SeatUnitAmount,
     decimal MonthlySeatAmount);
-
-/// <summary>
-/// Resolves whose bill a workspace member's charges land on (issues #278, #141). The owner
-/// pays — the same rule <see cref="WorkspaceService"/> already applies to the plan and
-/// <c>QuotaService</c> to the quota pool, kept in one place so billing cannot drift from the
-/// tier gates it is supposed to be charging for.
-/// </summary>
-public sealed class BillingAccountResolver(AppDbContext db)
-{
-    public async Task<Guid> ResolvePayerAsync(Guid userId, CancellationToken ct)
-    {
-        var ownerId = await db.WorkspaceMembers
-            .AsNoTracking()
-            .Where(m => m.UserId == userId && m.RevokedAt == null && m.JoinedAt != null)
-            .Select(m => (Guid?)m.Workspace.OwnerId)
-            .FirstOrDefaultAsync(ct);
-
-        return ownerId ?? userId;
-    }
-}

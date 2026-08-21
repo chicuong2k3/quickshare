@@ -238,9 +238,9 @@ See `docs/delivery-gating.md` for the full subsystem. Three rules bind all futur
 
 See `docs/comments-and-channels.md` for the full subsystem. Three rules bind all future work:
 
-- **Comments are gated by three independent switches, all of which only close**: the sender's `Delivery.CommentsEnabled`, the `Workspace.CommentPolicy` ceiling, and privacy mode (#187). Any new comment surface MUST resolve them through `CommentGate.EvaluateAsync` — a path that checks only the delivery flag ignores workspace policy, and none of the three may ever open a conversation the sender did not.
+- **Comments are gated by five independent switches, all of which only close**: the sender's `Delivery.CommentsEnabled`, the `Workspace.CommentPolicy` ceiling, privacy mode (#187), the delivery's lifecycle (expired/revoked/suspended/awaiting approval), and its scope rules via `DeliveryAccessService` (#142/#166). Any new comment surface MUST resolve them through `CommentGate.EvaluateAsync`. Comments are a recipient-facing content path: a caller refused the file must be refused the conversation about it — this was missed on first delivery and is now the reason the rule is written this way.
 - **A chat webhook URL is a credential.** Never return it from an endpoint, never put it in an audit payload (record the host), and post over HTTPS only. Channel posts are best-effort with a short timeout and MUST NOT be able to fail a share or a comment — a chat outage is not an upload error.
-- **Test stubs MUST produce the same shapes as production.** The storage stub returned a made-up object key, which made an entire residency feature untestable while everything looked green. If a stub invents a value, it is hiding whatever reads that value.
+- **Test stubs MUST produce the same shapes as production, and every feature needs at least one test that proves it is *reached*.** The storage stub returned a made-up object key, which made an entire residency feature untestable while everything looked green; separately, three services were written, documented and never called by anything. A unit test proves a function computes the right answer and says nothing about whether anything calls it. Assert the wiring through an observable side effect — see `AuditRegressionTests`.
 
 @RTK.md
 

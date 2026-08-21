@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using QuickShare.Extensions;
+using QuickShare.Features.Downloads.Shared;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Features.Workspaces.Channels;
 using QuickShare.Infrastructure.Email;
@@ -29,17 +30,41 @@ public sealed class PostCommentRequest
 /// <summary>
 /// Resolves whether a delivery accepts comments, and from whom (issue #289).
 ///
-/// Three gates, each able only to close: the sender's per-delivery switch, the workspace policy,
-/// and privacy mode. Privacy mode (#187) disables comments outright — a share that deliberately
-/// keeps no download record should not accumulate a public thread instead.
+/// Five gates, every one of which can only close. Three are about intent — the sender's
+/// per-delivery switch, the workspace policy ceiling, and privacy mode (#187), which disables
+/// comments outright because a share that deliberately keeps no download record should not
+/// accumulate a public thread instead. Two are about reachability: the delivery's own lifecycle,
+/// and its scope rules.
 /// </summary>
-public sealed class CommentGate(AppDbContext db)
+public sealed class CommentGate(AppDbContext db, DeliveryAccessService access)
 {
     public sealed record Verdict(bool CanRead, bool CanPost, string Policy);
 
+    /// <summary>
+    /// A delivery's thread is only reachable by callers the delivery itself is reachable by.
+    ///
+    /// Comments are a recipient-facing content path, so the scope rules that govern the page,
+    /// the byte stream and every preview (#142 CIDR allowlist, #166 country rules) govern the
+    /// discussion too — a caller refused the file must not be able to read the conversation
+    /// about it. The delivery's own lifecycle applies for the same reason: an expired, revoked
+    /// or still-unapproved share exposes nothing, including its thread.
+    /// </summary>
     public async Task<Verdict> EvaluateAsync(Delivery delivery, bool isSignedInMember, CancellationToken ct)
     {
         if (!delivery.CommentsEnabled || delivery.PrivacyMode)
+            return new Verdict(false, false, CommentPolicy.Disabled);
+
+        if (delivery.Status is DeliveryStatus.PendingApproval
+            or DeliveryStatus.Suspended
+            or DeliveryStatus.Revoked)
+        {
+            return new Verdict(false, false, CommentPolicy.Disabled);
+        }
+
+        if (delivery.ExpiresAt is { } expiresAt && expiresAt < DateTime.UtcNow)
+            return new Verdict(false, false, CommentPolicy.Disabled);
+
+        if (await access.CheckAsync(delivery, ct) != DeliveryAccessDecision.Allowed)
             return new Verdict(false, false, CommentPolicy.Disabled);
 
         var policy = delivery.WorkspaceId is { } workspaceId

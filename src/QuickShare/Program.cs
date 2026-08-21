@@ -246,7 +246,6 @@ builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceServic
 
 // ── Billing ledger (issues #278 seats, #141 overage, #112 e-invoice, #192 PO/net terms) ──
 builder.Services.AddScoped<QuickShare.Features.Payments.Billing.InvoiceService>();
-builder.Services.AddScoped<QuickShare.Features.Payments.Billing.BillingAccountResolver>();
 
 // Tenant-isolation observation (issue #190) and SIEM shipping transport (issue #191).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.TenantGuard>();

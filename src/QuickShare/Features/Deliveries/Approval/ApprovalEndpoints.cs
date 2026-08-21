@@ -1,6 +1,7 @@
 using System.Text.Json;
 using QuickShare.Extensions;
 using QuickShare.Features.Workspaces.Audit;
+using QuickShare.Features.Workspaces.Channels;
 using QuickShare.Features.Workspaces.Shared;
 using QuickShare.Infrastructure.Email;
 
@@ -152,8 +153,16 @@ public sealed class ApproveDeliveryEndpoint : EndpointWithoutRequest
         await workspaces.AuditAsync(seat.WorkspaceId, seat.UserId!.Value, SecurityEventType.DeliveryApproved,
             HttpContext, ct, JsonSerializer.Serialize(new { delivery.ShareCode, delivery.FileName }));
 
-        // Only now does anybody outside hear about it.
+        // Only now does anybody outside hear about it — by mail, and in the channel.
         await Resolve<ApprovalNotifier>().SendReleaseAsync(delivery, recipients, ct);
+
+        var emailOptions = Resolve<Microsoft.Extensions.Options.IOptions<EmailOptions>>();
+        await Resolve<ChannelNotifier>().NotifyDeliveryAsync(
+            delivery.WorkspaceId,
+            delivery.FileName,
+            $"{emailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{delivery.ShareCode}",
+            delivery.ExpiresAt,
+            ct);
 
         await Send.NoContentAsync(ct);
     }

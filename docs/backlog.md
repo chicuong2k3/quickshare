@@ -618,6 +618,36 @@ configures two regions, so residency is exercised end to end.
 routing (needs a participant directory recipients are not in), download events posted to the
 channel, and comments in the GDPR export.
 
+
+Audit of tier-6 batches 1–11, 2026-08-22. No new features; findings and fixes. Tests:
+`AuditRegressionTests` (22), suite fully green at 747 for the first time since the tier began.
+
+**Fixed — security.** Delivery comments (`#289`) bypassed every gate the delivery itself
+enforces: no `DeliveryAccessService` (so an IP- or country-blocked caller could read and post to
+the discussion about a file they could not open) and no lifecycle check (expired, revoked and
+awaiting-approval shares kept serving their threads). This violated an invariant already written
+into `AGENTS.md` by the compliance batch. `CommentGate` now applies both first.
+
+**Fixed — never wired.** `ChannelNotifier.NotifyDeliveryAsync` was never called by anything, so
+`#180`'s headline behaviour — announcing a *new delivery* in Slack/Teams — did nothing while the
+flag was settable and documented. Now called from commit, and from approval release for held
+shares. `BillingAccountResolver` was dead code, DI-registered and documented as authoritative;
+deleted. Three `RoutePaths` constants pointed at pages that were never built; removed.
+
+**Fixed — test hygiene.** The two `RecipientContactTests` failures reported as "pre-existing" for
+nine batches were order-dependent assertions on the shared default user; scoped to per-test
+accounts. A permanently red run is worse than no test, because it trains everyone to skim past
+red — which is how the `#119` defects survived.
+
+**Found, not fixed — UI gap.** `#162` (approval queue), `#176` (schedule list), `#180` (channel
+config) and `#289` (comment thread) shipped API-only. The endpoints are complete and tested; the
+screens a user would touch do not exist. Those four issues were reopened rather than left closed.
+
+**Root cause across all of it**: unit tests prove a function computes the right answer and say
+nothing about whether anything calls it. `AuditRegressionTests` asserts reachability through
+observable side effects, and page render coverage now exists for the eleven pages the suite had
+never loaded.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

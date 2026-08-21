@@ -116,8 +116,8 @@ rules:
 | Brand CSS inputs are validated at the write boundary; uploaded assets are sniffed by magic bytes and SVG is refused | workspace-branding.md (#285/#286) |
 | Any path publishing a delivery checks `PendingApproval`; it must be indistinguishable from not-found to recipients | delivery-gating.md (#162) |
 | Any code copying a delivery carries `StorageRegion` and drops legal hold, approval state and `DeletedAt` | delivery-gating.md (#162/#176/#119) |
-| Comment surfaces resolve all three gates via `CommentGate`; a chat webhook URL is never returned or audited | comments-and-channels.md (#289/#180) |
-| Test stubs produce production shapes — a stub that invents a value hides whatever reads it | comments-and-channels.md |
+| Comment surfaces resolve all five gates via `CommentGate` (incl. lifecycle + `DeliveryAccessService`); a chat webhook URL is never returned or audited | comments-and-channels.md (#289/#180) |
+| Test stubs produce production shapes, and every feature has a test proving it is *reached*, not just correct | comments-and-channels.md |
 
 ## 6. Workflow (issue → done)
 
