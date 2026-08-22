@@ -42,6 +42,16 @@ public record DeliveryFile
 
     public string? Sha256 { get; init; }
 
+    /// <summary>
+    /// Times this specific file was fetched (issue #154). Separate from the delivery's own
+    /// counter, which counts fetches of the *share* — a recipient who takes two files out of a
+    /// bundle of five has downloaded the delivery once and two of its files once each, and a
+    /// sender who cannot tell those apart cannot tell which file nobody wanted.
+    ///
+    /// Not counted in privacy mode, like every other number here.
+    /// </summary>
+    public int DownloadCount { get; set; }
+
     /// <summary>Sender's order. File 0 is the one <see cref="Delivery"/> mirrors.</summary>
     public int SortOrder { get; init; }
 

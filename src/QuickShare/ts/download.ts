@@ -314,11 +314,20 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
 
     function toggleZK() { state.zkOpen = !state.zkOpen; render(); }
 
+    /** The addressed recipient's token, when they arrived by their own emailed link (#37). */
+    function recipientToken(): string {
+        return new URLSearchParams(window.location.search).get('t') || '';
+    }
+
     function downloadUrl(): string {
         let url = apiBase() + '/api/downloads/' + shareCode();
         const params: string[] = [];
         if (state.verifiedPassword) params.push('password=' + encodeURIComponent(state.verifiedPassword));
         if (state.verifiedOtp) params.push('otp=' + encodeURIComponent(state.verifiedOtp));
+        // Carried through so a download is attributed to the person it was sent to, rather than
+        // counting against nobody the moment the page hands off to the API.
+        const token = recipientToken();
+        if (token) params.push('t=' + encodeURIComponent(token));
         if (params.length) url += '?' + params.join('&');
         return url;
     }

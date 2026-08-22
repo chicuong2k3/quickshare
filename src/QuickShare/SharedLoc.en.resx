@@ -2526,4 +2526,25 @@
   <data name="deliveries_bulk_move_loose" xml:space="preserve">
     <value>No folder</value>
   </data>
+  <data name="deliveries_activity_title" xml:space="preserve">
+    <value>Recipients &amp; files</value>
+  </data>
+  <data name="deliveries_activity_empty" xml:space="preserve">
+    <value>Nothing recorded yet.</value>
+  </data>
+  <data name="deliveries_activity_private" xml:space="preserve">
+    <value>Privacy mode: nothing about this share is recorded.</value>
+  </data>
+  <data name="deliveries_activity_sent" xml:space="preserve">
+    <value>sent</value>
+  </data>
+  <data name="deliveries_activity_opened" xml:space="preserve">
+    <value>opened</value>
+  </data>
+  <data name="deliveries_activity_downloaded" xml:space="preserve">
+    <value>downloaded</value>
+  </data>
+  <data name="deliveries_activity_file_downloads" xml:space="preserve">
+    <value>{0} download(s)</value>
+  </data>
 </root>

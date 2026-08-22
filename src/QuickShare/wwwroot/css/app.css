@@ -3159,3 +3159,14 @@ html, body {
     width: 100%;
     margin-bottom: var(--db-space-2);
 }
+
+/* Per-delivery activity (issues #37, #154): a quiet panel under the row, closed by default. */
+.account-delivery__activity {
+    margin-top: var(--db-space-2);
+    font-size: 0.8125rem;
+}
+
+.account-delivery__activity-body ul {
+    margin: var(--db-space-2) 0 0;
+    padding-left: var(--db-space-4);
+}

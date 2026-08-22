@@ -405,6 +405,43 @@ else
             else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
         }).catch(function () { btn.disabled = false; });
     };
+    // Activity panel (issues #37, #154). Fetched once per row, on first open.
+    window.loadActivity = function (details) {
+        if (!details.open || details.dataset.loaded) return;
+        details.dataset.loaded = '1';
+
+        var body = details.querySelector('.account-delivery__activity-body');
+        fetch('/api/deliveries/' + details.getAttribute('data-id') + '/activity')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data) { body.textContent = body.getAttribute('data-empty'); return; }
+                if (data.privacyMode) { body.textContent = body.getAttribute('data-private'); return; }
+
+                var lines = [];
+                data.recipients.forEach(function (r) {
+                    var state = r.downloadedAt
+                        ? body.getAttribute('data-downloaded')
+                        : (r.openedAt ? body.getAttribute('data-opened') : body.getAttribute('data-sent'));
+                    lines.push(r.email + ' \u00b7 ' + state);
+                });
+                data.files.forEach(function (f) {
+                    lines.push(f.fileName + ' \u00b7 ' + body.getAttribute('data-downloads').replace('{0}', f.downloadCount));
+                });
+
+                if (lines.length === 0) { body.textContent = body.getAttribute('data-empty'); return; }
+
+                var list = document.createElement('ul');
+                lines.forEach(function (line) {
+                    var li = document.createElement('li');
+                    // textContent, never innerHTML: an address is somebody else's text.
+                    li.textContent = line;
+                    list.appendChild(li);
+                });
+                body.textContent = '';
+                body.appendChild(list);
+            })
+            .catch(function () { body.textContent = body.getAttribute('data-empty'); });
+    };
     window.bulkSelectedIds = function () {
         return Array.prototype.slice.call(document.querySelectorAll('.account-delivery__select:checked'))
             .map(function (el) { return el.value; });
@@ -604,6 +641,21 @@ else
                               data-ai-action="delivery.holdBadge">@Loc["deliveries_hold_badge"]</span>
                     }
                 </div>
+
+                @* Who took it, and which parts (issues #37, #154). Loaded when opened, not with
+                   the page: most rows are never expanded, and a list that costs two queries per
+                   delivery would be paid for on every page of twenty. *@
+                <details class="account-delivery__activity" data-id="@item.Id"
+                         ontoggle="loadActivity(this)">
+                    <summary class="db-text-muted">@Loc["deliveries_activity_title"]</summary>
+                    <div class="account-delivery__activity-body"
+                         data-empty="@Loc["deliveries_activity_empty"]"
+                         data-private="@Loc["deliveries_activity_private"]"
+                         data-opened="@Loc["deliveries_activity_opened"]"
+                         data-downloaded="@Loc["deliveries_activity_downloaded"]"
+                         data-sent="@Loc["deliveries_activity_sent"]"
+                         data-downloads="@Loc["deliveries_activity_file_downloads"]"></div>
+                </details>
                 <div class="account-delivery__gauge" role="img"
                      aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
                     <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>

@@ -391,9 +391,17 @@ public sealed class CommitR2Handler(
             await SendLinkEmailAsync(delivery, shareCode, cancellationToken);
         }
 
-        if (!requiresApproval && recipients.Count > 0 && emailSender.IsConfigured)
+        if (!requiresApproval && recipients.Count > 0)
         {
-            await SendRecipientEmailsAsync(delivery, shareCode, recipients, cancellationToken);
+            // The rows first, and independently of whether mail can go out at all (issue #37):
+            // the recipient list is a record of who this was addressed to, and a deployment
+            // with no mailer configured should still be able to tell its sender that.
+            var tokens = delivery.PrivacyMode
+                ? []
+                : await CreateRecipientsAsync(delivery.Id, recipients, cancellationToken);
+
+            if (emailSender.IsConfigured)
+                await SendRecipientEmailsAsync(delivery, shareCode, recipients, tokens, cancellationToken);
         }
 
         // Announce it in the workspace's chat channel (issue #180). Held shares are announced
@@ -613,20 +621,35 @@ public sealed class CommitR2Handler(
         }
     }
 
-    private async Task SendRecipientEmailsAsync(Delivery delivery, string shareCode, List<string> recipients, CancellationToken cancellationToken)
+    /// <summary>
+    /// One mail per recipient, each carrying that recipient's own tracking token (issue #37).
+    ///
+    /// Privacy mode gets no tokens at all: a share that deliberately keeps no download record
+    /// must not keep a per-person one instead. Those recipients still receive their link — the
+    /// difference is that nothing is written down about what they do with it.
+    /// </summary>
+    private async Task SendRecipientEmailsAsync(
+        Delivery delivery, string shareCode, List<string> recipients,
+        Dictionary<string, string> tokens, CancellationToken cancellationToken)
     {
         var shareUrl = await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken);
 
-        var body = $"""
-            <div style="font-family:system-ui,sans-serif;font-size:15px;color:#1f2937">
-              <p>Chào bạn,</p>
-              <p>Có một file được gửi cho bạn qua QuickShare:</p>
-              <p><a href="{shareUrl}" style="color:#2563eb">{shareUrl}</a></p>
-            </div>
-            """;
-
         foreach (var email in recipients)
         {
+            // Each address gets its own URL, so the mail one person forwards stays attributable
+            // to the person it was sent to rather than to nobody.
+            var link = tokens.TryGetValue(email, out var token)
+                ? $"{shareUrl}?{DeliveryRecipient.TokenQueryKey}={token}"
+                : shareUrl;
+
+            var body = $"""
+                <div style="font-family:system-ui,sans-serif;font-size:15px;color:#1f2937">
+                  <p>Chào bạn,</p>
+                  <p>Có một file được gửi cho bạn qua QuickShare:</p>
+                  <p><a href="{link}" style="color:#2563eb">{link}</a></p>
+                </div>
+                """;
+
             try
             {
                 await emailSender.SendAsync(email, "QuickShare", LinkEmailSubject, body, cancellationToken);
@@ -636,5 +659,41 @@ public sealed class CommitR2Handler(
                 logger.LogWarning(ex, "Failed to send recipient link email to {Email} for delivery {DeliveryId}", email, delivery.Id);
             }
         }
+    }
+
+    /// <summary>
+    /// One row per addressed recipient, each with its own token (issue #37).
+    ///
+    /// Written before the mails go out, so a send that fails halfway still leaves the sender a
+    /// complete list of who was supposed to receive it — which is exactly the moment that list
+    /// is most useful.
+    /// </summary>
+    private async Task<Dictionary<string, string>> CreateRecipientsAsync(
+        Guid deliveryId, List<string> recipients, CancellationToken cancellationToken)
+    {
+        var tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var email in recipients)
+        {
+            if (tokens.ContainsKey(email))
+                continue;
+
+            var token = Convert.ToHexString(
+                RandomNumberGenerator.GetBytes(DeliveryRecipient.TokenLength / 2)).ToLowerInvariant();
+
+            tokens[email] = token;
+            db.DeliveryRecipients.Add(new DeliveryRecipient
+            {
+                Id = Guid.CreateVersion7(),
+                DeliveryId = deliveryId,
+                Email = email,
+                Token = token,
+                SentAt = DateTime.UtcNow,
+            });
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return tokens;
     }
 }

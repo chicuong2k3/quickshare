@@ -214,6 +214,9 @@ public sealed class DownloadDeliveryHandler(
             // are disposed once the response completes, racing the background task.
             var scopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
             var analyticsContext = AnalyticsService.CaptureContext(httpContext);
+            // Read here, not inside the background task: the query collection belongs to a
+            // request that is about to be disposed.
+            var recipientToken = httpContext.Request.Query[DeliveryRecipient.TokenQueryKey].FirstOrDefault();
 
             _ = Task.Run(async () =>
             {
@@ -242,6 +245,12 @@ public sealed class DownloadDeliveryHandler(
                                 fileName = entity.FileName,
                                 downloadCount = entity.DownloadCount,
                             }, CancellationToken.None);
+
+                            // Per-recipient attribution (issue #37), in the same privacy-mode
+                            // branch as everything else that writes a record down.
+                            var tracker = scope.ServiceProvider
+                                .GetRequiredService<QuickShare.Features.Deliveries.Recipients.RecipientTracker>();
+                            await tracker.MarkDownloadedAsync(entity.Id, recipientToken, CancellationToken.None);
 
                             updateDb.DownloadTrackings.Add(new DownloadTracking
                             {

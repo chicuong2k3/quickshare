@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **10/10 done** (08-17) |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 51 done (08-22): `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
+| Tier 4 | WeTransfer parity baseline | 54 done (08-22): `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
 | Tier 6 | B2B / enterprise / far-future | 40 done (08-22): `#194` Outlook add-in, `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
@@ -1278,6 +1278,47 @@ Tests: `FolderMoveTests` (8). Suite green at 1001.
 
 **Not shipped**: drag-and-drop onto a folder (`#275` wants manual ordering too — both need a
 sort column and a drag layer, which is its own batch), and moving between workspaces.
+
+## Tier 4 — batch 29: who took it, and which parts (#37, #154)
+
+Both issues shipped half of themselves batches ago and nobody noticed the other half was
+missing.
+
+`#37` delivered N recipients, per-plan caps and one mail each. Its acceptance also says *per-
+recipient status* — who opened, who downloaded — and a sender who mails five people and reads
+“3 downloads” still does not know which two to chase. `#154` asked for a page listing several
+separate files with per-item downloads; `#79`/`#43` gave the page and the per-file links, and
+left the counting.
+
+**Attribution is a token per recipient, in their own mail.** It is a tracking identifier and it
+behaves like one — a forwarded link attributes the person it was sent to, because the token
+travels with the URL. It marks nothing and gates nothing: it cannot open a share that is closed,
+and stripping it costs a recipient only their row.
+
+**Rows are written whether or not mail can go out.** The list is a record of who this was
+addressed to; a deployment with no mailer configured should still be able to tell its sender
+that. The first run of the tests found the opposite — no mailer, no rows.
+
+**Privacy mode records nothing at all.** Not the row, not the token, not the open. A share that
+deliberately keeps no download record must not keep a per-person one instead — and the sender is
+*told* that is why the panel is empty, rather than shown a blank.
+
+**A token is scoped by delivery as well as by token.** One share's token must never resolve
+against another's row, which is the same rule the per-file download already follows for file ids.
+
+**Per-file counts are their own number.** Taking two files out of a bundle of five is one
+download of the share and one of each file; a sender who cannot tell those apart cannot tell
+which file nobody wanted. Only shown for bundles — for a single-file delivery it is the same
+number said twice.
+
+The sender sees both in a per-row panel that loads when opened: most rows are never expanded,
+and a list that costs two queries per delivery would be paid for on every page of twenty.
+
+Tests: `RecipientActivityTests` (8). Suite green at 1009.
+
+**Not shipped**: per-recipient revocation (one recipient losing access while the others keep it
+needs per-recipient links, not per-recipient markers), re-send to one recipient, and read
+receipts on the recipient page — nobody asked to be told they were watched.
 
 ## 9. Local artifact map (feature area → design doc)
 

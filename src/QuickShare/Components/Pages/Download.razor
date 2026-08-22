@@ -12,11 +12,13 @@
 @using QuickShare.Features.Workspaces.Branding
 @using QuickShare.Features.Workspaces.Domains
 @using QuickShare.Features.Downloads.Shared
+@using QuickShare.Features.Deliveries.Recipients
 @using QuickShare.Features.Uploads.Shared
 @using QuickShare.Features.Deliveries.Comments
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject BrandReader Brands
 @inject WorkspaceDomainReader Domains
+@inject RecipientTracker Recipients
 @inject StorageRegionResolver Regions
 @inject CommentGate Gate
 
@@ -805,6 +807,12 @@
     /// </summary>
     private string? Watermark { get; set; }
 
+    /// <summary>
+    /// The addressed recipient's token from their own mail (issue #37), or null for anybody who
+    /// arrived by a forwarded or copied link.
+    /// </summary>
+    private string? RecipientToken { get; set; }
+
     /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
     private string? RegionLabel { get; set; }
 
@@ -934,6 +942,12 @@
             RenderState = DownloadRenderState.NotFound;
             return;
         }
+
+        // Per-recipient tracking (issue #37). Before anything can fail: a page that renders is
+        // an open, whatever the delivery's own state turns out to be.
+        RecipientToken = httpContext.Request.Query[DeliveryRecipient.TokenQueryKey].FirstOrDefault();
+        if (stored is not null && RecipientToken is not null)
+            await Recipients.MarkOpenedAsync(stored.Id, RecipientToken, CancellationToken.None);
 
         Brand = await Brands.ForWorkspaceAsync(stored?.WorkspaceId, CancellationToken.None);
 

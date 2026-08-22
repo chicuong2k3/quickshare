@@ -49,6 +49,7 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceDomain> WorkspaceDomains => Set<WorkspaceDomain>();
     public DbSet<WorkspaceS3Credential> WorkspaceS3Credentials => Set<WorkspaceS3Credential>();
     public DbSet<DeliveryOcrText> DeliveryOcrTexts => Set<DeliveryOcrText>();
+    public DbSet<DeliveryRecipient> DeliveryRecipients => Set<DeliveryRecipient>();
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
@@ -718,6 +719,21 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceDeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DeliveryRecipient>(entity =>
+        {
+            entity.ToTable("delivery_recipients");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(DeliveryRecipient.EmailMaxLength);
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(DeliveryRecipient.TokenLength);
+            // The token is what arrives on a request, so it is the lookup and it is unique.
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.DeliveryId);
+            entity.HasOne(e => e.Delivery)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<DeliveryOcrText>(entity =>

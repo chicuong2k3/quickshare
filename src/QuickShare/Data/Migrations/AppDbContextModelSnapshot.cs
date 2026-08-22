@@ -593,6 +593,9 @@ namespace QuickShare.Migrations
                     b.Property<Guid>("DeliveryId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("DownloadCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -644,6 +647,44 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("delivery_ocr_texts", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryRecipient", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DownloadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<DateTime?>("OpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("delivery_recipients", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
@@ -3042,6 +3083,17 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DeliveryOcrText", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryRecipient", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
                         .WithMany()

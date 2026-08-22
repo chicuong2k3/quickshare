@@ -91,6 +91,30 @@ public sealed class DownloadBundleFileEndpoint : EndpointWithoutRequest
             return;
         }
 
+        // Per-file counting (issue #154): a recipient who takes two files out of a bundle of
+        // five has downloaded the delivery once and two of its files once each. A sender who
+        // cannot tell those apart cannot tell which file nobody wanted.
+        //
+        // Privacy mode keeps no record here either, and the whole thing is best-effort: a
+        // counter that fails must not cost somebody their file.
+        if (!delivery.PrivacyMode)
+        {
+            try
+            {
+                await db.DeliveryFiles
+                    .Where(f => f.Id == file.Id)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(f => f.DownloadCount, f => f.DownloadCount + 1), ct);
+
+                await Resolve<QuickShare.Features.Deliveries.Recipients.RecipientTracker>()
+                    .MarkDownloadedAsync(delivery.Id, HttpContext.Request.Query[DeliveryRecipient.TokenQueryKey].FirstOrDefault(), ct);
+            }
+            catch (Exception ex)
+            {
+                Resolve<ILogger<DownloadBundleFileEndpoint>>()
+                    .LogWarning(ex, "Could not record a file download for delivery {DeliveryId}", delivery.Id);
+            }
+        }
+
         var url = await Resolve<IStorageProvider>().GetPresignedDownloadUrlAsync(file.ObjectKey, LinkLifetime, ct);
         await Send.RedirectAsync(url.OriginalString, isPermanent: false, allowRemoteRedirects: true);
     }
