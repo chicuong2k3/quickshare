@@ -2091,4 +2091,130 @@
   <data name="dl_files_download_all" xml:space="preserve">
     <value>Tải tất cả ({0})</value>
   </data>
+  <data name="account_tab_developer" xml:space="preserve">
+    <value>Nhà phát triển</value>
+  </data>
+  <data name="dev_title" xml:space="preserve">
+    <value>Nhà phát triển</value>
+  </data>
+  <data name="dev_subtitle" xml:space="preserve">
+    <value>API key và webhook để tự động hoá việc gửi.</value>
+  </data>
+  <data name="dev_keys_title" xml:space="preserve">
+    <value>API key</value>
+  </data>
+  <data name="dev_keys_hint" xml:space="preserve">
+    <value>Gửi qua `Authorization: Bearer &lt;key&gt;` hoặc `X-Api-Key`. Key hoạt động với quyền của bạn.</value>
+  </data>
+  <data name="dev_keys_empty" xml:space="preserve">
+    <value>Chưa có API key nào.</value>
+  </data>
+  <data name="dev_key_name" xml:space="preserve">
+    <value>Nhãn</value>
+  </data>
+  <data name="dev_key_scopes" xml:space="preserve">
+    <value>Phạm vi</value>
+  </data>
+  <data name="dev_scope_read" xml:space="preserve">
+    <value>Chỉ đọc</value>
+  </data>
+  <data name="dev_scope_write" xml:space="preserve">
+    <value>Đọc và ghi</value>
+  </data>
+  <data name="dev_scope_manage" xml:space="preserve">
+    <value>Toàn quyền</value>
+  </data>
+  <data name="dev_key_create" xml:space="preserve">
+    <value>Tạo key</value>
+  </data>
+  <data name="dev_key_shown_once" xml:space="preserve">
+    <value>Hãy sao chép key ngay. Nó sẽ không bao giờ hiển thị lại.</value>
+  </data>
+  <data name="dev_key_revoke" xml:space="preserve">
+    <value>Thu hồi</value>
+  </data>
+  <data name="dev_key_revoke_confirm" xml:space="preserve">
+    <value>Thu hồi key này? Mọi thứ đang dùng nó sẽ ngừng hoạt động ngay lập tức.</value>
+  </data>
+  <data name="dev_key_last_used" xml:space="preserve">
+    <value>dùng gần nhất {0}</value>
+  </data>
+  <data name="dev_key_never_used" xml:space="preserve">
+    <value>chưa dùng</value>
+  </data>
+  <data name="dev_key_expires" xml:space="preserve">
+    <value>hết hạn {0}</value>
+  </data>
+  <data name="dev_hooks_title" xml:space="preserve">
+    <value>Webhook</value>
+  </data>
+  <data name="dev_hooks_hint" xml:space="preserve">
+    <value>Chúng tôi POST sự kiện tới URL của bạn kèm chữ ký. Kiểm tra X-QuickShare-Signature là HMAC-SHA256 của {timestamp}.{body}.</value>
+  </data>
+  <data name="dev_hooks_empty" xml:space="preserve">
+    <value>Chưa có endpoint webhook nào.</value>
+  </data>
+  <data name="dev_hook_url" xml:space="preserve">
+    <value>URL endpoint</value>
+  </data>
+  <data name="dev_hook_url_hint" xml:space="preserve">
+    <value>Chỉ chấp nhận HTTPS. Payload có chữ ký gửi qua kênh không mã hoá vẫn đọc được bởi bất kỳ ai trên đường truyền.</value>
+  </data>
+  <data name="dev_hook_events" xml:space="preserve">
+    <value>Sự kiện</value>
+  </data>
+  <data name="dev_hook_events_all" xml:space="preserve">
+    <value>Tất cả sự kiện</value>
+  </data>
+  <data name="dev_hook_create" xml:space="preserve">
+    <value>Thêm endpoint</value>
+  </data>
+  <data name="dev_hook_secret_once" xml:space="preserve">
+    <value>Hãy sao chép secret ký ngay. Nó sẽ không bao giờ hiển thị lại.</value>
+  </data>
+  <data name="dev_hook_test" xml:space="preserve">
+    <value>Gửi thử</value>
+  </data>
+  <data name="dev_hook_pause" xml:space="preserve">
+    <value>Tạm dừng</value>
+  </data>
+  <data name="dev_hook_resume" xml:space="preserve">
+    <value>Chạy lại</value>
+  </data>
+  <data name="dev_hook_delete" xml:space="preserve">
+    <value>Xoá</value>
+  </data>
+  <data name="dev_hook_delete_confirm" xml:space="preserve">
+    <value>Xoá endpoint này? Các sự kiện đang chờ sẽ không được gửi.</value>
+  </data>
+  <data name="dev_hook_parked" xml:space="preserve">
+    <value>Đã tạm dừng</value>
+  </data>
+  <data name="dev_hook_disabled" xml:space="preserve">
+    <value>Đang tạm dừng</value>
+  </data>
+  <data name="dev_hook_last" xml:space="preserve">
+    <value>gửi gần nhất {0}</value>
+  </data>
+  <data name="dev_hook_never" xml:space="preserve">
+    <value>chưa gửi lần nào</value>
+  </data>
+  <data name="dev_hook_failures" xml:space="preserve">
+    <value>{0} lần lỗi liên tiếp</value>
+  </data>
+  <data name="dev_log_title" xml:space="preserve">
+    <value>Lượt gửi gần đây</value>
+  </data>
+  <data name="dev_log_hint" xml:space="preserve">
+    <value>Mọi lần thử, kèm phản hồi nhận được. Replay gửi lại đúng payload gốc.</value>
+  </data>
+  <data name="dev_log_empty" xml:space="preserve">
+    <value>Chưa có lượt gửi nào.</value>
+  </data>
+  <data name="dev_log_attempts" xml:space="preserve">
+    <value>{0} lần thử</value>
+  </data>
+  <data name="dev_log_replay" xml:space="preserve">
+    <value>Gửi lại</value>
+  </data>
 </root>

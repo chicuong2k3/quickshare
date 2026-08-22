@@ -2091,4 +2091,130 @@
   <data name="dl_files_download_all" xml:space="preserve">
     <value>Download all ({0})</value>
   </data>
+  <data name="account_tab_developer" xml:space="preserve">
+    <value>Developer</value>
+  </data>
+  <data name="dev_title" xml:space="preserve">
+    <value>Developer</value>
+  </data>
+  <data name="dev_subtitle" xml:space="preserve">
+    <value>API keys and webhooks for automating your sends.</value>
+  </data>
+  <data name="dev_keys_title" xml:space="preserve">
+    <value>API keys</value>
+  </data>
+  <data name="dev_keys_hint" xml:space="preserve">
+    <value>Send as `Authorization: Bearer &lt;key&gt;` or `X-Api-Key`. A key acts as you.</value>
+  </data>
+  <data name="dev_keys_empty" xml:space="preserve">
+    <value>No API keys yet.</value>
+  </data>
+  <data name="dev_key_name" xml:space="preserve">
+    <value>Label</value>
+  </data>
+  <data name="dev_key_scopes" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="dev_scope_read" xml:space="preserve">
+    <value>Read only</value>
+  </data>
+  <data name="dev_scope_write" xml:space="preserve">
+    <value>Read and write</value>
+  </data>
+  <data name="dev_scope_manage" xml:space="preserve">
+    <value>Full access</value>
+  </data>
+  <data name="dev_key_create" xml:space="preserve">
+    <value>Create key</value>
+  </data>
+  <data name="dev_key_shown_once" xml:space="preserve">
+    <value>Copy this key now. It is never shown again.</value>
+  </data>
+  <data name="dev_key_revoke" xml:space="preserve">
+    <value>Revoke</value>
+  </data>
+  <data name="dev_key_revoke_confirm" xml:space="preserve">
+    <value>Revoke this key? Anything using it stops working immediately.</value>
+  </data>
+  <data name="dev_key_last_used" xml:space="preserve">
+    <value>last used {0}</value>
+  </data>
+  <data name="dev_key_never_used" xml:space="preserve">
+    <value>never used</value>
+  </data>
+  <data name="dev_key_expires" xml:space="preserve">
+    <value>expires {0}</value>
+  </data>
+  <data name="dev_hooks_title" xml:space="preserve">
+    <value>Webhooks</value>
+  </data>
+  <data name="dev_hooks_hint" xml:space="preserve">
+    <value>We POST events to your URL and sign them. Verify X-QuickShare-Signature as HMAC-SHA256 over {timestamp}.{body}.</value>
+  </data>
+  <data name="dev_hooks_empty" xml:space="preserve">
+    <value>No webhook endpoints yet.</value>
+  </data>
+  <data name="dev_hook_url" xml:space="preserve">
+    <value>Endpoint URL</value>
+  </data>
+  <data name="dev_hook_url_hint" xml:space="preserve">
+    <value>HTTPS only. A signed payload over plaintext is a payload anyone on the path can read.</value>
+  </data>
+  <data name="dev_hook_events" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="dev_hook_events_all" xml:space="preserve">
+    <value>All events</value>
+  </data>
+  <data name="dev_hook_create" xml:space="preserve">
+    <value>Add endpoint</value>
+  </data>
+  <data name="dev_hook_secret_once" xml:space="preserve">
+    <value>Copy this signing secret now. It is never shown again.</value>
+  </data>
+  <data name="dev_hook_test" xml:space="preserve">
+    <value>Send test</value>
+  </data>
+  <data name="dev_hook_pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="dev_hook_resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="dev_hook_delete" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="dev_hook_delete_confirm" xml:space="preserve">
+    <value>Remove this endpoint? Queued events for it will not be delivered.</value>
+  </data>
+  <data name="dev_hook_parked" xml:space="preserve">
+    <value>Parked</value>
+  </data>
+  <data name="dev_hook_disabled" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="dev_hook_last" xml:space="preserve">
+    <value>last delivered {0}</value>
+  </data>
+  <data name="dev_hook_never" xml:space="preserve">
+    <value>nothing delivered yet</value>
+  </data>
+  <data name="dev_hook_failures" xml:space="preserve">
+    <value>{0} consecutive failures</value>
+  </data>
+  <data name="dev_log_title" xml:space="preserve">
+    <value>Recent deliveries</value>
+  </data>
+  <data name="dev_log_hint" xml:space="preserve">
+    <value>Every attempt, with the response we got back. Replay re-sends the original payload.</value>
+  </data>
+  <data name="dev_log_empty" xml:space="preserve">
+    <value>No deliveries yet.</value>
+  </data>
+  <data name="dev_log_attempts" xml:space="preserve">
+    <value>{0} attempts</value>
+  </data>
+  <data name="dev_log_replay" xml:space="preserve">
+    <value>Replay</value>
+  </data>
 </root>

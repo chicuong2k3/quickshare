@@ -164,6 +164,15 @@ public static class ErrorCodes
     public const string DeliveryFileKeyMismatch = "delivery_file_key_mismatch";
     public const string DeliveryFileNotFound = "delivery_file_not_found";
     public const string FileTooLarge = "file_too_large";
+    // Developer platform: API keys (#115) and webhooks (#39, #172, #223, #288).
+    public const string ApiKeyNotFound = "api_key_not_found";
+    public const string ApiKeyLimitReached = "api_key_limit_reached";
+    public const string ApiKeyInvalid = "api_key_invalid";
+    public const string ApiKeyScopeRequired = "api_key_scope_required";
+    public const string WebhookNotFound = "webhook_not_found";
+    public const string WebhookUrlInvalid = "webhook_url_invalid";
+    public const string WebhookLimitReached = "webhook_limit_reached";
+    public const string WebhookDeliveryNotFound = "webhook_delivery_not_found";
     /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
     public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
     public const string ScimTokenNotFound = "scim_token_not_found";

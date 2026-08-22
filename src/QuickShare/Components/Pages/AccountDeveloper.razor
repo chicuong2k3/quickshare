@@ -1,0 +1,298 @@
+@layout MainLayout
+@page "/account/developer"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Developer.Webhooks
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["dev_title"]</PageTitle>
+
+@* Key prefixes, endpoint URLs and payload excerpts — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["dev_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["dev_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountDeveloper" />
+
+    <section id="developer-body"
+             hx-get="@RoutePaths.AccountDeveloper"
+             hx-trigger="load"
+             hx-target="#developer-body"
+             hx-select="#developer-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/developer.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private List<ApiKey> keys = [];
+    private List<WebhookEndpoint> endpoints = [];
+    private List<WebhookDelivery> deliveries = [];
+
+    private RenderFragment Chunk => @<section id="developer-body">
+
+        @* ── #115 API keys ── *@
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["dev_keys_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["dev_keys_hint"]</p>
+
+                @if (keys.Count == 0)
+                {
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_keys_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var key in keys)
+                        {
+                            <li class="workspace-member" id="api-key-@key.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">@key.Name</span>
+                                    @* The prefix identifies the key without being usable — which is
+                                       exactly what somebody staring at a leaked key needs. *@
+                                    <span class="workspace-member__meta"><code>@key.Prefix…</code> · @key.Scopes</span>
+                                    <span class="workspace-member__meta">
+                                        @(key.LastUsedAt is { } used
+                                            ? Loc["dev_key_last_used", used.ToLocalTime().ToString("g")].Value
+                                            : Loc["dev_key_never_used"].Value)
+                                        @if (key.ExpiresAt is { } expires)
+                                        {
+                                            <text> · @Loc["dev_key_expires", expires.ToLocalTime().ToString("d")]</text>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="workspace-member__actions">
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@key.Id"
+                                            data-confirm="@Loc["dev_key_revoke_confirm"]"
+                                            onclick="window.quickShareDeveloper.revokeKey(this)"
+                                            data-ai-action="dev.key.revoke">@Loc["dev_key_revoke"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="dev-key-name">@Loc["dev_key_name"]</label>
+                    <input id="dev-key-name" class="db-input" type="text" maxlength="@ApiKey.NameMaxLength" />
+
+                    <label class="workspace-label" for="dev-key-scopes">@Loc["dev_key_scopes"]</label>
+                    <select id="dev-key-scopes" class="db-input">
+                        <option value="@ApiScopes.Read">@Loc["dev_scope_read"]</option>
+                        <option value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</option>
+                        <option value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</option>
+                    </select>
+
+                    <button type="button" class="db-btn db-btn--primary"
+                            data-once-label="@Loc["dev_key_shown_once"]"
+                            onclick="window.quickShareDeveloper.createKey(this)"
+                            data-ai-action="dev.key.create">@Loc["dev_key_create"]</button>
+
+                    @* Filled in by script: the raw key exists in exactly one response. *@
+                    <p class="db-p security-secret" id="dev-key-new" hidden><code id="dev-key-new-value"></code></p>
+                </div>
+            </div>
+        </div>
+
+        @* ── #39 webhook endpoints ── *@
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["dev_hooks_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["dev_hooks_hint"]</p>
+
+                @if (endpoints.Count == 0)
+                {
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_hooks_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var endpoint in endpoints)
+                        {
+                            <li class="workspace-member" id="webhook-@endpoint.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">
+                                        @endpoint.Url
+                                        @if (endpoint.IsParked)
+                                        {
+                                            <span class="workspace-badge">@Loc["dev_hook_parked"]</span>
+                                        }
+                                        else if (!endpoint.Enabled)
+                                        {
+                                            <span class="workspace-badge">@Loc["dev_hook_disabled"]</span>
+                                        }
+                                    </span>
+                                    <span class="workspace-member__meta">@endpoint.Events</span>
+                                    <span class="workspace-member__meta">
+                                        @(endpoint.LastDeliveredAt is { } at
+                                            ? Loc["dev_hook_last", at.ToLocalTime().ToString("g")].Value
+                                            : Loc["dev_hook_never"].Value)
+                                        @if (endpoint.ConsecutiveFailures > 0)
+                                        {
+                                            <text> · @Loc["dev_hook_failures", endpoint.ConsecutiveFailures]</text>
+                                        }
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(endpoint.LastError))
+                                    {
+                                        <span class="workspace-member__meta">@endpoint.LastError</span>
+                                    }
+                                </div>
+                                <div class="workspace-member__actions">
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@endpoint.Id"
+                                            onclick="window.quickShareDeveloper.testHook(this)"
+                                            data-ai-action="dev.hook.test">@Loc["dev_hook_test"]</button>
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@endpoint.Id"
+                                            data-enabled="@endpoint.Enabled.ToString().ToLowerInvariant()"
+                                            onclick="window.quickShareDeveloper.toggleHook(this)"
+                                            data-ai-action="dev.hook.toggle">
+                                        @(endpoint.Enabled ? Loc["dev_hook_pause"] : Loc["dev_hook_resume"])
+                                    </button>
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@endpoint.Id"
+                                            data-confirm="@Loc["dev_hook_delete_confirm"]"
+                                            onclick="window.quickShareDeveloper.deleteHook(this)"
+                                            data-ai-action="dev.hook.delete">@Loc["dev_hook_delete"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="dev-hook-url">@Loc["dev_hook_url"]</label>
+                    <input id="dev-hook-url" class="db-input" type="url"
+                           maxlength="@WebhookEndpoint.UrlMaxLength" placeholder="https://" />
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_hook_url_hint"]</p>
+
+                    <label class="workspace-label" for="dev-hook-events">@Loc["dev_hook_events"]</label>
+                    <select id="dev-hook-events" class="db-input">
+                        <option value="@string.Join(',', WebhookEvents.All)" selected>@Loc["dev_hook_events_all"]</option>
+                        @foreach (var evt in WebhookEvents.All)
+                        {
+                            <option value="@evt">@evt</option>
+                        }
+                    </select>
+
+                    <button type="button" class="db-btn db-btn--primary"
+                            data-once-label="@Loc["dev_hook_secret_once"]"
+                            onclick="window.quickShareDeveloper.createHook(this)"
+                            data-ai-action="dev.hook.create">@Loc["dev_hook_create"]</button>
+
+                    <p class="db-p security-secret" id="dev-hook-new" hidden><code id="dev-hook-new-value"></code></p>
+                </div>
+            </div>
+        </div>
+
+        @* ── #223 event log, #288 replay ── *@
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["dev_log_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["dev_log_hint"]</p>
+
+                @if (deliveries.Count == 0)
+                {
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_log_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var delivery in deliveries)
+                        {
+                            <li class="workspace-member" id="webhook-delivery-@delivery.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">
+                                        @delivery.EventType
+                                        <span class="workspace-badge">@delivery.Status</span>
+                                    </span>
+                                    <span class="workspace-member__meta">
+                                        <time datetime="@delivery.CreatedAt.ToString("o")">@delivery.CreatedAt.ToLocalTime().ToString("g")</time>
+                                        · @Loc["dev_log_attempts", delivery.AttemptCount]
+                                        @if (delivery.ResponseStatusCode is { } responseStatus)
+                                        {
+                                            <text> · HTTP @responseStatus</text>
+                                        }
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(delivery.ResponseBody))
+                                    {
+                                        <span class="workspace-member__meta">@delivery.ResponseBody</span>
+                                    }
+                                </div>
+                                <div class="workspace-member__actions">
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@delivery.Id"
+                                            onclick="window.quickShareDeveloper.replay(this)"
+                                            data-ai-action="dev.log.replay">@Loc["dev_log_replay"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </section>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
+        if (user is null) return;
+
+        keys = await Db.ApiKeys
+            .AsNoTracking()
+            .Where(k => k.UserId == user.Id && k.RevokedAt == null)
+            .OrderByDescending(k => k.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        endpoints = await Db.WebhookEndpoints
+            .AsNoTracking()
+            .Where(e => e.UserId == user.Id && e.RevokedAt == null)
+            .OrderByDescending(e => e.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        deliveries = await Db.WebhookDeliveries
+            .AsNoTracking()
+            .Where(d => d.UserId == user.Id)
+            .OrderByDescending(d => d.CreatedAt)
+            .Take(20)
+            .ToListAsync(CancellationToken.None);
+    }
+}

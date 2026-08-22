@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Hangfire;
+using QuickShare.Features.Developer.Webhooks;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Telemetry;
@@ -62,6 +63,19 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
             }
 
             delivery.Status = DeliveryStatus.Expired;
+        }
+
+        // Outbound webhook (issue #39), alongside the in-app notification below: an
+        // integration that filed the share somewhere needs to know it is gone.
+        var webhooks = scope.ServiceProvider.GetRequiredService<WebhookDispatcher>();
+        foreach (var delivery in expired.Where(d => d.SenderId != null))
+        {
+            await webhooks.EnqueueAsync(delivery.SenderId, WebhookEvents.DeliveryExpired, new
+            {
+                deliveryId = delivery.Id,
+                shareCode = delivery.ShareCode,
+                fileName = delivery.FileName,
+            }, ct);
         }
 
         // In-app notification (issue #246) for logged-in senders whose file expired.

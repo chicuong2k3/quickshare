@@ -27,6 +27,7 @@ public static class HangfireJobs
     public const string FileRequestDigest = "file-request-digest";
     public const string NotificationCleanup = "notification-cleanup";
     public const string SecurityEventCleanup = "security-event-cleanup";
+    public const string WebhookDelivery = "webhook-delivery";
     public const string FileLockExpiry = "file-lock-expiry";
     public const string WorkspaceReport = "workspace-report";
     public const string InvoiceOverdue = "invoice-overdue";
@@ -48,6 +49,9 @@ public static class HangfireJobs
         recurring.AddOrUpdate<TempUploadCleanupJob>(TempUploadCleanup, j => j.CleanupAsync(), Cron.MinuteInterval(15));
         recurring.AddOrUpdate<NotificationCleanupJob>(NotificationCleanup, j => j.CleanupAsync(), Cron.Daily());
         recurring.AddOrUpdate<SecurityEventCleanupJob>(SecurityEventCleanup, j => j.CleanupAsync(), Cron.Daily());
+        // Every minute: a webhook is an integration contract, and a five-minute floor on delivery
+        // latency would make every integration feel broken even when nothing is.
+        recurring.AddOrUpdate<WebhookDeliveryJob>(WebhookDelivery, j => j.RunAsync(), Cron.Minutely());
         recurring.AddOrUpdate<FileLockExpiryJob>(FileLockExpiry, j => j.ReleaseExpiredLocksAsync(), Cron.Minutely());
         recurring.AddOrUpdate<InvoiceOverdueJob>(InvoiceOverdue, j => j.SweepAsync(), Cron.Hourly());
         recurring.AddOrUpdate<SiemShippingJob>(SiemShipping, j => j.ShipAsync(), Cron.MinuteInterval(5));

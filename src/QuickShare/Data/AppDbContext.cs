@@ -51,6 +51,9 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
     public DbSet<SamlAssertionSeen> SamlAssertionsSeen => Set<SamlAssertionSeen>();
     public DbSet<DeliveryFile> DeliveryFiles => Set<DeliveryFile>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -525,6 +528,46 @@ public class AppDbContext : DbContext
             entity.Property(e => e.AdminGroupId).HasMaxLength(WorkspaceSsoConfig.GroupIdMaxLength);
             entity.Property(e => e.SamlSsoUrl).HasMaxLength(WorkspaceSsoConfig.SamlUrlMaxLength);
             entity.Property(e => e.SamlCertificate).HasMaxLength(WorkspaceSsoConfig.SamlCertificateMaxLength);
+        });
+
+        modelBuilder.Entity<ApiKey>(entity =>
+        {
+            entity.ToTable("api_keys");
+            // Authentication looks a key up by hash on every API call, so this is the hot path.
+            entity.HasIndex(e => e.KeyHash).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.Property(e => e.KeyHash).IsRequired().HasMaxLength(ApiKey.HashLength);
+            entity.Property(e => e.Prefix).IsRequired().HasMaxLength(ApiKey.PrefixLength);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(ApiKey.NameMaxLength);
+            entity.Property(e => e.Scopes).IsRequired().HasMaxLength(64);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WebhookEndpoint>(entity =>
+        {
+            entity.ToTable("webhook_endpoints");
+            entity.HasIndex(e => e.UserId);
+            entity.Property(e => e.Url).IsRequired().HasMaxLength(WebhookEndpoint.UrlMaxLength);
+            entity.Property(e => e.Secret).IsRequired().HasMaxLength(WebhookEndpoint.SecretLength);
+            entity.Property(e => e.Events).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.Description).HasMaxLength(WebhookEndpoint.DescriptionMaxLength);
+            entity.Property(e => e.LastError).HasMaxLength(WebhookEndpoint.ErrorMaxLength);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WebhookDelivery>(entity =>
+        {
+            entity.ToTable("webhook_deliveries");
+            entity.HasKey(e => e.Id);
+            // The job's query: pending rows that are due, oldest first.
+            entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+            // The log's query: this account's attempts, newest first.
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+            entity.Property(e => e.EventType).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.PayloadJson).IsRequired().HasMaxLength(WebhookDelivery.PayloadMaxLength);
+            entity.Property(e => e.ResponseBody).HasMaxLength(WebhookDelivery.ResponseMaxLength);
+            entity.HasOne(e => e.Endpoint).WithMany().HasForeignKey(e => e.EndpointId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<DeliveryFile>(entity =>

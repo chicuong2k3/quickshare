@@ -100,6 +100,12 @@ protected override async Task OnInitializedAsync()
   #181). `hd` / `tid` establish it; `AllowedEmailDomains` only ever narrows what the claim already
   established. Reversing that order hands a workspace seat to anyone who buys a convincing domain.
   A directory belongs to exactly one workspace, or the proof gets handed to the wrong tenant.
+- **Sign a timestamp along with the body, never the body alone** (issue #172). A signature over
+  just the payload makes a captured request valid forever and gives the receiver no way to tell a
+  replay from the original.
+- **An outbound integration is queued, never sent on the request path** (issue #39). It has to
+  survive the receiver being down, which means a row and a retry schedule — unlike a best-effort
+  chat post (#180), which documents the opposite trade for a reason that does not transfer.
 - **An object key named by a client must be proved to belong to the resource claiming it**
   (issue #79). `R2ObjectKey.BelongsTo` exists because a commit request is attacker-controlled;
   without it a caller attaches somebody else's object to a share code they own.

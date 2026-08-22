@@ -28,7 +28,8 @@ public sealed class CommitR2Handler(
     ILogger<CommitR2Handler> logger,
     AppDbContext db,
     CacheService cache,
-    ChannelNotifier channels)
+    ChannelNotifier channels,
+    QuickShare.Features.Developer.Webhooks.WebhookDispatcher webhooks)
     : IRequestHandler<CommitR2Command, Result<CommitR2Response>>
 {
     // Client-side AES-GCM adds a 12-byte nonce + 16-byte tag on top of the declared plain size.
@@ -393,6 +394,22 @@ public sealed class CommitR2Handler(
                 $"{_emailOptions.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{shareCode}",
                 delivery.ExpiresAt,
                 cancellationToken);
+        }
+
+        // Outbound webhook (issue #39). Queued, not sent — an upload must not wait on somebody
+        // else's HTTP endpoint, and a receiver that is down has to be retried rather than lost.
+        // Held shares are announced on approval instead, same rule as the chat post above.
+        if (!requiresApproval)
+        {
+            await webhooks.EnqueueAsync(delivery.SenderId, WebhookEvents.DeliveryCreated, new
+            {
+                deliveryId = delivery.Id,
+                shareCode = delivery.ShareCode,
+                fileName = delivery.FileName,
+                fileCount = delivery.FileCount,
+                totalBytes = delivery.TotalFileBytes,
+                expiresAt = delivery.ExpiresAt,
+            }, cancellationToken);
         }
 
         // Recent-recipients + address book (issue #316): remember who this user

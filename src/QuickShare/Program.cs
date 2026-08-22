@@ -274,6 +274,9 @@ builder.Services.AddScoped<QuickShare.Features.Auth.Sso.SsoLoginService>();
 builder.Services.AddScoped<QuickShare.Features.Auth.Mfa.MfaPolicyService>();
 builder.Services.AddScoped<QuickShare.Features.Auth.Scim.ScimAuthenticator>();
 builder.Services.AddScoped<QuickShare.Features.Auth.Saml.SamlService>();
+// Developer platform (#115 API keys, #39 outbound webhooks).
+builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticator>();
+builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatcher>();
 
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();

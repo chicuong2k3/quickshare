@@ -272,6 +272,7 @@ interface Window {
     quickShareBrand: QsPageActions;
     quickShareChannel: QsPageActions;
     quickShareComments: QsPageActions;
+    quickShareDeveloper: QsPageActions;
     quickShareDpa: QsPageActions;
     quickShareMfa: QsPageActions;
     quickShareSecurity: QsPageActions;

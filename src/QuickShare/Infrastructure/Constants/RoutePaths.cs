@@ -69,6 +69,7 @@ public static class RoutePaths
     public const string AccountWorkspaceChannel = "/account/workspace/channel";
     public const string AccountRecurring = "/account/recurring";
     public const string AccountSecurity = "/account/security";
+    public const string AccountDeveloper = "/account/developer";
     public const string AccountWorkspaceSso = "/account/workspace/sso";
     /// <summary>The second-factor challenge (issue #128).</summary>
     public const string MfaChallenge = "/mfa";

@@ -228,9 +228,21 @@ public sealed class DownloadDeliveryHandler(
                         entity.DownloadCount++;
 
                         // Privacy mode (issue #187): the count still drives max-downloads/burn
-                        // enforcement, but nothing is logged — no IP, no analytics event.
+                        // enforcement, but nothing is logged — no IP, no analytics event, and no
+                        // webhook. A share that keeps no record must not export one either.
                         if (!entity.PrivacyMode)
                         {
+                            var webhooks = scope.ServiceProvider
+                                .GetRequiredService<QuickShare.Features.Developer.Webhooks.WebhookDispatcher>();
+
+                            await webhooks.EnqueueAsync(entity.SenderId, WebhookEvents.DeliveryDownloaded, new
+                            {
+                                deliveryId = entity.Id,
+                                shareCode = entity.ShareCode,
+                                fileName = entity.FileName,
+                                downloadCount = entity.DownloadCount,
+                            }, CancellationToken.None);
+
                             updateDb.DownloadTrackings.Add(new DownloadTracking
                             {
                                 Id = Guid.CreateVersion7(),

@@ -784,6 +784,39 @@ taught — that a person can reach it, not just that the code exists — before 
 **Not shipped**: per-file expiry, adding files after commit (that is versioning, #110), reordering
 (#275), Zip64, bundle-aware previews.
 
+## Tier 5 — batch 15: the developer platform (#115, #39, #172, #223, #288)
+
+API keys and outbound webhooks, built as one subsystem because a webhook nobody can authenticate
+against and a key with nothing to call are each half a feature.
+
+- `#115` API keys — `qs_` prefix, SHA-256 stored, returned once, coarse scopes, optional expiry
+- `#39` outbound webhooks — three events, HTTPS only, queued not inline
+- `#172` HMAC-SHA256 over `{timestamp}.{body}`, exponential backoff, endpoint parking
+- `#223` event log with the response we got back, plus a test console on the real path
+- `#288` replay — original payload, new row
+
+**The signing decision worth reviewing**: the timestamp is inside the signed material. Signing
+only the body means a captured request stays valid forever and the receiver cannot tell a replay
+from the original. Same construction as the SIEM sink, so one shape to document.
+
+**Queued, not inline** — deliberately unlike the chat notifier (#180), which posts inline because
+a chat post is best-effort and forgettable. A webhook is an integration contract and has to
+survive the receiver being down.
+
+**Privacy mode suppresses `delivery.downloaded`**, alongside the analytics event and the download
+record. A share that keeps no record must not export one instead.
+
+**Also this batch — twelve tier-5 issues closed on verification**: #23 vanity links, #61 admin
+moderation, #126 audit trail, #187 privacy mode, #189 SSRF hardening, #217 recovery codes, #235
+trusted devices, #239 feedback, #291 one-time codes, #294 public stats, #324 email gate, #51
+branded download page. All already shipped with UI and tests; each checked for reachability first.
+
+**Not shipped**: per-scope enforcement on existing endpoints (keys identify their owner; the
+endpoints still authenticate by cookie), secret rotation with an overlap window, per-key usage
+analytics (#273), API versioning (#199), more event types.
+
+Design and invariants: `docs/developer-platform.md`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
