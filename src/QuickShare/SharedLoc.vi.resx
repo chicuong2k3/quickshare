@@ -2253,4 +2253,28 @@
   <data name="upgrade_promo_label" xml:space="preserve">
     <value>Mã khuyến mãi (không bắt buộc)</value>
   </data>
+  <data name="sessions_title" xml:space="preserve">
+    <value>Nơi bạn đang đăng nhập</value>
+  </data>
+  <data name="sessions_hint" xml:space="preserve">
+    <value>Đăng xuất một phiên có hiệu lực ngay lập tức. Phiên không dùng trong {0} ngày sẽ tự hết hạn.</value>
+  </data>
+  <data name="sessions_current" xml:space="preserve">
+    <value>Thiết bị này</value>
+  </data>
+  <data name="sessions_last_seen" xml:space="preserve">
+    <value>hoạt động gần nhất {0}</value>
+  </data>
+  <data name="sessions_started" xml:space="preserve">
+    <value>đăng nhập {0}</value>
+  </data>
+  <data name="sessions_revoke" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="sessions_revoke_all" xml:space="preserve">
+    <value>Đăng xuất khỏi mọi thiết bị khác</value>
+  </data>
+  <data name="sessions_revoke_all_confirm" xml:space="preserve">
+    <value>Đăng xuất khỏi tất cả thiết bị trừ thiết bị này?</value>
+  </data>
 </root>

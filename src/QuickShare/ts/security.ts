@@ -76,6 +76,18 @@ window.quickShareSecurity = (function () {
                 .catch(function () { btn.disabled = false; });
         },
 
+        revokeSession: function (btn: HTMLButtonElement): void {
+            qsPage.send('/api/account/sessions/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,
+                { btn: btn, body: BODY });
+        },
+
+        // Keeps this session signed in — "sign out my other devices" is the actual ask, and
+        // signing yourself out too turns a security action into a chore people skip.
+        revokeAllSessions: function (btn: HTMLButtonElement): void {
+            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+            qsPage.send('/api/account/sessions/revoke-all', 'POST', null, { btn: btn, body: BODY });
+        },
+
         remove: function (btn: HTMLButtonElement): void {
             if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
 

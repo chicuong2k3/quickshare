@@ -92,6 +92,7 @@ browser download needed.
 | Multi-file deliveries — the one-row invariant, key ownership, zip behaviour | `MultiFileDeliveryTests` |
 | Developer platform — key hashing, signature construction, retry, replay | `DeveloperPlatformTests` |
 | Subscription lifecycle — promo redemption, proration bounds, pause banking | `SubscriptionLifecycleTests` |
+| Sessions — revocation biting immediately, idle timeout, SCIM offboarding | `SessionManagementTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |

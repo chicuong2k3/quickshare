@@ -100,6 +100,11 @@ protected override async Task OnInitializedAsync()
   #181). `hd` / `tid` establish it; `AllowedEmailDomains` only ever narrows what the claim already
   established. Reversing that order hands a workspace seat to anyone who buys a convincing domain.
   A directory belongs to exactly one workspace, or the proof gets handed to the wrong tenant.
+- **Never cache an authorisation check that a revoke button is supposed to affect** (issue #105).
+  The moment the answer is cached, revocation becomes eventual — which is indistinguishable from
+  broken to the person who just lost their laptop.
+- **Any new sign-in path must start a session.** Calling `SignInAsync` directly without one issues
+  a cookie nothing can revoke.
 - **Sign a timestamp along with the body, never the body alone** (issue #172). A signature over
   just the payload makes a captured request valid forever and gives the receiver no way to tell a
   replay from the original.

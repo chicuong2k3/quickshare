@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
     public DbSet<SamlAssertionSeen> SamlAssertionsSeen => Set<SamlAssertionSeen>();
     public DbSet<DeliveryFile> DeliveryFiles => Set<DeliveryFile>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<PromoRedemption> PromoRedemptions => Set<PromoRedemption>();
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
@@ -551,6 +552,18 @@ public class AppDbContext : DbContext
             // index, two concurrent requests both pass the check and both redeem.
             entity.HasIndex(e => new { e.PromoCodeId, e.UserId }).IsUnique();
             entity.HasOne(e => e.PromoCode).WithMany().HasForeignKey(e => e.PromoCodeId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.ToTable("user_sessions");
+            entity.HasKey(e => e.Id);
+            // Read on every authenticated request — this index is the feature's whole cost model.
+            entity.HasIndex(e => e.SessionId).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.LastSeenAt });
+            entity.Property(e => e.SessionId).IsRequired().HasMaxLength(UserSession.SessionIdLength);
+            entity.Property(e => e.UserAgentLabel).IsRequired().HasMaxLength(UserSession.LabelMaxLength);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 

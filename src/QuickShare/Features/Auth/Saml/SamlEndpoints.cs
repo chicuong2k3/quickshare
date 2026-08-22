@@ -170,7 +170,10 @@ public static class SamlEndpoints
 
             await sso.ApplySamlAsync(profile.Id, email, binding, provisioningClaims, ct);
 
-            await SignInAsync(context, profile.Id, subject, displayName, email);
+            var sessions = context.RequestServices.GetRequiredService<Users.Sessions.SessionService>();
+            var session = await sessions.StartAsync(profile.Id, context, ct);
+
+            await SignInAsync(context, profile.Id, subject, displayName, email, session.SessionId);
 
             await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.Login,
                 context.Request.Headers.UserAgent.ToString(),
@@ -186,10 +189,12 @@ public static class SamlEndpoints
     /// everything downstream — <c>GetUserAsync</c>, the MFA gate, the workspace lookups — reads
     /// those two claims and must not care which front door was used.
     /// </summary>
-    private static Task SignInAsync(HttpContext context, Guid userId, string subject, string name, string email)
+    private static Task SignInAsync(
+        HttpContext context, Guid userId, string subject, string name, string email, string sessionId)
     {
         var identity = new ClaimsIdentity(
         [
+            new Claim(Users.Sessions.SessionService.SessionClaimType, sessionId),
             new Claim(ClaimTypes.NameIdentifier, subject),
             new Claim(AuthConstants.ProviderClaimType, SsoProvider.Saml),
             new Claim(ClaimTypes.Name, name),

@@ -419,7 +419,15 @@ public sealed class ScimPatchUserEndpoint : Endpoint<ScimPatchRequest, ScimUser>
         // Restores the member's own plan when the borrowed seat goes away (#106).
         var workspaces = new WorkspaceService(db);
         if (member.UserId is { } userId && !active)
+        {
             await workspaces.RestorePersonalPlanAsync(userId, ct);
+
+            // Cut their sessions too (#105). Until the session store existed this was documented
+            // as a known gap: the seat died immediately but a signed-in browser kept working
+            // until its cookie expired, which is not what "IT deactivated them" is supposed to
+            // mean. Every session, not all-but-current — SCIM has no current session.
+            await new Users.Sessions.SessionService(db).RevokeAllAsync(userId, null, ct);
+        }
         else
             await workspaces.SyncMemberPlansAsync(workspaceId, ct);
     }

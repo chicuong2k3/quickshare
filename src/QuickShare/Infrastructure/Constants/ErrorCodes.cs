@@ -181,6 +181,8 @@ public static class ErrorCodes
     public const string SubscriptionNotFound = "subscription_not_found";
     public const string SubscriptionNotPausable = "subscription_not_pausable";
     public const string SubscriptionNotPaused = "subscription_not_paused";
+    /// <summary>Session revoked, idle out, or never existed (issues #105, #173).</summary>
+    public const string SessionNotFound = "session_not_found";
     /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
     public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
     public const string ScimTokenNotFound = "scim_token_not_found";

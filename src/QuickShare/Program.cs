@@ -279,6 +279,8 @@ builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthentic
 builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatcher>();
 // Subscription lifecycle (#98 promo codes).
 builder.Services.AddScoped<QuickShare.Features.Payments.Promos.PromoCodeService>();
+// Session store (#105 management, #173 idle timeout and global sign-out).
+builder.Services.AddScoped<QuickShare.Features.Users.Sessions.SessionService>();
 
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
@@ -364,6 +366,13 @@ static async Task FinalizeOAuthAsync(Microsoft.AspNetCore.Authentication.OAuth.O
     var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
     await sso.ApplyAsync(profile.Id, email, provider, ctx.Identity?.Claims ?? [], ctx.HttpContext.RequestAborted);
 
+    // Start a revocable session (issues #105, #173) and put its id in the cookie.
+    var sessionService = ctx.HttpContext.RequestServices
+        .GetRequiredService<QuickShare.Features.Users.Sessions.SessionService>();
+    var session = await sessionService.StartAsync(profile.Id, ctx.HttpContext, ctx.HttpContext.RequestAborted);
+    ctx.Identity?.AddClaim(new Claim(
+        QuickShare.Features.Users.Sessions.SessionService.SessionClaimType, session.SessionId));
+
     var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();
     var alertSender = ctx.HttpContext.RequestServices.GetRequiredService<NewDeviceAlertSender>();
     var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
@@ -399,6 +408,27 @@ var authBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefault
         options.LogoutPath = RoutePaths.Logout;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
+        // Server-side session check (issues #105, #173). Without this the cookie is
+        // self-contained and a "revoke" button revokes nothing until it expires on its own.
+        //
+        // One indexed read per authenticated request is the cost. It is the price of a revoke
+        // that works, and it is not cached: caching the answer is exactly the thing that would
+        // make revocation take effect "eventually" instead of on the next request.
+        options.Events.OnValidatePrincipal = async ctx =>
+        {
+            if (ctx.Principal?.Identity?.IsAuthenticated != true)
+                return;
+
+            var sessions = ctx.HttpContext.RequestServices
+                .GetRequiredService<QuickShare.Features.Users.Sessions.SessionService>();
+
+            if (await sessions.ValidateAsync(ctx.Principal, ctx.HttpContext.RequestAborted))
+                return;
+
+            ctx.RejectPrincipal();
+            await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        };
+
         options.Events.OnRedirectToLogin = ctx =>
         {
             // API callers get a status code; browser page requests get the redirect.

@@ -2253,4 +2253,28 @@
   <data name="upgrade_promo_label" xml:space="preserve">
     <value>Promo code (optional)</value>
   </data>
+  <data name="sessions_title" xml:space="preserve">
+    <value>Where you are signed in</value>
+  </data>
+  <data name="sessions_hint" xml:space="preserve">
+    <value>Signing out a session takes effect immediately. Sessions unused for {0} days expire on their own.</value>
+  </data>
+  <data name="sessions_current" xml:space="preserve">
+    <value>This device</value>
+  </data>
+  <data name="sessions_last_seen" xml:space="preserve">
+    <value>last active {0}</value>
+  </data>
+  <data name="sessions_started" xml:space="preserve">
+    <value>signed in {0}</value>
+  </data>
+  <data name="sessions_revoke" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="sessions_revoke_all" xml:space="preserve">
+    <value>Sign out of all other devices</value>
+  </data>
+  <data name="sessions_revoke_all_confirm" xml:space="preserve">
+    <value>Sign out everywhere except this device?</value>
+  </data>
 </root>

@@ -850,6 +850,34 @@ half-built), code stacking, refunds, dunning (#140), multi-currency (#120).
 
 Design and invariants: `docs/subscription-lifecycle.md`.
 
+## Tier 5 — batch 17: sessions you can actually revoke (#105, #173)
+
+The auth cookie was self-contained: it proved who somebody was and expired on its own schedule,
+and nothing on the server could take it back. A "sign out everywhere" button over that would have
+been decoration, so this adds the session store underneath it.
+
+The cookie now carries a session id and a row decides whether it counts. **The validation result
+is deliberately not cached** — caching it is exactly what would make revocation take effect
+eventually rather than on the next request. One indexed read per authenticated request is the
+honest price of a revoke button that works.
+
+Two clocks, because they answer different questions: the cookie's 30 days ask how long somebody
+may stay signed in, the 14-day idle timeout asks how long after they walked away.
+
+**Legacy cookies are allowed through** — a principal with no session claim validates. Rejecting
+them would sign out every logged-in user on deploy to enforce a rule none of them had a chance to
+satisfy. The hole closes itself within 30 days.
+
+**Closes a gap this backlog already recorded.** When SCIM (#146) shipped, the docs said plainly
+that deprovisioning killed the seat but not the browser session. It does now, with a test that
+drives the real SCIM PATCH.
+
+**Not shipped**: per-session IP display (the hash is stored for privacy; showing a hash helps
+nobody), device naming (UserDevice already models the device), step-up re-authentication,
+per-workspace idle timeouts.
+
+Design and invariants: `docs/sessions.md`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
