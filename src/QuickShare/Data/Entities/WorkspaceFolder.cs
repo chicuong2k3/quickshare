@@ -23,6 +23,13 @@ public record WorkspaceFolder : BaseAuditEntity
     /// <summary>Null = a root folder. A child may never itself have children (see <see cref="MaxDepth"/>).</summary>
     public Guid? ParentId { get; set; }
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The order an admin dragged this folder into (issue #275). Zero for everything created
+    /// before ordering existed, which is why the list falls back to the name: a tree where every
+    /// folder claims position zero should still come out alphabetical rather than arbitrary.
+    /// </summary>
+    public int SortOrder { get; set; }
     public Guid CreatedById { get; set; }
 
     // ── Default settings (issue #245) ──

@@ -17,7 +17,57 @@ window.quickShareWorkspace = (function () {
         return '/api/workspace/templates/' + qsPage.attr(btn, 'data-template-id') + (suffix || '');
     }
 
+    const FOLDER_ORDER_URL = '/api/workspace/folders/order';
+
+    /** Sends the list as it currently reads: one arrangement, one request (issue #275). */
+    function saveFolderOrder(): void {
+        const list = document.getElementById('ws-folder-list');
+        if (!list) return;
+
+        const order = Array.prototype.slice
+            .call(list.querySelectorAll('[data-folder-id]'))
+            .map(function (row: Element) { return row.getAttribute('data-folder-id'); });
+
+        qsPage.send(FOLDER_ORDER_URL, 'PATCH', { order: order }, {});
+    }
+
     return {
+        /** Remembers which row is being dragged; the drop handler does the work. */
+        dragFolder: function (event: DragEvent): void {
+            const row = event.target as HTMLElement;
+            if (event.dataTransfer) event.dataTransfer.setData('text/plain', row.getAttribute('data-folder-id') || '');
+        },
+
+        dropFolder: function (event: DragEvent): void {
+            event.preventDefault();
+            const id = event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
+            const dragged = document.querySelector('[data-folder-id="' + id + '"]') as HTMLElement | null;
+            const target = (event.target as HTMLElement).closest('[data-folder-id]') as HTMLElement | null;
+            if (!dragged || !target || dragged === target) return;
+
+            // Dropped above or below depending on which half of the row it landed on — the
+            // behaviour every list in every app has, and the one people expect without being told.
+            const box = target.getBoundingClientRect();
+            const after = event.clientY > box.top + box.height / 2;
+            target.parentNode!.insertBefore(dragged, after ? target.nextSibling : target);
+
+            saveFolderOrder();
+        },
+
+        /** The same move, by keyboard. Direction is -1 for up, 1 for down. */
+        moveFolder: function (button: HTMLButtonElement, direction: number): void {
+            const row = button.closest('[data-folder-id]') as HTMLElement | null;
+            if (!row || !row.parentNode) return;
+
+            const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+            if (!sibling) return;
+
+            if (direction < 0) row.parentNode.insertBefore(row, sibling);
+            else row.parentNode.insertBefore(sibling, row);
+
+            saveFolderOrder();
+        },
+
         create: function (): void {
             send('/api/workspace', 'POST', {
                 name: qsPage.value('ws-name'),

@@ -77,11 +77,19 @@ else
                     }
                     else
                     {
-                        <ul class="workspace-member-list">
+                        @* Manual order (issue #275). Draggable for a mouse, and move-up/down
+                           buttons for everybody else — a reorder that only works by dragging is a
+                           reorder keyboard users cannot do at all. *@
+                        <ul class="workspace-member-list workspace-folder-list" id="ws-folder-list">
                             @foreach (var folder in RootsFirst)
                             {
                                 <li class="workspace-member @(folder.ParentId is null ? string.Empty : "workspace-folder--child")"
-                                    id="ws-folder-@folder.Id">
+                                    id="ws-folder-@folder.Id"
+                                    data-folder-id="@folder.Id"
+                                    draggable="@(folders.CanManage ? "true" : "false")"
+                                    ondragstart="window.quickShareWorkspace.dragFolder(event)"
+                                    ondragover="event.preventDefault()"
+                                    ondrop="window.quickShareWorkspace.dropFolder(event)">
                                     <div class="workspace-member__info">
                                         <span class="workspace-member__name">
                                             @folder.Name
@@ -96,6 +104,14 @@ else
                                     @if (folders.CanManage)
                                     {
                                         <div class="workspace-member__actions">
+                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                    aria-label="@Loc["ws_folders_move_up"]"
+                                                    onclick="window.quickShareWorkspace.moveFolder(this, -1)"
+                                                    data-ai-action="folder.moveUp">↑</button>
+                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                                    aria-label="@Loc["ws_folders_move_down"]"
+                                                    onclick="window.quickShareWorkspace.moveFolder(this, 1)"
+                                                    data-ai-action="folder.moveDown">↓</button>
                                             <button type="button" class="db-btn db-btn--ghost db-btn--sm"
                                                     data-folder-id="@folder.Id"
                                                     data-prompt="@Loc["ws_folders_rename_prompt"]"

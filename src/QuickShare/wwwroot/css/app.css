@@ -3203,3 +3203,8 @@ html, body {
     max-width: 12rem;
     height: auto;
 }
+
+/* Manual folder order (issue #275): the row says it can be moved before anybody tries. */
+.workspace-folder-list [draggable="true"] {
+    cursor: grab;
+}

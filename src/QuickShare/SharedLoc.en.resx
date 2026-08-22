@@ -2664,4 +2664,10 @@
   <data name="privacy_pdpd_title" xml:space="preserve">
     <value>Vietnam — Decree 13/2023 (PDPD)</value>
   </data>
+  <data name="ws_folders_move_up" xml:space="preserve">
+    <value>Move folder up</value>
+  </data>
+  <data name="ws_folders_move_down" xml:space="preserve">
+    <value>Move folder down</value>
+  </data>
 </root>

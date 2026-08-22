@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **10/10 done** (08-17) |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 59 done (08-23): `#230` PDPD consent, `#16` file-request submission page, `#17` drop room, `#104` upload by email, `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
+| Tier 4 | WeTransfer parity baseline | 60 done (08-23) — **tier complete**: `#275` manual folder order, `#230` PDPD consent, `#16` file-request submission page, `#17` drop room, `#104` upload by email, `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
 | Tier 6 | B2B / enterprise / far-future | 40 done (08-22): `#194` Outlook add-in, `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
@@ -1453,6 +1453,33 @@ the end), consent for anonymous senders (nothing is stored about them beyond the
 asking a stranger to agree to a processing notice before they can send a file is consent theatre),
 and a separate VN privacy page.
 
+## Tier 4 — batch 34: manual folder order (#275)
+
+The last open tier-4 item. Folders sorted alphabetically and nothing could change that, which is
+fine until the tree is “Client A, Client B, Archive” and the archive keeps landing first.
+
+**One request carries the whole arrangement**, not a sequence of moves. A reorder is a single
+intention; applying it move by move means every intermediate state is a real state somebody could
+load. Positions are assigned from the sequence rather than trusted from the caller, so a
+duplicate or a gap cannot produce a list that sorts differently for the next reader than it did
+for the person who dragged it.
+
+**Name is still the tie-break.** Every folder that predates ordering sits at position zero, and
+alphabetical is a better answer there than insertion order.
+
+**Drag *and* buttons.** A reorder that only works by dragging is a reorder keyboard users cannot
+do at all — which the accessibility batch two batches ago spent its time on. The rows are
+draggable for a mouse and every row carries move-up/move-down buttons with real labels.
+
+**An id from another workspace is silently not found**, which is the same answer as it never
+existing.
+
+Tests: `FolderOrderTests` (6). Server suite green at 1039, browser at 42.
+
+**Not shipped**: reordering *deliveries* inside a folder (they sort newest-first, and a manual
+order there would fight the cursor paging every list in the product uses), and cross-parent drag
+— moving a folder under a different parent is a different operation from arranging siblings.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1505,7 +1532,9 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 1: implement `#52` rate limiting → Tier 1 fully done (08-17)
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
-- [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
+- [x] Tier 4: complete (08-23). The last four were `#104` upload by email, `#16`/`#17` the drop
+  page and rooms, `#230` PDPD consent and `#275` manual folder order.
+- [ ] Tier 5: the remaining open tier; see the label filter.
 - [ ] Tier 6: 40 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,

@@ -377,6 +377,10 @@ internal static class FolderReader
             .AsNoTracking()
             .Where(f => f.WorkspaceId == workspaceId)
             .OrderBy(f => f.ParentId == null ? 0 : 1)
+            // Manual order first (issue #275), name as the tie-break — every folder that
+            // predates ordering sits at zero, and alphabetical is a better answer there than
+            // insertion order.
+            .ThenBy(f => f.SortOrder)
             .ThenBy(f => f.Name)
             .ToListAsync(ct);
 
