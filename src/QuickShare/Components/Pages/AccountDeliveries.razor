@@ -4,9 +4,11 @@
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Deliveries.List
 @using Microsoft.Extensions.Localization
+@using QuickShare.Features.Workspaces.Shared
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IMediator Bus
 @inject AppDbContext Db
+@inject WorkspaceService Workspaces
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["deliveries_title"]</PageTitle>
@@ -104,6 +106,21 @@ else
                 <button type="button" class="db-btn db-btn--ghost db-btn--sm"
                         data-confirm="@Loc["deliveries_bulk_trash_confirm"]"
                         onclick="bulkTrash(this)" data-ai-action="deliveries.bulkTrash" disabled>@Loc["deliveries_bulk_trash"]</button>
+                @* Move many at once (issues #244, #284). Shown only when there is somewhere to
+                   move things to — a destination picker with no destinations is furniture. *@
+                @if (folders.Count > 0)
+                {
+                    <select id="bulk-folder" class="db-input db-input--sm" aria-label="@Loc["deliveries_bulk_move_label"]">
+                        <option value="">@Loc["deliveries_bulk_move_loose"]</option>
+                        @foreach (var folder in folders)
+                        {
+                            <option value="@folder.Id">@folder.Name</option>
+                        }
+                    </select>
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            data-error="@Loc["deliveries_bulk_error"]"
+                            onclick="bulkMove(this)" data-ai-action="deliveries.bulkMove" disabled>@Loc["deliveries_bulk_move"]</button>
+                }
             </div>
 
             @if (items.Count == 0)
@@ -418,6 +435,24 @@ else
         }).catch(function () { window.alert(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
     };
+    // Move (issues #244, #284). An empty destination means "out of any folder", which is a
+    // real choice and not a missing one — so the value is sent as null rather than skipped.
+    window.bulkMove = function (btn) {
+        var ids = window.bulkSelectedIds();
+        if (ids.length === 0) return;
+        var picker = document.getElementById('bulk-folder');
+        var folderId = picker && picker.value ? picker.value : null;
+        btn.disabled = true;
+        fetch('/api/deliveries/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, action: 'move', folderId: folderId })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
     window.bulkTrash = function (btn) {
         var ids = window.bulkSelectedIds();
         if (ids.length === 0) return;
@@ -505,6 +540,7 @@ else
     private bool isLoaded;
     private bool isChunkRequest;
     private List<DeliveryItem> items = [];
+    private List<WorkspaceFolder> folders = [];
     private string? nextCursor;
 
     /// <summary>Rows plus the sentinel that pulls the next page into view — appended to itself.</summary>
@@ -721,6 +757,19 @@ else
                     g.Count(d => d.Status == DeliveryStatus.Active && d.ExpiresAt != null && d.ExpiresAt > now && d.ExpiresAt < soon),
                     g.Count(d => d.Status == DeliveryStatus.Active && d.DownloadCount >= d.MaxDownloads)))
                 .FirstOrDefaultAsync();
+        }
+
+        // Destinations for the move control. Only the caller's own workspace: a folder list
+        // is the one part of this page that is not about their deliveries, and showing another
+        // team's would be a leak of the tree's shape.
+        var seat = await Workspaces.GetSeatAsync(ctx.User.GetUserId(), CancellationToken.None);
+        if (seat is { IsActive: true })
+        {
+            folders = await Db.WorkspaceFolders
+                .AsNoTracking()
+                .Where(f => f.WorkspaceId == seat.WorkspaceId)
+                .OrderBy(f => f.Name)
+                .ToListAsync(CancellationToken.None);
         }
 
         var result = await Bus.Send<LightResults.Result<CursorPage<DeliveryItem>>>(

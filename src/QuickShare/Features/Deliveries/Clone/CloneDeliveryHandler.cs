@@ -2,7 +2,7 @@ using LightResults;
 
 namespace QuickShare.Features.Deliveries.Clone;
 
-public record CloneDeliveryCommand(Guid DeliveryId) : IRequest<Result<CloneDeliveryResponse>>;
+public record CloneDeliveryCommand(Guid DeliveryId, Guid? FolderId = null) : IRequest<Result<CloneDeliveryResponse>>;
 
 public record CloneDeliveryResponse(Guid Id, string ShareCode);
 
@@ -49,9 +49,26 @@ public sealed class CloneDeliveryHandler(IStorageProvider storage, AppDbContext 
             expiresAt = now + window;
         }
 
+        // "Copy into a folder" (issue #244). Only into a folder of the delivery's own
+        // workspace: a copy that lands in another team's folder is a share nobody agreed to,
+        // and a personal delivery has no workspace to file it in at all.
+        var folderId = delivery.FolderId;
+        if (cmd.FolderId is { } destination)
+        {
+            var reachable = delivery.WorkspaceId is { } workspaceId
+                && await db.WorkspaceFolders.AsNoTracking()
+                    .AnyAsync(f => f.Id == destination && f.WorkspaceId == workspaceId, cancellationToken);
+
+            if (!reachable)
+                return Result.Failure<CloneDeliveryResponse>(new LightResults.Error(ErrorCodes.FolderNotFound));
+
+            folderId = destination;
+        }
+
         var clone = delivery with
         {
             Id = newId,
+            FolderId = folderId,
             ShareCode = ShareCodes.Generate(),
             StoragePath = newKey,
             Status = DeliveryStatus.Active,

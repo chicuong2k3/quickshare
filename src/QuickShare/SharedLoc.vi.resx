@@ -2517,4 +2517,13 @@
   <data name="outlook_failed" xml:space="preserve">
     <value>Không hoàn tất được: {0}</value>
   </data>
+  <data name="deliveries_bulk_move" xml:space="preserve">
+    <value>Chuyển</value>
+  </data>
+  <data name="deliveries_bulk_move_label" xml:space="preserve">
+    <value>Thư mục đích</value>
+  </data>
+  <data name="deliveries_bulk_move_loose" xml:space="preserve">
+    <value>Không thuộc thư mục</value>
+  </data>
 </root>
