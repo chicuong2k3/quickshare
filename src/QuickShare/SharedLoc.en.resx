@@ -2394,4 +2394,22 @@
   <data name="upload_watermark_hint" xml:space="preserve">
     <value>Your name is drawn across the in-page preview. The downloaded file is untouched.</value>
   </data>
+  <data name="dev_mount_title" xml:space="preserve">
+    <value>Mount as a drive</value>
+  </data>
+  <data name="dev_mount_hint" xml:space="preserve">
+    <value>WebDAV over your workspace folders. Drop a file in and it becomes a delivery with the workspace's expiry, quota and folder rules.</value>
+  </data>
+  <data name="dev_mount_needs_workspace" xml:space="preserve">
+    <value>A mount is a team surface — join or create a workspace first.</value>
+  </data>
+  <data name="dev_mount_url" xml:space="preserve">
+    <value>WebDAV address</value>
+  </data>
+  <data name="dev_mount_setup" xml:space="preserve">
+    <value>Sign in with any username and an API key as the password:</value>
+  </data>
+  <data name="dev_mount_clients" xml:space="preserve">
+    <value>rclone, davfs2 and Cyberduck read and write. Windows Explorer and macOS Finder mount read-only — they require WebDAV locking, which this server does not claim to support.</value>
+  </data>
 </root>

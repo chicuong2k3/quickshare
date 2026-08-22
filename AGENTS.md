@@ -280,6 +280,14 @@ See `docs/white-label.md` for the full subsystem. Three rules bind all future wo
 - **A verified host serves exactly one workspace, and a foreign share on it is a plain not-found.** Never redirect to the canonical address instead — that confirms the share code exists. Any new recipient-facing page MUST apply the same host check `Download.razor` does.
 - **Build recipient links through `WorkspaceDomainReader.DeliveryUrlAsync`, never by formatting `EmailOptions.BaseUrl`.** Seven call sites were each doing their own formatting; a link branded in one mail and unbranded in the next is worse than no white-label. Related: a paid-only control that the plan cannot honour MUST be refused at commit (`watermark_requires_paid_plan`), not silently stored as `false` — degrading it quietly tells the sender something untrue about their own share.
 
+### Mount Invariants (WebDAV #195, S3 gateway #265)
+
+See `docs/protocol-mounts.md` for the full subsystem. Three rules bind all future work:
+
+- **A mount is the workspace and nothing else.** Personal deliveries and shares awaiting approval are never listed, there is no anonymous mount, and the credential is an existing API key (#115) over Basic — no second secret and no second place to revoke. Any new protocol surface MUST go through `MountCredentials` and `WorkspaceFileSystem` rather than reimplementing either: two protocols that disagree about which files exist are two products.
+- **A mount read is owner-side; a mount write obeys the same rules as the upload form.** Reads never count a download or run the recipient gates. Writes apply the plan size cap on the bytes that landed, the monthly quota, the storage region and locked folder defaults — those rules live in `WorkspaceFileSystem`, not in the form, and a protocol that skipped one would be a weaker door into the same files. DELETE requires the `manage` scope, not `write`.
+- **Never advertise a capability that is not implemented, and never `Results.Forbid()` on a protocol route.** `DAV: 1` with no LOCK costs read-write mounting from Explorer and Finder, and that is the honest price; a LOCK that returns a token while locking nothing tells a client its exclusive access is real. `Results.Forbid()` runs the cookie scheme's forbid handler and redirects a filesystem client to a sign-in page it will never render — return the status code.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

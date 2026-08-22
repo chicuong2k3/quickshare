@@ -2394,4 +2394,22 @@
   <data name="upload_watermark_hint" xml:space="preserve">
     <value>Tên bạn hiện mờ trên bản xem trước. File tải về không bị thay đổi.</value>
   </data>
+  <data name="dev_mount_title" xml:space="preserve">
+    <value>Gắn như một ổ đĩa</value>
+  </data>
+  <data name="dev_mount_hint" xml:space="preserve">
+    <value>WebDAV trên thư mục workspace. Thả file vào là thành một lượt gửi, áp dụng đúng hạn dùng, hạn mức và quy tắc thư mục của workspace.</value>
+  </data>
+  <data name="dev_mount_needs_workspace" xml:space="preserve">
+    <value>Mount là bề mặt của nhóm — hãy tạo hoặc tham gia một workspace trước.</value>
+  </data>
+  <data name="dev_mount_url" xml:space="preserve">
+    <value>Địa chỉ WebDAV</value>
+  </data>
+  <data name="dev_mount_setup" xml:space="preserve">
+    <value>Đăng nhập với tên bất kỳ và mật khẩu là API key:</value>
+  </data>
+  <data name="dev_mount_clients" xml:space="preserve">
+    <value>rclone, davfs2 và Cyberduck đọc ghi được. Windows Explorer và macOS Finder chỉ đọc — chúng yêu cầu WebDAV lock, thứ máy chủ này không nhận là có.</value>
+  </data>
 </root>

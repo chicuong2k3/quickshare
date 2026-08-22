@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 34 done (08-22): `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 35 done (08-22): `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -952,6 +952,53 @@ certificate issuance (the edge terminates TLS for the custom host — an operati
 down rather than performed by the app), per-tenant sender addresses in outbound mail (DKIM
 delegation is a second verification subsystem), and custom watermark text.
 
+## Tier 6 — batch 20: the WebDAV mount (#195)
+
+A workspace as a network drive, for the teams the JSON API was never going to reach: the nightly
+job that writes to a share, the designer who drags files into a folder window, the shop
+migrating off FTP.
+
+**One filesystem, two protocols eventually.** `WorkspaceFileSystem` owns what a path *means* —
+root folders, shared folders (#151) one or two deep, deliveries as files — and WebDAV is only
+the first consumer. `#265`'s S3 gateway is the second, and the reason the mapping is a class
+rather than a handler: two protocols that disagreed about which files exist would be two
+products.
+
+**The namespace is the workspace, never a personal pile**, and a share still awaiting approval
+(#162) is not listed — a drive is not a way around the gate.
+
+**A mount read is owner-side.** It does not count a download, run the recipient gates or touch
+the stats: this is the team looking at its own file, and charging it to the recipient statistics
+would corrupt the only number the sender asked for.
+
+**Writes obey the form's rules because the rules do not live in the form**: plan size cap
+(checked on what landed, since a chunked PUT declares no length), monthly quota, storage region
+(#119), locked folder defaults (#245). A folder whose locked policy demands a password refuses a
+mount write outright — the protocol has no field for one, and inventing a password leaves nobody
+to tell it to. PUT over an existing name *replaces* that delivery and keeps its link, which is
+both what a filesystem client means by PUT and what `#72` already calls replace-keep-link.
+
+**Credentials are the existing API key over Basic** — no second secret, no second place to
+revoke — and the scope split is deliberate: `read` for PROPFIND/GET, `write` for PUT/MKCOL,
+**`manage` for DELETE**, because a key that drops a nightly report should not be able to empty
+the drive. There is no anonymous mount.
+
+**Class 1 only, and the table says so.** No LOCK, so rclone/davfs2/Cyberduck read and write
+while Explorer and Finder mount read-only. A fake LOCK returning a token while locking nothing
+is worse than none: it tells a client its exclusive access is real. `Depth: infinity` is refused
+rather than walked.
+
+**A stub that was lying, found by the first test to need it.** `LocalDiskStorageProviderStub`
+discarded uploaded bytes, so no stream-in/stream-out path could be tested while the suite looked
+green — the same defect class batch 11's audit found in the object key. It now holds what it is
+given, and the round trip is asserted.
+
+Tests: `WebDavTests` (18); suite green at 940. Design:
+[`docs/protocol-mounts.md`](protocol-mounts.md).
+
+**Not shipped**: LOCK/UNLOCK (and therefore read-write Explorer/Finder — #308 is what a real
+LOCK should map onto), MOVE/COPY, PROPPATCH, and the S3 gateway itself.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -983,6 +1030,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Delivery gating (approval / recurrence) | `docs/delivery-gating.md` |
 | Comments & chat channels | `docs/comments-and-channels.md` |
 | White-label domain & preview watermark | `docs/white-label.md` |
+| Protocol mounts (WebDAV, S3 gateway) | `docs/protocol-mounts.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -999,11 +1047,11 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 34 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 35 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,
   `#180` channels, `#162`/`#176` gating, `#285`/`#286` branding, `#119` residency, and the
   identity batches `#128`/`#181`/`#219`/`#146`/`#139` (12–13). Batch 19 closed `#81`
-  white-label and `#155` preview watermark. Still open: the protocol surfaces (`#265` S3
-  gateway, `#195` WebDAV, `#196` SFTP), `#163` BYOK, `#194` Outlook add-in, `#243` OCR,
-  `#225` crypto pay, `#277` voice commands
+  white-label and `#155` preview watermark; batch 20 closed `#195` WebDAV. Still open:
+  `#265` S3 gateway (the filesystem half is built and shared), `#196` SFTP, `#163` BYOK,
+  `#194` Outlook add-in, `#243` OCR, `#225` crypto pay, `#277` voice commands

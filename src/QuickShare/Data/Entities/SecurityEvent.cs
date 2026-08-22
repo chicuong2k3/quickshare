@@ -99,4 +99,8 @@ public enum SecurityEventType
     // White-label custom domain (#81).
     WorkspaceDomainChanged,
     WorkspaceDomainVerified,
+    // Protocol mounts (#195 WebDAV, #265 S3 gateway).
+    MountObjectWritten,
+    MountObjectDeleted,
+    MountFolderCreated,
 }

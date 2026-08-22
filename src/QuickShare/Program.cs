@@ -260,6 +260,10 @@ builder.Services.AddScoped<WorkspaceBackupJob>();
 // Recipient-facing workspace branding (issues #285, #286).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>();
 
+// Protocol mounts (#195 WebDAV, #265 S3): one filesystem view of the workspace, one credential.
+builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
+builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
+
 // White-label custom domain (issue #81): who owns an incoming host, and where a share's
 // public link lives. The verifier is not sealed so a test can answer DNS without a network.
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.WorkspaceDomainReader>();
@@ -714,6 +718,10 @@ app.MapGet(RoutePaths.MagicLink, async (
 
 // SAML 2.0 (issue #139): metadata, SP-initiated login and the assertion consumer.
 app.MapSamlEndpoints();
+
+// WebDAV mount (issue #195). Anonymous at the route level — the mount authenticates itself
+// with an API key over Basic, because no filesystem client carries our cookie.
+QuickShare.Features.Protocols.WebDav.WebDavEndpoints.MapWebDavEndpoints(app);
 
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>

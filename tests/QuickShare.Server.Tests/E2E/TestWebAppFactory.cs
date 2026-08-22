@@ -290,7 +290,17 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     /// <summary>Size reported by GetObjectSizeAsync; -1 (default) means "unknown", which skips the commit-time size check.</summary>
     public long NextObjectSize { get; set; } = -1;
     public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
-        => Task.FromResult(NextObjectSize);
+    {
+        // An explicit NextObjectSize still wins, so the tests that drive the commit-time size
+        // check keep driving it; a stored object answers for itself.
+        if (NextObjectSize >= 0)
+            return Task.FromResult(NextObjectSize);
+
+        lock (_objects)
+        {
+            return Task.FromResult(_objects.TryGetValue(objectKey, out var bytes) ? bytes.LongLength : -1L);
+        }
+    }
 
     /// <summary>
     /// Builds the *real* key shape rather than a stub-specific one. The old "stub/{id}/{name}"
@@ -311,8 +321,23 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
         => Task.CompletedTask;
 
-    public Task UploadObjectAsync(string objectKey, Stream content, string contentType, CancellationToken ct = default)
-        => Task.CompletedTask;
+    /// <summary>
+    /// Objects this stub actually holds. It used to throw the bytes away, which made every
+    /// stream-in/stream-out path (the protocol mounts, #195/#265) untestable while looking
+    /// green — the same class of defect the batch-11 audit found in the object *key*.
+    /// </summary>
+    private readonly Dictionary<string, byte[]> _objects = new(StringComparer.Ordinal);
+
+    public async Task UploadObjectAsync(string objectKey, Stream content, string contentType, CancellationToken ct = default)
+    {
+        using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, ct);
+
+        lock (_objects)
+        {
+            _objects[objectKey] = buffer.ToArray();
+        }
+    }
 
     public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
         => Task.FromResult(new Uri("http://stub.local/download"));
@@ -327,7 +352,14 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     }
 
     public Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
-        => Task.CompletedTask;
+    {
+        lock (_objects)
+        {
+            _objects.Remove(objectKey);
+        }
+
+        return Task.CompletedTask;
+    }
 
     public Task CopyObjectAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
         => Task.CompletedTask;
@@ -336,7 +368,15 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     public byte[] NextReadBytes { get; set; } = [];
 
     public Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
-        => Task.FromResult<Stream?>(new MemoryStream(NextReadBytes));
+    {
+        lock (_objects)
+        {
+            if (_objects.TryGetValue(objectKey, out var stored))
+                return Task.FromResult<Stream?>(new MemoryStream(stored));
+        }
+
+        return Task.FromResult<Stream?>(new MemoryStream(NextReadBytes));
+    }
 
     public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<string>>([]);

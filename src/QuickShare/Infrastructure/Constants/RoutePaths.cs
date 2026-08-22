@@ -68,6 +68,8 @@ public static class RoutePaths
     public const string AccountWorkspaceApprovals = "/account/workspace/approvals";
     public const string AccountWorkspaceChannel = "/account/workspace/channel";
     public const string AccountWorkspaceDomain = "/account/workspace/domain";
+    /// <summary>WebDAV mount root (issue #195). No trailing slash — segments are appended.</summary>
+    public const string WebDav = "/dav";
     public const string AccountRecurring = "/account/recurring";
     public const string AccountSecurity = "/account/security";
     public const string AccountDeveloper = "/account/developer";

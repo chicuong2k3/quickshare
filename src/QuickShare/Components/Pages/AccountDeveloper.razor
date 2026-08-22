@@ -3,9 +3,14 @@
 @attribute [Authorize]
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Developer.Webhooks
+@using QuickShare.Features.Workspaces.Shared
+@using QuickShare.Infrastructure.Email
 @using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Options
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IOptions<EmailOptions> EmailOptions
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["dev_title"]</PageTitle>
@@ -54,6 +59,13 @@ else
     private List<ApiKey> keys = [];
     private List<WebhookEndpoint> endpoints = [];
     private List<WebhookDelivery> deliveries = [];
+    private bool hasSeat;
+
+    private string MountUrl => $"{EmailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.WebDav}";
+
+    /// <summary>The one command a team has to run. The key is typed by the user, never printed here.</summary>
+    private string RcloneSetup =>
+        $"rclone config create quickshare webdav url={MountUrl} vendor=other user=quickshare pass=<API-KEY>";
 
     private RenderFragment Chunk => @<section id="developer-body">
 
@@ -119,6 +131,34 @@ else
                     @* Filled in by script: the raw key exists in exactly one response. *@
                     <p class="db-p security-secret" id="dev-key-new" hidden><code id="dev-key-new-value"></code></p>
                 </div>
+            </div>
+        </div>
+
+        @* ── #195 WebDAV mount ── *@
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
+                <h2 class="db-h3">@Loc["dev_mount_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_hint"]</p>
+
+                @if (!hasSeat)
+                {
+                    @* A mount is a team surface: without a seat there is nothing to mount, and
+                       an address that answers 401 forever helps nobody. *@
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_needs_workspace"]</p>
+                }
+                else
+                {
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["dev_mount_url"]</dt>
+                            <dd><code>@MountUrl</code></dd>
+                        </div>
+                    </dl>
+
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_setup"]</p>
+                    <pre class="security-secret"><code>@RcloneSetup</code></pre>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_clients"]</p>
+                }
             </div>
         </div>
 
@@ -275,6 +315,9 @@ else
 
         var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
         if (user is null) return;
+
+        // The mount is only offered to a live seat — see the card's own note.
+        hasSeat = await Workspaces.GetSeatAsync(user.Id, CancellationToken.None) is { IsActive: true };
 
         keys = await Db.ApiKeys
             .AsNoTracking()
