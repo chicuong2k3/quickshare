@@ -122,6 +122,14 @@ public static class ErrorCodes
     public const string BrandAssetMissing = "brand_asset_missing";
     public const string BrandAssetTooLarge = "brand_asset_too_large";
     public const string BrandAssetTypeInvalid = "brand_asset_type_invalid";
+    // White-label custom domain (#81).
+    public const string DomainInvalid = "domain_invalid";
+    public const string DomainTaken = "domain_taken";
+    public const string DomainNotFound = "domain_not_found";
+    public const string DomainNotVerified = "domain_not_verified";
+    public const string DomainRequiresStudio = "domain_requires_studio";
+    /// <summary>Preview watermark is a paid control (issue #155).</summary>
+    public const string WatermarkRequiresPaidPlan = "watermark_requires_paid_plan";
     /// <summary>Requested storage region is not configured on this deployment (issue #119).</summary>
     public const string StorageRegionInvalid = "storage_region_invalid";
     // Approval workflow (#162) and recurring delivery (#176).

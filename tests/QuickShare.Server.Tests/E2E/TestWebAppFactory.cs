@@ -93,6 +93,10 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             services.RemoveAll<QuickShare.Infrastructure.Push.IPushService>();
             services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, StubPushService>();
             services.AddScoped<PayOSService, StubPayOSService>();
+            // White-label domain verification (issue #81) asks DNS a question; a suite that
+            // asked the real resolver would be testing the network.
+            services.RemoveAll<QuickShare.Features.Workspaces.Domains.DomainVerifier>();
+            services.AddScoped<QuickShare.Features.Workspaces.Domains.DomainVerifier, StubDomainVerifier>();
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
     }
@@ -192,6 +196,31 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(T));
         if (descriptor is not null)
             services.Remove(descriptor);
+    }
+}
+
+/// <summary>
+/// Answers domain verification from a set instead of the resolver (issue #81). A host is
+/// "pointed at us" once a test says so, which is what publishing a CNAME means here.
+/// </summary>
+internal sealed class StubDomainVerifier(
+    Microsoft.Extensions.Options.IOptions<QuickShare.Infrastructure.Email.EmailOptions> emailOptions,
+    Microsoft.Extensions.Logging.ILogger<QuickShare.Features.Workspaces.Domains.DomainVerifier> logger)
+    : QuickShare.Features.Workspaces.Domains.DomainVerifier(emailOptions, logger)
+{
+    /// <summary>Hosts whose CNAME the test has published.</summary>
+    public static readonly HashSet<string> Pointed = new(StringComparer.OrdinalIgnoreCase);
+
+    public override string CanonicalHost => "app.quickshare.test";
+
+    public override Task<string?> CheckAsync(string host, CancellationToken ct)
+    {
+        lock (Pointed)
+        {
+            return Task.FromResult(Pointed.Contains(host)
+                ? null
+                : $"{host} does not point at {CanonicalHost} yet.");
+        }
     }
 }
 

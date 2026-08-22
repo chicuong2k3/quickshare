@@ -46,6 +46,13 @@ public record Delivery : BaseAuditEntity
     /// contract is a place for things to be said that the sender never sees.
     /// </summary>
     public bool CommentsEnabled { get; set; }
+
+    /// <summary>
+    /// Overlay the sender's name across the in-page preview (issue #155). The stored file is
+    /// never touched and the download is never watermarked — this marks the *screenshot*, which
+    /// is the leak an agency sharing work-in-progress actually fears.
+    /// </summary>
+    public bool WatermarkEnabled { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }

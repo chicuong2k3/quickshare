@@ -46,6 +46,7 @@ public class AppDbContext : DbContext
     public DbSet<RecurringDelivery> RecurringDeliveries => Set<RecurringDelivery>();
     public DbSet<DeliveryComment> DeliveryComments => Set<DeliveryComment>();
     public DbSet<WorkspaceChannelHook> WorkspaceChannelHooks => Set<WorkspaceChannelHook>();
+    public DbSet<WorkspaceDomain> WorkspaceDomains => Set<WorkspaceDomain>();
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
@@ -711,6 +712,25 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceDeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkspaceDomain>(entity =>
+        {
+            entity.ToTable("workspace_domains");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Host).IsRequired().HasMaxLength(WorkspaceDomain.HostMaxLength);
+            entity.Property(e => e.VerificationToken).IsRequired().HasMaxLength(WorkspaceDomain.TokenLength);
+            entity.Property(e => e.LastError).HasMaxLength(WorkspaceDomain.ErrorMaxLength);
+            // Unique on the host, not just per workspace: two workspaces claiming one hostname is
+            // the same hole the SSO directory had — whoever registered first would absorb the
+            // other's recipients.
+            entity.HasIndex(e => e.Host).IsUnique();
+            // One domain per workspace. A second address for the same brand is a redirect.
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<WorkspaceBrand>(entity =>

@@ -1,0 +1,165 @@
+@layout MainLayout
+@page "/account/workspace/domain"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Domains
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject DomainVerifier Verifier
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["domain_title"]</PageTitle>
+
+@* Workspace configuration — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+@if (isChunkRequest)
+{
+    @Chunk
+}
+else
+{
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="db-h1">@Loc["domain_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["domain_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceDomain" />
+
+    <section id="workspace-domain-body"
+             hx-get="@RoutePaths.AccountWorkspaceDomain"
+             hx-trigger="load"
+             hx-target="#workspace-domain-body"
+             hx-select="#workspace-domain-body"
+             hx-swap="outerHTML"
+             aria-busy="true">
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
+            </div>
+        </div>
+    </section>
+
+</PageWrapper>
+}
+
+<script src="/js/domain.js" defer></script>
+
+@code {
+    private bool isChunkRequest;
+    private bool isAdmin;
+    private WorkspaceDomain? domain;
+
+    private RenderFragment Chunk => @<section id="workspace-domain-body">
+        @if (!isAdmin)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <p class="db-p">@Loc["ws_admin_only"]</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["domain_config_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["domain_config_hint"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="domain-host">@Loc["domain_host"]</label>
+                        <input id="domain-host" class="db-input" type="text" autocomplete="off" spellcheck="false"
+                               maxlength="@WorkspaceDomain.HostMaxLength"
+                               value="@(domain?.Host ?? string.Empty)"
+                               placeholder="files.example.com" />
+                        <p class="db-p db-text-muted workspace-hint">@Loc["domain_host_hint"]</p>
+
+                        <dl class="workspace-stats">
+                            <div class="workspace-stat">
+                                <dt>@Loc["domain_cname_target"]</dt>
+                                <dd>@Verifier.CanonicalHost</dd>
+                            </div>
+                        </dl>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-saved-label="@Loc["domain_saved"]"
+                                onclick="window.quickShareDomain.save(this)"
+                                data-ai-action="domain.save">@Loc["domain_save"]</button>
+
+                        @if (domain is not null)
+                        {
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    onclick="window.quickShareDomain.verify(this)"
+                                    data-ai-action="domain.verify">@Loc["domain_verify"]</button>
+
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    data-confirm="@Loc["domain_remove_confirm"]"
+                                    onclick="window.quickShareDomain.remove(this)"
+                                    data-ai-action="domain.remove">@Loc["domain_remove"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (domain is not null)
+            {
+                <div class="db-card account-card workspace-card">
+                    <div class="db-card__body">
+                        <h2 class="db-h3">@Loc["domain_status_title"]</h2>
+
+                        <p class="db-p @(domain.IsVerified ? string.Empty : "workspace-notice")">
+                            @(domain.IsVerified ? Loc["domain_verified"] : Loc["domain_unverified"])
+                        </p>
+
+                        <dl class="workspace-stats">
+                            <div class="workspace-stat">
+                                <dt>@Loc["domain_last_checked"]</dt>
+                                <dd>@(domain.LastCheckedAt is { } at ? at.ToLocalTime().ToString("g") : "—")</dd>
+                            </div>
+                            <div class="workspace-stat">
+                                <dt>@Loc["domain_token"]</dt>
+                                <dd>@domain.VerificationToken</dd>
+                            </div>
+                        </dl>
+
+                        <p class="db-p db-text-muted workspace-hint">@Loc["domain_token_hint"]</p>
+
+                        @if (!string.IsNullOrEmpty(domain.LastError))
+                        {
+                            <p class="db-p db-text-muted workspace-hint">@Loc["domain_last_error", domain.LastError]</p>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </section>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var isHtmxRequest = string.Equals(
+            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
+            HtmxHeaders.RequestValue,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isHtmxRequest) return;
+
+        isChunkRequest = true;
+
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        domain = await Db.WorkspaceDomains
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.WorkspaceId == seat.WorkspaceId, CancellationToken.None);
+    }
+}

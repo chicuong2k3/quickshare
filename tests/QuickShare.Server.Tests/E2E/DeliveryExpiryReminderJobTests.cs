@@ -92,7 +92,7 @@ public sealed class DeliveryExpiryReminderJobTests : IClassFixture<TestWebAppFac
             await db.SaveChangesAsync();
         }
 
-        var job = new DeliveryExpiryReminderJob(scopeFactory, emailSender, emailOptions, NullLogger<DeliveryExpiryReminderJob>.Instance);
+        var job = new DeliveryExpiryReminderJob(scopeFactory, emailSender, NullLogger<DeliveryExpiryReminderJob>.Instance);
         await job.RemindAsync();
 
         await using (var verifyScope = scopeFactory.CreateAsyncScope())

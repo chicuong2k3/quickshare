@@ -489,6 +489,9 @@ namespace QuickShare.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("WatermarkEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("WorkspaceId")
                         .HasColumnType("uuid");
 
@@ -2503,6 +2506,52 @@ namespace QuickShare.Migrations
                     b.ToTable("workspace_channel_hooks", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceDomain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<DateTime?>("LastCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VerificationToken")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Host")
+                        .IsUnique();
+
+                    b.HasIndex("WorkspaceId")
+                        .IsUnique();
+
+                    b.ToTable("workspace_domains", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceFolder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3232,6 +3281,17 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceChannelHook", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceDomain", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.Workspace", "Workspace")
                         .WithMany()

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Features.Workspaces.Channels;
+using QuickShare.Features.Workspaces.Domains;
 using QuickShare.Features.Workspaces.Folders;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Constants;
@@ -12,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -29,6 +30,7 @@ public sealed class CommitR2Handler(
     AppDbContext db,
     CacheService cache,
     ChannelNotifier channels,
+    WorkspaceDomainReader domains,
     QuickShare.Features.Developer.Webhooks.WebhookDispatcher webhooks)
     : IRequestHandler<CommitR2Command, Result<CommitR2Response>>
 {
@@ -66,6 +68,12 @@ public sealed class CommitR2Handler(
         // Scope rules (issues #142 CIDR allowlist, #166 country rules) are a paid control.
         // Normalize first: an all-garbage list collapses to null, which is "no rule" and
         // must not trip the plan gate.
+        // Preview watermark (issue #155) is a paid control, and refused rather than silently
+        // dropped: a sender who thinks their preview carries their name and finds out it does
+        // not has been told something untrue about who can screenshot their work.
+        if (cmd.WatermarkEnabled && plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
+            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.WatermarkRequiresPaidPlan));
+
         var allowedIpRanges = DeliveryAccessPolicy.NormalizeIpRanges(cmd.AllowedIpRanges);
         var allowedCountries = DeliveryAccessPolicy.NormalizeCountries(cmd.AllowedCountries);
         var blockedCountries = DeliveryAccessPolicy.NormalizeCountries(cmd.BlockedCountries);
@@ -295,6 +303,7 @@ public sealed class CommitR2Handler(
             // Privacy mode wins: a share that keeps no download record should not grow a
             // thread instead (issues #289/#187).
             CommentsEnabled = cmd.CommentsEnabled && !cmd.PrivacyMode,
+            WatermarkEnabled = cmd.WatermarkEnabled,
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.
@@ -391,7 +400,7 @@ public sealed class CommitR2Handler(
             await channels.NotifyDeliveryAsync(
                 delivery.WorkspaceId,
                 delivery.FileName,
-                $"{_emailOptions.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{shareCode}",
+                await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken),
                 delivery.ExpiresAt,
                 cancellationToken);
         }
@@ -422,8 +431,10 @@ public sealed class CommitR2Handler(
             await CaptureRecipientsAsync(user.Id, recipients, cancellationToken);
         }
 
-        var baseUrl = $"{httpContextAccessor.HttpContext!.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}";
-        var shareLink = $"{baseUrl}/d/{shareCode}";
+        // The link the sender copies is the workspace's own address when it has one (issue #81):
+        // an agency that white-labels its recipient page and then hands out our hostname has
+        // white-labelled nothing.
+        var shareLink = await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken);
         if (!string.IsNullOrEmpty(user?.ReferralCode))
             shareLink += $"?{ReferralPolicy.QueryParam}={user.ReferralCode}";
 
@@ -519,7 +530,7 @@ public sealed class CommitR2Handler(
             }
 
             var baseUrl = _emailOptions.BaseUrl.TrimEnd('/');
-            var shareUrl = $"{baseUrl}/d/{shareCode}";
+            var shareUrl = await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken);
             var confirmUrl = $"{baseUrl}{RoutePaths.ConfirmSenderEmail}/{senderEmailTokens.CreateConfirmToken(delivery.Id)}";
             var unsubscribeUrl = $"{baseUrl}{RoutePaths.UnsubscribeSender}/{senderEmailTokens.CreateUnsubscribeToken(delivery.Id)}";
 
@@ -600,8 +611,7 @@ public sealed class CommitR2Handler(
 
     private async Task SendRecipientEmailsAsync(Delivery delivery, string shareCode, List<string> recipients, CancellationToken cancellationToken)
     {
-        var baseUrl = _emailOptions.BaseUrl.TrimEnd('/');
-        var shareUrl = $"{baseUrl}{RoutePaths.DeliveryPage}{shareCode}";
+        var shareUrl = await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken);
 
         var body = $"""
             <div style="font-family:system-ui,sans-serif;font-size:15px;color:#1f2937">

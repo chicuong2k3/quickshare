@@ -2,6 +2,7 @@ using System.Text.Json;
 using QuickShare.Extensions;
 using QuickShare.Features.Workspaces.Audit;
 using QuickShare.Features.Workspaces.Channels;
+using QuickShare.Features.Workspaces.Domains;
 using QuickShare.Features.Workspaces.Shared;
 using QuickShare.Infrastructure.Email;
 
@@ -156,11 +157,10 @@ public sealed class ApproveDeliveryEndpoint : EndpointWithoutRequest
         // Only now does anybody outside hear about it — by mail, and in the channel.
         await Resolve<ApprovalNotifier>().SendReleaseAsync(delivery, recipients, ct);
 
-        var emailOptions = Resolve<Microsoft.Extensions.Options.IOptions<EmailOptions>>();
         await Resolve<ChannelNotifier>().NotifyDeliveryAsync(
             delivery.WorkspaceId,
             delivery.FileName,
-            $"{emailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{delivery.ShareCode}",
+            await Resolve<WorkspaceDomainReader>().DeliveryUrlAsync(delivery.WorkspaceId, delivery.ShareCode, ct),
             delivery.ExpiresAt,
             ct);
 
@@ -257,7 +257,7 @@ public sealed class DenyDeliveryEndpoint : Endpoint<DenyRequest>
 /// </summary>
 public sealed class ApprovalNotifier(
     EmailSender emailSender,
-    Microsoft.Extensions.Options.IOptions<EmailOptions> emailOptions,
+    WorkspaceDomainReader domains,
     AppDbContext db,
     ILogger<ApprovalNotifier> logger)
 {
@@ -274,7 +274,7 @@ public sealed class ApprovalNotifier(
         if (!emailSender.IsConfigured || recipients.Count == 0)
             return;
 
-        var link = $"{emailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{delivery.ShareCode}";
+        var link = await domains.DeliveryUrlAsync(delivery.WorkspaceId, delivery.ShareCode, ct);
         var body = $"""
             <p>{System.Net.WebUtility.HtmlEncode(delivery.FileName)} is ready for you.</p>
             <p><a href="{link}">Open the delivery</a></p>

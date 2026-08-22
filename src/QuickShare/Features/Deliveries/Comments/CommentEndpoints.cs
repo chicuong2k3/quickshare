@@ -3,6 +3,7 @@ using QuickShare.Extensions;
 using QuickShare.Features.Downloads.Shared;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Features.Workspaces.Channels;
+using QuickShare.Features.Workspaces.Domains;
 using QuickShare.Infrastructure.Email;
 
 namespace QuickShare.Features.Deliveries.Comments;
@@ -276,7 +277,7 @@ public sealed class PostCommentEndpoint : Endpoint<PostCommentRequest, CommentDt
 
         await db.SaveChangesAsync(ct);
 
-        var link = $"{Resolve<IOptions<EmailOptions>>().Value.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{delivery.ShareCode}";
+        var link = await Resolve<WorkspaceDomainReader>().DeliveryUrlAsync(delivery.WorkspaceId, delivery.ShareCode, ct);
         await Resolve<ChannelNotifier>().NotifyCommentAsync(
             delivery.WorkspaceId, delivery.FileName, author.Name, body, link, ct);
 

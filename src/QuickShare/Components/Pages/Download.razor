@@ -10,10 +10,13 @@
 @using QuickShare.Features.Downloads.Info
 @using QuickShare.Features.Deliveries.ExtensionRequests
 @using QuickShare.Features.Workspaces.Branding
+@using QuickShare.Features.Workspaces.Domains
+@using QuickShare.Features.Downloads.Shared
 @using QuickShare.Features.Uploads.Shared
 @using QuickShare.Features.Deliveries.Comments
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject BrandReader Brands
+@inject WorkspaceDomainReader Domains
 @inject StorageRegionResolver Regions
 @inject CommentGate Gate
 
@@ -249,7 +252,9 @@
 
                         @* Inline media preview (issue #21) — filled by download.js. Only
                            ungated, unencrypted media reaches this element. *@
-                        <div id="dl-media-preview" class="dl-media hidden" style="margin-top: 1.5rem"></div>
+                        <div id="dl-media-preview"
+                             class="dl-media hidden @(Watermark is null ? string.Empty : "dl-media--watermark")"
+                             style="margin-top: 1.5rem@(Watermark is null ? string.Empty : $"; --dl-watermark: {Watermark}")"></div>
 
                         @* ZIP archive contents (issue #215) — filled by download.js; a
                            read-only entry listing so recipients see what's inside before
@@ -794,6 +799,12 @@
     /// </summary>
     private BrandView? Brand { get; set; }
 
+    /// <summary>
+    /// The preview overlay as a CSS <c>url()</c> tile (issue #155), or null when this share
+    /// carries no watermark. Only the preview is marked — the download is untouched.
+    /// </summary>
+    private string? Watermark { get; set; }
+
     /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
     private string? RegionLabel { get; set; }
 
@@ -901,10 +912,40 @@
             // Id and the two gate hashes join the projection for the file list (issue #79):
             // it needs to know which delivery, and whether the share is still behind a gate.
             // Still deliberately narrow — none of this reaches the recipient payload.
-            .Select(d => new { d.Id, d.WorkspaceId, d.StorageRegion, d.PasswordHash, d.OtpHash })
+            .Select(d => new
+            {
+                d.Id,
+                d.WorkspaceId,
+                d.StorageRegion,
+                d.PasswordHash,
+                d.OtpHash,
+                d.WatermarkEnabled,
+                SenderName = d.Sender != null ? d.Sender.Name : null,
+            })
             .FirstOrDefaultAsync(CancellationToken.None);
 
+        // White-label host check (issue #81). A verified custom domain belongs to one workspace,
+        // and a share from a different one must not be reachable through it: an agency's client
+        // seeing somebody else's file under the agency's own hostname is the worst failure this
+        // feature can have, and it is worth a 404 rather than a redirect that confirms the code.
+        var hostWorkspaceId = await Domains.WorkspaceForHostAsync(
+            httpContext.Request.Host.Host, CancellationToken.None);
+
+        if (hostWorkspaceId is { } hostWorkspace && stored?.WorkspaceId != hostWorkspace)
+        {
+            RenderState = DownloadRenderState.NotFound;
+            return;
+        }
+
         Brand = await Brands.ForWorkspaceAsync(stored?.WorkspaceId, CancellationToken.None);
+
+        // The overlay marks the screenshot, never the file: nothing below touches the stored
+        // object or the download route (issue #155).
+        if (stored?.WatermarkEnabled == true
+            && PreviewWatermark.TextFor(Brand?.HeaderText, stored.SenderName) is { } watermarkText)
+        {
+            Watermark = PreviewWatermark.ToCssUrl(watermarkText);
+        }
         var gated = !string.IsNullOrEmpty(stored?.PasswordHash) || !string.IsNullOrEmpty(stored?.OtpHash);
         await LoadFilesAsync(stored?.Id, gated, CancellationToken.None);
         await LoadCommentsAsync(CancellationToken.None);

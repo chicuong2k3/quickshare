@@ -2328,4 +2328,70 @@
   <data name="login_link_sent" xml:space="preserve">
     <value>If that address has an account, a sign-in link is on its way.</value>
   </data>
+  <data name="ws_tab_domain" xml:space="preserve">
+    <value>Domain</value>
+  </data>
+  <data name="domain_title" xml:space="preserve">
+    <value>Custom domain</value>
+  </data>
+  <data name="domain_subtitle" xml:space="preserve">
+    <value>Serve your recipient pages from your own hostname.</value>
+  </data>
+  <data name="domain_config_title" xml:space="preserve">
+    <value>Your hostname</value>
+  </data>
+  <data name="domain_config_hint" xml:space="preserve">
+    <value>Studio plan. Point a CNAME at our host, then verify — nothing is served under an unverified domain.</value>
+  </data>
+  <data name="domain_host" xml:space="preserve">
+    <value>Hostname</value>
+  </data>
+  <data name="domain_host_hint" xml:space="preserve">
+    <value>A hostname only, e.g. files.your-agency.com — no scheme, port or path.</value>
+  </data>
+  <data name="domain_save" xml:space="preserve">
+    <value>Save domain</value>
+  </data>
+  <data name="domain_saved" xml:space="preserve">
+    <value>Domain saved. Add the CNAME, then verify.</value>
+  </data>
+  <data name="domain_verify" xml:space="preserve">
+    <value>Verify now</value>
+  </data>
+  <data name="domain_remove" xml:space="preserve">
+    <value>Remove domain</value>
+  </data>
+  <data name="domain_remove_confirm" xml:space="preserve">
+    <value>Remove this domain? Links already sent will keep working on the default address.</value>
+  </data>
+  <data name="domain_status_title" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="domain_verified" xml:space="preserve">
+    <value>Verified — recipient links use this hostname.</value>
+  </data>
+  <data name="domain_unverified" xml:space="preserve">
+    <value>Not verified yet. Links still use the default address.</value>
+  </data>
+  <data name="domain_cname_target" xml:space="preserve">
+    <value>CNAME target</value>
+  </data>
+  <data name="domain_token" xml:space="preserve">
+    <value>Reference</value>
+  </data>
+  <data name="domain_token_hint" xml:space="preserve">
+    <value>Quote this if you contact support about the domain.</value>
+  </data>
+  <data name="domain_last_checked" xml:space="preserve">
+    <value>Last checked</value>
+  </data>
+  <data name="domain_last_error" xml:space="preserve">
+    <value>Last check said: {0}</value>
+  </data>
+  <data name="upload_watermark_label" xml:space="preserve">
+    <value>Watermark the preview</value>
+  </data>
+  <data name="upload_watermark_hint" xml:space="preserve">
+    <value>Your name is drawn across the in-page preview. The downloaded file is untouched.</value>
+  </data>
 </root>

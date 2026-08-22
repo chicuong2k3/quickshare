@@ -1,5 +1,5 @@
 using Hangfire;
-using Microsoft.Extensions.Options;
+using QuickShare.Features.Workspaces.Domains;
 using QuickShare.Infrastructure.Email;
 
 namespace QuickShare.Infrastructure.Jobs;
@@ -20,7 +20,7 @@ public sealed class RecurringDeliveryJob(
     IServiceScopeFactory scopeFactory,
     IStorageProvider storage,
     EmailSender emailSender,
-    IOptions<EmailOptions> emailOptions,
+    WorkspaceDomainReader domains,
     ILogger<RecurringDeliveryJob> logger)
 {
     private const string Subject = "A file has been shared with you";
@@ -151,7 +151,7 @@ public sealed class RecurringDeliveryJob(
         if (recipients.Length == 0)
             return;
 
-        var link = $"{emailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.DeliveryPage}{copy.ShareCode}";
+        var link = await domains.DeliveryUrlAsync(copy.WorkspaceId, copy.ShareCode, CancellationToken.None);
         var body = $"""
             <p>{System.Net.WebUtility.HtmlEncode(copy.FileName)} is ready for you.</p>
             <p><a href="{link}">Open the delivery</a></p>

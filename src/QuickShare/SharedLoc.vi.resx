@@ -2328,4 +2328,70 @@
   <data name="login_link_sent" xml:space="preserve">
     <value>Nếu địa chỉ đó có tài khoản, liên kết đăng nhập đang được gửi đi.</value>
   </data>
+  <data name="ws_tab_domain" xml:space="preserve">
+    <value>Tên miền</value>
+  </data>
+  <data name="domain_title" xml:space="preserve">
+    <value>Tên miền riêng</value>
+  </data>
+  <data name="domain_subtitle" xml:space="preserve">
+    <value>Trang tải file hiển thị trên tên miền của bạn.</value>
+  </data>
+  <data name="domain_config_title" xml:space="preserve">
+    <value>Tên miền của bạn</value>
+  </data>
+  <data name="domain_config_hint" xml:space="preserve">
+    <value>Gói Studio. Trỏ CNAME về host của chúng tôi rồi xác minh — tên miền chưa xác minh sẽ không được dùng.</value>
+  </data>
+  <data name="domain_host" xml:space="preserve">
+    <value>Tên miền</value>
+  </data>
+  <data name="domain_host_hint" xml:space="preserve">
+    <value>Chỉ nhập hostname, ví dụ files.agency-cua-ban.com — không kèm giao thức, cổng hay đường dẫn.</value>
+  </data>
+  <data name="domain_save" xml:space="preserve">
+    <value>Lưu tên miền</value>
+  </data>
+  <data name="domain_saved" xml:space="preserve">
+    <value>Đã lưu. Thêm bản ghi CNAME rồi bấm xác minh.</value>
+  </data>
+  <data name="domain_verify" xml:space="preserve">
+    <value>Xác minh ngay</value>
+  </data>
+  <data name="domain_remove" xml:space="preserve">
+    <value>Xoá tên miền</value>
+  </data>
+  <data name="domain_remove_confirm" xml:space="preserve">
+    <value>Xoá tên miền này? Các link đã gửi vẫn hoạt động trên địa chỉ mặc định.</value>
+  </data>
+  <data name="domain_status_title" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="domain_verified" xml:space="preserve">
+    <value>Đã xác minh — link gửi cho người nhận dùng tên miền này.</value>
+  </data>
+  <data name="domain_unverified" xml:space="preserve">
+    <value>Chưa xác minh. Link vẫn dùng địa chỉ mặc định.</value>
+  </data>
+  <data name="domain_cname_target" xml:space="preserve">
+    <value>Trỏ CNAME về</value>
+  </data>
+  <data name="domain_token" xml:space="preserve">
+    <value>Mã tham chiếu</value>
+  </data>
+  <data name="domain_token_hint" xml:space="preserve">
+    <value>Cung cấp mã này khi liên hệ hỗ trợ về tên miền.</value>
+  </data>
+  <data name="domain_last_checked" xml:space="preserve">
+    <value>Kiểm tra lần cuối</value>
+  </data>
+  <data name="domain_last_error" xml:space="preserve">
+    <value>Kết quả kiểm tra: {0}</value>
+  </data>
+  <data name="upload_watermark_label" xml:space="preserve">
+    <value>Đóng dấu bản xem trước</value>
+  </data>
+  <data name="upload_watermark_hint" xml:space="preserve">
+    <value>Tên bạn hiện mờ trên bản xem trước. File tải về không bị thay đổi.</value>
+  </data>
 </root>

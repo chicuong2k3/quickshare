@@ -96,4 +96,7 @@ public enum SecurityEventType
     ScimTokenRevoked,
     ScimUserProvisioned,
     ScimUserDeprovisioned,
+    // White-label custom domain (#81).
+    WorkspaceDomainChanged,
+    WorkspaceDomainVerified,
 }

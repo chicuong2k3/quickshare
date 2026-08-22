@@ -382,3 +382,21 @@
         transition: none;
     }
 }
+
+/* ─── Preview watermark (issue #155) ───
+   Marks the screenshot, not the file: the overlay lives on the preview container, the stored
+   object and the download route are untouched. pointer-events: none so it never eats a click on
+   a video control underneath. */
+.dl-media--watermark {
+    position: relative;
+}
+
+.dl-media--watermark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: var(--dl-watermark);
+    background-repeat: repeat;
+    mix-blend-mode: difference;
+}

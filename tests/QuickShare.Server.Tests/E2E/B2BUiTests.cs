@@ -120,6 +120,37 @@ public sealed class B2BUiTests : IClassFixture<TestWebAppFactory>
         Assert.DoesNotContain("channel.remove", html, StringComparison.Ordinal);
     }
 
+    // ── #81 custom domain ──
+
+    [Fact]
+    public async Task DomainPage_ShowsTheClaimAndItsStatus()
+    {
+        var (client, _) = await WorkspaceClientAsync();
+
+        var save = await client.PutAsJsonAsync("/api/workspace/domain", new { host = "files.uitest.test" });
+        save.EnsureSuccessStatusCode();
+
+        var html = await FragmentAsync(client, RoutePaths.AccountWorkspaceDomain);
+
+        Assert.Contains("domain.save", html, StringComparison.Ordinal);
+        Assert.Contains("domain.verify", html, StringComparison.Ordinal);
+        Assert.Contains("files.uitest.test", html, StringComparison.Ordinal);
+        // The setup step the admin actually has to perform has to be on the page.
+        Assert.Contains("app.quickshare.test", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DomainPage_RendersWithNothingClaimed()
+    {
+        var (client, _) = await WorkspaceClientAsync();
+
+        var html = await FragmentAsync(client, RoutePaths.AccountWorkspaceDomain);
+
+        Assert.Contains("domain.save", html, StringComparison.Ordinal);
+        // Nothing to verify or remove yet.
+        Assert.DoesNotContain("domain.verify", html, StringComparison.Ordinal);
+    }
+
     // ── #176 schedule list ──
 
     [Fact]

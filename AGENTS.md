@@ -272,6 +272,14 @@ See `docs/comments-and-channels.md` for the full subsystem. Three rules bind all
 - **A chat webhook URL is a credential.** Never return it from an endpoint, never put it in an audit payload (record the host), and post over HTTPS only. Channel posts are best-effort with a short timeout and MUST NOT be able to fail a share or a comment — a chat outage is not an upload error.
 - **Test stubs MUST produce the same shapes as production, and every feature needs at least one test that proves it is *reached*.** The storage stub returned a made-up object key, which made an entire residency feature untestable while everything looked green; separately, three services were written, documented and never called by anything. A unit test proves a function computes the right answer and says nothing about whether anything calls it. Assert the wiring through an observable side effect — see `AuditRegressionTests`.
 
+### White-label Invariants (custom domain #81, preview watermark #155)
+
+See `docs/white-label.md` for the full subsystem. Three rules bind all future work:
+
+- **Nothing is served under an unverified host.** Every read of a custom domain goes through `VerifiedAt`, never `Host` alone, and the host column is unique across all workspaces. A hostname is somebody's property: claiming one MUST change nothing until DNS agrees, or claiming would be a way to break another workspace's links.
+- **A verified host serves exactly one workspace, and a foreign share on it is a plain not-found.** Never redirect to the canonical address instead — that confirms the share code exists. Any new recipient-facing page MUST apply the same host check `Download.razor` does.
+- **Build recipient links through `WorkspaceDomainReader.DeliveryUrlAsync`, never by formatting `EmailOptions.BaseUrl`.** Seven call sites were each doing their own formatting; a link branded in one mail and unbranded in the next is worse than no white-label. Related: a paid-only control that the plan cannot honour MUST be refused at commit (`watermark_requires_paid_plan`), not silently stored as `false` — degrading it quietly tells the sender something untrue about their own share.
+
 @RTK.md
 
 ## Keeping the GitNexus index fresh

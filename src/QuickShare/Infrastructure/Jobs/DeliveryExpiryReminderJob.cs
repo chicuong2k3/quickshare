@@ -1,6 +1,6 @@
 using System.Net;
 using Hangfire;
-using Microsoft.Extensions.Options;
+using QuickShare.Features.Workspaces.Domains;
 using QuickShare.Infrastructure.Email;
 
 namespace QuickShare.Infrastructure.Jobs;
@@ -13,12 +13,9 @@ namespace QuickShare.Infrastructure.Jobs;
 public sealed class DeliveryExpiryReminderJob(
     IServiceScopeFactory scopeFactory,
     EmailSender emailSender,
-    IOptions<EmailOptions> emailOptions,
     ILogger<DeliveryExpiryReminderJob> logger)
 {
     private const string Subject = "File của bạn sắp hết hạn — tải về trước khi mất";
-
-    private readonly EmailOptions _options = emailOptions.Value;
 
     [DisableConcurrentExecution(timeoutInSeconds: 0)]
     [AutomaticRetry(Attempts = 0)]
@@ -30,6 +27,7 @@ public sealed class DeliveryExpiryReminderJob(
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var domains = scope.ServiceProvider.GetRequiredService<WorkspaceDomainReader>();
 
         var candidates = await db.Deliveries
             .Where(d => d.Status == DeliveryStatus.Active)
@@ -47,8 +45,9 @@ public sealed class DeliveryExpiryReminderJob(
         {
             try
             {
+                var shareUrl = await domains.DeliveryUrlAsync(delivery.WorkspaceId, delivery.ShareCode, ct);
                 await emailSender.SendAsync(
-                    delivery.SenderEmail!, string.Empty, Subject, BuildBody(delivery), ct);
+                    delivery.SenderEmail!, string.Empty, Subject, BuildBody(delivery, shareUrl), ct);
                 sent++;
             }
             catch (Exception ex)
@@ -66,10 +65,8 @@ public sealed class DeliveryExpiryReminderJob(
         logger.LogInformation("DeliveryExpiryReminderJob reminded {Sent} senders of {Count} expiring files", sent, candidates.Count);
     }
 
-    private string BuildBody(Delivery delivery)
+    private static string BuildBody(Delivery delivery, string shareUrl)
     {
-        var baseUrl = _options.BaseUrl.TrimEnd('/');
-        var shareUrl = $"{baseUrl}/d/{delivery.ShareCode}";
         var expiresLabel = delivery.ExpiresAt!.Value.ToString("dd/MM/yyyy HH:mm 'UTC'", CultureInfo.InvariantCulture);
 
         return $"""

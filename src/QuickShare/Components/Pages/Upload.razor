@@ -263,6 +263,18 @@
                     <span class="otp-hint">@Loc["upload_comments_hint"]</span>
                 </div>
 
+                @* Preview watermark (issue #155) — Pro/Studio; marks the screenshot, not the file *@
+                @if (plan is PlanTierLimits.Pro or PlanTierLimits.Studio)
+                {
+                    <div class="sender-email-wrap">
+                        <label class="otp-label burn-toggle">
+                            <input type="checkbox" id="upload-watermark" />
+                            <span>@Loc["upload_watermark_label"]</span>
+                        </label>
+                        <span class="otp-hint">@Loc["upload_watermark_hint"]</span>
+                    </div>
+                }
+
                 @* Email OTP (issue #291) — recipient requests a single-use emailed code *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

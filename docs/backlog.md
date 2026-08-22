@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 32 done (08-22): `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 34 done (08-22): `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -493,9 +493,9 @@ request that may never finish. The licence note is the uploader's own declaratio
 labelled as unverifiable.
 
 **Not shipped**: per-folder brand override (a second resolution layer on every recipient page
-for a setting changed once a year), and custom-domain-carried branding — `#67` is still open,
-so `#81` white-label stays open too, since brand control without domain control is not
-white-label.
+for a setting changed once a year), and custom-domain-carried branding — `#67` was still open at
+the time, so `#81` white-label stayed open with it, since brand control without domain control
+is not white-label. (Batch 19 closed that gap.)
 
 
 Tier 6 batch 9 (residency), 2026-08-22: `#119` data residency — one migration
@@ -905,6 +905,53 @@ verification (we do not care which authenticator model was used), magic links fo
 
 Design and invariants: `docs/passwordless-auth.md`.
 
+## Tier 6 — batch 19: white-label and the preview watermark (#81, #155)
+
+The agency batch. `#285`/`#286` gave a workspace its own look; this gives it its own address,
+and gives the previews it shares a name across them.
+
+`#81` is mostly composition — sub-accounts are seats (`#106`/`#278`), per-tenant keys are the
+developer platform (`#115`), billing is PayOS. The part that did not exist was the hostname.
+
+**A claim is not a grant.** `workspace_domains` stores what an admin typed and changes nothing
+until DNS agrees: every read goes through `VerifiedAt`, never `Host`. Two unique indexes carry
+it — one per workspace, and one on the host itself, which is the index that closes the hole
+batch 12 found in SSO directories, where two workspaces claiming one directory meant whoever
+registered first absorbed the other's people.
+
+**Verification is a DNS resolution, not a TXT record.** The domain only works if the agency
+points it at us, so the check asks exactly that and asks for nothing else. `Dns` from the BCL
+does it — no DNS client dependency. It is re-runnable and it can take a domain away: a host that
+stops pointing at us stops being verified, because staying verified would keep us minting links
+to an address that no longer reaches the files.
+
+**One place builds a recipient link.** `WorkspaceDomainReader.DeliveryUrlAsync` now serves the
+commit response, the recipient mail, the sender's own copy, the channel post, the approval
+release, the recurring cycle and the expiry reminder. A link branded in the confirmation mail
+and unbranded in the reminder is worse than no white-label at all — and the seven call sites had
+each been formatting `BaseUrl` themselves.
+
+**A verified host serves exactly one workspace.** `Download.razor` refuses a share from any
+other with a plain not-found: an agency's client seeing somebody else's file under the agency's
+own hostname is the worst failure this feature has, and a redirect would confirm the code
+exists.
+
+`#155` is a tiled SVG behind a CSS `::after` — no canvas, no re-encode, the stored object
+untouched and the download byte-identical. The text is the workspace's brand line or the
+sender's name, escaped twice (XML, then percent-encoding) into the data URI. On a free plan the
+commit is **refused** rather than silently storing `false`: a sender told their preview carries
+their name when it does not has been told something untrue about who can screenshot their work.
+The overlay is defeatable by anyone determined — every overlay is; what it removes is the casual
+screenshot-and-forward, and burning pixels into a transcoded stream is the upgrade path.
+
+Tests: `WhiteLabelTests` (16) plus two page-render cases in `B2BUiTests`; suite green at 922.
+Design: [`docs/white-label.md`](white-label.md).
+
+**Not shipped**: multiple domains per workspace, apex domains (needs ALIAS/ANAME at the edge),
+certificate issuance (the edge terminates TLS for the custom host — an operations step, written
+down rather than performed by the app), per-tenant sender addresses in outbound mail (DKIM
+delegation is a second verification subsystem), and custom watermark text.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -935,6 +982,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Workspace branding (recipient page / typography) | `docs/workspace-branding.md` |
 | Delivery gating (approval / recurrence) | `docs/delivery-gating.md` |
 | Comments & chat channels | `docs/comments-and-channels.md` |
+| White-label domain & preview watermark | `docs/white-label.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -951,9 +999,11 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 32 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 34 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
-  `#278`/`#141`/`#112`/`#192` (08-21, see section 8); `#323` SOC 2, `#289` delivery comments,
-  `#286` custom fonts, `#285` branded upload page, `#119` data residency, `#81` white-label,
-  `#139` SAML SSO, `#146` SCIM, `#219` MFA policy (blocked: no MFA exists yet) and the rest
-  still open
+  `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,
+  `#180` channels, `#162`/`#176` gating, `#285`/`#286` branding, `#119` residency, and the
+  identity batches `#128`/`#181`/`#219`/`#146`/`#139` (12–13). Batch 19 closed `#81`
+  white-label and `#155` preview watermark. Still open: the protocol surfaces (`#265` S3
+  gateway, `#195` WebDAV, `#196` SFTP), `#163` BYOK, `#194` Outlook add-in, `#243` OCR,
+  `#225` crypto pay, `#277` voice commands

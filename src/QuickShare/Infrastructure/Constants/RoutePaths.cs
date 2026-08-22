@@ -67,6 +67,7 @@ public static class RoutePaths
     public const string AccountWorkspaceBrand = "/account/workspace/brand";
     public const string AccountWorkspaceApprovals = "/account/workspace/approvals";
     public const string AccountWorkspaceChannel = "/account/workspace/channel";
+    public const string AccountWorkspaceDomain = "/account/workspace/domain";
     public const string AccountRecurring = "/account/recurring";
     public const string AccountSecurity = "/account/security";
     public const string AccountDeveloper = "/account/developer";

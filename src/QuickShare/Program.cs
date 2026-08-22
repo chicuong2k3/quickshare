@@ -260,6 +260,11 @@ builder.Services.AddScoped<WorkspaceBackupJob>();
 // Recipient-facing workspace branding (issues #285, #286).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>();
 
+// White-label custom domain (issue #81): who owns an incoming host, and where a share's
+// public link lives. The verifier is not sealed so a test can answer DNS without a network.
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.WorkspaceDomainReader>();
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.DomainVerifier>();
+
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
 
