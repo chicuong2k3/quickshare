@@ -18,5 +18,8 @@ public static partial class UserMapper
     [MapperIgnoreSource(nameof(User.PersonalPlan))]
     // Storage residency (issue #119) is an account setting, not profile identity.
     [MapperIgnoreSource(nameof(User.PreferredStorageRegion))]
+    // The upload-by-email address (issue #104) has its own endpoint: it is a credential-ish
+    // route into the account, not something to hand out with every profile render.
+    [MapperIgnoreSource(nameof(User.EmailIngestToken))]
     public static partial ProfileResponse ToProfileResponse(this User source);
 }

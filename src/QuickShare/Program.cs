@@ -265,6 +265,9 @@ builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.S3.S3Credentials>();
 
+// Upload by email (issue #104): the inbound webhook and the account's ingest address.
+builder.Services.AddScoped<QuickShare.Features.Uploads.EmailIngest.EmailIngestService>();
+
 // Per-recipient tracking (issue #37): who opened, who downloaded.
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Recipients.RecipientTracker>();
 

@@ -132,6 +132,27 @@
                             onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
                 </div>
 
+                @* Upload by email (issue #104) — signed-in accounts get a private forwarding
+                   address. Fetched on demand rather than rendered with the page: the address is
+                   minted on first ask, and nobody should get a live ingest route by loading a
+                   page they did not act on. *@
+                @if (isAuthenticated)
+                {
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm upload-text-toggle"
+                            onclick="uploadEmail.show(this)"
+                            data-error="@Loc["upload_email_unavailable"]"
+                            data-ai-action="upload.byEmail.show">@Loc["upload_email_toggle"]</button>
+                    <div id="upload-email-mode" class="hidden upload-text-mode">
+                        <p class="db-p db-text-muted">@Loc["upload_email_hint"]</p>
+                        <div class="upload-url-row">
+                            <input id="upload-email-address" type="text" readonly class="share-input"
+                                   aria-label="@Loc["upload_email_toggle"]" />
+                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    onclick="uploadEmail.copy()" data-ai-action="upload.byEmail.copy">@Loc["upload_copy_link"]</button>
+                        </div>
+                    </div>
+                }
+
                 @* Upload from URL (issue #57) — Pro/Studio server-side remote fetch *@
                 @if (canSchedule)
                 {
@@ -490,6 +511,34 @@
 <script src="/js/upload.js"></script>
 
 <script>
+    // Upload by email (issue #104). The address is minted server-side on the first ask.
+    window.uploadEmail = {
+        show: function (btn) {
+            var panel = document.getElementById('upload-email-mode');
+            var field = document.getElementById('upload-email-address');
+            panel.classList.remove('hidden');
+            if (field.value) return;
+
+            fetch('/api/uploads/email-address')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data || !data.enabled) {
+                        // No inbound domain configured: say so rather than showing an address
+                        // no mail server would accept.
+                        field.value = btn.getAttribute('data-error');
+                        return;
+                    }
+                    field.value = data.address;
+                })
+                .catch(function () { field.value = btn.getAttribute('data-error'); });
+        },
+        copy: function () {
+            var field = document.getElementById('upload-email-address');
+            field.select();
+            navigator.clipboard.writeText(field.value);
+        },
+    };
+
     window.uploadUrl = {
         toggle: function () {
             document.getElementById('upload-url-mode').classList.toggle('hidden');

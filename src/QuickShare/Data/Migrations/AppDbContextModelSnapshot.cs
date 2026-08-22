@@ -1949,6 +1949,10 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("EmailIngestToken")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<bool>("EmailOnDownload")
                         .HasColumnType("boolean");
 
@@ -1985,6 +1989,9 @@ namespace QuickShare.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EmailIngestToken")
+                        .IsUnique();
 
                     b.ToTable("users", (string)null);
                 });

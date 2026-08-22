@@ -57,6 +57,10 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         // suite can sign a webhook with — the signature is the whole security of that path.
         builder.UseSetting(CryptoCheckoutService.ApiKeyConfigKey, "test-crypto-key");
         builder.UseSetting(CryptoCheckoutService.WebhookSecretConfigKey, CryptoWebhookSecret);
+        // Upload by email (issue #104): a domain so an address is minted, and the shared secret
+        // the inbound webhook has to present.
+        builder.UseSetting("Email:InboundDomain", "inbound.quickshare.test");
+        builder.UseSetting("Email:InboundSecret", InboundSecret);
         // The default seeded test user ("test@quickshare.test") is an admin, so the
         // feature-flag admin surface is exercisable from E2E tests.
         builder.UseSetting("Admin:Emails:0", TestUserEmail);
@@ -114,6 +118,9 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
 
     /// <summary>The shared secret the suite signs crypto webhooks with (issue #225).</summary>
     public const string CryptoWebhookSecret = "test-crypto-webhook-secret";
+
+    /// <summary>The secret the inbound-mail webhook must present (issue #104).</summary>
+    public const string InboundSecret = "test-inbound-secret";
 
     /// <summary>Client authenticated as the default seeded test user.</summary>
     public HttpClient CreateAuthenticatedClient() => CreateAuthenticatedClient(TestUserProviderKey);

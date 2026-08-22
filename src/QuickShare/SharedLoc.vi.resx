@@ -2562,4 +2562,13 @@
   <data name="a11y_code_digit" xml:space="preserve">
     <value>Chữ số thứ {0} trên {1}</value>
   </data>
+  <data name="upload_email_toggle" xml:space="preserve">
+    <value>Hoặc chuyển tiếp tệp qua email</value>
+  </data>
+  <data name="upload_email_hint" xml:space="preserve">
+    <value>Chuyển tiếp email tới địa chỉ này từ chính email tài khoản của bạn, liên kết sẽ được gửi lại. Chỉ chấp nhận thư từ chính địa chỉ của bạn.</value>
+  </data>
+  <data name="upload_email_unavailable" xml:space="preserve">
+    <value>Bản triển khai này không hỗ trợ tải lên qua email.</value>
+  </data>
 </root>

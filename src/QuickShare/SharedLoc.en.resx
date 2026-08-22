@@ -2562,4 +2562,13 @@
   <data name="a11y_code_digit" xml:space="preserve">
     <value>Code digit {0} of {1}</value>
   </data>
+  <data name="upload_email_toggle" xml:space="preserve">
+    <value>Or forward files by email</value>
+  </data>
+  <data name="upload_email_hint" xml:space="preserve">
+    <value>Forward an email to this address from your account's address and you get the links back. Only mail from your own address is accepted.</value>
+  </data>
+  <data name="upload_email_unavailable" xml:space="preserve">
+    <value>Email upload is not available on this deployment.</value>
+  </data>
 </root>

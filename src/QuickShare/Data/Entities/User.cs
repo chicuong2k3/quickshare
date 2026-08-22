@@ -20,6 +20,13 @@ public record User : BaseAuditEntity
     /// </summary>
     public string? PreferredStorageRegion { get; set; }
     public bool EmailOnDownload { get; set; } = true;
+
+    /// <summary>
+    /// Local-part of this account's private upload-by-email address (issue #104). Null until
+    /// the account asks for one: an address nobody requested is a live ingest route nobody
+    /// watches.
+    /// </summary>
+    public string? EmailIngestToken { get; set; }
     public string? ReferralCode { get; set; }
     public Guid? ReferredByUserId { get; set; }
     public long BonusQuotaBytes { get; set; }

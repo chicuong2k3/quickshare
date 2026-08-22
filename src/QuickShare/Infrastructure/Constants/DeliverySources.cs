@@ -10,8 +10,10 @@ public static class DeliverySources
     public const string Url = "url";
     /// <summary>A protocol mount — WebDAV or the S3 gateway (issues #195, #265).</summary>
     public const string Mount = "mount";
+    /// <summary>Forwarded to the account's private ingest address (issue #104).</summary>
+    public const string Email = "email";
 
-    private static readonly string[] Known = [Web, Paste, Url, Mount];
+    private static readonly string[] Known = [Web, Paste, Url, Mount, Email];
 
     public static string Normalize(string? source)
         => Known.Contains(source) ? source! : Web;

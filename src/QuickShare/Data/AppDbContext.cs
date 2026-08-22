@@ -1,4 +1,6 @@
 
+using QuickShare.Features.Uploads.EmailIngest;
+
 namespace QuickShare.Data;
 
 public class AppDbContext : DbContext
@@ -69,6 +71,9 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<User>(entity =>
         {
+            entity.Property(e => e.EmailIngestToken).HasMaxLength(EmailIngestService.TokenLength);
+            // The inbound webhook arrives knowing only the address, so the token is the lookup.
+            entity.HasIndex(e => e.EmailIngestToken).IsUnique();
             entity.ToTable("users");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired();

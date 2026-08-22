@@ -123,6 +123,8 @@ public static class ErrorCodes
     public const string BrandAssetTooLarge = "brand_asset_too_large";
     public const string BrandAssetTypeInvalid = "brand_asset_type_invalid";
     // White-label custom domain (#81).
+    /// <summary>The inbound-mail webhook did not present the deployment secret (issue #104).</summary>
+    public const string InboundUnauthorized = "inbound_unauthorized";
     // S3 gateway credentials (#265).
     public const string S3CredentialLimitReached = "s3_credential_limit_reached";
     public const string S3CredentialLabelInvalid = "s3_credential_label_invalid";

@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **10/10 done** (08-17) |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 55 done (08-22): `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
+| Tier 4 | WeTransfer parity baseline | 56 done (08-22): `#104` upload by email, `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
 | Tier 6 | B2B / enterprise / far-future | 40 done (08-22): `#194` Outlook add-in, `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
@@ -1351,6 +1351,42 @@ and the shell every page inherits), contrast re-checks of the design tokens (`DE
 palette, and changing it is a design decision rather than a fix), and reduced-motion coverage
 beyond what the download page already has.
 
+## Tier 4 — batch 31: upload by email (#104)
+
+Forward a mail to a private address, get the links back. For the case where opening the app and
+re-uploading is three minutes of fighting a file picker on a phone.
+
+**The address is not a secret and is not treated as one.** It travels in the headers of every
+mail it appears in. What makes it safe is that only the account's own address may use it: anybody
+can send, nobody but the owner gets a delivery out of it, and the reply only ever goes to the
+owner. Mail `From` is forgeable, so this is a convenience boundary rather than a security one —
+the worst a forged `From` achieves is a delivery in the owner's own list.
+
+**Minted on first ask, never at signup.** An address nobody requested is a live ingest route
+nobody watches; and it is stable afterwards, because one that changed would break every
+forwarding rule set against it. With no inbound domain configured the feature reports itself
+unavailable rather than handing out an address no mail server accepts.
+
+**Attachments arrive as base64, not as URLs.** Fetching from an address somebody else controls
+is the SSRF surface `RemoteUrlFetcher` exists to contain, and it would make ingestion depend on
+that link still being alive.
+
+**The webhook answers 200 to almost everything** — unknown address, stranger's `From`, nothing
+attached — because a provider retries anything that is not a 200 and none of those are conditions
+a retry fixes. Its own authentication is a constant-time shared secret, and with none configured
+every call is refused.
+
+Plan caps, quota, retention and expiry apply exactly as they do to a browser upload: nothing
+about arriving by mail relaxes a limit.
+
+Tests: `EmailIngestTests` (10). Suite green at 1019. Design:
+[`docs/upload-by-email.md`](upload-by-email.md).
+
+**Not shipped**: mail *bodies* as text shares (`#178` already does that better), forwarding into
+a workspace folder (the mail carries no folder, and guessing from a subject line files somebody's
+contract in the wrong place), per-account ingest rules, and DKIM/SPF checks — the account
+boundary carries the safety here, not the envelope.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1386,6 +1422,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Voice commands | `docs/voice-commands.md` |
 | OCR search | `docs/ocr-search.md` |
 | Outlook add-in | `docs/outlook-addin.md` |
+| Upload by email | `docs/upload-by-email.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
