@@ -690,6 +690,9 @@ if (!useInMemoryDb)
 // endpoints it protects. It lets the enrolment and challenge routes through by name.
 app.UseMiddleware<MfaEnforcementMiddleware>();
 
+// White-label host scope (issue #81): a tenant domain serves recipient surfaces only.
+// Before the security headers and the endpoints, because a redirect settles the request.
+app.UseMiddleware<QuickShare.Infrastructure.Middleware.CustomDomainMiddleware>();
 app.UseMiddleware<RobotsNoIndexMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 

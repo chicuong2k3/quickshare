@@ -58,6 +58,12 @@ renaming would be a way to serve an unverified address.
    file under the agency's own hostname is the worst failure this feature has; a redirect would
    confirm the share code exists, so it is a 404.
 
+3. **Scope.** A tenant host serves recipient surfaces only — the delivery page, its stats page,
+   the brand assets, and the API and static files those are built out of.
+   `CustomDomainMiddleware` redirects everything else to the canonical address. Sign-in and the
+   account area under an agency's hostname would be unbranded (deliberately) and an invitation
+   to type our credentials somewhere we do not control.
+
 Removing a domain is safe by construction: links already in an inbox keep working, because the
 canonical host never stopped serving them.
 

@@ -42,6 +42,21 @@ public sealed class WorkspaceDomainReader(AppDbContext db, CacheService cache, I
             token: ct);
     }
 
+    /// <summary>
+    /// True when this host belongs to a workspace and the delivery does not (issue #81).
+    ///
+    /// Every recipient-facing page asks this, not just the download page: an agency's client
+    /// seeing somebody else's file — or somebody else's download statistics — under the agency's
+    /// own hostname is the worst failure this feature has, and it was originally guarded on one
+    /// page while `/d/{code}/stats` sat one route away.
+    /// </summary>
+    public async Task<bool> IsForeignHostAsync(string? host, Guid? deliveryWorkspaceId, CancellationToken ct)
+    {
+        var hostWorkspaceId = await WorkspaceForHostAsync(host, ct);
+
+        return hostWorkspaceId is { } owner && deliveryWorkspaceId != owner;
+    }
+
     /// <summary>The workspace's verified hostname, or null when it shares the canonical one.</summary>
     public async Task<string?> HostForWorkspaceAsync(Guid? workspaceId, CancellationToken ct)
     {

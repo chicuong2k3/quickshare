@@ -33,6 +33,10 @@ deliveries have no workspace and stay out.
 **Deliveries awaiting approval (#162) are not listed.** A share under review has not been
 published to anybody, and a drive is not a way around the gate.
 
+**Suspended deliveries (#53) are not listed either.** That one was missed on first delivery and
+found by the batch-25 audit: suspension is a moderation decision applied *to* the owner, so "it
+is their own file" is precisely the reasoning that does not hold.
+
 ## Reading is owner-side
 
 A GET through a mount does not count a download, does not run the recipient gates, and does not

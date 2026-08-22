@@ -1144,6 +1144,41 @@ tesseract would be testing tesseract. Suite green at 975. Design:
 on demand for files uploaded before the sender changed their mind, match highlighting in the
 preview, and language detection beyond the configured `eng+vie`.
 
+## Tier 6 — batch 25: audit of batches 19–24
+
+No new features. Six batches shipped since the last audit (white-label, WebDAV, the S3 gateway,
+voice, crypto, OCR), and the same failure shape turned up twice: **a rule enforced at the call
+site that needed it instead of at the thing every call site goes through.**
+
+**Fixed — the tenant host was scoped on one page.** `#81` checked that a verified custom domain
+only serves its own workspace's shares — on `Download.razor`. `/d/{code}/stats` (#294) sat one
+route away with no check at all, so an agency's domain would happily render another workspace's
+download statistics. The check now lives on `WorkspaceDomainReader.IsForeignHostAsync` and both
+pages call it.
+
+**Fixed — the whole app answered on a tenant domain.** Sign-in, the account area, the admin
+surface and the marketing pages were all served under an agency's hostname: unbranded on
+purpose, and an invitation to type our credentials into a domain we do not control.
+`CustomDomainMiddleware` now serves recipient surfaces (and the API and assets they are built
+out of) on a tenant host and redirects everything else to the canonical address — a redirect
+rather than a 404, because the visitor still wanted the product.
+
+**Fixed — suspension did not reach the new surfaces.** An abuse-suspended delivery (#53) stayed
+listable and downloadable through the WebDAV mount and the S3 gateway, and was still queued for
+OCR indexing. "It is the owner's own file" is the argument that fails here: suspension is
+applied *to* the owner. Both mount paths and the OCR job now exclude it.
+
+**Checked and found sound**: the mount's approval gate (#162 shares never appear), the S3
+signature and chunk-chain verification, the crypto webhook's idempotency, the OCR privacy-mode
+gate, and the voice layer's registry reuse.
+
+**Accepted as-is**: the S3 gateway creates folders for a nested key before the upload can fail
+on quota, which can leave an empty folder behind — visible, harmless and deletable, where the
+alternative is a transaction spanning a network upload.
+
+Tests: `TierSixAuditTests` (5), each one verified to fail against the code before its fix.
+Server suite green at 980, browser suite at 36.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

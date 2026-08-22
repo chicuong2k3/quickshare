@@ -36,7 +36,10 @@ public sealed class OcrJob(
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var pending = await db.Deliveries
-            .Where(d => d.OcrRequested && d.DeletedAt == null)
+            // Suspended (#53) is skipped for the same reason the mounts skip it: a moderation
+            // decision must hold on every path, and indexing the content of a suspended share
+            // would put it back in front of somebody through search.
+            .Where(d => d.OcrRequested && d.DeletedAt == null && d.Status != DeliveryStatus.Suspended)
             .Where(d => !db.DeliveryOcrTexts.Any(o => o.DeliveryId == d.Id))
             .OrderBy(d => d.CreatedAt)
             .Take(BatchSize)

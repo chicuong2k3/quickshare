@@ -2,7 +2,11 @@
 @page "/d/{ShareCode}/stats"
 @attribute [StreamRendering]
 @using QuickShare.Features.Downloads.PublicStats
+@using QuickShare.Features.Workspaces.Domains
 @inject IMediator Bus
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceDomainReader Domains
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["ps_title"]</PageTitle>
@@ -94,6 +98,24 @@
     {
         try
         {
+            // White-label host scope (issue #81): a verified tenant hostname serves that
+            // workspace's shares and nothing else. Somebody else's download statistics under an
+            // agency's own domain is the same failure as somebody else's file, one route away.
+            var workspaceId = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.ShareCode == ShareCode)
+                .Select(d => d.WorkspaceId)
+                .FirstOrDefaultAsync(CancellationToken.None);
+
+            var host = HttpContextAccessor.HttpContext?.Request.Host.Host;
+            if (await Domains.IsForeignHostAsync(host, workspaceId, CancellationToken.None))
+            {
+                // The same generic state every other refusal renders: the page must not leak
+                // whether a delivery exists.
+                Unavailable = true;
+                return;
+            }
+
             var result = await Bus.Send<LightResults.Result<PublicStatsResponse>>(
                 new PublicStatsQuery(ShareCode), CancellationToken.None);
 

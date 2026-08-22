@@ -928,10 +928,8 @@
         // and a share from a different one must not be reachable through it: an agency's client
         // seeing somebody else's file under the agency's own hostname is the worst failure this
         // feature can have, and it is worth a 404 rather than a redirect that confirms the code.
-        var hostWorkspaceId = await Domains.WorkspaceForHostAsync(
-            httpContext.Request.Host.Host, CancellationToken.None);
-
-        if (hostWorkspaceId is { } hostWorkspace && stored?.WorkspaceId != hostWorkspace)
+        if (await Domains.IsForeignHostAsync(
+                httpContext.Request.Host.Host, stored?.WorkspaceId, CancellationToken.None))
         {
             RenderState = DownloadRenderState.NotFound;
             return;

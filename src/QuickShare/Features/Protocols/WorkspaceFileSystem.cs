@@ -369,7 +369,10 @@ public sealed class WorkspaceFileSystem(
             && d.DeletedAt == null
             // A share still under review has not been published to anyone, including a drive:
             // the mount is a view of the workspace's files, not a way around the gate (#162).
-            && d.Status != DeliveryStatus.PendingApproval);
+            && d.Status != DeliveryStatus.PendingApproval
+            // Nor a way around a moderation decision (#53). Suspension is applied *to* the
+            // owner, so "it is their own file" is exactly the argument that does not hold here.
+            && d.Status != DeliveryStatus.Suspended);
 
     private async Task<Delivery?> FindFileAsync(Guid workspaceId, Guid? folderId, string name, CancellationToken ct)
     {
