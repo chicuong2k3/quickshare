@@ -30,7 +30,7 @@ New here? Start at your role's entry point:
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 60 done (08-23) — **tier complete**: `#275` manual folder order, `#230` PDPD consent, `#16` file-request submission page, `#17` drop room, `#104` upload by email, `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
-| Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
+| Tier 5 | Growth wave 2 | 22 done: `#273` per-key API usage, `#280` delivery password breach check (already shipped), `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
 | Tier 6 | B2B / enterprise / far-future | 40 done (08-22): `#194` Outlook add-in, `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
@@ -1479,6 +1479,37 @@ Tests: `FolderOrderTests` (6). Server suite green at 1039, browser at 42.
 **Not shipped**: reordering *deliveries* inside a folder (they sort newest-first, and a manual
 order there would fight the cursor paging every list in the product uses), and cross-parent drag
 — moving a folder under a different parent is a different operation from arranging siblings.
+
+## Tier 5 — batch 35: per-key API usage (#273), and #280 closed as delivered
+
+First tier-5 batch. `#273` finishes the thread batch 26 started: keys that authenticate something
+should be able to say how much they authenticated.
+
+**A daily bucket, not a request log.** The question a developer asks is “is my integration still
+running, and how hard”, which a graph answers; a row per request would be a log, with retention
+and privacy questions attached that nobody asked for.
+
+**Counted in memory, flushed on a tick.** A key already costs a lookup and a `LastUsedAt` write
+per call; a second write to keep a counter would make the measurement cost more than the thing
+measured. The buffer is an instance field on a singleton rather than a static — same lifetime in
+production, and it keeps the buffer inside the application that owns it, which matters the moment
+a test host runs several.
+
+ponytail, written on the class: a hard kill loses up to a minute of counts and several instances
+each flush their own share. Fine for a usage graph, not fine for billing — if this ever meters
+money it needs a durable path, not a bigger buffer.
+
+**`#280` was already delivered** and is closed rather than rebuilt: the send page has run a
+k-anonymity breach check on the delivery password since the password-meter work, failing open so
+an unreachable range API cannot stop somebody protecting their file.
+
+Tests: `ApiKeyUsageTests` (5), sharing the API-key fixture rather than standing up a second host.
+
+**Suite note, stated plainly**: the full server suite could not be run to completion on this
+machine at the end of this session — the test host is killed with no output at the full set size.
+It is capacity, not a defect: *all tests except the new class* pass (1039), and *all tests except
+one unrelated large class, with the new class included*, pass (1014). Worth a look at how many
+`WebApplicationFactory` hosts the suite stands up before it becomes a CI problem.
 
 ## 9. Local artifact map (feature area → design doc)
 

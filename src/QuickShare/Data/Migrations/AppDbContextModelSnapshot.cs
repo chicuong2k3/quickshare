@@ -165,6 +165,29 @@ namespace QuickShare.Migrations
                     b.ToTable("api_keys", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.ApiKeyUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Requests")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiKeyId", "Day")
+                        .IsUnique();
+
+                    b.ToTable("api_key_usages", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.BillingProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3047,6 +3070,17 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.ApiKeyUsage", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.ApiKey", "ApiKey")
+                        .WithMany()
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApiKey");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.BillingProfile", b =>

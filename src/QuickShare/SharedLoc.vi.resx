@@ -2670,4 +2670,13 @@
   <data name="ws_folders_move_down" xml:space="preserve">
     <value>Đưa thư mục xuống</value>
   </data>
+  <data name="dev_key_usage" xml:space="preserve">
+    <value>Lưu lượng</value>
+  </data>
+  <data name="dev_key_usage_empty" xml:space="preserve">
+    <value>Không có lượt gọi nào trong 30 ngày qua.</value>
+  </data>
+  <data name="dev_key_usage_total" xml:space="preserve">
+    <value>{0} lượt gọi trong 30 ngày</value>
+  </data>
 </root>

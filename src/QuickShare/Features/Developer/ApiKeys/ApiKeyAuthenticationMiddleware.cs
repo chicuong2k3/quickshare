@@ -24,7 +24,7 @@ public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next)
 
     private const string ApiPrefix = "/api/";
 
-    public async Task InvokeAsync(HttpContext context, ApiKeyAuthenticator keys, AppDbContext db)
+    public async Task InvokeAsync(HttpContext context, ApiKeyAuthenticator keys, AppDbContext db, ApiKeyUsageRecorder usage)
     {
         // A cookie wins: a browser session that also happens to carry a key is still a person,
         // and downgrading it to the key's scopes would be a surprise in the wrong direction.
@@ -69,6 +69,11 @@ public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next)
         }
 
         context.User = Build(login, key);
+
+        // Counted in memory and flushed on a tick (issue #273): a second database write per
+        // call would make the measurement cost more than the thing measured.
+        usage.Record(key.Id, DateTime.UtcNow);
+
         await next(context);
     }
 

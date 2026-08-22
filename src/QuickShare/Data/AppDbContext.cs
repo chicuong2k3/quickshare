@@ -53,6 +53,7 @@ public class AppDbContext : DbContext
     public DbSet<DeliveryOcrText> DeliveryOcrTexts => Set<DeliveryOcrText>();
     public DbSet<DeliveryRecipient> DeliveryRecipients => Set<DeliveryRecipient>();
     public DbSet<UserConsent> UserConsents => Set<UserConsent>();
+    public DbSet<ApiKeyUsage> ApiKeyUsages => Set<ApiKeyUsage>();
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
@@ -725,6 +726,18 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceDeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ApiKeyUsage>(entity =>
+        {
+            entity.ToTable("api_key_usages");
+            entity.HasKey(e => e.Id);
+            // One bucket per key per day; the flush upserts against exactly this.
+            entity.HasIndex(e => new { e.ApiKeyId, e.Day }).IsUnique();
+            entity.HasOne(e => e.ApiKey)
+                .WithMany()
+                .HasForeignKey(e => e.ApiKeyId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UserConsent>(entity =>

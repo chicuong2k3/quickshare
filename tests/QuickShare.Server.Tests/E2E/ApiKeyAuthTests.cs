@@ -22,7 +22,15 @@ namespace QuickShare.Server.Tests.E2E;
 /// described permissions nothing consulted. These tests are the proof that they now mean
 /// something — including that a `read` key cannot write and a revoked one cannot do anything.
 /// </summary>
-public sealed class ApiKeyAuthTests : IClassFixture<TestWebAppFactory>
+/// <summary>One application for every API-key test class; see <see cref="ApiKeyUsageTests"/>.</summary>
+[CollectionDefinition(ApiKeyTestGroup.Name)]
+public sealed class ApiKeyTestGroup : ICollectionFixture<TestWebAppFactory>
+{
+    public const string Name = "api-key";
+}
+
+[Collection(ApiKeyTestGroup.Name)]
+public sealed class ApiKeyAuthTests
 {
     private const string FileName = "report.csv";
     private const string ContentType = "text/csv";

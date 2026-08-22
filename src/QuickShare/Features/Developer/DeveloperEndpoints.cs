@@ -481,3 +481,54 @@ public sealed class ReplayWebhookDeliveryEndpoint : EndpointWithoutRequest<Webho
             replay.Id, replay.EndpointId, replay.EventType, replay.Status, 0, null, null, replay.CreatedAt, null), ct);
     }
 }
+
+/// <summary>Daily call counts for one key (issue #273).</summary>
+public sealed record ApiKeyUsageDto(DateOnly Day, int Requests);
+
+/// <summary>
+/// GET /api/developer/keys/{Id}/usage — is my integration still running, and how hard (issue #273).
+///
+/// The owner's own keys and nobody else's: a call-volume graph says when a business is busy, and
+/// that is not a fact to hand to whoever guesses a key id.
+/// </summary>
+public sealed class ApiKeyUsageEndpoint : EndpointWithoutRequest<IReadOnlyList<ApiKeyUsageDto>>
+{
+    /// <summary>Enough to see a weekly rhythm and a broken cron; more is a different feature.</summary>
+    private const int WindowDays = 30;
+
+    public override void Configure()
+    {
+        Get("/api/developer/keys/{Id}/usage");
+        Description(b => b.WithTags(ApiTags.Developer));
+        Summary(s =>
+        {
+            s.Summary = "Daily call counts for an API key";
+            s.Description = "Owner only (issue #273). Last 30 days, one bucket per day, days with no calls omitted.";
+        });
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var db = Resolve<AppDbContext>();
+        var user = await HttpContext.User.GetUserAsync(db, ct);
+        var id = Route<Guid>("Id");
+
+        var owned = await db.ApiKeys.AsNoTracking().AnyAsync(k => k.Id == id && k.UserId == user.Id, ct);
+        if (!owned)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        var since = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-WindowDays));
+
+        var usage = await db.ApiKeyUsages
+            .AsNoTracking()
+            .Where(u => u.ApiKeyId == id && u.Day >= since)
+            .OrderBy(u => u.Day)
+            .Select(u => new ApiKeyUsageDto(u.Day, u.Requests))
+            .ToListAsync(ct);
+
+        await Send.OkAsync(usage, ct);
+    }
+}

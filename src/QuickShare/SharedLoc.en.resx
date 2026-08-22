@@ -2670,4 +2670,13 @@
   <data name="ws_folders_move_down" xml:space="preserve">
     <value>Move folder down</value>
   </data>
+  <data name="dev_key_usage" xml:space="preserve">
+    <value>Usage</value>
+  </data>
+  <data name="dev_key_usage_empty" xml:space="preserve">
+    <value>No calls recorded in the last 30 days.</value>
+  </data>
+  <data name="dev_key_usage_total" xml:space="preserve">
+    <value>{0} call(s) in 30 days</value>
+  </data>
 </root>

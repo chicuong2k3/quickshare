@@ -66,6 +66,28 @@ window.quickShareDeveloper = (function () {
                 { btn: btn, body: BODY });
         },
 
+        // Per-key usage (issue #273): 30 daily buckets, summed and listed as text. A sparkline
+        // would need a chart library for a number people read once a week.
+        usage: function (btn: HTMLButtonElement): void {
+            const holder = document.getElementById(qsPage.attr(btn, 'data-target'));
+            if (!holder) return;
+            if (holder.textContent) { holder.textContent = ''; return; }
+
+            fetch('/api/developer/keys/' + qsPage.attr(btn, 'data-id') + '/usage')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (days: { day: string; requests: number }[] | null) {
+                    if (!days || days.length === 0) {
+                        holder.textContent = qsPage.attr(btn, 'data-empty');
+                        return;
+                    }
+                    let total = 0;
+                    for (let i = 0; i < days.length; i++) total += days[i].requests;
+                    holder.textContent = qsPage.attr(btn, 'data-total').replace('{0}', String(total)) +
+                        ' \u00b7 ' + days.map(function (d) { return d.day + ': ' + d.requests; }).join(', ');
+                })
+                .catch(function () { holder.textContent = qsPage.attr(btn, 'data-empty'); });
+        },
+
         revokeKey: function (btn: HTMLButtonElement): void {
             if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
             qsPage.send('/api/developer/keys/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,

@@ -302,6 +302,9 @@ builder.Services.AddScoped<QuickShare.Features.Auth.Scim.ScimAuthenticator>();
 builder.Services.AddScoped<QuickShare.Features.Auth.Saml.SamlService>();
 // Developer platform (#115 API keys, #39 outbound webhooks).
 builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticator>();
+// Per-key usage (issue #273): a singleton buffer, drained by a job.
+builder.Services.AddSingleton<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageRecorder>();
+builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageFlushJob>();
 builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatcher>();
 // Subscription lifecycle (#98 promo codes).
 builder.Services.AddScoped<QuickShare.Features.Payments.Promos.PromoCodeService>();

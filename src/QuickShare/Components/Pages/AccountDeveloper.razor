@@ -107,6 +107,16 @@ else
                                     </span>
                                 </div>
                                 <div class="workspace-member__actions">
+                                    @* Usage (issue #273): loaded when asked for, because most keys
+                                       are never looked at twice and a graph nobody opened is a
+                                       query nobody needed. *@
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@key.Id"
+                                            data-target="dev-key-usage-@key.Id"
+                                            data-empty="@Loc["dev_key_usage_empty"]"
+                                            data-total="@Loc["dev_key_usage_total"]"
+                                            onclick="window.quickShareDeveloper.usage(this)"
+                                            data-ai-action="dev.key.usage">@Loc["dev_key_usage"]</button>
                                     <button type="button" class="db-btn db-btn--ghost db-btn--sm"
                                             data-id="@key.Id"
                                             data-confirm="@Loc["dev_key_revoke_confirm"]"
