@@ -18,7 +18,7 @@ public sealed class CreateFileRequestEndpoint : Endpoint<CreateFileRequestReques
 
     public override async Task HandleAsync(CreateFileRequestRequest req, CancellationToken ct)
     {
-        var cmd = new CreateFileRequestCommand(req.Title, req.Message);
+        var cmd = new CreateFileRequestCommand(req.Title, req.Message, req.Kind);
         var result = await Resolve<IMediator>().Send<LightResults.Result<CreateFileRequestResponse>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -32,4 +32,7 @@ public class CreateFileRequestRequest
 {
     public string Title { get; set; } = string.Empty;
     public string? Message { get; set; }
+
+    /// <summary>"room" for a shared drop room (issue #17); anything else is a private request.</summary>
+    public string? Kind { get; set; }
 }

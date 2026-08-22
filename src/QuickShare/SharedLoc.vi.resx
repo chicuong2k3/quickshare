@@ -2571,4 +2571,76 @@
   <data name="upload_email_unavailable" xml:space="preserve">
     <value>Bản triển khai này không hỗ trợ tải lên qua email.</value>
   </data>
+  <data name="request_title" xml:space="preserve">
+    <value>Gửi tệp</value>
+  </data>
+  <data name="request_from" xml:space="preserve">
+    <value>Yêu cầu bởi {0}</value>
+  </data>
+  <data name="request_unavailable_title" xml:space="preserve">
+    <value>Liên kết này không khả dụng</value>
+  </data>
+  <data name="request_unavailable_body" xml:space="preserve">
+    <value>Có thể đã hết hạn, đã đóng, hoặc chưa từng tồn tại.</value>
+  </data>
+  <data name="request_closed" xml:space="preserve">
+    <value>Yêu cầu này đã đóng — không thể gửi thêm.</value>
+  </data>
+  <data name="request_limits" xml:space="preserve">
+    <value>{0}/{1} tệp · đã dùng {2}/{3}</value>
+  </data>
+  <data name="request_no_e2e" xml:space="preserve">
+    <value>Tệp gửi ở đây không được mã hoá đầu cuối: người yêu cầu phải mở được chúng, và không có khoá nào để trao.</value>
+  </data>
+  <data name="request_choose" xml:space="preserve">
+    <value>Chọn tệp</value>
+  </data>
+  <data name="request_send" xml:space="preserve">
+    <value>Gửi tệp</value>
+  </data>
+  <data name="request_uploading" xml:space="preserve">
+    <value>Đang gửi {0}…</value>
+  </data>
+  <data name="request_done" xml:space="preserve">
+    <value>Đã gửi. Cảm ơn bạn.</value>
+  </data>
+  <data name="request_failed" xml:space="preserve">
+    <value>Không gửi được: {0}</value>
+  </data>
+  <data name="request_room_files" xml:space="preserve">
+    <value>{0} tệp trong phòng này</value>
+  </data>
+  <data name="requests_kind_room" xml:space="preserve">
+    <value>Phòng chung (mọi người thấy tệp)</value>
+  </data>
+  <data name="requests_kind_request" xml:space="preserve">
+    <value>Yêu cầu riêng (chỉ bạn thấy tệp)</value>
+  </data>
+  <data name="requests_create_title" xml:space="preserve">
+    <value>Tạo yêu cầu hoặc phòng mới</value>
+  </data>
+  <data name="requests_create_label" xml:space="preserve">
+    <value>Bạn muốn nhận gì?</value>
+  </data>
+  <data name="requests_create_placeholder" xml:space="preserve">
+    <value>Ảnh cưới</value>
+  </data>
+  <data name="requests_create_kind" xml:space="preserve">
+    <value>Ai thấy tệp</value>
+  </data>
+  <data name="requests_create_btn" xml:space="preserve">
+    <value>Tạo liên kết</value>
+  </data>
+  <data name="requests_create_failed" xml:space="preserve">
+    <value>Không tạo được liên kết.</value>
+  </data>
+  <data name="requests_qr" xml:space="preserve">
+    <value>QR</value>
+  </data>
+  <data name="requests_qr_aria" xml:space="preserve">
+    <value>Mã QR cho liên kết này</value>
+  </data>
+  <data name="requests_qr_unavailable" xml:space="preserve">
+    <value>Hiện chưa tạo được QR.</value>
+  </data>
 </root>

@@ -1,0 +1,149 @@
+@layout MainLayout
+@page "/r/{Code}"
+@using QuickShare.Features.FileRequests.Get
+@using Microsoft.Extensions.Localization
+@inject IMediator Bus
+@inject AppDbContext Db
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@(Request?.Title ?? Loc["request_title"])</PageTitle>
+
+@* A share-by-link page like the download one: never indexed (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    @if (Request is null)
+    {
+        <section class="hero">
+            <h1 class="db-h1">@Loc["request_unavailable_title"]</h1>
+            <p class="db-p db-text-muted">@Loc["request_unavailable_body"]</p>
+        </section>
+    }
+    else
+    {
+        <section class="hero">
+            <h1 class="db-h1">@Request.Title</h1>
+            <p class="db-p db-text-muted">@Loc["request_from", Request.OwnerName]</p>
+            @if (!string.IsNullOrWhiteSpace(Request.Message))
+            {
+                <p class="db-p">@Request.Message</p>
+            }
+        </section>
+
+        <div class="db-card account-card">
+            <div class="db-card__body">
+                @if (Request.IsClosed)
+                {
+                    <p class="db-p">@Loc["request_closed"]</p>
+                }
+                else
+                {
+                    <p class="db-p db-text-muted">
+                        @Loc["request_limits", Request.CurrentFileCount, Request.MaxFiles, Bytes(Request.CurrentTotalBytes), Bytes(Request.MaxTotalBytes)]
+                    </p>
+
+                    @* The honest note this page exists to make. A drop from a stranger cannot be
+                       end-to-end encrypted: E2E here works by keeping the key in the URL
+                       fragment, and there is nobody to hand that key to — the owner has to be
+                       able to open what was dropped. Saying so is the whole difference between
+                       a design decision and a broken promise. *@
+                    <p class="db-p db-text-muted request-note">@Loc["request_no_e2e"]</p>
+
+                    <input type="file" id="request-file" class="db-input" multiple
+                           aria-label="@Loc["request_choose"]" />
+                    <button type="button" class="db-btn db-btn--primary" style="margin-top:1rem"
+                            onclick="requestUpload.send(this)"
+                            data-code="@Code"
+                            data-uploading="@Loc["request_uploading"]"
+                            data-done="@Loc["request_done"]"
+                            data-failed="@Loc["request_failed"]"
+                            data-ai-action="request.upload">@Loc["request_send"]</button>
+
+                    <p id="request-status" class="db-p" role="status" aria-live="polite"></p>
+                }
+            </div>
+        </div>
+
+        @* A room shows what everybody dropped; a plain request does not (issue #17).
+           One submitter must not be shown another's files just because they both had the
+           link — that is the difference between a shared room and a private request. *@
+        @if (IsRoom && Files.Count > 0)
+        {
+            <div class="db-card account-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["request_room_files", Files.Count]</h2>
+                    <ul class="dl-files__list">
+                        @foreach (var file in Files)
+                        {
+                            <li class="dl-file">
+                                <a class="dl-file__name" href="@($"{RoutePaths.DeliveryPage}{file.ShareCode}")">@file.FileName</a>
+                                <span class="dl-file__size">@Bytes(file.FileSize)</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+    }
+
+</PageWrapper>
+
+<script src="/js/request-upload.js" defer></script>
+
+@code {
+    [Parameter]
+    public string Code { get; set; } = string.Empty;
+
+    private GetFileRequestResponse? Request { get; set; }
+    private bool IsRoom { get; set; }
+    private List<DroppedFile> Files { get; set; } = [];
+
+    private sealed record DroppedFile(string FileName, long FileSize, string ShareCode);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Bus.Send<LightResults.Result<GetFileRequestResponse>>(
+            new GetFileRequestQuery(Code), CancellationToken.None);
+
+        // Expired, closed, missing: one generic unavailable state, so the page never becomes an
+        // oracle for which codes exist.
+        if (!result.IsSuccess(out var value))
+            return;
+
+        Request = value;
+
+        var request = await Db.FileRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Code == Code, CancellationToken.None);
+
+        IsRoom = request?.Kind == FileRequestKind.Room;
+
+        if (IsRoom && request is not null)
+        {
+            Files = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.FileRequestId == request.Id && d.DeletedAt == null)
+                .OrderByDescending(d => d.CreatedAt)
+                .Select(d => new DroppedFile(d.FileName, d.FileSize, d.ShareCode))
+                .ToListAsync(CancellationToken.None);
+        }
+    }
+
+    private static string Bytes(long value)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        double size = value;
+        var unit = 0;
+
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        return $"{size:0.#} {units[unit]}";
+    }
+}

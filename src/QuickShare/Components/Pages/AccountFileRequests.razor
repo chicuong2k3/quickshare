@@ -26,6 +26,32 @@ else
 
     <AccountTabs Current="@RoutePaths.AccountFileRequests" />
 
+    @* Creating one (issues #16, #17). The endpoints have existed since the file-request batch
+       and *nothing called them* — the same API-only defect the batch-11 audit found in four
+       other screens. A request nobody can create is a feature nobody has. *@
+    <div class="db-card account-card">
+        <div class="db-card__body">
+            <h2 class="db-h3">@Loc["requests_create_title"]</h2>
+
+            <div class="workspace-form">
+                <label class="workspace-label" for="request-new-title">@Loc["requests_create_label"]</label>
+                <input id="request-new-title" class="db-input" type="text"
+                       maxlength="@FileRequest.TitleMaxLength" placeholder="@Loc["requests_create_placeholder"]" />
+
+                <label class="workspace-label" for="request-new-kind">@Loc["requests_create_kind"]</label>
+                <select id="request-new-kind" class="db-input">
+                    <option value="@FileRequestKind.Request">@Loc["requests_kind_request"]</option>
+                    <option value="@FileRequestKind.Room">@Loc["requests_kind_room"]</option>
+                </select>
+
+                <button type="button" class="db-btn db-btn--primary"
+                        data-error="@Loc["requests_create_failed"]"
+                        onclick="createRequest(this)"
+                        data-ai-action="request.create">@Loc["requests_create_btn"]</button>
+            </div>
+        </div>
+    </div>
+
     @if (!isLoaded)
     {
         @* Shell skeleton — rendered instantly, no DB calls. *@
@@ -60,6 +86,55 @@ else
 }
 
 <script>
+    // Create a request or a room (issues #16, #17).
+    window.createRequest = function (btn) {
+        var title = document.getElementById('request-new-title');
+        var kind = document.getElementById('request-new-kind');
+        if (!title.value.trim()) return;
+
+        btn.disabled = true;
+        fetch('/api/file-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title.value.trim(), kind: kind.value })
+        }).then(function (r) {
+            if (r.ok) { window.location.reload(); return; }
+            btn.disabled = false;
+            window.alert(btn.getAttribute('data-error'));
+        }).catch(function () {
+            btn.disabled = false;
+            window.alert(btn.getAttribute('data-error'));
+        });
+    };
+
+    // The QR a room is meant to be handed out as (issue #17): printed, taped to a wall, pointed
+    // at with a phone. Rendered on demand, because most rows are never expanded.
+    window.showRequestQr = function (btn) {
+        var holder = document.getElementById(btn.getAttribute('data-target'));
+        if (!holder) return;
+        if (holder.innerHTML) { holder.innerHTML = ''; return; }
+        if (!window.qrcode) { holder.textContent = btn.getAttribute('data-unavailable'); return; }
+
+        var qr = window.qrcode(0, 'M');
+        qr.addData(btn.getAttribute('data-url'));
+        qr.make();
+
+        var count = qr.getModuleCount(), cell = 5, dim = count * cell;
+        var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim +
+            '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + btn.getAttribute('data-aria') +
+            '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
+        for (var r = 0; r < count; r++) {
+            for (var c = 0; c < count; c++) {
+                if (qr.isDark(r, c)) {
+                    parts.push('<rect x="' + (c * cell) + '" y="' + (r * cell) + '" width="' + cell +
+                        '" height="' + cell + '" fill="#0f172a"/>');
+                }
+            }
+        }
+        parts.push('</svg>');
+        holder.innerHTML = parts.join('');
+    };
+
     window.closeRequest = function (btn) {
         var article = btn.closest('article');
         var id = article.id.replace('request-', '');
@@ -167,12 +242,21 @@ else
                                 data-url="@link"
                                 data-copied-label="@Loc["account_requests_copied"]"
                                 onclick="copyRequestLink(this)" data-ai-action="request.copyLink">@Loc["upload_copy_link"]</button>
+                        @* The QR a room is handed out as (issue #17): printed, taped to a wall,
+                           pointed at with a phone. *@
+                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                data-url="@link"
+                                data-target="request-qr-@item.Id"
+                                data-aria="@Loc["requests_qr_aria"]"
+                                data-unavailable="@Loc["requests_qr_unavailable"]"
+                                onclick="showRequestQr(this)" data-ai-action="request.qr">@Loc["requests_qr"]</button>
                         <button type="button" class="db-btn db-btn--ghost db-btn--sm"
                                 data-confirm="@Loc["account_requests_close_confirm"]"
                                 data-closed-label="@Loc["account_requests_closed"]"
                                 onclick="closeRequest(this)" data-ai-action="request.close">@Loc["account_requests_close"]</button>
                     }
                 </p>
+                <div id="request-qr-@item.Id" class="request-qr"></div>
             </article>
         }
 

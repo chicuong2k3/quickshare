@@ -3193,3 +3193,13 @@ html, body {
 #main-content:focus {
     outline: none;
 }
+
+/* The room's QR (issue #17): empty until asked for, then a plain square anybody can photograph. */
+.request-qr {
+    margin-top: var(--db-space-2);
+}
+
+.request-qr svg {
+    max-width: 12rem;
+    height: auto;
+}

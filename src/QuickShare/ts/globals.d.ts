@@ -224,6 +224,11 @@ interface QsPaste {
 
 
 /** A page-scoped action object: methods are called from inline onclick in the markup. */
+/** Anonymous submission to a file request or drop room (#16, #17). */
+interface QsRequestUpload {
+    send: (button: HTMLButtonElement) => Promise<void>;
+}
+
 /** Outlook task pane (#194): attachment in, share link out. */
 interface QsOutlook {
     saveKey: () => void;
@@ -289,6 +294,7 @@ interface Window {
     quickShareDeveloper: QsPageActions;
     quickShareVoice: QsVoice;
     quickShareOutlook: QsOutlook;
+    requestUpload: QsRequestUpload;
     quickShareDomain: QsPageActions;
     quickSharePasskeys: QsPageActions;
     quickShareDpa: QsPageActions;
