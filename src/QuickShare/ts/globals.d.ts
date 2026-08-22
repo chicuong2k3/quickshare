@@ -224,6 +224,14 @@ interface QsPaste {
 
 
 /** A page-scoped action object: methods are called from inline onclick in the markup. */
+/** Voice commands (#277): speech in, command-palette actions out. */
+interface QsVoice {
+    start: () => void;
+    cancel: () => void;
+    match: (transcript: string) => HTMLAnchorElement | null;
+    init: () => void;
+}
+
 type QsPageActions = Record<string, (...args: any[]) => void>;
 
 interface QsPageModule {
@@ -273,6 +281,7 @@ interface Window {
     quickShareChannel: QsPageActions;
     quickShareComments: QsPageActions;
     quickShareDeveloper: QsPageActions;
+    quickShareVoice: QsVoice;
     quickShareDomain: QsPageActions;
     quickSharePasskeys: QsPageActions;
     quickShareDpa: QsPageActions;

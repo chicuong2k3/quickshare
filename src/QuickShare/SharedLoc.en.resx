@@ -2436,4 +2436,28 @@
   <data name="dev_s3_revoke_confirm" xml:space="preserve">
     <value>Revoke this access key? Anything using it stops working immediately.</value>
   </data>
+  <data name="voice_trigger" xml:space="preserve">
+    <value>Voice command</value>
+  </data>
+  <data name="voice_listening" xml:space="preserve">
+    <value>Listening…</value>
+  </data>
+  <data name="voice_heard" xml:space="preserve">
+    <value>Heard: {0}</value>
+  </data>
+  <data name="voice_no_match" xml:space="preserve">
+    <value>No command matched “{0}”.</value>
+  </data>
+  <data name="voice_running" xml:space="preserve">
+    <value>Opening {0} — press Escape or say cancel to stop.</value>
+  </data>
+  <data name="voice_cancelled" xml:space="preserve">
+    <value>Cancelled.</value>
+  </data>
+  <data name="voice_unsupported" xml:space="preserve">
+    <value>This browser cannot listen. The command palette (Ctrl+K) does the same things.</value>
+  </data>
+  <data name="voice_denied" xml:space="preserve">
+    <value>Microphone access was refused.</value>
+  </data>
 </root>

@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 36 done (08-22): `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 37 done (08-22): `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -1040,6 +1040,41 @@ Tests: `S3GatewayTests` (20); suite green at 960. Design:
 **Not shipped**: multipart upload, presigned URLs (query-string auth), `POST ?delete` batch
 deletes, bucket policies and versioning.
 
+## Tier 6 — batch 22: voice commands (#277)
+
+Hands-free navigation, built as an alternative *input* to the command palette (#153) rather than
+as a second menu.
+
+**No registry of its own.** `ts/voice.ts` matches what it heard against the palette's own
+entries — the same labels, the same `data-keywords` the typed filter uses — so a command that
+works typed works spoken, in whichever language the palette is rendered in. A parallel list of
+voice commands would drift from the real one the day somebody adds a page.
+
+**Nothing runs before it is shown.** Recognition mishears; a mishearing that navigates silently
+is the failure mode worth designing against. So the status line says what was heard and what is
+about to happen, waits, and goes — Escape or the word "cancel" stops it. The undo for an action
+that has not happened yet is simply not doing it. The line is an `aria-live` region, because the
+user this is for may not be watching the screen.
+
+**The mic hides itself where the browser cannot listen**, rather than offering a dead button,
+and the fallback is named in the message: the palette does the same things with Ctrl+K.
+
+**Honest about privacy.** The issue claimed audio never leaves the device. That is not true of
+Chrome, whose Web Speech implementation sends audio to a vendor service; only the *matching* is
+local. The UI does not repeat the claim, and `docs/voice-commands.md` says which part is which.
+
+**A CSS bug found by the test.** `hidden` on the trigger did nothing: the button class sets its
+own `display`, which beats the attribute, so the "hidden" mic was still on screen and still
+dead. Any `[hidden]` on a `db-btn` anywhere has the same problem.
+
+Tests: `VoiceCommandBrowserTests` (5) — a fake `SpeechRecognition` is injected and spoken into,
+because the part worth testing is what happens *after* recognition. Browser suite green at 36,
+server suite at 960.
+
+**Not shipped**: a wake phrase (always-on listening is a microphone nobody asked to leave open),
+dictation into fields, and voice actions beyond navigation — "delete that file" needs a target
+the palette does not model.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1072,6 +1107,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | Comments & chat channels | `docs/comments-and-channels.md` |
 | White-label domain & preview watermark | `docs/white-label.md` |
 | Protocol mounts (WebDAV, S3 gateway) | `docs/protocol-mounts.md` |
+| Voice commands | `docs/voice-commands.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -1088,11 +1124,13 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 36 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 37 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,
   `#180` channels, `#162`/`#176` gating, `#285`/`#286` branding, `#119` residency, and the
   identity batches `#128`/`#181`/`#219`/`#146`/`#139` (12–13). Batch 19 closed `#81`
   white-label and `#155` preview watermark; batch 20 closed `#195` WebDAV and
-  batch 21 `#265` S3 gateway. Still open: `#196` SFTP, `#163` BYOK, `#194` Outlook add-in,
-  `#243` OCR, `#225` crypto pay, `#277` voice commands
+  batch 21 `#265` S3 gateway and batch 22
+  `#277` voice commands. Still open: `#196` SFTP (no maintained .NET SSH *server* library —
+  deferred rather than built on an archived one), `#163` BYOK, `#194` Outlook add-in,
+  `#243` OCR, `#225` crypto pay

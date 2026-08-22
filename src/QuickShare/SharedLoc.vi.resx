@@ -2436,4 +2436,28 @@
   <data name="dev_s3_revoke_confirm" xml:space="preserve">
     <value>Thu hồi access key này? Mọi thứ đang dùng nó sẽ ngừng hoạt động ngay.</value>
   </data>
+  <data name="voice_trigger" xml:space="preserve">
+    <value>Lệnh bằng giọng nói</value>
+  </data>
+  <data name="voice_listening" xml:space="preserve">
+    <value>Đang nghe…</value>
+  </data>
+  <data name="voice_heard" xml:space="preserve">
+    <value>Nghe được: {0}</value>
+  </data>
+  <data name="voice_no_match" xml:space="preserve">
+    <value>Không có lệnh nào khớp “{0}”.</value>
+  </data>
+  <data name="voice_running" xml:space="preserve">
+    <value>Đang mở {0} — nhấn Escape hoặc nói huỷ để dừng.</value>
+  </data>
+  <data name="voice_cancelled" xml:space="preserve">
+    <value>Đã huỷ.</value>
+  </data>
+  <data name="voice_unsupported" xml:space="preserve">
+    <value>Trình duyệt này không nghe được. Bảng lệnh (Ctrl+K) làm được những việc tương tự.</value>
+  </data>
+  <data name="voice_denied" xml:space="preserve">
+    <value>Micro bị từ chối quyền truy cập.</value>
+  </data>
 </root>

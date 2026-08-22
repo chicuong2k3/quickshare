@@ -72,6 +72,13 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <span class="layout-command-kbd" aria-hidden="true">⌘K</span>
             </button>
+            @* Voice commands (#277) — drives the palette below; hidden by voice.js where the
+               browser cannot listen, so it is never a dead button. *@
+            <button type="button" id="voice-trigger" class="db-btn db-btn--ghost db-btn--sm layout-voice-trigger"
+                    onclick="window.quickShareVoice.start()" aria-label="@Loc["voice_trigger"]"
+                    title="@Loc["voice_trigger"]" data-ai-action="voice.start">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            </button>
             <button type="button" class="db-btn db-btn--ghost db-btn--sm layout-theme-toggle" onclick="toggleTheme()" aria-label="@Loc["theme_toggle"]" title="@Loc["theme_toggle"]" data-ai-action="theme.toggle">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
             </button>
@@ -119,6 +126,11 @@
             </svg>
         </button>
     </nav>
+
+    @* What voice heard and what it is about to do (#277). A live region, because the whole
+       point is that a hands-free user is told before anything happens. *@
+    <p id="voice-status" class="voice-status" role="status" aria-live="polite" hidden></p>
+    <script id="voice-i18n" type="application/json">@RawJson(VoiceStrings())</script>
 
     @* Command palette (issue #153) — Ctrl+K / Cmd+K opens; type to filter, arrows + Enter to pick. *@
     <div id="command-palette" class="command-palette" hidden role="dialog" aria-modal="true" aria-label="@Loc["command_palette_trigger"]">
@@ -246,6 +258,23 @@
 </script>
 
 @code {
+    /// <summary>
+    /// Strings the voice layer needs (#277). Passed as JSON rather than hardcoded in the script,
+    /// because a spoken interface that answers in the wrong language is worse than none.
+    /// </summary>
+    private string VoiceStrings() => System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+    {
+        ["listening"] = Loc["voice_listening"],
+        ["heard"] = Loc["voice_heard"],
+        ["noMatch"] = Loc["voice_no_match"],
+        ["running"] = Loc["voice_running"],
+        ["cancelled"] = Loc["voice_cancelled"],
+        ["unsupported"] = Loc["voice_unsupported"],
+        ["denied"] = Loc["voice_denied"],
+    });
+
+    private static MarkupString RawJson(string json) => new(json);
+
     private const string RootSpec = "INDEX";
 
     private int unreadCount;

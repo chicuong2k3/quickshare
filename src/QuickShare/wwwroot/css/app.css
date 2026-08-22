@@ -3110,3 +3110,29 @@ html, body {
     color: var(--db-color-text-muted);
     font-variant-numeric: tabular-nums;
 }
+
+/* ─── Voice command status (issue #277) ───
+   Sits above the fold, announces what was heard and what is about to run. Global rather than
+   scoped because the layout also ships inside HTMX partials. */
+.voice-status {
+    position: fixed;
+    left: 50%;
+    bottom: var(--db-space-4);
+    transform: translateX(-50%);
+    z-index: 1001;
+    margin: 0;
+    padding: var(--db-space-2) var(--db-space-4);
+    max-width: min(32rem, calc(100vw - 2rem));
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+/* The mic hides itself where the browser cannot listen (#277). `hidden` alone loses to the
+   button class's own `display`, so the class has to say it — otherwise the "hidden" button is
+   still on screen and still dead. */
+.layout-voice-trigger[hidden] {
+    display: none;
+}
