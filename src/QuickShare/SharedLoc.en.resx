@@ -2277,4 +2277,55 @@
   <data name="sessions_revoke_all_confirm" xml:space="preserve">
     <value>Sign out everywhere except this device?</value>
   </data>
+  <data name="passkeys_title" xml:space="preserve">
+    <value>Passkeys</value>
+  </data>
+  <data name="passkeys_hint" xml:space="preserve">
+    <value>Sign in with your fingerprint, face or security key. Your provider account keeps working as well.</value>
+  </data>
+  <data name="passkeys_empty" xml:space="preserve">
+    <value>No passkeys yet.</value>
+  </data>
+  <data name="passkeys_unnamed" xml:space="preserve">
+    <value>Passkey</value>
+  </data>
+  <data name="passkeys_name" xml:space="preserve">
+    <value>Name this device (optional)</value>
+  </data>
+  <data name="passkeys_register" xml:space="preserve">
+    <value>Add a passkey</value>
+  </data>
+  <data name="passkeys_remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="passkeys_remove_confirm" xml:space="preserve">
+    <value>Remove this passkey?</value>
+  </data>
+  <data name="passkeys_added" xml:space="preserve">
+    <value>added {0}</value>
+  </data>
+  <data name="passkeys_last_used" xml:space="preserve">
+    <value>last used {0}</value>
+  </data>
+  <data name="passkeys_failed" xml:space="preserve">
+    <value>That passkey could not be registered.</value>
+  </data>
+  <data name="passkeys_signin_failed" xml:space="preserve">
+    <value>That passkey was not accepted.</value>
+  </data>
+  <data name="passkeys_unsupported" xml:space="preserve">
+    <value>This browser does not support passkeys.</value>
+  </data>
+  <data name="login_with_passkey" xml:space="preserve">
+    <value>Sign in with a passkey</value>
+  </data>
+  <data name="login_email_label" xml:space="preserve">
+    <value>Or get a sign-in link by email</value>
+  </data>
+  <data name="login_send_link" xml:space="preserve">
+    <value>Email me a link</value>
+  </data>
+  <data name="login_link_sent" xml:space="preserve">
+    <value>If that address has an account, a sign-in link is on its way.</value>
+  </data>
 </root>

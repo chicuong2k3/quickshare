@@ -19,6 +19,7 @@
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="FastEndpoints" Version="8.2.0" />
     <PackageReference Include="FastEndpoints.Swagger" Version="8.2.0" />
+    <PackageReference Include="Fido2.AspNet" Version="4.0.1" />
     <PackageReference Include="ITfoxtec.Identity.Saml2" Version="4.20.1" />
     <!--
       Pinned, not incidental. ITfoxtec pulls System.Security.Cryptography.Xml 10.0.7 transitively,

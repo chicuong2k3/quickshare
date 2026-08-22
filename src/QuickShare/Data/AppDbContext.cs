@@ -53,6 +53,9 @@ public class AppDbContext : DbContext
     public DbSet<DeliveryFile> DeliveryFiles => Set<DeliveryFile>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<UserPasskey> UserPasskeys => Set<UserPasskey>();
+    public DbSet<PasskeyChallenge> PasskeyChallenges => Set<PasskeyChallenge>();
+    public DbSet<LoginToken> LoginTokens => Set<LoginToken>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<PromoRedemption> PromoRedemptions => Set<PromoRedemption>();
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
@@ -553,6 +556,38 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.PromoCodeId, e.UserId }).IsUnique();
             entity.HasOne(e => e.PromoCode).WithMany().HasForeignKey(e => e.PromoCodeId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserPasskey>(entity =>
+        {
+            entity.ToTable("user_passkeys");
+            // Sign-in resolves an account from a credential id, so this is the hot path.
+            entity.HasIndex(e => e.CredentialId).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.Property(e => e.CredentialId).IsRequired().HasMaxLength(UserPasskey.CredentialIdMaxLength);
+            entity.Property(e => e.PublicKey).IsRequired().HasMaxLength(UserPasskey.PublicKeyMaxLength);
+            entity.Property(e => e.Name).HasMaxLength(UserPasskey.NameMaxLength);
+            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PasskeyChallenge>(entity =>
+        {
+            entity.ToTable("passkey_challenges");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Handle).IsUnique();
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.Property(e => e.Handle).IsRequired().HasMaxLength(PasskeyChallenge.HandleLength);
+            entity.Property(e => e.OptionsJson).IsRequired().HasMaxLength(PasskeyChallenge.OptionsMaxLength);
+        });
+
+        modelBuilder.Entity<LoginToken>(entity =>
+        {
+            entity.ToTable("login_tokens");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(LoginToken.EmailMaxLength);
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(LoginToken.TokenHashLength);
         });
 
         modelBuilder.Entity<UserSession>(entity =>

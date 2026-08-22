@@ -93,6 +93,7 @@ browser download needed.
 | Developer platform — key hashing, signature construction, retry, replay | `DeveloperPlatformTests` |
 | Subscription lifecycle — promo redemption, proration bounds, pause banking | `SubscriptionLifecycleTests` |
 | Sessions — revocation biting immediately, idle timeout, SCIM offboarding | `SessionManagementTests` |
+| Passwordless sign-in — challenge consumption, single-use links, no existence oracle | `PasskeyAndMagicLinkTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -138,6 +139,7 @@ checklist of the touched issue. Minimum regression set per change:
 | **Any new endpoint a person is meant to use** | `B2BUiTests` | a page renders its data — assert the rendered HTML, because a passing endpoint test says nothing about whether a screen exists |
 | **Any code implementing a published standard** (TOTP, SCIM, OIDC) | `EnterpriseIdentityTests` | anchor to the spec's own reference vector or wire format — a broken implementation is still self-consistent |
 | **Any change that adds a shape to an existing entity** | `MultiFileDeliveryTests` | the *old* shape still behaves identically — additive means the previous case is untouched, and only a test says so |
+| **Any endpoint that takes an email address** | `PasskeyAndMagicLinkTests` | it answers identically for a known and an unknown address — including when a dependency fails, which is how the leak usually gets in |
 | **Anything touching money** | `SubscriptionLifecycleTests` | write the test as what must never happen — negative price, double redemption, a credit that pays out — not as the happy path |
 | **Any outbound integration** | `DeveloperPlatformTests` | it retries and survives the receiver being down — an integration that drops events on the first failure is worse than none |
 | **Any signature or token check** | `SamlSsoTests` | mint a real valid artefact, then change one attacker-controlled thing and require rejection — a checker that rejects everything passes every negative test |

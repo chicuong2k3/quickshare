@@ -70,6 +70,8 @@ public static class RoutePaths
     public const string AccountRecurring = "/account/recurring";
     public const string AccountSecurity = "/account/security";
     public const string AccountDeveloper = "/account/developer";
+    /// <summary>Where an emailed sign-in link lands (issue #132).</summary>
+    public const string MagicLink = "/login/link";
     public const string AccountWorkspaceSso = "/account/workspace/sso";
     /// <summary>The second-factor challenge (issue #128).</summary>
     public const string MfaChallenge = "/mfa";

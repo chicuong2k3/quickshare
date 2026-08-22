@@ -878,6 +878,33 @@ per-workspace idle timeouts.
 
 Design and invariants: `docs/sessions.md`.
 
+## Tier 5 — batch 18: passkeys and magic links (#68, #132)
+
+Two more doors into an account that is still created through an identity provider. That single
+fact shapes the design: losing every passkey is not a lockout, and a magic link cannot create an
+account.
+
+The cryptography is Fido2NetLib's. What is ours is challenge storage (a table, not the cache —
+same reasoning as the SAML assertion store), usernameless sign-in, and what a failure is allowed
+to say: one error for every passkey failure, because distinguishing "no such credential" from
+"bad signature" tells an anonymous caller which credential ids exist.
+
+**A test caught a real leak.** The magic-link endpoint is supposed to answer identically whether
+or not an address has an account. With email unconfigured, a known address threw a 500 and an
+unknown one returned 204 — exactly the account-existence oracle the design set out to prevent.
+The send is now wrapped: a failure to send is an operational problem and belongs in the log, not
+in a response a stranger can diff against another one.
+
+**#118 is deliberately left open.** It asks for a passkey recovery escape hatch, and that premise
+does not hold here — every account has a working identity provider behind it, and accounts with an
+authenticator already have recovery codes from #128. Writing that on the issue is more useful than
+closing it with a hand-wave or building a redundant mechanism.
+
+**Not shipped**: passkey as a step-up factor, conditional-UI autofill passkeys, attestation
+verification (we do not care which authenticator model was used), magic links for new addresses.
+
+Design and invariants: `docs/passwordless-auth.md`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

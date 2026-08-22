@@ -70,7 +70,26 @@
                         </a>
                     </li>
                 </ul>
+
+                @* Two more ways in (issues #68, #132). Both sit under the providers rather than
+                   above them: OAuth is how accounts are created here, so it stays the front door. *@
+                <div class="login-alt">
+                    <button type="button" class="db-btn db-btn--secondary login-provider"
+                            data-error-label="@Loc["passkeys_signin_failed"]"
+                            data-unsupported-label="@Loc["passkeys_unsupported"]"
+                            onclick="window.quickSharePasskeys.signIn(this)"
+                            data-ai-action="login.passkey">@Loc["login_with_passkey"]</button>
+
+                    <label class="workspace-label" for="login-email">@Loc["login_email_label"]</label>
+                    <input id="login-email" class="db-input" type="email" autocomplete="email" />
+                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            data-sent-label="@Loc["login_link_sent"]"
+                            onclick="window.quickSharePasskeys.sendLink(this)"
+                            data-ai-action="login.magiclink">@Loc["login_send_link"]</button>
+                </div>
             </div>
         </div>
     </section>
 </PageWrapper>
+
+<script src="/js/passkeys.js" defer></script>

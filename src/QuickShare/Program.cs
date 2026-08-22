@@ -26,6 +26,7 @@ using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
 using System.Security.Claims;
+using Fido2NetLib;
 using QuickShare.Features.Auth.Saml;
 using QuickShare.Features.Auth.Sso;
 using ZiggyCreatures.Caching.Fusion;
@@ -281,6 +282,19 @@ builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatc
 builder.Services.AddScoped<QuickShare.Features.Payments.Promos.PromoCodeService>();
 // Session store (#105 management, #173 idle timeout and global sign-out).
 builder.Services.AddScoped<QuickShare.Features.Users.Sessions.SessionService>();
+// Passkeys (#68) and magic-link sign-in (#132).
+builder.Services.AddScoped<QuickShare.Features.Auth.Passkeys.PasskeyService>();
+builder.Services.AddScoped<QuickShare.Features.Auth.MagicLink.MagicLinkService>();
+
+// The relying party is this deployment. ServerDomain must be the registered domain — not the
+// origin — or every ceremony fails with an origin mismatch that reads like a browser bug.
+var passkeyOrigin = builder.Configuration["Email:BaseUrl"] ?? "https://localhost:9001";
+builder.Services.AddFido2(options =>
+{
+    options.ServerDomain = new Uri(passkeyOrigin).Host;
+    options.ServerName = "QuickShareCloud";
+    options.Origins = new HashSet<string>(StringComparer.Ordinal) { passkeyOrigin.TrimEnd('/') };
+});
 
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
@@ -675,6 +689,23 @@ app.UseFastEndpoints()
 // ── Web (Blazor SSR) ──
 app.MapStaticAssets();
 app.MapRazorComponents<App>();
+
+// Magic-link landing (issue #132). A GET, because it is a link in an email — which is also why
+// the token is single-use: mail gateways follow links, and one of those must not consume the
+// human's only chance to sign in without them noticing.
+app.MapGet(RoutePaths.MagicLink, async (
+    string? token, HttpContext context, AppDbContext db,
+    QuickShare.Features.Auth.MagicLink.MagicLinkService links, CancellationToken ct) =>
+{
+    var user = await links.ConsumeAsync(token, ct);
+    if (user is null)
+        return Results.Redirect($"{RoutePaths.Login}?error=link");
+
+    await QuickShare.Features.Auth.Passkeys.AuthSignIn.CompleteAsync(
+        context, db, user, AuthConstants.MagicLinkProvider, ct);
+
+    return Results.Redirect("/");
+});
 
 // SAML 2.0 (issue #139): metadata, SP-initiated login and the assertion consumer.
 app.MapSamlEndpoints();

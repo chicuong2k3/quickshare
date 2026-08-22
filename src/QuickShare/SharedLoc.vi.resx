@@ -2277,4 +2277,55 @@
   <data name="sessions_revoke_all_confirm" xml:space="preserve">
     <value>Đăng xuất khỏi tất cả thiết bị trừ thiết bị này?</value>
   </data>
+  <data name="passkeys_title" xml:space="preserve">
+    <value>Passkey</value>
+  </data>
+  <data name="passkeys_hint" xml:space="preserve">
+    <value>Đăng nhập bằng vân tay, khuôn mặt hoặc khoá bảo mật. Tài khoản nhà cung cấp của bạn vẫn dùng được.</value>
+  </data>
+  <data name="passkeys_empty" xml:space="preserve">
+    <value>Chưa có passkey nào.</value>
+  </data>
+  <data name="passkeys_unnamed" xml:space="preserve">
+    <value>Passkey</value>
+  </data>
+  <data name="passkeys_name" xml:space="preserve">
+    <value>Đặt tên thiết bị (không bắt buộc)</value>
+  </data>
+  <data name="passkeys_register" xml:space="preserve">
+    <value>Thêm passkey</value>
+  </data>
+  <data name="passkeys_remove" xml:space="preserve">
+    <value>Xoá</value>
+  </data>
+  <data name="passkeys_remove_confirm" xml:space="preserve">
+    <value>Xoá passkey này?</value>
+  </data>
+  <data name="passkeys_added" xml:space="preserve">
+    <value>thêm ngày {0}</value>
+  </data>
+  <data name="passkeys_last_used" xml:space="preserve">
+    <value>dùng gần nhất {0}</value>
+  </data>
+  <data name="passkeys_failed" xml:space="preserve">
+    <value>Không đăng ký được passkey.</value>
+  </data>
+  <data name="passkeys_signin_failed" xml:space="preserve">
+    <value>Passkey không được chấp nhận.</value>
+  </data>
+  <data name="passkeys_unsupported" xml:space="preserve">
+    <value>Trình duyệt này không hỗ trợ passkey.</value>
+  </data>
+  <data name="login_with_passkey" xml:space="preserve">
+    <value>Đăng nhập bằng passkey</value>
+  </data>
+  <data name="login_email_label" xml:space="preserve">
+    <value>Hoặc nhận liên kết đăng nhập qua email</value>
+  </data>
+  <data name="login_send_link" xml:space="preserve">
+    <value>Gửi liên kết cho tôi</value>
+  </data>
+  <data name="login_link_sent" xml:space="preserve">
+    <value>Nếu địa chỉ đó có tài khoản, liên kết đăng nhập đang được gửi đi.</value>
+  </data>
 </root>

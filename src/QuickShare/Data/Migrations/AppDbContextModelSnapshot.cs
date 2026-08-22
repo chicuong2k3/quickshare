@@ -1026,6 +1026,41 @@ namespace QuickShare.Migrations
                     b.ToTable("invoice_lines", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.LoginToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("login_tokens", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1095,6 +1130,41 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("otp_lockouts", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.PasskeyChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Handle")
+                        .IsRequired()
+                        .HasMaxLength(43)
+                        .HasColumnType("character varying(43)");
+
+                    b.Property<string>("OptionsJson")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("Handle")
+                        .IsUnique();
+
+                    b.ToTable("passkey_challenges", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PaymentEvent", b =>
@@ -1897,6 +1967,54 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("user_logins", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.UserPasskey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AaGuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CredentialId")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("PublicKey")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<long>("SignCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CredentialId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("user_passkeys", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UserSession", b =>
@@ -3006,6 +3124,17 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UserLogin", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.UserPasskey", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()

@@ -4,6 +4,7 @@
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Auth.Mfa
 @using QuickShare.Features.Auth.Totp
+@using QuickShare.Features.Auth.Passkeys
 @using QuickShare.Features.Users.Sessions
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
@@ -51,12 +52,14 @@ else
 }
 
 <script src="/js/security.js" defer></script>
+<script src="/js/passkeys.js" defer></script>
 
 @code {
     private bool isChunkRequest;
     private UserTotp? totp;
     private MfaVerdict verdict;
     private List<UserSession> sessions = [];
+    private List<UserPasskey> passkeys = [];
     private string? currentSessionId;
 
     private RenderFragment Chunk => @<section id="security-body">
@@ -151,6 +154,56 @@ else
         </div>
         <div class="db-card account-card workspace-card">
             <div class="db-card__body">
+                <h2 class="db-h3">@Loc["passkeys_title"]</h2>
+                <p class="db-p db-text-muted workspace-hint">@Loc["passkeys_hint"]</p>
+
+                @if (passkeys.Count == 0)
+                {
+                    <p class="db-p db-text-muted workspace-hint">@Loc["passkeys_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var passkey in passkeys)
+                        {
+                            <li class="workspace-member" id="passkey-@passkey.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">@(passkey.Name ?? Loc["passkeys_unnamed"].Value)</span>
+                                    <span class="workspace-member__meta">
+                                        @Loc["passkeys_added", passkey.CreatedAt.ToLocalTime().ToString("d")]
+                                        @if (passkey.LastUsedAt is { } used)
+                                        {
+                                            <text> · @Loc["passkeys_last_used", used.ToLocalTime().ToString("g")]</text>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="workspace-member__actions">
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@passkey.Id"
+                                            data-confirm="@Loc["passkeys_remove_confirm"]"
+                                            onclick="window.quickSharePasskeys.remove(this)"
+                                            data-ai-action="security.passkey.remove">@Loc["passkeys_remove"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="passkey-name">@Loc["passkeys_name"]</label>
+                    <input id="passkey-name" class="db-input" type="text" maxlength="@UserPasskey.NameMaxLength" />
+
+                    <button type="button" class="db-btn db-btn--primary"
+                            data-error-label="@Loc["passkeys_failed"]"
+                            data-unsupported-label="@Loc["passkeys_unsupported"]"
+                            onclick="window.quickSharePasskeys.register(this)"
+                            data-ai-action="security.passkey.register">@Loc["passkeys_register"]</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="db-card account-card workspace-card">
+            <div class="db-card__body">
                 <h2 class="db-h3">@Loc["sessions_title"]</h2>
                 <p class="db-p db-text-muted workspace-hint">@Loc["sessions_hint", (int)UserSession.IdleTimeout.TotalDays]</p>
 
@@ -220,6 +273,12 @@ else
 
         currentSessionId = ctx.User.FindFirst(SessionService.SessionClaimType)?.Value;
         var cutoff = DateTime.UtcNow - UserSession.IdleTimeout;
+
+        passkeys = await Db.UserPasskeys
+            .AsNoTracking()
+            .Where(p => p.UserId == user.Id)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(CancellationToken.None);
 
         sessions = await Db.UserSessions
             .AsNoTracking()
