@@ -1270,6 +1270,15 @@ namespace QuickShare.Migrations
                     b.Property<int>("ProrationCredit")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("ProviderChargeId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -1283,6 +1292,8 @@ namespace QuickShare.Migrations
 
                     b.HasIndex("PayOSOrderCode")
                         .IsUnique();
+
+                    b.HasIndex("ProviderChargeId");
 
                     b.HasIndex("Status");
 

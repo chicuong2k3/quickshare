@@ -285,6 +285,10 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<PaymentIntent>(entity =>
         {
+            entity.Property(e => e.Provider).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.ProviderChargeId).HasMaxLength(64);
+            // The webhook arrives knowing only the charge id, so that is the lookup.
+            entity.HasIndex(e => e.ProviderChargeId);
             entity.ToTable("payment_intents");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Code).HasMaxLength(20).IsRequired();

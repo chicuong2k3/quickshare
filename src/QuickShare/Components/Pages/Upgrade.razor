@@ -67,6 +67,17 @@ else
                         <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
                             @Loc["upgrade_pay_now_btn"]
                         </button>
+                        @* Crypto (issue #225) — same form, same price, different rail. Only offered
+                           when the provider is configured; a button that cannot charge is worse
+                           than no button. *@
+                        @if (Checkout.CryptoAvailable)
+                        {
+                            <button type="submit" name="Provider" value="@PaymentProviders.Crypto"
+                                    class="db-btn db-btn--ghost" style="width:100%;margin-top:0.5rem"
+                                    data-ai-action="upgrade.pay.crypto">
+                                @Loc["upgrade_pay_crypto_btn"]
+                            </button>
+                        }
                     </form>
                 </div>
             </div>
@@ -102,6 +113,26 @@ else
                 @if (paymentCompleted)
                 {
                     @PaymentStatus
+                }
+                else if (cryptoResult is not null && cryptoResult.Success)
+                {
+                    @* The provider's page cannot be framed, and a chain confirmation outlasts any
+                       redirect — so this hands off in a new tab and waits for the webhook. *@
+                    <div class="payment-info">
+                        <h3 class="db-h3">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
+                        <p class="db-text-muted" style="margin-top:0.5rem">@Loc["upgrade_crypto_hint"]</p>
+                        <a class="db-btn db-btn--primary" style="width:100%;margin-top:1rem"
+                           href="@cryptoResult.HostedUrl" target="_blank" rel="noopener noreferrer"
+                           data-ai-action="upgrade.crypto.open">@Loc["upgrade_crypto_open"]</a>
+
+                        @PaymentStatus
+                    </div>
+                }
+                else if (cryptoResult is not null)
+                {
+                    <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
+                        <p>@string.Format(Loc["upgrade_payment_error"], cryptoResult.ErrorMessage)</p>
+                    </div>
                 }
                 else if (payOSResult is not null && payOSResult.Success)
                 {
@@ -198,6 +229,7 @@ else
     private bool isFullyLoaded;
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
+    private QuickShare.Features.Payments.Crypto.CryptoChargeResult? cryptoResult;
     private bool isPollRequest;
     private bool paymentCompleted;
     private long pollOrderCode;
@@ -318,8 +350,18 @@ else
             // rejected: somebody came here to buy, and a typo in an optional field must not
             // become a wall between them and the purchase.
             var formPromo = form["PromoCode"].FirstOrDefault();
-            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(
-                user, formPlan, formIsYearly, ct, formPromo);
+            var formProvider = form["Provider"].FirstOrDefault();
+
+            if (string.Equals(formProvider, PaymentProviders.Crypto, StringComparison.Ordinal))
+            {
+                (paymentIntent, cryptoResult) = await Checkout.CreateCryptoCheckoutAsync(
+                    user, formPlan, formIsYearly, ct, formPromo);
+            }
+            else
+            {
+                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(
+                    user, formPlan, formIsYearly, ct, formPromo);
+            }
         }
         else if (isHtmxRequest)
         {

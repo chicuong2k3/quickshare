@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 37 done (08-22): `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 38 done (08-22): `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -1075,6 +1075,39 @@ server suite at 960.
 dictation into fields, and voice actions beyond navigation — "delete that file" needs a target
 the palette does not model.
 
+## Tier 6 — batch 23: crypto payments (#225)
+
+A second payment rail behind the same intent, for the segment without a card: crypto-native devs
+and international freelancers.
+
+**One money path, two rails.** Plan, price, proration and promo quoting are computed once and the
+provider is a column on `PaymentIntent`; only where the buyer is sent and what tells us they paid
+differ. The alternative — a provider with its own pricing — is two products, and the day they
+disagree a customer is charged something nobody can explain.
+
+**Onramp, never custody.** The provider settles to fiat, so refunds and VAT stay on the existing
+invoice path and nobody here holds a wallet, a key or a volatility problem.
+
+**The webhook is the activation, and its signature is all of the security.** A chain confirmation
+outlasts any redirect, so no return URL proves payment on this rail — the HMAC over the raw body
+is the only thing between a stranger and a free Studio plan. Verified *before* parsing, because
+parsing and re-serialising changes the bytes that were signed: the exact mistake that once made
+every real PayOS webhook fail to verify here.
+
+**Everything unconfirmed is acknowledged and ignored** — 200 for pending, delayed, failed and for
+charges we cannot match, because a provider retries anything that is not a 200 and none of those
+are failures it can fix by resending.
+
+With no API key configured the button is not rendered: a payment method that cannot charge is
+worse than one that is missing.
+
+Tests: `CryptoPaymentTests` (8) — the charge is stubbed, the signature check deliberately is not.
+Suite green at 968. Design: [`docs/payment-architecture.md`](payment-architecture.md).
+
+**Not shipped**: self-custody, crypto refunds (fiat, through the provider, as a support
+conversation), recurring crypto renewals (a hosted charge is one-shot — renewal falls back to the
+card rail), and the pricing-page badge.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1124,13 +1157,13 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 37 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 38 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,
   `#180` channels, `#162`/`#176` gating, `#285`/`#286` branding, `#119` residency, and the
   identity batches `#128`/`#181`/`#219`/`#146`/`#139` (12–13). Batch 19 closed `#81`
   white-label and `#155` preview watermark; batch 20 closed `#195` WebDAV and
   batch 21 `#265` S3 gateway and batch 22
-  `#277` voice commands. Still open: `#196` SFTP (no maintained .NET SSH *server* library —
-  deferred rather than built on an archived one), `#163` BYOK, `#194` Outlook add-in,
-  `#243` OCR, `#225` crypto pay
+  `#277` voice commands and batch 23 `#225` crypto pay. Still open: `#196` SFTP (no maintained
+  .NET SSH *server* library — deferred rather than built on an archived one), `#163` BYOK,
+  `#194` Outlook add-in, `#243` OCR

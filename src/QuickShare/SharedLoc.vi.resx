@@ -2460,4 +2460,13 @@
   <data name="voice_denied" xml:space="preserve">
     <value>Micro bị từ chối quyền truy cập.</value>
   </data>
+  <data name="upgrade_pay_crypto_btn" xml:space="preserve">
+    <value>Thanh toán bằng crypto</value>
+  </data>
+  <data name="upgrade_crypto_hint" xml:space="preserve">
+    <value>Trang thanh toán sẽ mở ở nhà cung cấp. Gói kích hoạt ngay khi giao dịch được xác nhận trên chuỗi — bạn có thể đóng tab này.</value>
+  </data>
+  <data name="upgrade_crypto_open" xml:space="preserve">
+    <value>Đi tới trang thanh toán crypto</value>
+  </data>
 </root>

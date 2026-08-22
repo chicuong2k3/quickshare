@@ -265,6 +265,9 @@ builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.S3.S3Credentials>();
 
+// Crypto checkout (issue #225): a second payment rail behind the same intent.
+builder.Services.AddScoped<QuickShare.Features.Payments.Crypto.CryptoCheckoutService>();
+
 // White-label custom domain (issue #81): who owns an incoming host, and where a share's
 // public link lives. The verifier is not sealed so a test can answer DNS without a network.
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.WorkspaceDomainReader>();

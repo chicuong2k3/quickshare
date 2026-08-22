@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using QuickShare.Data;
+using QuickShare.Features.Payments.Crypto;
 using QuickShare.Data.Entities;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
@@ -52,6 +53,10 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
         builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
         builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");
+        // Crypto rail (issue #225): a key so the button is offered, and a shared secret the
+        // suite can sign a webhook with — the signature is the whole security of that path.
+        builder.UseSetting(CryptoCheckoutService.ApiKeyConfigKey, "test-crypto-key");
+        builder.UseSetting(CryptoCheckoutService.WebhookSecretConfigKey, CryptoWebhookSecret);
         // The default seeded test user ("test@quickshare.test") is an admin, so the
         // feature-flag admin surface is exercisable from E2E tests.
         builder.UseSetting("Admin:Emails:0", TestUserEmail);
@@ -93,6 +98,8 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             services.RemoveAll<QuickShare.Infrastructure.Push.IPushService>();
             services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, StubPushService>();
             services.AddScoped<PayOSService, StubPayOSService>();
+            services.RemoveAll<CryptoCheckoutService>();
+            services.AddScoped<CryptoCheckoutService, StubCryptoCheckoutService>();
             // White-label domain verification (issue #81) asks DNS a question; a suite that
             // asked the real resolver would be testing the network.
             services.RemoveAll<QuickShare.Features.Workspaces.Domains.DomainVerifier>();
@@ -100,6 +107,9 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
     }
+
+    /// <summary>The shared secret the suite signs crypto webhooks with (issue #225).</summary>
+    public const string CryptoWebhookSecret = "test-crypto-webhook-secret";
 
     /// <summary>Client authenticated as the default seeded test user.</summary>
     public HttpClient CreateAuthenticatedClient() => CreateAuthenticatedClient(TestUserProviderKey);
@@ -221,6 +231,25 @@ internal sealed class StubDomainVerifier(
                 ? null
                 : $"{host} does not point at {CanonicalHost} yet.");
         }
+    }
+}
+
+/// <summary>
+/// Replaces the hosted crypto charge with an instant fake, the way the PayOS stub does. The
+/// signature verification is deliberately *not* stubbed: it is the part worth testing.
+/// </summary>
+internal sealed class StubCryptoCheckoutService(
+    IHttpClientFactory httpClientFactory,
+    Microsoft.Extensions.Configuration.IConfiguration config,
+    Microsoft.Extensions.Logging.ILogger<CryptoCheckoutService> logger)
+    : CryptoCheckoutService(httpClientFactory, config, logger)
+{
+    public override Task<CryptoChargeResult> CreateChargeAsync(
+        string reference, decimal amount, string currency, string description, CancellationToken ct)
+    {
+        var chargeId = "stub-" + Guid.NewGuid().ToString("N")[..12];
+
+        return Task.FromResult(new CryptoChargeResult(true, $"https://commerce.stub.local/{chargeId}", chargeId, null));
     }
 }
 

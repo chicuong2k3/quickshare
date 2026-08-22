@@ -2460,4 +2460,13 @@
   <data name="voice_denied" xml:space="preserve">
     <value>Microphone access was refused.</value>
   </data>
+  <data name="upgrade_pay_crypto_btn" xml:space="preserve">
+    <value>Pay with crypto</value>
+  </data>
+  <data name="upgrade_crypto_hint" xml:space="preserve">
+    <value>The checkout opens with the provider. Your plan activates as soon as the payment confirms on-chain — you can close this tab.</value>
+  </data>
+  <data name="upgrade_crypto_open" xml:space="preserve">
+    <value>Continue to crypto checkout</value>
+  </data>
 </root>

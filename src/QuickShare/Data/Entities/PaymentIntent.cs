@@ -11,6 +11,15 @@ public sealed class PaymentIntent
     public User User { get; set; } = null!;
     public string Code { get; set; } = string.Empty;
     public long PayOSOrderCode { get; set; }
+
+    /// <summary>
+    /// Which rail this intent is being paid on (issue #225). Defaults to the card/bank provider
+    /// so every row written before crypto existed still says something true.
+    /// </summary>
+    public string Provider { get; set; } = PaymentProviders.PayOS;
+
+    /// <summary>The provider's own id for a hosted charge; null for the PayOS order-code path.</summary>
+    public string? ProviderChargeId { get; set; }
     public string Plan { get; set; } = string.Empty;
     public string Billing { get; set; } = string.Empty;
     public decimal Amount { get; set; }

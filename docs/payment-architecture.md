@@ -444,3 +444,37 @@ Pages/
 ├── Upgrade.razor                  # Plan selection + PayOS payment
 └── AccountBilling.razor           # Subscription status + billing history
 ```
+
+## The crypto rail (#225)
+
+A second provider behind the **same** `PaymentIntent`. Plan, price, proration (#114) and promo
+handling (#98) are computed once in `CheckoutService.CreateIntentAsync` and the rail is a column
+on the row; only the checkout page and the confirmation differ. A provider that computed its own
+prices would be a second product to keep in step, and the day the two disagreed a customer would
+be charged something nobody could explain.
+
+**Onramp, never custody.** The provider takes the coin and settles to fiat; we are told a charge
+confirmed. Holding a wallet would make this a treasury feature — key management, volatility
+between charge and settlement, a balance somebody reconciles — none of which is a file-sharing
+product's business. It also means refunds and VAT stay exactly where they were: fiat, through
+the existing invoice path (#112).
+
+**The webhook is the activation, and its signature is the security.** A chain confirmation takes
+minutes; the buyer's browser is gone. There is no return URL that proves payment here, so the
+HMAC over the raw body is the only thing standing between a stranger and a free Studio plan. It
+is verified before the body is parsed — parsing and re-serialising changes bytes the provider
+signed, which is exactly how the PayOS webhook once failed to verify every real payment.
+
+**Every other event is acknowledged and ignored.** `charge:pending`, `charge:delayed`,
+`charge:failed` all return 200: a provider retries anything that is not a 200, and only
+confirmation moves a plan. A charge we cannot match is also a 200, because it is not something
+the provider can fix by sending it again.
+
+Configuration: `Crypto:ApiKey`, `Crypto:WebhookSecret`, optional `Crypto:ApiBase`. With no API
+key the button is not rendered at all — a payment method that cannot charge is worse than one
+that is missing.
+
+**Not shipped**: self-custody or on-chain settlement, crypto refunds (they go back through the
+provider in fiat, and that is a support conversation rather than a button), recurring crypto
+renewals (a hosted charge is one-shot; renewal falls back to the card rail), and a pricing-page
+badge.
