@@ -553,6 +553,14 @@ else
                               title="@(item.Lock.LockedBySelf ? Loc["deliveries_lock_self_tooltip"] : Loc["deliveries_lock_other_tooltip"])"
                               data-ai-action="delivery.lockBadge">@Loc["deliveries_lock_badge"]</span>
                     }
+                    @* Says *why* this row is in the results (issue #243) — without it an OCR hit
+                       looks like a name match that is not there, and the search looks broken. *@
+                    @if (item.MatchedInImage)
+                    {
+                        <span class="account-delivery__ocr"
+                              title="@Loc["deliveries_ocr_tooltip"]"
+                              data-ai-action="delivery.ocrBadge">@Loc["deliveries_ocr_badge"]</span>
+                    }
                     @if (item.IsUnderLegalHold)
                     {
                         <span class="account-delivery__hold"

@@ -53,6 +53,12 @@ public record Delivery : BaseAuditEntity
     /// is the leak an agency sharing work-in-progress actually fears.
     /// </summary>
     public bool WatermarkEnabled { get; set; }
+
+    /// <summary>
+    /// Index the text inside this image so it can be searched (issue #243). Opt-in per file:
+    /// reading somebody's screenshot is a data touch, and it is not one to make by default.
+    /// </summary>
+    public bool OcrRequested { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }

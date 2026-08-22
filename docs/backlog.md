@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 38 done (08-22): `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 39 done (08-22): `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -1108,6 +1108,42 @@ Suite green at 968. Design: [`docs/payment-architecture.md`](payment-architectur
 conversation), recurring crypto renewals (a hosted charge is one-shot — renewal falls back to the
 card rail), and the pricing-page badge.
 
+## Tier 6 — batch 24: OCR search (#243)
+
+Find a file by the words inside the picture — a screenshot of an invoice, a photo of a
+whiteboard, a scanned receipt.
+
+**Opt-in per file, images only, never in privacy mode.** Reading somebody's screenshot is a data
+touch and not one to make by default. The privacy gate is applied at commit, on the flag itself,
+so the column is already the truth and the next consumer of it inherits the rule rather than
+having to remember it.
+
+**The engine is the installed binary, not an interop package.** `tesseract` runs as a
+subprocess: one apt line in the Dockerfile, nothing in the build, and a host without it reports
+unavailable and never offers the feature. Local rather than a cloud vision API because the
+privacy page says files are not shipped to third parties, and an OCR feature that did would
+quietly make that untrue.
+
+**A null result is still a result.** The job writes a row either way — without it the same
+unreadable screenshot would be re-processed on every tick, forever.
+
+**Text lives in its own table.** The delivery row is read on every list, download and recipient
+page; a kilobyte of scanned invoice riding along on all of them would be paid for constantly to
+serve the one query that wants it.
+
+**One search box, and the result says why it matched.** Name or image text in a single predicate
+— a separate "search inside images" toggle would make people choose which search to run before
+they know which one will find it — and an OCR hit carries an `in image` badge, because otherwise
+it looks like a name match that is not there and the search looks broken.
+
+Tests: `OcrSearchTests` (7) — recognition is stubbed, because a suite that shelled out to
+tesseract would be testing tesseract. Suite green at 975. Design:
+[`docs/ocr-search.md`](ocr-search.md).
+
+**Not shipped**: PDF text extraction (a PDF has its own text layer — a different path), re-index
+on demand for files uploaded before the sender changed their mind, match highlighting in the
+preview, and language detection beyond the configured `eng+vie`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1141,6 +1177,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | White-label domain & preview watermark | `docs/white-label.md` |
 | Protocol mounts (WebDAV, S3 gateway) | `docs/protocol-mounts.md` |
 | Voice commands | `docs/voice-commands.md` |
+| OCR search | `docs/ocr-search.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 
@@ -1157,13 +1194,13 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 38 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 39 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,
   `#180` channels, `#162`/`#176` gating, `#285`/`#286` branding, `#119` residency, and the
   identity batches `#128`/`#181`/`#219`/`#146`/`#139` (12–13). Batch 19 closed `#81`
   white-label and `#155` preview watermark; batch 20 closed `#195` WebDAV and
   batch 21 `#265` S3 gateway and batch 22
-  `#277` voice commands and batch 23 `#225` crypto pay. Still open: `#196` SFTP (no maintained
-  .NET SSH *server* library — deferred rather than built on an archived one), `#163` BYOK,
-  `#194` Outlook add-in, `#243` OCR
+  `#277` voice commands and batch 23 `#225` crypto pay and batch 24
+  `#243` OCR search. Still open: `#196` SFTP (no maintained .NET SSH *server* library —
+  deferred rather than built on an archived one), `#163` BYOK, `#194` Outlook add-in

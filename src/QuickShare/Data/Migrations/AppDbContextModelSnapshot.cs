@@ -424,6 +424,9 @@ namespace QuickShare.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("text");
 
+                    b.Property<bool>("OcrRequested")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("OtpHash")
                         .HasColumnType("text");
 
@@ -614,6 +617,33 @@ namespace QuickShare.Migrations
                     b.HasIndex("DeliveryId", "SortOrder");
 
                     b.ToTable("delivery_files", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryOcrText", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId")
+                        .IsUnique();
+
+                    b.ToTable("delivery_ocr_texts", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DownloadTracking", b =>
@@ -3001,6 +3031,17 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DeliveryFile", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.DeliveryOcrText", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.Delivery", "Delivery")
                         .WithMany()

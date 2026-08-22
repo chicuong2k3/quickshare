@@ -265,6 +265,12 @@ builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.S3.S3Credentials>();
 
+// OCR search (issue #243). Singleton: the availability probe is a deployment fact, and running
+// it per request would be a process launch per request.
+builder.Services.AddSingleton<QuickShare.Features.Deliveries.Ocr.IOcrEngine,
+    QuickShare.Features.Deliveries.Ocr.TesseractOcrEngine>();
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Ocr.OcrJob>();
+
 // Crypto checkout (issue #225): a second payment rail behind the same intent.
 builder.Services.AddScoped<QuickShare.Features.Payments.Crypto.CryptoCheckoutService>();
 

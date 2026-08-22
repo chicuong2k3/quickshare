@@ -2469,4 +2469,16 @@
   <data name="upgrade_crypto_open" xml:space="preserve">
     <value>Đi tới trang thanh toán crypto</value>
   </data>
+  <data name="upload_ocr_label" xml:space="preserve">
+    <value>Tìm kiếm chữ trong ảnh này</value>
+  </data>
+  <data name="upload_ocr_hint" xml:space="preserve">
+    <value>Đọc chữ trong ảnh để sau này bạn tìm lại được. Chạy trên máy chủ của chúng tôi, không gửi cho bên nào khác. Tắt trong chế độ riêng tư.</value>
+  </data>
+  <data name="deliveries_ocr_badge" xml:space="preserve">
+    <value>trong ảnh</value>
+  </data>
+  <data name="deliveries_ocr_tooltip" xml:space="preserve">
+    <value>Tìm thấy trong chữ của ảnh, không phải trong tên file.</value>
+  </data>
 </root>

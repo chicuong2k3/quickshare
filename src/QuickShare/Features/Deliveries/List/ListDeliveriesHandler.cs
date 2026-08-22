@@ -21,6 +21,9 @@ public record DeliveryItem(
     /// <summary>Active file lock (issue #308). Null when the delivery is not locked.</summary>
     public FileLockInfo? Lock { get; init; }
 
+    /// <summary>The search term was found in the image's text, not in its name (issue #243).</summary>
+    public bool MatchedInImage { get; init; }
+
     /// <summary>Legal hold (issue #266): frozen against every deletion path until lifted.</summary>
     public bool IsUnderLegalHold => LegalHoldAt is not null;
 }
@@ -83,7 +86,11 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
             // doesn't apply inside an EF expression tree.
 #pragma warning disable CA1304, CA1311, CA1862
             var term = query.Search.Trim().ToLower();
-            source = source.Where(d => d.FileName.ToLower().Contains(term));
+            // Name *or* the text read out of the image (issue #243). One predicate, because a
+            // separate "search inside images" box would make people choose which search to run
+            // before they know which one will find it.
+            source = source.Where(d => d.FileName.ToLower().Contains(term)
+                || db.DeliveryOcrTexts.Any(o => o.DeliveryId == d.Id && o.Text != null && o.Text.ToLower().Contains(term)));
 #pragma warning restore CA1304, CA1311, CA1862
         }
 
@@ -105,6 +112,22 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
                 && l.ExpiresAt > now)
             .ToListAsync(cancellationToken);
 
+        // Which of these matched inside an image rather than by name (issue #243) — one extra
+        // round-trip for the page, the same shape as the lock enrichment above. Without it the
+        // result looks like a name match that is not there, and the search looks broken.
+        var ocrMatches = new HashSet<Guid>();
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+#pragma warning disable CA1304, CA1311, CA1862
+            var term = query.Search.Trim().ToLower();
+            ocrMatches = (await db.DeliveryOcrTexts
+                .AsNoTracking()
+                .Where(o => pageIds.Contains(o.DeliveryId) && o.Text != null && o.Text.ToLower().Contains(term))
+                .Select(o => o.DeliveryId)
+                .ToListAsync(cancellationToken)).ToHashSet();
+#pragma warning restore CA1304, CA1311, CA1862
+        }
+
         var lockByDelivery = activeLocks
             .GroupBy(l => l.DeliveryId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.CreatedAt).First());
@@ -113,9 +136,10 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
             .Select(item => lockByDelivery.TryGetValue(item.Id, out var lockInfo)
                 ? item with
                 {
-                    Lock = new FileLockInfo(lockInfo.LockedById, lockInfo.LockedById == userId, lockInfo.ExpiresAt)
+                    Lock = new FileLockInfo(lockInfo.LockedById, lockInfo.LockedById == userId, lockInfo.ExpiresAt),
+                    MatchedInImage = ocrMatches.Contains(item.Id),
                 }
-                : item)
+                : item with { MatchedInImage = ocrMatches.Contains(item.Id) })
             .ToList();
 
         return Result.Success(new CursorPage<DeliveryItem>(items, page.NextCursor));

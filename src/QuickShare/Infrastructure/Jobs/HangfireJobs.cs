@@ -34,6 +34,7 @@ public static class HangfireJobs
     public const string SiemShipping = "siem-shipping";
     public const string WorkspaceBackup = "workspace-backup";
     public const string RecurringDelivery = "recurring-delivery";
+    public const string ImageOcr = "image-ocr";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -58,6 +59,9 @@ public static class HangfireJobs
         // Hourly tick, but each policy only runs once its own interval has elapsed.
         recurring.AddOrUpdate<WorkspaceBackupJob>(WorkspaceBackup, j => j.RunAsync(), Cron.Hourly());
         recurring.AddOrUpdate<RecurringDeliveryJob>(RecurringDelivery, j => j.RunAsync(), Cron.Hourly());
+        // Every minute: a file the sender asked to index should be findable while they are still
+        // in the app, and the job does nothing at all when OCR is unavailable or nothing is queued.
+        recurring.AddOrUpdate<QuickShare.Features.Deliveries.Ocr.OcrJob>(ImageOcr, j => j.RunAsync(), Cron.Minutely());
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
         recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),

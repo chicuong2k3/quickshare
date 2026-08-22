@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceChannelHook> WorkspaceChannelHooks => Set<WorkspaceChannelHook>();
     public DbSet<WorkspaceDomain> WorkspaceDomains => Set<WorkspaceDomain>();
     public DbSet<WorkspaceS3Credential> WorkspaceS3Credentials => Set<WorkspaceS3Credential>();
+    public DbSet<DeliveryOcrText> DeliveryOcrTexts => Set<DeliveryOcrText>();
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
@@ -717,6 +718,19 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceDeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DeliveryOcrText>(entity =>
+        {
+            entity.ToTable("delivery_ocr_texts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Text).HasMaxLength(DeliveryOcrText.TextMaxLength);
+            // One result per delivery, and the delivery is how it is always looked up.
+            entity.HasIndex(e => e.DeliveryId).IsUnique();
+            entity.HasOne(e => e.Delivery)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<WorkspaceS3Credential>(entity =>

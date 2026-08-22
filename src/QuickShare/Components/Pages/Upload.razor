@@ -275,6 +275,16 @@
                     </div>
                 }
 
+                @* OCR search (issue #243) — opt-in per file; reading somebody's screenshot is a
+                   data touch, not a default. *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <input type="checkbox" id="upload-ocr" />
+                        <span>@Loc["upload_ocr_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_ocr_hint"]</span>
+                </div>
+
                 @* Email OTP (issue #291) — recipient requests a single-use emailed code *@
                 <div class="sender-email-wrap">
                     <label class="otp-label burn-toggle">

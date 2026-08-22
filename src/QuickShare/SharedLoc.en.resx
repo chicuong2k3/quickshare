@@ -2469,4 +2469,16 @@
   <data name="upgrade_crypto_open" xml:space="preserve">
     <value>Continue to crypto checkout</value>
   </data>
+  <data name="upload_ocr_label" xml:space="preserve">
+    <value>Search text inside this image</value>
+  </data>
+  <data name="upload_ocr_hint" xml:space="preserve">
+    <value>Reads the words in the picture so you can find it later. Runs on our servers, never sent to anyone else. Off in privacy mode.</value>
+  </data>
+  <data name="deliveries_ocr_badge" xml:space="preserve">
+    <value>in image</value>
+  </data>
+  <data name="deliveries_ocr_tooltip" xml:space="preserve">
+    <value>Matched text found inside the image, not in the file name.</value>
+  </data>
 </root>

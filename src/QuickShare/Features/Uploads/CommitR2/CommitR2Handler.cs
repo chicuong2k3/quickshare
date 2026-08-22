@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, bool OcrEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -304,6 +304,10 @@ public sealed class CommitR2Handler(
             // thread instead (issues #289/#187).
             CommentsEnabled = cmd.CommentsEnabled && !cmd.PrivacyMode,
             WatermarkEnabled = cmd.WatermarkEnabled,
+            // Privacy mode wins again (issues #243/#187): a share that keeps no record must not
+            // grow a searchable transcript of itself instead. Gated here rather than in the job,
+            // so the flag on the row is already the truth.
+            OcrRequested = cmd.OcrEnabled && !cmd.PrivacyMode && DeliveryOcrText.IsIndexable(session.ContentType),
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.

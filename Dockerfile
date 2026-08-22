@@ -29,8 +29,13 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 # AWSSDK (R2) needs the Kerberos GSSAPI native lib for SigV4a signing.
+# tesseract-ocr powers image text search (issue #243) — the binary, not an interop package, so
+# nothing in the build depends on it and a host without it simply never offers the feature.
+# The language packs match what the product is localised in; adding one is an apt line.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends libgssapi-krb5-2 && \
+    apt-get install -y --no-install-recommends \
+        libgssapi-krb5-2 \
+        tesseract-ocr tesseract-ocr-eng tesseract-ocr-vie && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

@@ -98,6 +98,10 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             services.RemoveAll<QuickShare.Infrastructure.Push.IPushService>();
             services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, StubPushService>();
             services.AddScoped<PayOSService, StubPayOSService>();
+            // OCR (issue #243): the recognition is stubbed — a suite that shelled out to
+            // tesseract would be testing tesseract, not what we do with what it returns.
+            services.RemoveAll<QuickShare.Features.Deliveries.Ocr.IOcrEngine>();
+            services.AddSingleton<QuickShare.Features.Deliveries.Ocr.IOcrEngine, StubOcrEngine>();
             services.RemoveAll<CryptoCheckoutService>();
             services.AddScoped<CryptoCheckoutService, StubCryptoCheckoutService>();
             // White-label domain verification (issue #81) asks DNS a question; a suite that
@@ -251,6 +255,18 @@ internal sealed class StubCryptoCheckoutService(
 
         return Task.FromResult(new CryptoChargeResult(true, $"https://commerce.stub.local/{chargeId}", chargeId, null));
     }
+}
+
+/// <summary>Returns whatever the current test says the picture says (issue #243).</summary>
+internal sealed class StubOcrEngine : QuickShare.Features.Deliveries.Ocr.IOcrEngine
+{
+    /// <summary>Null means "read it and found nothing", which is its own result.</summary>
+    public static string? Text { get; set; } = "PO-4417 total 1,240,000 VND";
+
+    public bool IsAvailable => true;
+
+    public Task<string?> ReadAsync(Stream image, string languages, CancellationToken ct) =>
+        Task.FromResult(Text);
 }
 
 /// <summary>Replaces outbound PayOS API calls with an instant fake checkout link.</summary>
