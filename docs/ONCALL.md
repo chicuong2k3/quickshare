@@ -156,3 +156,22 @@ PII is redacted before Loki (`PiiRedactingEnricher`) — email/file-name/IP neve
 
 Update when a new alert, service, or failure mode appears. See `AGENTS.md` → Issue Completion
 Docs Update Rule.
+
+## Personal-data breach — Vietnam (Decree 13/2023, issue #230)
+
+A different clock and a different recipient from the GDPR path above, so it runs alongside it
+rather than inside it.
+
+1. **Clock starts when we become aware**, not when we finish investigating. 72 hours to notify
+   the Vietnamese authority (A08) and the affected people.
+2. **Decide scope first**: whose personal data, what categories, whether it left our storage.
+   The delivery and security-event tables are the record; `docs/compliance-architecture.md` has
+   the data map.
+3. **Notify A08** with what is known so far. An incomplete notification inside the window beats a
+   complete one outside it.
+4. **Notify affected people** in Vietnamese, plainly: what happened, what data, what to do.
+5. **Record it** — the incident, the times, who decided what. That record is the evidence the
+   deadline was met.
+
+Owner: whoever holds the on-call pager at the time; escalate to the account owner immediately,
+because the notification is a legal act rather than an engineering one.

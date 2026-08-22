@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
     public DbSet<WorkspaceS3Credential> WorkspaceS3Credentials => Set<WorkspaceS3Credential>();
     public DbSet<DeliveryOcrText> DeliveryOcrTexts => Set<DeliveryOcrText>();
     public DbSet<DeliveryRecipient> DeliveryRecipients => Set<DeliveryRecipient>();
+    public DbSet<UserConsent> UserConsents => Set<UserConsent>();
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
@@ -724,6 +725,22 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceDeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserConsent>(entity =>
+        {
+            entity.ToTable("user_consents");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(UserConsent.KindMaxLength);
+            entity.Property(e => e.Version).IsRequired().HasMaxLength(UserConsent.VersionMaxLength);
+            entity.Property(e => e.IpHash).HasMaxLength(64);
+            // One row per account, kind and version: a log with an entry per page load says
+            // nothing about when somebody actually agreed.
+            entity.HasIndex(e => new { e.UserId, e.Kind, e.Version }).IsUnique();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<DeliveryRecipient>(entity =>

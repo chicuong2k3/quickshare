@@ -2643,4 +2643,25 @@
   <data name="requests_qr_unavailable" xml:space="preserve">
     <value>QR is unavailable right now.</value>
   </data>
+  <data name="pdpd_title" xml:space="preserve">
+    <value>Consent to processing and transfer abroad</value>
+  </data>
+  <data name="pdpd_body" xml:space="preserve">
+    <value>We process your personal data to run this service, and your files and account data are stored on servers outside Vietnam. Vietnam's Decree 13/2023 asks us to obtain your consent to both, and you can withdraw it at any time from the privacy page.</value>
+  </data>
+  <data name="pdpd_read_more" xml:space="preserve">
+    <value>Read what we store and where</value>
+  </data>
+  <data name="pdpd_agree" xml:space="preserve">
+    <value>I agree</value>
+  </data>
+  <data name="pdpd_withdraw" xml:space="preserve">
+    <value>Withdraw consent</value>
+  </data>
+  <data name="pdpd_withdrawn" xml:space="preserve">
+    <value>Consent withdrawn.</value>
+  </data>
+  <data name="privacy_pdpd_title" xml:space="preserve">
+    <value>Vietnam — Decree 13/2023 (PDPD)</value>
+  </data>
 </root>

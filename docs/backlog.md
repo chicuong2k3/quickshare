@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **10/10 done** (08-17) |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 58 done (08-23): `#16` file-request submission page, `#17` drop room, `#104` upload by email, `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
+| Tier 4 | WeTransfer parity baseline | 59 done (08-23): `#230` PDPD consent, `#16` file-request submission page, `#17` drop room, `#104` upload by email, `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
 | Tier 6 | B2B / enterprise / far-future | 40 done (08-22): `#194` Outlook add-in, `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
@@ -1420,6 +1420,39 @@ Tests: `DropRoomTests` (8). Server suite green at 1027, browser at 42.
 — a name typed by an anonymous stranger is a claim, and the room would present it as a fact —
 and notification-per-drop, which is what `FileRequestDigestJob` already batches.
 
+## Tier 4 — batch 33: PDPD consent (#230)
+
+Vietnam's Decree 13 is the local law for the market this product sells into, and it asks for
+something the GDPR work did not provide: consent that is **specific to transferring personal data
+abroad**, which is exactly what our storage does.
+
+**The mechanism is what is built, and the wording is what gets reviewed.** `docs/pdpd-compliance.md`
+says so in its first paragraph. Shipping a consent flow while pretending the text has been through
+a lawyer would be the worst of both.
+
+**Versioning is the load-bearing part.** A consent means something only against the text that was
+shown, so the version travels with the record and an agreement to last year's wording does not
+count as agreement to this year's. Re-granting an active consent is a no-op — a log with an entry
+per page load says nothing about when somebody actually agreed.
+
+**Withdrawal marks the row rather than deleting it.** *Consented on Tuesday, withdrew on Friday*
+is the record that matters; erasing the second half would erase the part that protects the person.
+
+**The banner does not block anything.** Consent that is a condition of using the thing you already
+paid for is not freely given. It is shown to accounts reading the site in Vietnamese, once per
+version; locale is what we have, and it is not a claim about where somebody lives.
+
+The 72-hour A08 breach branch is written into `ONCALL.md` as its own path, because it has a
+different clock and a different recipient from the GDPR one.
+
+Tests: `PdpdConsentTests` (6). Suite green at 1033.
+
+**Not shipped**: a Vietnamese-hosted storage region (#119 makes one configurable; standing it up
+is an operations decision with a cost), automated A08 notification (a human process with a form at
+the end), consent for anonymous senders (nothing is stored about them beyond the delivery, and
+asking a stranger to agree to a processing notice before they can send a file is consent theatre),
+and a separate VN privacy page.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1456,6 +1489,7 @@ Where a design/spec/plan already exists, read it before implementing.
 | OCR search | `docs/ocr-search.md` |
 | Outlook add-in | `docs/outlook-addin.md` |
 | Upload by email | `docs/upload-by-email.md` |
+| PDPD (Vietnam) compliance | `docs/pdpd-compliance.md` |
 | Style gallery | `docs/superpowers/specs/2026-08-15-quickshare-style-gallery-design.md` |
 | HTMXor integration | `docs/superpowers/plans/2026-07-25-htmxor-integration-plan.md` |
 

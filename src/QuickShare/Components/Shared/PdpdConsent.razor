@@ -1,0 +1,63 @@
+@* PDPD consent (issue #230) — Vietnam's Decree 13 asks for specific consent to processing and,
+   separately, to transferring personal data abroad, which is what our storage does. Shown to
+   signed-in accounts reading the site in Vietnamese, once per version of the text.
+
+   Not a modal and not a wall: the law asks for consent to be freely given, and a banner that
+   holds the product hostage is not that. It also never claims to be legal advice — the wording
+   is written down in docs/pdpd-compliance.md for review, and the version travels with the
+   record so an old agreement keeps naming the text it agreed to. *@
+@using QuickShare.Features.Users.Consent
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+
+@if (Show)
+{
+    <div id="pdpd-consent" class="cookie-consent" role="region" aria-labelledby="pdpd-consent-title">
+        <div class="cookie-consent__inner">
+            <div class="cookie-consent__text">
+                <span id="pdpd-consent-title" class="cookie-consent__title">@Loc["pdpd_title"]</span>
+                <p class="cookie-consent__desc">
+                    @Loc["pdpd_body"]
+                    <a href="@RoutePaths.Privacy" class="cookie-consent__link">@Loc["pdpd_read_more"]</a>
+                </p>
+            </div>
+            <div class="cookie-consent__actions">
+                <button class="db-btn db-btn--primary db-btn--sm cookie-consent__btn" type="button"
+                        onclick="window.qsPage.send('/api/consents/pdpd', 'POST', null, {})"
+                        data-ai-action="pdpd.grant">@Loc["pdpd_agree"]</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool Show { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = HttpContextAccessor.HttpContext;
+        if (context?.User.Identity?.IsAuthenticated != true)
+            return;
+
+        // Vietnamese-reading accounts. Locale is what we have; it is not a claim about where
+        // somebody lives, and the consent is available to everybody else from the privacy page.
+        if (!string.Equals(
+                System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "vi", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var user = await context.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
+        if (user is null)
+            return;
+
+        Show = !await Db.UserConsents
+            .AsNoTracking()
+            .AnyAsync(c => c.UserId == user.Id
+                && c.Kind == ConsentKinds.Pdpd
+                && c.Version == ConsentKinds.PdpdVersion
+                && c.RevokedAt == null, CancellationToken.None);
+    }
+}

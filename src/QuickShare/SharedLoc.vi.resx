@@ -2643,4 +2643,25 @@
   <data name="requests_qr_unavailable" xml:space="preserve">
     <value>Hiện chưa tạo được QR.</value>
   </data>
+  <data name="pdpd_title" xml:space="preserve">
+    <value>Đồng ý xử lý và chuyển dữ liệu ra nước ngoài</value>
+  </data>
+  <data name="pdpd_body" xml:space="preserve">
+    <value>Chúng tôi xử lý dữ liệu cá nhân của bạn để vận hành dịch vụ, và tệp cùng dữ liệu tài khoản được lưu trên máy chủ ngoài Việt Nam. Nghị định 13/2023 yêu cầu chúng tôi xin sự đồng ý của bạn cho cả hai việc này; bạn có thể rút lại bất cứ lúc nào ở trang quyền riêng tư.</value>
+  </data>
+  <data name="pdpd_read_more" xml:space="preserve">
+    <value>Xem chúng tôi lưu gì và lưu ở đâu</value>
+  </data>
+  <data name="pdpd_agree" xml:space="preserve">
+    <value>Tôi đồng ý</value>
+  </data>
+  <data name="pdpd_withdraw" xml:space="preserve">
+    <value>Rút lại đồng ý</value>
+  </data>
+  <data name="pdpd_withdrawn" xml:space="preserve">
+    <value>Đã rút lại đồng ý.</value>
+  </data>
+  <data name="privacy_pdpd_title" xml:space="preserve">
+    <value>Việt Nam — Nghị định 13/2023 (PDPD)</value>
+  </data>
 </root>
