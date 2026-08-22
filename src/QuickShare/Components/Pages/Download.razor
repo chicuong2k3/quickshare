@@ -104,7 +104,9 @@
                         <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_password_sub"]</p>
                         <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
                             <input type="password" id="dl-password" class="db-field__input db-input" style="max-width: 20rem; width: 100%" autocomplete="off" onkeydown="downloadApp.passwordKeydown(event)" aria-label="@Loc["dl_password_h2"]" />
-                            <p id="dl-password-error" class="error hidden"></p>
+                            @* role="alert" (issue #95): a wrong password that is only *shown* is a dead end for
+                               anybody not looking at that spot on the screen. *@
+                            <p id="dl-password-error" class="error hidden" role="alert"></p>
                             <button id="dl-password-btn" type="button" class="btn" onclick="downloadApp.verifyPassword()" data-ai-action="download.password.unlock">
                                 <span id="dl-password-btn-text">@Loc["dl_password_unlock"]</span>
                             </button>
@@ -121,15 +123,18 @@
                         <h2 class="db-h2" style="font-size: 1.125rem">@Loc["dl_otp_h2"]</h2>
                         <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_otp_sub"]</p>
                         <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
-                            <div id="dl-otp" class="db-otp" style="gap: 0.5rem">
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,1)" onkeydown="downloadApp.otpKeydown(event,1)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,2)" onkeydown="downloadApp.otpKeydown(event,2)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,3)" onkeydown="downloadApp.otpKeydown(event,3)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,4)" onkeydown="downloadApp.otpKeydown(event,4)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" />
+                            @* Six boxes, each with its own name (issue #95). Unlabelled, a screen
+                               reader announces six identical "edit text" fields and the code is
+                               unenterable without sight. *@
+                            <div id="dl-otp" class="db-otp" style="gap: 0.5rem" role="group" aria-label="@Loc["dl_otp_h2"]">
+                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 1, 6]" />
+                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,1)" onkeydown="downloadApp.otpKeydown(event,1)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 2, 6]" />
+                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,2)" onkeydown="downloadApp.otpKeydown(event,2)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 3, 6]" />
+                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,3)" onkeydown="downloadApp.otpKeydown(event,3)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 4, 6]" />
+                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,4)" onkeydown="downloadApp.otpKeydown(event,4)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 5, 6]" />
+                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 6, 6]" />
                             </div>
-                            <p id="dl-otp-error" class="error hidden"></p>
+                            <p id="dl-otp-error" class="error hidden" role="alert"></p>
                             <div id="dl-captcha" class="dl-captcha hidden"></div>
                             <button id="dl-otp-btn" type="button" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
                                 <span id="dl-otp-btn-text">@Loc["dl_otp_unlock"]</span>

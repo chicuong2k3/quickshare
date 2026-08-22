@@ -2547,4 +2547,19 @@
   <data name="deliveries_activity_file_downloads" xml:space="preserve">
     <value>{0} download(s)</value>
   </data>
+  <data name="a11y_skip_to_content" xml:space="preserve">
+    <value>Skip to content</value>
+  </data>
+  <data name="a11y_user_menu" xml:space="preserve">
+    <value>Account menu</value>
+  </data>
+  <data name="a11y_menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="a11y_legal_links" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="a11y_code_digit" xml:space="preserve">
+    <value>Code digit {0} of {1}</value>
+  </data>
 </root>

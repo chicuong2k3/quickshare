@@ -3170,3 +3170,26 @@ html, body {
     margin: var(--db-space-2) 0 0;
     padding-left: var(--db-space-4);
 }
+
+/* Skip link (issue #95). Off-screen until focused, then unmissable — a visible-on-focus control
+   is the one that both keyboard users find and sighted users never trip over. */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 2000;
+    padding: var(--db-space-2) var(--db-space-4);
+    background: var(--db-color-surface);
+    border: 1px solid var(--db-mountain);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    left: var(--db-space-4);
+    top: var(--db-space-2);
+}
+
+/* The landmark must not draw a focus ring when the skip link parks focus on it. */
+#main-content:focus {
+    outline: none;
+}

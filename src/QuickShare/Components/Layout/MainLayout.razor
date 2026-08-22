@@ -42,6 +42,11 @@
             })();
         </script>
     }
+    @* Bypass blocks (WCAG 2.4.1, issue #95). Without it a keyboard or screen-reader user tabs
+       the whole navbar again on every page — which is most of the reason people stop using
+       keyboard navigation on a site at all. *@
+    <a class="skip-link" href="#main-content">@Loc["a11y_skip_to_content"]</a>
+
     <nav class="db-navbar">
         <a class="db-navbar__brand" href="/">
             @* Mark: one crease cell folded — mountain solid, valley open. *@
@@ -98,7 +103,7 @@
                             hx-get="/api/me/avatar"
                             hx-trigger="load once, profileUpdated from:body"
                             hx-swap="innerHTML"
-                            type="button" aria-label="User menu">
+                            type="button" aria-label="@Loc["a11y_user_menu"]">
                         <span class="layout-avatar-skeleton"></span>
                     </button>
                     <div class="db-dropdown__content layout-avatar-dropdown">
@@ -118,7 +123,7 @@
                 <a href="/login" class="db-btn db-btn--primary db-btn--sm">@Loc["nav_login"]</a>
             }
         </div>
-        <button class="db-navbar__toggle" aria-label="Menu">
+        <button class="db-navbar__toggle" aria-label="@Loc["a11y_menu"]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
@@ -155,7 +160,11 @@
     @* Cookie consent banner *@
     <CookieConsent />
 
-    @Body
+    @* A real landmark, so “jump to main” works in every screen reader and the skip link has
+       somewhere to land. *@
+    <main id="main-content" tabindex="-1">
+        @Body
+    </main>
 
     <footer class="layout-footer">
         <div class="layout-footer__inner">
@@ -172,7 +181,7 @@
                 <a href="@RoutePaths.SeoWeTransferAlternatives">@Loc["nav_seo_wt_alt"]</a>
                 <a href="@RoutePaths.SeoP2pFileTransfer">@Loc["nav_seo_p2p"]</a>
             </nav>
-            <nav class="layout-footer__links" aria-label="Legal">
+            <nav class="layout-footer__links" aria-label="@Loc["a11y_legal_links"]">
                 <a href="@RoutePaths.Terms">@Loc["footer_terms"]</a>
                 <a href="@RoutePaths.Privacy">@Loc["footer_privacy"]</a>
                 <a href="@RoutePaths.Abuse">@Loc["footer_abuse"]</a>

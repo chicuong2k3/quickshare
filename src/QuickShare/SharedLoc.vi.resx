@@ -2547,4 +2547,19 @@
   <data name="deliveries_activity_file_downloads" xml:space="preserve">
     <value>{0} lượt tải</value>
   </data>
+  <data name="a11y_skip_to_content" xml:space="preserve">
+    <value>Bỏ qua, tới nội dung</value>
+  </data>
+  <data name="a11y_user_menu" xml:space="preserve">
+    <value>Menu tài khoản</value>
+  </data>
+  <data name="a11y_menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="a11y_legal_links" xml:space="preserve">
+    <value>Pháp lý</value>
+  </data>
+  <data name="a11y_code_digit" xml:space="preserve">
+    <value>Chữ số thứ {0} trên {1}</value>
+  </data>
 </root>

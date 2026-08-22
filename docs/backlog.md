@@ -29,7 +29,7 @@ New here? Start at your role's entry point:
 | Tier 1 | Foundation / survival risk | **10/10 done** (08-17) |
 | Tier 2 | Existing risk (cheap fixes) | all open |
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
-| Tier 4 | WeTransfer parity baseline | 54 done (08-22): `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
+| Tier 4 | WeTransfer parity baseline | 55 done (08-22): `#95` a11y pass, `#37` multi-recipient tracking, `#154` collection per-item stats, `#34` recipient re-request (via #233), `#244` move/copy between folders, `#284` multi-select move, `#221` per-folder storage, `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
 | Tier 6 | B2B / enterprise / far-future | 40 done (08-22): `#194` Outlook add-in, `#243` OCR search, `#225` crypto payments, `#277` voice commands, `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
@@ -1319,6 +1319,37 @@ Tests: `RecipientActivityTests` (8). Suite green at 1009.
 **Not shipped**: per-recipient revocation (one recipient losing access while the others keep it
 needs per-recipient links, not per-recipient markers), re-send to one recipient, and read
 receipts on the recipient page — nobody asked to be told they were watched.
+
+## Tier 4 — batch 30: the accessibility pass (#95)
+
+An audit of the pages a stranger actually lands on, and the fixes it found. Not a scanner run —
+a scanner reports contrast ratios and duplicate ids, and would not have caught any of this.
+
+**No way past the navbar.** There was no skip link and no `<main>` landmark, so a keyboard user
+tabbed the entire navigation again on every page and a screen-reader user had no “jump to main”
+to jump to. That is WCAG 2.4.1 failed outright, and it is most of the reason people give up on
+keyboard navigation. Both added; the skip link is off-screen until focused, then unmissable.
+
+**Six unlabelled boxes for the OTP.** The download page's code gate rendered six identical
+`<input>` elements with no accessible name: a screen reader announced “edit text” six times, and
+the code was simply unenterable without sight. Each now says which digit it is, inside a named
+group.
+
+**Errors that were shown but not announced.** The password and OTP failures wrote into a
+paragraph with no live-region role — visible to somebody looking at that exact spot, silent to
+everybody else. `role="alert"` on both.
+
+**English labels in a bilingual product.** “User menu”, “Menu” and “Legal” were hardcoded, so a
+Vietnamese screen-reader user heard English regardless of the switcher. Localised, and the test
+asserts the names follow the chosen language — which is the part that would silently regress.
+
+Tests: `AccessibilityTests` (6) in the browser suite, because every one of these is a property of
+the rendered page and a keyboard, not of a handler. Browser suite green at 42, server at 1009.
+
+**Not shipped**: a full WCAG AA audit of the signed-in app (this batch covered the recipient page
+and the shell every page inherits), contrast re-checks of the design tokens (`DESIGN.md` owns the
+palette, and changing it is a design decision rather than a fix), and reduced-motion coverage
+beyond what the download page already has.
 
 ## 9. Local artifact map (feature area → design doc)
 
