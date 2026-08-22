@@ -31,7 +31,7 @@ New here? Start at your role's entry point:
 | Tier 3 | Growth + monetization levers | **all done** (08-16) |
 | Tier 4 | WeTransfer parity baseline | 48 done (08-17): `#113` expiry countdown, `#12` burn-after-download, `#45` extend link, `#64` download stats, `#66` SHA-256, `#322` revoke, `#318` rename, `#232` expiry .ics, `#214` list filter/search, `#287` password meter, `#222` expired archive, `#218` clone, `#226` print view, `#206` branded 404, `#227` daily cap, `#311` alias, `#242` favorites, `#315` largest-files report, `#56` security.txt, `#58` changelog + roadmap, `#170` EXIF/GPS strip, `#49` range requests, `#47` success QR, `#125` audio preview, `#77` expired UX, `#78` Accept-Language, `#205` file-type icons, `#127` dark mode, `#321` delivery labels, `#138` search/filter (via #214), `#213` empty states, `#99` trash/undo delete, `#33` download tracking, `#27` upload resume, `#241` recents, `#274` rate-limit note, `#117` notification prefs, `#144` bulk manage, `#153` command palette, `#59` account deletion + data export, `#129` onboarding, `#63` auto-compress images, `#157` delete forever, `#178` text snippet sharing, `#240` markdown + code preview, `#220` download history, `#72` replace file, `#215` zip archive preview, `#29` expiry reminder email |
 | Tier 5 | Growth wave 2 | 20 done: `#69` scheduled send, `#88` sitemap + robots.txt, `#168` comparison page, `#25` privacy trust page, `#97` GitHub OAuth login, `#36` status page, `#143` rate-limit headers, `#116` help center, `#74` CSV export, `#35` feedback widget, `#60` email verification (N/A), `#83` subscription management, `#87` VND pricing, `#134` abuse reporting (via #53), `#31` referral dashboard, `#283` native share sheet, `#299` plan comparison, `#202` link health, `#62` weekly digest, `#133` quota meter + upgrade nudge |
-| Tier 6 | B2B / enterprise / far-future | 35 done (08-22): `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
+| Tier 6 | B2B / enterprise / far-future | 36 done (08-22): `#265` S3 gateway, `#195` WebDAV mount, `#81` white-label custom domain, `#155` preview watermark, `#289` delivery comments, `#180` Slack/Teams posting, `#162` approval workflow, `#176` recurring delivery, `#119` data residency, `#285` branded recipient page, `#286` custom fonts, `#171` S3-compatible storage, `#271` workspace backup, `#190` tenant isolation, `#191` SIEM streaming, `#184` self-serve DPA, `#147` SOC 2 readiness, `#323` SOC 2 roadmap, `#250` QR label sheet, `#282` announcement banner, `#308` file lock/checkout, `#266` legal hold, `#161` workspace retention policy, `#142` delivery IP allowlist, `#166` geo-restriction, `#106` team workspaces, `#252` ownership transfer, `#145` workspace audit log, `#300` admin usage report, `#151` shared folders, `#245` per-folder defaults, `#234` folder templates, `#278` team seats, `#141` Studio overage, `#112` e-invoice, `#192` PO + net terms |
 
 Dedup note: 2026-08-14 closed ~16 `VERIFIED gap` issues as `duplicate` (folded into #325).
 Per-issue status above is from `issue://?state=closed` (newest-100 window); Tier 1 closed items
@@ -999,6 +999,47 @@ Tests: `WebDavTests` (18); suite green at 940. Design:
 **Not shipped**: LOCK/UNLOCK (and therefore read-write Explorer/Finder — #308 is what a real
 LOCK should map onto), MOVE/COPY, PROPPATCH, and the S3 gateway itself.
 
+## Tier 6 — batch 21: the S3-compatible gateway (#265)
+
+The second dialect over the filesystem batch 20 built. Every backup tool, CI job and sync client
+already speaks S3, so the protocol is the integration: a procurement pipeline points rclone at a
+workspace and writes no code at all.
+
+**The bucket is the workspace, the key is the path**, so the gateway and the WebDAV mount are two
+accents rather than two products. Where S3 differs from a filesystem, S3 wins: a nested key
+creates the folders it needs (there is no MKCOL to call), deleting something absent succeeds, and
+a short listing carries a continuation token instead of stopping silently.
+
+**One credential in this product is stored reversibly, and the protocol is why.** SigV4 is a
+shared-secret HMAC — verifying means recomputing from the bytes the client holds, which a hash
+cannot do. So the gateway has its own credential row rather than reusing an API key: reusing
+would have meant storing API keys reversibly too, trading the hashing invariant that protects
+every other caller for one protocol's convenience. The secret is sealed with the DataProtection
+keyring the email tokens already use, and losing that keyring means reissuing — written down
+rather than worked around with a second secret store.
+
+**A signature covers a hash of the body, not the body.** Verifying only the signature would leave
+every upload payload unauthenticated while the request looked signed. The body is therefore
+checked as it streams: hashed against the declared digest, or — for the `aws-chunked` framing the
+AWS CLI sends — verified chunk by chunk along the signature chain from the seed. Verifying frames
+without the chain would let anything be spliced mid-body. A 15-minute skew window closes the
+replay the signature itself says nothing about.
+
+**Multipart answers `NotImplemented`.** Our storage provider's multipart is presigned
+client-to-bucket, the wrong shape for parts that arrive here, and a gateway that accepted an
+upload id and then lost parts is worse than one that says no. rclone's default cutoff (200 MiB)
+clears it; the AWS CLI's (8 MB) is one config line, and both are on the setup screen.
+
+**The suite signs its own requests.** A stub that "authenticates" would prove nothing about
+whether a real client can talk to us or whether a forged one cannot — so `S3GatewayTests` carries
+the client half of SigV4, including a hand-built chunked body and a deliberately broken chain.
+
+Tests: `S3GatewayTests` (20); suite green at 960. Design:
+[`docs/protocol-mounts.md`](protocol-mounts.md).
+
+**Not shipped**: multipart upload, presigned URLs (query-string auth), `POST ?delete` batch
+deletes, bucket policies and versioning.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.
@@ -1047,11 +1088,11 @@ Where a design/spec/plan already exists, read it before implementing.
 - [x] Tier 2: all 6 done 08-16 (see section 4)
 - [x] Tier 3: all 10 done 08-16 (see section 5)
 - [ ] Tiers 4–6: use label filter per tier; do NOT work them until Tier 2/3 clear
-- [ ] Tier 6: 35 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
+- [ ] Tier 6: 36 of ~50 done — compliance batch `#266`/`#161`/`#142`/`#166` (08-20), team batch
   `#106`/`#252`/`#145`/`#300`, folder batch `#151`/`#245`/`#234` and billing batch
   `#278`/`#141`/`#112`/`#192` (08-21, see section 8); then `#323` SOC 2, `#289` comments,
   `#180` channels, `#162`/`#176` gating, `#285`/`#286` branding, `#119` residency, and the
   identity batches `#128`/`#181`/`#219`/`#146`/`#139` (12–13). Batch 19 closed `#81`
-  white-label and `#155` preview watermark; batch 20 closed `#195` WebDAV. Still open:
-  `#265` S3 gateway (the filesystem half is built and shared), `#196` SFTP, `#163` BYOK,
-  `#194` Outlook add-in, `#243` OCR, `#225` crypto pay, `#277` voice commands
+  white-label and `#155` preview watermark; batch 20 closed `#195` WebDAV and
+  batch 21 `#265` S3 gateway. Still open: `#196` SFTP, `#163` BYOK, `#194` Outlook add-in,
+  `#243` OCR, `#225` crypto pay, `#277` voice commands

@@ -70,6 +70,8 @@ public static class RoutePaths
     public const string AccountWorkspaceDomain = "/account/workspace/domain";
     /// <summary>WebDAV mount root (issue #195). No trailing slash — segments are appended.</summary>
     public const string WebDav = "/dav";
+    /// <summary>S3-compatible gateway root (issue #265).</summary>
+    public const string S3Gateway = "/s3";
     public const string AccountRecurring = "/account/recurring";
     public const string AccountSecurity = "/account/security";
     public const string AccountDeveloper = "/account/developer";

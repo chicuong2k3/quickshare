@@ -47,6 +47,7 @@ public class AppDbContext : DbContext
     public DbSet<DeliveryComment> DeliveryComments => Set<DeliveryComment>();
     public DbSet<WorkspaceChannelHook> WorkspaceChannelHooks => Set<WorkspaceChannelHook>();
     public DbSet<WorkspaceDomain> WorkspaceDomains => Set<WorkspaceDomain>();
+    public DbSet<WorkspaceS3Credential> WorkspaceS3Credentials => Set<WorkspaceS3Credential>();
     public DbSet<UserTotp> UserTotps => Set<UserTotp>();
     public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
     public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
@@ -712,6 +713,27 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SourceDeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkspaceS3Credential>(entity =>
+        {
+            entity.ToTable("workspace_s3_credentials");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Label).IsRequired().HasMaxLength(WorkspaceS3Credential.LabelMaxLength);
+            entity.Property(e => e.AccessKeyId).IsRequired().HasMaxLength(WorkspaceS3Credential.AccessKeyIdLength);
+            entity.Property(e => e.SecretProtected).IsRequired().HasMaxLength(WorkspaceS3Credential.ProtectedMaxLength);
+            entity.Property(e => e.Scopes).IsRequired().HasMaxLength(64);
+            // The access key is what a signature arrives with, so it is the lookup and it is unique.
+            entity.HasIndex(e => e.AccessKeyId).IsUnique();
+            entity.HasIndex(e => e.WorkspaceId);
+            entity.HasOne(e => e.Workspace)
+                .WithMany()
+                .HasForeignKey(e => e.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<WorkspaceDomain>(entity =>

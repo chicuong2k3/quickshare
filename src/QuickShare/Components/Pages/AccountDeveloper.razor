@@ -4,6 +4,7 @@
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Developer.Webhooks
 @using QuickShare.Features.Workspaces.Shared
+@using QuickShare.Features.Protocols.S3
 @using QuickShare.Infrastructure.Email
 @using Microsoft.Extensions.Localization
 @using Microsoft.Extensions.Options
@@ -60,6 +61,11 @@ else
     private List<WebhookEndpoint> endpoints = [];
     private List<WebhookDelivery> deliveries = [];
     private bool hasSeat;
+    private bool isWorkspaceAdmin;
+    private string bucketName = string.Empty;
+    private List<WorkspaceS3Credential> s3Credentials = [];
+
+    private string S3Url => $"{EmailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.S3Gateway}";
 
     private string MountUrl => $"{EmailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.WebDav}";
 
@@ -161,6 +167,76 @@ else
                 }
             </div>
         </div>
+
+        @* ── #265 S3 gateway ── *@
+        @if (isWorkspaceAdmin)
+        {
+            <div class="db-card account-card workspace-card">
+                <div class="db-card__body">
+                    <h2 class="db-h3">@Loc["dev_s3_title"]</h2>
+                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_s3_hint"]</p>
+
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["dev_s3_endpoint"]</dt>
+                            <dd><code>@S3Url</code></dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["dev_s3_bucket"]</dt>
+                            <dd><code>@bucketName</code></dd>
+                        </div>
+                    </dl>
+
+                    @if (s3Credentials.Count == 0)
+                    {
+                        <p class="db-p db-text-muted workspace-hint">@Loc["dev_s3_empty"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-list">
+                            @foreach (var credential in s3Credentials)
+                            {
+                                <li class="workspace-list__item">
+                                    <div>
+                                        <p class="db-p"><strong>@credential.Label</strong> · <code>@credential.AccessKeyId</code></p>
+                                        <p class="db-p db-text-muted workspace-hint">
+                                            @credential.Scopes ·
+                                            @(credential.LastUsedAt is { } used
+                                                ? Loc["dev_key_last_used", used.ToLocalTime().ToString("g")].Value
+                                                : Loc["dev_key_never_used"].Value)
+                                        </p>
+                                    </div>
+                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            data-id="@credential.Id"
+                                            data-confirm="@Loc["dev_s3_revoke_confirm"]"
+                                            onclick="window.quickShareDeveloper.revokeS3(this)"
+                                            data-ai-action="dev.s3.revoke">@Loc["dev_key_revoke"]</button>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="dev-s3-label">@Loc["dev_key_name"]</label>
+                        <input id="dev-s3-label" class="db-input" type="text" maxlength="@WorkspaceS3Credential.LabelMaxLength" />
+
+                        <label class="workspace-label" for="dev-s3-scopes">@Loc["dev_key_scopes"]</label>
+                        <select id="dev-s3-scopes" class="db-input">
+                            <option value="@ApiScopes.Read">@Loc["dev_scope_read"]</option>
+                            <option value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</option>
+                            <option value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</option>
+                        </select>
+
+                        <button type="button" class="db-btn db-btn--primary"
+                                data-once-label="@Loc["dev_s3_shown_once"]"
+                                onclick="window.quickShareDeveloper.createS3(this)"
+                                data-ai-action="dev.s3.create">@Loc["dev_s3_create"]</button>
+
+                        <p class="db-p security-secret" id="dev-s3-new" hidden><code id="dev-s3-new-value"></code></p>
+                    </div>
+                </div>
+            </div>
+        }
 
         @* ── #39 webhook endpoints ── *@
         <div class="db-card account-card workspace-card">
@@ -317,7 +393,21 @@ else
         if (user is null) return;
 
         // The mount is only offered to a live seat — see the card's own note.
-        hasSeat = await Workspaces.GetSeatAsync(user.Id, CancellationToken.None) is { IsActive: true };
+        var seat = await Workspaces.GetSeatAsync(user.Id, CancellationToken.None);
+        hasSeat = seat is { IsActive: true };
+
+        // Gateway credentials are workspace configuration, so only an admin is shown them — the
+        // endpoints refuse everybody else anyway, and a card that always 403s is a bug report.
+        isWorkspaceAdmin = seat is { CanAdminister: true };
+        if (isWorkspaceAdmin)
+        {
+            bucketName = S3Endpoints.BucketName(seat!.Workspace);
+            s3Credentials = await Db.WorkspaceS3Credentials
+                .AsNoTracking()
+                .Where(c => c.WorkspaceId == seat.WorkspaceId && c.RevokedAt == null)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync(CancellationToken.None);
+        }
 
         keys = await Db.ApiKeys
             .AsNoTracking()

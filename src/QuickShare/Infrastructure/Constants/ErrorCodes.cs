@@ -123,6 +123,10 @@ public static class ErrorCodes
     public const string BrandAssetTooLarge = "brand_asset_too_large";
     public const string BrandAssetTypeInvalid = "brand_asset_type_invalid";
     // White-label custom domain (#81).
+    // S3 gateway credentials (#265).
+    public const string S3CredentialLimitReached = "s3_credential_limit_reached";
+    public const string S3CredentialLabelInvalid = "s3_credential_label_invalid";
+    public const string S3CredentialNotFound = "s3_credential_not_found";
     public const string DomainInvalid = "domain_invalid";
     public const string DomainTaken = "domain_taken";
     public const string DomainNotFound = "domain_not_found";

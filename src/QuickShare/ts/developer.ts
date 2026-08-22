@@ -48,6 +48,24 @@ window.quickShareDeveloper = (function () {
             });
         },
 
+        // S3 gateway credentials (#265). The secret is shown once, like every other secret here.
+        createS3: function (btn: HTMLButtonElement): void {
+            postJson('/api/workspace/s3-credentials', {
+                label: qsPage.value('dev-s3-label'),
+                scopes: qsPage.value('dev-s3-scopes'),
+            }, btn).then(function (body: { secret: string; accessKeyId: string } | null) {
+                if (body && body.secret) {
+                    revealOnce(btn, 'dev-s3-new', 'dev-s3-new-value', body.accessKeyId + ' / ' + body.secret);
+                }
+            });
+        },
+
+        revokeS3: function (btn: HTMLButtonElement): void {
+            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+            qsPage.send('/api/workspace/s3-credentials/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,
+                { btn: btn, body: BODY });
+        },
+
         revokeKey: function (btn: HTMLButtonElement): void {
             if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
             qsPage.send('/api/developer/keys/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,

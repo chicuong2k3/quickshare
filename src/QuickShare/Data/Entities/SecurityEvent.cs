@@ -103,4 +103,6 @@ public enum SecurityEventType
     MountObjectWritten,
     MountObjectDeleted,
     MountFolderCreated,
+    S3CredentialIssued,
+    S3CredentialRevoked,
 }

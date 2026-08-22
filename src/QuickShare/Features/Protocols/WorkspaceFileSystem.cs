@@ -128,6 +128,74 @@ public sealed class WorkspaceFileSystem(
         return entries;
     }
 
+    /// <summary>
+    /// Every file in the workspace as a flat <c>folder/name</c> key list (issue #265).
+    ///
+    /// Object storage has no directories, so an S3 client asking for a bucket without a
+    /// delimiter expects the whole tree at once. It is bounded by the folder depth cap (two) and
+    /// the per-workspace folder limit, so "walk it" is a handful of queries rather than an
+    /// unbounded crawl.
+    /// </summary>
+    public async Task<IReadOnlyList<(string Key, MountEntry Entry)>> ListAllAsync(
+        Guid workspaceId, CancellationToken ct)
+    {
+        var flat = new List<(string, MountEntry)>();
+        await WalkAsync(workspaceId, null, string.Empty, flat, ct);
+
+        return flat;
+    }
+
+    private async Task WalkAsync(
+        Guid workspaceId, Guid? folderId, string prefix, List<(string, MountEntry)> flat, CancellationToken ct)
+    {
+        foreach (var entry in await ListAsync(workspaceId, folderId, ct))
+        {
+            var key = prefix + entry.Name;
+
+            if (entry.IsCollection)
+                await WalkAsync(workspaceId, entry.FolderId, key + "/", flat, ct);
+            else
+                flat.Add((key, entry));
+        }
+    }
+
+    /// <summary>
+    /// Resolves a path, creating the folders along the way (issue #265).
+    ///
+    /// S3 has no <c>MKCOL</c>: a client writes <c>campaign/final/brief.pdf</c> and expects the
+    /// path to exist afterwards. The depth cap still applies — a key nested deeper than the
+    /// folder model allows is refused rather than flattened, because flattening would silently
+    /// file somebody's object somewhere they did not ask for.
+    /// </summary>
+    public async Task<Result<Guid?>> EnsureFolderAsync(
+        Guid workspaceId, string[] segments, Guid actorId, CancellationToken ct)
+    {
+        Guid? parentId = null;
+
+        foreach (var name in segments)
+        {
+            var existing = await db.WorkspaceFolders
+                .FirstOrDefaultAsync(f => f.WorkspaceId == workspaceId && f.ParentId == parentId && f.Name == name, ct);
+
+            if (existing is not null)
+            {
+                parentId = existing.Id;
+                continue;
+            }
+
+            var created = await CreateFolderAsync(workspaceId, parentId, name, actorId, ct);
+            if (!created.IsSuccess(out var folder))
+            {
+                created.IsFailure(out var error);
+                return Result.Failure<Guid?>(new LightResults.Error(error?.Message ?? ErrorCodes.FolderNotFound));
+            }
+
+            parentId = folder.Id;
+        }
+
+        return Result.Success(parentId);
+    }
+
     /// <summary>The bytes of a delivery, or null when the object is gone.</summary>
     public Task<Stream?> OpenAsync(Delivery file, CancellationToken ct) =>
         string.IsNullOrEmpty(file.StoragePath)
@@ -181,6 +249,14 @@ public sealed class WorkspaceFileSystem(
         try
         {
             await storage.UploadObjectAsync(objectKey, content, contentType ?? DefaultContentType, ct);
+        }
+        catch (MountPayloadException)
+        {
+            // The bytes failed their own integrity check partway through. Whatever landed is
+            // unauthenticated, so it does not stay — and the protocol layer, not this one, owns
+            // saying so to the client.
+            await TryDeleteAsync(objectKey, ct);
+            throw;
         }
         catch (Exception ex)
         {

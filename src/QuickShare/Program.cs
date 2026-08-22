@@ -263,6 +263,7 @@ builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>(
 // Protocol mounts (#195 WebDAV, #265 S3): one filesystem view of the workspace, one credential.
 builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
 builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
+builder.Services.AddScoped<QuickShare.Features.Protocols.S3.S3Credentials>();
 
 // White-label custom domain (issue #81): who owns an incoming host, and where a share's
 // public link lives. The verifier is not sealed so a test can answer DNS without a network.
@@ -722,6 +723,10 @@ app.MapSamlEndpoints();
 // WebDAV mount (issue #195). Anonymous at the route level — the mount authenticates itself
 // with an API key over Basic, because no filesystem client carries our cookie.
 QuickShare.Features.Protocols.WebDav.WebDavEndpoints.MapWebDavEndpoints(app);
+
+// S3-compatible gateway (issue #265). Also anonymous at the route level: it authenticates with
+// SigV4, which no authentication handler here knows how to speak.
+QuickShare.Features.Protocols.S3.S3Endpoints.MapS3Endpoints(app);
 
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>

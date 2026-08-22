@@ -2412,4 +2412,28 @@
   <data name="dev_mount_clients" xml:space="preserve">
     <value>rclone, davfs2 and Cyberduck read and write. Windows Explorer and macOS Finder mount read-only — they require WebDAV locking, which this server does not claim to support.</value>
   </data>
+  <data name="dev_s3_title" xml:space="preserve">
+    <value>S3-compatible endpoint</value>
+  </data>
+  <data name="dev_s3_hint" xml:space="preserve">
+    <value>Point rclone, the AWS CLI or any backup tool at the workspace. Single-part uploads only — set your client's multipart cutoff above your largest file.</value>
+  </data>
+  <data name="dev_s3_endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="dev_s3_bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="dev_s3_empty" xml:space="preserve">
+    <value>No access keys yet.</value>
+  </data>
+  <data name="dev_s3_create" xml:space="preserve">
+    <value>Create access key</value>
+  </data>
+  <data name="dev_s3_shown_once" xml:space="preserve">
+    <value>Copy the access key and secret now — the secret is not shown again.</value>
+  </data>
+  <data name="dev_s3_revoke_confirm" xml:space="preserve">
+    <value>Revoke this access key? Anything using it stops working immediately.</value>
+  </data>
 </root>

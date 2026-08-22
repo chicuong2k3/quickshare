@@ -2412,4 +2412,28 @@
   <data name="dev_mount_clients" xml:space="preserve">
     <value>rclone, davfs2 và Cyberduck đọc ghi được. Windows Explorer và macOS Finder chỉ đọc — chúng yêu cầu WebDAV lock, thứ máy chủ này không nhận là có.</value>
   </data>
+  <data name="dev_s3_title" xml:space="preserve">
+    <value>Endpoint tương thích S3</value>
+  </data>
+  <data name="dev_s3_hint" xml:space="preserve">
+    <value>Trỏ rclone, AWS CLI hay công cụ sao lưu bất kỳ vào workspace. Chỉ hỗ trợ upload một phần — hãy đặt ngưỡng multipart của client cao hơn file lớn nhất của bạn.</value>
+  </data>
+  <data name="dev_s3_endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="dev_s3_bucket" xml:space="preserve">
+    <value>Bucket</value>
+  </data>
+  <data name="dev_s3_empty" xml:space="preserve">
+    <value>Chưa có access key nào.</value>
+  </data>
+  <data name="dev_s3_create" xml:space="preserve">
+    <value>Tạo access key</value>
+  </data>
+  <data name="dev_s3_shown_once" xml:space="preserve">
+    <value>Hãy sao chép access key và secret ngay — secret sẽ không hiện lại.</value>
+  </data>
+  <data name="dev_s3_revoke_confirm" xml:space="preserve">
+    <value>Thu hồi access key này? Mọi thứ đang dùng nó sẽ ngừng hoạt động ngay.</value>
+  </data>
 </root>
