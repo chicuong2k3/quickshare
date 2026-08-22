@@ -173,6 +173,14 @@ public static class ErrorCodes
     public const string WebhookUrlInvalid = "webhook_url_invalid";
     public const string WebhookLimitReached = "webhook_limit_reached";
     public const string WebhookDeliveryNotFound = "webhook_delivery_not_found";
+    // Subscription lifecycle: promos (#98), proration (#114), pause (#229), cancel flow (#174).
+    public const string PromoCodeNotFound = "promo_code_not_found";
+    public const string PromoCodeNotApplicable = "promo_code_not_applicable";
+    public const string PromoCodeAlreadyUsed = "promo_code_already_used";
+    public const string PromoCodeFirstTimeOnly = "promo_code_first_time_only";
+    public const string SubscriptionNotFound = "subscription_not_found";
+    public const string SubscriptionNotPausable = "subscription_not_pausable";
+    public const string SubscriptionNotPaused = "subscription_not_paused";
     /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
     public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
     public const string ScimTokenNotFound = "scim_token_not_found";

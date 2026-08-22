@@ -1,5 +1,9 @@
 namespace QuickShare.Data.Entities;
 
+/// <summary>
+/// A checkout in flight. Carries the promo code and proration credit that produced its amount
+/// (issues #98, #114).
+/// </summary>
 public sealed class PaymentIntent
 {
     public Guid Id { get; set; }
@@ -15,6 +19,18 @@ public sealed class PaymentIntent
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
+
+    /// <summary>
+    /// The promo code this amount reflects (issue #98), or null. Kept so completion knows which
+    /// code to consume — the quote happened at checkout, the redemption happens on payment.
+    /// </summary>
+    public string? PromoCode { get; set; }
+
+    /// <summary>
+    /// Proration credit applied (issue #114), in the smallest currency unit. Kept so a discounted
+    /// payment can still be reconciled against a list price rather than looking like underpayment.
+    /// </summary>
+    public int ProrationCredit { get; set; }
 }
 
 public enum PaymentIntentStatus

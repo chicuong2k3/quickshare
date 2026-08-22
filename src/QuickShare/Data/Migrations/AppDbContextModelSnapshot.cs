@@ -1191,6 +1191,12 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PromoCode")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProrationCredit")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -1210,6 +1216,90 @@ namespace QuickShare.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("payment_intents", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.PromoCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AppliesToPlans")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("FirstTimeOnly")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("MaxRedemptions")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RedeemedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("promo_codes", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.PromoRedemption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DiscountAmount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PromoCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("PromoCodeId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("promo_redemptions", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PushSubscription", b =>
@@ -1536,6 +1626,12 @@ namespace QuickShare.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("CancellationFeedback")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1548,9 +1644,18 @@ namespace QuickShare.Migrations
                     b.Property<DateTime>("CurrentPeriodStart")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("PausedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PausedDaysBanked")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("SaveOfferShown")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -2749,6 +2854,23 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.PromoRedemption", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.PromoCode", "PromoCode")
+                        .WithMany()
+                        .HasForeignKey("PromoCodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuickShare.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PromoCode");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PushSubscription", b =>

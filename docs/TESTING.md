@@ -91,6 +91,7 @@ browser download needed.
 | SAML sign-in — signature, issuer, replay, domain filter | `SamlSsoTests` |
 | Multi-file deliveries — the one-row invariant, key ownership, zip behaviour | `MultiFileDeliveryTests` |
 | Developer platform — key hashing, signature construction, retry, replay | `DeveloperPlatformTests` |
+| Subscription lifecycle — promo redemption, proration bounds, pause banking | `SubscriptionLifecycleTests` |
 | Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
 | P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
 | Analytics | `AnalyticsTrackingTests` |
@@ -136,6 +137,7 @@ checklist of the touched issue. Minimum regression set per change:
 | **Any new endpoint a person is meant to use** | `B2BUiTests` | a page renders its data — assert the rendered HTML, because a passing endpoint test says nothing about whether a screen exists |
 | **Any code implementing a published standard** (TOTP, SCIM, OIDC) | `EnterpriseIdentityTests` | anchor to the spec's own reference vector or wire format — a broken implementation is still self-consistent |
 | **Any change that adds a shape to an existing entity** | `MultiFileDeliveryTests` | the *old* shape still behaves identically — additive means the previous case is untouched, and only a test says so |
+| **Anything touching money** | `SubscriptionLifecycleTests` | write the test as what must never happen — negative price, double redemption, a credit that pays out — not as the happy path |
 | **Any outbound integration** | `DeveloperPlatformTests` | it retries and survives the receiver being down — an integration that drops events on the first failure is worse than none |
 | **Any signature or token check** | `SamlSsoTests` | mint a real valid artefact, then change one attacker-controlled thing and require rejection — a checker that rejects everything passes every negative test |
 | **Any provisioning or offboarding path** | `EnterpriseIdentityTests` | it revokes as well as creates — half a lifecycle is exactly what procurement is asking about |

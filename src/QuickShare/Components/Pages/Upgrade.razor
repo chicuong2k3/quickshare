@@ -59,6 +59,11 @@ else
                         <AntiforgeryToken />
                         <input type="hidden" name="Plan" value="@selectedPlan" />
                         <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
+                        @* Quoted server-side at checkout (issue #98); an invalid code is ignored
+                           rather than blocking the purchase somebody came here to make. *@
+                        <label class="workspace-label" for="upgrade-promo">@Loc["upgrade_promo_label"]</label>
+                        <input id="upgrade-promo" name="PromoCode" class="db-input" type="text"
+                               maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
                         <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
                             @Loc["upgrade_pay_now_btn"]
                         </button>
@@ -309,7 +314,12 @@ else
             var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
             var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
             var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
-            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, formPlan, formIsYearly, ct);
+            // Quoted inside checkout (issue #98). An unusable code is ignored rather than
+            // rejected: somebody came here to buy, and a typo in an optional field must not
+            // become a wall between them and the purchase.
+            var formPromo = form["PromoCode"].FirstOrDefault();
+            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(
+                user, formPlan, formIsYearly, ct, formPromo);
         }
         else if (isHtmxRequest)
         {

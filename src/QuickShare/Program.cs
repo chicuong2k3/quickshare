@@ -277,6 +277,8 @@ builder.Services.AddScoped<QuickShare.Features.Auth.Saml.SamlService>();
 // Developer platform (#115 API keys, #39 outbound webhooks).
 builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticator>();
 builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatcher>();
+// Subscription lifecycle (#98 promo codes).
+builder.Services.AddScoped<QuickShare.Features.Payments.Promos.PromoCodeService>();
 
 // Data residency (issue #119): which storage region an upload is pinned to.
 builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();

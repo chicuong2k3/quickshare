@@ -64,7 +64,7 @@
                     }
                 </div>
 
-                @if (billing.Plan == PlanTierLimits.Free)
+                @if (billing.Plan == PlanTierLimits.Free && subscription?.IsPaused != true)
                 {
                     <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">@Loc["billing_btn_upgrade"]</a>
                 }
@@ -77,12 +77,42 @@
                         </p>
                         <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">@Loc["billing_btn_renew"]</a>
                     }
+                    else if (subscription?.IsPaused == true)
+                    {
+                        <p class="db-text-warning" style="margin-top:1rem">
+                            @Loc["billing_paused", subscription.PausedDaysBanked]
+                        </p>
+                        <div class="summary-card__actions">
+                            <form method="post" style="display:inline">
+                                <input type="hidden" name="Action" value="@SubscriptionActionResume" />
+                                <button type="submit" class="db-btn db-btn--primary">@Loc["billing_btn_resume"]</button>
+                            </form>
+                        </div>
+                    }
                     else
                     {
                         <div class="summary-card__actions">
                             <a href="/pricing" class="db-btn db-btn--secondary">@Loc["billing_btn_change"]</a>
+
+                            @* A hold is offered before the exit, not hidden behind it: somebody
+                               taking a break should not have to cancel to stop paying. *@
+                            <form method="post" style="display:inline">
+                                <input type="hidden" name="Action" value="@SubscriptionActionPause" />
+                                <button type="submit" class="db-btn db-btn--secondary">@Loc["billing_btn_pause"]</button>
+                            </form>
+
                             <form method="post" style="display:inline">
                                 <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
+                                <label class="workspace-label" for="cancel-reason">@Loc["billing_cancel_reason"]</label>
+                                <select id="cancel-reason" name="Reason" class="db-input">
+                                    @foreach (var reason in CancellationReasons.All)
+                                    {
+                                        <option value="@reason">@Loc[$"billing_reason_{reason}"]</option>
+                                    }
+                                </select>
+                                <label class="workspace-label" for="cancel-feedback">@Loc["billing_cancel_feedback"]</label>
+                                <textarea id="cancel-feedback" name="Feedback" class="db-input" rows="2"
+                                          maxlength="@Subscription.CancellationFeedbackMaxLength"></textarea>
                                 <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
                                     @Loc["billing_btn_cancel"]
                                 </button>
@@ -132,6 +162,8 @@
 
 @code {
     private const string SubscriptionActionCancel = "cancel";
+    private const string SubscriptionActionPause = "pause";
+    private const string SubscriptionActionResume = "resume";
 
 private BillingHistoryResponse? billing;
 private Subscription? subscription;
@@ -197,9 +229,28 @@ private int? trialDaysLeft;
         if (isPost)
         {
             var form = await ctx.Request.ReadFormAsync(ct);
-            if (form["Action"] == SubscriptionActionCancel)
+            var action = form["Action"].ToString();
+
+            if (action == SubscriptionActionPause || action == SubscriptionActionResume)
             {
-                await SubscriptionService.CancelAsync(user, Db, ct);
+                await HandleHoldAsync(user, action == SubscriptionActionPause, ct);
+                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+            }
+            else if (action == SubscriptionActionCancel)
+            {
+                var cancelled = await SubscriptionService.CancelAsync(user, Db, ct);
+
+                // Recorded with the exit (issue #174). A churn number without a reason tells you
+                // that people left, which you already knew.
+                if (cancelled is not null)
+                {
+                    cancelled.CancellationReason = CancellationReasons.Normalize(form["Reason"].ToString());
+                    var feedback = form["Feedback"].ToString().Trim();
+                    cancelled.CancellationFeedback = feedback.Length == 0
+                        ? null
+                        : feedback[..Math.Min(feedback.Length, Subscription.CancellationFeedbackMaxLength)];
+                }
+
                 await Db.SaveChangesAsync(ct);
 
                 // Plan row changed (kept active until CurrentPeriodEnd) and the
@@ -213,4 +264,39 @@ private int? trialDaysLeft;
         subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
         trialDaysLeft = await SubscriptionService.GetTrialDaysLeftAsync(user, Db, ct);
     }
+
+    /// <summary>
+    /// Puts the subscription on hold or lifts it (issue #229).
+    ///
+    /// The plan follows the hold: paused means Free, because nothing is being charged for.
+    /// </summary>
+    private async Task HandleHoldAsync(User user, bool pause, CancellationToken ct)
+    {
+        var current = await Db.Subscriptions
+            .Where(s => s.UserId == user.Id)
+            .OrderByDescending(s => s.CurrentPeriodEnd)
+            .FirstOrDefaultAsync(ct);
+
+        if (current is null)
+            return;
+
+        var now = DateTime.UtcNow;
+        var changed = pause
+            ? SubscriptionLifecycle.Pause(current, now)
+            : SubscriptionLifecycle.Resume(current, now);
+
+        if (!changed)
+            return;
+
+        var plan = pause ? PlanTierLimits.Free : current.Plan;
+        await Db.Users
+            .Where(u => u.Id == user.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(u => u.Plan, plan)
+                .SetProperty(u => u.UpdatedAt, now), ct);
+
+        user.Plan = plan;
+        await Db.SaveChangesAsync(ct);
+    }
+
 }

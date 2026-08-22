@@ -2217,4 +2217,40 @@
   <data name="dev_log_replay" xml:space="preserve">
     <value>Gửi lại</value>
   </data>
+  <data name="billing_btn_pause" xml:space="preserve">
+    <value>Tạm dừng</value>
+  </data>
+  <data name="billing_btn_resume" xml:space="preserve">
+    <value>Tiếp tục</value>
+  </data>
+  <data name="billing_paused" xml:space="preserve">
+    <value>Gói của bạn đang tạm dừng. Còn {0} ngày đã trả đang chờ bạn.</value>
+  </data>
+  <data name="billing_cancel_reason" xml:space="preserve">
+    <value>Vì sao bạn rời đi?</value>
+  </data>
+  <data name="billing_cancel_feedback" xml:space="preserve">
+    <value>Bạn muốn nói thêm điều gì không? (không bắt buộc)</value>
+  </data>
+  <data name="billing_reason_too_expensive" xml:space="preserve">
+    <value>Quá đắt</value>
+  </data>
+  <data name="billing_reason_not_using_it" xml:space="preserve">
+    <value>Không dùng đến nhiều</value>
+  </data>
+  <data name="billing_reason_missing_feature" xml:space="preserve">
+    <value>Thiếu tính năng tôi cần</value>
+  </data>
+  <data name="billing_reason_switched_provider" xml:space="preserve">
+    <value>Đã chuyển sang dịch vụ khác</value>
+  </data>
+  <data name="billing_reason_temporary_break" xml:space="preserve">
+    <value>Chỉ tạm nghỉ một thời gian</value>
+  </data>
+  <data name="billing_reason_other" xml:space="preserve">
+    <value>Lý do khác</value>
+  </data>
+  <data name="upgrade_promo_label" xml:space="preserve">
+    <value>Mã khuyến mãi (không bắt buộc)</value>
+  </data>
 </root>

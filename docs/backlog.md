@@ -817,6 +817,39 @@ analytics (#273), API versioning (#199), more event types.
 
 Design and invariants: `docs/developer-platform.md`.
 
+## Tier 5 — batch 16: subscription lifecycle (#98, #114, #229, #174)
+
+Everything that happens to a subscription between signing up and leaving. One batch because they
+interlock: the save offer in the cancel flow *is* a pause or a promo code.
+
+- `#98` promo codes — percent or fixed, limits, expiry, plan restriction, first-time-only
+- `#114` proration — the unused part of the current period credits an upgrade
+- `#229` vacation hold — banks the remaining paid days, drops to Free, hands them back
+- `#174` cancel flow — closed-set reason plus free text, with an offer matched to the reason
+
+Because it is money, the tests are written as things that must never happen: a negative price, a
+second redemption by the same account, a quote consuming a limited code, a pause granting free
+time or burning paid time, a proration credit paying out.
+
+**Quote and redeem are separate calls.** Redeeming at checkout would burn a limited code on every
+abandoned cart — a hundred-use code would run out on twenty sales.
+
+**The save offer matches the reason.** Somebody taking a break wants a hold, not a discount; and
+the retention discount is a promo code an operator creates (`STAY`), not a percentage hard-coded
+into the cancel flow, because that would be a price change nobody signed off on.
+
+**A bug the UI test caught:** pausing drops the account to Free, and the billing page was then
+hiding the subscription entirely — including the resume button, from the only person who needs it.
+
+**Also — #73 annual billing verified and closed**: `BillingPeriod.Yearly`, yearly pricing keys and
+the monthly/yearly toggle on the upgrade page were already shipped and reachable.
+
+**Not shipped**: admin UI for creating promo codes (they are rows an operator creates), automatic
+resume at a chosen date (`MaxPauseDays` exists, nothing enforces it yet — stated rather than
+half-built), code stacking, refunds, dunning (#140), multi-currency (#120).
+
+Design and invariants: `docs/subscription-lifecycle.md`.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

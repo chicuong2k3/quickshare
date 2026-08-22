@@ -52,6 +52,8 @@ public class AppDbContext : DbContext
     public DbSet<SamlAssertionSeen> SamlAssertionsSeen => Set<SamlAssertionSeen>();
     public DbSet<DeliveryFile> DeliveryFiles => Set<DeliveryFile>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
+    public DbSet<PromoRedemption> PromoRedemptions => Set<PromoRedemption>();
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
 
@@ -528,6 +530,28 @@ public class AppDbContext : DbContext
             entity.Property(e => e.AdminGroupId).HasMaxLength(WorkspaceSsoConfig.GroupIdMaxLength);
             entity.Property(e => e.SamlSsoUrl).HasMaxLength(WorkspaceSsoConfig.SamlUrlMaxLength);
             entity.Property(e => e.SamlCertificate).HasMaxLength(WorkspaceSsoConfig.SamlCertificateMaxLength);
+        });
+
+        modelBuilder.Entity<PromoCode>(entity =>
+        {
+            entity.ToTable("promo_codes");
+            // Codes are looked up by their text on every checkout, and must be unique.
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(PromoCode.CodeMaxLength);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Description).HasMaxLength(PromoCode.DescriptionMaxLength);
+            entity.Property(e => e.AppliesToPlans).HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<PromoRedemption>(entity =>
+        {
+            entity.ToTable("promo_redemptions");
+            entity.HasKey(e => e.Id);
+            // The enforcement of "one per customer", not a report of it: without the unique
+            // index, two concurrent requests both pass the check and both redeem.
+            entity.HasIndex(e => new { e.PromoCodeId, e.UserId }).IsUnique();
+            entity.HasOne(e => e.PromoCode).WithMany().HasForeignKey(e => e.PromoCodeId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ApiKey>(entity =>

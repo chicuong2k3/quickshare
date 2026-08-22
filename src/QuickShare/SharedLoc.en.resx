@@ -2217,4 +2217,40 @@
   <data name="dev_log_replay" xml:space="preserve">
     <value>Replay</value>
   </data>
+  <data name="billing_btn_pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="billing_btn_resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="billing_paused" xml:space="preserve">
+    <value>Your subscription is on hold. {0} paid days are waiting for you.</value>
+  </data>
+  <data name="billing_cancel_reason" xml:space="preserve">
+    <value>Why are you leaving?</value>
+  </data>
+  <data name="billing_cancel_feedback" xml:space="preserve">
+    <value>Anything you want to tell us? (optional)</value>
+  </data>
+  <data name="billing_reason_too_expensive" xml:space="preserve">
+    <value>Too expensive</value>
+  </data>
+  <data name="billing_reason_not_using_it" xml:space="preserve">
+    <value>Not using it enough</value>
+  </data>
+  <data name="billing_reason_missing_feature" xml:space="preserve">
+    <value>Missing a feature I need</value>
+  </data>
+  <data name="billing_reason_switched_provider" xml:space="preserve">
+    <value>Switched to something else</value>
+  </data>
+  <data name="billing_reason_temporary_break" xml:space="preserve">
+    <value>Just taking a break</value>
+  </data>
+  <data name="billing_reason_other" xml:space="preserve">
+    <value>Something else</value>
+  </data>
+  <data name="upgrade_promo_label" xml:space="preserve">
+    <value>Promo code (optional)</value>
+  </data>
 </root>
