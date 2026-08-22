@@ -1179,6 +1179,38 @@ alternative is a transaction spanning a network upload.
 Tests: `TierSixAuditTests` (5), each one verified to fail against the code before its fix.
 Server suite green at 980, browser suite at 36.
 
+## Tier 6 — batch 26: API keys that authenticate something (#115 follow-up)
+
+Not a new feature — the closing of a hole the mounts exposed. `#115` shipped API keys with
+scopes, a management screen and revocation, and **nothing accepted them**: every endpoint read
+the auth cookie, so a `write` key could not create an upload and a `read` key could not read a
+delivery. The permissions on the developer screen described something nothing consulted. The
+first consumer of a key in the whole product was the WebDAV mount, four batches later.
+
+`ApiKeyAuthenticationMiddleware` makes a key authenticate the JSON API as its owner. Middleware
+rather than an authentication scheme, so every endpoint keeps working untouched — the principal
+carries the same provider claims a cookie does.
+
+**Scope by method** (read for GET, manage for DELETE, write for the rest): coarse on purpose,
+matching how the scopes are described. A per-endpoint permission table looks thorough and drifts
+the first time somebody adds a route without remembering it exists.
+
+**A key is second-factor-verified by construction.** It is an independent credential, unphishable
+out of a session and revocable in one click, and a machine caller cannot answer a TOTP prompt.
+Without that claim, enrolling an authenticator would silently kill every integration on the
+account — the kind of failure nobody connects to the setting that caused it.
+
+**Placement is load-bearing**: between `UseAuthentication` and `UseAuthorization`. Authorization
+evaluates the endpoint's requirements on the very next line, so a principal built any later
+arrives to a 401 that has already been decided — which is exactly what the first run of the new
+tests showed.
+
+Tests: `ApiKeyAuthTests` (8). Suite green at 988. Design:
+[`docs/developer-platform.md`](developer-platform.md).
+
+**Not shipped**: per-endpoint scopes, key-scoped rate limits distinct from the session ones, and
+IP allowlisting per key.
+
 ## 9. Local artifact map (feature area → design doc)
 
 Where a design/spec/plan already exists, read it before implementing.

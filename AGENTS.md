@@ -280,6 +280,12 @@ See `docs/white-label.md` for the full subsystem. Three rules bind all future wo
 - **A verified host serves exactly one workspace, and a foreign share on it is a plain not-found.** Never redirect to the canonical address instead — that confirms the share code exists. Any new recipient-facing page MUST call `WorkspaceDomainReader.IsForeignHostAsync`, and a tenant host MUST NOT serve app surface at all (`CustomDomainMiddleware` redirects it): the batch-25 audit found the check on the download page and absent from the stats page one route away, and the whole signed-in app answering on an agency's domain.
 - **Build recipient links through `WorkspaceDomainReader.DeliveryUrlAsync`, never by formatting `EmailOptions.BaseUrl`.** Seven call sites were each doing their own formatting; a link branded in one mail and unbranded in the next is worse than no white-label. Related: a paid-only control that the plan cannot honour MUST be refused at commit (`watermark_requires_paid_plan`), not silently stored as `false` — degrading it quietly tells the sender something untrue about their own share.
 
+### Credential Invariants (API keys #115)
+
+- **A credential the product issues MUST be accepted somewhere, and the acceptance MUST be tested.** API keys were issued, scoped and revocable for six batches while every endpoint read the auth cookie: the scopes on screen described permissions nothing consulted. When adding a credential type, add the path that consumes it in the same batch.
+- **API keys authenticate `/api/` only, a cookie always wins, and scope is decided by method** (GET/HEAD/OPTIONS → `read`, DELETE → `manage`, everything else → `write`). Do not add a per-endpoint permission table: it drifts the first time a route is added without remembering it exists.
+- **An API-key principal is second-factor-verified by construction.** A key is independent, unphishable from a session and revocable in one click, and a machine cannot answer a TOTP prompt. Never make a machine credential subject to an interactive challenge — the failure mode is every integration on the account dying silently when somebody enrols an authenticator.
+
 ### Mount Invariants (WebDAV #195, S3 gateway #265)
 
 See `docs/protocol-mounts.md` for the full subsystem. Three rules bind all future work:

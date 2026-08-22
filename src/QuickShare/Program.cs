@@ -676,6 +676,10 @@ app.UseMiddleware<RateLimitingMiddleware>();
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
 app.UseAuthentication();
+// API keys authenticate the JSON API (issue #115). Between authentication and authorization,
+// because it *is* authentication: authorization evaluates the endpoint's requirements right
+// after this line, and a principal built any later would arrive to a 401 already decided.
+app.UseMiddleware<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticationMiddleware>();
 app.UseAuthorization();
 
 if (!useInMemoryDb)

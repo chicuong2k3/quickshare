@@ -133,3 +133,33 @@ The signature test is the load-bearing one: it asserts that the same body at two
 produces two different signatures, which is the property that makes replay detectable at the
 receiver. The retry test drives the job through its whole attempt budget against a hostname that
 does not resolve, then checks the row survives — because the row is what replay sends.
+
+## API keys actually authenticate (found in batch 26)
+
+For six batches the keys authenticated **nothing**. They were issued, scoped, listed, revocable
+and documented, and every endpoint read the auth cookie — so a `write` key could not create an
+upload and a `read` key could not read a delivery. The scopes on the developer screen described
+permissions nothing ever consulted. The first thing that accepted a key was the WebDAV mount
+(#195), which is how it surfaced.
+
+`ApiKeyAuthenticationMiddleware` closes it. Middleware rather than an authentication scheme, so
+every existing endpoint keeps working untouched: the principal it builds carries the same
+provider claims a cookie does, and `GetUserOrDefaultAsync` resolves the same account by the same
+route.
+
+Rules that hold:
+
+- **Only `/api/`.** The mounts and the S3 gateway authenticate themselves, and pages are for
+  people.
+- **A cookie wins.** A browser session that also carries a key is still a person; downgrading it
+  to the key's scopes would be a surprise in the wrong direction.
+- **Scope by method**: GET/HEAD/OPTIONS need `read`, DELETE needs `manage`, everything else needs
+  `write`. Coarse, matching how the scopes are described. A per-endpoint permission table would
+  look thorough and drift the first time somebody adds a route without remembering it exists.
+- **Second-factor-verified by construction.** A key *is* an independent credential, cannot be
+  phished out of a session, and is revocable in one click — and a machine caller has no way to
+  answer a TOTP prompt. Without this, enrolling an authenticator would silently kill every
+  integration the account has.
+- **It sits between `UseAuthentication` and `UseAuthorization`**, because it *is* authentication:
+  authorization evaluates the endpoint's requirements immediately after, and a principal built
+  any later arrives to a 401 that was already decided.
