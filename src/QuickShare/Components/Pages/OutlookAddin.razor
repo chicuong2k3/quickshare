@@ -1,0 +1,64 @@
+@layout HtmxorLayout
+@page "/addins/outlook"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@* The Outlook task pane (issue #194). Deliberately not the app shell: this renders in a webview
+   the width of a phone, inside somebody else's window, and the navbar, footer and cookie banner
+   would be furniture in a room that has none. *@
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@Loc["outlook_title"]</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    @* Required by Office and only loadable from their CDN — the add-in CSP override in
+       SecurityHeadersMiddleware exists for exactly this one script. *@
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</head>
+<body class="outlook-pane">
+    <main id="outlook-shell" hidden>
+        <h1 class="db-h3">@Loc["outlook_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["outlook_intro"]</p>
+
+        <button type="button" class="db-btn db-btn--primary" style="width:100%"
+                onclick="window.quickShareOutlook.share(this)"
+                data-ai-action="outlook.share">@Loc["outlook_share"]</button>
+
+        <p id="outlook-status" class="db-p" role="status" aria-live="polite"></p>
+
+        <details>
+            <summary class="db-p">@Loc["outlook_key_title"]</summary>
+            <p class="db-p db-text-muted">@Loc["outlook_key_hint"]</p>
+            <input id="outlook-key" class="db-input" type="password" autocomplete="off"
+                   placeholder="qs_…" />
+            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                    onclick="window.quickShareOutlook.saveKey()"
+                    data-ai-action="outlook.saveKey">@Loc["outlook_key_save"]</button>
+        </details>
+    </main>
+
+    <script id="outlook-i18n" type="application/json">@RawJson(Strings())</script>
+    <script src="/js/outlook.js"></script>
+</body>
+</html>
+
+@code {
+    /// <summary>
+    /// Strings the pane's script needs. Passed as JSON for the same reason the voice layer does
+    /// it: a task pane that answers in the wrong language is worse than one that says nothing.
+    /// </summary>
+    private string Strings() => System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+    {
+        ["needKey"] = Loc["outlook_need_key"],
+        ["saved"] = Loc["outlook_key_saved"],
+        ["noAttachments"] = Loc["outlook_no_attachments"],
+        ["uploading"] = Loc["outlook_uploading"],
+        ["inserted"] = Loc["outlook_inserted"],
+        ["failed"] = Loc["outlook_failed"],
+    });
+
+    private static MarkupString RawJson(string json) => new(json);
+}

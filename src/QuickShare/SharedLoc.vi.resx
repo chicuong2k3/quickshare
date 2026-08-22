@@ -2481,4 +2481,40 @@
   <data name="deliveries_ocr_tooltip" xml:space="preserve">
     <value>Tìm thấy trong chữ của ảnh, không phải trong tên file.</value>
   </data>
+  <data name="outlook_title" xml:space="preserve">
+    <value>Chia sẻ bằng QuickShare</value>
+  </data>
+  <data name="outlook_intro" xml:space="preserve">
+    <value>Chuyển các tệp đínkèm trong thư thành liên kết, dùng đúng hạn dùng và giới hạn của tài khoản bạn.</value>
+  </data>
+  <data name="outlook_share" xml:space="preserve">
+    <value>Thay tệp đính kèm bằng liên kết</value>
+  </data>
+  <data name="outlook_key_title" xml:space="preserve">
+    <value>API key</value>
+  </data>
+  <data name="outlook_key_hint" xml:space="preserve">
+    <value>Tạo key ở trang Developer. Key chỉ lưu trong add-in này; thu hồi ở đó là pane này ngừng ngay.</value>
+  </data>
+  <data name="outlook_key_save" xml:space="preserve">
+    <value>Lưu key</value>
+  </data>
+  <data name="outlook_need_key" xml:space="preserve">
+    <value>Hãy thêm API key trước.</value>
+  </data>
+  <data name="outlook_key_saved" xml:space="preserve">
+    <value>Đã lưu key.</value>
+  </data>
+  <data name="outlook_no_attachments" xml:space="preserve">
+    <value>Thư này không có tệp đính kèm nào.</value>
+  </data>
+  <data name="outlook_uploading" xml:space="preserve">
+    <value>Đang tải {0}…</value>
+  </data>
+  <data name="outlook_inserted" xml:space="preserve">
+    <value>Đã chèn {0} liên kết. Các tệp đính kèm đã được gỡ bỏ.</value>
+  </data>
+  <data name="outlook_failed" xml:space="preserve">
+    <value>Không hoàn tất được: {0}</value>
+  </data>
 </root>

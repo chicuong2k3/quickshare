@@ -224,6 +224,12 @@ interface QsPaste {
 
 
 /** A page-scoped action object: methods are called from inline onclick in the markup. */
+/** Outlook task pane (#194): attachment in, share link out. */
+interface QsOutlook {
+    saveKey: () => void;
+    share: (button: HTMLButtonElement) => Promise<void>;
+}
+
 /** Voice commands (#277): speech in, command-palette actions out. */
 interface QsVoice {
     start: () => void;
@@ -282,6 +288,7 @@ interface Window {
     quickShareComments: QsPageActions;
     quickShareDeveloper: QsPageActions;
     quickShareVoice: QsVoice;
+    quickShareOutlook: QsOutlook;
     quickShareDomain: QsPageActions;
     quickSharePasskeys: QsPageActions;
     quickShareDpa: QsPageActions;

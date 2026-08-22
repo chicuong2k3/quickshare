@@ -744,6 +744,10 @@ QuickShare.Features.Protocols.WebDav.WebDavEndpoints.MapWebDavEndpoints(app);
 // SigV4, which no authentication handler here knows how to speak.
 QuickShare.Features.Protocols.S3.S3Endpoints.MapS3Endpoints(app);
 
+// Outlook add-in manifest (issue #194). Anonymous and public: an org admin has to be able to
+// fetch it before anybody has signed in to anything.
+QuickShare.Features.Developer.Addins.OutlookAddinEndpoints.MapOutlookAddinEndpoints(app);
+
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>
 {

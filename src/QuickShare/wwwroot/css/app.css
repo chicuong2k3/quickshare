@@ -3147,3 +3147,15 @@ html, body {
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
+
+/* Outlook task pane (issue #194): a column the width of somebody else's sidebar. */
+.outlook-pane {
+    margin: 0;
+    padding: var(--db-space-4);
+    max-width: 22rem;
+}
+
+.outlook-pane .db-input {
+    width: 100%;
+    margin-bottom: var(--db-space-2);
+}

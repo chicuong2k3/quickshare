@@ -18,6 +18,7 @@ public sealed class SecurityHeadersMiddleware
 
     private const string HstsValue = "max-age=31536000; includeSubDomains";
     private const string NoSniff = "nosniff";
+    private const string AddinPathPrefix = "/addins";
     private const string ReferrerStrictOriginWhenCrossOrigin = "strict-origin-when-cross-origin";
     private const string PermissionsDefault =
         "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()";
@@ -52,8 +53,17 @@ public sealed class SecurityHeadersMiddleware
         context.Response.Headers[HttpHeaders.ReferrerPolicy] = ReferrerStrictOriginWhenCrossOrigin;
         context.Response.Headers[HttpHeaders.PermissionsPolicy] = PermissionsDefault;
 
-        if (!string.IsNullOrWhiteSpace(options.ContentSecurityPolicy))
-            context.Response.Headers[HttpHeaders.ContentSecurityPolicy] = options.ContentSecurityPolicy;
+        // The Outlook task pane (issue #194) is the one surface that must load a foreign script
+        // and be framed: Office serves office.js from its own CDN and renders the pane inside
+        // its window. The exception is scoped to that path rather than widened globally, because
+        // `frame-ancestors 'none'` everywhere else is what stops the rest of the app being
+        // clickjacked.
+        var policy = context.Request.Path.StartsWithSegments(AddinPathPrefix, StringComparison.OrdinalIgnoreCase)
+            ? options.AddinContentSecurityPolicy
+            : options.ContentSecurityPolicy;
+
+        if (!string.IsNullOrWhiteSpace(policy))
+            context.Response.Headers[HttpHeaders.ContentSecurityPolicy] = policy;
     }
 }
 
@@ -79,6 +89,24 @@ public sealed class SecurityHeaderOptions
         "img-src 'self' data: blob: https:; " +
         "connect-src 'self' https: wss: ws:; " +
         "frame-ancestors 'none'; " +
+        "base-uri 'self'; " +
+        "form-action 'self'; " +
+        "object-src 'none'";
+
+    /// <summary>
+    /// The same policy, plus what an Office add-in cannot work without: their script CDN, and
+    /// the Office hosts allowed to frame the pane. Nothing else is loosened, and it applies to
+    /// <c>/addins</c> only.
+    /// </summary>
+    public string AddinContentSecurityPolicy { get; set; } =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' https://appsforoffice.microsoft.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "font-src 'self' data:; " +
+        "img-src 'self' data: blob: https:; " +
+        "connect-src 'self' https:; " +
+        "frame-ancestors https://outlook.office.com https://outlook.office365.com " +
+            "https://outlook.live.com https://*.officeapps.live.com https://*.office.com; " +
         "base-uri 'self'; " +
         "form-action 'self'; " +
         "object-src 'none'";

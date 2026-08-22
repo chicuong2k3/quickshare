@@ -2481,4 +2481,40 @@
   <data name="deliveries_ocr_tooltip" xml:space="preserve">
     <value>Matched text found inside the image, not in the file name.</value>
   </data>
+  <data name="outlook_title" xml:space="preserve">
+    <value>Share with QuickShare</value>
+  </data>
+  <data name="outlook_intro" xml:space="preserve">
+    <value>Turns the attachments on this message into links, using your account's usual expiry and limits.</value>
+  </data>
+  <data name="outlook_share" xml:space="preserve">
+    <value>Replace attachments with links</value>
+  </data>
+  <data name="outlook_key_title" xml:space="preserve">
+    <value>API key</value>
+  </data>
+  <data name="outlook_key_hint" xml:space="preserve">
+    <value>Create one on the Developer page. It is stored in this add-in only, and revoking it there stops this pane immediately.</value>
+  </data>
+  <data name="outlook_key_save" xml:space="preserve">
+    <value>Save key</value>
+  </data>
+  <data name="outlook_need_key" xml:space="preserve">
+    <value>Add an API key first.</value>
+  </data>
+  <data name="outlook_key_saved" xml:space="preserve">
+    <value>Key saved.</value>
+  </data>
+  <data name="outlook_no_attachments" xml:space="preserve">
+    <value>This message has no attachments to share.</value>
+  </data>
+  <data name="outlook_uploading" xml:space="preserve">
+    <value>Uploading {0}…</value>
+  </data>
+  <data name="outlook_inserted" xml:space="preserve">
+    <value>Inserted {0} link(s). The attachments have been removed.</value>
+  </data>
+  <data name="outlook_failed" xml:space="preserve">
+    <value>Could not finish: {0}</value>
+  </data>
 </root>
