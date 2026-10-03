@@ -380,6 +380,350 @@ public sealed class WorkspaceTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task AuditPage_DirectAndUnpolyGet_KeepFilterAndAdminGate()
+    {
+        var (ownerClient, _) = await ClientAsync(PlanTierLimits.Pro);
+        var workspace = await CreateWorkspaceAsync(ownerClient);
+        await ownerClient.PostAsJsonAsync("/api/workspace/invites",
+            new InviteMemberRequest { Email = "page-audited@example.com", Role = MemberRole });
+
+        var direct = await ownerClient.GetAsync(RoutePaths.AccountWorkspaceAudit);
+        var html = await direct.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, direct.StatusCode);
+        Assert.Contains("id=\"workspace-audit-app\"", html);
+        Assert.Contains("workspacecreated", html);
+        Assert.Contains("workspacememberinvited", html);
+        Assert.Contains("up-target=\"#workspace-audit-app\"", html);
+
+        using var filteredRequest = new HttpRequestMessage(HttpMethod.Get,
+            $"{RoutePaths.AccountWorkspaceAudit}?action=WorkspaceCreated");
+        filteredRequest.Headers.Add(UnpolyHeaders.Target, "#workspace-audit-app");
+        var filtered = await ownerClient.SendAsync(filteredRequest);
+        var filteredHtml = await filtered.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, filtered.StatusCode);
+        Assert.Contains("workspacecreated", filteredHtml);
+        Assert.DoesNotContain("workspacememberinvited", filteredHtml);
+
+        var (memberClient, _) = await ClientAsync(PlanTierLimits.Free);
+        var token = await SeedInviteAsync(workspace.Id, "page-viewer@example.com", WorkspaceRole.Viewer);
+        await memberClient.PostAsJsonAsync("/api/workspace/invites/accept",
+            new AcceptInviteRequest { Token = token });
+        var denied = await memberClient.GetStringAsync(RoutePaths.AccountWorkspaceAudit);
+        Assert.Contains("id=\"workspace-audit-body\"", denied);
+        Assert.DoesNotContain("workspacememberinvited", denied);
+    }
+
+    [Fact]
+    public async Task ApprovalsPage_DirectAndTargetedGet_HideForeignAndViewerQueue()
+    {
+        const string ownFile = "pending-owner-workspace.pdf";
+        const string foreignFile = "pending-other-workspace.pdf";
+        var (ownerClient, ownerId) = await ClientAsync(PlanTierLimits.Pro);
+        var workspace = await CreateWorkspaceAsync(ownerClient);
+        var (foreignClient, foreignId) = await ClientAsync(PlanTierLimits.Pro);
+        var foreignWorkspace = await CreateWorkspaceAsync(foreignClient);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = ownerId,
+                WorkspaceId = workspace.Id,
+                FileName = ownFile,
+                ShareCode = Guid.CreateVersion7().ToString("N"),
+                Status = DeliveryStatus.PendingApproval,
+                ApprovalRequestedAt = DateTime.UtcNow,
+            });
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = foreignId,
+                WorkspaceId = foreignWorkspace.Id,
+                FileName = foreignFile,
+                ShareCode = Guid.CreateVersion7().ToString("N"),
+                Status = DeliveryStatus.PendingApproval,
+                ApprovalRequestedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var direct = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceApprovals);
+        Assert.Contains("id=\"workspace-approvals-body\"", direct);
+        Assert.Contains(ownFile, direct);
+        Assert.DoesNotContain(foreignFile, direct);
+
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get,
+            RoutePaths.AccountWorkspaceApprovals);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#workspace-approvals-body");
+        var targeted = await ownerClient.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains(ownFile, await targeted.Content.ReadAsStringAsync());
+
+        var token = await SeedInviteAsync(workspace.Id, "approvals-viewer@example.com", WorkspaceRole.Viewer);
+        var (viewerClient, _) = await ClientAsync(PlanTierLimits.Free);
+        await viewerClient.PostAsJsonAsync("/api/workspace/invites/accept",
+            new AcceptInviteRequest { Token = token });
+        var viewer = await viewerClient.GetStringAsync(RoutePaths.AccountWorkspaceApprovals);
+        Assert.Contains("id=\"workspace-approvals-body\"", viewer);
+        Assert.DoesNotContain(ownFile, viewer);
+    }
+
+    [Fact]
+    public async Task ReportPage_DirectAndTargetedGet_ScopeToAdminWorkspace()
+    {
+        const long ownerBytes = 2L * 1024 * 1024;
+        const long foreignBytes = 9L * 1024 * 1024;
+        var (ownerClient, ownerId) = await ClientAsync(PlanTierLimits.Pro);
+        var workspace = await CreateWorkspaceAsync(ownerClient);
+        var (foreignClient, foreignId) = await ClientAsync(PlanTierLimits.Pro);
+        var foreignWorkspace = await CreateWorkspaceAsync(foreignClient);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = ownerId,
+                WorkspaceId = workspace.Id,
+                ShareCode = Guid.CreateVersion7().ToString("N"),
+                ContentType = "application/pdf",
+                FileSize = ownerBytes,
+            });
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = foreignId,
+                WorkspaceId = foreignWorkspace.Id,
+                ShareCode = Guid.CreateVersion7().ToString("N"),
+                ContentType = "application/pdf",
+                FileSize = foreignBytes,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var direct = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceReport);
+        Assert.Contains("id=\"workspace-report-body\"", direct);
+        Assert.Contains("2.0 MB", direct);
+        Assert.DoesNotContain("9.0 MB", direct);
+
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get,
+            RoutePaths.AccountWorkspaceReport);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#workspace-report-body");
+        var targeted = await ownerClient.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains("2.0 MB", await targeted.Content.ReadAsStringAsync());
+
+        var (viewerClient, _) = await ClientAsync(PlanTierLimits.Free);
+        var token = await SeedInviteAsync(workspace.Id, "report-page-viewer@example.com", WorkspaceRole.Viewer);
+        await viewerClient.PostAsJsonAsync("/api/workspace/invites/accept",
+            new AcceptInviteRequest { Token = token });
+        var viewer = await viewerClient.GetStringAsync(RoutePaths.AccountWorkspaceReport);
+        Assert.Contains("id=\"workspace-report-body\"", viewer);
+        Assert.DoesNotContain("2.0 MB", viewer);
+    }
+
+    [Fact]
+    public async Task WorkspacePage_DirectAndTargetedGet_PreserveRoleGates()
+    {
+        var (ownerClient, _) = await ClientAsync(PlanTierLimits.Pro);
+        var workspace = await CreateWorkspaceAsync(ownerClient);
+
+        var direct = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspace);
+        Assert.Contains("id=\"workspace-body\"", direct);
+        Assert.Contains(WorkspaceName, direct);
+        Assert.Contains("data-ai-action=\"workspace.invite\"", direct);
+
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountWorkspace);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#workspace-body");
+        var targeted = await ownerClient.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains(WorkspaceName, await targeted.Content.ReadAsStringAsync());
+
+        var (viewerClient, _) = await ClientAsync(PlanTierLimits.Free);
+        var token = await SeedInviteAsync(workspace.Id, "workspace-page-viewer@example.com", WorkspaceRole.Viewer);
+        await viewerClient.PostAsJsonAsync("/api/workspace/invites/accept",
+            new AcceptInviteRequest { Token = token });
+        var viewer = await viewerClient.GetStringAsync(RoutePaths.AccountWorkspace);
+        Assert.Contains(WorkspaceName, viewer);
+        Assert.DoesNotContain("data-ai-action=\"workspace.invite\"", viewer);
+
+        var (freeClient, _) = await ClientAsync(PlanTierLimits.Free);
+        var free = await freeClient.GetStringAsync(RoutePaths.AccountWorkspace);
+        Assert.Contains("id=\"workspace-body\"", free);
+        Assert.DoesNotContain("data-ai-action=\"workspace.create\"", free);
+    }
+
+    [Fact]
+    public async Task WorkspaceSettings_DirectAndTargetedGet_IsolateBrandDomainAndSeats()
+    {
+        const string ownerHost = "owner-brand.example.test";
+        const string foreignHost = "foreign-brand.example.test";
+        const string ownerHeader = "Owner brand header";
+        const string foreignHeader = "Foreign brand header";
+        var (ownerClient, _) = await ClientAsync(PlanTierLimits.Pro);
+        var workspace = await CreateWorkspaceAsync(ownerClient);
+        var (foreignClient, _) = await ClientAsync(PlanTierLimits.Pro);
+        var foreignWorkspace = await CreateWorkspaceAsync(foreignClient);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.WorkspaceBrands.Add(new WorkspaceBrand { WorkspaceId = workspace.Id, HeaderText = ownerHeader });
+            db.WorkspaceBrands.Add(new WorkspaceBrand { WorkspaceId = foreignWorkspace.Id, HeaderText = foreignHeader });
+            db.WorkspaceDomains.Add(new WorkspaceDomain
+            {
+                WorkspaceId = workspace.Id,
+                Host = ownerHost,
+                VerificationToken = Guid.CreateVersion7().ToString("N"),
+            });
+            db.WorkspaceDomains.Add(new WorkspaceDomain
+            {
+                WorkspaceId = foreignWorkspace.Id,
+                Host = foreignHost,
+                VerificationToken = Guid.CreateVersion7().ToString("N"),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var brand = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceBrand);
+        Assert.Contains(ownerHeader, brand);
+        Assert.DoesNotContain(foreignHeader, brand);
+        var domain = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceDomain);
+        Assert.Contains(ownerHost, domain);
+        Assert.DoesNotContain(foreignHost, domain);
+        var seats = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceSeats);
+        Assert.Contains("id=\"workspace-seats-body\"", seats);
+        Assert.Contains("data-ai-action=\"seats.export\"", seats);
+
+        foreach (var (route, selector) in new[]
+        {
+            (RoutePaths.AccountWorkspaceBrand, "workspace-brand-body"),
+            (RoutePaths.AccountWorkspaceDomain, "workspace-domain-body"),
+            (RoutePaths.AccountWorkspaceSeats, "workspace-seats-body"),
+        })
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, route);
+            request.Headers.Add(UnpolyHeaders.Target, $"#{selector}");
+            var response = await ownerClient.SendAsync(request);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains($"id=\"{selector}\"", await response.Content.ReadAsStringAsync());
+        }
+
+        var (viewerClient, _) = await ClientAsync(PlanTierLimits.Free);
+        var token = await SeedInviteAsync(workspace.Id, "workspace-settings-viewer@example.com", WorkspaceRole.Viewer);
+        await viewerClient.PostAsJsonAsync("/api/workspace/invites/accept",
+            new AcceptInviteRequest { Token = token });
+        var viewerBrand = await viewerClient.GetStringAsync(RoutePaths.AccountWorkspaceBrand);
+        var viewerDomain = await viewerClient.GetStringAsync(RoutePaths.AccountWorkspaceDomain);
+        var viewerSeats = await viewerClient.GetStringAsync(RoutePaths.AccountWorkspaceSeats);
+        Assert.DoesNotContain(ownerHeader, viewerBrand);
+        Assert.DoesNotContain(ownerHost, viewerDomain);
+        Assert.DoesNotContain("data-ai-action=\"seats.export\"", viewerSeats);
+
+        var foreignBrand = await foreignClient.GetStringAsync(RoutePaths.AccountWorkspaceBrand);
+        var foreignDomain = await foreignClient.GetStringAsync(RoutePaths.AccountWorkspaceDomain);
+        Assert.Contains(foreignHeader, foreignBrand);
+        Assert.Contains(foreignHost, foreignDomain);
+    }
+
+    [Fact]
+    public async Task WorkspaceIntegrations_DirectGet_ScopeConfigsAndNeverRenderSecrets()
+    {
+        const string ownerSink = "https://owner-siem.example.test/events";
+        const string foreignSink = "https://foreign-siem.example.test/events";
+        const string ownerBucket = "owner-backup-bucket";
+        const string foreignBucket = "foreign-backup-bucket";
+        const string channelCredential = "https://hooks.example.test/private-owner-secret";
+        const string siemCredential = "private-siem-secret";
+        const string backupCredential = "private-backup-secret";
+        var (ownerClient, _) = await ClientAsync(PlanTierLimits.Pro);
+        var workspace = await CreateWorkspaceAsync(ownerClient);
+        var (foreignClient, _) = await ClientAsync(PlanTierLimits.Pro);
+        var foreignWorkspace = await CreateWorkspaceAsync(foreignClient);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.WorkspaceChannelHooks.Add(new WorkspaceChannelHook
+            {
+                WorkspaceId = workspace.Id,
+                WebhookUrl = channelCredential,
+            });
+            db.SiemSinks.Add(new SiemSink
+            {
+                WorkspaceId = workspace.Id,
+                Endpoint = ownerSink,
+                Secret = siemCredential,
+            });
+            db.SiemSinks.Add(new SiemSink
+            {
+                WorkspaceId = foreignWorkspace.Id,
+                Endpoint = foreignSink,
+            });
+            db.WorkspaceBackupPolicies.Add(new WorkspaceBackupPolicy
+            {
+                WorkspaceId = workspace.Id,
+                BucketName = ownerBucket,
+                AccessKeySecret = backupCredential,
+            });
+            db.WorkspaceBackupPolicies.Add(new WorkspaceBackupPolicy
+            {
+                WorkspaceId = foreignWorkspace.Id,
+                BucketName = foreignBucket,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        foreach (var (route, selector, control) in new[]
+        {
+            (RoutePaths.AccountWorkspaceChannel, "workspace-channel-body", "channel-kind"),
+            (RoutePaths.AccountWorkspaceStreaming, "workspace-streaming-body", "siem-endpoint"),
+            (RoutePaths.AccountWorkspaceBackup, "workspace-backup-body", "backup-endpoint"),
+        })
+        {
+            var html = await ownerClient.GetStringAsync(route);
+            Assert.Contains($"id=\"{selector}\"", html);
+            Assert.Contains($"id=\"{control}\"", html);
+            Assert.DoesNotContain(channelCredential, html);
+            Assert.DoesNotContain(siemCredential, html);
+            Assert.DoesNotContain(backupCredential, html);
+            Assert.DoesNotContain(foreignSink, html);
+            Assert.DoesNotContain(foreignBucket, html);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, route);
+            request.Headers.Add(UnpolyHeaders.Target, $"#{selector}");
+            var targeted = await ownerClient.SendAsync(request);
+            Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+            Assert.Contains($"id=\"{selector}\"", await targeted.Content.ReadAsStringAsync());
+        }
+
+        var ownerStreaming = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceStreaming);
+        var ownerBackup = await ownerClient.GetStringAsync(RoutePaths.AccountWorkspaceBackup);
+        Assert.Contains(ownerSink, ownerStreaming);
+        Assert.Contains(ownerBucket, ownerBackup);
+
+        var (viewerClient, _) = await ClientAsync(PlanTierLimits.Free);
+        var token = await SeedInviteAsync(workspace.Id, "integration-viewer@example.com", WorkspaceRole.Viewer);
+        await viewerClient.PostAsJsonAsync("/api/workspace/invites/accept",
+            new AcceptInviteRequest { Token = token });
+        foreach (var (route, control) in new[]
+        {
+            (RoutePaths.AccountWorkspaceChannel, "channel-kind"),
+            (RoutePaths.AccountWorkspaceStreaming, "siem-endpoint"),
+            (RoutePaths.AccountWorkspaceBackup, "backup-endpoint"),
+        })
+        {
+            var html = await viewerClient.GetStringAsync(route);
+            Assert.DoesNotContain($"id=\"{control}\"", html);
+            Assert.DoesNotContain(ownerSink, html);
+            Assert.DoesNotContain(ownerBucket, html);
+        }
+    }
+
+    [Fact]
     public async Task Audit_ExportsCsvWithAHeaderRow()
     {
         var (client, _) = await ClientAsync(PlanTierLimits.Pro);

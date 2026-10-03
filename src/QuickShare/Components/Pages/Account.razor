@@ -11,112 +11,43 @@
 
     <AccountTabs Current="@RoutePaths.Account" />
 
-    @* Onboarding checklist (issue #129) — HTMX lazy loaded, dismissible. *@
+    @* Onboarding checklist (issue #129), dismissible. *@
     <HtmxFragment>
-    <div id="onboarding-card" class="db-card account-card"
-         hx-get="@RoutePaths.AccountOnboarding"
-         hx-trigger="load"
-         hx-select="#onboarding-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountOnboarding />
     </HtmxFragment>
-    @* Profile Card — HTMX lazy loaded *@
+    @* Profile card renders in the initial response. *@
     <HtmxFragment>
-    <div id="profile-card" class="db-card account-card"
-         hx-get="/account/profile"
-         hx-trigger="load"
-         hx-select="#profile-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-profile">
-                <div class="account-skeleton-avatar"></div>
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 1.25rem"></div>
-                <div class="account-skeleton-line account-skeleton-email" style="margin-top: 0.5rem"></div>
-                <div class="account-skeleton-line account-skeleton-badge" style="margin-top: 0.75rem"></div>
-            </div>
-        </div>
-    </div>
+    <AccountProfile />
     </HtmxFragment>
 
-    @* Monthly usage bar — HTMX lazy loaded *@
+    @* Monthly usage bar. *@
     <HtmxFragment>
-    <div id="usage-card" class="db-card account-card account-usage"
-         hx-get="@RoutePaths.AccountUsage"
-         hx-trigger="load"
-         hx-select="#usage-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountUsage />
     </HtmxFragment>
 
-    @* Known devices (issue #149) — HTMX lazy loaded *@
+    @* Known devices (issue #149). *@
     <HtmxFragment>
-    <div id="devices-card" class="db-card account-card"
-         hx-get="/account/devices"
-         hx-trigger="load, devicesUpdated from:body"
-         hx-select="#devices-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountDevices />
     </HtmxFragment>
 
-    @* Referral (issue #31) — HTMX lazy loaded *@
+    @* Referral (issue #31). *@
     <HtmxFragment>
-    <div id="referral-card" class="db-card account-card"
-         hx-get="@RoutePaths.AccountReferral"
-         hx-trigger="load"
-         hx-select="#referral-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountReferral />
     </HtmxFragment>
 
-    @* Notification preferences (issue #117) — HTMX lazy loaded *@
+    @* Notification preferences (issue #117). *@
     <HtmxFragment>
-    <div id="notifications-card" class="db-card account-card"
-         hx-get="@RoutePaths.AccountNotifications"
-         hx-trigger="load"
-         hx-select="#notifications-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountNotifications />
     </HtmxFragment>
 
-    @* Download history (issue #220) — HTMX lazy loaded *@
+    @* Download history (issue #220). *@
     <HtmxFragment>
-    <div id="downloads-card" class="db-card account-card"
-         hx-get="@RoutePaths.AccountDownloads"
-         hx-trigger="load"
-         hx-select="#downloads-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountDownloads />
     </HtmxFragment>
 
-    @* Security activity (issue #126) — HTMX lazy loaded *@
+    @* Security activity (issue #126). *@
     <HtmxFragment>
-    <div id="security-activity-card" class="db-card account-card"
-         hx-get="@RoutePaths.AccountSecurityActivity"
-         hx-trigger="load"
-         hx-select="#security-activity-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-        </div>
-    </div>
+    <AccountSecurityActivity />
     </HtmxFragment>
 
     @* Data & privacy (issue #59) — static, no DB calls. *@

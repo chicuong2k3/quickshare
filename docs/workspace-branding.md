@@ -1,5 +1,10 @@
 # Workspace branding
 
+The signed-in brand settings page now renders admin-scoped fields on direct SSR GET and uses
+Unpoly to refresh its section after JSON/asset mutations. Recipient-facing brand validation,
+asset routing and cache rules below remain unchanged. Native no-JS mutation forms are still
+pending in the broader Unpoly migration.
+
 Issues `#285` (branded recipient page) and `#286` (custom typography). One entity, one
 migration, and one surface: the pages a workspace's *clients* open.
 

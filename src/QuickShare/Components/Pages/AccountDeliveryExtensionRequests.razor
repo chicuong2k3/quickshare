@@ -10,12 +10,6 @@
 
 <PageTitle>@Loc["ext_requests_title"]</PageTitle>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
@@ -23,25 +17,10 @@ else
         <p class="db-p db-text-muted">@Loc["ext_requests_lead"]</p>
     </section>
 
-    @if (!isLoaded)
-    {
-        <section id="ext-body"
-                 hx-get="@BodyUrl"
-                 hx-trigger="load"
-                 hx-target="#ext-body"
-                 hx-select="#ext-body"
-                 hx-swap="outerHTML"
-                 aria-busy="true">
-            <p class="db-text-muted">@Loc["notifications_center_loading"]</p>
-        </section>
-    }
-    else
-    {
-        <section id="ext-body">@Chunk</section>
-    }
+    @* Full SSR: direct navigation works without JavaScript. Unpoly can reload #ext-body. *@
+    <section id="ext-body">@Chunk</section>
 
 </PageWrapper>
-}
 
 <script>
     window.approveExtension = function (btn) {
@@ -80,11 +59,7 @@ else
     [Parameter]
     public Guid Id { get; set; }
 
-    private bool isLoaded;
-    private bool isChunkRequest;
     private IReadOnlyList<ExtensionRequestItem> items = [];
-
-    private string BodyUrl => $"{RoutePaths.AccountDeliveries}/{Id}/extension-requests";
 
     private RenderFragment Chunk => @<div class="notif-list">
         @if (items.Count == 0)
@@ -122,17 +97,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isLoaded = true;
-        isChunkRequest = true;
-
         var result = await Bus.Send<LightResults.Result<IReadOnlyList<ExtensionRequestItem>>>(
             new ListExtensionRequestsQuery(Id), CancellationToken.None);
 

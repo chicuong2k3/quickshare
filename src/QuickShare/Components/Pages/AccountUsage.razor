@@ -1,13 +1,12 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/usage"
+@layout MainLayout
 @attribute [Authorize]
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Nav
 
-<HtmxFragment>
 <div id="usage-card" class="db-card account-card account-usage">
     <div class="db-card__body">
         <h3 class="db-h4 account-usage__title">@Loc["account_usage_title"]</h3>
@@ -65,7 +64,6 @@
         }
     </div>
 </div>
-</HtmxFragment>
 
 @code {
     private const int LargestFilesCount = 10;
@@ -85,15 +83,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

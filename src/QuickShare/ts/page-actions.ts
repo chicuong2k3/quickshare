@@ -16,7 +16,7 @@ interface QsSendOptions {
     btn?: HTMLButtonElement | null;
     /** Alerted on success. Omit for actions whose result is visible in the refreshed section. */
     doneLabel?: string | null;
-    /** CSS selector of the HTMX section to re-fetch. Omit for a full page reload. */
+    /** CSS selector of the section to re-fetch. Omit for a full page reload. */
     body?: string;
 }
 
@@ -43,6 +43,13 @@ const qsPage = (function () {
 
     function reload(body?: string): void {
         const section = body ? document.querySelector(body) : null;
+        const unpoly = (window as Window & {
+            up?: { reload: (selector: string, options: { cache: boolean }) => Promise<unknown> };
+        }).up;
+        if (body && section?.hasAttribute('data-unpoly-reload') && unpoly) {
+            void unpoly.reload(body, { cache: false }).catch(() => window.location.reload());
+            return;
+        }
         if (body && section && window.htmx) {
             window.htmx.ajax('GET', window.location.pathname + window.location.search, {
                 target: body,

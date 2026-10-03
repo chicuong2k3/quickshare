@@ -1,13 +1,13 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/security/activity"
+@layout MainLayout
 @attribute [Authorize]
 @using QuickShare.Features.Users.Retention
 @using QuickShare.Features.Users.Shared
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IMediator Bus
-@inject NavigationManager Nav
 
 <HtmxFragment>
 <div id="security-activity-card" class="db-card account-card">
@@ -192,14 +192,6 @@
     protected override async Task OnInitializedAsync()
     {
         var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
         retentionAllowed = user.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
 

@@ -18,12 +18,6 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
@@ -33,31 +27,17 @@ else
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceChannel" />
 
-    <section id="workspace-channel-body"
-             hx-get="@RoutePaths.AccountWorkspaceChannel"
-             hx-trigger="load"
-             hx-target="#workspace-channel-body"
-             hx-select="#workspace-channel-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 <script src="/js/channel.js" defer></script>
 
 @code {
-    private bool isChunkRequest;
     private bool isAdmin;
     private WorkspaceChannelHook? hook;
 
-    private RenderFragment Chunk => @<section id="workspace-channel-body">
+    private RenderFragment Chunk => @<section id="workspace-channel-body" data-unpoly-reload>
         @if (!isAdmin)
         {
             <div class="db-card account-card workspace-card">
@@ -154,15 +134,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
-
         var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
         if (seat is null) return;
 

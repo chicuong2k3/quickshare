@@ -875,6 +875,8 @@
   <data name="notifications_filter_all" xml:space="preserve"><value>Tất cả</value></data>
   <data name="notifications_filter_unread" xml:space="preserve"><value>Chưa đọc</value></data>
   <data name="notifications_mark_all_read" xml:space="preserve"><value>Đánh dấu đã đọc tất cả</value></data>
+  <data name="notifications_mark_all_error" xml:space="preserve"><value>Không thể đánh dấu đã đọc. Vui lòng thử lại.</value></data>
+  <data name="notifications_load_more" xml:space="preserve"><value>Tải thêm thông báo</value></data>
   <data name="notifications_mark_read" xml:space="preserve"><value>Đánh dấu đã đọc</value></data>
   <data name="notifications_badge_aria" xml:space="preserve"><value>{0} thông báo chưa đọc</value></data>
   <data name="nav_notifications" xml:space="preserve"><value>Thông báo</value></data>
@@ -1174,6 +1176,9 @@
   </data>
   <data name="account_requests_loading" xml:space="preserve">
     <value>Đang tải yêu cầu gửi file...</value>
+  </data>
+  <data name="account_requests_load_more" xml:space="preserve">
+    <value>Tải thêm yêu cầu gửi file</value>
   </data>
   <data name="account_requests_close_confirm" xml:space="preserve">
     <value>Đóng yêu cầu này? Mọi người sẽ không thể gửi thêm file.</value>

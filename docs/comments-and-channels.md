@@ -168,7 +168,9 @@ for. `wwwroot/js/comments.js` reloads after a successful post rather than splici
 comment in, because ordering, tombstones and the team badge are server decisions and re-deriving
 them in the browser would be a second implementation to keep in step.
 
-**Channel config** — `/account/workspace/channel`, admins only, `noindex`. The webhook field is
+**Channel config** — `/account/workspace/channel`, admins only, `noindex`. The settings render
+on direct GET and refresh through Unpoly after existing JSON mutations; native no-JS forms
+remain pending. The webhook field is
 never populated with the stored URL; when a hook exists the placeholder says one is stored and a
 blank submit keeps it. That is asserted by `B2BUiTests.ChannelPage_ShowsStoredHookWithoutLeakingUrl`, which posts a recognisable secret and greps the rendered page for it. The health card shows
 last-posted, consecutive failures and the parked notice.

@@ -858,6 +858,8 @@
   <data name="notifications_filter_all" xml:space="preserve"><value>All</value></data>
   <data name="notifications_filter_unread" xml:space="preserve"><value>Unread</value></data>
   <data name="notifications_mark_all_read" xml:space="preserve"><value>Mark all read</value></data>
+  <data name="notifications_mark_all_error" xml:space="preserve"><value>Could not mark notifications as read. Try again.</value></data>
+  <data name="notifications_load_more" xml:space="preserve"><value>Load more notifications</value></data>
   <data name="notifications_mark_read" xml:space="preserve"><value>Mark read</value></data>
   <data name="notifications_badge_aria" xml:space="preserve"><value>{0} unread notifications</value></data>
   <data name="nav_notifications" xml:space="preserve"><value>Notifications</value></data>
@@ -1174,6 +1176,9 @@
   </data>
   <data name="account_requests_loading" xml:space="preserve">
     <value>Loading file requests...</value>
+  </data>
+  <data name="account_requests_load_more" xml:space="preserve">
+    <value>Load more requests</value>
   </data>
   <data name="account_requests_close_confirm" xml:space="preserve">
     <value>Close this request? People won't be able to send more files.</value>

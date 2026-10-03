@@ -235,12 +235,22 @@ sign-in one.
 
 ## UI
 
-`/account/workspace`, `/account/workspace/audit`, `/account/workspace/report` — all HTMX
-lazy-loaded per the project default, all `noindex, nofollow` (`#121`). `/workspace/join` is the
-token landing page and is deliberately *not* lazy-loaded: there is no DB read to defer, so a
-shell request would add a round trip and buy nothing. Styles live in `wwwroot/css/app.css`
-under the `workspace-` prefix, because the markup ships inside HTMX partials where another
-component's scoped CSS never applies.
+`/account/workspace/audit` now renders its admin-gated rows on direct GET; its GET filter
+uses Unpoly to refresh `#workspace-audit-app` and update URL/history, with native GET fallback
+when JavaScript is disabled. `/account/workspace/approvals` also renders its admin-scoped queue on direct GET and opts
+into Unpoly reload after mutations. `/account/workspace/report` renders its admin-scoped
+report on direct GET without an HX follow-up; CSV export remains a plain link.
+`/account/workspace` renders the member/seat card on initial GET and opts into Unpoly refresh,
+with unchanged owner/admin/member action gates. Workspace-page role tests now pass; Windows
+Application Control briefly blocked the test assembly, then the user resolved it. The seats,
+brand and domain settings pages now render scoped data on direct GET; brand and domain refresh
+through Unpoly after JSON mutations. The channel, SIEM and backup settings pages now render admin-scoped configurations on direct
+GET and use Unpoly to refresh sections after their existing API mutations. Secrets stay absent
+from HTML; viewer and foreign-tenant regressions cover these routes. Other workspace routes
+still use HTMX lazy loading during the Unpoly migration. All three carry `noindex, nofollow` (`#121`). `/workspace/join` is the token
+landing page and is deliberately not lazy-loaded: there is no DB read to defer. Styles remain
+in `wwwroot/css/app.css` under the `workspace-` prefix; other pages still ship HTMX partials
+whose markup cannot use another component's scoped CSS.
 
 ## Extending this
 

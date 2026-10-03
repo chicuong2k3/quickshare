@@ -140,6 +140,11 @@ resolve is worse than no badge.
 > [`comments-and-channels.md`](comments-and-channels.md) for why the suite could not catch them.
 
 
+The signed-in `/account/workspace/backup` settings page now SSR-renders admin-scoped policy
+on direct GET and refreshes with Unpoly after existing API mutations. Its secret never enters
+HTML; native no-JS mutation forms remain pending. The scheduled job and run-now invariants
+below are unchanged.
+
 ## Scheduled workspace backup (`#271`)
 
 The procurement question is "what happens if your region burns down?". The only answer that

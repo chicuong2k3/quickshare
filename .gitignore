@@ -5,6 +5,7 @@ appsettings.*.json
 !appsettings.Development.json
 .vs/
 .gitnexus
+slnmap.db*
 
 # OpenCode session continuation state - transient, regenerable
 .omo/

@@ -1,15 +1,14 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/devices"
+@layout MainLayout
 @attribute [Authorize]
 @using System.Text.Json
 @using System.Text.Json.Serialization
 @using QuickShare.Features.Users.Shared
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Nav
 
-<HtmxFragment>
 <div id="devices-card" class="db-card account-card">
     <div class="db-card__body">
         <div class="account-section-head">
@@ -41,7 +40,6 @@
         }
     </div>
 </div>
-</HtmxFragment>
 
 <script>
     window.quickShareAccount = window.quickShareAccount || {};
@@ -63,15 +61,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
 
         devices = await Db.UserDevices

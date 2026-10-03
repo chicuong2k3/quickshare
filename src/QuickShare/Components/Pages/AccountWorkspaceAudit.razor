@@ -17,13 +17,7 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper id="workspace-audit-app" Variant="PageVariant.Padded">
 
     <section class="hero">
         <h1 class="db-h1">@Loc["ws_audit_title"]</h1>
@@ -34,11 +28,7 @@ else
 
     @* Filters drive the URL, so a filtered view is linkable and the back button works. *@
     <form class="workspace-filters" method="get" action="@RoutePaths.AccountWorkspaceAudit"
-          hx-get="@RoutePaths.AccountWorkspaceAudit"
-          hx-target="#workspace-audit-body"
-          hx-select="#workspace-audit-body"
-          hx-swap="outerHTML"
-          hx-push-url="true">
+          up-submit="true" up-target="#workspace-audit-app" up-history="true">
         <label class="workspace-label" for="ws-audit-action">@Loc["ws_audit_filter_action"]</label>
         <select id="ws-audit-action" name="action" class="db-input">
             <option value="">@Loc["ws_audit_all_actions"]</option>
@@ -58,22 +48,9 @@ else
         <a class="db-btn db-btn--ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
     </form>
 
-    <section id="workspace-audit-body"
-             hx-get="@ListUrl"
-             hx-trigger="load"
-             hx-target="#workspace-audit-body"
-             hx-select="#workspace-audit-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 @code {
     /// <summary>Only the workspace-scoped types can ever appear here — the rest are personal-timeline events.</summary>
@@ -101,7 +78,6 @@ else
     [SupplyParameterFromQuery(Name = "to")]
     public string? To { get; set; }
 
-    private bool isChunkRequest;
     private bool isAdmin;
     private WorkspaceAuditPage page = new([], 0);
 
@@ -110,7 +86,6 @@ else
         $"&from={Uri.EscapeDataString(From ?? string.Empty)}" +
         $"&to={Uri.EscapeDataString(To ?? string.Empty)}";
 
-    private string ListUrl => RoutePaths.AccountWorkspaceAudit + Query;
     private string ExportUrl => "/api/workspace/audit/export" + Query;
 
     private RenderFragment Chunk => @<section id="workspace-audit-body">
@@ -165,15 +140,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
-
         var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
         if (seat is null) return;
 

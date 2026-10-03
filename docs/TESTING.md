@@ -57,11 +57,12 @@ browser download needed.
 | Delivery manage (revoke #322, rename #318, .ics #232, filter/search #214, clone #218, expired archive #222, 404 #206, alias #311, daily cap #227, favorites #242) | `DeliveryManageTests` |
 | Trust/retention extras (burn, SHA-256, extend, stats) | `DeliveryTrustExtrasTests` |
 | Auth | `AuthFlowTests` |
-| Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountDeliveriesTests`, `UpgradeFlowTests` |
-| File requests (#16) — create/list/close/owner-isolation/digest | `FileRequestsApiTests`, `FileRequestDigestJobTests` |
-| Notification center (#246) — list/read/unread-count/sources/retention | `NotificationCenterTests`, `NotificationJobTests` |
+| Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountUnpolyMigrationTests` (direct GET/card layout, invoice and recurring owner/plan isolation), `AccountDeliveriesTests`, `UpgradeFlowTests` |
+| File requests (#16) — create/list/close/owner-isolation/digest; direct SSR, Unpoly cursor and no-JS pagination | `FileRequestsApiTests`, `FileRequestDigestJobTests`, `FileRequestsUnpolyBrowserTests` |
+| Notification center (#246) — list/read/unread-count/sources/retention, Unpoly filters/pagination and no-JS GET | `NotificationCenterTests`, `NotificationJobTests`, `NotificationUnpolyBrowserTests` (browser read-all stubs JSON API: EF InMemory lacks `ExecuteUpdateAsync`; server suite checks API and form CSRF/redirect) |
 | Upload from URL (#57) — Pro-gate/full-flow + SSRF guard | `UploadFromUrlTests`, `IpAddressSafetyTests` |
-| Extension requests (#233) — request/dedup/approve/reject/toggle | `ExtensionRequestTests` |
+| Extension requests (#233) — request/dedup/approve/reject/toggle and no-JS direct GET | `ExtensionRequestTests` |
+| Unpoly migration (in progress) — asset/head, public Vary, targeted fragment and browser swaps | `UnpolyMigrationTests`, `AccountUnpolyMigrationTests`, `WorkspaceTests` (audit, approvals, report, workspace roles, seat/brand/domain/channel/SIEM/backup GET isolation and secret non-disclosure), `AdminFeedbackUnpolyTests`, `ExtensionRequestTests`, `NotificationUnpolyBrowserTests`, `FileRequestsUnpolyBrowserTests`, `WorkspaceAuditUnpolyBrowserTests`, `AccountReloadUnpolyBrowserTests` (invoices, recurring, approvals, workspace, domain, brand, channel, SIEM, backup) |
 | Office document preview (#94) — docx/xlsx/pptx extraction + gating | `OfficeTextExtractorTests`, `OfficePreviewTests` |
 | Multi-recipient share (#37) — recipient limit + normalization | `MultiRecipientTests` |
 | Web push (#103) — subscribe/upsert/unsubscribe/vapid-key | `PushSubscriptionTests` |

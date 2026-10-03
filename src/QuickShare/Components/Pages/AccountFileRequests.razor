@@ -10,13 +10,6 @@
 
 <PageTitle>@Loc["account_requests_title"]</PageTitle>
 
-@if (isChunkRequest)
-{
-    @* Infinite-scroll append: only the chunk is selected out of this response. *@
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
@@ -52,22 +45,8 @@ else
         </div>
     </div>
 
-    @if (!isLoaded)
-    {
-        @* Shell skeleton — rendered instantly, no DB calls. *@
-        <section id="requests-body"
-                 hx-get="@RoutePaths.AccountFileRequests"
-                 hx-trigger="load"
-                 hx-target="#requests-body"
-                 hx-select="#requests-body"
-                 hx-swap="outerHTML"
-                 aria-busy="true">
-            <p class="db-text-muted">@Loc["account_requests_loading"]</p>
-        </section>
-    }
-    else
-    {
-        <section id="requests-body">
+    <section id="requests-body">
+        <div id="requests-pages">
             @if (items.Count == 0)
             {
                 <div class="account-deliveries-empty">
@@ -79,11 +58,11 @@ else
             {
                 @Chunk
             }
-        </section>
-    }
+        </div>
+        @NextPage
+    </section>
 
 </PageWrapper>
-}
 
 <script>
     // Create a request or a room (issues #16, #17).
@@ -193,12 +172,10 @@ else
     [SupplyParameterFromQuery(Name = CursorQueryKey)]
     public string? Cursor { get; set; }
 
-    private bool isLoaded;
-    private bool isChunkRequest;
     private List<FileRequestItem> items = [];
     private string? nextCursor;
 
-    /// <summary>Request rows plus the sentinel that pulls the next page into view — appended to itself.</summary>
+    /// <summary>One owner-scoped page of request rows.</summary>
     private RenderFragment Chunk => @<div class="@ChunkClass account-deliveries">
         @foreach (var item in items)
         {
@@ -260,15 +237,19 @@ else
             </article>
         }
 
+    </div>;
+
+    private RenderFragment NextPage => @<div class="account-deliveries-more">
         @if (nextCursor is not null)
         {
-            <div class="account-deliveries-more"
-                 hx-get="@BodyUrl(nextCursor)"
-                 hx-trigger="revealed"
-                 hx-target="this"
-                 hx-select=".@ChunkClass"
-                 hx-swap="outerHTML"
-                 aria-busy="true"></div>
+            <a id="requests-next-page" href="@BodyUrl(nextCursor)"
+               class="db-btn db-btn--ghost db-btn--sm"
+               up-defer="reveal" up-follow="false" up-history="false"
+               up-target="#requests-next-page, #requests-pages:after">@Loc["account_requests_load_more"]</a>
+        }
+        else
+        {
+            <span id="requests-next-page" hidden></span>
         }
     </div>;
 
@@ -281,18 +262,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        // Shell render: return immediately, no DB calls.
-        if (!isHtmxRequest) return;
-
-        isLoaded = true;
-        isChunkRequest = !string.IsNullOrEmpty(Cursor);
-
         var result = await Bus.Send<LightResults.Result<CursorPage<FileRequestItem>>>(
             new ListFileRequestsQuery(Cursor), CancellationToken.None);
 

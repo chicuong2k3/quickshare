@@ -16,6 +16,10 @@ feature split across two batches; the third is the reason agencies asked for a p
 `#81` composes rather than invents: sub-accounts are team seats (#106/#278), per-tenant API keys
 are the developer platform (#115), billing is PayOS. What did not exist was the address.
 
+The signed-in custom-domain settings page now renders the admin-scoped domain on direct SSR
+GET and uses Unpoly to refresh the section after mutations. This does not change the verified-host
+gate on public links/routes; native no-JS mutation forms remain pending.
+
 ## Custom domain (#81)
 
 ### The claim is not the grant

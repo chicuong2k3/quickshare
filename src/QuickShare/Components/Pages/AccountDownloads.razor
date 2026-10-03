@@ -1,14 +1,13 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/downloads"
+@layout MainLayout
 @attribute [Authorize]
 @using QuickShare.Data
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Nav
 
-<HtmxFragment>
 <div id="downloads-card" class="db-card account-card">
     <div class="db-card__body">
         <h3 class="db-h4">@Loc["account_downloads_title"]</h3>
@@ -31,11 +30,8 @@
         }
     </div>
 </div>
-</HtmxFragment>
 
 @code {
-    private const string HtmxRequestHeader = "HX-Request";
-    private const string HtmxRequestValue = "true";
 
     private sealed record DownloadItem(string FileName, DateTime DownloadedAt);
 
@@ -43,15 +39,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxRequestHeader].FirstOrDefault() != HtmxRequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

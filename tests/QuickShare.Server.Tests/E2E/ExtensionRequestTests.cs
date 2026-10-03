@@ -160,6 +160,40 @@ public sealed class ExtensionRequestTests : IClassFixture<TestWebAppFactory>
         }
     }
 
+    private const string ExtensionBodySelector = "#ext-body";
+
+    [Fact]
+    public async Task ListPage_DirectGet_RendersRequestsWithoutJavascript()
+    {
+        var (providerKey, shareCode, deliveryId) = await SeedAsync(allowRequests: true, DateTime.UtcNow.AddDays(-1));
+        var recipient = _factory.CreateClient();
+        await recipient.PostAsync($"/api/deliveries/{shareCode}/extension-request", content: null);
+
+        var sender = _factory.CreateAuthenticatedClient(providerKey);
+        var response = await sender.GetAsync($"/account/deliveries/{deliveryId}/extension-requests");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"ext-body\"", html);
+        Assert.Contains("id=\"ext-", html);
+    }
+
+    [Fact]
+    public async Task ListPage_UnpolyTarget_ContainsRequestedFragmentAndVariesByTarget()
+    {
+        var (providerKey, _, deliveryId) = await SeedAsync(allowRequests: true, DateTime.UtcNow.AddDays(-1));
+        var sender = _factory.CreateAuthenticatedClient(providerKey);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/account/deliveries/{deliveryId}/extension-requests");
+        request.Headers.Add(UnpolyHeaders.Target, ExtensionBodySelector);
+
+        var response = await sender.SendAsync(request);
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"ext-body\"", html);
+        Assert.Contains(UnpolyHeaders.Target, string.Join(", ", response.Headers.Vary));
+    }
+
     [Fact]
     public async Task List_OtherUsersDelivery_Returns404()
     {

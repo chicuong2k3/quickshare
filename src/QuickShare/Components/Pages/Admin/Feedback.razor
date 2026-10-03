@@ -11,9 +11,12 @@
 
 <PageTitle>@Loc["admin_feedback_page_title"]</PageTitle>
 
-@if (isHxRequest)
-{
-    <HtmxFragment>
+<PageWrapper id="admin-feedback-shell" Variant="PageVariant.Padded">
+    <div class="admin-reports-heading">
+        <h1 class="db-h1">@Loc["admin_feedback_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["admin_feedback_subtitle"]</p>
+    </div>
+
     <div id="admin-feedback-app" class="db-card admin-reports-card">
         <div class="db-card__body">
             @if (!isAdmin)
@@ -49,53 +52,17 @@
             }
         </div>
     </div>
-    </HtmxFragment>
-}
-else
-{
-    <PageWrapper id="admin-feedback-shell" Variant="PageVariant.Padded">
-        <div class="admin-reports-heading">
-            <h1 class="db-h1">@Loc["admin_feedback_title"]</h1>
-            <p class="db-p db-text-muted">@Loc["admin_feedback_subtitle"]</p>
-        </div>
-
-        @if (!isAdmin)
-        {
-            <div class="db-alert db-alert--error" role="alert">@Loc["admin_feedback_forbidden"]</div>
-        }
-        else
-        {
-            <HtmxFragment>
-            <div id="admin-feedback-app" class="db-card admin-reports-card"
-                 hx-get="/api/admin/feedback"
-                 hx-trigger="load"
-                 hx-target="#admin-feedback-app"
-                 hx-select="#admin-feedback-app"
-                 hx-swap="outerHTML">
-                <div class="db-card__body">
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                </div>
-            </div>
-            </HtmxFragment>
-        }
-    </PageWrapper>
-}
+</PageWrapper>
 
 @code {
-    private bool isHxRequest;
     private bool isAdmin;
     private List<FeedbackListItem>? feedback;
 
     protected override async Task OnInitializedAsync()
     {
         var httpContext = HttpContextAccessor.HttpContext;
-        var request = httpContext?.Request;
-        isHxRequest = request is not null
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() == HtmxHeaders.RequestValue;
-
         isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
-
-        if (!isHxRequest || !isAdmin)
+        if (!isAdmin)
         {
             return;
         }

@@ -11,9 +11,12 @@
 
 <PageTitle>@Loc["admin_analytics_page_title"]</PageTitle>
 
-@if (isHxRequest)
-{
-    <HtmxFragment>
+<PageWrapper id="admin-analytics-shell" Variant="PageVariant.Padded">
+    <div class="admin-analytics-heading">
+        <h1 class="db-h1">@Loc["admin_analytics_title"]</h1>
+        <p class="db-p db-text-muted">@Loc["admin_analytics_subtitle"]</p>
+    </div>
+
     <div id="admin-analytics-app" class="db-card admin-analytics-card">
         <div class="db-card__body">
             @if (!isAdmin)
@@ -121,55 +124,18 @@
             }
         </div>
     </div>
-    </HtmxFragment>
-}
-else
-{
-    <PageWrapper id="admin-analytics-shell" Variant="PageVariant.Padded">
-        <div class="admin-analytics-heading">
-            <h1 class="db-h1">@Loc["admin_analytics_title"]</h1>
-            <p class="db-p db-text-muted">@Loc["admin_analytics_subtitle"]</p>
-        </div>
-
-        @if (!isAdmin)
-        {
-            <div class="db-alert db-alert--error" role="alert">@Loc["admin_analytics_forbidden"]</div>
-        }
-        else
-        {
-            <HtmxFragment>
-            <div id="admin-analytics-app" class="db-card admin-analytics-card"
-                 hx-get="@RoutePaths.AdminAnalytics"
-                 hx-trigger="load"
-                 hx-target="#admin-analytics-app"
-                 hx-select="#admin-analytics-app"
-                 hx-swap="outerHTML">
-                <div class="db-card__body">
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                </div>
-            </div>
-            </HtmxFragment>
-        }
-    </PageWrapper>
-}
+</PageWrapper>
 
 @code {
-    private bool isHxRequest;
     private bool isAdmin;
     private AnalyticsDashboardResponse? data;
 
     protected override async Task OnInitializedAsync()
     {
         var httpContext = HttpContextAccessor.HttpContext;
-        var request = httpContext?.Request;
-        isHxRequest = request is not null
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() == HtmxHeaders.RequestValue;
-
         isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
 
-        if (!isHxRequest || !isAdmin)
+        if (!isAdmin)
         {
             return;
         }

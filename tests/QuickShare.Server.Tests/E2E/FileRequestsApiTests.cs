@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using QuickShare.Data;
 using QuickShare.Data.Entities;
+using QuickShare.Features.FileRequests.List;
 using QuickShare.Infrastructure.Constants;
 using QuickShare.Querying;
 
@@ -124,24 +125,26 @@ public sealed class FileRequestsApiTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task RequestsPage_LazyLoadsRows()
+    public async Task RequestsPage_DirectGet_RendersRowsWithoutJavascript()
     {
         var providerKey = Guid.CreateVersion7().ToString();
         await _factory.SeedUserAsync(providerKey);
         var client = _factory.CreateAuthenticatedClient(providerKey);
-        await CreateRequestAsync(client, "Lazy request");
+        await CreateRequestAsync(client, "Direct request");
 
-        // Shell render: instant, no rows yet.
-        var shell = await client.GetAsync(RoutePaths.AccountFileRequests);
-        Assert.Equal(HttpStatusCode.OK, shell.StatusCode);
-        var shellHtml = await shell.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("account-delivery__name", shellHtml);
+        var response = await client.GetAsync(RoutePaths.AccountFileRequests);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"requests-body\"", html);
+        Assert.Contains("account-delivery__name", html);
+        Assert.Contains("Direct request", html);
+        Assert.Contains("/r/", html);
 
-        // HTMX fetch: the request row appears with its open status.
-        var loaded = await GetHtmxAsync(client, RoutePaths.AccountFileRequests);
-        Assert.Contains("account-delivery__name", loaded);
-        Assert.Contains("Lazy request", loaded);
-        Assert.Contains("/r/", loaded);
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountFileRequests);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#requests-body");
+        var targeted = await client.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains("Direct request", await targeted.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -151,17 +154,50 @@ public sealed class FileRequestsApiTests : IClassFixture<TestWebAppFactory>
         await _factory.SeedUserAsync(providerKey);
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        var html = await GetHtmxAsync(client, RoutePaths.AccountFileRequests);
+        var html = await client.GetStringAsync(RoutePaths.AccountFileRequests);
         Assert.Contains("account-deliveries-empty", html);
         Assert.DoesNotContain("account-delivery__name", html);
     }
 
-    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    [Fact]
+    public async Task RequestsPage_CursorIsBookmarkableWithAndWithoutUnpoly()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
-        var response = await client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        return await response.Content.ReadAsStringAsync();
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            for (var index = 0; index <= FileRequestPaging.DefaultLimit; index++)
+            {
+                db.FileRequests.Add(new FileRequest
+                {
+                    OwnerId = user.Id,
+                    Code = Guid.CreateVersion7().ToString("N")[..FileRequest.CodeMaxLength],
+                    Title = $"paged-request-{index}",
+                    ExpiresAt = DateTime.UtcNow.AddDays(1),
+                    MaxFiles = 1,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        var first = await client.GetFromJsonAsync<CursorPage<RequestRow>>(FileRequestsApi);
+        Assert.NotNull(first?.NextCursor);
+        var firstHtml = await client.GetStringAsync(RoutePaths.AccountFileRequests);
+        Assert.Contains("id=\"requests-next-page\"", firstHtml);
+        Assert.Contains("up-defer=\"reveal\"", firstHtml);
+
+        var nextUrl = $"{RoutePaths.AccountFileRequests}?cursor={Uri.EscapeDataString(first.NextCursor)}";
+        var nextHtml = await client.GetStringAsync(nextUrl);
+        Assert.Contains("id=\"requests-body\"", nextHtml);
+        Assert.Contains("requests-chunk", nextHtml);
+        Assert.Contains("paged-request-", nextHtml);
+
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get, nextUrl);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#requests-pages");
+        var targeted = await client.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains("id=\"requests-pages\"", await targeted.Content.ReadAsStringAsync());
     }
 }

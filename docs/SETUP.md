@@ -24,6 +24,7 @@ Optional, only if you enable the feature:
 | Google Cloud OAuth client | Google login |
 | Brevo (SMTP) account | email notifications |
 | `cloudflared` | public URL via Cloudflare tunnel |
+| Slnmap 0.13.1 (.NET global tool) | optional semantic impact analysis over `QuickShare.slnx` via MCP |
 
 ## 2. One-time setup
 
@@ -33,6 +34,14 @@ cd quickshare
 dotnet restore
 dotnet tool restore          # installs dotnet-ef 10.0.10 (dotnet-tools.json)
 # npm deps auto-install on first dotnet build (BuildTypeScript MSBuild target)
+```
+
+For semantic impact analysis (optional): install `Slnmap` as a global .NET tool, run `slnmap analyze QuickShare.slnx --db slnmap.db` from the repository root, then point the `slnmap` MCP entry's `--db` argument to the **absolute** path of the resulting database. The generated `slnmap.db*` files are ignored by Git. Restart the MCP client after changing its configuration. Re-run analysis after modifying C# code; Razor markup is not indexed by Slnmap.
+
+```powershell
+dotnet tool install --global Slnmap
+slnmap analyze QuickShare.slnx --db slnmap.db
+slnmap status --db slnmap.db
 ```
 
 ## 3. Minimal local run (dev)

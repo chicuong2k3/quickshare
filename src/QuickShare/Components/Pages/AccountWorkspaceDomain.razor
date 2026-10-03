@@ -19,12 +19,6 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
@@ -34,31 +28,17 @@ else
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceDomain" />
 
-    <section id="workspace-domain-body"
-             hx-get="@RoutePaths.AccountWorkspaceDomain"
-             hx-trigger="load"
-             hx-target="#workspace-domain-body"
-             hx-select="#workspace-domain-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 <script src="/js/domain.js" defer></script>
 
 @code {
-    private bool isChunkRequest;
     private bool isAdmin;
     private WorkspaceDomain? domain;
 
-    private RenderFragment Chunk => @<section id="workspace-domain-body">
+    private RenderFragment Chunk => @<section id="workspace-domain-body" data-unpoly-reload>
         @if (!isAdmin)
         {
             <div class="db-card account-card workspace-card">
@@ -145,15 +125,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
-
         var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
         if (seat is null) return;
 

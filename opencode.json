@@ -1,6 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
+    "slnmap": {
+      "type": "local",
+      "command": ["C:/Users/nguye/.dotnet/tools/slnmap.exe", "serve", "--db", "C:/Users/nguye/OneDrive/Ảnh/codes/quickshare/slnmap.db"],
+      "enabled": true
+    },
     "vs-debug": {
       "type": "local",
       "command": [

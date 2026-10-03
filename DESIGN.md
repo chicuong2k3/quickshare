@@ -355,6 +355,9 @@ Mono 700 at 0.6875rem, uppercase, square, 3px/10px padding. The home features' c
 ### Navigation
 The navbar is the menu bar: card-white, 2px ink rule beneath. Items are Archivo 400 at 0.75rem, uppercase, tracked 0.14em, square, with a transparent 1px bottom hairline; hover inks that hairline; the active item takes the open cell — valley wash plus a valley-ink bottom border. Account section tabs (`.account-tabs`, global for HTMX partials) speak the same language with a `-1px` bottom margin merging their border with the strip's rule. The brand is a stacked lockup with a mono route-path line beneath it — wayfinding, not ornament.
 
+### Notification center and file-request pagination (Unpoly migration)
+The notification list keeps its valley-blue active filter tabs. "Load more notifications" and "Load more requests" links use the existing small ghost-button style; each is a real URL-backed link when JavaScript is off and becomes a reveal-triggered append with Unpoly. Requests update the next-page control without duplicating it. Direct entry renders the lists instead of permanent skeletons; no new color, type size or token is introduced.
+
 ### Progress / Gauge
 A slim track (4–10px) framed in a 1px ink hairline over putty-deep; the fill is **the rainbow** (`--db-progress-fill: var(--db-rainbow)`), width animating over `--db-transition-slow` (460ms). A spent delivery greys its fill to muted text color and drops the row to 0.65 opacity.
 

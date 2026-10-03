@@ -136,6 +136,62 @@ public sealed class NotificationCenterTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task Page_ReadAllForm_PostsWithoutJavascriptAndRedirects()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        await SeedAsync(_factory, user.Id, 2);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        var html = await client.GetStringAsync(RoutePaths.AccountNotificationCenter);
+        var token = AntiforgeryHelper.ExtractToken(html);
+        Assert.Contains("data-notification-read-all", html);
+
+        var response = await client.PostAsync(RoutePaths.AccountNotificationReadAll,
+            new FormUrlEncodedContent([
+                new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            ]));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadAsStringAsync();
+        Assert.Contains("notifications-body", result);
+        Assert.Contains("file-0.pdf", result);
+        Assert.Contains("notif--read", result);
+        Assert.DoesNotContain("notif--unread", result);
+        var unreadCount = await client.GetFromJsonAsync<UnreadCountResponse>($"{NotificationsApi}/unread-count");
+        Assert.Equal(0, unreadCount!.Count);
+    }
+
+    [Fact]
+    public async Task Page_ReadAllForm_AnonymousCannotMutate()
+    {
+        using var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+        var response = await client.PostAsync(
+            RoutePaths.AccountNotificationReadAll, new FormUrlEncodedContent([]));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(RoutePaths.Login, response.Headers.Location?.AbsolutePath);
+    }
+
+    [Fact]
+    public async Task Page_ReadAllForm_WithoutAntiforgeryToken_DoesNotWrite()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        await SeedAsync(_factory, user.Id, 1);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var response = await client.PostAsync(RoutePaths.AccountNotificationReadAll,
+            new FormUrlEncodedContent([]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var unreadCount = await client.GetFromJsonAsync<UnreadCountResponse>($"{NotificationsApi}/unread-count");
+        Assert.Equal(1, unreadCount!.Count);
+    }
+
+    [Fact]
     public async Task ListFilter_UnreadOnly()
     {
         var providerKey = Guid.CreateVersion7().ToString();
@@ -152,29 +208,65 @@ public sealed class NotificationCenterTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task Page_LazyLoadsNotifications()
+    public async Task Page_DirectGet_RendersNotificationsWithoutJavascript()
     {
         var providerKey = Guid.CreateVersion7().ToString();
         var user = await _factory.SeedUserAsync(providerKey);
         await SeedAsync(_factory, user.Id, 1);
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        var shell = await client.GetAsync(RoutePaths.AccountNotificationCenter);
-        Assert.Equal(HttpStatusCode.OK, shell.StatusCode);
-        var shellHtml = await shell.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("notif__message", shellHtml);
+        var response = await client.GetAsync(RoutePaths.AccountNotificationCenter);
+        var html = await response.Content.ReadAsStringAsync();
 
-        var loaded = await GetHtmxAsync(client, RoutePaths.AccountNotificationCenter);
-        Assert.Contains("notif__message", loaded);
-        Assert.Contains("file-0.pdf", loaded);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"notifications-body\"", html);
+        Assert.Contains("notif__message", html);
+        Assert.Contains("file-0.pdf", html);
+        Assert.Contains("up-target=\"#notifications-body\"", html);
     }
 
-    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    [Fact]
+    public async Task Page_UnpolyFilter_ContainsOnlyUnreadNotifications()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        await SeedAsync(_factory, user.Id, 1);
+        await SeedAsync(_factory, user.Id, 2, isRead: true);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"{RoutePaths.AccountNotificationCenter}?filter=unread");
+        request.Headers.Add(UnpolyHeaders.Target, "#notifications-body");
+
         var response = await client.SendAsync(request);
+        var html = await response.Content.ReadAsStringAsync();
+
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        return await response.Content.ReadAsStringAsync();
+        Assert.Contains("file-0.pdf", html);
+        Assert.DoesNotContain("file-1.pdf", html);
+        Assert.Contains("id=\"notifications-body\"", html);
+    }
+
+    [Fact]
+    public async Task Page_CursorDirectGet_RendersBookmarkablePageAndNextLink()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        await SeedAsync(_factory, user.Id, 35);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+        var first = await client.GetFromJsonAsync<CursorPage<NotificationRow>>(NotificationsApi);
+        Assert.NotNull(first?.NextCursor);
+
+        var firstHtml = await client.GetStringAsync(RoutePaths.AccountNotificationCenter);
+        Assert.Contains("up-defer=\"reveal\"", firstHtml);
+        Assert.Contains("id=\"notifications-next-page\"", firstHtml);
+
+        var cursorUrl = $"{RoutePaths.AccountNotificationCenter}?cursor={Uri.EscapeDataString(first.NextCursor)}";
+        var next = await client.GetAsync(cursorUrl);
+        var nextHtml = await next.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, next.StatusCode);
+        Assert.Contains("id=\"notifications-pages\"", nextHtml);
+        Assert.Contains("id=\"notifications-next-page\"", nextHtml);
+        Assert.Contains("notif__message", nextHtml);
     }
 }

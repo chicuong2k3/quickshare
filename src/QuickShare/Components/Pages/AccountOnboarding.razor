@@ -1,14 +1,13 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/onboarding"
+@layout MainLayout
 @attribute [Authorize]
 @using QuickShare.Data
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Nav
 
-<HtmxFragment>
 <div id="onboarding-card" class="db-card account-card account-onboarding" data-ai-action="account.onboarding">
     <div class="db-card__body">
         <div class="account-onboarding-head">
@@ -28,11 +27,8 @@
         </ul>
     </div>
 </div>
-</HtmxFragment>
 
 @code {
-    private const string HtmxRequestHeader = "HX-Request";
-    private const string HtmxRequestValue = "true";
     private const int StepCount = 4;
 
     private bool hasUpload;
@@ -47,15 +43,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxRequestHeader].FirstOrDefault() != HtmxRequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

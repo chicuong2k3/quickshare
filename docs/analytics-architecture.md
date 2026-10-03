@@ -67,7 +67,8 @@ navigator.sendBeacon('/api/analytics/track',
 ## Founder dashboard
 
 - **Page**: `/admin/analytics` (`Components/Pages/Admin/Analytics.razor`) —
-  HTMX lazy-load shell, admin-gated via `AdminGate` (email in `Admin:Emails`).
+  initial SSR data on direct GET and Unpoly-targeted GET, admin-gated via `AdminGate`
+  (email in `Admin:Emails`); no HX follow-up request.
 - **API**: `GET /api/admin/analytics` (admin-only) → `AnalyticsDashboardResponse`:
   - `DailyActiveUsers` — distinct visitor ids per day (default 30-day window)
   - `Funnel` — visitor → upload_started → upload_completed → download_completed

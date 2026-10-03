@@ -15,12 +15,6 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
@@ -30,22 +24,9 @@ else
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspace" />
 
-    <section id="workspace-body"
-             hx-get="@RoutePaths.AccountWorkspace"
-             hx-trigger="load"
-             hx-target="#workspace-body"
-             hx-select="#workspace-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 <script src="/js/workspace.js" defer></script>
 
@@ -55,11 +36,10 @@ else
     private const string RoleAdmin = "admin";
     private const string RoleOwner = "owner";
 
-    private bool isChunkRequest;
     private WorkspaceDto? workspace;
     private bool canCreate;
 
-    private RenderFragment Chunk => @<section id="workspace-body">
+    private RenderFragment Chunk => @<section id="workspace-body" data-unpoly-reload>
         @if (workspace is null)
         {
             <div class="db-card account-card workspace-card">
@@ -199,15 +179,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
-
         var result = await Bus.Send<LightResults.Result<WorkspaceDto>>(
             new GetWorkspaceQuery(), CancellationToken.None);
 

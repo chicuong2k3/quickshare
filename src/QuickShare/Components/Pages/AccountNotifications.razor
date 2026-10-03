@@ -1,13 +1,13 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/notifications"
+@layout MainLayout
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Nav
 
 <HtmxFragment>
 <div id="notifications-card" class="db-card account-card">
@@ -40,8 +40,6 @@
 </HtmxFragment>
 
 @code {
-    private const string HtmxRequestHeader = "HX-Request";
-    private const string HtmxRequestValue = "true";
 
     private bool emailOnDownload = true;
     private bool trackMyDownloads;
@@ -55,16 +53,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // HTMX partial for /account — direct browser hits render the bare card.
-        var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxRequestHeader].FirstOrDefault() != HtmxRequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

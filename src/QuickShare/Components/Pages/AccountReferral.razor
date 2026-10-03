@@ -1,13 +1,12 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @page "/account/referral"
+@layout MainLayout
 @attribute [Authorize]
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Nav
 
-<HtmxFragment>
 <div id="referral-card" class="db-card account-card">
     <div class="db-card__body">
         <h3 class="db-h4">@Loc["referral_title"]</h3>
@@ -23,7 +22,6 @@
         </p>
     </div>
 </div>
-</HtmxFragment>
 
 <script>
     window.copyReferralCode = function (btn) {
@@ -44,15 +42,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var request = HttpContextAccessor.HttpContext?.Request;
-        if (request is not null
-            && Microsoft.AspNetCore.Http.HttpMethods.IsGet(request.Method)
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() != HtmxHeaders.RequestValue)
-        {
-            Nav.NavigateTo(RoutePaths.Account);
-            return;
-        }
-
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

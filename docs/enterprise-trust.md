@@ -43,6 +43,11 @@ that exists but belongs to somebody else. Two properties matter:
 
 It costs one extra query, on a path that has already failed.
 
+The signed-in `/account/workspace/streaming` settings page now SSR-renders admin-scoped
+configuration on direct GET and refreshes its section via Unpoly. The secret stays out of
+HTML; the tenant-scoped query and streaming worker below are unchanged. No-JS mutation
+fallback remains migration work.
+
 ## SIEM streaming (`#191`)
 
 Enterprise SOC teams do not log into somebody else's UI. "We have an audit log" is not what

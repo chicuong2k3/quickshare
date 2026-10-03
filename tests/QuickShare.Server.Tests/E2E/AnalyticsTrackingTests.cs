@@ -370,10 +370,34 @@ public sealed class AnalyticsTrackingTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task AdminAnalyticsPage_Admin_Returns200()
+    public async Task AdminAnalyticsPage_Admin_RendersDataOnDirectAndTargetedGet()
     {
-        var client = _factory.CreateAuthenticatedClient();
+        using var client = _factory.CreateAuthenticatedClient();
         var response = await client.GetAsync(RoutePaths.AdminAnalytics);
+        var html = await response.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"admin-analytics-app\"", html);
+        Assert.Contains("admin-analytics-funnel", html);
+
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AdminAnalytics);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#admin-analytics-app");
+        var targeted = await client.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains("admin-analytics-funnel", await targeted.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task AdminAnalyticsPage_NonAdmin_CannotReadDashboard()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(providerKey);
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, providerKey);
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.EmailHeader, "non-admin@example.test");
+        client.DefaultRequestHeaders.Add(TestAuthDefaults.MfaVerifiedHeader, "1");
+
+        var html = await client.GetStringAsync(RoutePaths.AdminAnalytics);
+        Assert.Contains("id=\"admin-analytics-app\"", html);
+        Assert.DoesNotContain("admin-analytics-funnel", html);
     }
 }

@@ -7,6 +7,7 @@ public static class RoutePaths
     public const string Pricing = "/pricing";
     public const string Upgrade = "/upgrade";
     public const string Account = "/account";
+    public const string AccountProfile = "/account/profile";
     public const string AccountBilling = "/account/billing";
     public const string AccountDeliveries = "/account/deliveries";
     public const string AccountDeliveryLabels = "/account/deliveries/labels";
@@ -15,6 +16,7 @@ public static class RoutePaths
     public const string AccountSecurityActivity = "/account/security/activity";
     public const string AccountNotifications = "/account/notifications";
     public const string AccountNotificationCenter = "/account/notifications/inbox";
+    public const string AccountNotificationReadAll = "/account/notifications/inbox/read-all";
     public const string AccountOnboarding = "/account/onboarding";
     public const string AccountDownloads = "/account/downloads";
     public const string AccountFileRequests = "/account/requests";

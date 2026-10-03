@@ -30,6 +30,7 @@ using Fido2NetLib;
 using QuickShare.Features.Auth.Saml;
 using QuickShare.Features.Auth.Sso;
 using ZiggyCreatures.Caching.Fusion;
+using Unpoly.Blazor;
 
 
 // ── Load .env file (if present) for local development ──
@@ -382,6 +383,9 @@ builder.Services.AddRazorComponents()
     .AddHtmx();
 builder.Services.AddLocalization();
 builder.Services.AddAntiforgery();
+// Gradual migration: only explicit up-follow/up-submit controls use Unpoly.
+// Global interception would hijack unconverted HTMX links and forms.
+builder.Services.AddUnpoly(options => options.HandleAllLinksAndForms = false);
 
 // Shared OAuth post-login hook (Google + GitHub): tag the identity with the
 // provider, register/find the user, and run new-device tracking (issue #149).
@@ -709,6 +713,7 @@ app.UseMiddleware<QuickShare.Infrastructure.Middleware.CustomDomainMiddleware>()
 app.UseMiddleware<RobotsNoIndexMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
+app.UseUnpoly();
 app.UseAntiforgery();
 app.UseHtmxAntiforgery();
 

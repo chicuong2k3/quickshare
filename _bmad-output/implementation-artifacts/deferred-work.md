@@ -12,3 +12,6 @@ Tracked items that were identified during reviews and deferred for later impleme
 - source_spec: `_bmad-output/implementation-artifacts/spec-gh-107-orphan-r2-sweep.md`
   summary: OrphanSweepJob materializes all stale keys and all DB StoragePaths in memory per cycle; switch to per-page streaming if the bucket reaches millions of objects.
   evidence: Review finding (Blind Hunter #6 / Edge Case Hunter #10) — correct at current scale, marked with a ponytail ceiling comment in OrphanSweepJob.cs.
+- source_spec: none
+  summary: Replace DAUB styling and components with Unpoly.Blazor.Shadcn across the application.
+  evidence: User selected [S] to separate the independently shippable HTMX-to-Unpoly behavior migration from the DAUB-to-Shadcn visual migration; retain existing DESIGN.md identity in the first phase.
