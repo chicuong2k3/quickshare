@@ -18,71 +18,71 @@
 *@
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="db-h1">@Loc["dpa_title"]</h1>
-        <p class="db-p db-text-muted legal__version">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["dpa_title"]</h1>
+        <p class="text-muted-foreground legal__version">
             @Loc["dpa_version", DpaTerms.CurrentVersion, DpaTerms.CurrentVersionDate.ToString("yyyy-MM-dd")]
         </p>
-        <p class="db-p">@Loc["dpa_subtitle"]</p>
+        <p>@Loc["dpa_subtitle"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_s1_title"]</h2>
-        <p class="db-p">@Loc["dpa_s1_body"]</p>
+        <h2 class="text-2xl font-bold">@Loc["dpa_s1_title"]</h2>
+        <p>@Loc["dpa_s1_body"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_s2_title"]</h2>
-        <p class="db-p">@Loc["dpa_s2_body"]</p>
+        <h2 class="text-2xl font-bold">@Loc["dpa_s2_title"]</h2>
+        <p>@Loc["dpa_s2_body"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_s3_title"]</h2>
-        <p class="db-p">@Loc["dpa_s3_body"]</p>
+        <h2 class="text-2xl font-bold">@Loc["dpa_s3_title"]</h2>
+        <p>@Loc["dpa_s3_body"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_s4_title"]</h2>
-        <p class="db-p">@Loc["dpa_s4_body"]</p>
+        <h2 class="text-2xl font-bold">@Loc["dpa_s4_title"]</h2>
+        <p>@Loc["dpa_s4_body"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_s5_title"]</h2>
-        <p class="db-p">@Loc["dpa_s5_body"]</p>
+        <h2 class="text-2xl font-bold">@Loc["dpa_s5_title"]</h2>
+        <p>@Loc["dpa_s5_body"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_s6_title"]</h2>
-        <p class="db-p">@Loc["dpa_s6_body"]</p>
+        <h2 class="text-2xl font-bold">@Loc["dpa_s6_title"]</h2>
+        <p>@Loc["dpa_s6_body"]</p>
 
-        <h2 class="db-h2">@Loc["dpa_sign_title"]</h2>
+        <h2 class="text-2xl font-bold">@Loc["dpa_sign_title"]</h2>
 
         @if (!isAuthenticated)
         {
-            <p class="db-p db-text-muted">@Loc["dpa_sign_login"]</p>
+            <p class="text-muted-foreground">@Loc["dpa_sign_login"]</p>
         }
         else if (signature is not null && signature.Version == DpaTerms.CurrentVersion)
         {
-            <p class="db-p">
+            <p>
                 @Loc["dpa_signed_by", signature.SignerName, signature.CompanyName, signature.SignedAt.ToLocalTime().ToString("f")]
             </p>
-            <button type="button" class="db-btn db-btn--ghost db-btn--sm dpa-print-hide"
+            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dpa-print-hide"
                     onclick="window.print()" data-ai-action="dpa.print">@Loc["dpa_print"]</button>
         }
         else
         {
             @if (signature is not null)
             {
-                <p class="db-p db-text-muted">@Loc["dpa_resign", signature.Version, DpaTerms.CurrentVersion]</p>
+                <p class="text-muted-foreground">@Loc["dpa_resign", signature.Version, DpaTerms.CurrentVersion]</p>
             }
 
             <div class="workspace-form dpa-print-hide">
                 <label class="workspace-label" for="dpa-company">@Loc["dpa_company"]</label>
-                <input id="dpa-company" class="db-input" type="text"
+                <Input id="dpa-company" type="text"
                        maxlength="@DpaSignature.CompanyNameMaxLength" />
 
                 <label class="workspace-label" for="dpa-signer">@Loc["dpa_signer"]</label>
-                <input id="dpa-signer" class="db-input" type="text"
+                <Input id="dpa-signer" type="text"
                        maxlength="@DpaSignature.SignerMaxLength" />
 
                 <label class="workspace-label" for="dpa-email">@Loc["dpa_email"]</label>
-                <input id="dpa-email" class="db-input" type="email" value="@userEmail" />
+                <Input id="dpa-email" type="email" value="@userEmail" />
 
-                <button type="button" class="db-btn db-btn--primary"
+                <button type="button" data-slot="button" data-variant="default"
                         data-signed-label="@Loc["dpa_signed_ok"]"
                         onclick="window.quickShareDpa.sign(this)"
                         data-ai-action="dpa.sign">@Loc["dpa_sign_button"]</button>
             </div>
         }
 
-        <p class="db-p db-text-muted">@Loc["dpa_not_legal_advice"]</p>
+        <p class="text-muted-foreground">@Loc["dpa_not_legal_advice"]</p>
     </article>
 </PageWrapper>
 

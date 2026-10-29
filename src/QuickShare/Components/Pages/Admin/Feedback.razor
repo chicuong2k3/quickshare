@@ -13,23 +13,23 @@
 
 <PageWrapper id="admin-feedback-shell" Variant="PageVariant.Padded">
     <div class="admin-reports-heading">
-        <h1 class="db-h1">@Loc["admin_feedback_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["admin_feedback_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["admin_feedback_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_feedback_subtitle"]</p>
     </div>
 
-    <div id="admin-feedback-app" class="db-card admin-reports-card">
-        <div class="db-card__body">
+    <Card id="admin-feedback-app" class="admin-reports-card">
+        <CardContent>
             @if (!isAdmin)
             {
-                <div class="db-alert db-alert--error" role="alert">@Loc["admin_feedback_forbidden"]</div>
+                <p class="text-destructive" role="alert">@Loc["admin_feedback_forbidden"]</p>
             }
             else if (feedback is null)
             {
-                <p class="db-p db-text-muted">@Loc["admin_feedback_error"]</p>
+                <p class="text-muted-foreground">@Loc["admin_feedback_error"]</p>
             }
             else if (feedback.Count == 0)
             {
-                <p class="db-p db-text-muted">@Loc["admin_feedback_empty"]</p>
+                <p class="text-muted-foreground">@Loc["admin_feedback_empty"]</p>
             }
             else
             {
@@ -38,20 +38,20 @@
                     {
                         <li class="admin-report-item">
                             <div class="admin-report-item__head">
-                                <span class="db-badge">@item.Sentiment</span>
-                                <span class="db-badge">@item.Page</span>
+                                <Badge>@item.Sentiment</Badge>
+                                <Badge>@item.Page</Badge>
                                 <span class="miura-spec">@item.CreatedAt.ToLocalTime().ToString("g")</span>
                             </div>
                             @if (!string.IsNullOrWhiteSpace(item.Message))
                             {
-                                <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@item.Message</p>
+                                <p style="margin-top: 0.5rem; font-size: 0.875rem">@item.Message</p>
                             }
                         </li>
                     }
                 </ul>
             }
-        </div>
-    </div>
+        </CardContent>
+    </Card>
 </PageWrapper>
 
 @code {

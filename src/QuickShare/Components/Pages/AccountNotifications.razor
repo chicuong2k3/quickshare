@@ -5,51 +5,46 @@
 @attribute [Authorize]
 @using QuickShare.Data
 @using QuickShare.Features.Users.Shared
+@using QuickShare.Features.Users.Notifications
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 
-<HtmxFragment>
-<div id="notifications-card" class="db-card account-card">
-    <div class="db-card__body">
-        <h3 class="db-h4">@Loc["account_notifications_title"]</h3>
+<Card id="notifications-card" class="my-4">
+    <div class="px-6">
+        <h3 class="text-lg font-semibold">@Loc["account_notifications_title"]</h3>
 
         @if (!string.IsNullOrEmpty(formError))
         {
-            <div class="db-alert db-alert--error" style="margin-top: 0.75rem" role="alert">@formError</div>
+            <div class="mt-3 text-destructive" role="alert">@formError</div>
         }
 
-        <form class="account-notifications" hx-post="@RoutePaths.AccountNotifications" hx-target="#notifications-card" hx-select="#notifications-card" hx-swap="outerHTML" onpost="@HandleToggle">
-            <label class="account-notifications__item">
-                <input type="checkbox" name="emailOnDownload" checked="@emailOnDownload" onchange="this.form.requestSubmit()" />
+        <form method="post" action="@UpdateNotificationPreferencesFormEndpoint.FormRoute" class="mt-4 space-y-4">
+            <AntiforgeryToken />
+            <label class="flex items-start gap-3">
+                <input type="checkbox" name="@UpdateNotificationPreferencesFormEndpoint.EmailOnDownloadField" checked="@emailOnDownload" />
                 <span>
-                    <span class="account-notifications__label">@Loc["account_notifications_download_label"]</span>
-                    <span class="db-text-muted account-notifications__desc">@Loc["account_notifications_download_desc"]</span>
+                    <span class="block font-medium">@Loc["account_notifications_download_label"]</span>
+                    <span class="block text-sm text-muted-foreground">@Loc["account_notifications_download_desc"]</span>
                 </span>
             </label>
-            <label class="account-notifications__item">
-                <input type="checkbox" name="trackMyDownloads" checked="@trackMyDownloads" onchange="this.form.requestSubmit()" />
+            <label class="flex items-start gap-3">
+                <input type="checkbox" name="@UpdateNotificationPreferencesFormEndpoint.TrackMyDownloadsField" checked="@trackMyDownloads" />
                 <span>
-                    <span class="account-notifications__label">@Loc["account_notifications_track_label"]</span>
-                    <span class="db-text-muted account-notifications__desc">@Loc["account_notifications_track_desc"]</span>
+                    <span class="block font-medium">@Loc["account_notifications_track_label"]</span>
+                    <span class="block text-sm text-muted-foreground">@Loc["account_notifications_track_desc"]</span>
                 </span>
             </label>
+            <Button Type="submit">@Loc["account_profile_save_btn"]</Button>
         </form>
     </div>
-</div>
-</HtmxFragment>
+</Card>
 
 @code {
 
     private bool emailOnDownload = true;
     private bool trackMyDownloads;
     private string? formError;
-
-    [SupplyParameterFromForm(Name = "emailOnDownload")]
-    private bool FormEmailOnDownload { get; set; }
-
-    [SupplyParameterFromForm(Name = "trackMyDownloads")]
-    private bool FormTrackMyDownloads { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,28 +59,10 @@
             emailOnDownload = prefs.EmailOnDownload;
             trackMyDownloads = prefs.TrackMyDownloads;
         }
-        catch { }
-    }
-
-    private async Task HandleToggle()
-    {
-        formError = null;
-        try
-        {
-            var ct = CancellationToken.None;
-            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
-            await Db.Users
-                .Where(u => u.Id == user.Id)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(u => u.EmailOnDownload, FormEmailOnDownload)
-                    .SetProperty(u => u.TrackMyDownloads, FormTrackMyDownloads), ct);
-
-            emailOnDownload = FormEmailOnDownload;
-            trackMyDownloads = FormTrackMyDownloads;
-        }
         catch
         {
             formError = Loc["account_notifications_error"];
         }
     }
+
 }

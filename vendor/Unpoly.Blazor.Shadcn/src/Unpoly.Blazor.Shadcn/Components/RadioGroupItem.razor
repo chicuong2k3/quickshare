@@ -1,0 +1,40 @@
+@inherits UiComponentBase
+
+@* A radio's `name` is what groups it, and it has to be identical across the group — the DOM,
+   not the wrapper, is what decides membership. So <RadioGroup> is presentation only and the
+   name is written on each item, as it is in plain HTML. *@
+
+@* Two-way binding via @bind / @bind-Checked. When the caller passes CheckedChanged, the input
+   renders checked="@Checked" with an @onchange that raises it. The unbound branch renders
+   checked="@Checked" as well: a bare `checked` binds to the Checked parameter and never
+   reaches the splat, so omitting it here silently drops the caller's value. *@
+@if (CheckedChanged.HasDelegate)
+{
+    <input type="radio" data-slot="radio-group-item" checked="@Checked" @onchange="OnChange" class="@Classes" @attributes="AdditionalAttributes" />
+}
+else
+{
+    <input type="radio" data-slot="radio-group-item" checked="@Checked" class="@Classes" @attributes="AdditionalAttributes" />
+}
+
+@code {
+    /// <summary>The bound checked state, from <c>@bind</c>/<c>@bind-Checked</c>.</summary>
+    [Parameter] public bool Checked { get; set; }
+
+    /// <summary>Raises on change when bound. Its presence decides whether the component renders
+    /// checked/@onchange or lets the <c>@attributes</c> splat do it.</summary>
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await CheckedChanged.InvokeAsync(e.Value is not null && e.Value is not false
+            && !(e.Value is string s && s == "false"));
+
+    const string Base =
+        "aspect-square size-4 shrink-0 rounded-full border border-input text-primary " +
+        "shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring " +
+        "focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed " +
+        "disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 " +
+        "dark:bg-input/30 dark:aria-invalid:ring-destructive/40";
+
+    string Classes => Cn(Base, Class);
+}

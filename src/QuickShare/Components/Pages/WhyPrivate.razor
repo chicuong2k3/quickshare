@@ -11,11 +11,11 @@
 
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="db-h1">@(IsVi ? "Chúng tôi không đọc file của bạn" : "We don't read your files")</h1>
+        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Chúng tôi không đọc file của bạn" : "We don't read your files")</h1>
 
         @if (IsVi)
         {
-            <p class="db-p db-text-muted">Năm 2025, WeTransfer đổi điều khoản cho phép dùng file để huấn luyện AI — hàng triệu người rời bỏ. QuickShareCloud đứng về phía ngược lại: máy chủ của chúng tôi không đọc được nội dung file của bạn.</p>
+            <p class="text-muted-foreground">Năm 2025, WeTransfer đổi điều khoản cho phép dùng file để huấn luyện AI — hàng triệu người rời bỏ. QuickShareCloud đứng về phía ngược lại: máy chủ của chúng tôi không đọc được nội dung file của bạn.</p>
 
             <div class="badges">
                 <span class="badge --encrypted">AES-256-GCM</span>
@@ -23,8 +23,8 @@
                 <span class="badge --sovereign">Không huấn luyện AI</span>
             </div>
 
-            <h2 class="db-h2">Điều chúng tôi làm được</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">Điều chúng tôi làm được</h2>
+            <ul class="legal__list">
                 <li><strong>Mã hoá đầu-cuối:</strong> file được mã hoá ngay trong trình duyệt của bạn (AES-256-GCM) trước khi tải lên; chìa khoá nằm trong liên kết, máy chủ không giữ.</li>
                 <li><strong>Tự xoá:</strong> file bị xoá khi liên kết hết hạn (2h–7 ngày với gói miễn phí). Không giữ bản sao lâu hơn mức cần.</li>
                 <li><strong>Không huấn luyện AI:</strong> chúng tôi cam kết không dùng file của bạn để huấn luyện mô hình.</li>
@@ -32,15 +32,15 @@
                 <li><strong>P2P:</strong> truyền trực tiếp giữa hai trình duyệt — không qua máy chủ lưu trữ.</li>
             </ul>
 
-            <h2 class="db-h2">Điều chúng tôi không giấu</h2>
-            <p class="db-p">Thành thật: chúng tôi vẫn thấy metadata — tên file, kích thước, thời điểm, địa chỉ IP, email tài khoản, sự kiện thanh toán. "Zero-knowledge" áp dụng cho nội dung, không áp dụng cho metadata. Chính sách đầy đủ tại <a class="db-link" href="@RoutePaths.Privacy">Chính sách quyền riêng tư</a>.</p>
+            <h2 class="text-2xl font-bold">Điều chúng tôi không giấu</h2>
+            <p>Thành thật: chúng tôi vẫn thấy metadata — tên file, kích thước, thời điểm, địa chỉ IP, email tài khoản, sự kiện thanh toán. "Zero-knowledge" áp dụng cho nội dung, không áp dụng cho metadata. Chính sách đầy đủ tại <a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Privacy">Chính sách quyền riêng tư</a>.</p>
 
-            <h2 class="db-h2">Dữ liệu nằm ở đâu</h2>
-            <p class="db-p">Lưu trữ trên Cloudflare R2 (khu vực Châu Á-Thái Bình Dương); phân phối qua mạng Cloudflare. Dữ liệu phải tuân theo luật pháp Việt Nam (Nghị định 13/2023/NĐ-CP).</p>
+            <h2 class="text-2xl font-bold">Dữ liệu nằm ở đâu</h2>
+            <p>Lưu trữ trên Cloudflare R2 (khu vực Châu Á-Thái Bình Dương); phân phối qua mạng Cloudflare. Dữ liệu phải tuân theo luật pháp Việt Nam (Nghị định 13/2023/NĐ-CP).</p>
         }
         else
         {
-            <p class="db-p db-text-muted">In 2025 WeTransfer changed its terms to allow AI training on files — millions left. QuickShareCloud stands on the opposite side: our servers cannot read your file contents.</p>
+            <p class="text-muted-foreground">In 2025 WeTransfer changed its terms to allow AI training on files — millions left. QuickShareCloud stands on the opposite side: our servers cannot read your file contents.</p>
 
             <div class="badges">
                 <span class="badge --encrypted">AES-256-GCM</span>
@@ -48,8 +48,8 @@
                 <span class="badge --sovereign">No AI training</span>
             </div>
 
-            <h2 class="db-h2">What we do</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">What we do</h2>
+            <ul class="legal__list">
                 <li><strong>End-to-end encryption:</strong> files are encrypted in your browser (AES-256-GCM) before upload; the key lives in the link, not on our server.</li>
                 <li><strong>Auto-delete:</strong> files are deleted when the link expires (2h–7 days on the free plan). We keep no copy longer than needed.</li>
                 <li><strong>No AI training:</strong> we pledge never to train models on your files.</li>
@@ -57,14 +57,14 @@
                 <li><strong>P2P:</strong> direct browser-to-browser transfer — never stored on our servers.</li>
             </ul>
 
-            <h2 class="db-h2">What we don't hide</h2>
-            <p class="db-p">Honestly: we still see metadata — file names, sizes, timestamps, IP addresses, account email, payment events. Zero-knowledge covers content, not metadata. Full policy at <a class="db-link" href="@RoutePaths.Privacy">Privacy Policy</a>.</p>
+            <h2 class="text-2xl font-bold">What we don't hide</h2>
+            <p>Honestly: we still see metadata — file names, sizes, timestamps, IP addresses, account email, payment events. Zero-knowledge covers content, not metadata. Full policy at <a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Privacy">Privacy Policy</a>.</p>
 
-            <h2 class="db-h2">Where your data lives</h2>
-            <p class="db-p">Stored on Cloudflare R2 (Asia-Pacific); served through Cloudflare's network. Data is subject to Vietnamese law (Decree 13/2023/ND-CP).</p>
+            <h2 class="text-2xl font-bold">Where your data lives</h2>
+            <p>Stored on Cloudflare R2 (Asia-Pacific); served through Cloudflare's network. Data is subject to Vietnamese law (Decree 13/2023/ND-CP).</p>
         }
 
-        <p class="db-p"><a class="db-link" href="@RoutePaths.Send">@(IsVi ? "Gửi file mã hoá đầu-cuối →" : "Send an end-to-end encrypted file →")</a></p>
+        <p><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Send">@(IsVi ? "Gửi file mã hoá đầu-cuối →" : "Send an end-to-end encrypted file →")</a></p>
     </article>
 </PageWrapper>
 

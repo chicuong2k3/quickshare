@@ -1,0 +1,39 @@
+@inherits UiComponentBase
+
+@* A value, not a link — which is what separates this from a command palette, where every row
+   goes somewhere. Choosing one writes the hidden input and closes the list. *@
+
+<button type="button" data-slot="combobox-item" role="option" data-value="@Value"
+        data-keywords="@Keywords" data-label="@Label" aria-selected="@(Selected ? "true" : "false")"
+        data-selected="@(Selected ? "true" : null)" data-disabled="@(Disabled ? "" : null)"
+        disabled="@Disabled" class="@Classes" @attributes="AdditionalAttributes">
+    @ChildContent
+    <ComboboxItemIndicator />
+</button>
+
+@code {
+    /// <summary>What gets posted. The label is the child content.</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = default!;
+
+    /// <summary>
+    /// What the trigger and the chip should read when this row is chosen. Only needed when the
+    /// row is more than its label: the fallback is the row's own text, and for an item carrying
+    /// an avatar and a description that comes back as all three run together.
+    /// </summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Extra words this row should match. Space separated.</summary>
+    [Parameter] public string? Keywords { get; set; }
+
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    const string Base =
+        "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pe-8 ps-2 " +
+        "text-control outline-hidden select-none data-highlighted:bg-accent " +
+        "data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none " +
+        "data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 " +
+        "[&_svg:not([class*='size-'])]:size-4";
+
+    string Classes => Cn(Base, Class);
+}

@@ -18,30 +18,30 @@
     @if (Request is null)
     {
         <section class="hero">
-            <h1 class="db-h1">@Loc["request_unavailable_title"]</h1>
-            <p class="db-p db-text-muted">@Loc["request_unavailable_body"]</p>
+            <h1 class="text-3xl font-bold tracking-tight">@Loc["request_unavailable_title"]</h1>
+            <p class="text-muted-foreground">@Loc["request_unavailable_body"]</p>
         </section>
     }
     else
     {
         <section class="hero">
-            <h1 class="db-h1">@Request.Title</h1>
-            <p class="db-p db-text-muted">@Loc["request_from", Request.OwnerName]</p>
+            <h1 class="text-3xl font-bold tracking-tight">@Request.Title</h1>
+            <p class="text-muted-foreground">@Loc["request_from", Request.OwnerName]</p>
             @if (!string.IsNullOrWhiteSpace(Request.Message))
             {
-                <p class="db-p">@Request.Message</p>
+                <p>@Request.Message</p>
             }
         </section>
 
-        <div class="db-card account-card">
-            <div class="db-card__body">
+        <div class="account-card" data-slot="card">
+            <div class="px-(--card-spacing)">
                 @if (Request.IsClosed)
                 {
-                    <p class="db-p">@Loc["request_closed"]</p>
+                    <p>@Loc["request_closed"]</p>
                 }
                 else
                 {
-                    <p class="db-p db-text-muted">
+                    <p class="text-muted-foreground">
                         @Loc["request_limits", Request.CurrentFileCount, Request.MaxFiles, Bytes(Request.CurrentTotalBytes), Bytes(Request.MaxTotalBytes)]
                     </p>
 
@@ -50,11 +50,11 @@
                        fragment, and there is nobody to hand that key to — the owner has to be
                        able to open what was dropped. Saying so is the whole difference between
                        a design decision and a broken promise. *@
-                    <p class="db-p db-text-muted request-note">@Loc["request_no_e2e"]</p>
+                    <p class="text-muted-foreground request-note">@Loc["request_no_e2e"]</p>
 
-                    <input type="file" id="request-file" class="db-input" multiple
+                    <input type="file" id="request-file" class="rounded-md border bg-transparent px-3 py-1 text-sm" multiple
                            aria-label="@Loc["request_choose"]" />
-                    <button type="button" class="db-btn db-btn--primary" style="margin-top:1rem"
+                    <button type="button" data-slot="button" data-variant="default" style="margin-top:1rem"
                             onclick="requestUpload.send(this)"
                             data-code="@Code"
                             data-uploading="@Loc["request_uploading"]"
@@ -62,7 +62,7 @@
                             data-failed="@Loc["request_failed"]"
                             data-ai-action="request.upload">@Loc["request_send"]</button>
 
-                    <p id="request-status" class="db-p" role="status" aria-live="polite"></p>
+                    <p id="request-status" role="status" aria-live="polite"></p>
                 }
             </div>
         </div>
@@ -72,9 +72,9 @@
            link — that is the difference between a shared room and a private request. *@
         @if (IsRoom && Files.Count > 0)
         {
-            <div class="db-card account-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["request_room_files", Files.Count]</h2>
+            <div class="account-card" data-slot="card">
+                <div class="px-(--card-spacing)">
+                    <h2 class="text-xl font-semibold">@Loc["request_room_files", Files.Count]</h2>
                     <ul class="dl-files__list">
                         @foreach (var file in Files)
                         {

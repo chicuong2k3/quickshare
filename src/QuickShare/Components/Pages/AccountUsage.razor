@@ -7,63 +7,61 @@
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 
-<div id="usage-card" class="db-card account-card account-usage">
-    <div class="db-card__body">
-        <h3 class="db-h4 account-usage__title">@Loc["account_usage_title"]</h3>
+<Card id="usage-card" class="my-4 w-full max-w-md p-6">
+        <h3 class="mb-4 text-lg font-semibold">@Loc["account_usage_title"]</h3>
         @if (unlimited)
         {
-            <p class="db-p db-text-muted account-usage__unlimited">@Loc["account_usage_unlimited"]</p>
+            <p class="text-muted-foreground">@Loc["account_usage_unlimited"]</p>
         }
         else
         {
-            <div class="account-usage-bar" role="meter" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100" aria-label="@Loc["account_usage_title"]">
-                <div class="account-usage-bar__fill @barClass" style="width: @barWidth%"></div>
+            <div class="h-2.5 w-full overflow-hidden rounded-full bg-muted" role="meter" aria-valuenow="@barWidth" aria-valuemin="0" aria-valuemax="100" aria-label="@Loc["account_usage_title"]">
+                <div class="h-full transition-[width] motion-reduce:transition-none @barClass" style="width: @barWidth%"></div>
             </div>
-            <div class="account-usage-meta">
-                <span class="db-text-muted">@Loc["account_usage_summary", usedText, quotaText]</span>
-                <span class="account-usage-pct">@pct%</span>
+            <div class="mt-2 flex items-baseline justify-between gap-3 text-sm">
+                <span class="text-muted-foreground">@Loc["account_usage_summary", usedText, quotaText]</span>
+                <span class="font-mono">@pct%</span>
             </div>
             @if (pct >= 70)
             {
-                <a href="@RoutePaths.Upgrade" class="db-btn db-btn--primary db-btn--sm" style="margin-top: 0.75rem" data-ai-action="usage.upgrade">@Loc["account_usage_upgrade"]</a>
+                <Button Href="@RoutePaths.Upgrade" Size="sm" class="mt-3" data-ai-action="usage.upgrade">@Loc["account_usage_upgrade"]</Button>
             }
         }
 
-        <p class="db-text-muted" style="margin-top: 0.75rem; font-size: 0.75rem">@Loc["account_usage_rate_limit", RateLimitPerMinute]</p>
+        <p class="mt-3 text-xs text-muted-foreground">@Loc["account_usage_rate_limit", RateLimitPerMinute]</p>
 
 
         @* Largest files (issue #315) — the cleanup shortlist, biggest first. *@
         @if (largest.Count > 0)
         {
-            <h4 class="db-h5 account-usage__largest-title">@Loc["account_usage_largest_title"]</h4>
-            <ul class="account-usage-largest">
+            <h4 class="mb-2 mt-5 font-semibold">@Loc["account_usage_largest_title"]</h4>
+            <ul class="mb-3">
                 @foreach (var file in largest)
                 {
-                    <li class="account-usage-largest__row">
-                        <span class="account-usage-largest__name" title="@file.FileName">@file.FileName</span>
-                        <span class="account-usage-largest__size db-text-muted">@FormatBytes(file.FileSize)</span>
+                    <li class="flex justify-between gap-3 py-1 text-sm">
+                        <span class="min-w-0 truncate" title="@file.FileName">@file.FileName</span>
+                        <span class="whitespace-nowrap font-mono tabular-nums text-muted-foreground">@FormatBytes(file.FileSize)</span>
                     </li>
                 }
             </ul>
-            <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost db-btn--sm">@Loc["account_usage_largest_manage"]</a>
+            <Button Href="@RoutePaths.AccountDeliveries" Variant="ghost" Size="sm">@Loc["account_usage_largest_manage"]</Button>
         }
 
         @* Recent download activity (issue #33) *@
         @if (recentDownloads.Count > 0)
         {
-            <h4 class="db-h5 account-usage__largest-title">@Loc["account_usage_recent_title"]</h4>
-            <ul class="account-usage-largest">
+            <h4 class="mb-2 mt-5 font-semibold">@Loc["account_usage_recent_title"]</h4>
+            <ul class="mb-3">
                 @foreach (var dl in recentDownloads)
                 {
-                    <li class="account-usage-largest__row">
-                        <span class="account-usage-largest__name" title="@dl.FileName">@dl.FileName</span>
-                        <span class="account-usage-largest__size db-text-muted">@dl.DownloadedAt.ToLocalTime().ToString("g")</span>
+                    <li class="flex justify-between gap-3 py-1 text-sm">
+                        <span class="min-w-0 truncate" title="@dl.FileName">@dl.FileName</span>
+                        <span class="whitespace-nowrap font-mono tabular-nums text-muted-foreground">@dl.DownloadedAt.ToLocalTime().ToString("g")</span>
                     </li>
                 }
             </ul>
         }
-    </div>
-</div>
+</Card>
 
 @code {
     private const int LargestFilesCount = 10;

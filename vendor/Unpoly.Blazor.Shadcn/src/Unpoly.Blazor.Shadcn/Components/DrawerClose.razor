@@ -1,0 +1,16 @@
+@inherits UiComponentBase
+
+@* Closes the drawer it is inside. It used to be a submit button carrying formmethod="dialog",
+   which the platform honours only when the button HAS a form owner — and a drawer is not
+   normally inside a form, so every Close and Cancel in one was inert. Same shape as DialogClose
+   now: an ordinary button, closed by the compiler that already handles every other close. *@
+
+<button type="button" data-slot="drawer-close" class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "outline";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

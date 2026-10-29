@@ -580,7 +580,6 @@ public sealed class EnterpriseIdentityTests : IClassFixture<TestWebAppFactory>
         await client.PostAsJsonAsync("/api/workspace/scim-tokens", new { label = "Okta" });
 
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountWorkspaceSso);
-        request.Headers.Add("HX-Request", "true");
         var response = await client.SendAsync(request);
         var html = await response.Content.ReadAsStringAsync();
 
@@ -598,7 +597,6 @@ public sealed class EnterpriseIdentityTests : IClassFixture<TestWebAppFactory>
         var (client, _) = await AccountAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountSecurity);
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         Assert.Contains("security.totp.start", html, StringComparison.Ordinal);

@@ -1,0 +1,21 @@
+@inherits UiComponentBase
+
+@* popovertarget opens it with no JavaScript at all, exactly as the dropdown trigger does. What
+   the compiler adds is the menubar's own behaviour: arrow keys along the bar, and switching
+   menus on hover once one is open. *@
+
+<button type="button" data-slot="menubar-trigger" data-target="@Target"
+        popovertarget="@Target" role="menuitem" aria-haspopup="menu" aria-expanded="false"
+        class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    /// <summary>The id of the <see cref="MenubarContent"/> this opens.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    const string Base =
+        "flex items-center rounded-sm px-2 py-1 text-control font-medium outline-hidden " +
+        "select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent " +
+        "data-[state=open]:text-accent-foreground";
+
+    string Classes => Cn(Base, Class);
+}

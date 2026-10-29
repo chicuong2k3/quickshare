@@ -24,7 +24,6 @@ public sealed class VerifyOtpHandler(AnalyticsService analytics, OtpLockoutServi
 
         if (delivery.OtpHash is null)
         {
-            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
             await analytics.RecordAsync(AnalyticsEvents.OtpPass, ct: cancellationToken);
             return Result.Success(new VerifyOtpResponse(true));
         }
@@ -33,7 +32,10 @@ public sealed class VerifyOtpHandler(AnalyticsService analytics, OtpLockoutServi
 
         if (valid)
         {
-            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
+            if (string.IsNullOrEmpty(delivery.PasswordHash) && !delivery.EmailOtpEnabled)
+            {
+                await lockout.ResetAsync(db, delivery.Id, cancellationToken);
+            }
             await analytics.RecordAsync(AnalyticsEvents.OtpPass, ct: cancellationToken);
             return Result.Success(new VerifyOtpResponse(true));
         }

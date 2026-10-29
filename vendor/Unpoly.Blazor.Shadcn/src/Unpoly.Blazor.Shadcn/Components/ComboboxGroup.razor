@@ -1,0 +1,20 @@
+@inherits UiComponentBase
+
+<div data-slot="combobox-group" role="group" aria-label="@Heading" class="@Classes"
+     @attributes="AdditionalAttributes">
+    @if (Heading is not null)
+    {
+        <ComboboxLabel>@Heading</ComboboxLabel>
+    }
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>Also the group's accessible name — a heading div names nothing by itself.</summary>
+    [Parameter] public string? Heading { get; set; }
+
+    const string Base =
+        "";
+
+    string Classes => Cn(Base, Class);
+}

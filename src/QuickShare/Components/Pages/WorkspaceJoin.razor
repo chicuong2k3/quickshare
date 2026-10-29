@@ -1,9 +1,15 @@
 @layout MainLayout
 @page "/workspace/join"
 @attribute [Authorize]
+@using Microsoft.AspNetCore.Antiforgery
 @using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Manage
+@using QuickShare.Features.Workspaces.Transfer
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IAntiforgery Antiforgery
+@inject IMediator Bus
 
 <PageTitle>@Loc["ws_join_title"]</PageTitle>
 
@@ -13,44 +19,44 @@
 </HeadContent>
 
 @*
-    Fully static: the token arrives in the URL and the accept is one POST. There is no
-    DB read to lazy-load, so the HTMX shell pattern would add a round trip and buy nothing.
+    Fully static: the token arrives in the URL and the accept is one POST.
+    The initial page does not read the database.
 *@
 <PageWrapper Variant="PageVariant.Padded">
 
-    <section class="hero">
-        <h1 class="db-h1">@Loc["ws_join_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["ws_join_hint"]</p>
+    <section class="mb-6">
+        <h1 class="text-3xl font-semibold">@Loc["ws_join_title"]</h1>
+        <p class="mt-2 text-muted-foreground">@Loc["ws_join_hint"]</p>
     </section>
 
-    <div class="db-card account-card workspace-card">
-        <div class="db-card__body">
-            @if (string.IsNullOrWhiteSpace(ActiveToken))
+    <Card class="w-full max-w-md p-6">
+            @if (string.IsNullOrWhiteSpace(ActiveToken) && !HttpMethods.IsPost(HttpContextAccessor.HttpContext?.Request.Method ?? string.Empty))
             {
-                <p class="db-p">@Loc["ws_join_missing"]</p>
+                <p>@Loc["ws_join_missing"]</p>
             }
             else
             {
-                <p class="db-p" id="ws-join-status" aria-live="polite"></p>
-                <button type="button" class="db-btn db-btn--primary"
-                        data-token="@ActiveToken"
-                        data-kind="@Kind"
-                        data-next="@RoutePaths.AccountWorkspace"
-                        data-ok-label="@Loc["ws_join_ok"]"
-                        data-error-label="@Loc["ws_join_error"]"
-                        onclick="window.quickShareWorkspace.join(this)"
-                        data-ai-action="workspace.join">@Loc["ws_join_accept"]</button>
+                @if (joinFailed)
+                {
+                    <p id="ws-join-status" class="mb-3 text-destructive" role="alert">@Loc["ws_join_error"]</p>
+                }
+                <form method="post" @formname="workspace-join" @onsubmit="HandleSubmit">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="@TokenField" value="@ActiveToken" />
+                    <input type="hidden" name="@KindField" value="@Kind" />
+                    <Button Type="submit" data-ai-action="workspace.join">@Loc["ws_join_accept"]</Button>
+                </form>
             }
-        </div>
-    </div>
+    </Card>
 
 </PageWrapper>
-
-<script src="/js/workspace.js" defer></script>
 
 @code {
     private const string KindInvite = "invite";
     private const string KindTransfer = "transfer";
+    private const string TokenField = "joinToken";
+    private const string KindField = "joinKind";
+    private bool joinFailed;
 
     [SupplyParameterFromQuery(Name = "token")]
     public string? Token { get; set; }
@@ -61,4 +67,49 @@
     private string Kind => string.IsNullOrWhiteSpace(TransferToken) ? KindInvite : KindTransfer;
 
     private string? ActiveToken => string.IsNullOrWhiteSpace(TransferToken) ? Token : TransferToken;
+
+    private async Task HandleSubmit()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);
+        var token = form[TokenField].ToString();
+        var kind = form[KindField].ToString();
+        bool success;
+        if (kind == KindInvite)
+        {
+            Token = token;
+            TransferToken = null;
+            var result = await Bus.Send<LightResults.Result<WorkspaceDto>>(new AcceptInviteCommand(token), ctx.RequestAborted);
+            success = result.IsSuccess();
+        }
+        else if (kind == KindTransfer)
+        {
+            TransferToken = token;
+            var result = await Bus.Send<LightResults.Result<TransferDto>>(new AcceptTransferCommand(token), ctx.RequestAborted);
+            success = result.IsSuccess();
+        }
+        else
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        if (success)
+        {
+            ctx.Response.Redirect(RoutePaths.AccountWorkspace);
+            return;
+        }
+
+        joinFailed = true;
+    }
 }

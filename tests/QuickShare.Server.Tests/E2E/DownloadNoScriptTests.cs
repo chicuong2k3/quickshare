@@ -27,6 +27,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
 
         Assert.Contains("id=\"download-phase-file\"", html);
         Assert.DoesNotContain("id=\"download-phase-file\" class=\"hidden\"", html);
+        Assert.DoesNotContain("<blazor-ssr", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
         var shareCode = await SeedAsync(hasOtp: true);
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
-        Assert.DoesNotContain("id=\"download-phase-otp\" class=\"db-text-center hidden\"", html);
+        Assert.DoesNotContain("id=\"download-phase-otp\" class=\"text-center hidden\"", html);
         Assert.Contains("id=\"download-phase-file\" class=\"hidden\"", html);
     }
 
@@ -56,7 +57,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
         var shareCode = await SeedAsync(hasOtp: false);
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
-        Assert.Contains("id=\"download-phase-ad\" class=\"db-text-center hidden\"", html);
+        Assert.Contains("id=\"download-phase-ad\" class=\"text-center hidden\"", html);
     }
 
     [Fact]

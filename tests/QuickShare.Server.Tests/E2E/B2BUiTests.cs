@@ -19,14 +19,13 @@ namespace QuickShare.Server.Tests.E2E;
 /// The audit that prompted these found the same failure each time — an endpoint nobody could
 /// reach. So these tests assert the *page* carries the data, not that a handler returns it: a
 /// render that omits the queue is the exact defect being fixed, and a 200 alone would not catch
-/// it. The HTMX fragment is what gets asserted because that is the half that runs the queries.
+/// it. The direct response must include the queried data.
 /// </summary>
 public sealed class B2BUiTests : IClassFixture<TestWebAppFactory>
 {
     private const string FileName = "quarterly.pdf";
     private const string ContentType = "application/pdf";
     private const long FileSize = 2048;
-    private const string HtmxHeader = "HX-Request";
 
     private readonly TestWebAppFactory _factory;
 
@@ -254,7 +253,6 @@ public sealed class B2BUiTests : IClassFixture<TestWebAppFactory>
     private static async Task<string> FragmentAsync(HttpClient client, string url)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeader, "true");
         var response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

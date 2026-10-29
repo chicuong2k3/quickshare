@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* Closes the nearest enclosing <dialog>. type="button" so it never submits a form it sits in. *@
+
+<button type="button" data-slot="sheet-close" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "outline";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

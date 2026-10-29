@@ -35,18 +35,18 @@
                         <rect x="6" y="17" width="12" height="1" fill="#963D97"/>
                         <rect x="6" y="18" width="12" height="1" fill="#009DDC"/>
                     </svg>
-                    <h1 class="db-h1 home-h1">
+                    <h1 class="text-3xl font-bold tracking-tight home-h1">
                         @Loc["home_h1_send"] <span class="home-accent">@Loc["home_h1_anything"]</span>,
                         <br>@Loc["home_h1_zero"]
                     </h1>
-                    <p class="db-p db-text-muted home-hero__sub">
+                    <p class="text-muted-foreground home-hero__sub">
                         @Loc["home_sub"]
                     </p>
                     <div class="home-hero__actions">
-                        <a href="/send" class="db-btn db-btn--primary db-btn--lg">@Loc["home_btn_start"]</a>
-                        <a href="/pricing" class="db-btn db-btn--ghost db-btn--lg">@Loc["home_btn_pricing"]</a>
+                        <Button Href="/send" Size="lg">@Loc["home_btn_start"]</Button>
+                        <Button Href="/pricing" Variant="ghost" Size="lg">@Loc["home_btn_pricing"]</Button>
                     </div>
-                    <p class="db-text-muted home-hero__paste">@Loc["home_paste_hint"]</p>
+                    <p class="text-muted-foreground home-hero__paste">@Loc["home_paste_hint"]</p>
                 </div>
             </div>
         </div>
@@ -54,8 +54,8 @@
 
     <section class="home-why" aria-labelledby="why-use-app">
         <div class="home-why__head">
-            <h2 id="why-use-app" class="db-h2">@Loc["home_why_title"]</h2>
-            <p class="db-text-muted home-why__sub">
+            <h2 id="why-use-app" class="text-2xl font-bold">@Loc["home_why_title"]</h2>
+                <p class="text-muted-foreground home-why__sub">
                 @Loc["home_why_sub"]
             </p>
         </div>
@@ -67,13 +67,13 @@
                 @Loc["home_badge_p2p"]
             </span>
         </div>
-        <div class="db-card home-why__card">
+        <Card class="home-why__card">
             <div class="qs-titlebar home-why__bar">
                 <span class="qs-titlebar__box" aria-hidden="true"></span>
                 <span class="qs-titlebar__label">@Loc["home_table_caption"]</span>
                 <span class="qs-titlebar__box" aria-hidden="true"></span>
             </div>
-            <div class="db-card__body">
+            <CardContent>
                 <table class="home-why__table">
                     <caption class="sr-only">@Loc["home_table_caption"]</caption>
                     <thead>
@@ -112,16 +112,16 @@
                     </tbody>
                 </table>
                 <div class="home-why__actions">
-                    <a href="/send" class="db-btn db-btn--primary">@Loc["home_btn_send_now"]</a>
-                    <a href="/pricing" class="db-btn db-btn--ghost">@Loc["home_btn_pro_limits"]</a>
+                    <Button Href="/send">@Loc["home_btn_send_now"]</Button>
+                    <Button Href="/pricing" Variant="ghost">@Loc["home_btn_pro_limits"]</Button>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     </section>
     <section class="home-features">
-        <div class="db-grid db-grid--3 db-gap-4">
-            <div class="db-card">
-                <div class="db-card__body">
+        <div class="grid grid-cols-3 gap-4">
+            <Card>
+                <CardContent>
                     <span class="home-feature-tab home-feature-tab--green">@Loc["home_feat_tab1"]</span>
                     <div class="home-feature-icon home-feature-icon--green">
                         @* Pixel padlock *@
@@ -135,14 +135,14 @@
                             <rect x="7" y="9" width="2" height="3" fill="var(--db-sheet-raised)"/>
                         </svg>
                     </div>
-                    <h3 class="db-h3">@Loc["home_feat1_title"]</h3>
-                    <p class="db-text-muted">
+                    <h3 class="text-xl font-semibold">@Loc["home_feat1_title"]</h3>
+                    <p class="text-muted-foreground">
                         @Loc["home_feat1_desc"]
                     </p>
-                </div>
-            </div>
-            <div class="db-card">
-                <div class="db-card__body">
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent>
                     <span class="home-feature-tab home-feature-tab--blue">@Loc["home_feat_tab2"]</span>
                     <div class="home-feature-icon home-feature-icon--blue">
                         @* Pixel clock *@
@@ -153,14 +153,14 @@
                             <rect x="9" y="8" width="3" height="2" fill="currentColor"/>
                         </svg>
                     </div>
-                    <h3 class="db-h3">@Loc["home_feat2_title"]</h3>
-                    <p class="db-text-muted">
+                    <h3 class="text-xl font-semibold">@Loc["home_feat2_title"]</h3>
+                    <p class="text-muted-foreground">
                         @Loc["home_feat2_desc"]
                     </p>
-                </div>
-            </div>
-            <div class="db-card">
-                <div class="db-card__body">
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent>
                     <span class="home-feature-tab home-feature-tab--yellow">@Loc["home_feat_tab3"]</span>
                     <div class="home-feature-icon home-feature-icon--yellow">
                         @* Pixel arrow through an open door — no signup gate *@
@@ -172,44 +172,44 @@
                             <rect x="7" y="9" width="2" height="2" fill="currentColor"/>
                         </svg>
                     </div>
-                    <h3 class="db-h3">@Loc["home_feat3_title"]</h3>
-                    <p class="db-text-muted">
+                    <h3 class="text-xl font-semibold">@Loc["home_feat3_title"]</h3>
+                    <p class="text-muted-foreground">
                         @Loc["home_feat3_desc"]
                     </p>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     </section>
 
     <section class="home-how">
-        <h2 class="db-h2 home-how__title">@Loc["home_how_title"]</h2>
+        <h2 class="text-2xl font-bold home-how__title">@Loc["home_how_title"]</h2>
         <div class="home-how__steps">
             <div class="home-step">
                 <span class="home-step__num">1</span>
-                <h3 class="db-h4">@Loc["home_step1_title"]</h3>
-                <p class="db-text-muted">@Loc["home_step1_desc"]</p>
+                <h3 class="text-lg font-medium">@Loc["home_step1_title"]</h3>
+                <p class="text-muted-foreground">@Loc["home_step1_desc"]</p>
             </div>
             <div class="home-step">
                 <span class="home-step__num">2</span>
-                <h3 class="db-h4">@Loc["home_step2_title"]</h3>
-                <p class="db-text-muted">@Loc["home_step2_desc"]</p>
+                <h3 class="text-lg font-medium">@Loc["home_step2_title"]</h3>
+                <p class="text-muted-foreground">@Loc["home_step2_desc"]</p>
             </div>
             <div class="home-step">
                 <span class="home-step__num">3</span>
-                <h3 class="db-h4">@Loc["home_step3_title"]</h3>
-                <p class="db-text-muted">@Loc["home_step3_desc"]</p>
+                <h3 class="text-lg font-medium">@Loc["home_step3_title"]</h3>
+                <p class="text-muted-foreground">@Loc["home_step3_desc"]</p>
             </div>
         </div>
     </section>
 
     <section class="home-cta">
-        <div class="db-card home-cta__card">
-            <div class="db-card__body">
-                <h2 class="db-h2">@Loc["home_cta_title"]</h2>
-                <p class="db-text-muted home-cta__sub">@Loc["home_cta_sub"]</p>
-                <a href="/send" class="db-btn db-btn--primary db-btn--lg">@Loc["home_cta_btn"]</a>
-            </div>
-        </div>
+        <Card class="home-cta__card">
+            <CardContent>
+                <h2 class="text-2xl font-bold">@Loc["home_cta_title"]</h2>
+                <p class="text-muted-foreground home-cta__sub">@Loc["home_cta_sub"]</p>
+                <Button Href="/send" Size="lg">@Loc["home_cta_btn"]</Button>
+            </CardContent>
+        </Card>
     </section>
 </PageWrapper>
 

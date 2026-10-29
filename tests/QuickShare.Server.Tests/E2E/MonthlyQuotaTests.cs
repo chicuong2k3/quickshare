@@ -157,7 +157,6 @@ public sealed class MonthlyQuotaTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, TestWebAppFactory.TestUserProviderKey);
         var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountUsage);
-        request.Headers.Add("HX-Request", "true");
 
         var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

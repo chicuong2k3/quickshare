@@ -1,129 +1,92 @@
-/* QuickShareCloud — Account Billing page (grunge-dark tokens) */
-
 .billing-body {
-    max-width: 680px;
+    max-width: 42.5rem;
     margin: 0 auto;
-    padding: 0 var(--db-space-4);
+    padding: 0 1rem;
 }
 
-/* ─── Summary card ─── */
 .summary-card {
-    background:
-        none top right / auto no-repeat,
-        var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
-    padding: var(--db-space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--card-foreground);
+    padding: 1.5rem;
 }
 
-.summary-card__head {
-    text-align: center;
-    margin-bottom: var(--db-space-4);
-}
-
+.summary-card__head,
 .summary-card__price {
     text-align: center;
-    margin-bottom: var(--db-space-5);
+    margin-bottom: 1rem;
 }
 
 .price-amount {
-    font-family: var(--db-font-mono);
     font-size: 2rem;
-    font-weight: 300;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    color: var(--db-color-text);
 }
 
 .price-period {
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted);
+    font-size: 0.875rem;
 }
 
-/* ─── Features list ─── */
-.summary-card__features {
-    display: flex;
-    flex-direction: column;
-    gap: var(--db-space-3);
-    margin-bottom: var(--db-space-4);
-}
-
-.feature {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-3);
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-secondary);
-}
-
-/* A crease marker, not a stock circle-check (DESIGN.md zero-radius law). */
-.feature__icon {
-    width: 0.5rem;
-    height: 0.5rem;
-    flex-shrink: 0;
-    background: var(--db-valley-ink);
-    color: transparent;
-    transform: none;
-}
-
-/* ─── Actions ─── */
-.summary-card__actions {
-    display: flex;
-    gap: var(--db-space-3);
-    margin-top: var(--db-space-5);
-}
-
-/* ─── Payment history ─── */
-.history {
-    margin-top: var(--db-space-8);
-}
-
+.summary-card__features,
 .timeline {
     display: flex;
     flex-direction: column;
-    margin-top: var(--db-space-4);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.feature,
+.summary-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.feature {
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+}
+
+.feature__icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: var(--primary);
+}
+
+.summary-card__actions {
+    margin-top: 1.25rem;
+}
+
+.history {
+    margin-top: 2rem;
 }
 
 .timeline-item {
     display: flex;
-    gap: var(--db-space-4);
-    padding: var(--db-space-4) 0;
-    border-bottom: 1px solid var(--db-mountain);
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
 }
 
-.timeline-item:last-child {
-    border-bottom: none;
-}
-
-/* A crease marker, not a dot: same parallelogram as every other cell. */
 .timeline-item__dot {
     width: 0.6rem;
     height: 0.6rem;
     margin-top: 0.45rem;
     flex-shrink: 0;
-    transform: none;
+    border-radius: 50%;
+    background: var(--muted-foreground);
 }
 
-.dot--created {
-    background: var(--db-color-success);
-}
-
+.dot--created,
 .dot--renewed {
-    background: var(--db-foil);
+    background: var(--primary);
 }
 
 .dot--cancelled {
-    background: var(--db-color-warning);
-}
-
-.dot--expired {
-    background: var(--db-color-text-muted);
-}
-
-.dot--default {
-    background: var(--db-color-text-muted);
+    background: var(--destructive);
 }
 
 .timeline-item__content {
@@ -131,21 +94,8 @@
     min-width: 0;
 }
 
-.timeline-item__label {
-    font-weight: 400;
-    color: var(--db-color-text);
-}
-
 .timeline-item__meta {
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.06em;
-    font-variant-numeric: tabular-nums;
-    color: var(--db-color-text-muted);
     margin-top: 0.3rem;
-}
-
-.loading {
-    text-align: center;
-    padding: var(--db-space-8) var(--db-space-4);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
 }

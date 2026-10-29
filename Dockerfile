@@ -1,3 +1,6 @@
+# ── Node toolchain ──
+FROM node:22-bookworm-slim AS node
+
 # ── SDK stage ──
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
@@ -7,14 +10,13 @@ COPY QuickShare.slnx ./
 COPY src/QuickShare/QuickShare.csproj src/QuickShare/
 COPY src/QuickShare.Querying/QuickShare.Querying.csproj src/QuickShare.Querying/
 COPY src/QuickShare.Querying.Generators/QuickShare.Querying.Generators.csproj src/QuickShare.Querying.Generators/
+COPY vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Unpoly.Blazor.Shadcn.csproj vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/
 # Runner network to nuget.org is slow/flaky — sequential restore + more retries.
 # Parallel restore floods the pipe and trips "no data received for 60000ms" timeouts.
 RUN dotnet restore src/QuickShare/QuickShare.csproj --disable-parallel -p:RestoreRetryCount=6
 
-# Node.js for the TypeScript build (BuildTypeScript MSBuild target runs before publish)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends nodejs npm && \
-    rm -rf /var/lib/apt/lists/*
+# Node.js for the TypeScript and Tailwind build.
+COPY --from=node /usr/local/ /usr/local/
 
 # TypeScript toolchain — cached layer, only rebuilds when package files change
 COPY src/QuickShare/package.json src/QuickShare/package-lock.json src/QuickShare/

@@ -303,7 +303,6 @@ public sealed class S3GatewayTests : IClassFixture<TestWebAppFactory>
         var (_, client, bucket) = await GatewayAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/developer");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // An endpoint nobody can find is the defect the batch-11 audit spent its time on.

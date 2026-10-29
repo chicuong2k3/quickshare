@@ -1,0 +1,29 @@
+@inherits UiComponentBase
+
+@* An <a> with an href, always. [up-nav] on an ancestor marks the current one with .up-current,
+   so "which page am I on" needs no parameter and no state — and aria-current says the same thing
+   to a screen reader, which .up-current alone does not. *@
+
+<a href="@Href" data-slot="navigation-menu-link" aria-current="@(Active ? "page" : null)"
+   data-active="@(Active ? "true" : null)" class="@Classes"
+   @attributes="AdditionalAttributes">@ChildContent</a>
+
+@code {
+    [Parameter, EditorRequired] public string Href { get; set; } = default!;
+
+    /// <summary>Only when the server knows. With [up-nav] on the list, Unpoly marks it instead.</summary>
+    [Parameter] public bool Active { get; set; }
+
+    const string Base =
+        "flex flex-col gap-1 rounded-sm p-2 text-control transition-all outline-none " +
+        "hover:bg-accent hover:text-accent-foreground focus:bg-accent " +
+        "focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 " +
+        "focus-visible:outline-1 data-[active=true]:bg-accent/50 " +
+        "data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent " +
+        "data-[active=true]:focus:bg-accent [&_svg:not([class*='size-'])]:size-4 " +
+        "[&_svg:not([class*='text-'])]:text-muted-foreground [&.up-current]:bg-accent/50 " +
+        "[&.up-current]:text-accent-foreground [&.up-current]:hover:bg-accent " +
+        "[&.up-current]:focus:bg-accent";
+
+    string Classes => Cn(Base, Class);
+}

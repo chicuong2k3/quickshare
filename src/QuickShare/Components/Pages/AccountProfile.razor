@@ -10,12 +10,14 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Options
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStorageProvider Storage
 @inject IOptions<R2Options> R2Opt
+@inject IAntiforgery Antiforgery
 
 @{
     var apiBase = string.Empty;
@@ -23,62 +25,51 @@
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 
-<HtmxFragment>
-<div id="profile-card" class="db-card account-card">
-    <div class="db-card__body">
-        <div class="account-profile">
-            <div class="account-avatar-wrap" onclick="document.getElementById('avatarFileInput').click()">
+<Card id="profile-card" class="my-4 px-6">
+        <div class="flex flex-col items-center text-center">
+            <div class="relative">
                 @if (!string.IsNullOrEmpty(avatar))
                 {
-                    <img id="avatarPreview" class="account-avatar-img" src="@avatar" alt="@name" />
+                    <img id="avatarPreview" class="h-20 w-20 rounded-full object-cover" src="@avatar" alt="@name" />
                 }
                 else
                 {
-                    <div id="avatarInitial" class="account-avatar-initial">@($"{(string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpper())}")</div>
-                    <img id="avatarPreview" class="hidden account-avatar-img" src="" alt="@name" />
+                    <div id="avatarInitial" class="flex h-20 w-20 items-center justify-center rounded-full border bg-muted text-xl">@($"{(string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpper())}")</div>
+                    <img id="avatarPreview" class="hidden h-20 w-20 rounded-full object-cover" alt="@name" />
                 }
-                <div class="account-avatar-overlay">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </div>
             </div>
-            <h2 class="db-h2" style="margin-top: 1.25rem">@name</h2>
-            <p class="db-p db-text-muted" style="margin-top: 0.25rem">@email</p>
-            <span class="db-badge db-badge--updated" style="margin-top: 0.75rem">@provider · @plan</span>
+            <h2 class="mt-5 text-2xl font-semibold">@name</h2>
+            <p class="mt-1 text-muted-foreground">@email</p>
+            <span class="mt-3 rounded-md border px-2 py-1 text-sm">@provider · @plan</span>
         </div>
 
         @if (!string.IsNullOrEmpty(formError))
         {
-            <div class="db-alert db-alert--error" style="margin-top: 1.5rem" role="alert">@formError</div>
+            <div class="mt-6 text-destructive" role="alert">@formError</div>
         }
 
-        <form class="account-form" hx-post="/account/profile" hx-target="#profile-card" hx-select="#profile-card" hx-swap="outerHTML" hx-encoding="multipart/form-data" hx-indicator="#profile-save-spinner" hx-disabled-elt="#name, #avatarFile, button[type=submit]" onpost="@HandleUpdateProfile">
-            <div class="account-form-inner">
-                <label class="db-field">
-                    <span class="db-label">@Loc["account_profile_name_label"]</span>
-                    <input id="name" name="name" type="text" required value="@name" class="db-field__input db-input" />
+        <form class="mt-6 space-y-5" method="post" action="@RoutePaths.AccountProfile" enctype="multipart/form-data"
+              @formname="account-profile" @onsubmit="HandleSubmit">
+                <AntiforgeryToken />
+                <label class="block space-y-2">
+                    <span class="block text-sm font-medium">@Loc["account_profile_name_label"]</span>
+                    <input id="name" name="name" type="text" required value="@name" class="w-full rounded-md border bg-background px-3 py-2" />
                 </label>
-                <div>
-                    <input id="avatarFileInput" name="avatar" type="file" accept="image/*" class="sr-only" onchange="previewAvatar(event)" />
-                </div>
-                <button type="submit" class="db-btn db-btn--primary account-save-btn" style="width: 100%" data-ai-action="profile.save.submit">
-                    <span class="btn-text">@Loc["account_profile_save_btn"]</span>
-                    <span id="profile-save-spinner" class="htmx-indicator account-btn-spinner"></span>
-                </button>
-            </div>
+                <label class="block space-y-2">
+                    <span class="block text-sm font-medium">@Loc["account_profile_avatar_label"]</span>
+                    <input id="avatarFileInput" name="avatar" type="file" accept="image/*" class="block w-full text-sm" onchange="previewAvatar(event)" />
+                </label>
+                <Button Type="submit" class="w-full" data-ai-action="profile.save.submit">@Loc["account_profile_save_btn"]</Button>
         </form>
 
-        <div class="account-logout-row">
-            <a href="/logout" hx-boost="false" class="db-btn db-btn--ghost" style="width: 100%; display: flex; align-items: center; justify-content: center">@Loc["nav_logout"]</a>
+        <div class="mt-5">
+            <Button Href="/logout" Variant="ghost" class="w-full">@Loc["nav_logout"]</Button>
         </div>
-    </div>
-</div>
-</HtmxFragment>
+</Card>
 
 <script src="/js/account.js"></script>
 
 @code {
-    private const string ProfileUpdatedTrigger = "profileUpdated";
-
     private const long MaxAvatarBytes = 5 * 1024 * 1024;
 
     private static readonly IReadOnlyDictionary<string, string> AvatarExtensions = new Dictionary<string, string>
@@ -97,10 +88,8 @@
     private string provider = "unknown";
     private string? formError;
 
-    [SupplyParameterFromForm(Name = "name")]
     private string? FormName { get; set; }
 
-    [SupplyParameterFromForm(Name = "avatar")]
     private IFormFile? FormAvatar { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -122,6 +111,25 @@
             provider = httpContext.User?.FindFirstValue(AuthConstants.ProviderClaimType) ?? "unknown";
             formError = httpContext.Request.Query["error"].FirstOrDefault();
         }
+    }
+
+    private async Task HandleSubmit()
+    {
+        var context = HttpContextAccessor.HttpContext!;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(context);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var form = await context.Request.ReadFormAsync();
+        FormName = form["name"].FirstOrDefault();
+        FormAvatar = form.Files.GetFile("avatar");
+        await HandleUpdateProfile();
     }
 
     private async Task HandleUpdateProfile()
@@ -203,7 +211,6 @@
             var newPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, identity.AuthenticationType));
             await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
 
-            httpContext.Response.Headers[HtmxHeaders.Trigger] = ProfileUpdatedTrigger;
         }
     }
 }

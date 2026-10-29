@@ -1,6 +1,7 @@
 @layout MainLayout
 @page "/mfa"
 @attribute [Authorize]
+@using Microsoft.AspNetCore.Antiforgery
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Auth.Mfa
 @using QuickShare.Features.Auth.Totp
@@ -9,6 +10,7 @@
 @inject AppDbContext Db
 @inject MfaPolicyService Policies
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IAntiforgery Antiforgery
 
 <PageTitle>@Loc["mfa_title"]</PageTitle>
 
@@ -18,8 +20,6 @@
 </HeadContent>
 
 @*
-    Deliberately NOT HTMX lazy-loaded, unlike every other page here.
-
     This is the wall. Its whole job is to be the first thing a held session sees, and a skeleton
     that fills in a moment later would mean the gate briefly renders as an empty page — which
     reads as "the site is broken", which is how somebody ends up filing a ticket instead of
@@ -27,51 +27,96 @@
 *@
 <PageWrapper Variant="PageVariant.Padded">
 
-    <section class="hero">
-        <h1 class="db-h1">@Loc["mfa_title"]</h1>
-        <p class="db-p db-text-muted">@Subtitle</p>
+    <section class="mb-6">
+        <h1 class="text-3xl font-semibold">@Loc["mfa_title"]</h1>
+        <p class="mt-2 text-muted-foreground">@Subtitle</p>
     </section>
 
-    <div class="db-card account-card workspace-card">
-        <div class="db-card__body">
+    <Card class="w-full max-w-md p-6">
             @if (NeedsEnrolment)
             {
                 @* Out of grace and not enrolled: the way out is enrolment, not a code. *@
-                <p class="db-p">@Loc["mfa_enrol_required"]</p>
-                <a class="db-btn db-btn--primary" href="@RoutePaths.AccountSecurity">@Loc["mfa_go_enrol"]</a>
+                <p>@Loc["mfa_enrol_required"]</p>
+                <Button Href="@RoutePaths.AccountSecurity" class="mt-4">@Loc["mfa_go_enrol"]</Button>
             }
             else
             {
-                <div class="workspace-form">
-                    <label class="workspace-label" for="mfa-code">@Loc["mfa_code_label"]</label>
-                    <input id="mfa-code" class="db-input" type="text" inputmode="numeric"
-                           autocomplete="one-time-code" maxlength="@RecoveryCodeMaxLength" autofocus />
-                    <p class="db-p db-text-muted workspace-hint">@Loc["mfa_code_hint"]</p>
-
-                    <button type="button" class="db-btn db-btn--primary"
-                            data-error-label="@Loc["mfa_code_failed"]"
-                            onclick="window.quickShareMfa.verify(this)"
-                            data-ai-action="mfa.verify">@Loc["mfa_verify"]</button>
-                </div>
+                <form method="post" @formname="mfa-challenge" @onsubmit="HandleSubmit" class="space-y-3">
+                    <AntiforgeryToken />
+                    <label class="block text-sm font-medium" for="mfa-code">@Loc["mfa_code_label"]</label>
+                    <input id="mfa-code" name="@CodeField" class="w-full rounded-md border bg-background px-3 py-2" type="text"
+                           autocomplete="one-time-code" maxlength="@RecoveryCodeMaxLength" required autofocus />
+                    <p class="text-sm text-muted-foreground">@Loc["mfa_code_hint"]</p>
+                    @if (retryAfterSeconds > 0)
+                    {
+                        <p class="text-sm text-destructive" role="alert">@Loc["mfa_rate_limited", retryAfterSeconds]</p>
+                    }
+                    else if (challengeFailed)
+                    {
+                        <p class="text-sm text-destructive" role="alert">@Loc["mfa_code_failed"]</p>
+                    }
+                    <Button Type="submit" data-ai-action="mfa.verify">@Loc["mfa_verify"]</Button>
+                </form>
             }
 
-            <p class="db-p db-text-muted workspace-hint">
-                <a href="@RoutePaths.Logout">@Loc["mfa_sign_out"]</a>
+            <p class="mt-4 text-sm text-muted-foreground">
+                <a class="underline" href="@RoutePaths.Logout">@Loc["mfa_sign_out"]</a>
             </p>
-        </div>
-    </div>
+    </Card>
 
 </PageWrapper>
-
-<script src="/js/mfa.js" defer></script>
 
 @code {
     /// <summary>A recovery code is longer than a TOTP code; the field has to admit both.</summary>
     private const int RecoveryCodeMaxLength = 32;
+    private const int DefaultRetrySeconds = 60;
+    private const string CodeField = "code";
 
     private bool NeedsEnrolment { get; set; }
+    private bool challengeFailed;
+    private int retryAfterSeconds;
 
     private string Subtitle => NeedsEnrolment ? Loc["mfa_subtitle_enrol"] : Loc["mfa_subtitle_code"];
+
+    private async Task HandleSubmit()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        if (NeedsEnrolment)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var user = await ctx.User.GetUserAsync(Db, ctx.RequestAborted);
+        var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);
+        var result = await TotpChallenge.VerifyAsync(Db, user, form[CodeField].ToString(), ctx, ctx.RequestAborted);
+        if (result == TotpChallengeResult.RateLimited)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            retryAfterSeconds = int.TryParse(ctx.Response.Headers.RetryAfter.ToString(), out var retryAfter)
+                ? retryAfter
+                : DefaultRetrySeconds;
+            return;
+        }
+
+        if (result == TotpChallengeResult.Success)
+        {
+            ctx.Response.Redirect(RoutePaths.Home);
+            return;
+        }
+
+        challengeFailed = true;
+    }
 
     protected override async Task OnInitializedAsync()
     {

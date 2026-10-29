@@ -20,8 +20,8 @@
 <PageWrapper id="workspace-audit-app" Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["ws_audit_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["ws_audit_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_audit_title"]</h1>
+        <p class="text-muted-foreground">@Loc["ws_audit_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceAudit" />
@@ -30,22 +30,22 @@
     <form class="workspace-filters" method="get" action="@RoutePaths.AccountWorkspaceAudit"
           up-submit="true" up-target="#workspace-audit-app" up-history="true">
         <label class="workspace-label" for="ws-audit-action">@Loc["ws_audit_filter_action"]</label>
-        <select id="ws-audit-action" name="action" class="db-input">
-            <option value="">@Loc["ws_audit_all_actions"]</option>
+        <NativeSelect id="ws-audit-action" name="action">
+            <NativeSelectOption value="">@Loc["ws_audit_all_actions"]</NativeSelectOption>
             @foreach (var action in AuditActions)
             {
-                <option value="@action.ToString()" selected="@(string.Equals(Action, action.ToString(), StringComparison.OrdinalIgnoreCase))">@Humanize(action)</option>
+                <NativeSelectOption value="@action.ToString()" selected="@(string.Equals(Action, action.ToString(), StringComparison.OrdinalIgnoreCase))">@Humanize(action)</NativeSelectOption>
             }
-        </select>
+        </NativeSelect>
 
         <label class="workspace-label" for="ws-audit-from">@Loc["ws_audit_filter_from"]</label>
-        <input id="ws-audit-from" name="from" class="db-input" type="date" value="@From" />
+        <Input id="ws-audit-from" name="from"  type="date" value="@From" />
 
         <label class="workspace-label" for="ws-audit-to">@Loc["ws_audit_filter_to"]</label>
-        <input id="ws-audit-to" name="to" class="db-input" type="date" value="@To" />
+        <Input id="ws-audit-to" name="to"  type="date" value="@To" />
 
-        <button type="submit" class="db-btn db-btn--primary" data-ai-action="workspace.audit.filter">@Loc["ws_audit_apply"]</button>
-        <a class="db-btn db-btn--ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
+        <button type="submit" data-slot="button" data-variant="default" data-ai-action="workspace.audit.filter">@Loc["ws_audit_apply"]</button>
+        <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
     </form>
 
     @Chunk
@@ -91,24 +91,24 @@
     private RenderFragment Chunk => @<section id="workspace-audit-body">
         @if (!isAdmin)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else if (page.Rows.Count == 0)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p db-text-muted">@Loc["ws_audit_empty"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p class="text-muted-foreground">@Loc["ws_audit_empty"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body workspace-table-wrap">
+            <Card class="account-card workspace-card">
+                <CardContent class="workspace-table-wrap">
                     <table class="workspace-table">
                         <thead>
                             <tr>
@@ -130,8 +130,8 @@
                             }
                         </tbody>
                     </table>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     </section>;
 

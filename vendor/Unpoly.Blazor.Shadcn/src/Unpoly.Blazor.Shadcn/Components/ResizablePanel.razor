@@ -1,0 +1,23 @@
+@inherits UiComponentBase
+
+@* One panel. DefaultSize is a percentage and becomes flex-basis, so the panels add up to the
+   group whatever its width is. MinSize is enforced by the handle's compiler, not by CSS, because
+   CSS min-width would let the neighbour shrink past its own minimum instead. *@
+
+<div data-slot="resizable-panel" data-min-size="@MinSize" class="@Classes"
+     style="@($"flex: {DefaultSize} 1 0%;{Style}")"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Starting size, as a share of the group. Any consistent unit works.</summary>
+    [Parameter] public double DefaultSize { get; set; } = 1;
+
+    /// <summary>Smallest share the handle will let this panel reach.</summary>
+    [Parameter] public double MinSize { get; set; } = 0.1;
+
+    [Parameter] public string? Style { get; set; }
+
+    const string Base = "";
+
+    string Classes => Cn(Base, Class);
+}

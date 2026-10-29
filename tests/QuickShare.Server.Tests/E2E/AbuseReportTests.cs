@@ -81,7 +81,6 @@ public sealed class AbuseReportTests : IClassFixture<TestWebAppFactory>
         var page = await client.GetAsync($"/d/{shareCode}");
         var pageHtml = await page.Content.ReadAsStringAsync();
         Assert.Contains("download-phase-suspended", pageHtml);
-        Assert.Contains("class=\"db-text-center\"", pageHtml);
 
         var download = await client.GetAsync($"/api/downloads/{shareCode}");
         Assert.Equal(HttpStatusCode.Gone, download.StatusCode);

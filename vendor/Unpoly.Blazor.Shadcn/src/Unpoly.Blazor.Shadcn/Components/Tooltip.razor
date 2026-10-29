@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* shadcn wraps these in a TooltipProvider that shares one delay timer across the app. There is
+   no provider here — each trigger keeps its own timer in ui.js — so the grouped "one opens, the
+   rest open instantly" behaviour is not reproduced. It is the one part of Radix's tooltip that
+   genuinely needs shared state, and the one part nobody has ever filed a bug about missing. *@
+
+<span data-slot="tooltip" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    string Classes => Cn("inline-block", Class);
+}

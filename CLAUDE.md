@@ -1,80 +1,23 @@
 # QuickShareCloud — AI Rules
 
-## HTMX Lazy Loading (DEFAULT — mọi page)
+## SSR and Unpoly migration
 
-**Mọi page có `OnInitializedAsync` PHẢI dùng pattern này.** Nguyên tắc đơn giản:
-- **Data tĩnh** (layout, heading, markup tĩnh) → trả ngay lập tức, không DB call
-- **Data động** (DB query, API call) → fetch qua HTMX sau khi page load
-
-Mục tiêu: page shell render tức thì (0ms), không block, data fill in async qua HTMX. Đây là kiến trúc mặc định, KHÔNG phải optional.
-
-### Tại sao
-
-| Cách | First paint | Trải nghiệm |
-|---|---|---|
-| **HTMX lazy-load** (rule này) | < 100ms — skeleton ngay | Shell hiện ngay, data fill sau |
-| `[StreamRendering]` | 200–500ms — vẫn block async init | Page "nghĩ" 1 lúc, rồi stream |
-| Plain `OnInitializedAsync` | 1–3s — block DB query | Page đơ, user thoát |
-
-`[StreamRendering]` vẫn chạy `OnInitializedAsync` trong lần render đầu — nó chỉ giúp stream HTML SAU KHI async bắt đầu, chứ first byte vẫn delay. Nó là fallback, không phải giải pháp.
-
-### Pattern
-
-1. **Shell render**: Check `HX-Request` header. Không có → return ngay. Render skeleton.
-2. **Data fetch**: Skeleton có `hx-get` + `hx-trigger="load"` + `hx-swap="outerHTML"`. Request thứ 2 có `HX-Request` → load data.
-3. **Tất cả internal navigation**: Folder link, search, pagination, clear button — TẤT CẢ dùng `hx-get` target content area, KHÔNG dùng plain `<a href>` (gây full page reload).
-4. **CSS cho HTMX partial**: Scoped CSS (`.razor.css`) KHÔNG áp dụng cho HTML từ HTMX partial của component khác. Dùng global styles trong `wwwroot/css/app.css` với prefix namespace (`account-`, `files-`, v.v.).
-
-```csharp
-protected override async Task OnInitializedAsync()
-{
-    var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
-    if (hxHeader != "true") return; // shell render — show skeleton, no DB calls
-
-    // ... data loading (DB queries, IMediator.Send, ...) ...
-}
-```
-
-```html
-@* Shell skeleton — render tức thì *@
-<div id="page-content"
-     hx-get="/page-url"
-     hx-trigger="load"
-     hx-target="#page-content"
-     hx-swap="outerHTML">
-    @* skeleton markup *@
-</div>
-```
-
-```html
-@* Tất cả link navigation dùng HTMX *@
-<a href="/page?filter=X"
-   hx-get="/page?filter=X"
-   hx-target="#page-content"
-   hx-swap="outerHTML"
-   hx-push-url="true">Filter X</a>
-```
-
-### Ngoại lệ
-
-- **Page static** hoàn toàn (không async, không DB/API) không cần lazy-load.
-- `[StreamRendering]` chỉ chấp nhận khi không thể tách shell + partial (interdependency phức tạp). Kể cả vậy, vẫn ưu tiên lazy-load.
-
+- Direct GET renders complete usable data, JavaScript disabled too; never gate on partial-request headers or emit permanent skeletons.
+- Use native URL/form fallbacks; add Unpoly attributes for real server-rendered partial updates.
+- Razor POST forms use unique `@formname` and `@onsubmit`; validate antiforgery and mutate only in the submit handler.
+- Preserve authorization, URL/history, validation, CSRF, focus, and cache safety.
+- Use opt-in Unpoly for partial updates and native forms as a fallback.
 ## Design System
 
-`DESIGN.md` là nguồn chuẩn cho mọi thứ nhìn thấy được. Đọc nó trước khi viết CSS.
-
-- **Token `--db-*` là lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`). Đổi *giá trị*, **không bao giờ đổi tên** — ~322 lượt dùng class `db-*` trong markup phụ thuộc vào chúng.
-- **Vàng foil là fill, không bao giờ là màu chữ** (2.1:1 trên nền sheet). Chữ dùng `--db-color-accent-text`. Xanh valley = trạng thái đang hoạt động. Xám mountain = trạng thái nghỉ.
-- Radius = 0 ở tầng token. Hình học của tờ giấy là `skewX(-14deg)`, glyph bên trong counter-skew `skewX(14deg)`.
-- Kích thước chữ phải nằm trong tập đóng khai báo ở `DESIGN.md` (`typography.scale`). Ngoài danh sách đó là lỗi, không phải lựa chọn.
-- **Trang download phải chạy được khi không có JS**: server render sẵn phase dùng được, JS chỉ chuyển tiếp từ đó. Đừng bao giờ đưa `class="hidden"` trở lại phase mặc định — `DownloadNoScriptTests` sẽ chặn.
-
+- `DESIGN.md` describes legacy DAUB pages. New and migrated components use vendored Unpoly.Blazor.Shadcn components and tokens.
+- Keep existing `--db-*` token names intact for unmigrated surfaces. Do not add new DAUB classes to a migrated component or mix both systems inside one component.
+- Build generated Shadcn CSS from `src/QuickShare/tailwind.css` with the project's `css:build` script; do not edit output CSS.
+- The download page must work with no JavaScript: server renders a usable phase, and JS only advances it. Keep `class="hidden"` off the default phase.
 ## Code Style
 
 - **One statement per line** — không gộp nhiều câu lệnh trên cùng một dòng. Mỗi câu lệnh phải nằm trên dòng riêng của nó.
 - **No magic strings** — không dùng hardcoded string/number literal trực tiếp. Phải dùng `const` hoặc `enum` (strongly typed).
-- **CSS scoped, JS theo page** — CSS dùng scoped (`.razor.css`) cho mỗi component (trừ HTML trả về từ HTMX partial — xem mục HTMX ở trên, dùng global `app.css` với prefix). JS riêng của page viết bằng TypeScript tại `src/QuickShare/ts/<page>.ts`, expose qua 1 object global (xem `download.ts`). **`wwwroot/js/**` là output do `tsc` sinh ra và bị `.gitignore` — file viết thẳng vào đó sẽ không có trong repo và biến mất ở lần clone kế tiếp.** Helper dùng chung cho các màn hình config nhỏ đã có sẵn ở `ts/page-actions.ts` (`window.qsPage`), nạp toàn cục từ `App.razor`.
+- **CSS scoped, JS theo page** — CSS dùng scoped (`.razor.css`) cho mỗi component; dùng global `app.css` với prefix khi markup Unpoly vượt scope. JS riêng của page viết bằng TypeScript tại `src/QuickShare/ts/<page>.ts`, expose qua 1 object global (xem `download.ts`). **`wwwroot/js/**` là output do `tsc` sinh ra và bị `.gitignore` — file viết thẳng vào đó sẽ không có trong repo và biến mất ở lần clone kế tiếp.** Helper dùng chung cho các màn hình config nhỏ đã có sẵn ở `ts/page-actions.ts` (`window.qsPage`), nạp toàn cục từ `App.razor`.
 
 ## Cấu trúc dự án
 
@@ -83,7 +26,7 @@ src/QuickShare/
 ├── Program.cs                # composition root: DI, middleware pipeline, auth, Mediator, FastEndpoints
 ├── GlobalUsings.cs           # namespace dùng toàn cục (Data, Entities, Infrastructure.Constants, .Storage…)
 ├── Components/
-│   ├── Layout/               # MainLayout, HtmxorLayout
+│   ├── Layout/               # MainLayout, EmptyLayout
 │   ├── Pages/                # Blazor SSR page (@page) — mỗi page: .razor + .razor.css
 │   └── Shared/               # component tái sử dụng (AdComponent, PageWrapper…)
 ├── Data/
@@ -97,7 +40,7 @@ src/QuickShare/
 │   ├── Constants/            # ApiTags, ErrorCodes, RoutePaths, PlanTierLimits… (no magic strings)
 │   ├── Caching/              # CacheService (FusionCache)
 │   ├── Jobs/                 # background job (cleanup, expiry, sweeper)
-│   ├── Middleware/           # exception handler, rate limiting, request logging, HTMX cache
+│   ├── Middleware/           # exception handler, rate limiting, request logging, SSR cache
 │   ├── Storage/              # IStorageProvider + R2StorageProvider / LocalDiskStorageProvider
 │   └── Errors.cs, QuickShareOptions.cs
 └── wwwroot/                  # css/app.css (global), js/<page>.js, lib/
@@ -112,7 +55,7 @@ Làm theo thứ tự con người sẽ làm:
 2. **Cần entity mới?** Thêm class vào `Data/Entities/`, thêm `DbSet` vào `AppDbContext`, chạy `dotnet ef migrations add <Tên>` (output vào `Data/Migrations/`).
 3. **API endpoint**: tạo folder `Features/<Tên>/<Action>/` với tối đa 3 file: `<Action>Endpoint.cs` (FastEndpoints — auto-discover, KHÔNG cần đăng ký ở đâu), `<Action>Handler.cs` (Mediator handler nhận command/query record — cũng auto-discover), `<Action>Validator.cs` (FluentValidation, chỉ khi có input). Tag endpoint bằng const trong `ApiTags`.
 4. **Hằng số**: route, error code, limit, header… vào `Infrastructure/Constants/` — không hardcode.
-5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern HTMX lazy-load ở đầu file này và **hệ thị giác trong `DESIGN.md`** (xem mục Design System bên dưới). JS riêng của page vào `ts/<tên>.ts` (KHÔNG phải `wwwroot/js/` — đó là output bị gitignore) và expose qua 1 object global; khai báo object đó trong `ts/globals.d.ts`. Chuỗi hiển thị cho người dùng vào `SharedLoc.{en,vi}.resx`, **không hardcode** — chuỗi mà JS cần thì truyền qua một block JSON trong page (xem `download-i18n`).
+5. **UI**: page mới vào `Components/Pages/<Tên>.razor` + `.razor.css`, theo pattern SSR và Unpoly ở đầu file này và **hệ thị giác trong `DESIGN.md`** (xem mục Design System bên dưới). JS riêng của page vào `ts/<tên>.ts` (KHÔNG phải `wwwroot/js/` — đó là output bị gitignore) và expose qua 1 object global; khai báo object đó trong `ts/globals.d.ts`. Chuỗi hiển thị cho người dùng vào `SharedLoc.{en,vi}.resx`, **không hardcode** — chuỗi mà JS cần thì truyền qua một block JSON trong page (xem `download-i18n`).
 6. **Service**: service chỉ 1 feature dùng → đặt ngay trong folder feature đó (vd `P2PQuotaService` nằm trong `Features/Shares/P2P/`). Chỉ khi ≥2 feature dùng chung mới đưa vào `Infrastructure/`. Đăng ký DI trong `Program.cs`.
 7. **Test**: E2E phía server vào `tests/QuickShare.Server.Tests/E2E/`, dùng `TestWebAppFactory` (xem `DeliveryExtrasApiTests` làm mẫu seed data + client). Logic **chỉ tồn tại trong trình duyệt** (clipboard, sessionStorage, chuyển phase bằng JS) thì dùng `BrowserAppFixture` + Playwright (xem `PasteBrowserTests`) — nó chạy app như process thật và lái Chrome đã cài, không tải browser bundle.
 8. **Xoá feature**: xoá folder `Features/<Tên>/` là endpoint + handler tự biến mất (auto-discovery), sau đó grep tên feature để dọn UI/JS/CSS/test còn tham chiếu.

@@ -289,7 +289,6 @@ public sealed class WebDavTests : IClassFixture<TestWebAppFactory>
         var (client, _, _) = await MountAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/developer");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // The address and the one command a team has to run — an endpoint nobody can find is
@@ -306,7 +305,6 @@ public sealed class WebDavTests : IClassFixture<TestWebAppFactory>
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/developer");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // An address that would answer 401 forever is worse than saying why.

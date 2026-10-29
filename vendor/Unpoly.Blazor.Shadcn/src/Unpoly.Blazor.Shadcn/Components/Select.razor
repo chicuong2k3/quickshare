@@ -1,0 +1,61 @@
+@inherits UiComponentBase
+
+@* The one deliberate departure from shadcn's DOM, and the reason for it:
+   -----------------------------------------------------------------------------------------
+   Radix Select is a listbox of divs plus a hidden input. That is a reasonable trade in a SPA
+   and a bad one here — the <select> is what posts the form, what works with scripting off, and
+   what a phone renders as its own native wheel. So the native control stays, wearing
+   SelectTrigger's classes, and ui.js draws the shadcn panel beside it and hides the select
+   (sr-only, never display:none — a hidden select still submits, but an unlabelled one is
+   unreachable to a screen reader).
+
+   The visible result is shadcn's. The API is not identical: there is no <SelectTrigger> /
+   <SelectValue> / <SelectContent> here, because the native element is all three. Options are
+   <SelectItem>, which renders <option>.
+
+   Without JavaScript this is a plain styled <select>, with the OS panel. That is the fallback
+   working, not the fallback failing. *@
+
+@* data-wrapper-class carries the caller's classes verbatim. When ui.js hides the select behind a
+   drawn panel, the sizing the call site asked for (`max-w-[170px]`, `w-full`) has to move to the
+   visible control — and guessing which classes those are by subtracting the recipe leaves
+   `pr-9` and the aria-invalid rules behind to shift the wrapper's layout. *@
+@if (ValueChanged.HasDelegate)
+{
+    <select data-slot="select" data-size="@Size" data-wrapper-class="@Class"
+            data-align-item-with-trigger="@(AlignItemWithTrigger ? null : "false")" class="@Classes"
+            value="@Value" @onchange="OnChange" @attributes="AdditionalAttributes">@ChildContent</select>
+}
+else
+{
+    <select data-slot="select" data-size="@Size" data-wrapper-class="@Class"
+            data-align-item-with-trigger="@(AlignItemWithTrigger ? null : "false")" class="@Classes"
+            @attributes="AdditionalAttributes">@ChildContent</select>
+}
+
+@code {
+    /// <summary>default | sm. ui.js copies it onto the trigger it draws.</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    /// <summary>
+    /// shadcn's alignItemWithTrigger, and on by default as it is there: the list opens with the
+    /// chosen row over the trigger, so the value you already have does not move under the
+    /// pointer. Off, the list hangs below the control like a menu.
+    /// </summary>
+    [Parameter] public bool AlignItemWithTrigger { get; set; } = true;
+
+    /// <summary>The bound value, from <c>@bind-Value</c>. Only rendered when binding is in use.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Raises on change when <c>@bind-Value</c> is used. Its presence decides whether the
+    /// component renders the bound value/onchange or lets the <c>@attributes</c> splat do it.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+
+    const string Base =
+        "";
+
+    string Classes => Cn(Base, Class);
+}

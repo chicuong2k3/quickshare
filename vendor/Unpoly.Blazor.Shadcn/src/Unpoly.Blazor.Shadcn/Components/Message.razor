@@ -1,0 +1,20 @@
+@inherits UiComponentBase
+
+@* A message in a thread — the wider shape around <Bubble>, with room for an avatar, a header and
+   a footer. An <article> for the same reason: a thread is a list of separately authored things,
+   and that is what lets a screen reader move between them. *@
+
+<article data-slot="message" data-align="@Align" class="@Classes"
+         @attributes="AdditionalAttributes">@ChildContent</article>
+
+@code {
+    /// <summary>start | end — which side of the thread this turn sits on. "end" is the reader's
+    /// own messages, in every chat interface anyone has used.</summary>
+    [Parameter] public string Align { get; set; } = "start";
+
+    const string Base =
+        "group/message relative flex w-full min-w-0 gap-2 text-control " +
+        "data-[align=end]:flex-row-reverse";
+
+    string Classes => Cn(Base, Class);
+}

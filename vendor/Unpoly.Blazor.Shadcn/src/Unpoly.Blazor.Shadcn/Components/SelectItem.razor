@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* An <option> takes no styling worth having and no children beyond text — the OS draws it. The
+   themed row a user actually sees is built by ui.js from this option's value and text. *@
+
+<option data-slot="select-item" value="@Value" selected="@Selected" class="@Class"
+        @attributes="AdditionalAttributes">@ChildContent</option>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool Selected { get; set; }
+}

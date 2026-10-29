@@ -1,0 +1,50 @@
+@inherits UiComponentBase
+
+@* Timeline — chronological events, Lumeo parity. No JS, pure CSS. *@
+
+<div data-slot="timeline"
+     data-orientation="@Orientation.ToLowerInvariant()"
+     data-animated="@(Animated ? "true" : null)"
+     data-alternate="@(Alternate ? "true" : null)"
+     role="list"
+     class="@Classes"
+     @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+</div>
+
+@code {
+    [Parameter] public string Orientation { get; set; } = "Vertical"; // Vertical | Horizontal
+
+    [Parameter] public int ActiveIndex { get; set; } = -1;
+
+    [Parameter] public EventCallback<int> ActiveIndexChanged { get; set; }
+
+    [Parameter] public bool Animated { get; set; }
+
+    [Parameter] public bool Alternate { get; set; }
+
+    internal List<TimelineItem> Items { get; } = new();
+    internal void Register(TimelineItem i) { if (!Items.Contains(i)) Items.Add(i); }
+    internal void Unregister(TimelineItem i) => Items.Remove(i);
+    internal int IndexOf(TimelineItem i) => Items.IndexOf(i);
+
+    internal bool IsHorizontal => Orientation.Equals("Horizontal", StringComparison.OrdinalIgnoreCase);
+
+    internal async Task SelectAsync(int idx)
+    {
+        if (idx < 0 || idx >= Items.Count) return;
+        ActiveIndex = idx;
+        await ActiveIndexChanged.InvokeAsync(idx);
+        StateHasChanged();
+    }
+
+    const string BaseVertical = "relative flex flex-col gap-0 pl-6";
+    const string BaseHorizontal = "relative flex flex-row gap-4 overflow-x-auto";
+
+    string Classes => Cn(
+        IsHorizontal ? BaseHorizontal : BaseVertical,
+        Alternate ? "data-[alternate=true]:[&>[data-slot=timeline-item]:nth-child(even)]:flex-row-reverse" : null,
+        Class);
+}

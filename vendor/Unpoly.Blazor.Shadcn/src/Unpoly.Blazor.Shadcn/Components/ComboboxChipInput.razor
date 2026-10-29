@@ -1,0 +1,20 @@
+@inherits UiComponentBase
+
+@* The text box inside the chip frame. role="combobox" belongs here rather than on the frame:
+   this is the thing that takes the typing and owns the list. *@
+
+<input type="text" data-slot="combobox-chip-input" role="combobox" autocomplete="off"
+       aria-autocomplete="list" aria-expanded="false" aria-label="@AriaLabel"
+       placeholder="@Placeholder" class="@Classes" @attributes="AdditionalAttributes" />
+
+@code {
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The placeholder is not a label, and a chip frame rarely has a visible one.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Search";
+
+    const string Base =
+        "min-w-16 flex-1 outline-none";
+
+    string Classes => Cn(Base, Class);
+}

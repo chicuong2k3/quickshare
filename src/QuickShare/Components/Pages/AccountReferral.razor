@@ -4,24 +4,23 @@
 @layout MainLayout
 @attribute [Authorize]
 @using Microsoft.EntityFrameworkCore
+@using Unpoly.Blazor.Shadcn
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 
-<div id="referral-card" class="db-card account-card">
-    <div class="db-card__body">
-        <h3 class="db-h4">@Loc["referral_title"]</h3>
-        <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["referral_lead"]</p>
+<Card id="referral-card" class="my-4 w-full max-w-md p-6">
+        <h3 class="text-lg font-semibold">@Loc["referral_title"]</h3>
+        <p class="mt-1.5 text-sm text-muted-foreground">@Loc["referral_lead"]</p>
 
-        <div class="referral-code" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem">
-            <code class="miura-spec" style="font-size: 1.25rem">@referralCode</code>
-            <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="copyReferralCode(this)" data-ai-action="referral.copy">@Loc["referral_copy"]</button>
+        <div class="referral-code mt-4 flex items-center gap-2">
+            <code class="text-xl">@referralCode</code>
+            <button type="button" class="@(ButtonVariants.Of("ghost", "sm"))" onclick="copyReferralCode(this)" data-ai-action="referral.copy">@Loc["referral_copy"]</button>
         </div>
 
-        <p class="db-p db-text-muted" style="margin-top: 0.75rem; font-size: 0.875rem">
+        <p class="mt-3 text-sm text-muted-foreground">
             @Loc["referral_stats", referredCount.ToString(), bonusText]
         </p>
-    </div>
-</div>
+</Card>
 
 <script>
     window.copyReferralCode = function (btn) {

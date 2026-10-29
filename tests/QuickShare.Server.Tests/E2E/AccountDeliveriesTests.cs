@@ -126,14 +126,8 @@ public sealed class AccountDeliveriesTests : IClassFixture<TestWebAppFactory>
         await SeedDeliveriesAsync(_factory, user.Id, 1, downloadCount: 1);
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        // Shell render: instant, no rows yet.
-        var shell = await client.GetAsync(RoutePaths.AccountDeliveries);
-        Assert.Equal(HttpStatusCode.OK, shell.StatusCode);
-        var shellHtml = await shell.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("account-delivery__gauge", shellHtml);
-
-        // HTMX fetch: the gauge fill reflects 1 of 5 downloads.
-        var loaded = await GetHtmxAsync(client, RoutePaths.AccountDeliveries);
+        // The direct response reflects 1 of 5 downloads.
+        var loaded = await GetPageAsync(client, RoutePaths.AccountDeliveries);
         Assert.Contains("account-delivery__gauge", loaded);
         Assert.Contains("width:20%", loaded);
 
@@ -146,7 +140,7 @@ public sealed class AccountDeliveriesTests : IClassFixture<TestWebAppFactory>
             await db.SaveChangesAsync();
         }
 
-        var refreshed = await GetHtmxAsync(client, RoutePaths.AccountDeliveries);
+        var refreshed = await GetPageAsync(client, RoutePaths.AccountDeliveries);
         Assert.Contains("width:60%", refreshed);
         Assert.DoesNotContain("width:20%", refreshed);
     }
@@ -158,7 +152,7 @@ public sealed class AccountDeliveriesTests : IClassFixture<TestWebAppFactory>
         await _factory.SeedUserAsync(providerKey);
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        var html = await GetHtmxAsync(client, RoutePaths.AccountDeliveries);
+        var html = await GetPageAsync(client, RoutePaths.AccountDeliveries);
         Assert.Contains("account-deliveries-empty", html);
         Assert.DoesNotContain("account-delivery__gauge", html);
     }
@@ -170,16 +164,17 @@ public sealed class AccountDeliveriesTests : IClassFixture<TestWebAppFactory>
 
         foreach (var url in new[] { RoutePaths.Account, RoutePaths.AccountBilling, RoutePaths.AccountDeliveries })
         {
-            var html = await (await client.GetAsync(url)).Content.ReadAsStringAsync();
+            var response = await client.GetAsync(url);
+            var html = await response.Content.ReadAsStringAsync();
+            Assert.True(response.IsSuccessStatusCode, $"{url}: {(int)response.StatusCode} {html}");
             Assert.Contains("account-tabs", html);
             Assert.Contains(RoutePaths.AccountDeliveries, html);
         }
     }
 
-    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    private static async Task<string> GetPageAsync(HttpClient client, string url)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
         var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadAsStringAsync();

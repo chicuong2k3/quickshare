@@ -1,0 +1,42 @@
+@inherits UiComponentBase
+
+@* GradientBorder — a 1px gradient edge around whatever the caller puts inside.
+   Pure CSS: a gradient plate 1px thick behind a surface-coloured inset, so the child's own
+   layout is untouched — no extra padding on the child, no positioning context, no JS.
+
+   Do NOT use it for anything that carries meaning. The gradient is decoration: it cannot be
+   read aloud, it is invisible at 1px on a low-contrast display, and it drops to a single flat
+   colour wherever oklch colour-mix or a print stylesheet cannot be relied on. If the border
+   is load-bearing — a selected state, a required field, an error — use `Border`/`Variant` on
+   the control itself, and say the state in text. Reach for this only to make a panel read as
+   a distinct surface. *@
+
+<div data-slot="gradient-border" class="@Classes" @attributes="AdditionalAttributes">
+    <div data-slot="gradient-border-surface" class="@SurfaceClasses">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>Colour the surface behind the child paints over. Leave it null unless the child
+    /// is bare content — a Card or Dialog brings its own background and the default only fills
+    /// the gap around it.</summary>
+    [Parameter] public string? Surface { get; set; }
+
+    // The plate is `p-px` of gradient over a surface-coloured inset, so the child's box is one
+    // pixel larger than it would be on its own and nothing inside it shifts. `border` was the
+    // other option and it cannot carry a gradient that follows the corner radius: a border-image
+    // squares the corners off against the rounding.
+    string Classes => Cn(
+        "relative inline-block rounded-lg bg-gradient-to-r from-primary via-accent to-primary p-px",
+        Class);
+
+    // One pixel inside the plate's radius, or the surface's corners would clip inside the
+    // gradient's and leave a sliver of colour showing at each one. The theme's --radius is
+    // 0.625rem and rounded-lg is calc(--radius - 2px), so the surface is calc(--radius - 3px).
+    // Written as an arbitrary value because Tailwind's own scale has no "1px smaller" step, and
+    // hardcoding a rem here would drift the moment the theme changes.
+    string SurfaceClasses => Cn(
+        "rounded-[calc(var(--radius)-3px)]",
+        Surface is null ? "bg-background" : Surface);
+}

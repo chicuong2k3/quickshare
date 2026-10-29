@@ -343,13 +343,13 @@ public sealed class LegalHoldTests : IClassFixture<TestWebAppFactory>
         var delivery = await UploadFileAsync(client);
 
         // The badge marker, not the class prefix — `account-delivery__hold` also prefixes the button.
-        var before = await GetHtmxAsync(client, "/account/deliveries");
+        var before = await GetPageAsync(client, "/account/deliveries");
         Assert.DoesNotContain("delivery.holdBadge", before, StringComparison.Ordinal);
         Assert.Contains("delivery.hold\"", before, StringComparison.Ordinal);
 
         await PlaceHoldAsync(client, delivery);
 
-        var after = await GetHtmxAsync(client, "/account/deliveries");
+        var after = await GetPageAsync(client, "/account/deliveries");
         Assert.Contains("delivery.holdBadge", after, StringComparison.Ordinal);
         Assert.Contains("account-delivery__hold\"", after, StringComparison.Ordinal);
         // The case reference is the state a legal team reads — it must reach the markup.
@@ -361,10 +361,9 @@ public sealed class LegalHoldTests : IClassFixture<TestWebAppFactory>
         Assert.DoesNotContain("deliveries_hold", after, StringComparison.Ordinal);
     }
 
-    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    private static async Task<string> GetPageAsync(HttpClient client, string url)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
         var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadAsStringAsync();

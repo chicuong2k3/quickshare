@@ -13,37 +13,37 @@
     <article class="legal">
         @if (IsVi)
         {
-            <h1 class="db-h1">Báo cáo lỗ hổng bảo mật</h1>
-            <p class="db-p db-text-muted legal__version">Cập nhật @DocDate</p>
+            <h1 class="text-3xl font-bold tracking-tight">Báo cáo lỗ hổng bảo mật</h1>
+            <p class="text-muted-foreground legal__version">Cập nhật @DocDate</p>
 
-            <h2 class="db-h2">1. Cách báo cáo</h2>
-            <p class="db-p">Gửi báo cáo qua <a class="db-link" href="mailto:@SecurityConstants.ContactEmail">@SecurityConstants.ContactEmail</a> (kèm khoá PGP nếu cần). Không gửi lỗ hổng qua kênh công khai (issue tracker, mạng xã hội) cho đến khi chúng tôi đã khắc phục.</p>
+            <h2 class="text-2xl font-bold">1. Cách báo cáo</h2>
+            <p>Gửi báo cáo qua <a class="text-primary underline-offset-4 hover:underline" href="mailto:@SecurityConstants.ContactEmail">@SecurityConstants.ContactEmail</a> (kèm khoá PGP nếu cần). Không gửi lỗ hổng qua kênh công khai (issue tracker, mạng xã hội) cho đến khi chúng tôi đã khắc phục.</p>
 
-            <h2 class="db-h2">2. Phạm vi</h2>
-            <p class="db-p">Trong phạm vi: hạ tầng tải/tải xuống tệp, luồng truyền P2P (WebRTC), mã hoá AES-GCM phía client, xác thực OTP/mật khẩu trên liên kết chia sẻ, và bất kỳ lỗ hổng nào làm lộ dữ liệu người dùng.</p>
+            <h2 class="text-2xl font-bold">2. Phạm vi</h2>
+            <p>Trong phạm vi: hạ tầng tải/tải xuống tệp, luồng truyền P2P (WebRTC), mã hoá AES-GCM phía client, xác thực OTP/mật khẩu trên liên kết chia sẻ, và bất kỳ lỗ hổng nào làm lộ dữ liệu người dùng.</p>
 
-            <h2 class="db-h2">3. Cam kết xử lý</h2>
-            <p class="db-p">Xác nhận trong 72 giờ. Khắc phục trong 90 ngày (trừ lỗ hổng nghiêm trọng — xử lý sớm hơn). Chúng tôi ghi công người báo cáo trong trang cảm ơn khi lỗ hổng được đóng, nếu bạn muốn.</p>
+            <h2 class="text-2xl font-bold">3. Cam kết xử lý</h2>
+            <p>Xác nhận trong 72 giờ. Khắc phục trong 90 ngày (trừ lỗ hổng nghiêm trọng — xử lý sớm hơn). Chúng tôi ghi công người báo cáo trong trang cảm ơn khi lỗ hổng được đóng, nếu bạn muốn.</p>
 
-            <h2 class="db-h2">4. Quy tắc</h2>
-            <p class="db-p">Không phá hoại dữ liệu, không xâm nhập tài khoản người khác, chỉ dùng mức truy cập tối thiểu để chứng minh lỗ hổng. Báo cáo có trách nhiệm sẽ không bị truy cứu khi tuân thủ các quy tắc trên.</p>
+            <h2 class="text-2xl font-bold">4. Quy tắc</h2>
+            <p>Không phá hoại dữ liệu, không xâm nhập tài khoản người khác, chỉ dùng mức truy cập tối thiểu để chứng minh lỗ hổng. Báo cáo có trách nhiệm sẽ không bị truy cứu khi tuân thủ các quy tắc trên.</p>
         }
         else
         {
-            <h1 class="db-h1">Vulnerability Disclosure</h1>
-            <p class="db-p db-text-muted legal__version">Last updated @DocDate</p>
+            <h1 class="text-3xl font-bold tracking-tight">Vulnerability Disclosure</h1>
+            <p class="text-muted-foreground legal__version">Last updated @DocDate</p>
 
-            <h2 class="db-h2">1. How to report</h2>
-            <p class="db-p">Send reports to <a class="db-link" href="mailto:@SecurityConstants.ContactEmail">@SecurityConstants.ContactEmail</a> (PGP key on request). Do not disclose a vulnerability publicly (issue tracker, social media) until we have shipped a fix.</p>
+            <h2 class="text-2xl font-bold">1. How to report</h2>
+            <p>Send reports to <a class="text-primary underline-offset-4 hover:underline" href="mailto:@SecurityConstants.ContactEmail">@SecurityConstants.ContactEmail</a> (PGP key on request). Do not disclose a vulnerability publicly (issue tracker, social media) until we have shipped a fix.</p>
 
-            <h2 class="db-h2">2. Scope</h2>
-            <p class="db-p">In scope: upload/download infrastructure, P2P transfer (WebRTC), client-side AES-GCM encryption, OTP/password gates on share links, and any issue that exposes user data.</p>
+            <h2 class="text-2xl font-bold">2. Scope</h2>
+            <p>In scope: upload/download infrastructure, P2P transfer (WebRTC), client-side AES-GCM encryption, OTP/password gates on share links, and any issue that exposes user data.</p>
 
-            <h2 class="db-h2">3. Commitments</h2>
-            <p class="db-p">Acknowledge within 72 hours. Fix within 90 days (critical issues sooner). We credit reporters on the acknowledgments page once the issue is closed, if you opt in.</p>
+            <h2 class="text-2xl font-bold">3. Commitments</h2>
+            <p>Acknowledge within 72 hours. Fix within 90 days (critical issues sooner). We credit reporters on the acknowledgments page once the issue is closed, if you opt in.</p>
 
-            <h2 class="db-h2">4. Rules</h2>
-            <p class="db-p">No data destruction, no accessing other users' accounts, use the least access needed to demonstrate the issue. Responsible reports that follow these rules won't be pursued.</p>
+            <h2 class="text-2xl font-bold">4. Rules</h2>
+            <p>No data destruction, no accessing other users' accounts, use the least access needed to demonstrate the issue. Responsible reports that follow these rules won't be pursued.</p>
         }
     </article>
 </PageWrapper>

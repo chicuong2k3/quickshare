@@ -1,0 +1,19 @@
+@inherits UiComponentBase
+
+@* Variant is the difference between a section heading and a label for a group of checkboxes —
+   the same element at two sizes. It is an attribute rather than a class because that is what the
+   recipe keys off; without it neither size applied and every legend rendered at the inherited
+   one. *@
+
+<legend data-slot="field-legend" data-variant="@Variant" class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</legend>
+
+@code {
+    /// <summary>legend | label</summary>
+    [Parameter] public string Variant { get; set; } = "legend";
+
+    const string Base =
+        "mb-3 font-medium data-[variant=legend]:text-base data-[variant=label]:text-sm";
+
+    string Classes => Cn(Base, Class);
+}

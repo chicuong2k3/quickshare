@@ -5,10 +5,13 @@
   "description": "TypeScript sources for the QuickShare web client. Compiled to wwwroot/js via tsc.",
   "scripts": {
     "tsc": "tsc -p tsconfig.json",
+    "css:build": "tailwindcss -i ./tailwind.css -o ./wwwroot/css/shadcn.generated.css --minify",
     "tsc:watch": "tsc -p tsconfig.json --watch"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "eslint": "^10.8.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   }
 }

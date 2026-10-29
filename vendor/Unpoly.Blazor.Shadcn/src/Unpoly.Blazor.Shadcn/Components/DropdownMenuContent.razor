@@ -1,0 +1,23 @@
+@inherits UiComponentBase
+
+<div id="@Id" popover data-slot="dropdown-menu-content" role="menu"
+     data-align="@Align" data-side="@Side" data-side-offset="@SideOffset" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>start | center | end — which edge lines up with the trigger's.</summary>
+    [Parameter] public string Align { get; set; } = "start";
+
+    /// <summary>bottom | top. Flipped anyway when there is no room below.</summary>
+    [Parameter] public string Side { get; set; } = "bottom";
+
+    /// <summary>Pixels between the trigger and the panel. Read by ui.js when it positions.</summary>
+    [Parameter] public int SideOffset { get; set; } = 4;
+
+    const string Base =
+        "z-50 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 " +
+        "text-popover-foreground shadow-md";
+
+    string Classes => Cn(Base, Class);
+}

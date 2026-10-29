@@ -1,7 +1,7 @@
 @* AdComponent.razor — self-contained rewarded ad component.
    Resolves user plan and remaining ads internally via DB.
    Renders nothing for anonymous users, consent CTA for no-consent,
-   skeleton on first render, full ad prompt on HTMX response.
+   full ad prompt rendered directly by static SSR.
    Pro/Studio users: skeleton flashes briefly then clears. *@
 @using QuickShare.Infrastructure
 @using QuickShare.Extensions
@@ -38,25 +38,7 @@
     return;
 }
 
-@* Shell render — skeleton, hx-get to dedicated /ads/reward-prompt page *@
-@if (!IsHxRequest)
-{
-    <div id="ad-reward-card"
-         class="ad-reward-card"
-         hx-get="@AdConstants.RewardPromptRoute"
-         hx-trigger="load"
-         hx-target="#ad-reward-card"
-         hx-select="#ad-reward-card"
-         hx-swap="outerHTML">
-        <div class="ad-reward-card__skeleton">
-            <div class="db-skeleton db-skeleton--text" style="width:55%"></div>
-            <div class="db-skeleton db-skeleton--button" style="width:35%; height:2.5rem; margin-top:0.75rem"></div>
-        </div>
-    </div>
-    return;
-}
-
-@* HTMX response — _userPlan resolved, Pro users get empty clear-out *@
+@* _userPlan resolved during SSR; paid users get empty clear-out. *@
 @if (_userPlan != PlanTierLimits.Free)
 {
     <div id="ad-reward-card"></div>
@@ -167,7 +149,6 @@
     private string? _userPlan;
     private bool _allowDevSimulation;
     private int RemainingAds { get; set; } = AdConstants.MaxDailyAds;
-    private bool IsHxRequest { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -179,13 +160,10 @@
         _allowDevSimulation = string.Equals(
             Config["Ads:DevSimulation"], "true", StringComparison.OrdinalIgnoreCase);
 
-        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
-        IsHxRequest = hxHeader == "true";
-        if (!IsHxRequest) return; // Shell render — no DB calls
         if (!_isAuthenticated) return;
         if (!HasAdConsent) return;
 
-        // HTMX data fetch: resolve plan + remaining ads from DB
+        // Resolve plan + remaining ads from DB.
         try
         {
             var principal = HttpContextAccessor.HttpContext!.User;

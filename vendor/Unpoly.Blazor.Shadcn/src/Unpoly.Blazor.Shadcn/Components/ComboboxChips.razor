@@ -1,0 +1,35 @@
+@inherits UiComponentBase
+
+@* The frame of a multi-select: chips for what is chosen, and a text box to add more. It looks
+   like one control and is really two, which is why the frame carries the focus ring rather than
+   the input — :focus-within is what makes a composite control look focused.
+
+   The <template> is the chip ui.js clones when a row is chosen. It used to build one by hand out
+   of a class name the caller had to remember to pass, so a chip added by clicking had neither
+   the badge styling nor a remove button while the one the server rendered had both. A template
+   keeps that markup in Razor, beside the rest of it, with nothing to keep in step. *@
+
+<div data-slot="combobox-chips" data-name="@Name" class="@Classes"
+     @attributes="AdditionalAttributes">
+    @ChildContent
+    <template data-combobox-chip-template>
+        <ComboboxChip Value="" Name="@Name" />
+    </template>
+</div>
+
+@code {
+    /// <summary>The field every chip posts under. The same on all of them: that is the list.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    const string Base =
+        "flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input " +
+        "bg-transparent bg-clip-padding px-2.5 py-1.5 text-control shadow-xs " +
+        "transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] " +
+        "focus-within:ring-ring/50 has-aria-invalid:border-destructive " +
+        "has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 " +
+        "has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 " +
+        "dark:has-aria-invalid:border-destructive/50 " +
+        "dark:has-aria-invalid:ring-destructive/40";
+
+    string Classes => Cn(Base, Class);
+}

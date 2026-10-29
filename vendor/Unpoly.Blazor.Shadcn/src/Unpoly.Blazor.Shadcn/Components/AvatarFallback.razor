@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+<span data-slot="avatar-fallback" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    const string Base =
+        "flex size-full items-center justify-center rounded-full bg-muted text-control " +
+        "text-muted-foreground group-data-[size=sm]/avatar:text-xs absolute inset-0";
+
+    string Classes => Cn(Base, Class);
+}

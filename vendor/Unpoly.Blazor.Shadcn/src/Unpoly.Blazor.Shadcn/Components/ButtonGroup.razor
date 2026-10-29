@@ -1,0 +1,37 @@
+@inherits UiComponentBase
+
+@* A row — or a column — of controls that read as one. The joins are made by the group, not by
+   the buttons: each child after the first loses its leading radius and its leading border, so
+   two 1px edges never sit on top of each other.
+
+   Orientation is a real parameter, as upstream. It was missing, and the horizontal classes were
+   baked into the base — so <ButtonGroup Orientation="vertical"> splatted an unknown attribute
+   onto the div and produced a horizontal group with the word "vertical" in its markup.
+
+   Logical properties, so the joins are on the reading edges: in Arabic the first button keeps
+   its radius on the right and loses it on the left, which is the opposite of what rounded-l
+   would do. *@
+
+<div data-slot="button-group" data-orientation="@Orientation" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>horizontal | vertical</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    const string Base =
+        "flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 " +
+        "[&>*]:focus-visible:relative [&>*]:focus-visible:z-10 " +
+        "has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-e-md " +
+        "[&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1";
+
+    string OrientationClass => Orientation switch
+    {
+        "vertical" => "flex-col [&>*:not(:first-child)]:rounded-t-none " +
+                      "[&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
+        _ => "[&>*:not(:first-child)]:rounded-s-none [&>*:not(:first-child)]:border-s-0 " +
+             "[&>*:not(:last-child)]:rounded-e-none",
+    };
+
+    string Classes => Cn(Base, OrientationClass, Class);
+}

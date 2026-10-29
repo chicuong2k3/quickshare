@@ -1,0 +1,163 @@
+@inherits UiComponentBase
+
+@* PricingTable — after Kokonut UI's pricing table on 21st.dev, built from its description rather
+   than its source: a monthly/yearly switch, the plans as cards to choose between, a matrix of
+   which plan includes which feature with the chosen plan's column lit, and one button that
+   starts with the chosen plan. Prices count to their new value when the billing changes, where
+   upstream reached for NumberFlow.
+
+   It is a form, and that is the whole of the state. The switch and the cards are radio buttons,
+   so the choice is the platform's, and the button submits plan=… and billing=… to Action with a
+   GET — a link that carries the reader's choice to sign-up or checkout, with no script and no
+   endpoint of its own. Which price shows follows the checked billing radio through :has() in
+   ui.behavior.css, so that works with scripting off too. ui.js lights the chosen column, keeps
+   the button's plan name in step, and counts the prices with Motion. *@
+
+<form data-slot="pricing-table" data-billing-scope="@(Yearly ? "yearly" : "monthly")" method="get" action="@Action"
+      class="@Classes" @attributes="AdditionalAttributes">
+    <fieldset data-slot="pricing-table-billing" data-billing-control class="mx-auto flex w-fit min-w-0 rounded-full border bg-muted p-1">
+        <legend class="sr-only">Billing period</legend>
+        <label class="@ToggleClasses">
+            <input type="radio" name="billing" value="monthly" checked="@(!Yearly)" class="sr-only" />Monthly
+        </label>
+        <label class="@ToggleClasses">
+            <input type="radio" name="billing" value="yearly" checked="@Yearly" class="sr-only" />Yearly
+        </label>
+    </fieldset>
+
+    <fieldset data-slot="pricing-table-plans" class="grid min-w-0 gap-3 sm:auto-cols-fr sm:grid-flow-col">
+        <legend class="sr-only">Plan</legend>
+        @foreach (var plan in Plans)
+        {
+            <label data-slot="pricing-table-plan" data-plan="@plan.Name" class="@PlanClasses">
+                <input type="radio" name="plan" value="@plan.Name" checked="@(plan.Name == Selected)" class="sr-only" />
+                <span class="flex items-center justify-between gap-2">
+                    <span class="font-medium">@plan.Name</span>
+                    @if (plan.Popular)
+                    {
+                        <Badge>Popular</Badge>
+                    }
+                </span>
+                <span class="flex items-baseline gap-1">
+                    @Price(plan.MonthlyPrice, "monthly")
+                    @Price(plan.YearlyPrice, "yearly")
+                    <span data-billing="monthly" class="text-sm text-muted-foreground">/month</span>
+                    <span data-billing="yearly" class="text-sm text-muted-foreground">/year</span>
+                </span>
+            </label>
+        }
+    </fieldset>
+
+    @* Equal plan columns from sm up, where there is room for a fixed layout. Below it the
+       columns size to their content, so a plan's name is never squeezed out of its header, and
+       a matrix too wide for the phone scrolls sideways inside its border. *@
+    <div data-slot="pricing-table-matrix" class="overflow-x-auto rounded-xl border">
+        <table class="w-full text-sm sm:table-fixed">
+            <caption class="sr-only">Features by plan</caption>
+            <thead>
+                <tr class="border-b bg-muted/50">
+                    <th scope="col" class="p-3 text-start font-medium sm:w-2/5 sm:p-4">Features</th>
+                    @foreach (var plan in Plans)
+                    {
+                        <th scope="col" data-plan="@plan.Name" data-selected="@IsSelected(plan)"
+                            class="px-2 py-3 text-center font-medium transition-colors data-[selected=true]:text-primary sm:p-4">@plan.Name</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var feature in Features)
+                {
+                    var from = IndexOf(feature.IncludedFrom);
+                    <tr class="border-b last:border-b-0">
+                        <th scope="row" class="p-3 text-start font-normal sm:p-4">@feature.Name</th>
+                        @for (var i = 0; i < Plans.Count; i++)
+                        {
+                            var plan = Plans[i];
+                            <td data-plan="@plan.Name" data-selected="@IsSelected(plan)"
+                                class="px-2 py-3 text-center transition-colors data-[selected=true]:bg-primary/5 sm:p-4 dark:data-[selected=true]:bg-primary/10">
+                                @if (from >= 0 && i >= from)
+                                {
+                                    <Icon Name="check" Title="Included" Class="mx-auto size-5 text-primary" />
+                                }
+                                else
+                                {
+                                    <Icon Name="minus" Title="Not included" Class="mx-auto size-5 text-muted-foreground/50" />
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-center">
+        @* One span round the words: the button lays its children out with a gap, which put a second
+           space between "with" and the plan's name. *@
+        <Button Class="w-full sm:w-auto"><span>Get started with <span data-slot="pricing-table-choice">@Selected</span></span></Button>
+    </div>
+</form>
+
+@code {
+    /// <summary>The plans, cheapest first: a feature is included from its plan onwards.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PricingPlan> Plans { get; set; } = default!;
+
+    /// <summary>The comparison rows, in the order they are listed.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PricingFeature> Features { get; set; } = default!;
+
+    /// <summary>Where the button sends <c>plan</c> and <c>billing</c>. Null submits to the
+    /// current address, for a page that reads its own query.</summary>
+    [Parameter] public string? Action { get; set; }
+
+    /// <summary><c>monthly</c> or <c>yearly</c> — which is checked when the page arrives.
+    /// Anything else is read as <c>monthly</c>.</summary>
+    [Parameter] public string Billing { get; set; } = "monthly";
+
+    /// <summary>The plan checked when the page arrives, by name. Null, or a name no plan has,
+    /// selects the popular plan, or the first.</summary>
+    [Parameter] public string? SelectedPlan { get; set; }
+
+    /// <summary>Written in front of every price.</summary>
+    [Parameter] public string Currency { get; set; } = "$";
+
+    bool Yearly => string.Equals(Billing?.Trim(), "yearly", StringComparison.OrdinalIgnoreCase);
+
+    string? Selected => Plans.FirstOrDefault(p => p.Name == SelectedPlan)?.Name
+        ?? Plans.FirstOrDefault(p => p.Popular)?.Name
+        ?? Plans.FirstOrDefault()?.Name;
+
+    string IsSelected(PricingPlan plan) => plan.Name == Selected ? "true" : "false";
+
+    int IndexOf(string name)
+    {
+        for (var i = 0; i < Plans.Count; i++)
+            if (Plans[i].Name == name) return i;
+        return -1;
+    }
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    // Formatted here, invariant, rather than by the machine's locale: data-value is read back by
+    // ui.js as a JavaScript number, and the count's last frame has to be this same text.
+    RenderFragment Price(decimal value, string billing) => __builder =>
+    {
+        var decimals = decimal.Round(value) == value ? 0 : 2;
+        <span data-slot="pricing-table-price" data-billing="@billing" data-value="@value.ToString(Inv)"
+              data-decimals="@decimals" data-prefix="@Currency"
+              class="text-3xl font-semibold tracking-tight tabular-nums">@(Currency + value.ToString("N" + decimals, Inv))</span>
+    };
+
+    string Classes => Cn("flex w-full flex-col gap-6", Class);
+
+    // relative on each label: the radio inside is sr-only, absolutely placed, and focusing it
+    // would otherwise scroll to wherever its nearest positioned ancestor is.
+    const string ToggleClasses =
+        "relative cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors " +
+        "has-[:checked]:bg-background has-[:checked]:text-foreground has-[:checked]:shadow-sm " +
+        "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50";
+
+    const string PlanClasses =
+        "relative flex cursor-pointer flex-col gap-2 rounded-xl border p-4 transition-colors " +
+        "has-[:checked]:border-primary has-[:checked]:bg-primary/5 dark:has-[:checked]:bg-primary/10 " +
+        "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50";
+}

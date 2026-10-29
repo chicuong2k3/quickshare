@@ -1,0 +1,22 @@
+@inherits UiComponentBase
+
+<div data-slot="progress" role="progressbar" aria-valuemin="0" aria-valuemax="@Max"
+     aria-valuenow="@Clamped" class="@Classes" @attributes="AdditionalAttributes">
+    <div data-slot="progress-indicator" class="bg-primary h-full w-full flex-1 transition-all"
+         style="transform: translateX(-@(Offset)%)"></div>
+</div>
+
+@code {
+    [Parameter] public double Value { get; set; }
+    [Parameter] public double Max { get; set; } = 100;
+
+    double Clamped => Math.Clamp(Value, 0, Max);
+
+    /// <summary>How far left to slide the bar. Invariant culture on purpose: under a culture that
+    /// writes decimals with a comma, the CSS transform is not a number and the bar silently
+    /// stops moving — with no error anywhere.</summary>
+    string Offset => (Max <= 0 ? 100 : 100 - Clamped / Max * 100)
+        .ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    string Classes => Cn("relative h-2 w-full overflow-hidden rounded-full bg-primary/20", Class);
+}

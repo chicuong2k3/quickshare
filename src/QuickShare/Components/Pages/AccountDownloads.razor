@@ -8,28 +8,26 @@
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 
-<div id="downloads-card" class="db-card account-card">
-    <div class="db-card__body">
-        <h3 class="db-h4">@Loc["account_downloads_title"]</h3>
+<Card id="downloads-card" class="my-4 w-full max-w-md p-6">
+        <h3 class="text-lg font-semibold">@Loc["account_downloads_title"]</h3>
 
         @if (items.Count == 0)
         {
-            <p class="db-p db-text-muted">@Loc["account_downloads_empty"]</p>
+            <p class="mt-3 text-muted-foreground">@Loc["account_downloads_empty"]</p>
         }
         else
         {
-            <ul class="account-downloads-list">
+            <ul class="mt-3">
                 @foreach (var item in items)
                 {
-                    <li class="account-downloads-row">
-                        <span class="account-downloads-name" title="@item.FileName">@item.FileName</span>
-                        <span class="account-downloads-size db-text-muted">@item.DownloadedAt.ToLocalTime().ToString("g")</span>
+                    <li class="flex justify-between gap-3 border-b py-2 last:border-b-0">
+                        <span class="min-w-0 truncate" title="@item.FileName">@item.FileName</span>
+                        <span class="whitespace-nowrap font-mono text-sm text-muted-foreground">@item.DownloadedAt.ToLocalTime().ToString("g")</span>
                     </li>
                 }
             </ul>
         }
-    </div>
-</div>
+</Card>
 
 @code {
 

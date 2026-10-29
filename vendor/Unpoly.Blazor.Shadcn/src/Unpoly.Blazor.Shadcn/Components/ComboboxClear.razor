@@ -1,0 +1,18 @@
+@inherits UiComponentBase
+
+@* Clears the lot. Hidden while there is nothing to clear, so the control does not offer an
+   action that would do nothing. *@
+
+<button type="button" data-slot="combobox-clear" aria-label="@Label" hidden class="@Classes"
+        @attributes="AdditionalAttributes">
+    <Icon Name="x" Class="size-4" />
+</button>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Clear";
+
+    const string Base =
+        "opacity-60 hover:opacity-100";
+
+    string Classes => Cn(Base, Class);
+}

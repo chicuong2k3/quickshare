@@ -22,8 +22,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["domain_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["domain_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["domain_title"]</h1>
+        <p class="text-muted-foreground">@Loc["domain_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceDomain" />
@@ -41,26 +41,26 @@
     private RenderFragment Chunk => @<section id="workspace-domain-body" data-unpoly-reload>
         @if (!isAdmin)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["domain_config_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["domain_config_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["domain_config_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["domain_config_hint"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="domain-host">@Loc["domain_host"]</label>
-                        <input id="domain-host" class="db-input" type="text" autocomplete="off" spellcheck="false"
+                        <Input id="domain-host"  type="text" autocomplete="off" spellcheck="false"
                                maxlength="@WorkspaceDomain.HostMaxLength"
                                value="@(domain?.Host ?? string.Empty)"
                                placeholder="files.example.com" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["domain_host_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["domain_host_hint"]</p>
 
                         <dl class="workspace-stats">
                             <div class="workspace-stat">
@@ -69,33 +69,33 @@
                             </div>
                         </dl>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["domain_saved"]"
                                 onclick="window.quickShareDomain.save(this)"
                                 data-ai-action="domain.save">@Loc["domain_save"]</button>
 
                         @if (domain is not null)
                         {
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     onclick="window.quickShareDomain.verify(this)"
                                     data-ai-action="domain.verify">@Loc["domain_verify"]</button>
 
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     data-confirm="@Loc["domain_remove_confirm"]"
                                     onclick="window.quickShareDomain.remove(this)"
                                     data-ai-action="domain.remove">@Loc["domain_remove"]</button>
                         }
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @if (domain is not null)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["domain_status_title"]</h2>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["domain_status_title"]</h2>
 
-                        <p class="db-p @(domain.IsVerified ? string.Empty : "workspace-notice")">
+                        <p class="@(domain.IsVerified ? string.Empty : "workspace-notice")">
                             @(domain.IsVerified ? Loc["domain_verified"] : Loc["domain_unverified"])
                         </p>
 
@@ -110,14 +110,14 @@
                             </div>
                         </dl>
 
-                        <p class="db-p db-text-muted workspace-hint">@Loc["domain_token_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["domain_token_hint"]</p>
 
                         @if (!string.IsNullOrEmpty(domain.LastError))
                         {
-                            <p class="db-p db-text-muted workspace-hint">@Loc["domain_last_error", domain.LastError]</p>
+                            <p class="text-muted-foreground workspace-hint">@Loc["domain_last_error", domain.LastError]</p>
                         }
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;

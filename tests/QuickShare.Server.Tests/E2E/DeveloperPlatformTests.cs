@@ -326,7 +326,6 @@ public sealed class DeveloperPlatformTests : IClassFixture<TestWebAppFactory>
         await EnqueueAsync(userId, WebhookEvents.DeliveryCreated);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountDeveloper);
-        request.Headers.Add("HX-Request", "true");
         var response = await client.SendAsync(request);
         var html = await response.Content.ReadAsStringAsync();
 
@@ -345,7 +344,6 @@ public sealed class DeveloperPlatformTests : IClassFixture<TestWebAppFactory>
         var hook = await CreateHookAsync(client);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountDeveloper);
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // Both exist in exactly one response each. If either turns up in the page source it is in

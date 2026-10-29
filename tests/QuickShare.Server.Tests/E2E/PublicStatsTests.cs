@@ -119,6 +119,7 @@ public sealed class PublicStatsTests : IClassFixture<TestWebAppFactory>
         var html = await response.Content.ReadAsStringAsync();
         Assert.Contains("stats.pdf", html);
         Assert.Contains("ps-stats", html);
+        Assert.DoesNotContain("<blazor-ssr", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

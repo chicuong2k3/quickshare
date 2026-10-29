@@ -5,28 +5,48 @@
 @attribute [Authorize]
 @using QuickShare.Data
 @using Microsoft.EntityFrameworkCore
+@using QuickShare.Features.Users.Onboarding
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 
-<div id="onboarding-card" class="db-card account-card account-onboarding" data-ai-action="account.onboarding">
-    <div class="db-card__body">
-        <div class="account-onboarding-head">
-            <h3 class="db-h4">@Loc["onboarding_title"]</h3>
-            <button type="button" class="account-onboarding-dismiss" aria-label="@Loc["onboarding_dismiss"]"
-                    onclick="dismissOnboarding(this)" data-ai-action="account.onboarding.dismiss">×</button>
+@{
+    var context = HttpContextAccessor.HttpContext;
+    var dismissed = context?.Request.Cookies[OnboardingDismissal.CookieName] == OnboardingDismissal.CookieValue;
+    if (dismissed && context?.Request.Path != RoutePaths.AccountOnboarding)
+    {
+        return;
+    }
+}
+
+@if (dismissed)
+{
+    <Card class="my-4 w-full max-w-md p-6">
+        <p>@Loc["onboarding_dismissed"]</p>
+        <Button Href="@RoutePaths.Account" Variant="outline" class="mt-4">@Loc["nav_account"]</Button>
+    </Card>
+}
+else
+{
+<Card id="onboarding-card" class="my-4 w-full max-w-md p-6" data-ai-action="account.onboarding">
+        <div class="mb-2 flex items-center justify-between gap-2">
+            <h3 class="text-lg font-semibold">@Loc["onboarding_title"]</h3>
+            <form method="post" action="@RoutePaths.AccountOnboardingDismiss">
+                <AntiforgeryToken />
+                <Button Type="submit" Variant="ghost" Size="icon" aria-label="@Loc["onboarding_dismiss"]" data-ai-action="account.onboarding.dismiss">×</Button>
+            </form>
         </div>
-        <p class="db-text-muted account-onboarding-progress">@string.Format(Loc["onboarding_progress"], completed, StepCount)</p>
-        <div class="account-onboarding-bar" role="progressbar" aria-valuenow="@completed" aria-valuemin="0" aria-valuemax="@StepCount">
-            <div class="account-onboarding-bar__fill" style="width: @(completed * 100 / StepCount)%"></div>
+        <p class="mb-2 text-sm text-muted-foreground">@string.Format(Loc["onboarding_progress"], completed, StepCount)</p>
+        <div class="mb-3 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow="@completed" aria-valuemin="0" aria-valuemax="@StepCount" aria-label="@Loc["onboarding_title"]">
+            <div class="h-full bg-primary transition-[width] motion-reduce:transition-none" style="width: @(completed * 100 / StepCount)%"></div>
         </div>
-        <ul class="account-onboarding-list">
+        <ul class="grid gap-2 sm:grid-cols-2">
             <li class="@StepClass(hasUpload)">@Loc["onboarding_step_upload"]</li>
             <li class="@StepClass(hasDownload)">@Loc["onboarding_step_share"]</li>
             <li class="@StepClass(hasExpiry)">@Loc["onboarding_step_expiry"]</li>
             <li class="@StepClass(hasPassword)">@Loc["onboarding_step_password"]</li>
         </ul>
-    </div>
-</div>
+</Card>
+}
 
 @code {
     private const int StepCount = 4;

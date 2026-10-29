@@ -1,5 +1,5 @@
 // ad-component.js — Google AdMob rewarded video lifecycle for QuickShareCloud.
-// Loaded by HTMX after the AdComponent.razor reward prompt HTML is swapped in.
+// Loaded by the ad reward page.
 window.QuickShareAds = (function (): QuickShareAdsModule {
     'use strict';
 

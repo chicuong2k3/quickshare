@@ -1,0 +1,22 @@
+@inherits UiComponentBase
+
+@* Upstream is the Lucide loader-circle with role=status, and so is this.
+
+   role=status is what makes it announce; without it a spinner is a decorative shape and a screen
+   reader says nothing while the page waits. aria-label because the SVG has no text.
+
+   Worth knowing where this belongs: a button that started an Unpoly request already grows its own
+   spinner from .up-active with no parameter and no state. This is for the places nothing was
+   clicked — a region refreshing itself, a poll, a deferred fragment. *@
+
+<Icon Name="loader-circle" data-slot="spinner" role="status" aria-label="@AriaLabel"
+      Class="@Classes" @attributes="AdditionalAttributes" />
+
+@code {
+    /// <summary>What a screen reader announces. Say what is loading when you know.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Loading";
+
+    const string Base = "size-4 animate-spin";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,4 +1,5 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@using Unpoly.Blazor.Shadcn
 
 @layout MainLayout
 @page "/account"
@@ -12,57 +13,39 @@
     <AccountTabs Current="@RoutePaths.Account" />
 
     @* Onboarding checklist (issue #129), dismissible. *@
-    <HtmxFragment>
     <AccountOnboarding />
-    </HtmxFragment>
     @* Profile card renders in the initial response. *@
-    <HtmxFragment>
     <AccountProfile />
-    </HtmxFragment>
 
     @* Monthly usage bar. *@
-    <HtmxFragment>
     <AccountUsage />
-    </HtmxFragment>
 
     @* Known devices (issue #149). *@
-    <HtmxFragment>
     <AccountDevices />
-    </HtmxFragment>
 
     @* Referral (issue #31). *@
-    <HtmxFragment>
     <AccountReferral />
-    </HtmxFragment>
 
     @* Notification preferences (issue #117). *@
-    <HtmxFragment>
     <AccountNotifications />
-    </HtmxFragment>
 
     @* Download history (issue #220). *@
-    <HtmxFragment>
     <AccountDownloads />
-    </HtmxFragment>
 
     @* Security activity (issue #126). *@
-    <HtmxFragment>
     <AccountSecurityActivity />
-    </HtmxFragment>
 
     @* Data & privacy (issue #59) — static, no DB calls. *@
-    <div class="db-card account-card">
-        <div class="db-card__body">
-            <h3 class="db-h4">@Loc["account_data_title"]</h3>
-            <div class="account-data-actions">
-                <a href="/api/me/export" class="db-btn db-btn--ghost db-btn--sm" data-ai-action="account.exportData">@Loc["account_data_export"]</a>
-                <button type="button" class="db-btn db-btn--ghost db-btn--sm account-data-delete"
-                        data-prompt="@Loc["account_data_delete_prompt"]"
-                        data-error="@Loc["account_data_delete_error"]"
-                        onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
-            </div>
+    <Card class="my-4 p-6">
+        <h3 class="text-lg font-semibold">@Loc["account_data_title"]</h3>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <Button Href="/api/me/export" Variant="ghost" Size="sm" data-ai-action="account.exportData">@Loc["account_data_export"]</Button>
+            <button type="button" class="@(ButtonVariants.Of("ghost", "sm", "text-destructive"))"
+                    data-prompt="@Loc["account_data_delete_prompt"]"
+                    data-error="@Loc["account_data_delete_error"]"
+                    onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
         </div>
-    </div>
+    </Card>
 
 </PageWrapper>
 
@@ -80,11 +63,6 @@
             else window.alert(btn.getAttribute('data-error'));
         }).catch(function () { window.alert(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
-    };
-    window.dismissOnboarding = function (btn) {
-        localStorage.setItem('qs-onboarding-dismissed', '1');
-        var card = btn.closest('#onboarding-card');
-        if (card) card.remove();
     };
     (function () {
         if (localStorage.getItem('qs-onboarding-dismissed')) {

@@ -11,13 +11,13 @@
 
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="db-h1">@(IsVi ? "Nhật ký thay đổi" : "Changelog")</h1>
-        <p class="db-p db-text-muted">@(IsVi ? "Cập nhật gần nhất: " : "Last updated: ")@DocDate</p>
+        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Nhật ký thay đổi" : "Changelog")</h1>
+        <p class="text-muted-foreground">@(IsVi ? "Cập nhật gần nhất: " : "Last updated: ")@DocDate</p>
 
         @if (IsVi)
         {
-            <h2 class="db-h2">2026-08-16 — Bảo vệ liên kết &amp; quản trị</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">2026-08-16 — Bảo vệ liên kết &amp; quản trị</h2>
+            <ul class="legal__list">
                 <li>Thu hồi liên kết trước khi hết hạn; đổi tên file sau khi tải lên</li>
                 <li>Mật khẩu bảo vệ liên kết + thước đo độ mạnh mật khẩu</li>
                 <li>Nhân bản liên kết không cần tải lại; tự huỷ sau 1 lần tải</li>
@@ -26,23 +26,23 @@
                 <li>Lọc/tìm kiếm danh sách; báo cáo file lớn nhất; giới hạn tải theo ngày</li>
             </ul>
 
-            <h2 class="db-h2">2026-08-15 — Bảo mật nền tảng</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">2026-08-15 — Bảo mật nền tảng</h2>
+            <ul class="legal__list">
                 <li>Giới hạn tần suất, khoá tài khoản, cảnh báo thiết bị mới, CAPTCHA tải xuống</li>
                 <li>Báo cáo lạm dụng + DMCA; tiêu đề bảo mật + CSP</li>
                 <li>Dùng thử Pro 7 ngày; giới thiệu +2GB; tuỳ chọn hết hạn 24h/7 ngày</li>
             </ul>
 
-            <h2 class="db-h2">2026-08-14 — Tăng trưởng &amp; di động</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">2026-08-14 — Tăng trưởng &amp; di động</h2>
+            <ul class="legal__list">
                 <li>Thẻ OpenGraph; trang SEO; xem trước file (ảnh/video/PDF)</li>
                 <li>PWA + Android Share Target; bảng chia sẻ gốc + mã QR</li>
             </ul>
         }
         else
         {
-            <h2 class="db-h2">2026-08-16 — Link protection &amp; management</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">2026-08-16 — Link protection &amp; management</h2>
+            <ul class="legal__list">
                 <li>Revoke a link before expiry; rename files after upload</li>
                 <li>Share password + live strength meter</li>
                 <li>Clone a link without re-upload; burn-after-download</li>
@@ -51,15 +51,15 @@
                 <li>List filter/search</li>
             </ul>
 
-            <h2 class="db-h2">2026-08-15 — Platform security</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">2026-08-15 — Platform security</h2>
+            <ul class="legal__list">
                 <li>Rate limiting, account lockout, new-device alerts, download CAPTCHA</li>
                 <li>Abuse + DMCA reporting; security headers + CSP</li>
                 <li>7-day Pro trial; referral +2GB; 24h/7d expiry options</li>
             </ul>
 
-            <h2 class="db-h2">2026-08-14 — Growth &amp; mobile</h2>
-            <ul class="db-p legal__list">
+            <h2 class="text-2xl font-bold">2026-08-14 — Growth &amp; mobile</h2>
+            <ul class="legal__list">
                 <li>OpenGraph cards; SEO pages; file previews (image/video/PDF)</li>
                 <li>PWA + Android Share Target; native share sheet + QR</li>
             </ul>

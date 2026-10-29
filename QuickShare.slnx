@@ -3,6 +3,7 @@
     <Project Path="src/QuickShare.Querying.Generators/QuickShare.Querying.Generators.csproj" />
     <Project Path="src/QuickShare.Querying/QuickShare.Querying.csproj" />
     <Project Path="src/QuickShare/QuickShare.csproj" />
+    <Project Path="vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Unpoly.Blazor.Shadcn.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/QuickShare.Browser.Tests/QuickShare.Browser.Tests.csproj" />

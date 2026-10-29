@@ -2,7 +2,7 @@
 // SIEM, DPA, approvals, channel, schedules).
 //
 // Every one of those pages was doing the same four things — read a field, POST JSON, alert the
-// server's error code, swap the HTMX section — in its own copy of the same twenty lines. This is
+// server's error code, refresh the section — in its own copy of the same twenty lines. This is
 // that copy, once. It is loaded globally from App.razor because a page script that needs it must
 // not have to remember to include it.
 //
@@ -46,16 +46,8 @@ const qsPage = (function () {
         const unpoly = (window as Window & {
             up?: { reload: (selector: string, options: { cache: boolean }) => Promise<unknown> };
         }).up;
-        if (body && section?.hasAttribute('data-unpoly-reload') && unpoly) {
+        if (body && section && unpoly) {
             void unpoly.reload(body, { cache: false }).catch(() => window.location.reload());
-            return;
-        }
-        if (body && section && window.htmx) {
-            window.htmx.ajax('GET', window.location.pathname + window.location.search, {
-                target: body,
-                select: body,
-                swap: 'outerHTML',
-            });
             return;
         }
         window.location.reload();

@@ -1,0 +1,28 @@
+@inherits UiComponentBase
+
+@* BentoCard — a Card that fills the cell it lands in. Everything else about it is Card's,
+   deliberately: the border, the background, the elevation, and above all the padding, which stays
+   one number published as --card-spacing so a child can pull back out by exactly what the card
+   pushed in. How a bento card spans is Class — "lg:col-span-2 lg:row-span-2" — not a variant
+   here, because the grid is what has to agree with it.
+   Not for a card that should hug its content: that is a plain Card, and it is one fewer
+   assumption to carry.
+
+   The slot stays "card", and that is load-bearing rather than an oversight. The theme reaches
+   Card through it twice — `:where([data-slot="card"]) { --card-spacing: … }`, which is what Card's
+   own `py-(--card-spacing)` and `gap-(--card-spacing)` read, and `[data-slot="card"] { border-color:
+   var(--surface-border) }`, which is how a theme decides what a card's edge looks like. Renaming
+   the slot to "bento-card" to name this component loses both: the card renders with no padding
+   and no gap between its sections, and with an edge no theme can reach. A component that
+   invents a surface earns its own slot; one that composes Card keeps the slot of the thing it
+   composes. *@
+
+<Card Class="@Classes" @attributes="AdditionalAttributes">@ChildContent</Card>
+
+@code {
+    // Grid items already stretch to their row, so h-full is a no-op for a card sitting directly
+    // in the grid. It earns its place in the two cases that are not: a card wrapped in a <div>,
+    // and a grid given items-start by a caller who wants top-aligned content. Without it the
+    // card stops at its content height and leaves a band of page under its own border.
+    string Classes => Cn("h-full", Class);
+}

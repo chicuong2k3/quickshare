@@ -155,7 +155,6 @@ public sealed class DropRoomTests : IClassFixture<TestWebAppFactory>
         var (client, _) = await OwnerAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/requests");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // The create endpoints had existed since the file-request batch with nothing calling

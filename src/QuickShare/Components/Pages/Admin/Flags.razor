@@ -1,6 +1,7 @@
 @page "/admin/flags"
 @layout MainLayout
 @attribute [Authorize]
+@using QuickShare.Features.Admin.Flags
 @using QuickShare.Infrastructure.FeatureFlags
 @using Microsoft.Extensions.Options
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
@@ -10,134 +11,83 @@
 
 <PageTitle>@Loc["admin_flags_page_title"]</PageTitle>
 
-@if (isHxRequest)
-{
-    <HtmxFragment>
-    <div id="admin-flags-table" class="db-card admin-flags-card">
-        <div class="db-card__body">
-            @if (!isAdmin)
-            {
-                <div class="db-alert db-alert--error" role="alert">@Loc["admin_flags_forbidden"]</div>
-            }
-            else if (flags.Count == 0)
-            {
-                <p class="db-p db-text-muted">@Loc["admin_flags_empty"]</p>
-            }
-            else
-            {
-                <table class="admin-flags-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">@Loc["admin_flags_col_key"]</th>
-                            <th scope="col">@Loc["admin_flags_col_enabled"]</th>
-                            <th scope="col">@Loc["admin_flags_col_rollout"]</th>
-                            <th scope="col"><span class="sr-only">@Loc["admin_flags_col_actions"]</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var flag in flags)
-                        {
-                            <tr class="admin-flag-row">
-                                <td>
-                                    <span class="admin-flag-key">@flag.Key</span>
-                                    @if (!string.IsNullOrEmpty(flag.Description))
-                                    {
-                                        <span class="admin-flag-desc">@flag.Description</span>
-                                    }
-                                </td>
-                                <td>
-                                    <label class="admin-flag-toggle">
-                                        <input type="checkbox"
-                                               name="Enabled"
-                                               value="true"
-                                               checked="@flag.EffectiveEnabled"
-                                               data-ai-action="admin.flags.enabled.@flag.Key" />
-                                        <span>@Loc[flag.EffectiveEnabled ? "admin_flags_on" : "admin_flags_off"]</span>
-                                    </label>
-                                </td>
-                                <td>
-                                    <label class="admin-flag-percent">
-                                        <span class="sr-only">@Loc["admin_flags_rollout_label"]</span>
-                                        <input type="number"
-                                               name="RolloutPercent"
-                                               min="0"
-                                               max="100"
-                                               step="1"
-                                               value="@flag.EffectiveRolloutPercent"
-                                               data-ai-action="admin.flags.rollout.@flag.Key" />
-                                        <span aria-hidden="true">%</span>
-                                    </label>
-                                </td>
-                                <td>
-                                    <form class="admin-flag-form"
-                                          hx-put="/api/admin/flags/@flag.Key"
-                                          hx-swap="none"
-                                          hx-on::after-request="if (event.detail.successful) htmx.ajax('GET', '/admin/flags', {target: '#admin-flags-table', select: '#admin-flags-table', swap: 'outerHTML'})"
-                                          data-ai-action="admin.flags.save.@flag.Key">
-                                        <button type="submit" class="db-btn db-btn--primary admin-flag-save-btn">@Loc["admin_flags_save_btn"]</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-        </div>
+<PageWrapper id="admin-flags-app" Variant="PageVariant.Padded">
+    <div class="mb-6">
+        <h1 class="text-3xl font-semibold">@Loc["admin_flags_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_flags_subtitle"]</p>
     </div>
-    </HtmxFragment>
-}
-else
-{
-    <PageWrapper id="admin-flags-app" Variant="PageVariant.Padded">
-        <div class="admin-flags-heading">
-            <h1 class="db-h1">@Loc["admin_flags_title"]</h1>
-            <p class="db-p db-text-muted">@Loc["admin_flags_subtitle"]</p>
-        </div>
 
+    <Card id="admin-flags-table" class="overflow-x-auto px-6">
         @if (!isAdmin)
         {
-            <div class="db-alert db-alert--error" role="alert">@Loc["admin_flags_forbidden"]</div>
+            <div class="text-destructive" role="alert">@Loc["admin_flags_forbidden"]</div>
+        }
+        else if (flags.Count == 0)
+        {
+            <p class="text-muted-foreground">@Loc["admin_flags_empty"]</p>
         }
         else
         {
-            <HtmxFragment>
-            <div id="admin-flags-table" class="db-card admin-flags-card"
-                 hx-get="@RoutePaths.AdminFlags"
-                 hx-trigger="load"
-                 hx-target="#admin-flags-table"
-                 hx-select="#admin-flags-table"
-                 hx-swap="outerHTML">
-                <div class="db-card__body">
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                    <div class="admin-skeleton-line admin-skeleton-row"></div>
-                </div>
-            </div>
-            </HtmxFragment>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b text-left">
+                        <th scope="col" class="p-2">@Loc["admin_flags_col_key"]</th>
+                        <th scope="col" class="p-2">@Loc["admin_flags_col_enabled"]</th>
+                        <th scope="col" class="p-2">@Loc["admin_flags_col_rollout"]</th>
+                        <th scope="col" class="p-2"><span class="sr-only">@Loc["admin_flags_col_actions"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var flag in flags)
+                    {
+                        var formId = $"flag-{flag.Key}";
+                        <tr class="border-b">
+                            <td class="p-2">
+                                <span class="font-medium">@flag.Key</span>
+                                @if (!string.IsNullOrEmpty(flag.Description))
+                                {
+                                    <span class="block text-muted-foreground">@flag.Description</span>
+                                }
+                            </td>
+                            <td class="p-2">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" form="@formId" name="@UpdateFlagFormEndpoint.EnabledField" checked="@flag.EffectiveEnabled" data-ai-action="admin.flags.enabled.@flag.Key" />
+                                    <span>@Loc[flag.EffectiveEnabled ? "admin_flags_on" : "admin_flags_off"]</span>
+                                </label>
+                            </td>
+                            <td class="p-2">
+                                <label class="flex items-center gap-2">
+                                    <span class="sr-only">@Loc["admin_flags_rollout_label"]</span>
+                                    <input type="number" form="@formId" name="@UpdateFlagFormEndpoint.RolloutField" min="0" max="100" step="1" value="@flag.EffectiveRolloutPercent" class="w-20 rounded-md border bg-background px-2 py-1" data-ai-action="admin.flags.rollout.@flag.Key" />
+                                    <span aria-hidden="true">%</span>
+                                </label>
+                            </td>
+                            <td class="p-2">
+                                <form id="@formId" method="post" action="@UpdateFlagFormEndpoint.FormRoute" data-ai-action="admin.flags.save.@flag.Key">
+                                    <AntiforgeryToken />
+                                    <input type="hidden" name="@UpdateFlagFormEndpoint.KeyField" value="@flag.Key" />
+                                    <Button Type="submit">@Loc["admin_flags_save_btn"]</Button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         }
-    </PageWrapper>
-}
+    </Card>
+</PageWrapper>
 
 @code {
-    private bool isHxRequest;
     private bool isAdmin;
     private IReadOnlyList<FeatureFlagStatus> flags = [];
 
     protected override async Task OnInitializedAsync()
     {
         var httpContext = HttpContextAccessor.HttpContext;
-        var request = httpContext?.Request;
-        isHxRequest = request is not null
-            && request.Headers[HtmxHeaders.Request].FirstOrDefault() == HtmxHeaders.RequestValue;
-
         isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
-
-        if (!isHxRequest || !isAdmin)
+        if (isAdmin)
         {
-            return;
+            flags = await FlagService.ListAsync(CancellationToken.None);
         }
-
-        flags = await FlagService.ListAsync(CancellationToken.None);
     }
 }

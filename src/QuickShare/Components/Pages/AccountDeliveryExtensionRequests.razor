@@ -13,8 +13,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["ext_requests_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["ext_requests_lead"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ext_requests_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["ext_requests_lead"]</p>
     </section>
 
     @* Full SSR: direct navigation works without JavaScript. Unpoly can reload #ext-body. *@
@@ -65,7 +65,7 @@
         @if (items.Count == 0)
         {
             <div class="account-deliveries-empty">
-                <p class="db-p">@Loc["ext_requests_empty"]</p>
+                <p>@Loc["ext_requests_empty"]</p>
             </div>
         }
         @foreach (var item in items)
@@ -80,14 +80,14 @@
 
             <article id="ext-@item.Id" class="notif @(pending ? "notif--unread" : "notif--read")">
                 <div class="notif__body">
-                    <time class="db-text-muted notif__time" datetime="@item.CreatedAt.ToString("o")">@statusLabel · @item.CreatedAt.ToLocalTime().ToString("g")</time>
+                    <time class="text-muted-foreground notif__time" datetime="@item.CreatedAt.ToString("o")">@statusLabel · @item.CreatedAt.ToLocalTime().ToString("g")</time>
                 </div>
                 @if (pending)
                 {
-                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                    <button type="button" data-slot="button" data-variant="ghost"
                             data-approved-label="@Loc["ext_requests_status_approved"]"
                             onclick="approveExtension(this)" data-ai-action="extension.approve">@Loc["ext_requests_approve"]</button>
-                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                    <button type="button" data-slot="button" data-variant="ghost"
                             data-rejected-label="@Loc["ext_requests_status_rejected"]"
                             onclick="rejectExtension(this)" data-ai-action="extension.reject">@Loc["ext_requests_reject"]</button>
                 }

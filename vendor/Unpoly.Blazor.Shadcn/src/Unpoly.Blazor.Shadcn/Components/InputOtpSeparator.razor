@@ -1,0 +1,24 @@
+@inherits UiComponentBase
+
+@* The dash between two groups of boxes. role="separator" and nothing to read: it is a visual
+   grouping of one number, not a break in the content, and announcing "minus" between the third
+   and fourth digit of a code is worse than announcing nothing. *@
+
+<div data-slot="input-otp-separator" role="separator" aria-hidden="true" class="@Classes"
+     @attributes="AdditionalAttributes">
+    @if (ChildContent is null)
+    {
+        <Icon Name="minus" />
+    }
+    else
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    const string Base =
+        "";
+
+    string Classes => Cn(Base, Class);
+}

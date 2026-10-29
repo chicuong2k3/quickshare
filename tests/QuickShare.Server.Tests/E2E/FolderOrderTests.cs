@@ -112,7 +112,6 @@ public sealed class FolderOrderTests : IClassFixture<TestWebAppFactory>
         await FolderAsync(client, "Alpha");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountWorkspaceFolders);
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // A reorder that only works by dragging is a reorder keyboard users cannot do at all.

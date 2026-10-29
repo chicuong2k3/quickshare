@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+<p data-slot="form-description" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</p>
+
+@code {
+    string Classes => Cn("text-control text-muted-foreground", Class);
+}

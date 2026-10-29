@@ -1,0 +1,26 @@
+@inherits UiComponentBase
+
+@* type="search" rather than text: the platform gives it a clear button and the right keyboard.
+   The wrapper carries the icon so the input keeps its own padding. *@
+
+<div data-slot="command-input-wrapper" class="@WrapperClasses">
+    <Icon Name="search" Class="size-4 shrink-0 opacity-50" />
+    <input data-slot="command-input" type="search" autocomplete="off" spellcheck="false"
+           placeholder="@Placeholder" aria-label="@AriaLabel" class="@Classes"
+           @attributes="AdditionalAttributes" />
+</div>
+
+@code {
+    [Parameter] public string Placeholder { get; set; } = "Type a command or search…";
+
+    /// <summary>The placeholder is not a label; a search field still needs a name.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Search";
+
+    const string Base =
+        "flex h-10 w-full rounded-md bg-transparent py-3 text-control outline-hidden " +
+        "placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50";
+
+    string WrapperClasses => "flex h-12 items-center gap-2 border-b px-4";
+
+    string Classes => Cn(Base, Class);
+}

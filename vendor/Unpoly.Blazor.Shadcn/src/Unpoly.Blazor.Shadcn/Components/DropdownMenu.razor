@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* Built on the popover API, which supplies the top layer, light dismiss and Escape. Anchor
+   positioning is measured in ui.js because `position-area` is not portable yet.
+
+   Note the panel is NOT inside this element in the layout sense — [popover] promotes it to the
+   top layer, so it escapes any overflow:hidden or scrollport it is written inside. That is the
+   whole reason to use it rather than an absolutely positioned div. *@
+
+<div data-slot="dropdown-menu" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    string Classes => Cn("relative inline-block", Class);
+}

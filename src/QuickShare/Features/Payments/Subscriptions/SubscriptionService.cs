@@ -213,7 +213,7 @@ public static class SubscriptionService
     /// only stays honest if every plan write ends here, which is why this sits beside the
     /// three places that write one.
     /// </summary>
-    private static async Task PushPlanToWorkspaceAsync(Guid ownerId, AppDbContext db, CancellationToken ct)
+    internal static async Task PushPlanToWorkspaceAsync(Guid ownerId, AppDbContext db, CancellationToken ct)
     {
         var workspaceId = await db.Workspaces
             .Where(w => w.OwnerId == ownerId)

@@ -27,33 +27,13 @@ public sealed class ResolveReportEndpoint : Endpoint<ResolveReportRequest>
         }
 
         var reportId = Route<Guid>(ReportIdRouteKey);
-        var db = Resolve<AppDbContext>();
-
-        var report = await db.AbuseReports
-            .FirstOrDefaultAsync(r => r.Id == reportId, ct);
-
-        if (report is null)
+        var resolved = await ReportResolution.ResolveAsync(
+            reportId, req.Action, Resolve<AppDbContext>(),
+            Resolve<QuickShare.Infrastructure.Caching.CacheService>(), ct);
+        if (!resolved)
         {
             ThrowError("Report not found", 404);
             return;
-        }
-
-        report.Status = AbuseReportStatus.Resolved;
-        report.ResolvedAt = DateTime.UtcNow;
-        report.Resolution = req.Action;
-
-        var delivery = await db.Deliveries.FindAsync([report.DeliveryId], ct);
-
-        if (req.Action == ReportAction.Suspend && delivery is not null)
-            delivery.Status = DeliveryStatus.Suspended;
-
-        await db.SaveChangesAsync(ct);
-
-        if (delivery is not null)
-        {
-            // Delivery status changes are user-visible — drop the cached download info.
-            await Resolve<QuickShare.Infrastructure.Caching.CacheService>()
-                .RemoveAsync($"download:info:{delivery.ShareCode}", ct);
         }
 
         await Send.OkAsync(new { resolved = true }, ct);

@@ -21,8 +21,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["seats_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["seats_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["seats_title"]</h1>
+        <p class="text-muted-foreground">@Loc["seats_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceSeats" />
@@ -43,16 +43,16 @@
     private RenderFragment Chunk => @<section id="workspace-seats-body">
         @if (!inWorkspace || report is null)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["seats_none"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["seats_none"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
+            <Card class="account-card workspace-card">
+                <CardContent>
                     <dl class="workspace-stats">
                         <div class="workspace-stat">
                             <dt>@Loc["seats_purchased"]</dt>
@@ -72,7 +72,7 @@
                         </div>
                     </dl>
 
-                    <p class="db-p db-text-muted workspace-hint">
+                    <p class="text-muted-foreground workspace-hint">
                         @Loc["seats_included", $"{report.IncludedSeats} ({report.Plan})"]
                         ·
                         @Loc["seats_next", PlanCatalog.FormatPrice((int)report.ProratedNextSeatAmount, null)]
@@ -81,15 +81,15 @@
                     @if (canManage)
                     {
                         <p class="workspace-filters">
-                            <a class="db-btn db-btn--ghost" href="/api/workspace/seats/export"
+                            <a data-slot="button" data-variant="ghost" href="/api/workspace/seats/export"
                                data-ai-action="seats.export">@Loc["seats_export"]</a>
                         </p>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body workspace-table-wrap">
+            <Card class="account-card workspace-card">
+                <CardContent class="workspace-table-wrap">
                     <table class="workspace-table">
                         <thead>
                             <tr>
@@ -111,31 +111,31 @@
                             }
                         </tbody>
                     </table>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @* Overage (issue #141) — Studio meters, everyone else hard-stops. *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["overage_title"]</h2>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["overage_title"]</h2>
                     @if (!PlanCatalog.AllowsOverage(plan))
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["overage_blocked"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["overage_blocked"]</p>
                     }
                     else if (overageBytes <= 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["overage_none"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["overage_none"]</p>
                     }
                     else
                     {
-                        <p class="db-p workspace-hint">
+                        <p class="workspace-hint">
                             @Loc["overage_used",
                                 $"{QuickShare.Features.Payments.Billing.InvoiceService.OverageGb(overageBytes):0.##} GB",
                                 PlanCatalog.FormatPrice((int)PlanCatalog.OverageGbAmount(plan), null)]
                         </p>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     </section>;
 

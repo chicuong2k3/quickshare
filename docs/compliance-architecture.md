@@ -106,8 +106,7 @@ memory: a held row is never loaded into a delete batch in the first place.
 `LegalHoldAt`) drives an `account-delivery__hold` badge whose text carries the state, with
 the case reference in the tooltip. `Legal hold` / `Lift hold` buttons swap on state; lifting
 is double-confirmed. A `Legal hold report` link sits beside the CSV export in the page lead.
-Badge CSS is global in `wwwroot/css/app.css` because the row is rendered as an HTMX partial
-and carries no Blazor scope attribute.
+Badge styles are scoped to `AccountDeliveries.razor` and use Shadcn tokens.
 
 ---
 
@@ -199,11 +198,10 @@ dates in without expiring anything itself — the expiry pass that follows does 
 
 ### 3.7 UI
 
-The retention card lives **inside** `#security-activity-card` in
-`Components/Pages/AccountSecurityActivity.razor`: compliance belongs with security, not
-profile, and `/account` swaps that card in with `hx-select="#security-activity-card"`, so
-anything outside it would be dropped. The preview line is fed by `hx-get` on the same page
-route with `?retentionDays=N` targeting a nested `#account-retention-preview`.
+The retention card lives inside `#security-activity-card` in
+`Components/Pages/AccountSecurityActivity.razor`. Direct GET renders the current policy and
+preview. A CSRF-protected native form provides separate preview and save actions; preview
+does not mutate the policy. Security event filters use URL-backed Unpoly links.
 
 ---
 
@@ -427,4 +425,4 @@ plus one index.
 | `DeliveryAccessScopeTests` | `tests/QuickShare.Server.Tests/E2E/DeliveryAccessScopeTests.cs` | Scope enforcement end to end across info, download, preview, zip |
 | `DeliveryAccessPolicyTests` | `tests/QuickShare.Server.Tests/Infrastructure/DeliveryAccessPolicyTests.cs` | Fail-closed rule evaluation, AND-scoping, malformed rules |
 | `RetentionPolicyTests` | `tests/QuickShare.Server.Tests/Infrastructure/RetentionPolicyTests.cs` | Ceiling-not-floor clamp, preset validity |
-| `RetentionPolicyApiTests` | `tests/QuickShare.Server.Tests/E2E/RetentionPolicyApiTests.cs` | Policy mutation (paid gate, range, lock cleared with window); clamp at upload and extend; regulated-mode refusal; sweep convergence and held-row exemption; dry-run preview; settings-card and preview-panel render through the HTMX pipeline |
+| `RetentionPolicyApiTests` | `tests/QuickShare.Server.Tests/E2E/RetentionPolicyApiTests.cs` | Policy mutation (paid gate, range, lock cleared with window); clamp at upload and extend; regulated-mode refusal; sweep convergence and held-row exemption; direct settings-card and preview rendering |

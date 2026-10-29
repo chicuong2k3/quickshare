@@ -1,0 +1,23 @@
+@inherits UiComponentBase
+
+@* One slide. aria-roledescription="slide" is upstream's, and the reason each item is announced
+   as a slide rather than an anonymous group. *@
+
+<div data-slot="carousel-item" role="group" aria-roledescription="slide" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Must match the &lt;Carousel&gt; it is in. Razor has no context to read it from.</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    const string Base =
+        "min-w-0 shrink-0 grow-0 basis-full";
+
+    string VariantClass => Orientation switch
+    {
+        "vertical" => "pt-4",
+        _ => "ps-4",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

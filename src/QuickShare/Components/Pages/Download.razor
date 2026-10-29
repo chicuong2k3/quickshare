@@ -1,6 +1,5 @@
 @layout MainLayout
 @page "/d/{ShareCode}"
-@attribute [StreamRendering]
 @inject IMediator Bus
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
@@ -74,36 +73,36 @@
         @* Residency badge (issue #119) — a trust signal the recipient can see without asking. *@
         <p class="dl-region">@Loc["dl_stored_in", regionLabel]</p>
     }
-    <div class="card db-card">
+    <div class="card" data-slot="card">
         @* The delivery's own card chrome; the label is the real share code. *@
         <div class="qs-titlebar">
             <span class="qs-titlebar__box" aria-hidden="true"></span>
             <span class="qs-titlebar__label">@ShareCode</span>
             <span class="qs-titlebar__box" aria-hidden="true"></span>
         </div>
-        <div class="db-card__body">
+        <div class="px-(--card-spacing)">
             @switch (RenderState)
             {
                 case DownloadRenderState.Loading:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
-                        <div class="db-spinner"></div>
-                        <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">@Loc["dl_checking"]</p>
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <div class="size-6 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                        <p style="margin-top: 1.25rem; font-size: 0.875rem">@Loc["dl_checking"]</p>
                     </div>
                     break;
 
                 case DownloadRenderState.Ready:
 
                     @* Password Gate (issue #44) — unlocked before the OTP gate *@
-                    <div id="download-phase-password" class="db-text-center @PhaseClass(PhasePassword)">
+                    <div id="download-phase-password" class="text-center @PhaseClass(PhasePassword)">
                         <div class="icon-box --lock">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                             </svg>
                         </div>
-                        <h2 class="db-h2" style="font-size: 1.125rem">@Loc["dl_password_h2"]</h2>
-                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_password_sub"]</p>
+                        <h2 class="text-xl font-semibold">@Loc["dl_password_h2"]</h2>
+                        <p style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_password_sub"]</p>
                         <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
-                            <input type="password" id="dl-password" class="db-field__input db-input" style="max-width: 20rem; width: 100%" autocomplete="off" onkeydown="downloadApp.passwordKeydown(event)" aria-label="@Loc["dl_password_h2"]" />
+                            <input type="password" id="dl-password" class="rounded-md border bg-transparent px-3 py-1 text-sm" style="max-width: 20rem; width: 100%" autocomplete="off" onkeydown="downloadApp.passwordKeydown(event)" aria-label="@Loc["dl_password_h2"]" />
                             @* role="alert" (issue #95): a wrong password that is only *shown* is a dead end for
                                anybody not looking at that spot on the screen. *@
                             <p id="dl-password-error" class="error hidden" role="alert"></p>
@@ -114,25 +113,25 @@
                     </div>
 
                     @* OTP Gate *@
-                    <div id="download-phase-otp" class="db-text-center @PhaseClass(PhaseOtp)">
+                    <div id="download-phase-otp" class="text-center @PhaseClass(PhaseOtp)">
                         <div class="icon-box --lock">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                             </svg>
                         </div>
-                        <h2 class="db-h2" style="font-size: 1.125rem">@Loc["dl_otp_h2"]</h2>
-                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_otp_sub"]</p>
+                        <h2 class="text-xl font-semibold">@Loc["dl_otp_h2"]</h2>
+                        <p style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_otp_sub"]</p>
                         <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
                             @* Six boxes, each with its own name (issue #95). Unlabelled, a screen
                                reader announces six identical "edit text" fields and the code is
                                unenterable without sight. *@
-                            <div id="dl-otp" class="db-otp" style="gap: 0.5rem" role="group" aria-label="@Loc["dl_otp_h2"]">
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 1, 6]" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,1)" onkeydown="downloadApp.otpKeydown(event,1)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 2, 6]" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,2)" onkeydown="downloadApp.otpKeydown(event,2)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 3, 6]" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,3)" onkeydown="downloadApp.otpKeydown(event,3)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 4, 6]" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,4)" onkeydown="downloadApp.otpKeydown(event,4)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 5, 6]" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 6, 6]" />
+                            <div id="dl-otp" class="flex gap-2" style="gap: 0.5rem" role="group" aria-label="@Loc["dl_otp_h2"]">
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 1, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,1)" onkeydown="downloadApp.otpKeydown(event,1)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 2, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,2)" onkeydown="downloadApp.otpKeydown(event,2)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 3, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,3)" onkeydown="downloadApp.otpKeydown(event,3)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 4, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,4)" onkeydown="downloadApp.otpKeydown(event,4)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 5, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 6, 6]" />
                             </div>
                             <p id="dl-otp-error" class="error hidden" role="alert"></p>
                             <div id="dl-captcha" class="dl-captcha hidden"></div>
@@ -144,14 +143,14 @@
 
                     @* Ad Interstitial *@
                     @* Never server-rendered: an ad nobody can dismiss without JS must not stand between a recipient and their file. JS raises it. *@
-                    <div id="download-phase-ad" class="db-text-center hidden" style="padding: 1.5rem 0">
+                    <div id="download-phase-ad" class="text-center hidden" style="padding: 1.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M7 4v16 M17 4v16 M2 12h20 M2 8h20" />
                             </svg>
                         </div>
-                        <h3 class="db-h3" style="font-size: 1rem">@Loc["dl_ad_title"]</h3>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_ad_sub"] <a href="/pricing" class="link">@Loc["dl_ad_upgrade"]</a></p>
+                        <h3 class="text-xl font-semibold" style="font-size: 1rem">@Loc["dl_ad_title"]</h3>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_ad_sub"] <a href="/pricing" class="link">@Loc["dl_ad_upgrade"]</a></p>
                         <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.75rem; color: var(--db-color-text-muted)">
                             <svg class="badge--sovereign" style="width: 0.875rem; height: 0.875rem" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                             <span id="dl-ad-countdown"></span>
@@ -230,30 +229,30 @@
                         <div id="dl-text-preview" class="text-preview hidden">
                             <div class="text-preview__bar">
                                 <span id="dl-text-status" class="text-preview__status"></span>
-                                <button type="button" id="dl-text-copy" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.copyText()">
+                                <button type="button" id="dl-text-copy" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copyText()">
                                     <span id="dl-text-copy-label">@Loc["dl_preview_copy"]</span>
                                 </button>
                             </div>
                             @* Diff toolbar (issue #248) — shown by download.js only when a
                                .patch/.diff file renders. Hidden by default for non-diff. *@
                             <div id="dl-diff-toolbar" class="dl-diff-toolbar hidden">
-                                <button type="button" id="dl-diff-mode-btn" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
+                                <button type="button" id="dl-diff-mode-btn" class="hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
                                     <span id="dl-diff-mode-label">@Loc["dl_diff_split"]</span>
                                 </button>
-                                <button type="button" id="dl-diff-raw-btn" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
+                                <button type="button" id="dl-diff-raw-btn" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
                                     <span id="dl-diff-raw-label">@Loc["dl_diff_raw"]</span>
                                 </button>
                             </div>
                             <div id="dl-text-body" class="text-preview__body"></div>
-                            <button type="button" id="dl-text-more" class="db-btn db-btn--ghost db-btn--sm hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
+                            <button type="button" id="dl-text-more" class="hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
                         </div>
 
                         @* Sender note (issue #137) — server-rendered escaped text. *@
                         @if (!string.IsNullOrEmpty(Info?.Message))
                         {
                             <div class="dl-message" style="margin-top: 1.25rem; padding: 1rem 1.25rem; background: var(--db-color-surface, rgba(255,255,255,0.04))">
-                                <p class="db-label" style="margin: 0 0 0.375rem">@Loc["dl_message_label"]</p>
-                                <p class="db-p" style="margin: 0; font-size: 0.875rem; white-space: pre-wrap; overflow-wrap: anywhere">@Info.Message</p>
+                                <p class="text-sm font-medium" style="margin: 0 0 0.375rem">@Loc["dl_message_label"]</p>
+                                <p style="margin: 0; font-size: 0.875rem; white-space: pre-wrap; overflow-wrap: anywhere">@Info.Message</p>
                             </div>
                         }
 
@@ -268,14 +267,14 @@
                            committing to a large download. Only ungated, unencrypted
                            .zip deliveries reach this element. *@
                         <div id="dl-zip-preview" class="dl-zip hidden" style="margin-top: 1.5rem">
-                            <p class="db-label" style="margin: 0 0 0.5rem">@Loc["dl_zip_title"]</p>
+                            <p class="text-sm font-medium" style="margin: 0 0 0.5rem">@Loc["dl_zip_title"]</p>
                             <div id="dl-zip-list" class="dl-zip__list"></div>
                         </div>
 
                         @* Aggregate download stats (issue #64) — count only, no sender identity. *@
                         @if (Info?.HideDownloadStats != true && (Info?.DownloadCount ?? 0) > 0)
                         {
-                            <p class="db-p db-text-muted" style="margin-top: 1rem; font-size: 0.8125rem">
+                            <p class="text-muted-foreground" style="margin-top: 1rem; font-size: 0.8125rem">
                                 @Loc["dl_stats_downloaded", Info!.DownloadCount]
                                 @if (Info.FirstDownloadedAt is { } first)
                                 {
@@ -287,7 +286,7 @@
                         @* Privacy mode (issue #187) — the sender left no trace; say so, don't count. *@
                         @if (Info?.PrivacyMode == true)
                         {
-                            <p class="db-p db-text-muted" style="margin-top: 0.75rem; font-size: 0.8125rem" role="note">@Loc["dl_privacy_badge"]</p>
+                            <p class="text-muted-foreground" style="margin-top: 0.75rem; font-size: 0.8125rem" role="note">@Loc["dl_privacy_badge"]</p>
                         }
 
                         @* Burn-after-download warning (issue #12) — shown before the download button. *@
@@ -300,10 +299,10 @@
                         @if (!string.IsNullOrEmpty(Info?.Sha256))
                         {
                             <div class="dl-sha" style="margin-top: 1rem; font-size: 0.8125rem">
-                                <span class="db-label" style="display:block; margin-bottom: 0.25rem">SHA-256</span>
+                                <span class="text-sm font-medium" style="display:block; margin-bottom: 0.25rem">SHA-256</span>
                                 <div style="display:flex; gap: 0.5rem; align-items: flex-start">
                                     <code class="dl-sha__value" style="word-break: break-all; flex: 1">@Info.Sha256</code>
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="downloadApp.copySha256()" data-ai-action="download.sha.copy">
+                                    <button type="button" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copySha256()" data-ai-action="download.sha.copy">
                                         <span id="dl-sha-copy-label">@Loc["dl_sha_copy"]</span>
                                     </button>
                                 </div>
@@ -315,8 +314,8 @@
                         @if (Info?.RequireRecipientEmail == true)
                         {
                             <div id="dl-recipient-gate" style="margin-top: 2rem">
-                                <p class="db-p">@Loc["dl_recipient_email_title"]</p>
-                                <input type="email" id="dl-recipient-email" class="db-field__input db-input" placeholder="@Loc["dl_recipient_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_recipient_email_placeholder"]" />
+                                <p>@Loc["dl_recipient_email_title"]</p>
+                                <input type="email" id="dl-recipient-email" class="rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="@Loc["dl_recipient_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_recipient_email_placeholder"]" />
                                 <label class="burn-toggle" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem">
                                     <input type="checkbox" id="dl-recipient-consent" />
                                     <span>@Loc["dl_recipient_consent"]</span>
@@ -329,13 +328,13 @@
                         @if (Info?.EmailOtpEnabled == true)
                         {
                             <div id="dl-email-otp" class="dl-email-otp" style="margin-top: 2rem">
-                                <p class="db-p">@Loc["dl_email_otp_title"]</p>
-                                <input type="email" id="dl-email-otp-email" class="db-field__input db-input" placeholder="@Loc["dl_email_otp_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_email_otp_email_placeholder"]" />
+                                <p>@Loc["dl_email_otp_title"]</p>
+                                <input type="email" id="dl-email-otp-email" class="rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="@Loc["dl_email_otp_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_email_otp_email_placeholder"]" />
                                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
                                     <button type="button" id="dl-email-otp-send" class="btn" onclick="emailOtp.send()" data-ai-action="download.emailOtp.send">@Loc["dl_email_otp_send"]</button>
-                                    <p id="dl-email-otp-sent" class="db-p hidden" style="margin: 0">@Loc["dl_email_otp_sent"]</p>
+                                    <p id="dl-email-otp-sent" class="hidden" style="margin: 0">@Loc["dl_email_otp_sent"]</p>
                                 </div>
-                                <input type="text" id="dl-email-otp-code" class="db-field__input db-input" placeholder="@Loc["dl_email_otp_placeholder"]" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="max-width: 20rem; width: 100%; margin-top: 0.5rem" aria-label="@Loc["dl_email_otp_placeholder"]" />
+                                <input type="text" id="dl-email-otp-code" class="rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="@Loc["dl_email_otp_placeholder"]" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="max-width: 20rem; width: 100%; margin-top: 0.5rem" aria-label="@Loc["dl_email_otp_placeholder"]" />
                                 <button type="button" id="dl-email-otp-download" class="btn" onclick="emailOtp.download()" data-ai-action="download.emailOtp.download" style="margin-top: 0.75rem">@Loc["dl_email_otp_download"]</button>
                             </div>
                         }
@@ -351,7 +350,7 @@
                                 </a>
                             }
                             @* Native share sheet (issue #283) — shares the link only, never the password/OTP. *@
-                            <button type="button" class="db-btn db-btn--ghost" style="margin-top: 0.75rem"
+                            <button type="button" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" style="margin-top: 0.75rem"
                                     onclick="downloadApp.sharePage()" data-ai-action="download.share">
                                 <svg style="width: 1rem; height: 1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
@@ -376,8 +375,8 @@
                         @if (ShowViralCta)
                         {
                             <div id="dl-viral-cta" class="dl-viral hidden" style="margin-top: 2rem; padding: 1.25rem; border: 1px solid var(--db-color-border, rgba(255,255,255,0.12)); text-align: center">
-                                <h3 class="db-h3" style="font-size: 1rem">@Loc["dl_cta_title"]</h3>
-                                <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_cta_sub"]</p>
+                                <h3 class="text-xl font-semibold" style="font-size: 1rem">@Loc["dl_cta_title"]</h3>
+                                <p class="text-muted-foreground" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_cta_sub"]</p>
                                 <a href="/send?ref=dl" class="btn" style="display: inline-flex; margin-top: 1rem; width: auto; padding: 0.75rem 1.5rem" data-ai-action="download.viral.cta">@Loc["dl_cta_button"]</a>
                             </div>
                         }
@@ -390,49 +389,49 @@
                     @* Report dialog — raised by JS; server still renders the trigger. *@
                     <div id="download-report-dialog" class="dl-report-dialog hidden">
                         <div class="dl-report-dialog__inner">
-                            <h2 class="db-h3">@Loc["dl_report_title"]</h2>
-                            <p class="db-p db-text-muted" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_report_sub"]</p>
+                            <h2 class="text-xl font-semibold">@Loc["dl_report_title"]</h2>
+                            <p class="text-muted-foreground" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_report_sub"]</p>
                             <form id="dl-report-form" onsubmit="return downloadApp.submitReport(event)">
-                                <label class="db-field" style="margin-top: 1rem">
-                                    <span class="db-label">@Loc["dl_report_category"]</span>
-                                    <select id="dl-report-category" class="db-field__input db-input" required>
+                                <label class="block" style="margin-top: 1rem">
+                                    <span class="text-sm font-medium">@Loc["dl_report_category"]</span>
+                                    <select id="dl-report-category" class="rounded-md border bg-transparent px-3 py-1 text-sm" required>
                                         <option value="abuse">@Loc["dl_report_cat_abuse"]</option>
                                         <option value="copyright">@Loc["dl_report_cat_copyright"]</option>
                                         <option value="malware">@Loc["dl_report_cat_malware"]</option>
                                         <option value="other">@Loc["dl_report_cat_other"]</option>
                                     </select>
                                 </label>
-                                <label class="db-field" style="margin-top: 0.75rem">
-                                    <span class="db-label">@Loc["dl_report_note"]</span>
-                                    <textarea id="dl-report-note" class="db-field__input db-input" rows="3" maxlength="2000"></textarea>
+                                <label class="block" style="margin-top: 0.75rem">
+                                    <span class="text-sm font-medium">@Loc["dl_report_note"]</span>
+                                    <textarea id="dl-report-note" class="rounded-md border bg-transparent px-3 py-1 text-sm" rows="3" maxlength="2000"></textarea>
                                 </label>
                                 <p id="dl-report-error" class="error hidden" style="margin-top: 0.5rem"></p>
                                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem">
                                     <button type="submit" class="btn" data-ai-action="download.report.submit">@Loc["dl_report_submit"]</button>
-                                    <button type="button" class="db-btn db-btn--ghost" onclick="downloadApp.closeReport()">@Loc["dl_report_cancel"]</button>
+                                    <button type="button" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.closeReport()">@Loc["dl_report_cancel"]</button>
                                 </div>
                             </form>
-                            <p id="dl-report-done" class="db-p db-text-muted hidden" style="margin-top: 1rem; font-size: 0.875rem">@Loc["dl_report_done"]</p>
+                            <p id="dl-report-done" class="text-muted-foreground hidden" style="margin-top: 1rem; font-size: 0.875rem">@Loc["dl_report_done"]</p>
                         </div>
                     </div>
 
                     @* Expired phase — hidden by default; download.js swaps to it when the
                        countdown reaches zero. Server always renders a usable phase. *@
                     <div id="download-phase-expired" class="hidden">
-                        <div class="db-text-center" style="padding: 2.5rem 0">
+                        <div class="text-center" style="padding: 2.5rem 0">
                             <div class="icon-box --muted">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                                 </svg>
                             </div>
-                            <div class="db-h1" role="heading" aria-level="1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</div>
-                            <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                            <div class="text-3xl font-bold tracking-tight" role="heading" aria-level="1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</div>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
                             <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                             @if (Info?.AllowExtensionRequests == true)
                             {
                                 <div id="dl-ext-request" style="margin-top: 1.5rem">
                                     <button type="button" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
-                                    <p id="dl-ext-request-done" class="db-p hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
+                                    <p id="dl-ext-request-done" class="hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
                                 </div>
                             }
                         </div>
@@ -440,14 +439,14 @@
                     break;
 
                 case DownloadRenderState.Scheduled:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
+                    <div class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_scheduled_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_scheduled_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">
                             @Loc["dl_scheduled_sub", ScheduledLabel]
                             <span id="dl-scheduled-countdown" style="display:block;margin-top:0.25rem;font-weight:500"></span>
                         </p>
@@ -456,47 +455,47 @@
                     break;
 
                 case DownloadRenderState.Expired:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
+                    <div class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                         @if (allowExtensionRequests)
                         {
                             <div id="dl-ext-request" style="margin-top: 1.5rem">
                                 <button type="button" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
-                                <p id="dl-ext-request-done" class="db-p hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
+                                <p id="dl-ext-request-done" class="hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
                             </div>
                         }
                     </div>
                     break;
 
                 case DownloadRenderState.Suspended:
-                    <div id="download-phase-suspended" class="db-text-center" style="padding: 2.5rem 0">
+                    <div id="download-phase-suspended" class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_suspended_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_suspended_sub"]</p>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_suspended_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_suspended_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.Revoked:
-                    <div id="download-phase-revoked" class="db-text-center" style="padding: 2.5rem 0">
+                    <div id="download-phase-revoked" class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_revoked_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_revoked_sub"]</p>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_revoked_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_revoked_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
@@ -505,57 +504,57 @@
                     @* Access rules refused this caller (issues #142/#166). Deliberately says
                        nothing about which rule, the sender's values, the file, or the counts —
                        a refused visitor learns only that a restriction exists. *@
-                    <div id="download-phase-restricted" class="db-text-center" style="padding: 2.5rem 0">
+                    <div id="download-phase-restricted" class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_restricted_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_restricted_sub"]</p>
-                        <p class="db-p dl-restricted__notice">@Loc["dl_restricted_notice"]</p>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_restricted_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_restricted_sub"]</p>
+                        <p class="dl-restricted__notice">@Loc["dl_restricted_notice"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.NotFound:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
+                    <div class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_notfound_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_notfound_sub"]</p>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_notfound_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_notfound_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.LimitReached:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
-                        <h1 class="db-h1" style="font-size: 1.25rem">@Loc["dl_limit_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_limit_sub"]</p>
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <h1 class="text-3xl font-bold tracking-tight" style="font-size: 1.25rem">@Loc["dl_limit_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_limit_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.DailyLimit:
-                    <div id="download-phase-daily-limit" class="db-text-center" style="padding: 2.5rem 0">
+                    <div id="download-phase-daily-limit" class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_daily_limit_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_daily_limit_sub"]</p>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_daily_limit_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_daily_limit_sub"]</p>
                         <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.Error:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
-                        <h1 class="db-h1" style="font-size: 1.25rem">@Loc["dl_error_h1"]</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_error_sub"]</p>
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <h1 class="text-3xl font-bold tracking-tight" style="font-size: 1.25rem">@Loc["dl_error_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_error_sub"]</p>
                         <a href="" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_error_retry"]</a>
                     </div>
                     break;
@@ -626,7 +625,7 @@
            has to work with scripting off (DownloadNoScriptTests), and a bundle whose contents
            only appear after a fetch is an empty page to that reader. *@
         <section id="dl-files" class="dl-files" data-share-code="@ShareCode">
-            <h2 class="db-h3 dl-files__title">@Loc["dl_files_title", Files.Count]</h2>
+            <h2 class="dl-files__title text-xl font-semibold">@Loc["dl_files_title", Files.Count]</h2>
 
             <ul class="dl-files__list">
                 @foreach (var file in Files)
@@ -638,7 +637,7 @@
                 }
             </ul>
 
-            <a class="db-btn db-btn--primary dl-files__all" href="/api/downloads/@ShareCode/zip"
+            <a class="dl-files__all inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href="/api/downloads/@ShareCode/zip"
                data-ai-action="download.zip">@Loc["dl_files_download_all", FormatBytes(TotalFileBytes)]</a>
         </section>
     }
@@ -649,11 +648,11 @@
         <noscript><style>.dl-comments__js { display: none; }</style></noscript>
 
         <section id="dl-comments" class="dl-comments" data-share-code="@ShareCode">
-            <h2 class="db-h3 dl-comments__title">@Loc["dl_comments_title"]</h2>
+            <h2 class="dl-comments__title text-xl font-semibold">@Loc["dl_comments_title"]</h2>
 
             @if (Comments.Count == 0)
             {
-                <p class="db-p db-text-muted" id="dl-comments-empty">@Loc["dl_comments_empty"]</p>
+                <p class="text-muted-foreground" id="dl-comments-empty">@Loc["dl_comments_empty"]</p>
             }
 
             <ul class="dl-comments__list" id="dl-comments-list">
@@ -688,7 +687,7 @@
 
                         @if (CanPost)
                         {
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm dl-comments__js"
+                            <button type="button" class="dl-comments__js inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground"
                                     data-parent-id="@comment.Id"
                                     onclick="window.quickShareComments.reply(this)"
                                     data-ai-action="comment.reply">@Loc["dl_comments_reply"]</button>
@@ -705,20 +704,20 @@
                     @if (!IsSignedIn)
                     {
                         <label class="workspace-label" for="dl-comment-name">@Loc["dl_comments_name"]</label>
-                        <input id="dl-comment-name" class="db-input" type="text" maxlength="@DeliveryComment.AuthorNameMaxLength" />
+                        <input id="dl-comment-name" class="rounded-md border bg-transparent px-3 py-1 text-sm" type="text" maxlength="@DeliveryComment.AuthorNameMaxLength" />
                     }
 
                     <label class="workspace-label" for="dl-comment-body">@Loc["dl_comments_body"]</label>
-                    <textarea id="dl-comment-body" class="db-input" rows="3" maxlength="@DeliveryComment.BodyMaxLength"></textarea>
+                    <textarea id="dl-comment-body" class="rounded-md border bg-transparent px-3 py-1 text-sm" rows="3" maxlength="@DeliveryComment.BodyMaxLength"></textarea>
 
-                    <p class="db-p db-text-muted dl-comments__hint" id="dl-comment-replying" hidden>
+                    <p class="dl-comments__hint text-muted-foreground" id="dl-comment-replying" hidden>
                         @Loc["dl_comments_replying"]
                         <button type="button" class="dl-comments__cancel"
                                 onclick="window.quickShareComments.cancelReply()"
                                 data-ai-action="comment.reply.cancel">@Loc["dl_comments_cancel_reply"]</button>
                     </p>
 
-                    <button type="button" class="db-btn db-btn--primary db-btn--sm"
+                    <button type="button" class="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
                             data-error-label="@Loc["dl_comments_failed"]"
                             onclick="window.quickShareComments.post(this)"
                             data-ai-action="comment.post">@Loc["dl_comments_post"]</button>

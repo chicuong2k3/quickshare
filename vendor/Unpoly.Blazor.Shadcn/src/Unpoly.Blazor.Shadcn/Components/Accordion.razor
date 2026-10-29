@@ -1,0 +1,8 @@
+@inherits UiComponentBase
+
+@* Built on <details>, so there is no compiler and nothing to tear down: the state machine is
+   the browser's, it survives a fragment swap by construction, and it works with scripting off.
+   `Name` is what makes a group single-open — the platform's own accordion behaviour, which
+   Radix spends a reducer on. *@
+
+<div data-slot="accordion" class="@Class" @attributes="AdditionalAttributes">@ChildContent</div>

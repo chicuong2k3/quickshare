@@ -306,9 +306,9 @@ public sealed class RetentionPolicyApiTests : IClassFixture<TestWebAppFactory>
         var (client, _) = await PaidClientAsync();
         await SetPolicyAsync(client, WindowDays, noExtend: true);
 
-        var html = await GetHtmxAsync(client, RoutePaths.AccountSecurityActivity);
+        var html = await GetPageAsync(client, RoutePaths.AccountSecurityActivity);
 
-        Assert.Contains("account-retention__form", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"retentionDays\"", html, StringComparison.Ordinal);
         foreach (var preset in RetentionPolicy.Presets)
             Assert.Contains($"value=\"{preset}\"", html, StringComparison.Ordinal);
 
@@ -332,12 +332,11 @@ public sealed class RetentionPolicyApiTests : IClassFixture<TestWebAppFactory>
         await _factory.SeedUserAsync(providerKey);
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        var html = await GetHtmxAsync(client, RoutePaths.AccountSecurityActivity);
+        var html = await GetPageAsync(client, RoutePaths.AccountSecurityActivity);
 
-        Assert.Contains("account-retention__locked", html, StringComparison.Ordinal);
         Assert.Contains("Retention policies are a Pro and Studio feature.", html, StringComparison.Ordinal);
         // Inert, not hidden: a free owner should see the control they would be buying.
-        Assert.Contains("account-retention__form", html, StringComparison.Ordinal);
+        Assert.Contains("name=\"retentionDays\"", html, StringComparison.Ordinal);
         Assert.Contains("disabled", html, StringComparison.Ordinal);
         Assert.Contains(RoutePaths.Upgrade, html, StringComparison.Ordinal);
     }
@@ -348,9 +347,9 @@ public sealed class RetentionPolicyApiTests : IClassFixture<TestWebAppFactory>
         var (client, userId) = await PaidClientAsync();
         await SeedDeliveryAsync(userId, DateTime.UtcNow.AddDays(60));
 
-        var html = await GetHtmxAsync(client, $"{RoutePaths.AccountSecurityActivity}?retentionDays={WindowDays}");
+        var html = await GetPageAsync(client, $"{RoutePaths.AccountSecurityActivity}?retentionDays={WindowDays}");
 
-        Assert.Contains("account-retention__preview", html, StringComparison.Ordinal);
+        Assert.Contains("account-retention-preview", html, StringComparison.Ordinal);
         Assert.Contains("1 shares would expire sooner.", html, StringComparison.Ordinal);
         Assert.Contains(TestFileName, html, StringComparison.Ordinal);
 
@@ -367,29 +366,27 @@ public sealed class RetentionPolicyApiTests : IClassFixture<TestWebAppFactory>
         var (client, userId) = await PaidClientAsync();
         await SeedDeliveryAsync(userId, DateTime.UtcNow.AddDays(2));
 
-        var html = await GetHtmxAsync(client, $"{RoutePaths.AccountSecurityActivity}?retentionDays={WindowDays}");
+        var html = await GetPageAsync(client, $"{RoutePaths.AccountSecurityActivity}?retentionDays={WindowDays}");
 
         Assert.Contains("Nothing would change", html, StringComparison.Ordinal);
         Assert.DoesNotContain("would expire sooner", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task SettingsCard_WithoutTheHtmxHeader_RedirectsToAccount()
+    public async Task SettingsCard_DirectGet_RendersUsableControls()
     {
         var (client, _) = await PaidClientAsync();
 
         var response = await client.GetAsync(RoutePaths.AccountSecurityActivity);
 
-        // The page only exists as a partial; a direct hit must land on the tab that hosts it
-        // instead of rendering a card with no shell around it.
         var html = await response.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("account-retention__form", html, StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("name=\"retentionDays\"", html, StringComparison.Ordinal);
     }
 
-    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    private static async Task<string> GetPageAsync(HttpClient client, string url)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
         var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadAsStringAsync();

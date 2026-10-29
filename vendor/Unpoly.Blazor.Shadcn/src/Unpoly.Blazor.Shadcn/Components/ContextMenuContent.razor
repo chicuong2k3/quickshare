@@ -1,0 +1,29 @@
+@inherits UiComponentBase
+
+@* Positioned at the pointer rather than against the trigger — that is the only structural
+   difference from a dropdown. Side overrides that for the few cases where the menu belongs to
+   the box rather than to the click, as upstream's side prop does: the panel then opens against
+   the trigger's named edge, centred along it. *@
+
+<div id="@Id" popover data-slot="context-menu-content" role="menu" data-side="@Side"
+     class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>top | right | bottom | left. Unset — the default — opens at the pointer.</summary>
+    [Parameter] public string? Side { get; set; }
+
+    const string Base =
+        "z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] " +
+        "origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden " +
+        "overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md " +
+        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 " +
+        "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 " +
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 " +
+        "data-[state=closed]:zoom-out-95 data-[state=open]:animate-in " +
+        "data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95";
+
+    string Classes => Cn(Base, Class);
+}

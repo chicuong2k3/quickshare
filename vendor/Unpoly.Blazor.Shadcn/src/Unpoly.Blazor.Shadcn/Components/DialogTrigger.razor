@@ -1,0 +1,18 @@
+@inherits UiComponentBase
+
+@* shadcn uses `asChild` here so any element can open the dialog. Blazor has no cloneElement, so
+   this renders a real button wearing the button recipe, and Variant/Size cover what asChild was
+   mostly used for. *@
+
+<button type="button" data-slot="dialog-trigger" data-target="@Target"
+        aria-haspopup="dialog" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    /// <summary>The id of the <see cref="Dialog"/> to open.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    [Parameter] public string Variant { get; set; } = "default";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

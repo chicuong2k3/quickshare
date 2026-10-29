@@ -371,7 +371,6 @@ public sealed class SubscriptionLifecycleTests : IClassFixture<TestWebAppFactory
         await SeedSubscriptionAsync(userId, PlanTierLimits.Pro, daysLeft: 20);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/billing");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         // The hold sits beside the exit, not behind it: somebody taking a break should not have
@@ -388,7 +387,6 @@ public sealed class SubscriptionLifecycleTests : IClassFixture<TestWebAppFactory
         (await client.PostAsync("/api/billing/subscription/pause", null)).EnsureSuccessStatusCode();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/billing");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         Assert.Contains("value=\"resume\"", html, StringComparison.Ordinal);

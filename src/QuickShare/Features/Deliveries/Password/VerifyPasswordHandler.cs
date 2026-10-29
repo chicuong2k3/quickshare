@@ -33,7 +33,10 @@ public sealed class VerifyPasswordHandler(OtpLockoutService lockout, AppDbContex
 
         if (valid)
         {
-            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
+            if (string.IsNullOrEmpty(delivery.OtpHash) && !delivery.EmailOtpEnabled)
+            {
+                await lockout.ResetAsync(db, delivery.Id, cancellationToken);
+            }
             return Result.Success(new VerifyPasswordResponse(true));
         }
 

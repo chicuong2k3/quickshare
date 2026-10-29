@@ -1,0 +1,44 @@
+@inherits UiComponentBase
+
+@* One tab in a BottomNavBar: the icon as ChildContent, Label beside it while the tab is active.
+
+   The name of an inactive tab is folded to no width rather than removed, so it is still the
+   tab's accessible name — an icon-only tab is never nameless, and no aria-label repeats it.
+
+   With Href it is a link and Active marks the current page with aria-current. Without Href it is
+   a button, and Active is aria-pressed. *@
+
+@if (Href is not null)
+{
+    <a data-slot="bottom-nav-bar-item" href="@Href" aria-current="@(Active ? "page" : null)"
+       data-active="@(Active ? "true" : null)" class="@Classes" @attributes="AdditionalAttributes">@Body</a>
+}
+else
+{
+    <button type="button" data-slot="bottom-nav-bar-item" aria-pressed="@(Active ? "true" : "false")"
+            data-active="@(Active ? "true" : null)" class="@Classes" @attributes="AdditionalAttributes">@Body</button>
+}
+
+@code {
+    /// <summary>Where the tab goes. Null renders a button instead of a link.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>The tab's name: shown beside the icon while active, read aloud always.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The current tab — the one whose name shows when the page arrives.</summary>
+    [Parameter] public bool Active { get; set; }
+
+    // The gap between icon and name is padding inside the name, so folding the name to no width
+    // takes the gap with it and an icon-only tab stays centred.
+    RenderFragment Body => __builder =>
+    {
+        <span aria-hidden="true" class="flex">@ChildContent</span>
+        <span data-slot="bottom-nav-bar-label"
+              class="max-w-0 overflow-hidden opacity-0 group-data-[active=true]/bottom-nav-bar-item:max-w-none group-data-[active=true]/bottom-nav-bar-item:opacity-100">
+            <span class="block w-max ps-2 text-xs font-medium">@Label</span>
+        </span>
+    };
+
+    string Classes => Cn("group/bottom-nav-bar-item flex h-10 min-w-11 shrink-0 items-center justify-center rounded-full px-3 text-muted-foreground transition-all outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.97] data-[active=true]:bg-primary/10 data-[active=true]:text-primary dark:data-[active=true]:bg-primary/15 [&_svg]:size-[22px] [&_svg]:shrink-0", Class);
+}

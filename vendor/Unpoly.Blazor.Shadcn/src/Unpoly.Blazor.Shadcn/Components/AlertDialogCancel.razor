@@ -1,0 +1,17 @@
+@inherits UiComponentBase
+
+@* The answer that backs out. type="button" so it never submits the form it sits inside.
+
+   [data-dialog-close] rather than data-slot="dialog-close": the slot is upstream's name for this
+   element and the attribute is what ui.js binds the close handler to, and conflating the two
+   would mean a component could not be renamed without changing behaviour. *@
+
+<button type="button" data-slot="alert-dialog-cancel" data-dialog-close class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "outline";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

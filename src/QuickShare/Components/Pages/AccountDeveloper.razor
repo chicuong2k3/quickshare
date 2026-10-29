@@ -21,42 +21,22 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["dev_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["dev_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["dev_title"]</h1>
+        <p class="text-muted-foreground">@Loc["dev_subtitle"]</p>
     </section>
 
     <AccountTabs Current="@RoutePaths.AccountDeveloper" />
 
-    <section id="developer-body"
-             hx-get="@RoutePaths.AccountDeveloper"
-             hx-trigger="load"
-             hx-target="#developer-body"
-             hx-select="#developer-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 <script src="/js/developer.js" defer></script>
 
 @code {
-    private bool isChunkRequest;
     private List<ApiKey> keys = [];
     private List<WebhookEndpoint> endpoints = [];
     private List<WebhookDelivery> deliveries = [];
@@ -76,14 +56,14 @@ else
     private RenderFragment Chunk => @<section id="developer-body">
 
         @* ── #115 API keys ── *@
-        <div class="db-card account-card workspace-card">
-            <div class="db-card__body">
-                <h2 class="db-h3">@Loc["dev_keys_title"]</h2>
-                <p class="db-p db-text-muted workspace-hint">@Loc["dev_keys_hint"]</p>
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_keys_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_keys_hint"]</p>
 
                 @if (keys.Count == 0)
                 {
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_keys_empty"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_keys_empty"]</p>
                 }
                 else
                 {
@@ -110,14 +90,14 @@ else
                                     @* Usage (issue #273): loaded when asked for, because most keys
                                        are never looked at twice and a graph nobody opened is a
                                        query nobody needed. *@
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@key.Id"
                                             data-target="dev-key-usage-@key.Id"
                                             data-empty="@Loc["dev_key_usage_empty"]"
                                             data-total="@Loc["dev_key_usage_total"]"
                                             onclick="window.quickShareDeveloper.usage(this)"
                                             data-ai-action="dev.key.usage">@Loc["dev_key_usage"]</button>
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@key.Id"
                                             data-confirm="@Loc["dev_key_revoke_confirm"]"
                                             onclick="window.quickShareDeveloper.revokeKey(this)"
@@ -130,37 +110,37 @@ else
 
                 <div class="workspace-form">
                     <label class="workspace-label" for="dev-key-name">@Loc["dev_key_name"]</label>
-                    <input id="dev-key-name" class="db-input" type="text" maxlength="@ApiKey.NameMaxLength" />
+                    <Input id="dev-key-name"  type="text" maxlength="@ApiKey.NameMaxLength" />
 
                     <label class="workspace-label" for="dev-key-scopes">@Loc["dev_key_scopes"]</label>
-                    <select id="dev-key-scopes" class="db-input">
-                        <option value="@ApiScopes.Read">@Loc["dev_scope_read"]</option>
-                        <option value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</option>
-                        <option value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</option>
-                    </select>
+                    <NativeSelect id="dev-key-scopes">
+                        <NativeSelectOption value="@ApiScopes.Read">@Loc["dev_scope_read"]</NativeSelectOption>
+                        <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</NativeSelectOption>
+                        <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</NativeSelectOption>
+                    </NativeSelect>
 
-                    <button type="button" class="db-btn db-btn--primary"
+                    <button type="button" data-slot="button" data-variant="default"
                             data-once-label="@Loc["dev_key_shown_once"]"
                             onclick="window.quickShareDeveloper.createKey(this)"
                             data-ai-action="dev.key.create">@Loc["dev_key_create"]</button>
 
                     @* Filled in by script: the raw key exists in exactly one response. *@
-                    <p class="db-p security-secret" id="dev-key-new" hidden><code id="dev-key-new-value"></code></p>
+                    <p class="security-secret" id="dev-key-new" hidden><code id="dev-key-new-value"></code></p>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
         @* ── #195 WebDAV mount ── *@
-        <div class="db-card account-card workspace-card">
-            <div class="db-card__body">
-                <h2 class="db-h3">@Loc["dev_mount_title"]</h2>
-                <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_hint"]</p>
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_mount_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_hint"]</p>
 
                 @if (!hasSeat)
                 {
                     @* A mount is a team surface: without a seat there is nothing to mount, and
                        an address that answers 401 forever helps nobody. *@
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_needs_workspace"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_needs_workspace"]</p>
                 }
                 else
                 {
@@ -171,20 +151,20 @@ else
                         </div>
                     </dl>
 
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_setup"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_setup"]</p>
                     <pre class="security-secret"><code>@RcloneSetup</code></pre>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_mount_clients"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_clients"]</p>
                 }
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
         @* ── #265 S3 gateway ── *@
         @if (isWorkspaceAdmin)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["dev_s3_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_s3_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["dev_s3_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_s3_hint"]</p>
 
                     <dl class="workspace-stats">
                         <div class="workspace-stat">
@@ -199,7 +179,7 @@ else
 
                     @if (s3Credentials.Count == 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["dev_s3_empty"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["dev_s3_empty"]</p>
                     }
                     else
                     {
@@ -208,15 +188,15 @@ else
                             {
                                 <li class="workspace-list__item">
                                     <div>
-                                        <p class="db-p"><strong>@credential.Label</strong> · <code>@credential.AccessKeyId</code></p>
-                                        <p class="db-p db-text-muted workspace-hint">
+                                        <p><strong>@credential.Label</strong> · <code>@credential.AccessKeyId</code></p>
+                                        <p class="text-muted-foreground workspace-hint">
                                             @credential.Scopes ·
                                             @(credential.LastUsedAt is { } used
                                                 ? Loc["dev_key_last_used", used.ToLocalTime().ToString("g")].Value
                                                 : Loc["dev_key_never_used"].Value)
                                         </p>
                                     </div>
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@credential.Id"
                                             data-confirm="@Loc["dev_s3_revoke_confirm"]"
                                             onclick="window.quickShareDeveloper.revokeS3(this)"
@@ -228,35 +208,35 @@ else
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="dev-s3-label">@Loc["dev_key_name"]</label>
-                        <input id="dev-s3-label" class="db-input" type="text" maxlength="@WorkspaceS3Credential.LabelMaxLength" />
+                        <Input id="dev-s3-label"  type="text" maxlength="@WorkspaceS3Credential.LabelMaxLength" />
 
                         <label class="workspace-label" for="dev-s3-scopes">@Loc["dev_key_scopes"]</label>
-                        <select id="dev-s3-scopes" class="db-input">
-                            <option value="@ApiScopes.Read">@Loc["dev_scope_read"]</option>
-                            <option value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</option>
-                            <option value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</option>
-                        </select>
+                        <NativeSelect id="dev-s3-scopes">
+                            <NativeSelectOption value="@ApiScopes.Read">@Loc["dev_scope_read"]</NativeSelectOption>
+                            <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</NativeSelectOption>
+                            <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</NativeSelectOption>
+                        </NativeSelect>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-once-label="@Loc["dev_s3_shown_once"]"
                                 onclick="window.quickShareDeveloper.createS3(this)"
                                 data-ai-action="dev.s3.create">@Loc["dev_s3_create"]</button>
 
-                        <p class="db-p security-secret" id="dev-s3-new" hidden><code id="dev-s3-new-value"></code></p>
+                        <p class="security-secret" id="dev-s3-new" hidden><code id="dev-s3-new-value"></code></p>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
 
         @* ── #39 webhook endpoints ── *@
-        <div class="db-card account-card workspace-card">
-            <div class="db-card__body">
-                <h2 class="db-h3">@Loc["dev_hooks_title"]</h2>
-                <p class="db-p db-text-muted workspace-hint">@Loc["dev_hooks_hint"]</p>
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_hooks_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_hooks_hint"]</p>
 
                 @if (endpoints.Count == 0)
                 {
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_hooks_empty"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_hooks_empty"]</p>
                 }
                 else
                 {
@@ -292,18 +272,18 @@ else
                                     }
                                 </div>
                                 <div class="workspace-member__actions">
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@endpoint.Id"
                                             onclick="window.quickShareDeveloper.testHook(this)"
                                             data-ai-action="dev.hook.test">@Loc["dev_hook_test"]</button>
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@endpoint.Id"
                                             data-enabled="@endpoint.Enabled.ToString().ToLowerInvariant()"
                                             onclick="window.quickShareDeveloper.toggleHook(this)"
                                             data-ai-action="dev.hook.toggle">
                                         @(endpoint.Enabled ? Loc["dev_hook_pause"] : Loc["dev_hook_resume"])
                                     </button>
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@endpoint.Id"
                                             data-confirm="@Loc["dev_hook_delete_confirm"]"
                                             onclick="window.quickShareDeveloper.deleteHook(this)"
@@ -316,38 +296,38 @@ else
 
                 <div class="workspace-form">
                     <label class="workspace-label" for="dev-hook-url">@Loc["dev_hook_url"]</label>
-                    <input id="dev-hook-url" class="db-input" type="url"
+                    <Input id="dev-hook-url"  type="url"
                            maxlength="@WebhookEndpoint.UrlMaxLength" placeholder="https://" />
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_hook_url_hint"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_hook_url_hint"]</p>
 
                     <label class="workspace-label" for="dev-hook-events">@Loc["dev_hook_events"]</label>
-                    <select id="dev-hook-events" class="db-input">
-                        <option value="@string.Join(',', WebhookEvents.All)" selected>@Loc["dev_hook_events_all"]</option>
+                    <NativeSelect id="dev-hook-events">
+                        <NativeSelectOption value="@string.Join(',', WebhookEvents.All)" selected>@Loc["dev_hook_events_all"]</NativeSelectOption>
                         @foreach (var evt in WebhookEvents.All)
                         {
-                            <option value="@evt">@evt</option>
+                            <NativeSelectOption value="@evt">@evt</NativeSelectOption>
                         }
-                    </select>
+                    </NativeSelect>
 
-                    <button type="button" class="db-btn db-btn--primary"
+                    <button type="button" data-slot="button" data-variant="default"
                             data-once-label="@Loc["dev_hook_secret_once"]"
                             onclick="window.quickShareDeveloper.createHook(this)"
                             data-ai-action="dev.hook.create">@Loc["dev_hook_create"]</button>
 
-                    <p class="db-p security-secret" id="dev-hook-new" hidden><code id="dev-hook-new-value"></code></p>
+                    <p class="security-secret" id="dev-hook-new" hidden><code id="dev-hook-new-value"></code></p>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
         @* ── #223 event log, #288 replay ── *@
-        <div class="db-card account-card workspace-card">
-            <div class="db-card__body">
-                <h2 class="db-h3">@Loc["dev_log_title"]</h2>
-                <p class="db-p db-text-muted workspace-hint">@Loc["dev_log_hint"]</p>
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_log_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_log_hint"]</p>
 
                 @if (deliveries.Count == 0)
                 {
-                    <p class="db-p db-text-muted workspace-hint">@Loc["dev_log_empty"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_log_empty"]</p>
                 }
                 else
                 {
@@ -374,7 +354,7 @@ else
                                     }
                                 </div>
                                 <div class="workspace-member__actions">
-                                    <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                    <button type="button" data-slot="button" data-variant="ghost"
                                             data-id="@delivery.Id"
                                             onclick="window.quickShareDeveloper.replay(this)"
                                             data-ai-action="dev.log.replay">@Loc["dev_log_replay"]</button>
@@ -383,21 +363,13 @@ else
                         }
                     </ul>
                 }
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     </section>;
 
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
 
         var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
         if (user is null) return;

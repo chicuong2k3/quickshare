@@ -62,7 +62,7 @@ dotnet test tests/QuickShare.Browser.Tests   # Playwright on installed Chrome (~
 | Orphan R2 object sweep | #107 | failed upload → sweep job reclaims storage | `OrphanSweepJobTests` |
 | CI/CD pipeline | #96 | push → GitHub Actions build + test + deploy | — |
 | Localization vi/en + language switch | core | toggle language → all strings swap | `LocalizationTests`, `LanguageSwitchTests` |
-| HTMX lazy-load shell + cache | core | open any page → skeleton instant, data fills | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests` |
+| SSR pages + cache | core | open a page directly → authorized data renders | `PageRenderingTests`, `ResponseCacheTests`, `PageLoadTests` |
 | Global API rate limiting | #52 | hammer `/api` → 429 + `Retry-After` | — |
 
 ## 4. Security & Trust batch — ✅ committed

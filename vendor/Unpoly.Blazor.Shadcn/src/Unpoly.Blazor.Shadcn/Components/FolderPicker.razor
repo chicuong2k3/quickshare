@@ -1,0 +1,73 @@
+@inherits UiComponentBase
+
+<div data-slot="folder-picker" data-disabled="@(Disabled ? "" : null)" class="@Class" @attributes="AdditionalAttributes">
+    <InputGroup aria-invalid="@(Invalid ? "true" : null)" aria-busy="@(_busy ? "true" : null)">
+        <InputGroupAddon><Icon Name="folder" /></InputGroupAddon>
+        <InputGroupControl Id="@Id" Name="@Name" Value="@Value" ValueChanged="OnInputChangedAsync" readonly
+                           placeholder="@Placeholder" aria-label="@AriaLabel"
+                           aria-invalid="@(Invalid ? "true" : null)" />
+        <InputGroupAddon Align="inline-end">
+            <InputGroupButton Type="button" Size="sm" Disabled="@(Disabled || _busy || PickAsync is null)"
+                              aria-label="@BrowseAriaLabel" @onclick="ChooseAsync">
+                @if (_busy)
+                {
+                    <Spinner />
+                    @BusyLabel
+                }
+                else
+                {
+                    <Icon Name="folder" />
+                    @BrowseLabel
+                }
+            </InputGroupButton>
+        </InputGroupAddon>
+    </InputGroup>
+    @if (!string.IsNullOrWhiteSpace(_pickerError))
+    {
+        <FieldError role="alert">@_pickerError</FieldError>
+    }
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = $"folder-{Guid.NewGuid():N}";
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public Func<Task<string?>>? PickAsync { get; set; }
+    [Parameter] public EventCallback<Exception> OnError { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Invalid { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "No folder selected";
+    [Parameter] public string BrowseLabel { get; set; } = "Browse";
+    [Parameter] public string BusyLabel { get; set; } = "Opening";
+    [Parameter] public string BrowseAriaLabel { get; set; } = "Choose folder";
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string ErrorMessage { get; set; } = "The folder picker could not be opened. Try again.";
+
+    private bool _busy;
+    private string? _pickerError;
+
+    private Task OnInputChangedAsync(string? value) => ValueChanged.InvokeAsync(value);
+
+    private async Task ChooseAsync()
+    {
+        if (Disabled || _busy || PickAsync is null) return;
+        _busy = true;
+        _pickerError = null;
+        try
+        {
+            var selected = await PickAsync();
+            if (!string.IsNullOrWhiteSpace(selected))
+                await ValueChanged.InvokeAsync(selected);
+        }
+        catch (Exception exception)
+        {
+            _pickerError = ErrorMessage;
+            await OnError.InvokeAsync(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -472,8 +472,8 @@
 
 /* ─── Compact density — shared across every DAUB theme ─── */
 [data-theme] {
-    /* Vendor radius aliases the theme blocks never zeroed — .p2p-quota-banner,
-       .ad-reward-card/btn and .tools-landing__kbd read these. Cards are square. */
+    /* Vendor radius aliases the theme blocks never zeroed — .p2p-quota-banner
+       and .ad-reward-card/btn read these. Cards are square. */
     --db-radius-sm: 0px;
     --db-radius-md: 0px;
     --db-radius-lg: 0px;
@@ -601,7 +601,7 @@ textarea:focus-visible {
 }
 
 /* ─── The striped title bar — the card's signature chrome ────────
-   Global because it also ships inside HTMX partials. Anatomy: a box,
+   Global because it also ships inside server-rendered partials. Anatomy: a box,
    the label on its paper patch, a box; the stripes run behind. ── */
 .qs-titlebar {
     display: flex;
@@ -848,69 +848,10 @@ body::after,
     left: auto !important;
 }
 
-/* ─── Account: profile card (shared for HTMX lazy-load) ─── */
+/* ─── Account: profile card (shared for shared rendering) ─── */
 .account-card {
     width: 100%;
     max-width: 28rem;
-}
-
-/* ─── Account: monthly usage bar (global — ships inside an HTMX partial) ─── */
-.account-usage {
-    margin-top: var(--db-space-4);
-}
-
-.account-usage__title {
-    margin: 0 0 var(--db-space-4) 0;
-}
-
-.account-usage__unlimited {
-    margin: 0;
-}
-
-.account-usage-bar {
-    width: 100%;
-    height: 0.625rem;
-    background: var(--db-color-border);
-    border: 1px solid var(--db-mountain);
-    border-radius: var(--db-radius-full);
-    overflow: hidden;
-}
-
-.account-usage-bar__fill {
-    height: 100%;
-    transition: width 0.3s ease;
-}
-
-.account-usage-bar__fill--ok {
-    background: var(--db-color-success);
-}
-
-.account-usage-bar__fill--warn {
-    background: var(--db-color-warning);
-}
-
-.account-usage-bar__fill--over {
-    background: var(--db-color-error);
-}
-
-.account-usage-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--db-space-3);
-    margin-top: var(--db-space-2);
-    font-size: var(--db-text-sm);
-}
-
-.account-usage-pct {
-    font-family: var(--db-font-mono);
-    color: var(--db-color-text);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .account-usage-bar__fill {
-        transition: none;
-    }
 }
 
 /* Skeleton */
@@ -950,7 +891,7 @@ body::after,
 
 /* Profile card styles now in Pages/AccountProfile.razor.css (scoped) */
 
-/* Notification preferences (issue #117) — global: rendered inside an HTMX partial */
+/* Notification preferences (issue #117) — global: rendered inside a server-rendered partial */
 .account-notifications__item {
     display: flex;
     gap: var(--db-space-2);
@@ -977,7 +918,7 @@ body::after,
     font-size: var(--db-text-sm);
 }
 
-/* Retention policy (issue #161) — global: rendered inside an HTMX partial. */
+/* Retention policy (issue #161) — global: rendered inside a server-rendered partial. */
 /* The global `.db-p.db-text-muted` bottom margin over-gaps a section subtitle. */
 .account-retention__subtitle {
     margin-top: 0.25rem;
@@ -1086,121 +1027,6 @@ body::after,
     gap: var(--db-space-3);
     flex-wrap: wrap;
     margin-top: var(--db-space-3);
-}
-
-.account-data-delete {
-    color: var(--db-color-danger, #dc2626);
-    border-color: var(--db-color-danger, #dc2626);
-}
-
-/* Onboarding checklist (issue #129). */
-.account-onboarding-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--db-space-2);
-}
-
-.account-onboarding-dismiss {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25rem;
-    line-height: 1;
-    color: var(--db-color-text-muted, #6b7280);
-}
-
-.account-onboarding-progress {
-    font-size: var(--db-text-sm);
-    margin-bottom: var(--db-space-2);
-}
-
-.account-onboarding-bar {
-    height: 0.5rem;
-    background: var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
-    border-radius: var(--db-radius);
-    overflow: hidden;
-    margin-bottom: var(--db-space-3);
-}
-
-.account-onboarding-bar__fill {
-    height: 100%;
-    background: var(--db-valley);
-    transition: width 0.3s ease;
-}
-
-.account-onboarding-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-    gap: var(--db-space-2);
-}
-
-.account-onboarding-step {
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-muted, #6b7280);
-    padding-left: 1.5rem;
-    position: relative;
-}
-
-.account-onboarding-step::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.1rem;
-    width: 1rem;
-    height: 1rem;
-    border: 1px solid var(--db-mountain);
-    border-radius: 50%;
-}
-
-.account-data-delete {
-    color: var(--db-color-danger, #dc2626);
-    border-color: var(--db-color-danger, #dc2626);
-}
-
-/* Download history (issue #220). */
-.account-downloads-list {
-    list-style: none;
-    margin: var(--db-space-3) 0 0;
-    padding: 0;
-}
-
-.account-downloads-row {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--db-space-3);
-    padding: var(--db-space-2) 0;
-    border-bottom: 1px solid var(--db-mountain);
-}
-
-.account-downloads-row:last-child {
-    border-bottom: none;
-}
-
-.account-downloads-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.account-downloads-size {
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-sm);
-    white-space: nowrap;
-}
-
-.account-onboarding-step--done {
-    color: var(--db-color-text);
-    text-decoration: line-through;
-}
-
-.account-onboarding-step--done::before {
-    background: var(--db-valley);
-    border-color: var(--db-valley);
 }
 
 /* --- P2P send quota banner --- */
@@ -1325,7 +1151,7 @@ body::after,
     }
 }
 
-/* --- Ad reward card (ad- namespace - global for HTMX responses) --- */
+/* --- Ad reward card (ad- namespace - global for server-rendered responses) --- */
 .ad-reward-card {
     border: 1px solid var(--db-color-border);
     border-radius: var(--db-radius-lg);
@@ -1390,7 +1216,7 @@ body::after,
     color: var(--db-color-accent-hover);
 }
 
-/* ─── Account: section tabs (shared, ships inside HTMX partials) ─── */
+/* ─── Account: section tabs (shared, ships inside server-rendered partials) ─── */
 .account-tabs {
     display: flex;
     gap: 0;
@@ -1490,7 +1316,7 @@ body::after,
 }
 
 /* Legal hold badge (issue #266): the delivery is frozen against every deletion path.
-   Rendered inside the HTMX deliveries partial, so it must live here and not in the
+   Rendered inside the server-rendered deliveries partial, so it must live here and not in the
    component's scoped stylesheet. Text carries the state — the border is not the signal. */
 .account-delivery__hold {
     font-family: var(--db-font-mono);
@@ -1866,38 +1692,6 @@ a.notif__message:hover {
     gap: var(--db-space-2);
 }
 
-/* Largest-files cleanup shortlist on the usage card (issue #315). */
-.account-usage__largest-title {
-    margin-top: var(--db-space-5);
-    margin-bottom: var(--db-space-2);
-}
-
-.account-usage-largest {
-    list-style: none;
-    margin: 0 0 var(--db-space-3);
-    padding: 0;
-}
-
-.account-usage-largest__row {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--db-space-3);
-    padding: var(--db-space-1) 0;
-    font-size: 0.8125rem;
-}
-
-.account-usage-largest__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.account-usage-largest__size {
-    font-family: var(--db-font-mono);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-}
-
 .account-delivery__star {
     background: none;
     border: none;
@@ -1992,67 +1786,6 @@ a.notif__message:hover {
     min-width: 12rem;
 }
 
-/* ─── /tools SEO landing pages ───
-   Global, not scoped: the page supplies the article body as a RenderFragment,
-   so it carries the page's scope id, not ToolsLanding's. */
-.tools-landing {
-    max-width: 44rem;
-    margin: 0 auto;
-}
-
-.tools-landing__lede {
-    margin-top: var(--db-space-3);
-    font-size: var(--db-text-base);
-}
-
-.tools-landing__box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--db-space-2);
-    margin: var(--db-space-6) 0;
-    padding: var(--db-space-6);
-    border: 1px solid var(--db-mountain);
-    background: var(--db-dither) 0 0 / 4px 4px, var(--db-color-surface);
-    text-decoration: none;
-    color: var(--db-color-text);
-    text-align: center;
-}
-
-.tools-landing__box:hover {
-    border-color: var(--db-color-accent);
-}
-
-.tools-landing__kbd {
-    display: inline-block;
-    padding: 0.125rem 0.5rem;
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-sm);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.875rem;
-}
-
-.tools-landing__box-hint {
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-muted);
-}
-
-.tools-landing__body h2 {
-    margin-top: var(--db-space-6);
-}
-
-.tools-landing__body p,
-.tools-landing__body li {
-    margin-top: var(--db-space-3);
-    color: var(--db-color-text-muted);
-    line-height: 1.65;
-}
-
-.tools-landing__body ul {
-    padding-left: 1.25rem;
-    list-style: disc;
-}
-
 /* ─── Heading voice: Bricolage, heavy and tight ─────────────────
    DAUB's own h1/h2/h3 still carried the old magazine register. ── */
 .db-h1, .db-h2, .db-h3, .db-h4 {
@@ -2132,15 +1865,6 @@ select {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 6px 28px 6px 8px;
-}
-
-/* ─── Cookie consent reads as a footnote on the sheet ─── */
-.cookie-consent__title {
-    font-family: var(--db-font-mono) !important;
-    font-size: 0.6875rem !important;
-    font-weight: 400 !important;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
 }
 
 /* ─── Nothing may set the document wider than the viewport ─── */
@@ -2428,7 +2152,7 @@ html, body {
 /* ─── Download restrictions — sender controls (issues #142 + #166) ──
    The rule group on /send. Kept in the global sheet rather than
    Upload.razor.css so the same rules survive if the block is ever
-   delivered inside an HTMX partial, where scoped attributes never
+   delivered inside a server-rendered partial, where scoped attributes never
    reach the injected markup. ─────────────────────────────────────── */
 .upload-access__combine {
     display: block;
@@ -2459,7 +2183,7 @@ html, body {
     color: var(--db-color-text-muted);
 }
 
-/* ─── Admin: feature flags (shared for HTMX lazy-load) ─── */
+/* ─── Admin: feature flags (shared for shared rendering) ─── */
 .admin-flags-heading {
     margin-bottom: var(--db-space-4);
 }
@@ -2568,7 +2292,7 @@ html, body {
     50% { opacity: 0.7; }
 }
 
-/* ─── Admin: founder analytics dashboard (HTMX lazy-load) ─── */
+/* ─── Admin: founder analytics dashboard (shared rendering) ─── */
 .admin-analytics-heading {
     margin-bottom: var(--db-space-4);
 }
@@ -2660,7 +2384,7 @@ html, body {
 
 
 /* ─── Team workspace (issues #106 seats, #145 audit, #252 transfer, #300 report) ───
-   Global, not scoped: this markup ships inside HTMX partials, where a .razor.css
+   Global, not scoped: this markup ships inside server-rendered partials, where a .razor.css
    scope attribute from another component never applies. */
 .workspace-card {
     margin-top: var(--db-space-4);
@@ -2887,7 +2611,7 @@ html, body {
 
 
 /* ─── Workspace brand on recipient pages (issues #285 logo/colours, #286 fonts) ───
-   Global, not scoped: the download page renders these alongside HTMX-delivered markup. */
+   Global, not scoped: the download page renders these alongside server-rendered markup. */
 .dl-brand {
     display: flex;
     flex-direction: column;
@@ -2959,7 +2683,7 @@ html, body {
 
 /* ── Delivery comment thread (issue #289) ────────────────────────────────────
    Global rather than scoped: the thread renders inside Download.razor but the
-   markup is shared with the HTMX chunk, and scoped CSS does not reach that. */
+   markup is shared with the server-rendered chunk, and scoped CSS does not reach that. */
 .dl-comments {
     margin-top: var(--db-space-6);
     border-top: 1px solid var(--db-color-border);
@@ -3074,7 +2798,7 @@ html, body {
 
 
 /* ── Bundle file list on the recipient page (issues #79, #43) ───────────────
-   Global, not scoped: the same markup is reachable from an HTMX partial. */
+   Global, not scoped: the same markup is reachable from a server-rendered partial. */
 .dl-files {
     margin-top: var(--db-space-5);
     border-top: 1px solid var(--db-color-border);
@@ -3113,7 +2837,7 @@ html, body {
 
 /* ─── Voice command status (issue #277) ───
    Sits above the fold, announces what was heard and what is about to run. Global rather than
-   scoped because the layout also ships inside HTMX partials. */
+   scoped because the layout also ships inside server-rendered partials. */
 .voice-status {
     position: fixed;
     left: 50%;

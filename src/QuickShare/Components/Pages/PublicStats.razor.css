@@ -11,8 +11,9 @@
 }
 
 .ps-stats__card {
-    background: var(--db-color-muted);
-    border: 1px solid var(--db-color-border);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 1rem 1.25rem;
     text-align: center;
 }
@@ -22,25 +23,25 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--db-color-muted-text);
+    color: var(--muted-foreground);
 }
 
 .ps-stats__value {
     margin: 0;
     font-size: 2rem;
     font-weight: 700;
-    color: var(--db-color-accent-text);
+    color: var(--foreground);
 }
 
 .ps-stats__file {
-    border-bottom: 1px solid var(--db-color-border);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 0.75rem;
 }
 
 .ps-stats__meta {
     margin: 0.25rem 0 0;
     font-size: 0.875rem;
-    color: var(--db-color-muted-text);
+    color: var(--muted-foreground);
 }
 
 .ps-stats__timeline {
@@ -71,12 +72,12 @@
 .ps-stats__bar {
     width: 100%;
     min-height: 2px;
-    background: var(--db-color-accent);
+    background: var(--primary);
 }
 
 .ps-stats__day {
     font-size: 0.625rem;
-    color: var(--db-color-muted-text);
+    color: var(--muted-foreground);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

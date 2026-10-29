@@ -13,24 +13,24 @@
 
 <PageWrapper id="admin-analytics-shell" Variant="PageVariant.Padded">
     <div class="admin-analytics-heading">
-        <h1 class="db-h1">@Loc["admin_analytics_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["admin_analytics_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["admin_analytics_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_analytics_subtitle"]</p>
     </div>
 
-    <div id="admin-analytics-app" class="db-card admin-analytics-card">
-        <div class="db-card__body">
+    <div id="admin-analytics-app" class="admin-analytics-card" data-slot="card">
+        <div class="px-(--card-spacing)">
             @if (!isAdmin)
             {
-                <div class="db-alert db-alert--error" role="alert">@Loc["admin_analytics_forbidden"]</div>
+                <div class="text-destructive" role="alert">@Loc["admin_analytics_forbidden"]</div>
             }
             else if (data is null)
             {
-                <p class="db-p db-text-muted">@Loc["admin_analytics_empty"]</p>
+                <p class="text-muted-foreground">@Loc["admin_analytics_empty"]</p>
             }
             else
             {
                 <div class="admin-analytics-dau">
-                    <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_dau_title"]</h2>
+                    <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_dau_title"]</h2>
                     <div class="admin-analytics-cards">
                         @foreach (var dau in data.DailyActiveUsers)
                         {
@@ -43,7 +43,7 @@
                 </div>
 
                 <div class="admin-analytics-funnel">
-                    <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_funnel_title"]</h2>
+                    <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_funnel_title"]</h2>
                     <table class="admin-analytics-table">
                         <thead>
                             <tr>
@@ -66,10 +66,10 @@
 
                 <div class="admin-analytics-grid">
                     <div class="admin-analytics-top-files">
-                        <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_top_files_title"]</h2>
+                        <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_top_files_title"]</h2>
                         @if (data.TopFiles.Count == 0)
                         {
-                            <p class="db-p db-text-muted">@Loc["admin_analytics_top_files_empty"]</p>
+                            <p class="text-muted-foreground">@Loc["admin_analytics_top_files_empty"]</p>
                         }
                         else
                         {
@@ -94,10 +94,10 @@
                     </div>
 
                     <div class="admin-analytics-geo">
-                        <h2 class="db-h3 admin-analytics-section-title">@Loc["admin_analytics_geo_title"]</h2>
+                        <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_geo_title"]</h2>
                         @if (data.GeographicSpread.Count == 0)
                         {
-                            <p class="db-p db-text-muted">@Loc["admin_analytics_geo_empty"]</p>
+                            <p class="text-muted-foreground">@Loc["admin_analytics_geo_empty"]</p>
                         }
                         else
                         {

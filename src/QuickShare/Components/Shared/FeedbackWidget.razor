@@ -3,13 +3,13 @@
 @* Anonymous one-click feedback widget (issue #35). *@
 
 <div id="feedback-widget" class="feedback-widget">
-    <p class="db-label">@(IsVi ? "Bạn thấy sao?" : "How was that?")</p>
+    <p class="text-sm font-medium">@(IsVi ? "Bạn thấy sao?" : "How was that?")</p>
     <div class="feedback-actions" role="group" aria-label="@(IsVi ? "Đánh giá trải nghiệm" : "Rate your experience")">
         <button type="button" class="feedback-emoji" onclick="feedbackSubmit('up', '@Page')" aria-label="@(IsVi ? "Tốt" : "Good")">😊</button>
         <button type="button" class="feedback-emoji" onclick="feedbackSubmit('neutral', '@Page')" aria-label="@(IsVi ? "Bình thường" : "Neutral")">😐</button>
         <button type="button" class="feedback-emoji" onclick="feedbackSubmit('down', '@Page')" aria-label="@(IsVi ? "Kém" : "Bad")">😞</button>
     </div>
-    <textarea id="feedback-message" class="db-field__input db-input" rows="2" maxlength="1000"
+    <textarea id="feedback-message" class="w-full rounded-md border bg-transparent px-3 py-1 text-sm" rows="2" maxlength="1000"
               placeholder="@(IsVi ? "Góp ý thêm (tùy chọn)…" : "Optional note…")"></textarea>
 </div>
 

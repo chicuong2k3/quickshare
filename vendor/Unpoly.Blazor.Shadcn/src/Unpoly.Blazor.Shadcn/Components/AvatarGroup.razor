@@ -1,0 +1,6 @@
+@inherits UiComponentBase
+
+@* Overlapping avatars. The ring comes from the group, not from each avatar, so a stack reads as
+   one object and a lone avatar is not left wearing a ring for nothing. *@
+
+<div data-slot="avatar-group" class="@Cn("group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background", Class)" @attributes="AdditionalAttributes">@ChildContent</div>

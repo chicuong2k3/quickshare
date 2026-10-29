@@ -1,0 +1,10 @@
+@inherits UiComponentBase
+
+<div data-slot="card-footer" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex items-center px-(--card-spacing) [.border-t]:pt-(--card-spacing)";
+
+    string Classes => Cn(Base, Class);
+}

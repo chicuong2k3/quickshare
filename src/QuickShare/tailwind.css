@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Styles/ui.css";
+
+@source "./Components/**/*.razor";
+@source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Components/**/*.razor";
+@source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/ButtonVariants.cs";
+@source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/wwwroot/ui.js";

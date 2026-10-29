@@ -1,0 +1,9 @@
+@inherits UiComponentBase
+
+<option data-slot="native-select-option" value="@Value" selected="@Selected" class="@Cn("bg-[Canvas] text-[CanvasText]", Class)"
+        @attributes="AdditionalAttributes">@ChildContent</option>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool Selected { get; set; }
+}

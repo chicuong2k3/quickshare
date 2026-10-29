@@ -1,0 +1,134 @@
+@inherits UiComponentBase
+
+@* Sparkline — compact inline SVG trend, Lumeo parity. No JS — pure SVG path from Data.
+   Use in Table cells, KPI strips. For axes/tooltips or labelled bars use Chart/EChart
+   instead.
+
+   The area and the line are two paths, not one. A single path that is both filled and stroked
+   has to be closed to fill, and the stroke then draws the closing edges too — a hairline along
+   the bottom and down both sides that reads as a frame around the chart. *@
+
+<svg data-slot="sparkline"
+     data-type="@Type"
+     width="@Width" height="@Height"
+     viewBox="0 0 @VbWidth @VbHeight"
+     preserveAspectRatio="none"
+     class="@Classes"
+     role="img"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    @if (Type == "bars")
+    {
+        @for (int i = 0; i < Data.Length; i++)
+        {
+            var x = (double)i / Math.Max(1, Data.Length - 1) * (VbWidth - BarWidth) + BarWidth / 2;
+            var h = Normalized[i] * (VbHeight - 2);
+            var y = VbHeight - h - 1;
+            <rect x="@N(x)" y="@N(y)" width="@N(BarWidth)" height="@N(h)" rx="1" fill="@EffectiveColor" />
+        }
+    }
+    else
+    {
+        @if (ShowArea && Data.Length > 0)
+        {
+            <path data-slot="sparkline-area" d="@AreaData" fill="@EffectiveFill" stroke="none" />
+        }
+        <path data-slot="sparkline-line" d="@LineData" fill="none" stroke="@EffectiveColor" stroke-width="@N(StrokeWidth)"
+              stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+        @if (ShowDots && Data.Length > 0)
+        {
+            var last = Points[^1];
+            <circle cx="@N(last.X)" cy="@N(last.Y)" r="2" fill="@EffectiveColor" />
+        }
+    }
+</svg>
+
+@code {
+    [Parameter] public double[] Data { get; set; } = [];
+
+    /// <summary>line | area | bars</summary>
+    [Parameter] public string Type { get; set; } = "line";
+
+    [Parameter] public bool ShowArea { get; set; }
+
+    [Parameter] public bool ShowDots { get; set; }
+
+    /// <summary>Stroke width in CSS pixels. The stroke does not stretch with the viewBox, so a
+    /// sparkline scaled to the full width of a card keeps a line of this weight.</summary>
+    [Parameter] public double StrokeWidth { get; set; } = 1.5;
+
+    /// <summary>Any CSS colour for the line and bars. The area under a line is this colour at 18%.</summary>
+    [Parameter] public string? Color { get; set; }
+
+    [Parameter] public string? Width { get; set; } = "100px";
+
+    [Parameter] public string? Height { get; set; } = "28px";
+
+    [Parameter] public string? AriaLabel { get; set; }
+
+    int VbWidth => 100;
+    int VbHeight => 28;
+    double BarWidth => Math.Max(2, (VbWidth - 4) / Math.Max(1, Data.Length) * 0.6);
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    /// <summary>Every number that reaches the SVG is invariant: under a comma-decimal culture
+    /// "F2" writes <c>12,50</c>, which is not a coordinate, and the path silently draws nothing.</summary>
+    static string N(double value) => value.ToString("0.##", Inv);
+
+    double[] Normalized
+    {
+        get
+        {
+            if (Data.Length == 0) return [];
+            var clean = Data.Select(v => double.IsFinite(v) ? v : 0).ToArray();
+            var min = clean.Min();
+            var max = clean.Max();
+            var range = max - min;
+            if (range < 1e-9) return clean.Select(_ => 0.5).ToArray();
+            return clean.Select(v => (v - min) / range).ToArray();
+        }
+    }
+
+    (double X, double Y)[] Points
+    {
+        get
+        {
+            var n = Normalized;
+            return n.Select((v, i) => (
+                X: (double)i / Math.Max(1, n.Length - 1) * (VbWidth - 2) + 1,
+                Y: VbHeight - v * (VbHeight - 2) - 1)).ToArray();
+        }
+    }
+
+    // var() resolves inside SVG presentation attributes, and the themes write --primary in
+    // oklch — so the legacy hsl(var(--primary)) wrapper produced an invalid colour and the
+    // computed stroke was 'none'. Alpha comes from color-mix, the construct Tailwind generates
+    // for bg-primary/20 — and it applies to a custom Color too, which used to fill the area at
+    // full strength and bury the line in a solid block.
+    string EffectiveColor => Color ?? "var(--primary)";
+    string EffectiveFill => $"color-mix(in oklab, {EffectiveColor} 18%, transparent)";
+
+    string LineData
+    {
+        get
+        {
+            var pts = Points;
+            if (pts.Length == 0) return "";
+            return "M " + string.Join(" L ", pts.Select(p => $"{N(p.X)} {N(p.Y)}"));
+        }
+    }
+
+    string AreaData
+    {
+        get
+        {
+            var pts = Points;
+            if (pts.Length == 0) return "";
+            var floor = N(VbHeight);
+            return LineData + $" L {N(pts[^1].X)} {floor} L {N(pts[0].X)} {floor} Z";
+        }
+    }
+
+    string Classes => Cn("inline-block overflow-visible", Class);
+}

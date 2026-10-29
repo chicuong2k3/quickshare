@@ -1,0 +1,32 @@
+@inherits UiComponentBase
+
+@* Every attachment has the same two or three actions, so a label of "Remove" on its own is
+   announced identically down the whole list. Name the file in it. *@
+
+@* An action that GOES somewhere is a link — downloading a file is a URL, and a link gets the
+   middle-click, the context menu and the status bar that a button cannot offer. *@
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="attachment-action" aria-label="@AriaLabel" class="@Classes"
+       @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <button type="button" data-slot="attachment-action" aria-label="@AriaLabel" class="@Classes"
+            @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@code {
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = default!;
+
+    /// <summary>Where it goes, when it goes somewhere: a download, a preview, the original.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    [Parameter] public string Variant { get; set; } = "ghost";
+    [Parameter] public string Size { get; set; } = "icon-sm";
+
+    const string Base =
+        "";
+
+    string Classes => Cn(ButtonVariants.Of(Variant, Size), Base, Class);
+}

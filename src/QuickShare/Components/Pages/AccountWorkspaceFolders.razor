@@ -4,10 +4,12 @@
 @using QuickShare.Components.Shared
 @using QuickShare.Features.Workspaces.Folders
 @using QuickShare.Features.Workspaces.Templates
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IMediator Bus
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IAntiforgery Antiforgery
 
 <PageTitle>@Loc["ws_folders_title"]</PageTitle>
 
@@ -16,42 +18,22 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["ws_folders_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["ws_folders_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_folders_title"]</h1>
+        <p class="text-muted-foreground">@Loc["ws_folders_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceFolders" />
 
-    <section id="workspace-folders-body"
-             hx-get="@RoutePaths.AccountWorkspaceFolders"
-             hx-trigger="load, foldersUpdated from:body"
-             hx-target="#workspace-folders-body"
-             hx-select="#workspace-folders-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 <script src="/js/workspace.js" defer></script>
 
 @code {
-    private bool isChunkRequest;
     private bool inWorkspace;
     private FolderListDto folders = new([], false);
     private TemplateListDto templates = new([], false);
@@ -59,21 +41,21 @@ else
     private RenderFragment Chunk => @<section id="workspace-folders-body">
         @if (!inWorkspace)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_none"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_none"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["ws_folders_title"]</h2>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["ws_folders_title"]</h2>
 
                     @if (folders.Folders.Count == 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_folders_empty"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_folders_empty"]</p>
                     }
                     else
                     {
@@ -104,84 +86,116 @@ else
                                     @if (folders.CanManage)
                                     {
                                         <div class="workspace-member__actions">
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
-                                                    aria-label="@Loc["ws_folders_move_up"]"
-                                                    onclick="window.quickShareWorkspace.moveFolder(this, -1)"
-                                                    data-ai-action="folder.moveUp">↑</button>
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
-                                                    aria-label="@Loc["ws_folders_move_down"]"
-                                                    onclick="window.quickShareWorkspace.moveFolder(this, 1)"
-                                                    data-ai-action="folder.moveDown">↓</button>
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
-                                                    data-folder-id="@folder.Id"
-                                                    data-prompt="@Loc["ws_folders_rename_prompt"]"
-                                                    data-current="@folder.Name"
-                                                    onclick="window.quickShareWorkspace.renameFolder(this)"
-                                                    data-ai-action="folder.rename">@Loc["ws_folders_rename"]</button>
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
-                                                    data-folder-id="@folder.Id"
-                                                    data-confirm="@Loc["ws_folders_delete_confirm"]"
-                                                    onclick="window.quickShareWorkspace.deleteFolder(this)"
-                                                    data-ai-action="folder.delete">@Loc["ws_folders_delete"]</button>
+                                            <form method="post" @formname="@MoveFormName(folder.Id, FolderMoveDirection.Up)" @onsubmit="() => MoveFolderAsync(folder.Id, FolderMoveDirection.Up)">
+                                                <AntiforgeryToken />
+                                                <button type="submit" data-slot="button" data-variant="ghost"
+                                                        aria-label="@Loc["ws_folders_move_up"]"
+                                                        disabled="@(!CanMove(folder, FolderMoveDirection.Up))"
+                                                        data-ai-action="folder.moveUp">↑</button>
+                                            </form>
+                                            <form method="post" @formname="@MoveFormName(folder.Id, FolderMoveDirection.Down)" @onsubmit="() => MoveFolderAsync(folder.Id, FolderMoveDirection.Down)">
+                                                <AntiforgeryToken />
+                                                <button type="submit" data-slot="button" data-variant="ghost"
+                                                        aria-label="@Loc["ws_folders_move_down"]"
+                                                        disabled="@(!CanMove(folder, FolderMoveDirection.Down))"
+                                                        data-ai-action="folder.moveDown">↓</button>
+                                            </form>
+                                            @if (failedFolderId == folder.Id && failedAction == MoveAction)
+                                            {
+                                                <p role="alert">@Loc[folderErrorKey]</p>
+                                            }
+                                            <details open="@(failedFolderId == folder.Id && failedAction == RenameAction)">
+                                                <summary data-slot="button" data-variant="ghost">@Loc["ws_folders_rename"]</summary>
+                                                <form method="post" @formname="@RenameFormName(folder.Id)" @onsubmit="() => RenameFolderAsync(folder.Id)">
+                                                    <AntiforgeryToken />
+                                                    @if (failedFolderId == folder.Id && failedAction == RenameAction)
+                                                    {
+                                                        <p role="alert">@Loc[folderErrorKey]</p>
+                                                    }
+                                                    <label for="@("ws-folder-rename-" + folder.Id)">@Loc["ws_folders_rename_prompt"]</label>
+                                                    <Input id="@("ws-folder-rename-" + folder.Id)" name="@RenameFolderFieldName(folder.Id)" type="text" maxlength="@WorkspaceFolder.NameMaxLength" required value="@(failedFolderId == folder.Id && failedAction == RenameAction ? renameFolderName : folder.Name)" />
+                                                    <button type="submit" data-slot="button" data-variant="default" data-ai-action="folder.rename">@Loc["ws_folders_rename"]</button>
+                                                </form>
+                                            </details>
+                                            <details open="@(failedFolderId == folder.Id && failedAction == DeleteAction)">
+                                                <summary data-slot="button" data-variant="ghost">@Loc["ws_folders_delete"]</summary>
+                                                <form method="post" @formname="@DeleteFormName(folder.Id)" @onsubmit="() => DeleteFolderAsync(folder.Id)">
+                                                    <AntiforgeryToken />
+                                                    <p>@Loc["ws_folders_delete_confirm"]</p>
+                                                    @if (failedFolderId == folder.Id && failedAction == DeleteAction)
+                                                    {
+                                                        <p role="alert">@Loc[folderErrorKey]</p>
+                                                    }
+                                                    <button type="submit" data-slot="button" data-variant="default" data-ai-action="folder.delete">@Loc["ws_folders_delete"]</button>
+                                                </form>
+                                            </details>
                                         </div>
                                     }
                                 </li>
                             }
                         </ul>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @if (folders.CanManage)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["ws_folders_new"]</h2>
-                        <div class="workspace-form">
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_folders_new"]</h2>
+                        @if (createFailed)
+                        {
+                            <p role="alert">@Loc[createErrorKey]</p>
+                        }
+                        <form method="post" @formname="workspace-folder-create" @onsubmit="CreateFolderAsync" class="workspace-form">
+                            <AntiforgeryToken />
                             <label class="workspace-label" for="ws-folder-name">@Loc["ws_folders_name"]</label>
-                            <input id="ws-folder-name" class="db-input" type="text" maxlength="@WorkspaceFolder.NameMaxLength" />
+                            <Input id="ws-folder-name" name="@CreateFolderNameField" value="@createFolderName"  type="text" maxlength="@WorkspaceFolder.NameMaxLength" required />
 
                             <label class="workspace-label" for="ws-folder-parent">@Loc["ws_folders_parent"]</label>
-                            <select id="ws-folder-parent" class="db-input">
-                                <option value="">@Loc["ws_folders_parent_root"]</option>
+                            <NativeSelect id="ws-folder-parent" name="@FolderParentField">
+                                <NativeSelectOption value="">@Loc["ws_folders_parent_root"]</NativeSelectOption>
+                                @if (parentInvalid || (folderParent is { } selectedParent && !folders.Folders.Any(f => f.Id == selectedParent && f.ParentId is null)))
+                                {
+                                    <NativeSelectOption value="@InvalidParentValue" selected>@Loc["ws_folders_parent_unavailable"]</NativeSelectOption>
+                                }
                                 @foreach (var root in folders.Folders.Where(f => f.ParentId is null))
                                 {
-                                    <option value="@root.Id">@root.Name</option>
+                                    <NativeSelectOption value="@root.Id.ToString()" selected="@(folderParent == root.Id)">@root.Name</NativeSelectOption>
                                 }
-                            </select>
+                            </NativeSelect>
 
-                            <button type="button" class="db-btn db-btn--primary"
-                                    onclick="window.quickShareWorkspace.createFolder(this)"
+                            <button type="submit" data-slot="button" data-variant="default"
                                     data-ai-action="folder.create">@Loc["ws_folders_create"]</button>
-                        </div>
-                    </div>
-                </div>
+                        </form>
+                    </CardContent>
+                </Card>
 
                 @* Defaults editor (issue #245) — one folder at a time, chosen from the list. *@
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["ws_folders_defaults"]</h2>
-                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_folders_defaults_hint"]</p>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_folders_defaults"]</h2>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_folders_defaults_hint"]</p>
 
                         @if (folders.Folders.Count > 0)
                         {
                             <div class="workspace-form">
                                 <label class="workspace-label" for="ws-defaults-folder">@Loc["ws_folders_name"]</label>
-                                <select id="ws-defaults-folder" class="db-input"
+                                <NativeSelect id="ws-defaults-folder"
                                         onchange="window.quickShareWorkspace.loadDefaults()">
                                     @foreach (var folder in RootsFirst)
                                     {
-                                        <option value="@folder.Id"
+                                        <NativeSelectOption value="@folder.Id.ToString()"
                                                 data-expiry="@(folder.DefaultExpiryHours?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
                                                 data-password="@folder.DefaultPasswordRequired.ToString().ToLowerInvariant()"
                                                 data-hint="@folder.DefaultPasswordHint"
                                                 data-privacy="@folder.DefaultPrivacyMode.ToString().ToLowerInvariant()"
-                                                data-locked="@folder.DefaultsLocked.ToString().ToLowerInvariant()">@folder.Name</option>
+                                                data-locked="@folder.DefaultsLocked.ToString().ToLowerInvariant()">@folder.Name</NativeSelectOption>
                                     }
-                                </select>
+                                </NativeSelect>
 
                                 <label class="workspace-label" for="ws-defaults-expiry">@Loc["ws_folders_default_expiry"]</label>
-                                <input id="ws-defaults-expiry" class="db-input" type="number" min="1" step="1" />
+                                <Input id="ws-defaults-expiry"  type="number" min="1" step="1" />
 
                                 <label class="workspace-checkbox">
                                     <input id="ws-defaults-password" type="checkbox" />
@@ -189,7 +203,7 @@ else
                                 </label>
 
                                 <label class="workspace-label" for="ws-defaults-hint">@Loc["ws_folders_default_hint"]</label>
-                                <input id="ws-defaults-hint" class="db-input" type="text" maxlength="@WorkspaceFolder.HintMaxLength" />
+                                <Input id="ws-defaults-hint"  type="text" maxlength="@WorkspaceFolder.HintMaxLength" />
 
                                 <label class="workspace-checkbox">
                                     <input id="ws-defaults-privacy" type="checkbox" />
@@ -201,24 +215,24 @@ else
                                     <span>@Loc["ws_folders_default_locked"]</span>
                                 </label>
 
-                                <button type="button" class="db-btn db-btn--primary"
+                                <button type="button" data-slot="button" data-variant="default"
                                         data-saved-label="@Loc["ws_folders_saved"]"
                                         onclick="window.quickShareWorkspace.saveDefaults(this)"
                                         data-ai-action="folder.defaults.save">@Loc["ws_folders_save_defaults"]</button>
                             </div>
                         }
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
                 @* Templates (issue #234). *@
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["ws_templates_title"]</h2>
-                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_templates_subtitle"]</p>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_templates_title"]</h2>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_templates_subtitle"]</p>
 
                         @if (templates.Templates.Count == 0)
                         {
-                            <p class="db-p db-text-muted workspace-hint">@Loc["ws_templates_empty"]</p>
+                            <p class="text-muted-foreground workspace-hint">@Loc["ws_templates_empty"]</p>
                         }
                         else
                         {
@@ -231,13 +245,13 @@ else
                                             <span class="workspace-member__meta">@Loc["ws_templates_count", template.FolderCount]</span>
                                         </div>
                                         <div class="workspace-member__actions">
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            <button type="button" data-slot="button" data-variant="ghost"
                                                     data-template-id="@template.Id"
                                                     data-prompt="@Loc["ws_templates_apply_root"]"
                                                     data-applied-label="@Loc["ws_templates_applied", "{0}", "{1}"]"
                                                     onclick="window.quickShareWorkspace.applyTemplate(this)"
                                                     data-ai-action="template.apply">@Loc["ws_templates_apply"]</button>
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            <button type="button" data-slot="button" data-variant="ghost"
                                                     data-template-id="@template.Id"
                                                     data-confirm="@Loc["ws_templates_delete_confirm"]"
                                                     onclick="window.quickShareWorkspace.deleteTemplate(this)"
@@ -250,13 +264,13 @@ else
 
                         <div class="workspace-form">
                             <label class="workspace-label" for="ws-template-name">@Loc["ws_templates_name"]</label>
-                            <input id="ws-template-name" class="db-input" type="text" maxlength="@WorkspaceFolderTemplate.NameMaxLength" />
-                            <button type="button" class="db-btn db-btn--primary"
+                            <Input id="ws-template-name"  type="text" maxlength="@WorkspaceFolderTemplate.NameMaxLength" />
+                            <button type="button" data-slot="button" data-variant="default"
                                     onclick="window.quickShareWorkspace.saveTemplate(this)"
                                     data-ai-action="template.save">@Loc["ws_templates_save"]</button>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;
@@ -290,18 +304,170 @@ else
     }
 
     private bool isOwner;
+    private const string CreateFolderNameField = "createFolderName";
+    private const string FolderParentField = "folderParent";
+    private const string InvalidParentValue = "unavailable";
+    private const string RenameAction = "rename";
+    private const string DeleteAction = "delete";
+    private const string MoveAction = "move";
+    private bool createFailed;
+    private string createErrorKey = "ws_folders_create_error";
+    private string? createFolderName;
+    private string? renameFolderName;
+    private Guid? folderParent;
+    private bool parentInvalid;
+    private Guid? failedFolderId;
+    private string? failedAction;
+    private string folderErrorKey = "ws_folders_action_error";
+
+    private static string RenameFormName(Guid id) => $"workspace-folder-rename-{id:N}";
+    private static string DeleteFormName(Guid id) => $"workspace-folder-delete-{id:N}";
+    private static string RenameFolderFieldName(Guid id) => $"renameFolderName-{id:N}";
+    private static string MoveFormName(Guid id, FolderMoveDirection direction) => $"workspace-folder-move-{direction}-{id:N}";
+
+    private bool CanMove(FolderDto folder, FolderMoveDirection direction)
+    {
+        var siblings = folders.Folders.Where(f => f.ParentId == folder.ParentId).ToList();
+        var index = siblings.FindIndex(f => f.Id == folder.Id);
+        return direction == FolderMoveDirection.Up ? index > 0 : index >= 0 && index < siblings.Count - 1;
+    }
+
+    private async Task MoveFolderAsync(Guid folderId, FolderMoveDirection direction)
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        if (!await ValidateFolderFormAsync(ctx))
+        {
+            return;
+        }
+
+        var result = await Bus.Send<LightResults.Result<bool>>(new MoveFolderCommand(folderId, direction), ctx.RequestAborted);
+        if (result.IsSuccess())
+        {
+            ctx.Response.Redirect(RoutePaths.AccountWorkspaceFolders);
+            return;
+        }
+
+        failedFolderId = folderId;
+        failedAction = MoveAction;
+    }
+
+    private async Task RenameFolderAsync(Guid folderId)
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        if (!await ValidateFolderFormAsync(ctx))
+        {
+            return;
+        }
+
+        var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);
+        renameFolderName = form[RenameFolderFieldName(folderId)].ToString();
+        var result = await Bus.Send<LightResults.Result<FolderDto>>(
+            new RenameFolderCommand(folderId, renameFolderName), ctx.RequestAborted);
+        if (result.IsSuccess())
+        {
+            ctx.Response.Redirect(RoutePaths.AccountWorkspaceFolders);
+            return;
+        }
+
+        failedFolderId = folderId;
+        failedAction = RenameAction;
+        if (result.IsFailure(out var error) && error.Message == ErrorCodes.FolderNameTaken)
+        {
+            folderErrorKey = "ws_folders_create_duplicate";
+        }
+    }
+
+    private async Task DeleteFolderAsync(Guid folderId)
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        if (!await ValidateFolderFormAsync(ctx))
+        {
+            return;
+        }
+
+        var result = await Bus.Send<LightResults.Result<FolderListDto>>(
+            new DeleteFolderCommand(folderId), ctx.RequestAborted);
+        if (result.IsSuccess())
+        {
+            ctx.Response.Redirect(RoutePaths.AccountWorkspaceFolders);
+            return;
+        }
+
+        failedFolderId = folderId;
+        failedAction = DeleteAction;
+        if (result.IsFailure(out var error) && error.Message == ErrorCodes.FolderNotEmpty)
+        {
+            folderErrorKey = "ws_folders_delete_not_empty";
+        }
+    }
+
+    private async Task<bool> ValidateFolderFormAsync(HttpContext ctx)
+    {
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(ctx);
+            return true;
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return false;
+        }
+    }
+
+    private async Task CreateFolderAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted);
+        createFolderName = form[CreateFolderNameField].ToString();
+        var parentValue = form[FolderParentField].ToString();
+        Guid? parentId = null;
+        if (!string.IsNullOrWhiteSpace(parentValue))
+        {
+            if (!Guid.TryParse(parentValue, out var parsedParent))
+            {
+                parentInvalid = true;
+                createFailed = true;
+                return;
+            }
+            parentId = parsedParent;
+            folderParent = parsedParent;
+        }
+
+        var result = await Bus.Send<LightResults.Result<FolderDto>>(
+            new CreateFolderCommand(createFolderName, parentId), ctx.RequestAborted);
+        if (result.IsSuccess())
+        {
+            ctx.Response.Redirect(RoutePaths.AccountWorkspaceFolders);
+            return;
+        }
+
+        if (result.IsFailure(out var error))
+        {
+            createErrorKey = error.Message switch
+            {
+                ErrorCodes.FolderNameTaken => "ws_folders_create_duplicate",
+                ErrorCodes.FolderLimitReached => "ws_folders_create_limit",
+                ErrorCodes.WorkspaceForbidden or ErrorCodes.WorkspaceNotFound => "ws_folders_create_forbidden",
+                _ => "ws_folders_create_error",
+            };
+        }
+        createFailed = true;
+    }
 
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
 
         var folderResult = await Bus.Send<LightResults.Result<FolderListDto>>(
             new ListFoldersQuery(), CancellationToken.None);

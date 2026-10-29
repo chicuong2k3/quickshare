@@ -21,14 +21,14 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["ws_report_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["ws_report_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_report_title"]</h1>
+        <p class="text-muted-foreground">@Loc["ws_report_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceReport" />
 
     <p class="workspace-filters">
-        <a class="db-btn db-btn--ghost" href="@ExportUrl" data-ai-action="workspace.report.export">@Loc["ws_report_export"]</a>
+        <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.report.export">@Loc["ws_report_export"]</a>
     </p>
 
     @Chunk
@@ -45,18 +45,18 @@
     private RenderFragment Chunk => @<section id="workspace-report-body">
         @if (!isAdmin || report is null)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@report.Name</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["ws_report_window", report.WindowDays]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@report.Name</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["ws_report_window", report.WindowDays]</p>
 
                     <dl class="workspace-stats">
                         <div class="workspace-stat">
@@ -77,16 +77,16 @@
                         </div>
                     </dl>
 
-                    <p class="db-p db-text-muted workspace-hint">
+                    <p class="text-muted-foreground workspace-hint">
                         @Loc["ws_pooled_quota", Bytes(report.PooledUsedBytes), Bytes(report.PooledQuotaBytes)]
                         ·
                         @Loc["ws_report_inactive", report.InactiveMembers.Count]
                     </p>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body workspace-table-wrap">
+            <Card class="account-card workspace-card">
+                <CardContent class="workspace-table-wrap">
                     <table class="workspace-table">
                         <thead>
                             <tr>
@@ -112,14 +112,14 @@
                             }
                         </tbody>
                     </table>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @if (report.FileTypes.Count > 0)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["ws_report_filetypes"]</h2>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_report_filetypes"]</h2>
                         <ul class="workspace-member-list">
                             @foreach (var type in report.FileTypes)
                             {
@@ -129,8 +129,8 @@
                                 </li>
                             }
                         </ul>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;

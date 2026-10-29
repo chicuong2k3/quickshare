@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+<div role="radiogroup" data-slot="radio-group" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    string Classes => Cn("grid gap-3", Class);
+}

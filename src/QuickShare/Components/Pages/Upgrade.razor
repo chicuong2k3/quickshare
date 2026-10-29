@@ -1,262 +1,167 @@
 @layout MainLayout
 @page "/upgrade"
 @attribute [Authorize]
+@using Microsoft.AspNetCore.Antiforgery
 @using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.PayOS
 @using QuickShare.Features.Payments.Subscriptions
 @using QuickShare.Features.Users.Shared
+@using QuickShare.Infrastructure.Caching
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @inject IConfiguration Config
 @inject CheckoutService Checkout
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IAntiforgery Antiforgery
+@inject AnalyticsService Analytics
 
 <PageTitle>@string.Format(Loc["upgrade_page_title"], planDisplay)</PageTitle>
 
 @if (isPollRequest)
 {
-    @* HTMX poll response — only #payment-status is selected out of this page. *@
     @PaymentStatus
 }
 else
 {
-<PageWrapper Variant="PageVariant.Padded">
-
-    <section class="hero">
-        @* No eyebrow above the heading. *@
-        <h1 class="db-h1">@string.Format(Loc["upgrade_h1"], planDisplay)</h1>
-        <p class="db-p db-text-muted">
-            @if (isFullyLoaded)
-            {
-                <text>@Loc["upgrade_current_plan"]<strong>@currentPlan</strong>@Loc["upgrade_current_plan_suffix"] </text>
-            }
-            @string.Format(Loc["upgrade_plan_brings"], planDisplay, planSummary)
-        </p>
-    </section>
-
-    @if (!isFullyLoaded)
-    {
-        @* Shell skeleton: rendered in < 500ms, no DB calls *@
-        <section id="upgrade-body"
-                 hx-get="/upgrade?plan=@selectedPlan&billing=@(Billing ?? "")"
-                 hx-trigger="load"
-                 hx-target="#upgrade-body"
-                 hx-select="#upgrade-body"
-                 hx-swap="outerHTML"
-                 aria-busy="true">
-            @SummaryCard
-
-            <div class="payment">
-                <h2 class="db-h2">@Loc["upgrade_complete_title"]</h2>
-                <p class="db-text-muted" style="margin-top: 0.5rem">
-                    @((MarkupString)string.Format(Loc["upgrade_complete_desc"], $"<strong>{planDisplay}</strong>", IsYearly ? Loc["upgrade_billing_yearly_label"] : Loc["upgrade_billing_monthly_label"], $"<strong>{(IsYearly ? planYearlyPrice : planMonthlyPrice)}</strong>"))
+    <PageWrapper Variant="PageVariant.Padded">
+        <section class="mx-auto max-w-2xl space-y-6">
+            <header class="text-center">
+                <h1 class="text-3xl font-semibold">@string.Format(Loc["upgrade_h1"], planDisplay)</h1>
+                <p class="mt-2 text-muted-foreground">
+                    @Loc["upgrade_current_plan"]<strong>@currentPlan</strong>@Loc["upgrade_current_plan_suffix"]
+                    @string.Format(Loc["upgrade_plan_brings"], planDisplay, planSummary)
                 </p>
+            </header>
 
-                <div class="payment-option">
-                    <h3 class="db-h3">@Loc["upgrade_payment_method_title"]</h3>
-                    <p class="db-text-muted">@Loc["upgrade_payment_method_desc"]</p>
-                    <form method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="Plan" value="@selectedPlan" />
-                        <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
-                        @* Quoted server-side at checkout (issue #98); an invalid code is ignored
-                           rather than blocking the purchase somebody came here to make. *@
-                        <label class="workspace-label" for="upgrade-promo">@Loc["upgrade_promo_label"]</label>
-                        <input id="upgrade-promo" name="PromoCode" class="db-input" type="text"
-                               maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
-                        <button type="submit" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">
-                            @Loc["upgrade_pay_now_btn"]
-                        </button>
-                        @* Crypto (issue #225) — same form, same price, different rail. Only offered
-                           when the provider is configured; a button that cannot charge is worse
-                           than no button. *@
-                        @if (Checkout.CryptoAvailable)
-                        {
-                            <button type="submit" name="Provider" value="@PaymentProviders.Crypto"
-                                    class="db-btn db-btn--ghost" style="width:100%;margin-top:0.5rem"
-                                    data-ai-action="upgrade.pay.crypto">
-                                @Loc["upgrade_pay_crypto_btn"]
-                            </button>
-                        }
-                    </form>
+            <Card class="px-6">
+                <div class="text-center">
+                    <h2 class="text-2xl font-semibold">@planDisplay</h2>
+                    <p class="text-muted-foreground">@Loc[$"upgrade_plan_desc_{planKey}"]</p>
+                    <p class="mt-4 text-3xl font-semibold">
+                        @(IsYearly ? planYearlyPrice : planMonthlyPrice)
+                        <span class="text-sm font-normal text-muted-foreground">@(IsYearly ? Loc["upgrade_period_yearly"] : Loc["upgrade_period_monthly"])</span>
+                    </p>
                 </div>
-            </div>
-        </section>
-    }
-    else
-    {
-        @* Full render: HTMX GET re-render or POST with data *@
-        <section id="upgrade-body">
-            @SummaryCard
+                <ul class="space-y-2 text-sm">
+                    @foreach (var featureKey in planFeatureKeys)
+                    {
+                        <li>@Loc[featureKey]</li>
+                    }
+                </ul>
+            </Card>
 
-            <div class="payment" id="payment-section">
-                <h2 class="db-h2">@Loc["upgrade_complete_title"]</h2>
-                <p class="db-text-muted" style="margin-top: 0.5rem">
+            <Card id="upgrade-body" class="px-6">
+                <h2 class="text-2xl font-semibold">@Loc["upgrade_complete_title"]</h2>
+                <p class="text-muted-foreground">
                     @((MarkupString)string.Format(Loc["upgrade_complete_desc"], $"<strong>{planDisplay}</strong>", IsYearly ? Loc["upgrade_billing_yearly_label"] : Loc["upgrade_billing_monthly_label"], $"<strong>{(IsYearly ? planYearlyPrice : planMonthlyPrice)}</strong>"))
                 </p>
 
-                @if (currentPlan == PlanTierLimits.Free)
+                @if (currentPlan == PlanTierLimits.Free && paymentIntent is null)
                 {
-                    <div class="payment-option" style="margin-top: 1.25rem">
-                        <h3 class="db-h3">@Loc["trial_option_title"]</h3>
-                        <p class="db-text-muted" style="margin-top: 0.25rem">@Loc["trial_option_desc"]</p>
-                        <button type="button" class="db-btn db-btn--primary" style="width:100%;margin-top:0.75rem"
-                                onclick="quickShareStartTrial(this)"
-                                data-err="@Loc["trial_option_error"]"
-                                data-ai-action="upgrade.trial.start">
-                            @Loc["trial_option_btn"]
-                        </button>
-                        <p id="trial-error" class="error hidden" style="margin-top: 0.5rem"></p>
-                    </div>
-                }
-
-                @if (paymentCompleted)
-                {
-                    @PaymentStatus
-                }
-                else if (cryptoResult is not null && cryptoResult.Success)
-                {
-                    @* The provider's page cannot be framed, and a chain confirmation outlasts any
-                       redirect — so this hands off in a new tab and waits for the webhook. *@
-                    <div class="payment-info">
-                        <h3 class="db-h3">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
-                        <p class="db-text-muted" style="margin-top:0.5rem">@Loc["upgrade_crypto_hint"]</p>
-                        <a class="db-btn db-btn--primary" style="width:100%;margin-top:1rem"
-                           href="@cryptoResult.HostedUrl" target="_blank" rel="noopener noreferrer"
-                           data-ai-action="upgrade.crypto.open">@Loc["upgrade_crypto_open"]</a>
-
-                        @PaymentStatus
-                    </div>
-                }
-                else if (cryptoResult is not null)
-                {
-                    <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
-                        <p>@string.Format(Loc["upgrade_payment_error"], cryptoResult.ErrorMessage)</p>
-                    </div>
-                }
-                else if (payOSResult is not null && payOSResult.Success)
-                {
-                    <div class="payment-info">
-                        <h3 class="db-h3">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
-                        <p class="db-text-muted" style="margin-top:0.5rem">@Loc["upgrade_payos_support"]</p>
-
-                        @* Mã QR + thông tin chuyển khoản đã có sẵn trong khung PayOS bên dưới. *@
-                        <div class="payos-checkout">
-                            <div class="payos-iframe-wrap">
-                                <iframe src="@payOSResult.CheckoutUrl"
-                                        title="@Loc["upgrade_payos_iframe_title"]"
-                                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                                        loading="lazy"
-                                        class="payos-iframe"></iframe>
-                            </div>
-                        </div>
-
-                        @PaymentStatus
-                    </div>
-                }
-                else if (payOSResult is not null)
-                {
-                    <div class="db-alert db-alert--error" style="margin-top:1rem;padding:1rem;border-radius:0.5rem;color:var(--db-color-danger)">
-                        <p>@string.Format(Loc["upgrade_payment_error"], payOSResult.ErrorMessage)</p>
-                        <form method="post" style="margin-top:1rem">
+                    <section class="space-y-3 rounded-md border p-4">
+                        <h3 class="font-semibold">@Loc["trial_option_title"]</h3>
+                        <p class="text-sm text-muted-foreground">@Loc["trial_option_desc"]</p>
+                        @if (trialError)
+                        {
+                            <p class="text-destructive" role="alert">@Loc["trial_option_error"]</p>
+                        }
+                        <form method="post" @formname="upgrade-trial" @onsubmit="HandleSubmit">
                             <AntiforgeryToken />
-                            <input type="hidden" name="Plan" value="@selectedPlan" />
-                            <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
-                            <button type="submit" class="db-btn db-btn--primary">
-                                @Loc["upgrade_retry"]
-                            </button>
+                            <input type="hidden" name="@ActionField" value="@TrialAction" />
+                            <Button Type="submit" class="w-full" data-ai-action="upgrade.trial.start">@Loc["trial_option_btn"]</Button>
                         </form>
-                    </div>
+                    </section>
+                }
+
+                @if (cryptoResult is { Success: true })
+                {
+                    <section class="space-y-3">
+                        <h3 class="font-semibold">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
+                        <p class="text-muted-foreground">@Loc["upgrade_crypto_hint"]</p>
+                        <Button Href="@cryptoResult.HostedUrl" target="_blank" rel="noopener noreferrer" data-ai-action="upgrade.crypto.open">@Loc["upgrade_crypto_open"]</Button>
+                        @PaymentStatus
+                    </section>
+                }
+                else if (payOSResult is { Success: true })
+                {
+                    <section class="space-y-3">
+                        <h3 class="font-semibold">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
+                        <p class="text-muted-foreground">@Loc["upgrade_payos_support"]</p>
+                        <Button Href="@payOSResult.CheckoutUrl" target="_blank" rel="noopener noreferrer">@Loc["upgrade_payos_open"]</Button>
+                        <iframe src="@payOSResult.CheckoutUrl" title="@Loc["upgrade_payos_iframe_title"]"
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups" loading="lazy"
+                                class="min-h-96 w-full rounded-md border"></iframe>
+                        @PaymentStatus
+                    </section>
                 }
                 else
                 {
-                    @* PaymentIntent created, PayOS call in progress (loading state) *@
-                    <div class="payment-info payment-info--loading">
-                        <p class="db-text-muted">@Loc["upgrade_creating_link"]</p>
-                        <div class="db-spinner" style="margin:1rem auto"></div>
-                    </div>
+                    @if (cryptoResult is not null || payOSResult is not null)
+                    {
+                        <p class="text-destructive" role="alert">@string.Format(Loc["upgrade_payment_error"], cryptoResult?.ErrorMessage ?? payOSResult?.ErrorMessage)</p>
+                    }
+                    <section class="space-y-3">
+                        <h3 class="font-semibold">@Loc["upgrade_payment_method_title"]</h3>
+                        <p class="text-muted-foreground">@Loc["upgrade_payment_method_desc"]</p>
+                        <form method="post" class="space-y-3" @formname="upgrade-checkout" @onsubmit="HandleSubmit">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Plan" value="@selectedPlan" />
+                            <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
+                            <label class="block space-y-2" for="upgrade-promo">
+                                <span class="block text-sm font-medium">@Loc["upgrade_promo_label"]</span>
+                                <input id="upgrade-promo" name="PromoCode" class="w-full rounded-md border bg-background px-3 py-2" type="text" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
+                            </label>
+                            <Button Type="submit" class="w-full">@Loc["upgrade_pay_now_btn"]</Button>
+                            @if (Checkout.CryptoAvailable)
+                            {
+                                <Button Type="submit" Variant="outline" class="w-full" name="Provider" value="@PaymentProviders.Crypto" data-ai-action="upgrade.pay.crypto">@Loc["upgrade_pay_crypto_btn"]</Button>
+                            }
+                        </form>
+                    </section>
                 }
-
-                <p class="db-text-muted" style="margin-top:2rem;font-size:0.8rem;text-align:center">
+                <p class="text-center text-sm text-muted-foreground">
                     @Loc["upgrade_auto_upgrade_note"]
-                    @Loc["upgrade_need_help"] <a href="mailto:support@quicksharecloud.com" class="db-link">@Loc["upgrade_contact_support"]</a>.
+                    @Loc["upgrade_need_help"] <a href="mailto:support@quicksharecloud.com" class="text-primary underline">@Loc["upgrade_contact_support"]</a>.
                 </p>
-            </div>
+            </Card>
         </section>
-    }
-
-</PageWrapper>
+    </PageWrapper>
 }
 
-
-
-<script>
-    window.quickShareStartTrial = function (btn) {
-        var err = document.getElementById('trial-error');
-        if (err) err.classList.add('hidden');
-        fetch('/api/subscriptions/trial', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-            .then(function (r) {
-                if (!r.ok) throw new Error('failed');
-                window.location.reload();
-            })
-            .catch(function () {
-                if (err) { err.textContent = btn.getAttribute('data-err'); err.classList.remove('hidden'); }
-            });
-    };
-</script>
-
 @code {
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? Plan { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? Billing { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery(Name = PayOSOrderCodeQueryKey)]
-    public long? PayOSOrderCode { get; set; }
+    [Parameter, SupplyParameterFromQuery] public string? Plan { get; set; }
+    [Parameter, SupplyParameterFromQuery] public string? Billing { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name = PayOSOrderCodeQueryKey)] public long? PayOSOrderCode { get; set; }
 
     private const string PayOSOrderCodeQueryKey = "orderCode";
     private const string PollQueryKey = "poll";
     private const string PollQueryValue = "1";
-    private const string PollInterval = "every 3s";
+    private const string PollInterval = "3000";
     private const string PaymentStatusId = "payment-status";
+    private const string ActionField = "Action";
+    private const string TrialAction = "trial";
 
     private string selectedPlan = PlanTierLimits.Pro;
     private string currentPlan = PlanTierLimits.Free;
-    private bool isFullyLoaded;
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
     private QuickShare.Features.Payments.Crypto.CryptoChargeResult? cryptoResult;
     private bool isPollRequest;
     private bool paymentCompleted;
+    private bool trialError;
     private long pollOrderCode;
 
-    /// <summary>
-    /// Swapped in place by HTMX every few seconds while the payment is pending, so the
-    /// webhook result lands as a partial — no full page reload.
-    /// </summary>
-    private RenderFragment PaymentStatus => @<div id="@PaymentStatusId">
+    private string PollUrl => $"{RoutePaths.Upgrade}?plan={selectedPlan}&{PayOSOrderCodeQueryKey}={pollOrderCode}&{PollQueryKey}={PollQueryValue}";
+    private RenderFragment PaymentStatus => @<div id="@PaymentStatusId" up-poll="@(paymentCompleted ? "false" : "true")" up-interval="@PollInterval" up-href="@PollUrl">
         @if (paymentCompleted)
         {
-            <div class="db-alert db-alert--success" style="margin-top:1rem;padding:1rem;border-radius:0.5rem">
-                <p><strong>@string.Format(Loc["upgrade_payment_success"], planDisplay)</strong></p>
-                <a href="/account/billing" class="db-btn db-btn--primary" style="margin-top:1rem">@Loc["billing_view_receipt"]</a>
-            </div>
+            <p class="font-semibold" role="status">@string.Format(Loc["upgrade_payment_success"], planDisplay)</p>
+            <Button Href="@RoutePaths.AccountBilling" class="mt-3">@Loc["billing_view_receipt"]</Button>
         }
         else
         {
-            <p class="db-text-muted"
-               style="margin-top:1rem;font-size:0.85rem"
-               hx-get="/upgrade?plan=@selectedPlan&@(PayOSOrderCodeQueryKey)=@pollOrderCode&@(PollQueryKey)=@PollQueryValue"
-               hx-trigger="@PollInterval"
-               hx-target="#@PaymentStatusId"
-               hx-select="#@PaymentStatusId"
-               hx-swap="outerHTML">
-                @Loc["upgrade_waiting_confirmation"]
-            </p>
+            <p class="text-sm text-muted-foreground" role="status">@Loc["upgrade_waiting_confirmation"]</p>
+            <a href="@PollUrl" class="text-sm text-primary underline">@Loc["upgrade_refresh_status"]</a>
         }
     </div>;
 
@@ -265,121 +170,79 @@ else
     private string planDisplay => PlanData.Display;
     private string planSummary => Loc[$"upgrade_plan_summary_{planKey}"].Value;
     private string[] planFeatureKeys => selectedPlan == PlanTierLimits.Studio
-        ? new[] { "upgrade_feat_studio_1", "upgrade_feat_studio_2", "upgrade_feat_studio_3", "upgrade_feat_studio_5", "upgrade_feat_studio_6" }
-        : new[] { "upgrade_feat_pro_1", "upgrade_feat_pro_2", "upgrade_feat_pro_3", "upgrade_feat_pro_4", "upgrade_feat_pro_5" };
-    private string planMonthlyPrice => PlanCatalog.FormatPrice(
-        Config.GetValue(PlanData.MonthlyPricingKey, PlanData.MonthlyDefaultAmount),
-        Config[PricingKeys.Currency]);
-    private string planYearlyPrice => PlanCatalog.FormatPrice(
-        Config.GetValue(PlanData.YearlyPricingKey, PlanData.YearlyDefaultAmount),
-        Config[PricingKeys.Currency]);
-
+        ? ["upgrade_feat_studio_1", "upgrade_feat_studio_2", "upgrade_feat_studio_3", "upgrade_feat_studio_5", "upgrade_feat_studio_6"]
+        : ["upgrade_feat_pro_1", "upgrade_feat_pro_2", "upgrade_feat_pro_3", "upgrade_feat_pro_4", "upgrade_feat_pro_5"];
+    private string planMonthlyPrice => PlanCatalog.FormatPrice(Config.GetValue(PlanData.MonthlyPricingKey, PlanData.MonthlyDefaultAmount), Config[PricingKeys.Currency]);
+    private string planYearlyPrice => PlanCatalog.FormatPrice(Config.GetValue(PlanData.YearlyPricingKey, PlanData.YearlyDefaultAmount), Config[PricingKeys.Currency]);
     private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
     private int paymentAmount => (int)(paymentIntent?.Amount ?? 0);
-
-    private RenderFragment SummaryCard => @<div class="summary-card">
-        <div class="summary-card__head">
-            <h2 class="db-h2">@PlanData.Display</h2>
-            <p class="db-text-muted">@Loc[$"upgrade_plan_desc_{planKey}"]</p>
-        </div>
-        <div class="summary-card__price">
-            @if (IsYearly)
-            {
-                <span class="price-amount">@planYearlyPrice</span>
-                <span class="price-period db-text-muted">@Loc["upgrade_period_yearly"]</span>
-            }
-            else
-            {
-                <span class="price-amount">@planMonthlyPrice</span>
-                <span class="price-period db-text-muted">@Loc["upgrade_period_monthly"]</span>
-            }
-        </div>
-        <div class="summary-card__features">
-            @foreach (var featureKey in planFeatureKeys)
-            {
-                <div class="feature">
-                    <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                    <span>@Loc[featureKey]</span>
-                </div>
-            }
-        </div>
-    </div>;
 
     protected override async Task OnInitializedAsync()
     {
         selectedPlan = PlanCatalog.Normalize(Plan);
-
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
         var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
-        isPollRequest = ctx.Request.Query[PollQueryKey] == PollQueryValue
-            && TryGetPayOSOrderCode(ctx, out pollOrderCode);
-
-        // Shell render for GET: return immediately, no DB calls.
-        if (!isHtmxRequest && !isPost) return;
-
-        isFullyLoaded = true;
-
+        isPollRequest = !isPost && ctx.Request.Query[PollQueryKey] == PollQueryValue
+            && long.TryParse(ctx.Request.Query[PayOSOrderCodeQueryKey].FirstOrDefault(), out pollOrderCode);
         var ct = CancellationToken.None;
         var user = await ctx.User.GetUserAsync(Db, ct);
         currentPlan = user.ToProfileResponse().Plan;
 
-        // Poll: webhook status only — never creates another payment link.
         if (isPollRequest)
         {
             paymentCompleted = await Checkout.IsCompletedAsync(user, pollOrderCode, ct);
-            if (paymentCompleted)
+            return;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var ct = CancellationToken.None;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var user = await ctx.User.GetUserAsync(Db, ct);
+        var form = await ctx.Request.ReadFormAsync(ct);
+        if (form[ActionField] == TrialAction)
+        {
+            var trial = await SubscriptionService.StartTrialAsync(user, Db, ct);
+            if (trial.IsSuccess())
             {
-                // Gói đã kích hoạt — nhảy thẳng sang trang hoá đơn (HTMX điều hướng trang cha).
-                ctx.Response.Headers[HtmxHeaders.Redirect] = RoutePaths.AccountBilling;
+                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+                try
+                {
+                    await Analytics.RecordAsync(AnalyticsEvents.TrialStarted, new AnalyticsEventData(null, 0, null, PlanTierLimits.Pro), ct);
+                }
+                catch { }
+                ctx.Response.Redirect(RoutePaths.AccountBilling);
+            }
+            else
+            {
+                trialError = true;
             }
             return;
         }
 
-        // Auto-create payment on first load (HTMX GET) or on form submit / retry (POST).
-        if (isPost)
+        selectedPlan = PlanCatalog.Normalize(form["Plan"].FirstOrDefault());
+        Billing = form["Billing"].FirstOrDefault();
+        var promo = form["PromoCode"].FirstOrDefault();
+        var provider = form["Provider"].FirstOrDefault();
+        if (string.Equals(provider, PaymentProviders.Crypto, StringComparison.Ordinal))
         {
-            var form = await ctx.Request.ReadFormAsync();
-            var formPlan = form["Plan"].FirstOrDefault() ?? PlanTierLimits.Pro;
-            var formBilling = form["Billing"].FirstOrDefault() ?? BillingPeriods.Monthly;
-            var formIsYearly = string.Equals(formBilling, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
-            // Quoted inside checkout (issue #98). An unusable code is ignored rather than
-            // rejected: somebody came here to buy, and a typo in an optional field must not
-            // become a wall between them and the purchase.
-            var formPromo = form["PromoCode"].FirstOrDefault();
-            var formProvider = form["Provider"].FirstOrDefault();
-
-            if (string.Equals(formProvider, PaymentProviders.Crypto, StringComparison.Ordinal))
-            {
-                (paymentIntent, cryptoResult) = await Checkout.CreateCryptoCheckoutAsync(
-                    user, formPlan, formIsYearly, ct, formPromo);
-            }
-            else
-            {
-                (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(
-                    user, formPlan, formIsYearly, ct, formPromo);
-            }
+            (paymentIntent, cryptoResult) = await Checkout.CreateCryptoCheckoutAsync(user, selectedPlan, IsYearly, ct, promo);
         }
-        else if (isHtmxRequest)
+        else
         {
-            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct);
+            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct, promo);
         }
-
-        pollOrderCode = paymentIntent?.PayOSOrderCode ?? pollOrderCode;
-    }
-
-    private bool TryGetPayOSOrderCode(HttpContext ctx, out long orderCode)
-    {
-        if (PayOSOrderCode.HasValue)
-        {
-            orderCode = PayOSOrderCode.Value;
-            return true;
-        }
-
-        var orderCodeRaw = ctx.Request.Query[PayOSOrderCodeQueryKey].FirstOrDefault();
-        return long.TryParse(orderCodeRaw, out orderCode);
+        pollOrderCode = paymentIntent?.PayOSOrderCode ?? 0;
     }
 }

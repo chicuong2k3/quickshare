@@ -1,0 +1,122 @@
+@inherits UiComponentBase
+
+@* <input type="range">.
+
+   Radix builds a slider out of five divs, a pointer-event graph and a roving tab index, and then
+   spends most of its code re-implementing what the input already does: drag, arrow keys, Home,
+   End, Page Up, Page Down, the step grid, the disabled state, and — the part that is never
+   reimplemented correctly — announcing the value as it changes, in the user's own units.
+
+   So the root here IS the input, and the track, the filled range and the thumb are the three
+   pseudo-elements the browser gives it, styled in ui.behavior.css with upstream's own colours.
+
+   Values with more than one entry is upstream's several-thumb slider, and it is still native
+   inputs: one per thumb, stacked in one frame, each keeping its own drag, keyboard and
+   announcement. The frame draws the shared track and the band between the outermost thumbs —
+   server-side, as inline custom properties, so the band is right before any script runs — and
+   ui.js keeps neighbours ordered while dragging. Each thumb posts under Name, repeated, which a
+   server reads as a list; give the inputs ids and an <output for="…"> shows the live value.
+
+   What a row of native inputs cannot do is a vertical several-thumb slider; Orientation applies
+   to the single-thumb form only. *@
+
+@if (Values is not { Length: > 1 } values)
+{
+    @* id is written here, not left to the splat: Blazor matches parameters case-insensitively,
+       so a plain id="…" at the call site binds to the Id parameter below and never reaches the
+       element. The slider rendered with no id at all, and every <label for> and <output for>
+       pointing at it addressed nothing. *@
+    @if (ValueChanged.HasDelegate)
+    {
+        <input type="range" data-slot="slider" id="@Id" min="@Min" max="@Max" step="@Step"
+               value="@Value" disabled="@Disabled" data-disabled="@(Disabled ? "" : null)"
+               data-orientation="@Orientation" class="@Classes"
+               @onchange="OnChange" @attributes="AdditionalAttributes" />
+    }
+    else
+    {
+        <input type="range" data-slot="slider" id="@Id" min="@Min" max="@Max" step="@Step"
+               value="@Value" disabled="@Disabled" data-disabled="@(Disabled ? "" : null)"
+               data-orientation="@Orientation" class="@Classes"
+               @attributes="AdditionalAttributes" />
+    }
+}
+else
+{
+    <div data-slot="slider" data-range data-orientation="horizontal"
+         data-disabled="@(Disabled ? "" : null)" class="@RangeClasses" style="@Band(values)"
+         @attributes="AdditionalAttributes">
+        @for (var i = 0; i < values.Length; i++)
+        {
+            var at = i;
+            <input type="range" data-slot="slider-input" min="@Min" max="@Max" step="@Step"
+                   value="@values[at]" name="@Name" id="@IdFor(at)" disabled="@Disabled"
+                   aria-label="@(Labels?.ElementAtOrDefault(at) ?? $"Value {at + 1}")" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public double Min { get; set; }
+    [Parameter] public double Max { get; set; } = 100;
+
+    /// <summary>The step grid. "any" turns it off; the default matches upstream's.</summary>
+    [Parameter] public string Step { get; set; } = "1";
+
+    [Parameter] public double? Value { get; set; }
+
+    /// <summary>The bound single-thumb value, from <c>@bind-Value</c>. Only rendered when binding
+    /// is in use. Its presence decides whether the slider renders value/@onchange or the splat.</summary>
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await ValueChanged.InvokeAsync(
+            decimal.TryParse(e.Value?.ToString(), out var value) ? value : 0m);
+
+    /// <summary>One thumb per entry, as upstream's value array. Two is a range.</summary>
+    [Parameter] public double[]? Values { get; set; }
+
+    /// <summary>The field every thumb posts under, repeated — the server reads a list.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>An accessible name per thumb: "Lowest price", "Highest price".</summary>
+    [Parameter] public string[]? Labels { get; set; }
+
+    /// <summary>
+    /// The element's id with one thumb. With several it is the base for the per-thumb ids, so an
+    /// <c>&lt;output for&gt;</c> can watch one of them: Id "price" gives price-0, price-1, …
+    /// </summary>
+    [Parameter] public string? Id { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>"horizontal" or "vertical". Vertical is CSS only — the input is unchanged.</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    // w-auto is upstream's and is dropped here, in deviations.json with the reason: upstream's
+    // vertical root is a div WRAPPING a track, so auto width is the track's width plus the thumb.
+    // Here the root IS the input, and auto width is the six pixels of the track alone — the thumb
+    // then hangs off both sides of a control six pixels wide. The width comes from the stylesheet
+    // instead, beside the writing-mode that makes it vertical in the first place.
+    const string Base =
+        "relative w-full touch-none select-none data-[disabled]:opacity-50 " +
+        "data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 " +
+        "data-[orientation=vertical]:w-4";
+
+    string Classes => Cn(Base, Class);
+
+    string RangeClasses => Cn(Base, "h-4", Class);
+
+    string? IdFor(int at) => Id is null ? null : $"{Id}-{at}";
+
+    // The band between the outermost thumbs, as percentages the stylesheet reads. Inline so the
+    // server's render is already correct — scripting refines it, it does not create it.
+    string Band(double[] values)
+    {
+        var span = Max - Min;
+        if (span <= 0) return "--slider-from: 0%; --slider-to: 0%";
+        var from = (values.Min() - Min) / span * 100;
+        var to = (values.Max() - Min) / span * 100;
+        return FormattableString.Invariant($"--slider-from: {from:0.##}%; --slider-to: {to:0.##}%");
+    }
+}

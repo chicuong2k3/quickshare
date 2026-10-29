@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+@* <details>. No compiler, no state to lose across a fragment swap, and it works with scripting
+   off — the same reason <Accordion> is built this way. A Collapsible is an Accordion with one
+   item and no group, which is exactly what the element gives you. *@
+
+<details data-slot="collapsible" open="@Open" class="@Cn("", Class)" @attributes="AdditionalAttributes">@ChildContent</details>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+}

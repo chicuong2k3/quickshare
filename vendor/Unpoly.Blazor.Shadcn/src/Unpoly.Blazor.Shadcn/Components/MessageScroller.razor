@@ -1,0 +1,40 @@
+@inherits UiComponentBase
+
+@* A thread that keeps itself pinned to the newest message — and stops doing so the moment you
+   scroll up to read something, which is the behaviour every chat needs and most get wrong in one
+   direction or the other.
+
+   `overflow-anchor` does the first half in CSS with no script at all: the browser holds the
+   scroll position against content added above the anchor. The compiler adds the rest — the
+   button that appears once you have scrolled away, the turn that anchors near the top instead
+   of the thread snapping to its bottom, and where the thread opens.
+
+   shadcn keeps those three settings in a MessageScrollerProvider, because React needs a context
+   to reach them through. Here they are parameters on the root, because the root is already the
+   thing that scopes them. *@
+
+<div data-slot="message-scroller" data-open-at="@OpenAt" data-scroll-margin="@ScrollMargin"
+     data-auto-scroll="@(AutoScroll ? null : "false")" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>
+    /// end | start | anchor — where the thread sits when it first appears. "anchor" opens at the
+    /// last anchored turn, which is where a returning reader left off.
+    /// </summary>
+    [Parameter] public string OpenAt { get; set; } = "end";
+
+    /// <summary>Pixels of the previous exchange left visible above an anchored turn.</summary>
+    [Parameter] public int ScrollMargin { get; set; } = 24;
+
+    /// <summary>
+    /// Follow new messages while the reader is at the bottom. False for a transcript being read
+    /// rather than watched — the button still says there is more.
+    /// </summary>
+    [Parameter] public bool AutoScroll { get; set; } = true;
+
+    const string Base =
+        "group/message-scroller relative flex size-full min-h-0 flex-col overflow-hidden";
+
+    string Classes => Cn(Base, Class);
+}

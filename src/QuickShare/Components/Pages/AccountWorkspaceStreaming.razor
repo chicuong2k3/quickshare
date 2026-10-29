@@ -21,8 +21,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["siem_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["siem_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["siem_title"]</h1>
+        <p class="text-muted-foreground">@Loc["siem_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceStreaming" />
@@ -40,38 +40,38 @@
     private RenderFragment Chunk => @<section id="workspace-streaming-body" data-unpoly-reload>
         @if (!isAdmin)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["siem_config_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["siem_config_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["siem_config_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["siem_config_hint"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="siem-endpoint">@Loc["siem_endpoint"]</label>
-                        <input id="siem-endpoint" class="db-input" type="url" placeholder="https://"
+                        <Input id="siem-endpoint"  type="url" placeholder="https://"
                                maxlength="@SiemSink.EndpointMaxLength" value="@sink?.Endpoint" />
 
                         <label class="workspace-label" for="siem-format">@Loc["siem_format"]</label>
-                        <select id="siem-format" class="db-input">
-                            <option value="@SiemFormat.Json" selected="@(Format == SiemFormat.Json)">@Loc["siem_format_json"]</option>
-                            <option value="@SiemFormat.Cef" selected="@(Format == SiemFormat.Cef)">@Loc["siem_format_cef"]</option>
-                            <option value="@SiemFormat.SplunkHec" selected="@(Format == SiemFormat.SplunkHec)">@Loc["siem_format_splunk"]</option>
-                        </select>
+                        <NativeSelect id="siem-format">
+                            <NativeSelectOption value="@SiemFormat.Json" selected="@(Format == SiemFormat.Json)">@Loc["siem_format_json"]</NativeSelectOption>
+                            <NativeSelectOption value="@SiemFormat.Cef" selected="@(Format == SiemFormat.Cef)">@Loc["siem_format_cef"]</NativeSelectOption>
+                            <NativeSelectOption value="@SiemFormat.SplunkHec" selected="@(Format == SiemFormat.SplunkHec)">@Loc["siem_format_splunk"]</NativeSelectOption>
+                        </NativeSelect>
 
                         <label class="workspace-label" for="siem-secret">@Loc["siem_secret"]</label>
-                        <input id="siem-secret" class="db-input" type="password" autocomplete="off"
+                        <Input id="siem-secret"  type="password" autocomplete="off"
                                maxlength="@SiemSink.SecretMaxLength"
                                placeholder="@(sink is not null && !string.IsNullOrEmpty(sink.Secret) ? Loc["siem_secret_set"] : string.Empty)" />
 
                         <label class="workspace-label" for="siem-filter">@Loc["siem_filter"]</label>
-                        <input id="siem-filter" class="db-input" type="text"
+                        <Input id="siem-filter"  type="text"
                                maxlength="@SiemSink.EventFilterMaxLength" value="@sink?.EventFilter"
                                placeholder="@Loc["siem_filter_placeholder"]" />
 
@@ -80,31 +80,31 @@
                             <span>@Loc["siem_enabled"]</span>
                         </label>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["siem_saved"]"
                                 onclick="window.quickShareSiem.save(this)"
                                 data-ai-action="siem.save">@Loc["siem_save"]</button>
 
                         @if (sink is not null)
                         {
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     data-confirm="@Loc["siem_remove_confirm"]"
                                     onclick="window.quickShareSiem.remove(this)"
                                     data-ai-action="siem.remove">@Loc["siem_remove"]</button>
                         }
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @if (sink is not null)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["siem_health_title"]</h2>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["siem_health_title"]</h2>
 
                         @if (sink.IsParked)
                         {
-                            <p class="db-p workspace-notice">@Loc["siem_parked", SiemSink.MaxConsecutiveFailures]</p>
+                            <p class="workspace-notice">@Loc["siem_parked", SiemSink.MaxConsecutiveFailures]</p>
                         }
 
                         <dl class="workspace-stats">
@@ -124,10 +124,10 @@
 
                         @if (!string.IsNullOrEmpty(sink.LastError))
                         {
-                            <p class="db-p db-text-muted workspace-hint">@Loc["siem_last_error", sink.LastError]</p>
+                            <p class="text-muted-foreground workspace-hint">@Loc["siem_last_error", sink.LastError]</p>
                         }
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;

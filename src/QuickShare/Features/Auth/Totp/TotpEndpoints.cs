@@ -77,6 +77,7 @@ public sealed class StartTotpEndpoint : EndpointWithoutRequest<TotpEnrolmentDto>
         var db = Resolve<AppDbContext>();
         var user = await User.GetUserAsync(db, ct);
 
+        using var lease = await TotpAttemptLimiter.EnterAsync(user.Id, ct);
         var existing = await db.UserTotps.FirstOrDefaultAsync(t => t.UserId == user.Id, ct);
         if (existing is not null && existing.IsConfirmed)
         {
@@ -126,6 +127,14 @@ public sealed class ConfirmTotpEndpoint : Endpoint<TotpCodeRequest, TotpRecovery
         var db = Resolve<AppDbContext>();
         var user = await User.GetUserAsync(db, ct);
 
+        if (!TotpAttemptLimiter.TryAcquire(user.Id, out var retryAfterSeconds))
+        {
+            HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+            ThrowError(ErrorCodes.MfaRateLimited, StatusCodes.Status429TooManyRequests);
+            return;
+        }
+
+        using var lease = await TotpAttemptLimiter.EnterAsync(user.Id, ct);
         var totp = await db.UserTotps.FirstOrDefaultAsync(t => t.UserId == user.Id, ct);
         if (totp is null)
         {
@@ -189,37 +198,25 @@ public sealed class VerifyTotpEndpoint : Endpoint<TotpCodeRequest>
     {
         var db = Resolve<AppDbContext>();
         var user = await User.GetUserAsync(db, ct);
-        var code = (req.Code ?? string.Empty).Trim();
+        var result = await TotpChallenge.VerifyAsync(db, user, req.Code, HttpContext, ct);
+        if (result == TotpChallengeResult.RateLimited)
+        {
+            ThrowError(ErrorCodes.MfaRateLimited, StatusCodes.Status429TooManyRequests);
+            return;
+        }
 
-        var totp = await db.UserTotps.FirstOrDefaultAsync(t => t.UserId == user.Id, ct);
-        if (totp is null || !totp.IsConfirmed)
+        if (result == TotpChallengeResult.NotEnrolled)
         {
             ThrowError(ErrorCodes.TotpNotEnrolled, StatusCodes.Status404NotFound);
             return;
         }
 
-        var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
-        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
-
-        if (TotpService.TryVerify(totp.Secret, code, DateTime.UtcNow, totp.LastUsedStep, out var step))
+        if (result == TotpChallengeResult.InvalidCode)
         {
-            totp.LastUsedStep = step;
-        }
-        else if (TotpService.TrySpendRecoveryCode(totp.RecoveryCodeHashes, code, out var remaining))
-        {
-            totp.RecoveryCodeHashes = remaining;
-            await SecurityEventService.AppendAsync(db, user.Id, SecurityEventType.RecoveryUsed, userAgent, ip, ct);
-        }
-        else
-        {
-            await SecurityEventService.AppendAsync(db, user.Id, SecurityEventType.LoginFailed, userAgent, ip, ct);
-            await db.SaveChangesAsync(ct);
             ThrowError(ErrorCodes.TotpCodeInvalid, StatusCodes.Status400BadRequest);
             return;
         }
 
-        await db.SaveChangesAsync(ct);
-        await MfaSession.MarkVerifiedAsync(HttpContext);
         await Send.NoContentAsync(ct);
     }
 }
@@ -249,6 +246,14 @@ public sealed class DisableTotpEndpoint : Endpoint<TotpCodeRequest>
         var db = Resolve<AppDbContext>();
         var user = await User.GetUserAsync(db, ct);
 
+        if (!TotpAttemptLimiter.TryAcquire(user.Id, out var retryAfterSeconds))
+        {
+            HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+            ThrowError(ErrorCodes.MfaRateLimited, StatusCodes.Status429TooManyRequests);
+            return;
+        }
+
+        using var lease = await TotpAttemptLimiter.EnterAsync(user.Id, ct);
         var totp = await db.UserTotps.FirstOrDefaultAsync(t => t.UserId == user.Id, ct);
         if (totp is null)
         {

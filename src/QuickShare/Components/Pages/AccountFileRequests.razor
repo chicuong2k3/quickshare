@@ -13,8 +13,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["account_requests_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["account_requests_lead"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["account_requests_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["account_requests_lead"]</p>
     </section>
 
     <AccountTabs Current="@RoutePaths.AccountFileRequests" />
@@ -22,22 +22,22 @@
     @* Creating one (issues #16, #17). The endpoints have existed since the file-request batch
        and *nothing called them* — the same API-only defect the batch-11 audit found in four
        other screens. A request nobody can create is a feature nobody has. *@
-    <div class="db-card account-card">
-        <div class="db-card__body">
-            <h2 class="db-h3">@Loc["requests_create_title"]</h2>
+    <div class="account-card" data-slot="card">
+        <div class="px-(--card-spacing)">
+            <h2 class="text-xl font-semibold">@Loc["requests_create_title"]</h2>
 
             <div class="workspace-form">
                 <label class="workspace-label" for="request-new-title">@Loc["requests_create_label"]</label>
-                <input id="request-new-title" class="db-input" type="text"
+                <input id="request-new-title" class="rounded-md border bg-transparent px-3 py-1 text-sm" type="text"
                        maxlength="@FileRequest.TitleMaxLength" placeholder="@Loc["requests_create_placeholder"]" />
 
                 <label class="workspace-label" for="request-new-kind">@Loc["requests_create_kind"]</label>
-                <select id="request-new-kind" class="db-input">
+                <select id="request-new-kind" class="rounded-md border bg-transparent px-3 py-1 text-sm">
                     <option value="@FileRequestKind.Request">@Loc["requests_kind_request"]</option>
                     <option value="@FileRequestKind.Room">@Loc["requests_kind_room"]</option>
                 </select>
 
-                <button type="button" class="db-btn db-btn--primary"
+                <button type="button" data-slot="button" data-variant="default"
                         data-error="@Loc["requests_create_failed"]"
                         onclick="createRequest(this)"
                         data-ai-action="request.create">@Loc["requests_create_btn"]</button>
@@ -50,8 +50,8 @@
             @if (items.Count == 0)
             {
                 <div class="account-deliveries-empty">
-                    <p class="db-p">@Loc["account_requests_empty"]</p>
-                    <a href="@RoutePaths.Send" class="db-btn db-btn--primary">@Loc["deliveries_empty_cta"]</a>
+                    <p>@Loc["account_requests_empty"]</p>
+                    <a href="@RoutePaths.Send" data-slot="button" data-variant="default">@Loc["deliveries_empty_cta"]</a>
                 </div>
             }
             else
@@ -190,8 +190,8 @@
             <article id="request-@item.Id" class="account-delivery @(spent ? "account-delivery--spent" : "")">
                 <div class="account-delivery__head">
                     <span class="account-delivery__name" title="@item.Title">@item.Title</span>
-                    <a class="db-link account-delivery__code" href="@link" data-ai-action="request.open">/r/@item.Code</a>
-                    <span class="account-delivery__expiry db-text-muted">
+                    <a class="account-delivery__code text-primary underline-offset-4 hover:underline" href="@link" data-ai-action="request.open">/r/@item.Code</a>
+                    <span class="account-delivery__expiry text-muted-foreground">
                         @if (closed)
                         {
                             @Loc["account_requests_closed"]
@@ -210,24 +210,24 @@
                      aria-label="@string.Format(Loc["account_requests_files"], item.CurrentFileCount, item.MaxFiles)">
                     <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>
                 </div>
-                <p class="account-delivery__meta db-text-muted">
+                <p class="account-delivery__meta text-muted-foreground">
                     @string.Format(Loc["account_requests_files"], item.CurrentFileCount, item.MaxFiles)
                     <text> · </text>@string.Format(Loc["account_requests_bytes"], FormatBytes(item.CurrentTotalBytes), FormatBytes(item.MaxTotalBytes))
                     @if (!closed && !expired)
                     {
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        <button type="button" data-slot="button" data-variant="ghost"
                                 data-url="@link"
                                 data-copied-label="@Loc["account_requests_copied"]"
                                 onclick="copyRequestLink(this)" data-ai-action="request.copyLink">@Loc["upload_copy_link"]</button>
                         @* The QR a room is handed out as (issue #17): printed, taped to a wall,
                            pointed at with a phone. *@
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        <button type="button" data-slot="button" data-variant="ghost"
                                 data-url="@link"
                                 data-target="request-qr-@item.Id"
                                 data-aria="@Loc["requests_qr_aria"]"
                                 data-unavailable="@Loc["requests_qr_unavailable"]"
                                 onclick="showRequestQr(this)" data-ai-action="request.qr">@Loc["requests_qr"]</button>
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        <button type="button" data-slot="button" data-variant="ghost"
                                 data-confirm="@Loc["account_requests_close_confirm"]"
                                 data-closed-label="@Loc["account_requests_closed"]"
                                 onclick="closeRequest(this)" data-ai-action="request.close">@Loc["account_requests_close"]</button>
@@ -243,7 +243,7 @@
         @if (nextCursor is not null)
         {
             <a id="requests-next-page" href="@BodyUrl(nextCursor)"
-               class="db-btn db-btn--ghost db-btn--sm"
+               data-slot="button" data-variant="ghost"
                up-defer="reveal" up-follow="false" up-history="false"
                up-target="#requests-next-page, #requests-pages:after">@Loc["account_requests_load_more"]</a>
         }

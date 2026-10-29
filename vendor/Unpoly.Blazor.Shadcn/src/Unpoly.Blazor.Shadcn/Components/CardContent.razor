@@ -1,0 +1,10 @@
+@inherits UiComponentBase
+
+<div data-slot="card-content" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "px-(--card-spacing)";
+
+    string Classes => Cn(Base, Class);
+}

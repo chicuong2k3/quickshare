@@ -23,13 +23,13 @@ QuickShareCloud gửi file kích thước bất kỳ (chunked, mã hóa đầu�
 
 ## Operation Context
 
-- Upload/Download page: giao diện Blazor SSR + HTMX (shell render < 100ms, dữ liệu tải qua partial `hx-get`).
+- Upload/Download pages use Blazor static SSR. Direct GET renders usable authorized data; native URLs and forms work without JavaScript, with Unpoly enhancing server-rendered partial interactions.
 - Các route chính: home, `/send` upload, `/d/{code}` download, `/account`, `/account/profile`, `/account/billing`, `/pricing`, `/upgrade`, `/login`, `/p2p/send`, `/p2p/download` (webRTC), `/r/{code}` (FileRequest).
 - Mobile-first demand: receiver often opens on phone; desktop has priority NFR-5 with 3 breakpoints.
 
 ## Capabilities and Constraints
 
-- HTMX lazy-load là kiến trúc mặc định — shell render < 100 ms, data fill sau; layout `MainLayout` phải kế thừa `LayoutComponentBase`, HTMX partial dùng `hxmLayout`; **mỗi `hx-get` phải kèm `hx-select`** (không có Direct Routing trong .NET 10).
+- Unpoly enhancement is opt-in for real server-rendered partial updates. Static SSR remains canonical, and migrated surfaces use Unpoly.Blazor.Shadcn components and theme tokens; legacy DAUB surfaces remain during phased migration.
 - Thread: 2 theme — light + dark, bắt buộc cả hai; mọi token phải có cặp giá trị.
 - Token `--db-*` là **lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`). Giữ nguyên tên token để ~322 lượt dùng class `db-*` trong markup không phải sửa. Đổi giá trị, không đổi tên.
 - Hệ token grunge/kem cũ đã bị thay (2026-08-13). Chi tiết hệ hiện hành: `DESIGN.md`.

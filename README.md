@@ -6,8 +6,8 @@ Recipients open the link and download; no account, no app.
 
 ## Stack
 
-.NET 10 · FastEndpoints · Blazor Static SSR + Htmxor · Mediator (martinothamar/Mediator) · EF Core/Npgsql
-· PostgreSQL · Cloudflare R2 · PayOS (VN payments) · TypeScript · DAUB design system
+.NET 10 · FastEndpoints · Blazor Static SSR · Unpoly.Blazor · Unpoly.Blazor.Shadcn · Mediator
+(martinothamar/Mediator) · EF Core/Npgsql · PostgreSQL · Cloudflare R2 · PayOS · TypeScript
 
 ## Quick start
 

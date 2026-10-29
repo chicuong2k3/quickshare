@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+<div data-slot="form-item" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    string Classes => Cn("grid gap-2", Class);
+}

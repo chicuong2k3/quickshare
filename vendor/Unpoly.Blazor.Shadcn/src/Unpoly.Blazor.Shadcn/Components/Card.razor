@@ -1,0 +1,18 @@
+@inherits UiComponentBase
+
+@* The padding is a custom property, not a literal. shadcn's newer Card publishes --card-spacing
+   so a child can pull out by exactly the amount the card pushed in — that is the whole of the
+   "edge to edge" pattern, one number used twice with nothing to keep in step. The value is the
+   same 24px it always was; Size="sm" is 16px, as on shadcn's own page. The property is set in
+   CSS at zero specificity rather than inline, so one utility class on the card overrides it. *@
+
+<div data-slot="card" data-size="@Size" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>default | sm — the card's padding, and with it everything derived from it.</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => Cn("flex flex-col gap-(--card-spacing) rounded-xl border bg-card " +
+                         "py-(--card-spacing) text-card-foreground shadow-sm", Class);
+}

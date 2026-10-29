@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* Decorative: the marker's text is the label, and reading the shape beside it aloud adds
+   nothing. *@
+
+<span data-slot="marker-icon" aria-hidden="true" class="@Classes"
+      @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    const string Base =
+        "size-4 shrink-0 [&_svg:not([class*='size-'])]:size-4";
+
+    string Classes => Cn(Base, Class);
+}

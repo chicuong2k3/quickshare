@@ -1,0 +1,45 @@
+@inherits UiComponentBase
+
+@* An item that navigates is an <a href>, so Unpoly follows it, middle-click opens a tab, and the
+   status bar shows where it goes. Only an item that does something on the page is a button. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" role="menuitem" data-slot="dropdown-menu-item" data-variant="@Variant" data-inset="@(Inset ? "true" : null)"
+       data-disabled="@(Disabled ? "" : null)" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <button type="@Type" role="menuitem" data-slot="dropdown-menu-item" data-variant="@Variant" data-inset="@(Inset ? "true" : null)"
+            data-disabled="@(Disabled ? "" : null)" disabled="@Disabled"
+            class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@code {
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>default | destructive</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Indents the label to line up with rows that have an icon.</summary>
+    [Parameter] public bool Inset { get; set; }
+
+    /// <summary>Only meaningful on the button branch.</summary>
+    [Parameter] public string Type { get; set; } = "button";
+
+    const string Base =
+        "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-control " +
+        "outline-hidden select-none focus:bg-accent focus:text-accent-foreground " +
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:ps-8 " +
+        "data-[variant=destructive]:text-destructive " +
+        "data-[variant=destructive]:focus:bg-destructive/10 " +
+        "data-[variant=destructive]:focus:text-destructive " +
+        "dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none " +
+        "[&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 " +
+        "[&_svg:not([class*='text-'])]:text-muted-foreground " +
+        "data-[variant=destructive]:*:[svg]:text-destructive!";
+
+    string Classes => Cn(Base, Class);
+}

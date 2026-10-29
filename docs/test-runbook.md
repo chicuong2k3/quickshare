@@ -95,7 +95,7 @@ Each area has automated coverage; manual pass confirms the UX. Config-dependent 
 - [ ] Any page response has: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`
 - [ ] HTTPS (prod) also sends `Strict-Transport-Security` (local http won't)
 - [ ] Upload → download full flow still works under CSP (connect-src allows R2 presigned `https:`)
-- [ ] HTMX partials still load (account page lazy cards fill in)
+- [ ] Account pages render directly and Unpoly fragment updates still work
 - [ ] PWA/service-worker scripts still run (no CSP console block)
 
 ### C3. Noindex on delivery pages (#121)

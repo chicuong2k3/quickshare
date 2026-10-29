@@ -1,0 +1,44 @@
+@inherits UiComponentBase
+
+@* role=separator with aria-valuenow is the ARIA pattern for exactly this, and it is why the
+   handle is focusable: a divider that only a pointer can move is a divider half the people using
+   it cannot move at all. The compiler binds arrow keys, Home and End as well as dragging.
+
+   aria-orientation says which way it splits, and upstream's class string keys off it — which is
+   why it is a real attribute here rather than a data-. *@
+
+<div data-slot="resizable-handle" role="separator" tabindex="0"
+     aria-orientation="@Orientation" aria-label="@AriaLabel" class="@Classes"
+     @attributes="AdditionalAttributes">
+    @if (WithHandle)
+    {
+        <div class="z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border">
+            <Icon Name="grip-vertical" Class="size-2.5" />
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Draw the grip. Without it the handle is a one-pixel line — findable by pointer,
+    /// but nothing says it can be dragged.</summary>
+    [Parameter] public bool WithHandle { get; set; }
+
+    /// <summary>"vertical" for a divider between two columns — the ARIA sense, which is the
+    /// opposite of the group's. Upstream keys its classes off this attribute.</summary>
+    [Parameter] public string Orientation { get; set; } = "vertical";
+
+    [Parameter] public string AriaLabel { get; set; } = "Resize";
+
+    const string Base =
+        "relative flex w-px items-center justify-center bg-border after:absolute " +
+        "after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 " +
+        "focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-hidden " +
+        "aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full " +
+        "aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 " +
+        "aria-[orientation=horizontal]:after:w-full " +
+        "aria-[orientation=horizontal]:after:translate-x-0 " +
+        "aria-[orientation=horizontal]:after:-translate-y-1/2 " +
+        "[&[aria-orientation=horizontal]>div]:rotate-90";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,0 +1,32 @@
+@inherits UiComponentBase
+
+@* A one-time-code field. Upstream is `input-otp`, a React package that renders one hidden input
+   and paints the boxes over it — which needs a controlled value and a caret it draws itself.
+
+   Here each box IS an input. That means the field posts without JavaScript, autofill works
+   (`autocomplete="one-time-code"` on the first box is what iOS and Android look for), and
+   nothing has to be re-hydrated after a fragment swap. ui.js only adds what typing expects:
+   advance on entry, retreat on backspace, and a paste of the whole code filling every box.
+
+   The value arrives at the server as one field, not six: the compiler keeps a hidden input in
+   step, because six named fields would push the joining into every handler. *@
+
+<div data-slot="input-otp" data-length="@Length" class="@Classes" @attributes="AdditionalAttributes">
+    <input type="hidden" name="@Name" value="@Value" data-otp-value />
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>The posted field. One value, not one per box.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>How many boxes. Published as data-length for anything that asks.</summary>
+    [Parameter] public int Length { get; set; } = 6;
+
+    const string Base =
+        "flex items-center gap-2 has-disabled:opacity-50 *:disabled:cursor-not-allowed";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,6 +1,6 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
-@* Global (non-scoped) styles: this markup also ships inside HTMX partials. *@
+@* Global (non-scoped) styles: this markup also ships inside server-rendered partials. *@
 <nav class="account-tabs" aria-label="Account sections">
     <a href="@RoutePaths.Account" class="account-tabs__item @Active(RoutePaths.Account)">@Loc["account_tab_profile"]</a>
     <a href="@RoutePaths.AccountDeliveries" class="account-tabs__item @Active(RoutePaths.AccountDeliveries)">@Loc["account_tab_deliveries"]</a>

@@ -22,42 +22,22 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (isChunkRequest)
-{
-    @Chunk
-}
-else
-{
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["sso_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["sso_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["sso_title"]</h1>
+        <p class="text-muted-foreground">@Loc["sso_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceSso" />
 
-    <section id="workspace-sso-body"
-             hx-get="@RoutePaths.AccountWorkspaceSso"
-             hx-trigger="load"
-             hx-target="#workspace-sso-body"
-             hx-select="#workspace-sso-body"
-             hx-swap="outerHTML"
-             aria-busy="true">
-        <div class="db-card account-card">
-            <div class="db-card__body">
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 0"></div>
-            </div>
-        </div>
-    </section>
+    @Chunk
 
 </PageWrapper>
-}
 
 <script src="/js/sso.js" defer></script>
 
 @code {
-    private bool isChunkRequest;
     private bool isAdmin;
     private Workspace? workspace;
     private WorkspaceSsoConfig? config;
@@ -68,47 +48,47 @@ else
     private RenderFragment Chunk => @<section id="workspace-sso-body">
         @if (!isAdmin || workspace is null)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
             @* ── #181 directory binding ── *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["sso_directory_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["sso_directory_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["sso_directory_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["sso_directory_hint"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="sso-provider">@Loc["sso_provider"]</label>
-                        <select id="sso-provider" class="db-input">
-                            <option value="@SsoProvider.GoogleWorkspace" selected="@(Provider == SsoProvider.GoogleWorkspace)">@Loc["sso_provider_google"]</option>
-                            <option value="@SsoProvider.Entra" selected="@(Provider == SsoProvider.Entra)">@Loc["sso_provider_entra"]</option>
-                            <option value="@SsoProvider.Saml" selected="@(Provider == SsoProvider.Saml)">@Loc["sso_provider_saml"]</option>
-                        </select>
+                        <NativeSelect id="sso-provider">
+                            <NativeSelectOption value="@SsoProvider.GoogleWorkspace" selected="@(Provider == SsoProvider.GoogleWorkspace)">@Loc["sso_provider_google"]</NativeSelectOption>
+                            <NativeSelectOption value="@SsoProvider.Entra" selected="@(Provider == SsoProvider.Entra)">@Loc["sso_provider_entra"]</NativeSelectOption>
+                            <NativeSelectOption value="@SsoProvider.Saml" selected="@(Provider == SsoProvider.Saml)">@Loc["sso_provider_saml"]</NativeSelectOption>
+                        </NativeSelect>
 
                         <label class="workspace-label" for="sso-directory">@Loc["sso_directory"]</label>
-                        <input id="sso-directory" class="db-input" type="text"
+                        <Input id="sso-directory"  type="text"
                                maxlength="@WorkspaceSsoConfig.DirectoryIdMaxLength"
                                value="@config?.DirectoryId" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_directory_note"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["sso_directory_note"]</p>
 
                         @* SAML only. Shown always rather than toggled by script: a field that
                            appears on a dropdown change is a field somebody fills in and loses. *@
                         <label class="workspace-label" for="sso-saml-url">@Loc["saml_sso_url"]</label>
-                        <input id="sso-saml-url" class="db-input" type="url"
+                        <Input id="sso-saml-url"  type="url"
                                maxlength="@WorkspaceSsoConfig.SamlUrlMaxLength"
                                value="@config?.SamlSsoUrl" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["saml_sso_url_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["saml_sso_url_hint"]</p>
 
                         <label class="workspace-label" for="sso-saml-cert">@Loc["saml_certificate"]</label>
-                        <textarea id="sso-saml-cert" class="db-input" rows="4"
+                        <Textarea id="sso-saml-cert"  rows="4"
                                   maxlength="@WorkspaceSsoConfig.SamlCertificateMaxLength"
-                                  placeholder="@(HasCertificate ? Loc["saml_certificate_set"].Value : "-----BEGIN CERTIFICATE-----")"></textarea>
-                        <p class="db-p db-text-muted workspace-hint">@Loc["saml_certificate_hint"]</p>
+                                  placeholder="@(HasCertificate ? Loc["saml_certificate_set"].Value : "-----BEGIN CERTIFICATE-----")"></Textarea>
+                        <p class="text-muted-foreground workspace-hint">@Loc["saml_certificate_hint"]</p>
 
                         @if (Provider == SsoProvider.Saml)
                         {
@@ -129,24 +109,24 @@ else
                         }
 
                         <label class="workspace-label" for="sso-domains">@Loc["sso_domains"]</label>
-                        <input id="sso-domains" class="db-input" type="text"
+                        <Input id="sso-domains"  type="text"
                                maxlength="@WorkspaceSsoConfig.DomainsMaxLength"
                                value="@config?.AllowedEmailDomains" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_domains_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["sso_domains_hint"]</p>
 
                         <label class="workspace-label" for="sso-jit-role">@Loc["sso_jit_role"]</label>
-                        <select id="sso-jit-role" class="db-input">
-                            <option value="">@Loc["sso_jit_off"]</option>
-                            <option value="@nameof(WorkspaceRole.Member)" selected="@(config?.JitRole == WorkspaceRole.Member)">@Loc["sso_role_member"]</option>
-                            <option value="@nameof(WorkspaceRole.Viewer)" selected="@(config?.JitRole == WorkspaceRole.Viewer)">@Loc["sso_role_viewer"]</option>
-                            <option value="@nameof(WorkspaceRole.Admin)" selected="@(config?.JitRole == WorkspaceRole.Admin)">@Loc["sso_role_admin"]</option>
-                        </select>
+                        <NativeSelect id="sso-jit-role">
+                            <NativeSelectOption value="">@Loc["sso_jit_off"]</NativeSelectOption>
+                            <NativeSelectOption value="@nameof(WorkspaceRole.Member)" selected="@(config?.JitRole == WorkspaceRole.Member)">@Loc["sso_role_member"]</NativeSelectOption>
+                            <NativeSelectOption value="@nameof(WorkspaceRole.Viewer)" selected="@(config?.JitRole == WorkspaceRole.Viewer)">@Loc["sso_role_viewer"]</NativeSelectOption>
+                            <NativeSelectOption value="@nameof(WorkspaceRole.Admin)" selected="@(config?.JitRole == WorkspaceRole.Admin)">@Loc["sso_role_admin"]</NativeSelectOption>
+                        </NativeSelect>
 
                         <label class="workspace-label" for="sso-admin-group">@Loc["sso_admin_group"]</label>
-                        <input id="sso-admin-group" class="db-input" type="text"
+                        <Input id="sso-admin-group"  type="text"
                                maxlength="@WorkspaceSsoConfig.GroupIdMaxLength"
                                value="@config?.AdminGroupId" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_admin_group_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["sso_admin_group_hint"]</p>
 
                         <label class="workspace-checkbox">
                             <input id="sso-enabled" type="checkbox" checked="@(config?.Enabled ?? true)" />
@@ -157,29 +137,29 @@ else
                             <input id="sso-require" type="checkbox" checked="@(config?.RequireSso ?? false)" />
                             <span>@Loc["sso_require"]</span>
                         </label>
-                        <p class="db-p db-text-muted workspace-hint">@Loc["sso_require_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["sso_require_hint"]</p>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["sso_saved"]"
                                 onclick="window.quickShareSso.save(this)"
                                 data-ai-action="sso.save">@Loc["sso_save"]</button>
 
                         @if (config is not null)
                         {
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     data-confirm="@Loc["sso_remove_confirm"]"
                                     onclick="window.quickShareSso.remove(this)"
                                     data-ai-action="sso.remove">@Loc["sso_remove"]</button>
                         }
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @* ── #219 MFA policy and posture ── *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["mfa_policy_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["mfa_policy_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["mfa_policy_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["mfa_policy_hint"]</p>
 
                     <dl class="workspace-stats">
                         <div class="workspace-stat">
@@ -202,27 +182,27 @@ else
                         </label>
 
                         <label class="workspace-label" for="mfa-grace">@Loc["mfa_grace"]</label>
-                        <input id="mfa-grace" class="db-input" type="number"
+                        <input id="mfa-grace" type="number"
                                min="0" max="@Workspace.MaxMfaGraceDays" value="@workspace.MfaGraceDays" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["mfa_grace_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["mfa_grace_hint"]</p>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["mfa_policy_saved"]"
                                 onclick="window.quickShareSso.savePolicy(this)"
                                 data-ai-action="mfa.policy.save">@Loc["mfa_policy_save"]</button>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @* ── #146 SCIM provisioning ── *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["scim_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["scim_hint", ScimBaseUrl]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["scim_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["scim_hint", ScimBaseUrl]</p>
 
                     @if (tokens.Count == 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["scim_none"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["scim_none"]</p>
                     }
                     else
                     {
@@ -240,7 +220,7 @@ else
                                         </span>
                                     </div>
                                     <div class="workspace-member__actions">
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-id="@token.Id"
                                                 data-confirm="@Loc["scim_revoke_confirm"]"
                                                 onclick="window.quickShareSso.revokeToken(this)"
@@ -253,19 +233,19 @@ else
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="scim-label">@Loc["scim_label"]</label>
-                        <input id="scim-label" class="db-input" type="text"
+                        <Input id="scim-label"  type="text"
                                maxlength="@WorkspaceScimToken.LabelMaxLength" />
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-once-label="@Loc["scim_shown_once"]"
                                 onclick="window.quickShareSso.createToken(this)"
                                 data-ai-action="scim.token.create">@Loc["scim_create"]</button>
 
                         @* Filled in by script: the raw token exists in exactly one response. *@
-                        <p class="db-p security-secret" id="scim-new" hidden><code id="scim-new-value"></code></p>
+                        <p class="security-secret" id="scim-new" hidden><code id="scim-new-value"></code></p>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     </section>;
 
@@ -282,14 +262,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (!isHtmxRequest) return;
-
-        isChunkRequest = true;
 
         var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
         if (seat is null) return;

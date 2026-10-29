@@ -1,0 +1,16 @@
+@inherits UiComponentBase
+
+@* Consecutive turns by one author, drawn as one block. Upstream groups them for the rounding;
+   the accessible name says who they are all from, once, instead of once per bubble. *@
+
+<div data-slot="bubble-group" role="group" aria-label="@AriaLabel" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter] public string? AriaLabel { get; set; }
+
+    const string Base =
+        "flex min-w-0 flex-col gap-2";
+
+    string Classes => Cn(Base, Class);
+}

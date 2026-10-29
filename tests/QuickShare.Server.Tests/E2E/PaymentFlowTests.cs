@@ -34,6 +34,7 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });
@@ -64,6 +65,7 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });
@@ -92,6 +94,7 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", AntiforgeryHelper.ExtractToken(getHtml)),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });
@@ -119,11 +122,13 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
             PaymentIntentStatus.Completed,
             (await db.PaymentIntents.AsNoTracking().FirstAsync(i => i.UserId == user.Id)).Status);
 
-        // The page's HTMX poll must now bounce the user to the billing page.
+        // The status response stops polling and offers the billing page.
         var poll = new HttpRequestMessage(HttpMethod.Get, $"/upgrade?plan=pro&orderCode={orderCode}&poll=1");
-        poll.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
         var pollResponse = await client.SendAsync(poll);
-        Assert.Equal(RoutePaths.AccountBilling, pollResponse.Headers.GetValues(HtmxHeaders.Redirect).Single());
+        var pollHtml = await pollResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, pollResponse.StatusCode);
+        Assert.Contains(RoutePaths.AccountBilling, pollHtml);
+        Assert.Contains("up-poll=\"false\"", pollHtml);
     }
 
     [Fact]

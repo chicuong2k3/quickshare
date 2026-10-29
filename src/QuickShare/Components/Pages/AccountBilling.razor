@@ -6,53 +6,47 @@
 @using QuickShare.Features.Payments.Subscriptions
 @using QuickShare.Infrastructure.Caching
 @using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.Extensions.Localization
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IAntiforgery Antiforgery
 
 <PageTitle>@Loc["billing_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["billing_h1"]</h1>
+        <h1 class="text-3xl font-semibold">@Loc["billing_h1"]</h1>
     </section>
 
     <AccountTabs Current="@RoutePaths.AccountBilling" />
 
-    <section class="billing-body" id="billing-body"
-             hx-get="/account/billing"
-             hx-trigger="@(billing is null ? "load" : "none")"
-             hx-target="#billing-body"
-             hx-select="#billing-body"
-             hx-swap="outerHTML">
+    <section class="billing-body" id="billing-body">
         @if (billing is null)
         {
-            @* Shell skeleton — rendered instantly, no DB calls. *@
-            <div class="loading" aria-busy="true">
-                <p class="db-text-muted">@Loc["billing_loading"]</p>
-            </div>
+            <p class="text-muted-foreground">@Loc["billing_loading"]</p>
         }
         else
         {
             @if (trialDaysLeft is { } daysLeft)
             {
-                <div class="trial-banner" role="status" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; border: 1px solid var(--db-color-accent, rgba(232,184,75,0.4)); background: var(--db-color-surface, rgba(255,255,255,0.03)); display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem">
-                    <strong class="db-p" style="margin: 0">@Loc["trial_banner_title"]</strong>
-                    <span class="db-p db-text-muted" style="margin: 0; font-size: 0.875rem">@Loc["trial_banner_sub", daysLeft]</span>
-                    <a href="/pricing" class="db-btn db-btn--primary db-btn--sm" style="margin-left: auto" data-ai-action="billing.trial.convert">@Loc["billing_btn_upgrade"]</a>
+                <div class="mb-5 flex flex-wrap items-center gap-3 rounded-md border bg-card px-5 py-4" role="status">
+                    <strong>@Loc["trial_banner_title"]</strong>
+                    <span class="text-sm text-muted-foreground">@Loc["trial_banner_sub", daysLeft]</span>
+                    <Button Href="/pricing" Size="sm" class="ml-auto" data-ai-action="billing.trial.convert">@Loc["billing_btn_upgrade"]</Button>
                 </div>
             }
             <div class="summary-card">
                 <div class="summary-card__head">
-                    <h2 class="db-h2">@billing.PlanDisplay @Loc["billing_plan_suffix"]</h2>
-                    <p class="db-text-muted">@planDescription</p>
+                    <h2 class="text-2xl font-semibold">@billing.PlanDisplay @Loc["billing_plan_suffix"]</h2>
+                    <p class="text-muted-foreground">@planDescription</p>
                 </div>
                 <div class="summary-card__price">
                     <span class="price-amount">@planPrice</span>
-                    <span class="price-period db-text-muted">@billingPeriodLabel</span>
+                    <span class="price-period text-muted-foreground">@billingPeriodLabel</span>
                 </div>
                 <div class="summary-card__features">
                     @foreach (var feature in planFeatures)
@@ -66,56 +60,59 @@
 
                 @if (billing.Plan == PlanTierLimits.Free && subscription?.IsPaused != true)
                 {
-                    <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">@Loc["billing_btn_upgrade"]</a>
+                    <Button Href="/pricing" class="mt-6 w-full">@Loc["billing_btn_upgrade"]</Button>
                 }
                 else
                 {
                     @if (subscription?.Status == SubscriptionStatus.Cancelled)
                     {
-                        <p class="db-text-warning" style="margin-top:1rem">
+                        <p class="mt-4 text-muted-foreground">
                             @string.Format(Loc["billing_cancelled"], subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy"))
                         </p>
-                        <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">@Loc["billing_btn_renew"]</a>
+                        <Button Href="/pricing" class="mt-4 w-full">@Loc["billing_btn_renew"]</Button>
                     }
                     else if (subscription?.IsPaused == true)
                     {
-                        <p class="db-text-warning" style="margin-top:1rem">
+                        <p class="mt-4 text-muted-foreground">
                             @Loc["billing_paused", subscription.PausedDaysBanked]
                         </p>
                         <div class="summary-card__actions">
-                            <form method="post" style="display:inline">
+                            <form method="post" style="display:inline" @formname="billing-resume" @onsubmit="HandleSubmit">
+                                <AntiforgeryToken />
                                 <input type="hidden" name="Action" value="@SubscriptionActionResume" />
-                                <button type="submit" class="db-btn db-btn--primary">@Loc["billing_btn_resume"]</button>
+                                <Button Type="submit">@Loc["billing_btn_resume"]</Button>
                             </form>
                         </div>
                     }
                     else
                     {
                         <div class="summary-card__actions">
-                            <a href="/pricing" class="db-btn db-btn--secondary">@Loc["billing_btn_change"]</a>
+                            <Button Href="/pricing" Variant="secondary">@Loc["billing_btn_change"]</Button>
 
                             @* A hold is offered before the exit, not hidden behind it: somebody
                                taking a break should not have to cancel to stop paying. *@
-                            <form method="post" style="display:inline">
+                            <form method="post" style="display:inline" @formname="billing-pause" @onsubmit="HandleSubmit">
+                                <AntiforgeryToken />
                                 <input type="hidden" name="Action" value="@SubscriptionActionPause" />
-                                <button type="submit" class="db-btn db-btn--secondary">@Loc["billing_btn_pause"]</button>
+                                <Button Type="submit" Variant="secondary">@Loc["billing_btn_pause"]</Button>
                             </form>
 
-                            <form method="post" style="display:inline">
+                            <form method="post" style="display:inline" @formname="billing-cancel" @onsubmit="HandleSubmit">
+                                <AntiforgeryToken />
                                 <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
-                                <label class="workspace-label" for="cancel-reason">@Loc["billing_cancel_reason"]</label>
-                                <select id="cancel-reason" name="Reason" class="db-input">
+                                <label class="block text-sm font-medium" for="cancel-reason">@Loc["billing_cancel_reason"]</label>
+                                <select id="cancel-reason" name="Reason" class="rounded-md border bg-background px-3 py-2">
                                     @foreach (var reason in CancellationReasons.All)
                                     {
                                         <option value="@reason">@Loc[$"billing_reason_{reason}"]</option>
                                     }
                                 </select>
-                                <label class="workspace-label" for="cancel-feedback">@Loc["billing_cancel_feedback"]</label>
-                                <textarea id="cancel-feedback" name="Feedback" class="db-input" rows="2"
+                                <label class="block text-sm font-medium" for="cancel-feedback">@Loc["billing_cancel_feedback"]</label>
+                                <textarea id="cancel-feedback" name="Feedback" class="rounded-md border bg-background px-3 py-2" rows="2"
                                           maxlength="@Subscription.CancellationFeedbackMaxLength"></textarea>
-                                <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
+                                <Button Type="submit" Variant="destructive">
                                     @Loc["billing_btn_cancel"]
-                                </button>
+                                </Button>
                             </form>
                         </div>
                     }
@@ -123,11 +120,11 @@
             </div>
 
             <div class="history">
-                <h2 class="db-h2">@Loc["billing_history_title"]</h2>
+                <h2 class="text-2xl font-semibold">@Loc["billing_history_title"]</h2>
 
                 @if (billing.Events.Count == 0)
                 {
-                    <p class="db-text-muted">@Loc["billing_history_empty"]</p>
+                    <p class="text-muted-foreground">@Loc["billing_history_empty"]</p>
                 }
                 else
                 {
@@ -138,7 +135,7 @@
                                 <div class="timeline-item__dot @eventDotClass(evt.EventType)"></div>
                                 <div class="timeline-item__content">
                                     <div class="timeline-item__label">@evt.EventLabel</div>
-                                    <div class="timeline-item__meta db-text-muted">
+                                    <div class="timeline-item__meta text-muted-foreground">
                                         @evt.CreatedAt.ToString("MMM dd, yyyy")
                                         @if (evt.Amount > 0)
                                         {
@@ -147,7 +144,7 @@
                                     </div>
                                     @if (!string.IsNullOrEmpty(evt.InvoiceUrl))
                                     {
-                                        <a href="@evt.InvoiceUrl" target="_blank" class="db-link">@Loc["billing_view_receipt"]</a>
+                                        <a href="@evt.InvoiceUrl" target="_blank" rel="noopener noreferrer" class="text-primary underline">@Loc["billing_view_receipt"]</a>
                                     }
                                 </div>
                             </div>
@@ -211,58 +208,65 @@ private int? trialDaysLeft;
         _ => "dot--default"
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadBillingAsync();
+
+    private async Task LoadBillingAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-        var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
+        var ct = CancellationToken.None;
+        var user = await ctx.User.GetUserAsync(Db, ct);
+        billing = await BillingHistoryService.GetForUserAsync(user, Db, Loc, ct);
+        subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
+        trialDaysLeft = await SubscriptionService.GetTrialDaysLeftAsync(user, Db, ct);
+    }
 
-        // Shell render: return immediately, no DB calls — HTMX fetches the data.
-        if (!isHtmxRequest && !isPost) return;
+    private async Task HandleSubmit()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
 
         var ct = CancellationToken.None;
         var user = await ctx.User.GetUserAsync(Db, ct);
 
-        if (isPost)
+        try
         {
-            var form = await ctx.Request.ReadFormAsync(ct);
-            var action = form["Action"].ToString();
-
-            if (action == SubscriptionActionPause || action == SubscriptionActionResume)
-            {
-                await HandleHoldAsync(user, action == SubscriptionActionPause, ct);
-                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
-            }
-            else if (action == SubscriptionActionCancel)
-            {
-                var cancelled = await SubscriptionService.CancelAsync(user, Db, ct);
-
-                // Recorded with the exit (issue #174). A churn number without a reason tells you
-                // that people left, which you already knew.
-                if (cancelled is not null)
-                {
-                    cancelled.CancellationReason = CancellationReasons.Normalize(form["Reason"].ToString());
-                    var feedback = form["Feedback"].ToString().Trim();
-                    cancelled.CancellationFeedback = feedback.Length == 0
-                        ? null
-                        : feedback[..Math.Min(feedback.Length, Subscription.CancellationFeedbackMaxLength)];
-                }
-
-                await Db.SaveChangesAsync(ct);
-
-                // Plan row changed (kept active until CurrentPeriodEnd) and the
-                // PaymentEvent history gained an entry — evict cached copies so
-                // the billing page below renders the fresh state instantly.
-                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
-            }
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
         }
 
-        billing = await BillingHistoryService.GetForUserAsync(user, Db, Loc, ct);
-        subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
-        trialDaysLeft = await SubscriptionService.GetTrialDaysLeftAsync(user, Db, ct);
+        var form = await ctx.Request.ReadFormAsync(ct);
+        var action = form["Action"].ToString();
+
+        if (action == SubscriptionActionPause || action == SubscriptionActionResume)
+        {
+            await HandleHoldAsync(user, action == SubscriptionActionPause, ct);
+            await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+        }
+        else if (action == SubscriptionActionCancel)
+        {
+            var cancelled = await SubscriptionService.CancelAsync(user, Db, ct);
+
+            // Recorded with the exit (issue #174). A churn number without a reason tells you
+            // that people left, which you already knew.
+            if (cancelled is not null)
+            {
+                cancelled.CancellationReason = CancellationReasons.Normalize(form["Reason"].ToString());
+                var feedback = form["Feedback"].ToString().Trim();
+                cancelled.CancellationFeedback = feedback.Length == 0
+                    ? null
+                    : feedback[..Math.Min(feedback.Length, Subscription.CancellationFeedbackMaxLength)];
+            }
+
+            await Db.SaveChangesAsync(ct);
+
+            // Evict cached user and payment history after the subscription changes.
+            await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+        }
+
+        await LoadBillingAsync();
     }
 
     /// <summary>
@@ -297,6 +301,7 @@ private int? trialDaysLeft;
 
         user.Plan = plan;
         await Db.SaveChangesAsync(ct);
+        await SubscriptionService.PushPlanToWorkspaceAsync(user.Id, Db, ct);
     }
 
 }

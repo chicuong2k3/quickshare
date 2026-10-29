@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+<h2 data-slot="drawer-title" class="@Classes"
+    @attributes="AdditionalAttributes">@ChildContent</h2>
+
+@code {
+    const string Base =
+        "font-semibold text-foreground";
+
+    string Classes => Cn(Base, Class);
+}

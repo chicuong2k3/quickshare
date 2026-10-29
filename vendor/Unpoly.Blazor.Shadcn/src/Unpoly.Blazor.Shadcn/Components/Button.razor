@@ -1,0 +1,46 @@
+@inherits UiComponentBase
+
+@* shadcn/ui <Button>. The recipe itself lives in ButtonVariants, which is shadcn's exported
+   `buttonVariants` — <PaginationLink> and anything else that must look like a button without
+   being one reads the same source.
+
+   `asChild` has no Blazor equivalent — there is no cloneElement — so the one case it is
+   actually used for is a parameter: Href renders an <a> wearing the button's clothes. That also
+   happens to be what Unpoly wants, since a followed link is an <a href>. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="button" data-variant="@Variant" data-size="@Size" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <button type="@Type" data-slot="button" data-variant="@Variant" data-size="@Size" class="@Classes"
+            @onclick="OnClick" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@code {
+    // data-variant and data-size are shadcn's own — button.tsx emits both — and they are the
+    // stable hook for "the destructive button in this form". The class string is not: the design
+    // system reserves the right to rewrite it, and the generator does exactly that.
+    /// <summary>default | destructive | outline | secondary | ghost | link</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    /// <summary>default | sm | lg | icon</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    /// <summary>Renders an &lt;a&gt; instead of a &lt;button&gt; — shadcn's `asChild` with a Link.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>HTML button type. Only meaningful when <see cref="Href"/> is null.</summary>
+    [Parameter] public string Type { get; set; } = "submit";
+
+    /// <summary>
+    /// Click handler, for an interactive host (Blazor WebView). The static-SSR web head renders
+    /// once and navigates, so this is never set there; the button just has no @onclick. When a
+    /// host binds <c>OnClick</c> the handler is wired onto the &lt;button&gt;. Ignored when
+    /// <see cref="Href"/> renders an &lt;a&gt; (a link navigates; it does not click).
+    /// </summary>
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

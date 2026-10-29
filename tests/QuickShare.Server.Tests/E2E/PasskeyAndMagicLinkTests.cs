@@ -130,7 +130,6 @@ public sealed class PasskeyAndMagicLinkTests : IClassFixture<TestWebAppFactory>
         var (client, _) = await AccountAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountSecurity);
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         Assert.Contains("security.passkey.register", html, StringComparison.Ordinal);

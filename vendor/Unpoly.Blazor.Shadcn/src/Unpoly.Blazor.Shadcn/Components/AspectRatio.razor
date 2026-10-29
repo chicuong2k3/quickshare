@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* Radix computes a padding-bottom trick; CSS has had `aspect-ratio` for years. The parameter is
+   the ratio as a Tailwind arbitrary value, so any ratio works without a class per ratio. *@
+
+<div data-slot="aspect-ratio" style="aspect-ratio: @Ratio" class="@Cn("", Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Any CSS aspect-ratio value — "16 / 9", "1", "4 / 3".</summary>
+    [Parameter] public string Ratio { get; set; } = "16 / 9";
+}

@@ -18,8 +18,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["recurring_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["recurring_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["recurring_title"]</h1>
+        <p class="text-muted-foreground">@Loc["recurring_subtitle"]</p>
     </section>
 
     <AccountTabs Current="@RoutePaths.AccountDeliveries" />
@@ -39,21 +39,21 @@
     private RenderFragment Chunk => @<section id="recurring-body" data-unpoly-reload>
         @if (!canSchedule)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["recurring_requires_paid"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["recurring_requires_paid"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["recurring_list_title"]</h2>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["recurring_list_title"]</h2>
 
                     @if (schedules.Count == 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["recurring_empty"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["recurring_empty"]</p>
                     }
                     else
                     {
@@ -82,21 +82,21 @@
                                         }
                                     </div>
                                     <div class="workspace-member__actions">
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-id="@schedule.Id" data-enabled="@schedule.Enabled.ToString().ToLowerInvariant()"
                                                 onclick="window.quickShareRecurring.togglePause(this)"
                                                 data-ai-action="recurring.pause">
                                             @(schedule.Enabled ? Loc["recurring_pause"] : Loc["recurring_resume"])
                                         </button>
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-id="@schedule.Id"
                                                 onclick="window.quickShareRecurring.skipNext(this)"
                                                 data-ai-action="recurring.skip">@Loc["recurring_skip"]</button>
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-id="@schedule.Id"
                                                 onclick="window.quickShareRecurring.runNow(this)"
                                                 data-ai-action="recurring.run">@Loc["recurring_run_now"]</button>
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-id="@schedule.Id"
                                                 data-confirm="@Loc["recurring_delete_confirm"]"
                                                 onclick="window.quickShareRecurring.remove(this)"
@@ -106,63 +106,63 @@
                             }
                         </ul>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["recurring_new_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["recurring_new_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["recurring_new_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["recurring_new_hint"]</p>
 
                     @if (sources.Count == 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["recurring_no_sources"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["recurring_no_sources"]</p>
                     }
                     else
                     {
                         <div class="workspace-form">
                             <label class="workspace-label" for="recurring-name">@Loc["recurring_name"]</label>
-                            <input id="recurring-name" class="db-input" type="text"
+                            <Input id="recurring-name"  type="text"
                                    maxlength="@RecurringDelivery.NameMaxLength" />
 
                             <label class="workspace-label" for="recurring-source">@Loc["recurring_source"]</label>
-                            <select id="recurring-source" class="db-input">
+                            <NativeSelect id="recurring-source">
                                 @foreach (var source in sources)
                                 {
-                                    <option value="@source.Id">@source.FileName</option>
+                                    <NativeSelectOption value="@source.Id.ToString()">@source.FileName</NativeSelectOption>
                                 }
-                            </select>
+                            </NativeSelect>
 
                             <label class="workspace-label" for="recurring-frequency">@Loc["recurring_frequency"]</label>
-                            <select id="recurring-frequency" class="db-input">
-                                <option value="@RecurrenceFrequency.Daily">@Loc["recurring_daily"]</option>
-                                <option value="@RecurrenceFrequency.Weekly" selected>@Loc["recurring_weekly"]</option>
-                                <option value="@RecurrenceFrequency.Monthly">@Loc["recurring_monthly"]</option>
-                            </select>
+                            <NativeSelect id="recurring-frequency">
+                                <NativeSelectOption value="@(RecurrenceFrequency.Daily.ToString())">@Loc["recurring_daily"]</NativeSelectOption>
+                                <NativeSelectOption value="@(RecurrenceFrequency.Weekly.ToString())" selected>@Loc["recurring_weekly"]</NativeSelectOption>
+                                <NativeSelectOption value="@(RecurrenceFrequency.Monthly.ToString())">@Loc["recurring_monthly"]</NativeSelectOption>
+                            </NativeSelect>
 
                             <label class="workspace-label" for="recurring-hour">@Loc["recurring_hour"]</label>
-                            <input id="recurring-hour" class="db-input" type="number"
+                            <Input id="recurring-hour"  type="number"
                                    min="@RecurringDelivery.MinHour" max="@RecurringDelivery.MaxHour" value="8" />
 
                             <label class="workspace-label" for="recurring-day">@Loc["recurring_day"]</label>
-                            <select id="recurring-day" class="db-input">
+                            <NativeSelect id="recurring-day">
                                 @foreach (var day in Enum.GetValues<DayOfWeek>())
                                 {
-                                    <option value="@((int)day)" selected="@(day == DayOfWeek.Monday)">@day</option>
+                                    <NativeSelectOption value="@(((int)day).ToString())" selected="@(day == DayOfWeek.Monday)">@day</NativeSelectOption>
                                 }
-                            </select>
+                            </NativeSelect>
 
                             <label class="workspace-label" for="recurring-recipients">@Loc["recurring_recipients"]</label>
-                            <input id="recurring-recipients" class="db-input" type="text"
+                            <Input id="recurring-recipients"  type="text"
                                    maxlength="@RecurringDelivery.RecipientsMaxLength" />
 
-                            <button type="button" class="db-btn db-btn--primary"
+                            <button type="button" data-slot="button" data-variant="default"
                                     onclick="window.quickShareRecurring.create(this)"
                                     data-ai-action="recurring.create">@Loc["recurring_create"]</button>
                         </div>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     </section>;
 

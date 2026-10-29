@@ -1,12 +1,14 @@
 using LightResults;
 using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Storage;
+using QuickShare.Features.Workspaces.Domains;
 
 namespace QuickShare.Features.Downloads.Preview;
 
 public record PreviewDeliveryQuery(string ShareCode) : IRequest<Result<Uri>>;
 
-public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access)
+public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access,
+    WorkspaceDomainReader domains, IHttpContextAccessor http)
     : IRequestHandler<PreviewDeliveryQuery, Result<Uri>>
 {
     private static readonly TimeSpan PreviewUrlTtl = TimeSpan.FromHours(1);
@@ -18,30 +20,26 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContex
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (delivery is null || delivery.DeletedAt is not null)
-            return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.NotFound));
-
-        // Same scope rules as the byte path (issues #142/#166): a preview is the file.
-        if (await access.CheckAsync(delivery, cancellationToken) != DeliveryAccessDecision.Allowed)
-            return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DeliveryRestricted));
-
-        if (delivery.Status == DeliveryStatus.Suspended
-            || delivery.Status == DeliveryStatus.Revoked
-            || delivery.Status == DeliveryStatus.Expired
-            || (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow))
+        var error = await PreviewAccessGate.CheckAsync(delivery, db, access, domains, http.HttpContext, cancellationToken);
+        if (error is not null)
         {
-            return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DeliveryExpired));
+            return Result.Failure<Uri>(new LightResults.Error(error));
         }
 
-        if (delivery.DownloadCount >= delivery.MaxDownloads)
-            return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
-
-        if (!string.IsNullOrEmpty(delivery.OtpHash) || !string.IsNullOrEmpty(delivery.PasswordHash) || string.IsNullOrEmpty(delivery.StoragePath))
-            return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DeliveryGated));
+        var ttl = PreviewUrlTtl;
+        if (delivery!.ExpiresAt is { } expiresAt)
+        {
+            var remaining = expiresAt - DateTime.UtcNow;
+            if (remaining <= TimeSpan.Zero)
+            {
+                return Result.Failure<Uri>(new LightResults.Error(ErrorCodes.DeliveryExpired));
+            }
+            ttl = remaining < ttl ? remaining : ttl;
+        }
 
         try
         {
-            var url = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath, PreviewUrlTtl, cancellationToken);
+            var url = await storage.GetPresignedDownloadUrlAsync(delivery.StoragePath!, ttl, cancellationToken);
             return Result.Success(url);
         }
         catch

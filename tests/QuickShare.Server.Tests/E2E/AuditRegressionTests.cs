@@ -202,8 +202,7 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
     [InlineData("/workspace/join")]
     public async Task WorkspacePage_ShellRenders(string url)
     {
-        // Shell render only — these pages lazy-load their data over HTMX, so this asserts the
-        // half that a Razor mistake or a missing DI registration would break.
+        // Direct requests render the page with its data.
         var (client, _) = await WorkspaceClientAsync();
         var response = await client.GetAsync(url);
 
@@ -218,14 +217,13 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
     [InlineData("/account/workspace/approvals")]
     [InlineData("/account/workspace/channel")]
     [InlineData("/account/recurring")]
-    public async Task WorkspacePage_HtmxFragmentRenders(string url)
+    public async Task WorkspacePage_UnpolyRequestRenders(string url)
     {
-        // The half the shell test cannot reach: the fragment request actually runs the page's
-        // data loading, which is where a null reference or a bad query would surface.
+        // Targeted requests also need a valid page and authorized data.
         var (client, _) = await WorkspaceClientAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add("HX-Request", "true");
+        request.Headers.Add(UnpolyHeaders.Target, "#main-content");
         var response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

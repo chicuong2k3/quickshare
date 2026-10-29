@@ -1,0 +1,17 @@
+@inherits UiComponentBase
+
+@* Hidden with the `hidden` attribute rather than a class, so the fields inside an inactive
+   panel are still in the form and still post. A tabbed form that silently drops half its values
+   because the other tab was never opened is the bug this avoids. *@
+
+<div role="tabpanel" data-slot="tabs-content" data-value="@Value" hidden="@Hidden"
+     class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Server-side initial state; ui.js takes over on the first click.</summary>
+    [Parameter] public bool Hidden { get; set; }
+
+    string Classes => Cn("flex-1 outline-none", Class);
+}

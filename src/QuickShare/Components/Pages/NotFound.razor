@@ -10,21 +10,21 @@
 <PageTitle>@Loc["notfound_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Centered">
-    <div class="nf-card db-card">
-        <div class="qs-titlebar">
-            <span class="qs-titlebar__box" aria-hidden="true"></span>
-            <span class="qs-titlebar__label">404</span>
-            <span class="qs-titlebar__box" aria-hidden="true"></span>
+    <Card class="mx-auto mt-8 w-full max-w-md p-6">
+        <div class="flex items-center justify-between gap-3 border-b pb-4">
+            <span class="h-2 w-2 rounded-sm bg-primary" aria-hidden="true"></span>
+            <span class="font-semibold">404</span>
+            <span class="h-2 w-2 rounded-sm bg-primary" aria-hidden="true"></span>
         </div>
-        <div class="db-card__body nf-body">
-            <h1 class="db-h2 nf-title">@Loc["notfound_h1"]</h1>
-            <p class="db-p db-text-muted">@Loc["notfound_sub"]</p>
-            <div class="nf-actions">
-                <a href="@RoutePaths.Home" class="db-btn db-btn--primary">@Loc["notfound_cta_home"]</a>
-                <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost">@Loc["notfound_cta_deliveries"]</a>
+        <div class="pt-6 text-center">
+            <h1 class="mb-3 text-2xl font-semibold">@Loc["notfound_h1"]</h1>
+            <p class="text-muted-foreground">@Loc["notfound_sub"]</p>
+            <div class="mt-6 flex flex-wrap justify-center gap-4">
+                <Button Href="@RoutePaths.Home">@Loc["notfound_cta_home"]</Button>
+                <Button Href="@RoutePaths.AccountDeliveries" Variant="ghost">@Loc["notfound_cta_deliveries"]</Button>
             </div>
         </div>
-    </div>
+    </Card>
 </PageWrapper>
 
 @code {

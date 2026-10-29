@@ -1,0 +1,77 @@
+@inherits UiComponentBase
+@implements IDisposable
+
+<div data-slot="steps-item"
+     data-status="@StatusString"
+     data-state="@(IsActive ? "active" : IsCompleted ? "completed" : "default")"
+     data-clickable="@(Parent?.Clickable == true ? "true" : null)"
+     role="listitem"
+     aria-current="@(IsActive ? "step" : null)"
+     class="@Classes"
+     @onclick="HandleClick"
+     @attributes="AdditionalAttributes">
+    <div data-slot="steps-indicator" class="@IndicatorClasses">
+        @if (IconContent is not null)
+        {
+            @IconContent
+        }
+        else if (Status == StepsItemStatus.Error && IsActive)
+        {
+            <Icon Name="x" class="size-4" />
+        }
+        else if (IsCompleted)
+        {
+            <Icon Name="check" class="size-4" />
+        }
+        else
+        {
+            <span class="text-xs font-medium">@(Index + 1)</span>
+        }
+    </div>
+    <div class="flex flex-col gap-0.5">
+        <span data-slot="steps-title" class="text-sm font-medium leading-none @TitleClass">@(Title ?? $"Step {Index + 1}")</span>
+        @if (Description is not null)
+        {
+            <span data-slot="steps-description" class="text-xs text-muted-foreground">@Description</span>
+        }
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public Steps? Parent { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public StepsItemStatus Status { get; set; } = StepsItemStatus.Default;
+    [Parameter] public RenderFragment? IconContent { get; set; }
+
+    int Index => Parent?.IndexOf(this) ?? 0;
+    bool IsActive => Parent?.IsActive(this) ?? false;
+    bool IsCompleted => Parent?.IsCompleted(this) ?? false;
+
+    string StatusString => Status == StepsItemStatus.Error && IsActive ? "error" : IsActive ? "active" : IsCompleted ? "completed" : "default";
+
+    protected override void OnInitialized() => Parent?.Register(this);
+    public void Dispose() => Parent?.Unregister(this);
+
+    Task HandleClick() => Parent?.SelectAsync(this) ?? Task.CompletedTask;
+
+    string TitleClass => IsActive ? "text-foreground" : IsCompleted ? "text-foreground" : "text-muted-foreground";
+
+    const string Base =
+        "flex flex-1 items-start gap-3 rounded-md p-2 transition-colors " +
+        "data-[clickable=true]:cursor-pointer data-[clickable=true]:hover:bg-accent/50 " +
+        "data-[state=active]:bg-accent/30 data-[status=error]:border-destructive data-[status=error]:text-destructive";
+
+    string IndicatorClasses => Cn(
+        "grid size-8 shrink-0 place-items-center rounded-full border text-sm transition-all",
+        IsActive ? "border-primary bg-primary text-primary-foreground shadow-sm" : null,
+        IsActive && Parent?.Animated == true ? "animate-pulse" : null,
+        IsCompleted ? "border-primary bg-primary text-primary-foreground" : null,
+        Status == StepsItemStatus.Error && IsActive ? "border-destructive bg-destructive text-white" : null,
+        !IsActive && !IsCompleted ? "border-border bg-background text-muted-foreground" : null
+    );
+
+    string Classes => Cn(Base, Class);
+}

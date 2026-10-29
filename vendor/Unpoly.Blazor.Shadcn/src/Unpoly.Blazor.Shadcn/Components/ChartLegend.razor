@@ -1,0 +1,30 @@
+@inherits UiComponentBase
+
+@* shadcn's ChartLegendContent, minus Recharts. Upstream reads the series out of a payload the
+   chart library hands it; here the caller names them, because there is no library to ask.
+
+   The swatch reads var(--color-KEY) — the same custom property the bars are drawn with, which
+   <Chart> declared once. That is the whole point of declaring them there: one place decides the
+   colour, and the drawing and the labelling cannot disagree. *@
+
+<div data-slot="chart-legend" class="@Classes" @attributes="AdditionalAttributes">
+    @foreach (var (key, label) in Series)
+    {
+        <div class="flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground">
+            <div class="h-2 w-2 shrink-0 rounded-[2px]" style="background-color: var(--color-@key)"></div>
+            @label
+        </div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>Series key to label, in the order they should read.</summary>
+    [Parameter] public IEnumerable<KeyValuePair<string, string>> Series { get; set; } = [];
+
+    /// <summary>top | bottom — which side of the plot it sits on, as upstream's verticalAlign.</summary>
+    [Parameter] public string VerticalAlign { get; set; } = "bottom";
+
+    string Classes => Cn("flex items-center justify-center gap-4",
+                         VerticalAlign == "top" ? "pb-3" : "pt-3", Class);
+}

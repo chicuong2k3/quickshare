@@ -246,11 +246,9 @@ Application Control briefly blocked the test assembly, then the user resolved it
 brand and domain settings pages now render scoped data on direct GET; brand and domain refresh
 through Unpoly after JSON mutations. The channel, SIEM and backup settings pages now render admin-scoped configurations on direct
 GET and use Unpoly to refresh sections after their existing API mutations. Secrets stay absent
-from HTML; viewer and foreign-tenant regressions cover these routes. Other workspace routes
-still use HTMX lazy loading during the Unpoly migration. All three carry `noindex, nofollow` (`#121`). `/workspace/join` is the token
-landing page and is deliberately not lazy-loaded: there is no DB read to defer. Styles remain
-in `wwwroot/css/app.css` under the `workspace-` prefix; other pages still ship HTMX partials
-whose markup cannot use another component's scoped CSS.
+from HTML; viewer and foreign-tenant regressions cover these routes. The pages carry `noindex,
+nofollow` (`#121`). `/workspace/join` is the token landing page and has no initial DB read.
+Shared workspace styles remain in `wwwroot/css/app.css` under the `workspace-` prefix.
 
 ## Extending this
 

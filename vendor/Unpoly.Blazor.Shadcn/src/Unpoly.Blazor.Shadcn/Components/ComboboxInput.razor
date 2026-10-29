@@ -1,0 +1,66 @@
+@inherits UiComponentBase
+
+@* The type-to-filter face of the combobox: a text box in an input-group frame with the chevron
+   riding inside it, which is upstream's ComboboxInput — an InputGroup wrapping the input and an
+   inline-end addon. Typing filters the list, choosing writes the label back into the box, and
+   the chevron is a plain popover button for the pointer.
+
+   Inside a ComboboxContent it becomes the search box of the popup pattern instead: the panel
+   opens from a separate trigger, this takes focus, and choosing clears it. Same markup, and
+   ui.js tells the two apart by where the input sits. ShowTrigger="false" drops the chevron,
+   which a box inside an already-open panel has no use for.
+
+   The field attributes are parameters rather than a splat, because they belong to the inner
+   input while unknown attributes belong to the frame — one element cannot be both. *@
+
+<InputGroup Class="@Class" @attributes="AdditionalAttributes">
+    @* Anything the caller puts inside becomes an addon of its own, before the control — which is
+       how upstream hangs a globe or a search icon off the start of the box. *@
+    @ChildContent
+    <InputGroupControl id="@Id" name="@Name" value="@Value" role="combobox" autocomplete="off"
+                       aria-autocomplete="list" aria-controls="@Target" aria-expanded="false"
+                       aria-invalid="@(Invalid ? "true" : null)" disabled="@Disabled"
+                       placeholder="@Placeholder" />
+    <InputGroupAddon Align="inline-end">
+        @if (ShowClear)
+        {
+            <ComboboxClear />
+        }
+        @if (ShowTrigger)
+        {
+            <InputGroupButton Size="icon-xs" popovertarget="@Target" tabindex="-1"
+                              disabled="@Disabled" aria-label="@OpenLabel">
+                <ComboboxTriggerIcon />
+            </InputGroupButton>
+        }
+    </InputGroupAddon>
+</InputGroup>
+
+@code {
+    /// <summary>The id of the <see cref="ComboboxContent"/> the chevron opens.</summary>
+    [Parameter] public string? Target { get; set; }
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The inner input's id, so a <c>FieldLabel For</c> can reach it.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Set when the box itself is the field — it posts what was typed.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>The label of an already-chosen value, rendered by the server.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Draws the destructive ring, from the attribute a validator would set.</summary>
+    [Parameter] public bool Invalid { get; set; }
+
+    /// <summary>The chevron. Off for the search box inside an already-open panel.</summary>
+    [Parameter] public bool ShowTrigger { get; set; } = true;
+
+    /// <summary>A clear button that empties the selection, hidden while there is none.</summary>
+    [Parameter] public bool ShowClear { get; set; }
+
+    [Parameter] public string OpenLabel { get; set; } = "Open list";
+}

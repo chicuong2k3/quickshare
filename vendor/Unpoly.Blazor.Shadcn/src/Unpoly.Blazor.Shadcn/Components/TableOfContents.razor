@@ -1,0 +1,30 @@
+@inherits UiComponentBase
+
+<nav data-slot="table-of-contents" aria-label="@AriaLabel" class="@Classes" @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <div data-slot="table-of-contents-title">@Title</div>
+    }
+    @if (Items.Count > 0)
+    {
+        <ul data-slot="table-of-contents-list">
+            @foreach (var item in Items)
+            {
+                <li data-slot="table-of-contents-item" data-level="@item.Level">
+                    <a href="@($"#{item.Id}")">@item.Text</a>
+                </li>
+            }
+        </ul>
+    }
+</nav>
+
+@code {
+    [EditorRequired]
+    [Parameter] public IReadOnlyList<TableOfContentsEntry> Items { get; set; } = Array.Empty<TableOfContentsEntry>();
+
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public string AriaLabel { get; set; } = "Mục lục";
+
+    string Classes => Cn(Class);
+}

@@ -1,0 +1,25 @@
+@inherits UiComponentBase
+
+@* FloatingNav — Ruixen UI's floating navigation bar: a rounded bar of icon-and-label items with a
+   soft pill that slides to whichever item is active, on upstream's spring (stiffness 400,
+   damping 30).
+
+   Upstream pins the bar to the bottom of the window itself, centred and fixed. Here the
+   placement is the caller's, through Class, because a component that positions itself against
+   the window cannot sit in a page, a card or a documentation example — the same reason the
+   Sidebar examples need a frame. `Class="fixed inset-x-0 bottom-4 z-50 mx-auto"` is upstream's.
+
+   The pill is in the markup before any script runs: the active item draws it inside itself, so
+   a page with no script still shows where the reader is. ui.js lifts it out onto the bar and
+   from then on moves that one element, measured against the item, on Motion's spring. *@
+
+<nav data-slot="floating-nav" aria-label="@Label" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</nav>
+
+@code {
+    /// <summary>Names the navigation landmark.</summary>
+    [Parameter] public string Label { get; set; } = "Main";
+
+    // bg-background and the default border where upstream writes bg-white / dark:bg-neutral-900
+    // and border-gray-200: the same white bar, from the theme.
+    string Classes => Cn("relative flex w-full max-w-lg items-center justify-between rounded-full border bg-background px-1 py-2 shadow-xl", Class);
+}

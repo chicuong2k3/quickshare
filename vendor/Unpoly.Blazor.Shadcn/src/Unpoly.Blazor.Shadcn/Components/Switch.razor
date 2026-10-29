@@ -1,0 +1,46 @@
+@inherits UiComponentBase
+
+@* The same input as <Checkbox>, presented as a state that is on or off rather than ticked.
+   role="switch" is what tells a screen reader the difference — without it this is a checkbox
+   that merely looks unusual. The thumb is ::after in ui.behavior.css. *@
+
+@* Two-way binding via @bind / @bind-Checked. When the caller passes CheckedChanged, the input
+   renders checked="@Checked" with an @onchange that raises it. The unbound branch renders
+   checked="@Checked" as well: a bare `checked` binds to the Checked parameter and never
+   reaches the splat, so omitting it here silently drops the caller's value. *@
+@if (CheckedChanged.HasDelegate)
+{
+    <input type="checkbox" role="switch" data-slot="switch" data-size="@Size" class="@Classes"
+           checked="@Checked" @onchange="OnChange" @attributes="AdditionalAttributes" />
+}
+else
+{
+    <input type="checkbox" role="switch" data-slot="switch" data-size="@Size" class="@Classes"
+           checked="@Checked" @attributes="AdditionalAttributes" />
+}
+
+@code {
+    /// <summary>default | sm</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    /// <summary>The bound checked state, from <c>@bind</c>/<c>@bind-Checked</c>.</summary>
+    [Parameter] public bool Checked { get; set; }
+
+    /// <summary>Raises on change when bound. Its presence decides whether the component renders
+    /// checked/@onchange or lets the <c>@attributes</c> splat do it.</summary>
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await CheckedChanged.InvokeAsync(e.Value is not null && e.Value is not false
+            && !(e.Value is string s && s == "false"));
+
+    const string Base =
+        "peer group/switch inline-flex shrink-0 items-center rounded-full border " +
+        "border-transparent shadow-xs transition-all outline-none focus-visible:border-ring " +
+        "focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed " +
+        "disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 " +
+        "data-[size=sm]:h-3.5 data-[size=sm]:w-6 checked:bg-primary not-checked:bg-input " +
+        "dark:not-checked:bg-input/80";
+
+    string Classes => Cn(Base, Class);
+}

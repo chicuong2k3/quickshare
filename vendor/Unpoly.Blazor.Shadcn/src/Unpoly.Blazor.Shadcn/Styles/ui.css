@@ -1,0 +1,413 @@
+@import "./ui.behavior.css";
+
+/* shadcn/ui for Unpoly.Blazor — the token layer.
+   ------------------------------------------------------------------------------------------
+   Faithful to shadcn/ui (new-york, Tailwind v4): the same variable names, the same
+   `@theme inline` indirection, the same derived radius scale. `inline` is load-bearing —
+   it makes `bg-primary` compile to `var(--primary)` rather than to a resolved colour, which
+   is what lets a head override the palette from `:root` further down the cascade.
+
+   A consuming head sets its own palette by redeclaring these in `:root`. It never touches
+   `@theme`; that direction is this file's.
+
+   Two tokens are ours, not shadcn's, and they exist because one control layer serves two
+   heads at different sizes: `--control-h` and `--control-text`, surfaced as `h-control` and
+   `text-control`. shadcn writes `h-9 text-sm` literally there. Everywhere else the class
+   strings are shadcn's, unchanged, so a model that knows shadcn knows these. */
+
+/* Dark mode follows a class, not the operating system — and this line is what makes that true.
+   ------------------------------------------------------------------------------------------
+   Tailwind v4's stock `dark:` variant compiles to `@media (prefers-color-scheme: dark)`. shadcn
+   redefines it against a class in its own globals, and this file — which is this port's
+   globals — did not. The `.dark { … }` blocks below still worked, because they are ordinary CSS
+   selectors, so the palette flipped and the page looked right; but every `dark:` utility in
+   every component kept answering to the OS instead.
+
+   The effect was invisible on a machine whose OS matches the page and quietly wrong on one that
+   does not: on a light OS in dark mode, none of `dark:bg-input/30`, `dark:hover:bg-accent/50` or
+   `dark:aria-invalid:ring-destructive/40` ever applied. `:where` rather than shadcn's `.dark *`
+   so the element carrying the class is covered too. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    --radius: 0.625rem;
+
+    /* Page and card are both pure white, as in shadcn, so a card is separated by a line: the
+       border that --surface-border draws below. This file once had a grey page and borderless
+       cards; the page went back to white (see --background) and the border has to come with it,
+       or every card, alert and menu panel melts into the page. */
+    /* oklch(1 0 0), which is shadcn's. 0.98 is their --surface, a docs-site token, and it was
+       sitting on --background here: the page ground was a nearly-grey that made every
+       bg-background surface disappear into bg-muted next to it. The active tab was the visible
+       casualty — a white chip on a 0.97 list, reading as a 1% difference. */
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+
+    /* The colour of the line around a surface — a card, an alert, a menu panel, a dialog.
+       shadcn's: var(--border). It was transparent while the page was grey, and stayed transparent
+       when the page turned white, which left a white card on a white page with no edge at all.
+
+       It is a token rather than a rule because a theme has to be able to disagree. Notebook is
+       heavy borders on paper and nothing else; a rule would have quietly erased the one thing it
+       is. A theme that wants the borderless look sets this to transparent — and then has to give
+       --background and --card different tones, or its surfaces have nothing to separate them. */
+    --surface-border: var(--border);
+
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+
+    /* Ours. shadcn hardcodes h-9 / text-sm; two heads at 36px and 46px cannot both. */
+    --control-h: 2.25rem;
+    --control-text: 0.875rem;
+
+    /* The face a column of figures is set in. `inherit` by default — an app that wants money
+       to read digit over digit points this at its own mono stack. */
+    --font-numeric: inherit;
+
+    /* ---- themeable beyond shadcn --------------------------------------------------------
+       shadcn tokenises colour and one radius, and writes everything else as literals:
+       `shadow-xs`, `rounded-md`, `transition-all`. That is enough to recolour it and not
+       enough to make it look like another design language, because Material and Fluent both
+       define elevation and motion as part of the system rather than as decoration.
+
+       These map Tailwind's own namespaces onto runtime custom properties, so a theme file can
+       change them from :root without touching a single class string — which is why adding
+       them costs nothing in parity. See themes/README.md for what does and does not transfer. */
+    /* Flat at rest, lifted when floating — which is what shadcn's current sheet does, and what
+       this port did not: a card, an input and an outline button all carried a shadow the live
+       docs have not had for a while. Nothing about them changes but these two values; the class
+       strings still say shadow-xs and shadow-sm, so parity with upstream's source is untouched
+       and a theme that wants the old look sets them back from :root.
+
+       Levels three and four stay, because shadcn keeps them: a popover, a dropdown and a dialog
+       are ABOVE the page rather than part of it, and a shadow is how that is said. */
+    --elevation-1: 0 0 #0000;
+    --elevation-2: 0 0 #0000;
+    --elevation-3: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --elevation-4: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Controls round separately from containers. shadcn derives both from --radius; Material
+       wants pill-shaped buttons beside 12px cards, which one number cannot say. */
+    --radius-control: calc(var(--radius) - 2px);
+
+    --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-ui: 150ms;
+
+    /* Lucide glyphs a pseudo-element has to draw, because a ::after cannot hold an <svg> and a
+       CSS rule cannot hold a Tailwind class. Everything a component renders itself is an inline
+       <svg>, as in shadcn — these four are the exceptions, all of them indicators. */
+    --sh-clear-icon: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7385' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E");
+    --sh-check: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 13 4 4L19 7'/%3E%3C/svg%3E");
+    --sh-minus: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+    --sh-chevron-down: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.dark {
+    /* Same idea inverted: the page is the darker of the two and the card lifts off it. */
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.269 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.371 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+}
+
+@theme inline {
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --height-control: var(--control-h);
+    --text-control: var(--control-text);
+
+    /* Tailwind's own namespaces, pointed at the runtime tokens above. */
+    --shadow-xs: var(--elevation-1);
+    --shadow-sm: var(--elevation-2);
+    --shadow-md: var(--elevation-3);
+    --shadow-lg: var(--elevation-4);
+    --radius-md: var(--radius-control);
+    --ease-out: var(--ease-ui);
+    --default-transition-duration: var(--duration-ui);
+}
+
+/* shadcn's icon button is `size-9` — one number for both axes. There is no --size-* namespace to
+   hang a token on, so the third of our three substitutions is a real utility rather than a theme
+   key. Same value as h-control, squared. */
+@utility size-control {
+    inline-size: var(--control-h);
+    block-size: var(--control-h);
+}
+
+/* scroll-fade — the content fades out where it runs off the end of its scroller.
+   ------------------------------------------------------------------------------------------
+   AttachmentGroup asks for `scroll-fade-x` and MessageScrollerViewport for `scroll-fade-b`, and
+   neither existed: like `shimmer`, this utility lives in shadcn's CLI stylesheet rather than in
+   its globals, so this file never had it and both compiled to nothing. A row of attachments
+   simply stopped dead at the edge instead of fading, which reads as a layout that has not been
+   finished rather than as a missing utility.
+
+   Two of the family, because two are what this library uses. The rest — scroll-fade-t, -s, -e,
+   -l, -r, the sizing modifiers — are in shadcn's tailwind.css if a caller ever needs them.
+
+   The mask is animated by a SCROLL timeline, so the fade appears only on the side there is more
+   content on. Browsers without scroll-driven animations get the fade permanently, which is the
+   right way round: a hint that is always on beats a hint that is never on. */
+@property --scroll-fade-b {
+    syntax: "<length-percentage>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --scroll-fade-s {
+    syntax: "<length-percentage>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --scroll-fade-e {
+    syntax: "<length-percentage>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@theme inline {
+    @keyframes scroll-fade-reveal-b {
+        from { --scroll-fade-b: var(--_scroll-fade-size-b); }
+        to { --scroll-fade-b: 0px; }
+    }
+    @keyframes scroll-fade-reveal-s {
+        from { --scroll-fade-s: 0px; }
+        to { --scroll-fade-s: var(--_scroll-fade-size-s); }
+    }
+    @keyframes scroll-fade-reveal-e {
+        from { --scroll-fade-e: var(--_scroll-fade-size-e); }
+        to { --scroll-fade-e: 0px; }
+    }
+}
+
+@utility scroll-fade-b {
+    --_scroll-fade-size-b: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    --scroll-fade-mask: linear-gradient(to bottom, #000 0,
+        #000 calc(100% - var(--scroll-fade-b, 0px)), transparent 100%);
+    -webkit-mask-image: var(--scroll-fade-mask);
+    mask-image: var(--scroll-fade-mask);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+
+    @supports (animation-timeline: scroll()) {
+        animation: scroll-fade-reveal-b 1ms ease-in-out;
+        animation-timeline: scroll(self y);
+        animation-range: calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;
+        animation-fill-mode: both;
+    }
+
+    @supports not (animation-timeline: scroll()) {
+        --scroll-fade-b: var(--_scroll-fade-size-b);
+    }
+}
+
+/* Inline, so it fades the reading-start and reading-end edges — and swaps them under RTL. */
+@utility scroll-fade-x {
+    --_scroll-fade-size-s: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    --_scroll-fade-size-e: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    --scroll-fade-inline: linear-gradient(to right, transparent 0,
+        #000 var(--scroll-fade-s, 0px),
+        #000 calc(100% - var(--scroll-fade-e, 0px)), transparent 100%);
+
+    &:where([dir="rtl"], [dir="rtl"] *) {
+        --scroll-fade-inline: linear-gradient(to left, transparent 0,
+            #000 var(--scroll-fade-s, 0px),
+            #000 calc(100% - var(--scroll-fade-e, 0px)), transparent 100%);
+    }
+
+    -webkit-mask-image: var(--scroll-fade-mask, var(--scroll-fade-inline));
+    mask-image: var(--scroll-fade-mask, var(--scroll-fade-inline));
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+
+    @supports (animation-timeline: scroll()) {
+        animation: scroll-fade-reveal-s 1ms ease-in-out, scroll-fade-reveal-e 1ms ease-in-out;
+        animation-timeline: scroll(self inline), scroll(self inline);
+        animation-range: 0 var(--scroll-fade-reveal, calc(var(--spacing) * 24)),
+                         calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;
+        animation-fill-mode: both;
+    }
+
+    @supports not (animation-timeline: scroll()) {
+        --scroll-fade-s: var(--_scroll-fade-size-s);
+        --scroll-fade-e: var(--_scroll-fade-size-e);
+    }
+}
+
+/* shimmer — a gradient swept through the TEXT itself, not a box behind it.
+   ------------------------------------------------------------------------------------------
+   AttachmentTitle has carried `group-data-[state=uploading]/attachment:shimmer` since it was
+   ported, and MarkerContent takes `shimmer` as a class. Neither did anything: the utility is
+   not part of shadcn's globals — it lives in the CLI's own tailwind.css — so this file never
+   had it, and an undefined utility compiles to nothing without a warning. An uploading file
+   looked identical to a finished one.
+
+   background-clip: text plus a transparent fill is what puts the highlight in the glyphs. The
+   animation reverses under dir="rtl", because a sweep that runs against the reading direction
+   reads as a glitch rather than as progress. Copied from shadcn's tailwind.css. */
+@property --shimmer-angle {
+    syntax: "<angle>";
+    inherits: true;
+    initial-value: 20deg;
+}
+
+@theme inline {
+    @keyframes tw-shimmer {
+        from { background-position: 100% 0; }
+        to { background-position: 0 0; }
+    }
+}
+
+@utility shimmer {
+    --_spread: var(--shimmer-spread, calc(3ch + 40px));
+    --_base: currentColor;
+    --_highlight: var(--shimmer-color, oklch(from currentColor l c h / calc(alpha * 0.2)));
+
+    background-image: var(--shimmer-image, linear-gradient(
+        calc(90deg + var(--shimmer-angle)),
+        var(--_base) calc(50% - var(--_spread)),
+        color-mix(in oklch, var(--_highlight), var(--_base) 50%) calc(50% - var(--_spread) * 0.5),
+        var(--_highlight) 50%,
+        color-mix(in oklch, var(--_highlight), var(--_base) 50%) calc(50% + var(--_spread) * 0.5),
+        var(--_base) calc(50% + var(--_spread))
+    ));
+    background-repeat: no-repeat;
+    background-size: calc(200% + var(--_spread) * 2) 100%;
+    background-position: 0 0;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: var(--shimmer-text-fill, transparent);
+    animation: tw-shimmer var(--shimmer-duration, 2s) linear infinite;
+
+    @variant dark {
+        --_highlight: var(--shimmer-color,
+            oklch(from currentColor max(0.8, calc(l + 0.4)) c h / calc(alpha + 0.4)));
+    }
+
+    &:where([dir="rtl"], [dir="rtl"] *) {
+        animation-direction: reverse;
+    }
+
+    /* Motion is a preference, and a permanent sweep is exactly what it is about. Nested rather
+       than a second @utility inside @media, which Tailwind does not accept. */
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        -webkit-text-fill-color: currentColor;
+    }
+}
+
+/* shadcn's own base layer, and it is not optional.
+   ------------------------------------------------------------------------------------------
+   Tailwind's preflight leaves `border-color: currentColor`, so `border-b` with no colour class
+   draws a line in the TEXT colour. shadcn ships `* { @apply border-border outline-ring/50 }` in
+   its globals for exactly that reason, and this file — which is this port's globals — did not.
+
+   The result was a near-black hairline everywhere a component relies on the default: every table
+   row, every accordion item, the sidebar's edge, the input group's divider, the drawer's header.
+   It reads as "heavier than shadcn" rather than as a bug, which is why it survived this long.
+
+   `@layer base`, so anything a component says for itself still wins. */
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--border);
+        outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+}

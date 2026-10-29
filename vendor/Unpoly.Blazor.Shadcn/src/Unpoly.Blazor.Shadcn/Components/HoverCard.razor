@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+@* A popover that opens on hover rather than on click. It is decoration by definition — anything
+   only reachable by pointing at it is unreachable to a keyboard and to a touch screen — so the
+   trigger is still a real link or button and this only adds the preview. *@
+
+<div data-slot="hover-card" class="@Cn("relative inline-block", Class)" @attributes="AdditionalAttributes">@ChildContent</div>

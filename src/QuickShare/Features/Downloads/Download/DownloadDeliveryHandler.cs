@@ -1,6 +1,7 @@
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Features.Deliveries.Otp;
 using QuickShare.Features.Downloads.Shared;
+using QuickShare.Features.Workspaces.Domains;
 
 namespace QuickShare.Features.Downloads.Download;
 
@@ -11,12 +12,14 @@ public sealed class DownloadDeliveryHandler(
     IHttpContextAccessor httpContextAccessor,
     AppDbContext db,
     OtpLockoutService lockout,
-    DeliveryAccessService access)
+    DeliveryAccessService access,
+    WorkspaceDomainReader domains)
     : IRequestHandler<DownloadDeliveryQuery>
 {
     private static readonly TimeSpan FullDownloadTtl = TimeSpan.FromDays(7);
     private static readonly TimeSpan RangeRequestTtl = TimeSpan.FromHours(1);
     private const int BurnGraceMinutes = 10;
+    private const int ExpectedConsumedRows = 1;
 
     public async ValueTask<Unit> Handle(DownloadDeliveryQuery query, CancellationToken cancellationToken)
     {
@@ -32,6 +35,12 @@ public sealed class DownloadDeliveryHandler(
         if (delivery is null || delivery.DeletedAt is not null)
         {
             response.StatusCode = 404;
+            return Unit.Value;
+        }
+
+        if (await domains.IsForeignHostAsync(httpContext.Request.Host.Host, delivery.WorkspaceId, cancellationToken))
+        {
+            response.StatusCode = StatusCodes.Status404NotFound;
             return Unit.Value;
         }
 
@@ -92,7 +101,6 @@ public sealed class DownloadDeliveryHandler(
                 return Unit.Value;
             }
 
-            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
         }
         if (!string.IsNullOrEmpty(delivery.OtpHash))
         {
@@ -112,22 +120,35 @@ public sealed class DownloadDeliveryHandler(
                 return Unit.Value;
             }
 
-            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
         }
 
         // Email OTP gate (issue #291): the recipient redeemed a single-use emailed code.
         if (delivery.EmailOtpEnabled)
         {
-            if (!VerifyEmailOtp(delivery, query.EmailOtp, query.Email))
+            if (await lockout.IsLockedAsync(db, delivery.Id, cancellationToken))
             {
-                response.StatusCode = 403;
+                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, cancellationToken);
+                response.StatusCode = StatusCodes.Status423Locked;
+                response.Headers[HttpHeaders.RetryAfter] = retryAfter.ToString(CultureInfo.InvariantCulture);
                 return Unit.Value;
             }
 
-            // Single-use: consume the code before the redirect.
-            await db.Deliveries
-                .Where(d => d.Id == delivery.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(d => d.EmailOtpUsedAt, DateTime.UtcNow), cancellationToken);
+            if (!VerifyEmailOtp(delivery, query.EmailOtp, query.Email))
+            {
+                var now = DateTime.UtcNow;
+                var hasActiveChallenge = delivery.EmailOtpExpiresAt is { } expiresAt
+                    && expiresAt >= now
+                    && (delivery.EmailOtpUsedAt is not { } usedAt || now - usedAt <= TimeSpan.FromMinutes(BurnGraceMinutes));
+                if (!string.IsNullOrWhiteSpace(query.EmailOtp)
+                    && !string.IsNullOrWhiteSpace(query.Email)
+                    && !string.IsNullOrEmpty(delivery.EmailOtpHash)
+                    && hasActiveChallenge)
+                {
+                    await lockout.RecordFailureAsync(db, delivery.Id, cancellationToken);
+                }
+                response.StatusCode = 403;
+                return Unit.Value;
+            }
         }
 
         // Recipient email gate (issue #324): anonymous downloaders surrender an email first.
@@ -204,6 +225,33 @@ public sealed class DownloadDeliveryHandler(
             var signedIn = await httpContext.User.GetUserOrDefaultAsync(db, cancellationToken);
             if (signedIn is { TrackMyDownloads: true })
                 trackUserId = signedIn.Id;
+        }
+
+        if (delivery.EmailOtpEnabled)
+        {
+            // Do not consume a replacement code issued while the storage URL was generated.
+            // Preserve the first-use timestamp so retries cannot extend the grace period.
+            var now = DateTime.UtcNow;
+            var graceStart = now.AddMinutes(-BurnGraceMinutes);
+            var consumed = await db.Deliveries
+                .Where(d => d.Id == delivery.Id
+                    && d.EmailOtpEnabled
+                    && d.EmailOtpHash == delivery.EmailOtpHash
+                    && d.EmailOtpEmail == delivery.EmailOtpEmail
+                    && d.EmailOtpExpiresAt == delivery.EmailOtpExpiresAt
+                    && d.EmailOtpExpiresAt > now
+                    && (d.EmailOtpUsedAt == null || d.EmailOtpUsedAt >= graceStart))
+                .ExecuteUpdateAsync(s => s.SetProperty(d => d.EmailOtpUsedAt, d => d.EmailOtpUsedAt ?? now), cancellationToken);
+            if (consumed != ExpectedConsumedRows)
+            {
+                response.StatusCode = StatusCodes.Status403Forbidden;
+                return Unit.Value;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(delivery.PasswordHash) || !string.IsNullOrEmpty(delivery.OtpHash) || delivery.EmailOtpEnabled)
+        {
+            await lockout.ResetAsync(db, delivery.Id, cancellationToken);
         }
 
         response.Redirect(presignedUrl.AbsoluteUri, permanent: false);

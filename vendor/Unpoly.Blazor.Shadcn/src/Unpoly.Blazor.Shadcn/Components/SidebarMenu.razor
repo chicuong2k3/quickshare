@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* A real <ul>. "list, 7 items" is how a screen reader tells someone how much navigation there
+   is before they start reading it, and a stack of divs says nothing at all. *@
+
+<ul data-slot="sidebar-menu" class="@Classes"
+    @attributes="AdditionalAttributes">@ChildContent</ul>
+
+@code {
+    const string Base =
+        "flex w-full min-w-0 flex-col gap-1";
+
+    string Classes => Cn(Base, Class);
+}

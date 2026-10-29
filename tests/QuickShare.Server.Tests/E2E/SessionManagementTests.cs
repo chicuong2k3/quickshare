@@ -179,7 +179,6 @@ public sealed class SessionManagementTests : IClassFixture<TestWebAppFactory>
 
         var client = _factory.CreateAuthenticatedClient(providerKey);
         using var request = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountSecurity);
-        request.Headers.Add("HX-Request", "true");
         var html = await (await client.SendAsync(request)).Content.ReadAsStringAsync();
 
         Assert.Contains("security.session.revoke", html, StringComparison.Ordinal);

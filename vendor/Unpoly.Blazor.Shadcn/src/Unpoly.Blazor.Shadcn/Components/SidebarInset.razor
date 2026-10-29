@@ -1,0 +1,20 @@
+@inherits UiComponentBase
+
+@* The page beside the sidebar. A <main>, so "skip to main content" and a screen reader's
+   landmark list both find it — which is the whole reason this is not another div.
+
+   Its margin keys off peer-data- on the sidebar, which is why the two are siblings and why the
+   sidebar carries `peer`. *@
+
+<main data-slot="sidebar-inset" class="@Classes"
+      @attributes="AdditionalAttributes">@ChildContent</main>
+
+@code {
+    const string Base =
+        "relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 " +
+        "md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl " +
+        "md:peer-data-[variant=inset]:shadow-sm " +
+        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2";
+
+    string Classes => Cn(Base, Class);
+}

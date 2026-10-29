@@ -369,7 +369,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<P2PConnectionManager>();
 
 
-// ── Web (Blazor Static SSR + htmx) ──
+// Web: Blazor Static SSR with opt-in Unpoly navigation.
 // In .NET 10 Static Server rendering is the default for AddRazorComponents().
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -379,12 +379,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-builder.Services.AddRazorComponents()
-    .AddHtmx();
+builder.Services.AddRazorComponents();
 builder.Services.AddLocalization();
 builder.Services.AddAntiforgery();
-// Gradual migration: only explicit up-follow/up-submit controls use Unpoly.
-// Global interception would hijack unconverted HTMX links and forms.
+// Only explicit up-follow/up-submit controls use Unpoly.
 builder.Services.AddUnpoly(options => options.HandleAllLinksAndForms = false);
 
 // Shared OAuth post-login hook (Google + GitHub): tag the identity with the
@@ -715,12 +713,11 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 
 app.UseUnpoly();
 app.UseAntiforgery();
-app.UseHtmxAntiforgery();
 
 app.UseMiddleware<P2PSignalingMiddleware>();
 
-// ── HTTP caching for HTMX/SSR pages ──
-app.UseMiddleware<HtmxCacheMiddleware>();
+// ── HTTP caching for SSR pages ──
+app.UseMiddleware<PageCacheMiddleware>();
 
 // ── API endpoints ──
 app.UseFastEndpoints()

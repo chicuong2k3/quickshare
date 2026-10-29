@@ -14,13 +14,74 @@
 }
 
 /* ─── Navbar: the menu bar ─── */
-.layout-root ::deep .db-navbar {
+
+/* Base layout rules (formerly from daub.css .db-navbar) */
+.layout-navbar {
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: 56px;
+    padding: 0 var(--db-space-5);
+    font-family: var(--db-font-ui);
+    /* HyperCard chrome */
     border-bottom: 2px solid var(--db-mountain);
     background: var(--db-sheet-raised);
+    flex-wrap: nowrap;
+    gap: var(--db-space-3);
 }
 
+.layout-navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--db-charcoal);
+    text-decoration: none;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.layout-navbar__nav {
+    display: flex;
+    align-items: center;
+}
+
+.layout-navbar__spacer { flex: 1; }
+
+.layout-navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-2);
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.layout-navbar__toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--db-charcoal);
+    border-radius: 2px;
+    cursor: pointer;
+}
+.layout-navbar__toggle:hover { background: var(--db-cream-dark); }
+
 /* Nav items read as engineering labels; the active one takes the valley cell. */
-.layout-root ::deep .db-nav-menu__item {
+.layout-nav-menu {
+    display: flex;
+    align-items: center;
+    gap: var(--db-space-1);
+}
+
+.layout-nav-menu__item {
     font-family: var(--db-font-ui);
     font-size: 0.75rem;
     font-weight: 400;
@@ -29,16 +90,42 @@
     padding: 6px 10px;
     border-radius: 0;
     border-bottom: 1px solid transparent;
+    color: var(--db-warm-gray);
+    text-decoration: none;
+    transition: all 150ms ease;
 }
 
-.layout-root ::deep .db-nav-menu__item:hover {
+.layout-nav-menu__item:hover {
     border-bottom-color: var(--db-mountain-deep);
+    color: var(--db-ink);
 }
 
-.layout-root ::deep .db-nav-menu__item--active {
+.layout-nav-menu__item--active {
     background: var(--db-valley);
     border-bottom-color: var(--db-valley-ink);
     color: var(--db-color-text);
+}
+
+@media (max-width: 640px) {
+    .layout-navbar__toggle { display: flex; }
+    .layout-navbar__brand ~ .layout-navbar__toggle { margin-left: auto; }
+    .layout-navbar__nav {
+        display: none;
+        position: absolute;
+        top: 56px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--db-sheet-raised);
+        border-bottom: 2px solid var(--db-mountain);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: var(--db-space-2);
+        z-index: 999;
+    }
+    .layout-navbar__nav .layout-nav-menu { flex-direction: column; width: 100%; }
+    .layout-navbar__nav .layout-nav-menu__item { width: 100%; }
+    .layout-navbar--open .layout-navbar__nav { display: flex; }
+    .layout-navbar__spacer { display: none; }
 }
 
 /* ─── Brand ─── */
@@ -144,27 +231,14 @@
 
 .layout-avatar-btn {
     cursor: pointer;
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-semibold);
     line-height: 1;
-    transition: box-shadow var(--db-transition);
-}
-
-.layout-avatar-skeleton {
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: var(--db-color-surface);
-    animation: layout-avatar-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes layout-avatar-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
 }
 
 .layout-avatar-img {
     object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
 }
 
 .layout-user-info {
@@ -194,15 +268,6 @@
 }
 
 /* ─── Nav must never set the document's scroll width ─── */
-.layout-root ::deep .db-navbar {
-    flex-wrap: nowrap;
-    gap: var(--db-space-3);
-}
-
-.layout-root ::deep .db-navbar__brand,
-.layout-root ::deep .db-navbar__actions {
-    min-width: 0;
-}
 
 @media (max-width: 560px) {
     .layout-brand-word {

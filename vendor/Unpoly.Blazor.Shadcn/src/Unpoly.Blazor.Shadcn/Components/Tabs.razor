@@ -1,0 +1,16 @@
+@inherits UiComponentBase
+
+@* A local view switch: no request, no history, no URL. A tab that should be linkable is a link
+   with [up-target] instead and needs none of this — see ui.js for why the distinction matters. *@
+
+<div data-slot="tabs" data-value="@Value" data-orientation="@Orientation" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Which tab is open on first render. Defaults to the first trigger.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>horizontal | vertical. TabsList reads it through a group variant.</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    string Classes => Cn("group/tabs flex gap-2 data-[orientation=horizontal]:flex-col", Class);
+}

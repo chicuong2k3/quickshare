@@ -24,13 +24,13 @@
 <script id="p2p-download-i18n" type="application/json">@RawJson(Strings())</script>
 
 <PageWrapper Variant="PageVariant.Centered">
-    <div class="card db-card">
-        <div class="db-card__body">
+    <div class="card" data-slot="card">
+        <div class="px-(--card-spacing)">
 
             @* CHECKING *@
             <section id="p2pd-checking" class="section">
-                <div class="db-spinner"></div>
-                <p class="db-p" style="margin-top: 1.25rem">@Loc["p2p_download_connecting"]</p>
+                <div class="size-6 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                <p style="margin-top: 1.25rem">@Loc["p2p_download_connecting"]</p>
             </section>
 
 
@@ -43,12 +43,12 @@
                         </svg>
                     </div>
                     <div style="min-width: 0; flex: 1">
-                        <h1 id="p2pd-filename" class="db-h1" style="font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"></h1>
-                        <p class="db-p" id="p2pd-filesize" style="margin-top: 0.375rem"></p>
+                        <h1 id="p2pd-filename" class="text-3xl font-bold tracking-tight" style="font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"></h1>
+                        <p id="p2pd-filesize" style="margin-top: 0.375rem"></p>
                     </div>
                 </div>
                 <div style="margin-top: 2.5rem">
-                    <button id="p2pd-dl-btn" class="db-btn db-btn--primary" style="width: 100%" onclick="p2pDownload.startDownload()" data-ai-action="p2p.receive.download">
+                    <button id="p2pd-dl-btn" class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onclick="p2pDownload.startDownload()" data-ai-action="p2p.receive.download">
                         <span id="p2pd-dl-text">@Loc["p2p_download_download_btn"]</span>
                     </button>
                 </div>
@@ -57,11 +57,11 @@
 
             @* TRANSFERRING *@
             <section id="p2pd-transfer" class="section--compact hidden">
-                <div class="db-spinner"></div>
-                <h1 id="p2pd-transfer-name" class="db-h2" style="margin-top: 1.5rem; font-size: 1.25rem"></h1>
-                <p class="db-p" id="p2pd-transfer-progress" style="margin-top: 0.75rem"></p>
+                <div class="size-6 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                <h1 id="p2pd-transfer-name" class="text-2xl font-bold" style="margin-top: 1.5rem; font-size: 1.25rem"></h1>
+                <p id="p2pd-transfer-progress" style="margin-top: 0.75rem"></p>
                 <div class="progress"><div id="p2pd-progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div></div>
-                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="p2pDownload.cancelDownload()">@Loc["p2p_download_cancel"]</button>
+                <button class="inline-flex items-center rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="p2pDownload.cancelDownload()">@Loc["p2p_download_cancel"]</button>
             </section>
 
             @* COMPLETE *@
@@ -71,16 +71,16 @@
                         <polyline points="20 6 9 17 4 12" />
                     </svg>
                 </div>
-                <h1 class="db-h2" style="font-size: 1.25rem">@Loc["p2p_download_complete"]</h1>
-                <p class="db-p" id="p2pd-complete-name" style="margin-top: 0.5rem"></p>
-                <a href="/" class="db-btn db-btn--primary" style="margin-top: 2rem">@Loc["p2p_download_send_file"]</a>
+                <h1 class="text-2xl font-bold" style="font-size: 1.25rem">@Loc["p2p_download_complete"]</h1>
+                <p id="p2pd-complete-name" style="margin-top: 0.5rem"></p>
+                <a href="/" class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">@Loc["p2p_download_send_file"]</a>
             </section>
 
             @* WAITING *@
             <section id="p2pd-waiting" class="section hidden">
-                <div class="db-spinner"></div>
-                <h1 class="db-h2" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["p2p_download_waiting"]</h1>
-                <p class="db-p" style="margin-top: 0.5rem">@Loc["p2p_download_waiting_note"]</p>
+                <div class="size-6 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                <h1 class="text-2xl font-bold" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["p2p_download_waiting"]</h1>
+                <p style="margin-top: 0.5rem">@Loc["p2p_download_waiting_note"]</p>
             </section>
 
             @* ERROR *@
@@ -90,9 +90,9 @@
                         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                 </div>
-                <h1 class="db-h2" style="font-size: 1.25rem">@Loc["p2p_download_error_title"]</h1>
-                <p class="db-p" id="p2pd-error-msg" style="margin-top: 0.5rem"></p>
-                <button type="button" id="p2pd-retry" class="db-btn db-btn--primary hidden" style="margin-top: 2rem" onclick="window.location.reload()">@Loc["p2p_download_try_again"]</button>
+                <h1 class="text-2xl font-bold" style="font-size: 1.25rem">@Loc["p2p_download_error_title"]</h1>
+                <p id="p2pd-error-msg" style="margin-top: 0.5rem"></p>
+                <button type="button" id="p2pd-retry" class="hidden inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" style="margin-top: 2rem" onclick="window.location.reload()">@Loc["p2p_download_try_again"]</button>
             </section>
 
         </div>

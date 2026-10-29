@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+<div data-slot="sidebar-content" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto " +
+        "group-data-[collapsible=icon]:overflow-hidden";
+
+    string Classes => Cn(Base, Class);
+}

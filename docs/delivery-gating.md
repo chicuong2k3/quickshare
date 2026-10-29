@@ -149,8 +149,8 @@ and seat count it does not display.
 The list, live source choices and plan gate render on initial SSR GET, including with JavaScript
 disabled; Unpoly can target `#recurring-body` from the same response. Pause, skip-next,
 run-now and delete per row, plus a create form seeded from the caller's live `Active` deliveries.
-Those mutations still need native form fallbacks (JavaScript uses Unpoly reload)
-before Htmxor removal. Skip and pause are separate buttons because they answer different questions:
+Those mutations still need native form fallbacks; JavaScript currently uses Unpoly reload.
+Skip and pause are separate buttons because they answer different questions:
 "not this week" is a one-off, "not for now" is indefinite.
 
 ## Not shipped

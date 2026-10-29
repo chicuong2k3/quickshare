@@ -1,0 +1,40 @@
+@inherits UiComponentBase
+
+@* upstream's asChild, split into the two things it is actually used for. A quick-reply chip is a
+   bubble the reader can press, and every Bubble variant already styles
+   `[data-slot=bubble-content]:is(button,a)` for the hover — those rules matched nothing here,
+   because this always rendered a div.
+
+   Href for somewhere to go, Type for something to do. A real <a> and a real <button>, so the
+   thread works before any JavaScript and a middle click still opens a tab. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="bubble-content" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else if (Type is not null)
+{
+    <button type="@Type" data-slot="bubble-content" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+else
+{
+    <div data-slot="bubble-content" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+}
+
+@code {
+    /// <summary>Renders an anchor. For a reply that goes somewhere.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>submit | button. Renders a real button — put it in a form and it posts.</summary>
+    [Parameter] public string? Type { get; set; }
+
+    const string Base =
+        "w-fit max-w-full min-w-0 overflow-hidden rounded-xl border border-transparent px-3 " +
+        "py-2 text-control leading-relaxed wrap-break-word " +
+        "group-data-[align=end]/bubble:self-end [button]:text-start " +
+        "[button,a]:transition-colors [button,a]:outline-none " +
+        "[button,a]:focus-visible:border-ring [button,a]:focus-visible:ring-3 " +
+        "[button,a]:focus-visible:ring-ring/50";
+
+    string Classes => Cn(Base, Class);
+}

@@ -58,7 +58,8 @@ public sealed class CustomDomainMiddleware(RequestDelegate next, IOptions<EmailO
     {
         var value = path.Value ?? string.Empty;
 
-        return Array.Exists(AllowedPrefixes,
+        return string.Equals(value, RoutePaths.ScopedStyles, StringComparison.OrdinalIgnoreCase)
+            || Array.Exists(AllowedPrefixes,
             prefix => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 }

@@ -1,0 +1,31 @@
+@inherits UiComponentBase
+
+@* Not a shadcn component — shadcn has no number stepper at all, and a bare <input type=number>
+   is not one either: its spinners are a different shape in every engine, 14px wide, and invisible
+   until hovered.
+
+   The children are styled from here with descendant variants rather than each carrying its own
+   class list, so the page keeps writing plain <button> and <input> and the two heads cannot drift
+   apart on what a stepper feels like. *@
+
+<div data-slot="stepper" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "border-input inline-flex h-control items-stretch overflow-hidden rounded-md border " +
+        "bg-transparent shadow-xs transition-[color,box-shadow] " +
+        "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] " +
+        // The two buttons.
+        "[&>button]:grid [&>button]:w-9 [&>button]:place-items-center [&>button]:text-base " +
+        "[&>button]:leading-none [&>button]:text-muted-foreground [&>button]:transition-colors " +
+        "[&>button:hover]:bg-accent [&>button:hover]:text-accent-foreground " +
+        "[&>button:disabled]:cursor-not-allowed [&>button:disabled]:opacity-40 " +
+        // The number between them: mono, centred, and no engine-drawn spinner.
+        "[&>input]:w-12 [&>input]:border-x [&>input]:border-input [&>input]:bg-transparent " +
+        "[&>input]:text-center [&>input]:text-control [&>input]:outline-none " +
+        "[&>input]:[appearance:textfield] " +
+        "[&>input::-webkit-outer-spin-button]:appearance-none " +
+        "[&>input::-webkit-inner-spin-button]:appearance-none";
+
+    string Classes => Cn(Base, Class);
+}

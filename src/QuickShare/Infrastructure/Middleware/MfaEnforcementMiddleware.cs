@@ -32,6 +32,7 @@ public sealed class MfaEnforcementMiddleware(RequestDelegate next)
         RoutePaths.MfaChallenge,
         "/api/account/totp",
         RoutePaths.Logout,
+        RoutePaths.ScopedStyles,
         "/login",
         "/signin-",
         "/css",

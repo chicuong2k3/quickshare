@@ -1,0 +1,20 @@
+@inherits UiComponentBase
+
+@* data-error turns the label red when the field below it failed, which is shadcn's behaviour —
+   there it comes from the form context, here it is passed, because static SSR has no context to
+   read from. *@
+
+<label data-slot="form-label" data-error="@(Error ? "true" : null)" for="@For"
+       class="@Classes" @attributes="AdditionalAttributes">@ChildContent</label>
+
+@code {
+    /// <summary>The id of the control it names. A label with no target is not a label.</summary>
+    [Parameter] public string? For { get; set; }
+
+    [Parameter] public bool Error { get; set; }
+
+    const string Base =
+        "data-[error=true]:text-destructive";
+
+    string Classes => Cn(Base, Class);
+}

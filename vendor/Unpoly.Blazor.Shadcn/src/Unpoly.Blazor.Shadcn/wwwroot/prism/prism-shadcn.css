@@ -1,0 +1,121 @@
+/* Prism — shadcn адаптация
+   Keeps CodeBlock's bg-card/border from the component and makes Prism tokens legible in both
+   light and dark via CSS variables. The base prism.css (light) loads first; this file overrides
+   for .dark so a theme switch does not require a stylesheet swap.
+*/
+
+/* The component owns the outer card; let <pre> be transparent and inherit the card's bg. */
+pre[class*="language-"],
+pre[data-slot="code-block-pre"] {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 1rem !important;
+  text-shadow: none !important;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* Shadcn-aware token palette — light */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.token.punctuation { color: hsl(var(--foreground) / 0.7); }
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted { color: #905; }
+.dark .token.property,
+.dark .token.tag,
+.dark .token.boolean,
+.dark .token.number,
+.dark .token.constant,
+.dark .token.symbol,
+.dark .token.deleted { color: #f92672; }
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted { color: #690; }
+.dark .token.selector,
+.dark .token.attr-name,
+.dark .token.string,
+.dark .token.char,
+.dark .token.builtin,
+.dark .token.inserted { color: #a6e22e; }
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string { color: #9a6e3a; }
+.dark .token.operator,
+.dark .token.entity,
+.dark .token.url { color: #f8f8f2; }
+
+.token.atrule,
+.token.attr-value,
+.token.keyword { color: #07a; }
+.dark .token.atrule,
+.dark .token.attr-value,
+.dark .token.keyword { color: #66d9ef; }
+
+.token.function,
+.token.class-name { color: #dd4a68; }
+.dark .token.function,
+.dark .token.class-name { color: #e6db74; }
+
+.token.regex,
+.token.important,
+.token.variable { color: #e90; }
+.dark .token.regex,
+.dark .token.important,
+.dark .token.variable { color: #fd971f; }
+
+/* Line numbers gutter — shadcn muted */
+pre.line-numbers {
+  position: relative;
+  padding-left: 3.8em !important;
+  counter-reset: linenumber;
+}
+pre.line-numbers > code {
+  position: relative;
+  white-space: inherit;
+}
+.line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  left: -3.8em;
+  width: 3em;
+  letter-spacing: -1px;
+  border-right: 1px solid hsl(var(--border));
+  user-select: none;
+}
+.line-numbers-rows > span {
+  display: block;
+  counter-increment: linenumber;
+}
+.line-numbers-rows > span:before {
+  content: counter(linenumber);
+  color: hsl(var(--muted-foreground) / 0.6);
+  display: block;
+  padding-right: 0.8em;
+  text-align: right;
+}
+
+/* Inline code (not in CodeBlock) keeps its own subtle bg */
+:not(pre) > code[class*="language-"] {
+  background: hsl(var(--muted));
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}

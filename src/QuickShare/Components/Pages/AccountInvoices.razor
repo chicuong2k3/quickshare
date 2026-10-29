@@ -19,8 +19,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["invoices_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["invoices_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["invoices_title"]</h1>
+        <p class="text-muted-foreground">@Loc["invoices_subtitle"]</p>
     </section>
 
     <AccountTabs Current="@RoutePaths.AccountBilling" />
@@ -40,65 +40,65 @@
 
     private RenderFragment Chunk => @<section id="invoices-body" data-unpoly-reload>
         @* Billing identity (issues #112 VAT fields, #192 PO + terms). *@
-        <div class="db-card account-card workspace-card">
-            <div class="db-card__body">
-                <h2 class="db-h3">@Loc["billing_profile_title"]</h2>
-                <p class="db-p db-text-muted workspace-hint">@Loc["billing_profile_subtitle"]</p>
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["billing_profile_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["billing_profile_subtitle"]</p>
 
                 <div class="workspace-form">
                     <label class="workspace-label" for="bill-company">@Loc["billing_company"]</label>
-                    <input id="bill-company" class="db-input" type="text"
+                    <Input id="bill-company"  type="text"
                            maxlength="@BillingProfile.CompanyNameMaxLength" value="@profile?.CompanyName" />
 
                     <label class="workspace-label" for="bill-taxcode">@Loc["billing_taxcode"]</label>
-                    <input id="bill-taxcode" class="db-input" type="text"
+                    <Input id="bill-taxcode"  type="text"
                            maxlength="@BillingProfile.TaxCodeMaxLength" value="@profile?.TaxCode" />
 
                     <label class="workspace-label" for="bill-address">@Loc["billing_address"]</label>
-                    <input id="bill-address" class="db-input" type="text"
+                    <Input id="bill-address"  type="text"
                            maxlength="@BillingProfile.AddressMaxLength" value="@profile?.Address" />
 
                     <label class="workspace-label" for="bill-email">@Loc["billing_email"]</label>
-                    <input id="bill-email" class="db-input" type="email" value="@profile?.BillingEmail" />
+                    <Input id="bill-email"  type="email" value="@profile?.BillingEmail" />
 
                     <label class="workspace-label" for="bill-po">@Loc["billing_po"]</label>
-                    <input id="bill-po" class="db-input" type="text"
+                    <Input id="bill-po"  type="text"
                            maxlength="@BillingProfile.PoNumberMaxLength" value="@profile?.PoNumber" />
 
                     <label class="workspace-label" for="bill-terms">@Loc["billing_terms"]</label>
-                    <select id="bill-terms" class="db-input">
-                        <option value="0" selected="@(RequestedTerms == TermsNone)">@Loc["billing_terms_none"]</option>
-                        <option value="30" selected="@(RequestedTerms == Terms30)">@Loc["billing_terms_30"]</option>
-                        <option value="60" selected="@(RequestedTerms > Terms30)">@Loc["billing_terms_60"]</option>
-                    </select>
+                    <NativeSelect id="bill-terms">
+                        <NativeSelectOption value="0" selected="@(RequestedTerms == TermsNone)">@Loc["billing_terms_none"]</NativeSelectOption>
+                        <NativeSelectOption value="30" selected="@(RequestedTerms == Terms30)">@Loc["billing_terms_30"]</NativeSelectOption>
+                        <NativeSelectOption value="60" selected="@(RequestedTerms > Terms30)">@Loc["billing_terms_60"]</NativeSelectOption>
+                    </NativeSelect>
 
                     @if (RequestedTerms > TermsNone)
                     {
-                        <p class="db-p db-text-muted workspace-hint">
+                        <p class="text-muted-foreground workspace-hint">
                             @(profile?.NetTermsApprovedAt is null ? Loc["billing_terms_pending"] : Loc["billing_terms_approved"])
                         </p>
                     }
 
-                    <button type="button" class="db-btn db-btn--primary"
+                    <button type="button" data-slot="button" data-variant="default"
                             data-saved-label="@Loc["billing_saved"]"
                             onclick="window.quickShareBilling.saveProfile(this)"
                             data-ai-action="billing.profile.save">@Loc["billing_save"]</button>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
-        <div class="db-card account-card workspace-card">
-            <div class="db-card__body">
-                <h2 class="db-h3">@Loc["invoices_title"]</h2>
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["invoices_title"]</h2>
 
                 @if (invoices.Count == 0)
                 {
-                    <p class="db-p db-text-muted workspace-hint">@Loc["invoices_empty"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["invoices_empty"]</p>
                 }
                 else
                 {
                     <p class="workspace-filters">
-                        <a class="db-btn db-btn--ghost" href="/api/billing/invoices/export"
+                        <a data-slot="button" data-variant="ghost" href="/api/billing/invoices/export"
                            data-ai-action="invoices.export">@Loc["invoices_export"]</a>
                     </p>
 
@@ -128,16 +128,16 @@
                         </table>
                     </div>
                 }
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
         @* Printable document for the newest issued invoice — the browser makes the PDF. *@
         @if (Printable is { } printable)
         {
-            <div class="db-card account-card workspace-card invoice-print">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@printable.Number</h2>
-                    <p class="db-p db-text-muted workspace-hint">
+            <Card class="account-card workspace-card invoice-print">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@printable.Number</h2>
+                    <p class="text-muted-foreground workspace-hint">
                         @printable.CompanyName
                         @if (!string.IsNullOrEmpty(printable.TaxCode))
                         {
@@ -176,12 +176,12 @@
                         </table>
                     </div>
 
-                    <p class="db-p db-text-muted workspace-hint">@Loc["invoices_not_certified"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["invoices_not_certified"]</p>
 
-                    <button type="button" class="db-btn db-btn--ghost db-btn--sm invoice-print__hide"
+                    <button type="button" class="invoice-print__hide" data-slot="button" data-variant="ghost" data-size="sm"
                             onclick="window.print()" data-ai-action="invoice.print">@Loc["invoices_print"]</button>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     </section>;
 

@@ -61,7 +61,7 @@ public sealed class DeliveryPasswordTests : IClassFixture<TestWebAppFactory>
         var html = await client.GetStringAsync($"/d/{shareCode}");
 
         // The password gate is the initial (visible) phase; the file card stays hidden.
-        Assert.Contains("id=\"download-phase-password\" class=\"db-text-center ", html);
+        Assert.Contains("id=\"download-phase-password\" class=\"text-center ", html);
         Assert.Contains("id=\"download-phase-file\" class=\"hidden\"", html);
     }
 

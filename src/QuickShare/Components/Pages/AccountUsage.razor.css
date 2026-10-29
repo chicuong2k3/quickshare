@@ -1,0 +1,11 @@
+.account-usage-bar__fill--ok {
+    background: var(--primary);
+}
+
+.account-usage-bar__fill--warn {
+    background: var(--chart-4);
+}
+
+.account-usage-bar__fill--over {
+    background: var(--destructive);
+}

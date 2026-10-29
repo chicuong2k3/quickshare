@@ -123,12 +123,12 @@
                 </div>
 
                 @* Text snippet sharing (issue #178) — paste text, share without a file *@
-                <button type="button" class="db-btn db-btn--ghost db-btn--sm upload-text-toggle"
+                <button type="button" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
                         onclick="uploadPage.toggleTextMode()" data-ai-action="upload.shareText.toggle">@Loc["upload_share_text_toggle"]</button>
                 <div id="upload-text-mode" class="hidden upload-text-mode">
                     <textarea id="upload-text-input" class="sender-email-input upload-text-input" rows="6"
                               placeholder="@Loc["upload_share_text_placeholder"]" maxlength="100000"></textarea>
-                    <button type="button" class="db-btn db-btn--primary"
+                    <button type="button" data-slot="button" data-variant="default"
                             onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
                 </div>
 
@@ -138,16 +138,16 @@
                    page they did not act on. *@
                 @if (isAuthenticated)
                 {
-                    <button type="button" class="db-btn db-btn--ghost db-btn--sm upload-text-toggle"
+                    <button type="button" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
                             onclick="uploadEmail.show(this)"
                             data-error="@Loc["upload_email_unavailable"]"
                             data-ai-action="upload.byEmail.show">@Loc["upload_email_toggle"]</button>
                     <div id="upload-email-mode" class="hidden upload-text-mode">
-                        <p class="db-p db-text-muted">@Loc["upload_email_hint"]</p>
+                        <p class="text-muted-foreground">@Loc["upload_email_hint"]</p>
                         <div class="upload-url-row">
                             <input id="upload-email-address" type="text" readonly class="share-input"
                                    aria-label="@Loc["upload_email_toggle"]" />
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
                                     onclick="uploadEmail.copy()" data-ai-action="upload.byEmail.copy">@Loc["upload_copy_link"]</button>
                         </div>
                     </div>
@@ -156,19 +156,19 @@
                 @* Upload from URL (issue #57) — Pro/Studio server-side remote fetch *@
                 @if (canSchedule)
                 {
-                    <button type="button" class="db-btn db-btn--ghost db-btn--sm upload-text-toggle"
+                    <button type="button" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
                             onclick="uploadUrl.toggle()" data-ai-action="upload.fromUrl.toggle">@Loc["upload_url_toggle"]</button>
                     <div id="upload-url-mode" class="hidden upload-text-mode">
                         <div class="upload-url-row">
                             <input type="url" id="upload-url-input" class="sender-email-input" placeholder="@Loc["upload_url_placeholder"]" autocomplete="off" aria-label="@Loc["upload_url_toggle"]" />
-                            <button type="button" class="db-btn db-btn--primary" id="upload-url-btn"
+                            <button type="button" data-slot="button" data-variant="default" id="upload-url-btn"
                                     onclick="uploadUrl.fetch()" data-ai-action="upload.fromUrl.submit">@Loc["upload_url_fetch"]</button>
                         </div>
                         <div id="upload-url-status" class="upload-url-status hidden" role="status"
                              data-fetching="@Loc["upload_url_fetching"]" data-failed="@Loc["upload_url_failed"]"></div>
                         <div id="upload-url-success" class="upload-url-success hidden">
                             <input id="upload-url-link" type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="uploadUrl.copy()">@Loc["upload_copy_link"]</button>
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="uploadUrl.copy()">@Loc["upload_copy_link"]</button>
                         </div>
                     </div>
                 }
@@ -180,7 +180,7 @@
                     <label for="upload-password" class="protect-sub">@Loc["upload_password_label"]</label>
                     <div style="display: flex; gap: 0.5rem; align-items: center">
                         <input type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" oninput="uploadPage.passwordInput(event)" style="flex: 1" />
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm" onclick="uploadPage.generatePassword()" data-ai-action="upload.password.generate">@Loc["upload_password_generate"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="uploadPage.generatePassword()" data-ai-action="upload.password.generate">@Loc["upload_password_generate"]</button>
                     </div>
                     @* Live strength meter (issue #287) — client-side only, hidden until typing starts *@
                     <div id="upload-password-meter" class="pw-meter hidden" aria-live="polite"
@@ -194,13 +194,13 @@
                     <span class="otp-hint">@Loc["upload_password_hint"]</span>
 
                     <span class="protect-sub">@Loc["upload_otp_label"]</span>
-                    <div id="upload-otp" class="db-otp" style="gap: 0.5rem; margin-top: 0.5rem">
-                        <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                    <div id="upload-otp" class="flex" style="gap: 0.5rem; margin-top: 0.5rem">
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
                     </div>
                     <span class="otp-hint">@Loc["upload_otp_hint"]</span>
                 </div>
@@ -426,7 +426,7 @@
 
             @* UPLOADING *@
             <section id="upload-uploading" class="section hidden">
-                <div class="db-spinner db-spinner--lg "></div>
+                <div class="size-8 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
                 <h1 class="status-h1" id="upload-filename"></h1>
                 <p class="status-p" id="upload-progress-label"></p>
                 <div id="upload-encrypt-badge" class="badge-encrypt">
@@ -440,7 +440,7 @@
                         <div id="upload-progress-bar" class="progress-fill" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
-                <button id="upload-cancel-btn" class="db-btn db-btn--ghost" style="margin-top: 2.5rem" onclick="uploadPage.cancelUpload()">@Loc["upload_cancel"]</button>
+                <button id="upload-cancel-btn" data-slot="button" data-variant="ghost" style="margin-top: 2.5rem" onclick="uploadPage.cancelUpload()">@Loc["upload_cancel"]</button>
             </section>
 
             @* SUCCESS *@
@@ -462,8 +462,8 @@
                     </div>
                     <div class="share-row">
                         <input id="share-link" type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
-                        <button type="button" id="upload-share-btn" aria-label="@Loc["upload_share_aria"]" class="db-btn" onclick="uploadPage.shareLink()" data-ai-action="upload.share.sheet">@Loc["upload_share_btn"]</button>
-                        <button type="button" aria-label="@Loc["upload_copy_link_aria"]" class="db-btn db-btn--primary" id="upload-copy-btn" onclick="uploadPage.copyLink()">
+                        <button type="button" id="upload-share-btn" aria-label="@Loc["upload_share_aria"]" data-slot="button" data-variant="default" onclick="uploadPage.shareLink()" data-ai-action="upload.share.sheet">@Loc["upload_share_btn"]</button>
+                        <button type="button" aria-label="@Loc["upload_copy_link_aria"]" data-slot="button" data-variant="default" id="upload-copy-btn" onclick="uploadPage.copyLink()">
                             <span id="upload-copy-text">@Loc["upload_copy_link"]</span>
                             <span id="upload-copied-text" class="hidden">@Loc["upload_copied"]</span>
                         </button>
@@ -481,7 +481,7 @@
                 </div>
                 <FeedbackWidget Page="send" />
 
-                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="uploadPage.reset()">@Loc["upload_send_another"]</button>
+                <button data-slot="button" data-variant="ghost" style="margin-top: 2rem" onclick="uploadPage.reset()">@Loc["upload_send_another"]</button>
             </section>
 
             @* ERROR *@
@@ -494,8 +494,8 @@
                 <h1 class="status-h1">@Loc["upload_error_title"]</h1>
                 <p class="status-p" id="upload-error-msg">@Loc["upload_error_unknown"]</p>
                 <div style="margin-top: 2.5rem; display: flex; gap: 0.75rem; justify-content: center">
-                    <button id="upload-resume-btn" class="db-btn db-btn--primary hidden" onclick="uploadPage.resumeUpload()">@Loc["upload_resume"]</button>
-                    <button class="db-btn" onclick="uploadPage.reset()">@Loc["upload_try_again"]</button>
+                    <button id="upload-resume-btn" class="hidden" data-slot="button" data-variant="default" onclick="uploadPage.resumeUpload()">@Loc["upload_resume"]</button>
+                    <button data-slot="button" data-variant="default" onclick="uploadPage.reset()">@Loc["upload_try_again"]</button>
                 </div>
             </section>
 

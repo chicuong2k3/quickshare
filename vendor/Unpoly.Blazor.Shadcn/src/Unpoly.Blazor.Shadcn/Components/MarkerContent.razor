@@ -1,0 +1,13 @@
+@inherits UiComponentBase
+
+<span data-slot="marker-content" class="@Classes"
+      @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    const string Base =
+        "min-w-0 wrap-break-word group-data-[variant=separator]/marker:flex-none " +
+        "group-data-[variant=separator]/marker:text-center *:[a]:underline " +
+        "*:[a]:underline-offset-3 *:[a]:hover:text-foreground";
+
+    string Classes => Cn(Base, Class);
+}

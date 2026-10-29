@@ -1,0 +1,23 @@
+@inherits UiComponentBase
+
+<button type="button" data-slot="menubar-sub-trigger" role="menuitem"
+        data-target="@Target" popovertarget="@Target" aria-haspopup="menu" aria-expanded="false"
+        data-inset="@(Inset ? "true" : null)" class="@Classes"
+        @attributes="AdditionalAttributes">
+    @ChildContent
+    <Icon Name="chevron-right" Class="ms-auto rtl:rotate-180" />
+</button>
+
+@code {
+    /// <summary>The id of the <see cref="MenubarSubContent"/> this opens.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    [Parameter] public bool Inset { get; set; }
+
+    const string Base =
+        "flex cursor-default items-center rounded-sm px-2 py-1.5 text-control outline-none " +
+        "select-none focus:bg-accent focus:text-accent-foreground data-[inset]:ps-8 " +
+        "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground";
+
+    string Classes => Cn(Base, Class);
+}

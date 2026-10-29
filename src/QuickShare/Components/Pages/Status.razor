@@ -11,24 +11,24 @@
 
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="db-h1">@(IsVi ? "Trạng thái dịch vụ" : "Service status")</h1>
-        <p class="db-p db-text-muted">@(IsVi ? "Tất cả hệ thống đang hoạt động bình thường." : "All systems operational.")</p>
+        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Trạng thái dịch vụ" : "Service status")</h1>
+        <p class="text-muted-foreground">@(IsVi ? "Tất cả hệ thống đang hoạt động bình thường." : "All systems operational.")</p>
 
-        <h2 class="db-h2">@(IsVi ? "Thành phần" : "Components")</h2>
-        <table class="db-table">
-            <thead>
-                <tr><th scope="col">@(IsVi ? "Thành phần" : "Component")</th><th scope="col">@(IsVi ? "Trạng thái" : "Status")</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>@(IsVi ? "API / tải tệp lên" : "API / upload")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
-                <tr><td>@(IsVi ? "Lưu trữ (R2)" : "Storage (R2)")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
-                <tr><td>@(IsVi ? "Tín hiệu P2P (WebRTC)" : "P2P signaling (WebRTC)")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
-                <tr><td>@(IsVi ? "Thanh toán (PayOS)" : "Payments (PayOS)")</td><td><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</td></tr>
-            </tbody>
-        </table>
+        <h2 class="text-2xl font-bold">@(IsVi ? "Thành phần" : "Components")</h2>
+        <Table>
+            <TableHeader>
+                <TableRow><TableHead scope="col">@(IsVi ? "Thành phần" : "Component")</TableHead><TableHead scope="col">@(IsVi ? "Trạng thái" : "Status")</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
+                <TableRow><TableCell>@(IsVi ? "API / tải tệp lên" : "API / upload")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+                <TableRow><TableCell>@(IsVi ? "Lưu trữ (R2)" : "Storage (R2)")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+                <TableRow><TableCell>@(IsVi ? "Tín hiệu P2P (WebRTC)" : "P2P signaling (WebRTC)")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+                <TableRow><TableCell>@(IsVi ? "Thanh toán (PayOS)" : "Payments (PayOS)")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+            </TableBody>
+        </Table>
 
-        <h2 class="db-h2">@(IsVi ? "Lịch sử sự cố" : "Incident history")</h2>
-        <p class="db-p">@(IsVi ? "Không có sự cố nào được ghi nhận gần đây." : "No recent incidents recorded.")</p>
+        <h2 class="text-2xl font-bold">@(IsVi ? "Lịch sử sự cố" : "Incident history")</h2>
+        <p>@(IsVi ? "Không có sự cố nào được ghi nhận gần đây." : "No recent incidents recorded.")</p>
     </article>
 </PageWrapper>
 

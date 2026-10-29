@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* The current page is not a link — aria-current says which one it is, aria-disabled says it
+   goes nowhere. Rendering it as an <a href> that returns you to where you already are is the
+   mistake this component exists to prevent. *@
+
+<span data-slot="breadcrumb-page" role="link" aria-disabled="true" aria-current="page"
+      class="@Classes" @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    string Classes => Cn("font-normal text-foreground", Class);
+}

@@ -202,6 +202,7 @@
   <data name="login_btn_github" xml:space="preserve"><value>Continue with GitHub</value></data>
   <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Display name</value></data>
+  <data name="account_profile_avatar_label" xml:space="preserve"><value>Profile image</value></data>
   <data name="account_profile_save_btn" xml:space="preserve"><value>Save changes</value></data>
   <data name="account_profile_error_name_required" xml:space="preserve"><value>Name is required</value></data>
   <data name="account_profile_error_image_size" xml:space="preserve"><value>Image must be under 5 MB</value></data>
@@ -221,6 +222,7 @@
   <data name="onboarding_step_expiry" xml:space="preserve"><value>Set an expiry</value></data>
   <data name="onboarding_step_password" xml:space="preserve"><value>Password-protect a file</value></data>
   <data name="onboarding_dismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="onboarding_dismissed" xml:space="preserve"><value>The getting started checklist is hidden on this browser.</value></data>
   <data name="account_usage_rate_limit" xml:space="preserve"><value>Rate limit: {0} requests/min</value></data>
   <data name="account_notifications_title" xml:space="preserve"><value>Notifications</value></data>
   <data name="account_notifications_download_label" xml:space="preserve"><value>Email me when someone downloads my files</value></data>
@@ -499,6 +501,8 @@
   <data name="upgrade_payos_support" xml:space="preserve"><value>PayOS supports bank transfer, domestic cards, Visa/Mastercard.</value></data>
   <data name="upgrade_qr_instruction" xml:space="preserve"><value>Scan the QR code with your banking app, or pay directly below.</value></data>
   <data name="upgrade_payos_iframe_title" xml:space="preserve"><value>PayOS payment</value></data>
+  <data name="upgrade_payos_open" xml:space="preserve"><value>Open PayOS checkout</value></data>
+  <data name="upgrade_refresh_status" xml:space="preserve"><value>Refresh payment status</value></data>
   <data name="upgrade_auto_activate" xml:space="preserve"><value>Your plan will be activated automatically after successful payment.</value></data>
   <data name="upgrade_payment_error" xml:space="preserve"><value>Could not create payment link: {0}</value></data>
   <data name="upgrade_retry" xml:space="preserve"><value>Try again</value></data>
@@ -532,6 +536,7 @@
   <data name="deliveries_lead" xml:space="preserve"><value>How many downloads each link has left before it stops working.</value></data>
   <data name="deliveries_export" xml:space="preserve"><value>Export CSV</value></data>
   <data name="deliveries_loading" xml:space="preserve"><value>Loading deliveries...</value></data>
+  <data name="deliveries_next_page" xml:space="preserve"><value>Next page</value></data>
   <data name="deliveries_empty" xml:space="preserve"><value>Nothing here yet. Links you send show up on this page.</value></data>
   <data name="deliveries_empty_free" xml:space="preserve"><value>Free links expire after 2 hours.</value></data>
   <data name="deliveries_empty_cta" xml:space="preserve"><value>Send a file</value></data>
@@ -765,6 +770,7 @@
   <data name="account_retention_no_extend_label" xml:space="preserve"><value>Block extensions past the window</value></data>
   <data name="account_retention_no_extend_desc" xml:space="preserve"><value>Extend requests are refused once a share already sits at the ceiling, instead of quietly buying no time.</value></data>
   <data name="account_retention_preview_none" xml:space="preserve"><value>Pick a window to see what it would shorten.</value></data>
+  <data name="account_retention_preview_btn" xml:space="preserve"><value>Preview changes</value></data>
   <data name="account_retention_preview_clear" xml:space="preserve"><value>Nothing would change — every live share already fits this window.</value></data>
   <data name="account_retention_preview_count" xml:space="preserve"><value>{0} shares would expire sooner.</value></data>
   <data name="account_retention_preview_range" xml:space="preserve"><value>Affected expiry dates run from {0} to {1}.</value></data>
@@ -1318,6 +1324,11 @@
   <data name="ws_folders_title" xml:space="preserve"><value>Shared folders</value></data>
   <data name="ws_folders_subtitle" xml:space="preserve"><value>Where the team files its work. Every seat sees the same folders.</value></data>
   <data name="ws_folders_empty" xml:space="preserve"><value>No folders yet.</value></data>
+  <data name="ws_folders_create_error" xml:space="preserve"><value>Could not create folder. Check its name and parent, then try again.</value></data>
+  <data name="ws_folders_create_duplicate" xml:space="preserve"><value>A folder with this name already exists here.</value></data>
+  <data name="ws_folders_create_limit" xml:space="preserve"><value>This workspace has reached its folder limit.</value></data>
+  <data name="ws_folders_create_forbidden" xml:space="preserve"><value>You no longer have permission to create folders in this workspace.</value></data>
+  <data name="ws_folders_parent_unavailable" xml:space="preserve"><value>Previous parent is unavailable. Choose a folder or the root.</value></data>
   <data name="ws_folders_new" xml:space="preserve"><value>New folder</value></data>
   <data name="ws_folders_name" xml:space="preserve"><value>Folder name</value></data>
   <data name="ws_folders_parent" xml:space="preserve"><value>Inside</value></data>
@@ -1325,6 +1336,8 @@
   <data name="ws_folders_create" xml:space="preserve"><value>Create folder</value></data>
   <data name="ws_folders_delete" xml:space="preserve"><value>Delete</value></data>
   <data name="ws_folders_delete_confirm" xml:space="preserve"><value>Delete this folder? Only empty folders can be deleted — files are never removed with it.</value></data>
+  <data name="ws_folders_delete_not_empty" xml:space="preserve"><value>Move or remove its contents and child folders before deleting this folder.</value></data>
+  <data name="ws_folders_action_error" xml:space="preserve"><value>Could not change this folder. Refresh the page and try again.</value></data>
   <data name="ws_folders_rename" xml:space="preserve"><value>Rename</value></data>
   <data name="ws_folders_rename_prompt" xml:space="preserve"><value>New folder name</value></data>
   <data name="ws_folders_contents" xml:space="preserve"><value>{0} files · {1}</value></data>
@@ -1844,6 +1857,7 @@
   <data name="mfa_verify" xml:space="preserve">
     <value>Verify</value>
   </data>
+  <data name="mfa_rate_limited" xml:space="preserve"><value>Too many attempts. Wait {0} seconds before trying again.</value></data>
   <data name="mfa_code_failed" xml:space="preserve">
     <value>That code was not accepted.</value>
   </data>

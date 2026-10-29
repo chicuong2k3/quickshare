@@ -5,9 +5,9 @@ namespace QuickShare.Infrastructure.Middleware;
 /// <summary>
 /// Security headers for every response (issue #82). Cheap trust signal that
 /// appears in scanner reports (Mozilla Observatory, securityheaders.com).
-/// CSP allows 'unsafe-inline' scripts because this app is Blazor SSR + htmx
+/// CSP allows 'unsafe-inline' scripts because this Blazor SSR app renders
 /// with inline per-page config blocks (ZAPDROP_CONFIG, ad init, theme init)
-/// and inline scripts inside htmx partials — nonce-hashing all of them is a
+/// and inline scripts inside page fragments — nonce-hashing all of them is a
 /// larger refactor; the policy still blocks scripts from foreign origins,
 /// frames, object/embed, and base-uri tampering.
 /// </summary>
@@ -77,7 +77,7 @@ public sealed class SecurityHeaderOptions
 
     /// <summary>
     /// Full CSP string. 'unsafe-inline' is required for script because the
-    /// Blazor SSR shell + htmx partials ship inline config blocks; everything
+    /// Blazor SSR shell + server-rendered partials ship inline config blocks; everything
     /// else is locked down (self-only default, frame-ancestors none, no object/embed).
     /// connect-src allows https: because R2 presigned URLs live on a different origin.
     /// </summary>

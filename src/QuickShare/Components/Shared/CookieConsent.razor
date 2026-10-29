@@ -1,6 +1,6 @@
 @* CookieConsent — fixed bottom banner for AdMob cookie consent.
    Shows for all authenticated users in all regions. Hidden once consent cookie is set.
-   Uses HTMX POST to set consent server-side, hx-swap=delete to remove banner. *@
+   Native forms save consent and return to the current page. *@
 @using QuickShare.Infrastructure
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
@@ -25,20 +25,14 @@
             </p>
         </div>
         <div class="cookie-consent__actions">
-            <button class="db-btn db-btn--ghost db-btn--sm cookie-consent__btn"
-                    hx-post="@(RoutePaths.CookieConsent)?consent=@AdConstants.ConsentCookieValueDenied"
-                    hx-target="#cookie-consent"
-                    hx-swap="delete"
-                    type="button">
-                @Loc["cookie_consent_reject"]
-            </button>
-            <button class="db-btn db-btn--primary db-btn--sm cookie-consent__btn"
-                    hx-post="@(RoutePaths.CookieConsent)?consent=@AdConstants.ConsentCookieValueGranted"
-                    hx-target="#cookie-consent"
-                    hx-swap="delete"
-                    type="button">
-                @Loc["cookie_consent_accept"]
-            </button>
+            <form method="post" action="@(RoutePaths.CookieConsent)?consent=@AdConstants.ConsentCookieValueDenied">
+                <AntiforgeryToken />
+                <Button Variant="outline" Size="sm" Type="submit">@Loc["cookie_consent_reject"]</Button>
+            </form>
+            <form method="post" action="@(RoutePaths.CookieConsent)?consent=@AdConstants.ConsentCookieValueGranted">
+                <AntiforgeryToken />
+                <Button Size="sm" Type="submit">@Loc["cookie_consent_accept"]</Button>
+            </form>
         </div>
     </div>
 </div>

@@ -13,11 +13,14 @@ public static class RoutePaths
     public const string AccountDeliveryLabels = "/account/deliveries/labels";
     public const string AccountUsage = "/account/usage";
     public const string AccountDevices = "/account/devices";
+    public const string AccountDeviceRemove = "/account/devices/remove";
+    public const string ScopedStyles = "/QuickShare.styles.css";
     public const string AccountSecurityActivity = "/account/security/activity";
     public const string AccountNotifications = "/account/notifications";
     public const string AccountNotificationCenter = "/account/notifications/inbox";
     public const string AccountNotificationReadAll = "/account/notifications/inbox/read-all";
     public const string AccountOnboarding = "/account/onboarding";
+    public const string AccountOnboardingDismiss = "/account/onboarding/dismiss";
     public const string AccountDownloads = "/account/downloads";
     public const string AccountFileRequests = "/account/requests";
     public const string FileRequestPage = "/r/";

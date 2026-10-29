@@ -1,6 +1,7 @@
 ---
 name: QuickShareCloud
 description: A HyperCard stack, colorized — every delivery is a drawn white card on a putty dither desktop, with 2px ink borders, hard offset shadows, and six Apple colors rationed by role.
+
 colors:
   sheet: "#EDE9DC"                 # putty desktop ground (light)
   sheet-raised: "#FFFFFF"          # the card
@@ -187,6 +188,10 @@ components:
 
 # Design System: QuickShareCloud
 
+> Migration note: this specification describes the legacy DAUB interface. New and migrated
+> components use vendored Unpoly.Blazor.Shadcn components and tokens; keep one design system per
+> component while migration proceeds.
+
 ## Overview
 
 **Creative North Star: "The HyperCard Stack, Colorized"**
@@ -337,7 +342,7 @@ Iconography is **pixel drawing**: inline SVG built from a rect grid on a small v
 - **Primitive:** `.miura-cell` in `app.css` (legacy name, current world): surface, 2px ink border, hard drop.
 
 ### The Striped Title Bar (signature)
-`.qs-titlebar` — global, because it also ships inside HTMX partials. Anatomy: a 13px drawn box, the mono uppercase label on its own paper patch, a second box; behind them, horizontal 1px ink stripes on a 4px rhythm (`repeating-linear-gradient` clipped to the content box), and a 2px ink rule below. It is the card's chrome — the thing that makes a card read as a window in the stack. It bleeds to the card's edges (zero the container's margin, as `.home-why__bar` does).
+`.qs-titlebar` — shared global title bar. Anatomy: a 13px drawn box, the mono uppercase label on its own paper patch, a second box; behind them, horizontal 1px ink stripes on a 4px rhythm (`repeating-linear-gradient` clipped to the content box), and a 2px ink rule below. It is the card's chrome — the thing that makes a card read as a window in the stack. It bleeds to the card's edges (zero the container's margin, as `.home-why__bar` does).
 
 ### Inputs / Fields
 - **Style:** square (0 radius, forced), 2px ink border, card-white fill, 8px/12px padding. Any input holding a code, URL, or hash switches to Courier Prime with tracking.
@@ -353,7 +358,7 @@ Iconography is **pixel drawing**: inline SVG built from a rect grid on a small v
 Mono 700 at 0.6875rem, uppercase, square, 3px/10px padding. The home features' colored **card tabs** (`.home-feature-tab`) are the signature form: 2px ink border, a state wash fill, ink text — the stack's colored index tabs.
 
 ### Navigation
-The navbar is the menu bar: card-white, 2px ink rule beneath. Items are Archivo 400 at 0.75rem, uppercase, tracked 0.14em, square, with a transparent 1px bottom hairline; hover inks that hairline; the active item takes the open cell — valley wash plus a valley-ink bottom border. Account section tabs (`.account-tabs`, global for HTMX partials) speak the same language with a `-1px` bottom margin merging their border with the strip's rule. The brand is a stacked lockup with a mono route-path line beneath it — wayfinding, not ornament.
+The navbar is the menu bar: card-white, 2px ink rule beneath. Items are Archivo 400 at 0.75rem, uppercase, tracked 0.14em, square, with a transparent 1px bottom hairline; hover inks that hairline; the active item takes the open cell — valley wash plus a valley-ink bottom border. Account section tabs (`.account-tabs`, globally shared) speak the same language with a `-1px` bottom margin merging their border with the strip's rule. The brand is a stacked lockup with a mono route-path line beneath it — wayfinding, not ornament.
 
 ### Notification center and file-request pagination (Unpoly migration)
 The notification list keeps its valley-blue active filter tabs. "Load more notifications" and "Load more requests" links use the existing small ghost-button style; each is a real URL-backed link when JavaScript is off and becomes a reveal-triggered append with Unpoly. Requests update the next-page control without duplicating it. Direct entry renders the lists instead of permanent skeletons; no new color, type size or token is introduced.
@@ -380,7 +385,7 @@ HyperCard's native transition, and the page's **only** authored motion: when a d
 - **Do** put exactly one default button (`.db-btn--primary`) per card, with ≥6px clearance for its ring, and let press invert it to the active blue.
 - **Do** put real measurements in Courier Prime with `tabular-nums`; give state a wash (`--db-wash-*`), activity the valley, progress the rainbow.
 - **Do** draw icons as inline SVG rect grids with `shape-rendering: crispEdges`, filled with `var(--db-*)` so they re-skin per theme.
-- **Do** style cross-component HTMX partial markup from `app.css` with a namespaced global prefix (`account-`, `tools-landing__`, `ad-`, `p2p-`); scoped `.razor.css` does not reach another component's partial HTML.
+- **Do** check scoped styles when Unpoly swaps markup across component boundaries; use namespaced global styles when component scope does not reach the swapped markup.
 - **Do** draw focus as `2px solid var(--db-valley-ink)` with 2px offset (6px on the primary, outside its ring), and honour `prefers-reduced-motion` by dropping all animation.
 - **Do** keep the download page usable without JS: the server renders a working phase; JS only advances from it (`DownloadNoScriptTests` enforces this).
 

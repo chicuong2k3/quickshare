@@ -42,10 +42,9 @@ public sealed class UxExtrasTests : IClassFixture<TestWebAppFactory>
         return delivery;
     }
 
-    private static async Task<string> GetHtmxAsync(HttpClient client, string url)
+    private static async Task<string> GetPageAsync(HttpClient client, string url)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add(HtmxHeaders.Request, HtmxHeaders.RequestValue);
         var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadAsStringAsync();
@@ -69,11 +68,7 @@ public sealed class UxExtrasTests : IClassFixture<TestWebAppFactory>
         var delivery = await SeedDeliveryAsync(user.Id);
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        // Shell renders instantly without rows.
-        var shell = await (await client.GetAsync(RoutePaths.AccountDeliveryLabels)).Content.ReadAsStringAsync();
-        Assert.DoesNotContain("account-label__qr", shell);
-
-        var loaded = await GetHtmxAsync(client, RoutePaths.AccountDeliveryLabels);
+        var loaded = await GetPageAsync(client, RoutePaths.AccountDeliveryLabels);
         Assert.Contains("account-label__qr", loaded);
         Assert.Contains($"/d/{delivery.ShareCode}", loaded);
     }
@@ -100,7 +95,7 @@ public sealed class UxExtrasTests : IClassFixture<TestWebAppFactory>
         await SeedDeliveryAsync(user.Id, expiresAt: DateTime.UtcNow.AddHours(3));
         var client = _factory.CreateAuthenticatedClient(providerKey);
 
-        var html = await GetHtmxAsync(client, RoutePaths.AccountDeliveries);
+        var html = await GetPageAsync(client, RoutePaths.AccountDeliveries);
         Assert.Contains("account-deliveries-health", html);
         Assert.Contains("account-deliveries-health__warn", html);
     }

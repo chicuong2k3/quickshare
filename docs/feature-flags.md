@@ -26,7 +26,7 @@ The system has three layers:
 | Migration | `Data/Migrations/20260815050241_AddFeatureFlagOverrides.cs` | Creates `feature_flag_overrides` + unique index on `Key` |
 | List API | `Features/Admin/Flags/ListFlagsEndpoint.cs` | `GET /api/admin/flags` — all flags with effective state |
 | Update API | `Features/Admin/Flags/UpdateFlagEndpoint.cs` | `PUT /api/admin/flags/{Key}` — set override; 400 on unknown key / invalid percent |
-| Admin page | `Components/Pages/Admin/Flags.razor` | `/admin/flags` — HTMX shell + table of toggles/rollout sliders |
+| Admin page | `Components/Pages/Admin/Flags.razor` | `/admin/flags` — SSR table and native forms for toggles and rollout percentages |
 | Tests | `tests/QuickShare.Server.Tests/Infrastructure/FeatureFlagServiceTests.cs` | Unit: resolution precedence, kill switch, rollout buckets, override persistence (EF InMemory) |
 | Tests | `tests/QuickShare.Server.Tests/E2E/AdminFlagsApiTests.cs` | E2E: 401/403 gating, list, override persist + restore, 400s, page smoke |
 
@@ -77,7 +77,7 @@ IsEnabledAsync(key, userId)
 
 ### Page
 
-`/admin/flags` follows the HTMX lazy-load rule: shell renders instantly with no DB access, then an `hx-get` partial loads the flag table. Navigation and the update form use `hx-get`/`hx-put` with `hx-select` targeting the table region (HTMXor direct routing is not enabled on .NET 10 — see AGENTS.md). Styles live in `wwwroot/css/app.css` under the `admin-` prefix because HTMX partials do not carry scoped CSS.
+`/admin/flags` renders the authorized flag table on the initial GET. Each row posts to an admin-gated form endpoint that validates antiforgery, the flag key and rollout percentage before calling the same override service as the API. The form redirects back to the page and works without JavaScript.
 
 ---
 

@@ -47,8 +47,8 @@
        keyboard navigation on a site at all. *@
     <a class="skip-link" href="#main-content">@Loc["a11y_skip_to_content"]</a>
 
-    <nav class="db-navbar">
-        <a class="db-navbar__brand" href="/">
+    <nav class="layout-navbar">
+        <a class="layout-navbar__brand" href="/">
             @* Mark: one crease cell folded — mountain solid, valley open. *@
             <span class="layout-logo" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round">
@@ -63,67 +63,69 @@
                 <span class="layout-brand-path miura-spec">@CurrentSpec(path)</span>
             </span>
         </a>
-        <div class="db-navbar__nav">
-            <div class="db-nav-menu">
-                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Home || string.IsNullOrEmpty(path))" href="/">@Loc["nav_home"]</a>
-                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">@Loc["nav_send"]</a>
-                <a class="db-nav-menu__item @NavActive(path.StartsWith(RoutePaths.P2p))" href="/p2p/send">P2P</a>
-                <a class="db-nav-menu__item @NavActive(path == RoutePaths.Pricing)" href="/pricing">@Loc["nav_pricing"]</a>
+        <div class="layout-navbar__nav">
+            <div class="layout-nav-menu">
+                <a class="layout-nav-menu__item @NavActive(path == RoutePaths.Home || string.IsNullOrEmpty(path))" href="/">@Loc["nav_home"]</a>
+                <a class="layout-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">@Loc["nav_send"]</a>
+                <a class="layout-nav-menu__item @NavActive(path.StartsWith(RoutePaths.P2p))" href="/p2p/send">P2P</a>
+                <a class="layout-nav-menu__item @NavActive(path == RoutePaths.Pricing)" href="/pricing">@Loc["nav_pricing"]</a>
             </div>
         </div>
-        <div class="db-navbar__spacer"></div>
-        <div class="db-navbar__actions">
-            <button type="button" class="db-btn db-btn--ghost db-btn--sm layout-command-trigger" onclick="openCommandPalette()" aria-label="@Loc["command_palette_trigger"]" title="@Loc["command_palette_trigger"]" data-ai-action="commandPalette.open">
+        <div class="layout-navbar__spacer"></div>
+        <div class="layout-navbar__actions">
+            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="layout-command-trigger" onclick="openCommandPalette()" aria-label="@Loc["command_palette_trigger"]" title="@Loc["command_palette_trigger"]" data-ai-action="commandPalette.open">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <span class="layout-command-kbd" aria-hidden="true">⌘K</span>
             </button>
             @* Voice commands (#277) — drives the palette below; hidden by voice.js where the
                browser cannot listen, so it is never a dead button. *@
-            <button type="button" id="voice-trigger" class="db-btn db-btn--ghost db-btn--sm layout-voice-trigger"
+            <button type="button" id="voice-trigger" data-slot="button" data-variant="ghost" data-size="sm" class="layout-voice-trigger"
                     onclick="window.quickShareVoice.start()" aria-label="@Loc["voice_trigger"]"
                     title="@Loc["voice_trigger"]" data-ai-action="voice.start">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
-            <button type="button" class="db-btn db-btn--ghost db-btn--sm layout-theme-toggle" onclick="toggleTheme()" aria-label="@Loc["theme_toggle"]" title="@Loc["theme_toggle"]" data-ai-action="theme.toggle">
+            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="layout-theme-toggle" onclick="toggleTheme()" aria-label="@Loc["theme_toggle"]" title="@Loc["theme_toggle"]" data-ai-action="theme.toggle">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
             </button>
             <LanguageSwitch />
             @if (isAuthenticated)
             {
-                <a href="@RoutePaths.AccountNotificationCenter" class="db-btn db-btn--ghost db-btn--sm layout-bell"
-                   aria-label="@Loc["nav_notifications"]" title="@Loc["nav_notifications"]" data-ai-action="notifications.open">
+                <Button Href="@RoutePaths.AccountNotificationCenter" Variant="ghost" Size="sm" class="layout-bell"
+                        aria-label="@Loc["nav_notifications"]" title="@Loc["nav_notifications"]" data-ai-action="notifications.open">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                     @if (unreadCount > 0)
                     {
                         <span class="layout-bell__badge" aria-label="@string.Format(Loc["notifications_badge_aria"], unreadCount)">@BadgeLabel(unreadCount)</span>
                     }
-                </a>
-                <div class="db-dropdown">
-                    <button class="db-avatar db-avatar--sm db-dropdown__trigger layout-avatar-btn"
-                            hx-get="/api/me/avatar"
-                            hx-trigger="load once, profileUpdated from:body"
-                            hx-swap="innerHTML"
-                            type="button" aria-label="@Loc["a11y_user_menu"]">
-                        <span class="layout-avatar-skeleton"></span>
-                    </button>
-                    <div class="db-dropdown__content layout-avatar-dropdown">
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger Target="layout-user-menu" Variant="ghost" Size="icon" class="layout-avatar-btn" aria-label="@Loc["a11y_user_menu"]">
+                        <Avatar Size="sm" class="layout-avatar-img-wrap">
+                            @if (!string.IsNullOrEmpty(userAvatarUrl))
+                            {
+                                <AvatarImage src="@userAvatarUrl" alt="@userName" class="layout-avatar-img" />
+                            }
+                            <AvatarFallback>@AvatarInitials(userName)</AvatarFallback>
+                        </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent Id="layout-user-menu" Align="end" class="layout-avatar-dropdown">
                         <div class="layout-user-info">
                             <span class="layout-user-info__name">@userName</span>
                             <span class="layout-user-info__email">@userEmail</span>
                         </div>
-                        <div class="db-dropdown__separator"></div>
-                        <a href="/account" class="db-dropdown__item">@Loc["nav_account"]</a>
-                        <a href="@RoutePaths.AccountBilling" class="db-dropdown__item">@Loc["billing_h1"]</a>
-                        <a href="/logout" hx-boost="false" class="db-dropdown__item">@Loc["nav_logout"]</a>
-                    </div>
-                </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem Href="/account">@Loc["nav_account"]</DropdownMenuItem>
+                        <DropdownMenuItem Href="@RoutePaths.AccountBilling">@Loc["billing_h1"]</DropdownMenuItem>
+                        <DropdownMenuItem Href="/logout">@Loc["nav_logout"]</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             }
             else
             {
-                <a href="/login" class="db-btn db-btn--primary db-btn--sm">@Loc["nav_login"]</a>
+                <Button Href="/login" Size="sm">@Loc["nav_login"]</Button>
             }
         </div>
-        <button class="db-navbar__toggle" aria-label="@Loc["a11y_menu"]">
+        <button class="layout-navbar__toggle" aria-label="@Loc["a11y_menu"]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
@@ -288,6 +290,7 @@
     private const string RootSpec = "INDEX";
 
     private int unreadCount;
+    private string? userAvatarUrl;
 
     protected override async Task OnInitializedAsync()
     {
@@ -297,6 +300,7 @@
         try
         {
             var user = await HttpContextAccessor.HttpContext.User.GetUserAsync(Db, CancellationToken.None);
+            userAvatarUrl = user.AvatarUrl;
             unreadCount = await Db.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
         }
         catch
@@ -308,8 +312,24 @@
 
     private static string BadgeLabel(int count) => count > 99 ? "99+" : count.ToString(CultureInfo.InvariantCulture);
 
+    private static string AvatarInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "?";
+        }
+
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+        {
+            return parts[0][..1].ToUpperInvariant();
+        }
+
+        return string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant();
+    }
+
     private static string NavActive(bool isActive) =>
-        isActive ? "db-nav-menu__item--active" : string.Empty;
+        isActive ? "layout-nav-menu__item--active" : string.Empty;
 
     // The nav's mono tag is wayfinding, not decoration: it names where the
     // visitor actually is, which the old chrome never showed.

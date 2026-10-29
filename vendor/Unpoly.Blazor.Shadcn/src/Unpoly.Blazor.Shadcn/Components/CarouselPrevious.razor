@@ -1,0 +1,29 @@
+@inherits UiComponentBase
+
+@* Hidden until the compiler finds a scroller, because an arrow that cannot scroll anything is
+   worse than no arrow. The compiler also sets disabled at each end, which is what upstream's
+   canScrollPrev does. *@
+
+<button type="button" data-slot="carousel-previous" data-orientation="@Orientation" data-carousel-scroll="-1" hidden
+        class="@Classes" @attributes="AdditionalAttributes">
+    <Icon Name="arrow-left" />
+    <span class="sr-only">@Label</span>
+</button>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Previous slide";
+
+    /// <summary>Must match the &lt;Carousel&gt; it is in. Razor has no context to read it from.</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    const string Base =
+        "absolute size-8 rounded-full rtl:data-[orientation=horizontal]:[&_svg]:rotate-180";
+
+    string VariantClass => Orientation switch
+    {
+        "vertical" => "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+        _ => "top-1/2 -start-12 -translate-y-1/2",
+    };
+
+    string Classes => Cn(ButtonVariants.Of("outline", "icon"), Base, VariantClass, Class);
+}

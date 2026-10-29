@@ -1,0 +1,23 @@
+@inherits UiComponentBase
+
+@* Radix hides the native scrollbar and draws its own, which needs a resize observer, a scroll
+   listener and a thumb whose size it computes. None of that survives static SSR usefully, and
+   the platform now has `scrollbar-width: thin` and `scrollbar-color`, which is most of the look
+   for none of the cost — ui.behavior.css sets both.
+
+   So this is an overflow container with a styled native scrollbar. The trade is deliberate: the
+   scrollbar is the OS's shape rather than shadcn's, and it works with the wheel, the trackpad,
+   the keyboard and a touch screen without a line of JavaScript. *@
+
+<div data-slot="scroll-area" class="@Classes" @attributes="AdditionalAttributes">
+    <div data-slot="scroll-area-viewport" class="size-full overflow-auto rounded-[inherit]">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    const string Base =
+        "relative";
+
+    string Classes => Cn(Base, Class);
+}

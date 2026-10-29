@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+<div data-slot="combobox-empty" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "hidden w-full justify-center py-2 text-center text-control text-muted-foreground " +
+        "group-data-empty/combobox-content:flex";
+
+    string Classes => Cn(Base, Class);
+}

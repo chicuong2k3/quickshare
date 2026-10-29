@@ -2,6 +2,7 @@
 using LightResults;
 using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Storage;
+using QuickShare.Features.Workspaces.Domains;
 
 namespace QuickShare.Features.Downloads.ZipContents;
 
@@ -14,7 +15,8 @@ public record ZipEntryResponse(string Name, long Size, long CompressedSize, bool
 /// directory, never the decompressed bytes. Gated like the media preview (#21):
 /// password/OTP-gated and exhausted deliveries don't expose their contents.
 /// </summary>
-public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access)
+public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access,
+    WorkspaceDomainReader domains, IHttpContextAccessor http)
     : IRequestHandler<ZipContentsQuery, Result<IReadOnlyList<ZipEntryResponse>>>
 {
     private const long MaxZipBytes = 200 * 1024 * 1024;
@@ -27,24 +29,13 @@ public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (delivery is null || delivery.DeletedAt is not null)
-            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.NotFound));
+        var error = await PreviewAccessGate.CheckAsync(delivery, db, access, domains, http.HttpContext, cancellationToken);
+        if (error is not null)
+        {
+            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(error));
+        }
 
-        // Same scope rules as the byte path (issues #142/#166): the entry list is content.
-        if (await access.CheckAsync(delivery, cancellationToken) != DeliveryAccessDecision.Allowed)
-            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.DeliveryRestricted));
-
-        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked or DeliveryStatus.Expired
-            || (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow))
-            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.DeliveryExpired));
-
-        if (delivery.DownloadCount >= delivery.MaxDownloads)
-            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.DownloadLimitReached));
-
-        if (!string.IsNullOrEmpty(delivery.OtpHash) || !string.IsNullOrEmpty(delivery.PasswordHash) || string.IsNullOrEmpty(delivery.StoragePath))
-            return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(ErrorCodes.DeliveryGated));
-
-        var isZip = string.Equals(delivery.ContentType, "application/zip", StringComparison.OrdinalIgnoreCase)
+        var isZip = string.Equals(delivery!.ContentType, "application/zip", StringComparison.OrdinalIgnoreCase)
             || string.Equals(delivery.ContentType, "application/x-zip-compressed", StringComparison.OrdinalIgnoreCase)
             || delivery.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
 
@@ -57,7 +48,7 @@ public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db
         Stream? stream;
         try
         {
-            stream = await storage.OpenReadAsync(delivery.StoragePath, cancellationToken);
+            stream = await storage.OpenReadAsync(delivery.StoragePath!, cancellationToken);
         }
         catch
         {

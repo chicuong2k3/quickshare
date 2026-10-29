@@ -1,0 +1,64 @@
+@inherits UiComponentBase
+
+@* AuroraBackground — a decorative colour wash for the back of a section: two or three large
+   blurred gradient blobs drifting behind the content. Zero JS, zero keyframes of its own — the
+   drift is Tailwind's existing `animate-pulse`.
+
+   It is a LAYER, not a container: it takes up no space, ignores pointer events, and is hidden
+   from assistive tech. It never carries meaning, so never let it be the only signal that
+   anything exists or happened — a new card, a result, an error, must all read as text and as
+   DOM. It also needs a positioned ancestor to sit inside: the nearest `relative` element wins,
+   and with none the layer escapes to the viewport and covers the page. *@
+
+<div data-slot="aurora-background"
+     aria-hidden="true"
+     class="@Classes"
+     @attributes="AdditionalAttributes">
+    <div class="@BlobOneClasses"></div>
+    <div class="@BlobTwoClasses"></div>
+    @if (Third)
+    {
+        <div class="@BlobThreeClasses"></div>
+    }
+</div>
+
+@code {
+    /// <summary>Let the blobs breathe with <c>animate-pulse</c>. Turn it off for a still field —
+    /// on a page that already animates for a reason, a drifting background is noise competing
+    /// with whatever the user is meant to be looking at.</summary>
+    [Parameter] public bool Animated { get; set; } = true;
+
+    /// <summary>Add the third blob. Two is enough to read as an aurora; a third deepens it at
+    /// the cost of a larger, slower paint area on low-end phones.</summary>
+    [Parameter] public bool Third { get; set; }
+
+    // -z-10 so the layer falls behind whatever the caller stacks above it, and `overflow-hidden`
+    // so a blur that runs past the edge is clipped instead of painting over a neighbour.
+    // `pointer-events-none` because a full-bleed div above the content would otherwise swallow
+    // every click, hover and scroll in the section it decorates.
+    string Classes => Cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", Class);
+
+    // Blobs are oversized and offset rather than centred: a gradient's soft edge is invisible
+    // when it lands on a box boundary, so each one hangs off an edge on purpose. Stops stay on
+    // theme tokens so the field follows light and dark with everything else.
+    // motion-reduce is not optional on a decorative animation — it is the difference between
+    // decoration and discomfort for a reader who has asked the OS to stop moving things.
+    string BlobOneClasses => Blob(
+        "-left-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-primary/40 to-transparent blur-3xl",
+        "left-[42%]");
+
+    string BlobTwoClasses => Blob(
+        "-bottom-32 -right-20 h-80 w-80 rounded-full bg-gradient-to-tl from-accent/35 to-transparent blur-3xl",
+        "right-[8%] top-[18%]");
+
+    string BlobThreeClasses => Blob(
+        "left-1/4 top-1/2 h-64 w-64 rounded-full bg-gradient-to-tr from-primary/25 via-accent/20 to-transparent blur-3xl",
+        "left-[55%] top-[58%]");
+
+    string Blob(string position, string delay) => Cn(
+        "absolute",
+        position,
+        Animated ? "animate-pulse" : null,
+        "motion-reduce:animate-none",
+        delay);
+}

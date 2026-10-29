@@ -45,7 +45,7 @@ public sealed class RateLimitingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!ShouldRateLimit(context.Request.Path))
+        if (!ShouldRateLimit(context.Request))
         {
             await _next(context);
             return;
@@ -126,19 +126,20 @@ public sealed class RateLimitingMiddleware
         return AnonymousPrefix + clientIp + ":" + userAgent;
     }
 
-    private static bool ShouldRateLimit(PathString path)
+    private static bool ShouldRateLimit(HttpRequest request)
     {
-        if (path.StartsWithSegments(ApiPathPrefix, StringComparison.OrdinalIgnoreCase))
+        if (request.Path.StartsWithSegments(ApiPathPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (path.StartsWithSegments(P2PSocketPathPrefix, StringComparison.OrdinalIgnoreCase))
+        if (request.Path.StartsWithSegments(P2PSocketPathPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        return false;
+        return HttpMethods.IsPost(request.Method)
+            && request.Path.StartsWithSegments(RoutePaths.MfaChallenge, StringComparison.OrdinalIgnoreCase);
     }
 
     private TimeSpan BackoffFor(int violations)

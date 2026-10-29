@@ -44,8 +44,8 @@
     @* HERO *@
     <section class="hero">
         @* No eyebrow above the heading. *@
-        <h1 class="db-h1">@Loc["pricing_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["pricing_sub"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["pricing_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["pricing_sub"]</p>
     </section>
 
     @* BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) *@
@@ -56,15 +56,17 @@
             <div class="toggle-group">
                 @* Static classes are the no-JS fallback; Alpine swaps them on init. *@
                 <button type="button"
-                        class="db-btn db-btn--primary"
+                        data-slot="button"
                         x-on:click="billing = 'monthly'"
-                        x-bind:class="billing === 'monthly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
+                        :data-variant="billing === 'monthly' ? 'default' : 'ghost'"
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-control px-4 py-2">
                     @Loc["pricing_monthly"]
                 </button>
                 <button type="button"
-                        class="db-btn db-btn--ghost"
+                        data-slot="button"
                         x-on:click="billing = 'yearly'"
-                        x-bind:class="billing === 'yearly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
+                        :data-variant="billing === 'yearly' ? 'default' : 'ghost'"
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 cursor-pointer h-control px-4 py-2">
                     @Loc["pricing_yearly"]
                     <span class="tag">@Loc["pricing_save"]</span>
                 </button>
@@ -76,16 +78,16 @@
             @* Free Plan *@
             <div class="card">
                 <div class="card__head">
-                    <h3 class="db-h3">@Loc["pricing_free_name"]</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_free_desc"]</p>
+                    <h3 class="text-xl font-semibold">@Loc["pricing_free_name"]</h3>
+                    <p class="text-muted-foreground" style="margin-top: 0.5rem">@Loc["pricing_free_desc"]</p>
                 </div>
                 <div class="card__price">
                     <div class="price-amount">$0</div>
-                    <div class="price-period db-text-muted">@Loc["pricing_free_price_period"]</div>
+                    <div class="price-period text-muted-foreground">@Loc["pricing_free_price_period"]</div>
                 </div>
                 @if (!isAuthenticated)
                 {
-                    <a href="/login" class="db-btn db-btn--secondary">@Loc["btn_get_started"]</a>
+                    <Button Href="/login" Variant="secondary">@Loc["btn_get_started"]</Button>
                 }
                 <div class="features">
                     <div class="feature">
@@ -114,24 +116,23 @@
             @* Pro Plan *@
             <div class="card">
                 <div class="card__head">
-                    <h3 class="db-h3">@Loc["pricing_pro_name"]</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_pro_desc"]</p>
+                    <h3 class="text-xl font-semibold">@Loc["pricing_pro_name"]</h3>
+                    <p class="text-muted-foreground" style="margin-top: 0.5rem">@Loc["pricing_pro_desc"]</p>
                 </div>
                 <div class="card__price">
                     <div x-show="billing === 'monthly'" class="pricing-monthly">
                         <div class="price-amount">@proMonthly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_pro_billed_monthly"]</div>
+                        <div class="price-period text-muted-foreground">@Loc["pricing_pro_billed_monthly"]</div>
                     </div>
                     <div x-show="billing === 'yearly'" x-cloak class="pricing-yearly">
                         <div class="price-amount">@proYearly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_pro_billed_yearly"]</div>
+                        <div class="price-period text-muted-foreground">@Loc["pricing_pro_billed_yearly"]</div>
                     </div>
                 </div>
                 @if (currentPlanRank < ProPlanRank)
                 {
-                    <a href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
-                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
-                       class="db-btn db-btn--primary">@Loc["btn_start_free_trial"]</a>
+                    <Button Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
+                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')">@Loc["btn_start_free_trial"]</Button>
                 }
                 <div class="features">
                     <div class="feature">
@@ -161,24 +162,23 @@
             <div class="card card--popular">
                 <span class="card__badge">@Loc["pricing_card_badge"]</span>
                 <div class="card__head">
-                    <h3 class="db-h3">@Loc["pricing_studio_name"]</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_studio_desc"]</p>
+                    <h3 class="text-xl font-semibold">@Loc["pricing_studio_name"]</h3>
+                    <p class="text-muted-foreground" style="margin-top: 0.5rem">@Loc["pricing_studio_desc"]</p>
                 </div>
                 <div class="card__price">
                     <div x-show="billing === 'monthly'" class="pricing-monthly">
                         <div class="price-amount">@studioMonthly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_studio_billed_monthly"]</div>
+                        <div class="price-period text-muted-foreground">@Loc["pricing_studio_billed_monthly"]</div>
                     </div>
                     <div x-show="billing === 'yearly'" x-cloak class="pricing-yearly">
                         <div class="price-amount">@studioYearly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_studio_billed_yearly"]</div>
+                        <div class="price-period text-muted-foreground">@Loc["pricing_studio_billed_yearly"]</div>
                     </div>
                 </div>
                 @if (currentPlanRank < StudioPlanRank)
                 {
-                    <a href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
-                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
-                       class="db-btn db-btn--primary">@Loc["btn_start_free_trial"]</a>
+                    <Button Href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
+                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')">@Loc["btn_start_free_trial"]</Button>
                 }
                 <div class="features">
                     <div class="feature">
@@ -206,7 +206,7 @@
 
     @* Side-by-side comparison (issue #299) — real limits from PlanTierLimits, no fabricated features. *@
     <section class="compare">
-        <h2 class="db-h2 compare__title">@Loc["pricing_compare_title"]</h2>
+        <h2 class="text-2xl font-bold compare__title">@Loc["pricing_compare_title"]</h2>
         <div class="compare__scroll">
             <table class="compare__table">
                 <caption class="visually-hidden">@Loc["pricing_compare_title"]</caption>
@@ -271,8 +271,8 @@
     @* FAQ *@
     <section class="faq">
         <div class="faq__head">
-            <h2 class="db-h2">@Loc["pricing_faq_title"]</h2>
-            <p class="db-text-muted" style="margin-top: 0.75rem">@Loc["pricing_faq_sub"]</p>
+            <h2 class="text-2xl font-bold">@Loc["pricing_faq_title"]</h2>
+            <p class="text-muted-foreground" style="margin-top: 0.75rem">@Loc["pricing_faq_sub"]</p>
         </div>
         @foreach (var (q, a) in faqs)
         {
@@ -283,7 +283,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                     </svg>
                 </summary>
-                <div class="faq-answer db-text-muted">@a</div>
+                <div class="faq-answer text-muted-foreground">@a</div>
             </details>
         }
     </section>
@@ -291,10 +291,9 @@
     @* CTA *@
     <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
         <h3 class="cta__title">@Loc["pricing_cta_title"]</h3>
-        <p class="db-text-muted">@Loc["pricing_cta_sub"]</p>
-        <a href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
-           x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')"
-           class="db-btn db-btn--primary">@Loc["btn_get_started"]</a>
+        <p class="text-muted-foreground">@Loc["pricing_cta_sub"]</p>
+        <Button Href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
+           x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')">@Loc["btn_get_started"]</Button>
     </section>
 
 </PageWrapper>

@@ -8,88 +8,14 @@
 
 # QuickShareCloud — Agent Instructions
 
-## HTMX Lazy Loading (DEFAULT — every page)
+## Static SSR and Unpoly migration
 
-**Every page that has `OnInitializedAsync` MUST use this pattern.** The principle is simple:
-- **Static data** (layout, headings, static markup) → returns immediately, no DB calls
-- **Dynamic data** (DB queries, API calls) → fetched via HTMX after page load
-
-The goal is instant page shell render (0ms) with zero blocking, then data fills in asynchronously via HTMX. This is NOT optional — it is the default architecture for all pages.
-
-### Why this matters
-
-| Approach | First paint | User experience |
-|---|---|---|
-| **HTMX lazy-load** (this rule) | < 100ms — skeleton instantly | Shell appears immediately, data fills in |
-| `[StreamRendering]` | 200–500ms — still blocked by async init | Page "thinks" briefly, then streams |
-| Plain `OnInitializedAsync` | 1–3s — blocked by DB queries | Page feels frozen, user clicks away |
-
-`[StreamRendering]` still runs `OnInitializedAsync` in the initial render pass — it only helps stream the HTML AFTER async starts, but the first byte is still delayed. It is a fallback, not a solution.
-
-### Pattern
-
-1. **Shell render**: Check `HX-Request` header. If absent → return immediately. Render skeleton.
-2. **Data fetch**: Skeleton uses `hx-get` + `hx-trigger="load"` + `hx-swap="outerHTML"`. On second request `HX-Request` is set → load data.
-3. **All internal navigation**: Folder links, search, pagination, clear buttons — ALL use `hx-get` targeting the content area, NEVER plain `<a href>` (that causes full page reload).
-4. **CSS for HTMX partials**: Scoped CSS (`.razor.css`) does NOT apply to HTMX responses from a different component. Use global styles in `wwwroot/css/app.css` with namespaced prefix (`account-`, `files-`, etc.).
-
-```csharp
-protected override async Task OnInitializedAsync()
-{
-    var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
-    if (hxHeader != "true") return; // shell render — show skeleton, no DB calls
-
-    // ... data loading (DB queries, IMediator.Send, etc.) ...
-}
-```
-
-```html
-@* Shell skeleton — instant render *@
-<div id="page-content"
-     hx-get="/page-url"
-     hx-trigger="load"
-     hx-target="#page-content"
-     hx-select="#page-content"
-     hx-swap="outerHTML">
-    @* skeleton markup *@
-</div>
-```
-```html
-@* All navigation links use HTMX *@
-<a href="/page?filter=X"
-   hx-get="/page?filter=X"
-   hx-target="#page-content"
-   hx-select="#page-content"
-   hx-swap="outerHTML"
-   hx-push-url="true">Filter X</a>
-```
-
-### Exceptions
-
-- **Truly static pages** with zero async operations (pure markup, no DB/API calls) do not need lazy-load.
-- `[StreamRendering]` is acceptable only when splitting shell + partial is impractical (complex interdependencies). Even then, prefer lazy-load.
-
-### Layout Rule
-
-- **MainLayout MUST inherit `LayoutComponentBase`** (not `HtmxLayoutComponentBase`). If MainLayout inherits `HtmxLayoutComponentBase`, HTMXor will treat it as a valid HTMX layout and use it for partial requests, returning full nav + footer.
-- **HtmxorLayout inherits `HtmxLayoutComponentBase`** and renders only `@Body` — this is used automatically for HTMX partial responses via `[HtmxLayout(typeof(HtmxorLayout))]` in `_Imports.razor`.
-- `@layout MainLayout` on individual pages is fine — `[HtmxLayout]` will override it for HTMX requests.
-
-### HTMXor Direct Routing (.NET 10 compatibility)
-
-- **`AddHtmxorComponentEndpoints(app)` is NOT compatible with .NET 10** — it uses reflection to access internal Blazor APIs that changed between .NET 8 and .NET 10. Calling it throws `NullReferenceException` at startup. Do NOT add it to `Program.cs`.
-- **Without Direct Routing, ALL HTMX responses return full HTML pages** (including `<html>`, `<head>`, nav, footer from `App.razor`). The `[HtmxLayout]` attribute only affects the layout INSIDE the page pipeline; it does NOT strip the outer HTML document.
-- **Workaround: always use `hx-select`** on every element that uses `hx-get`/`hx-post` + `hx-target`. This tells HTMX to extract only the targeted element from the full HTML response before swapping.
-- Pattern:
-  ```html
-  <div id="my-content"
-       hx-get="/page"
-       hx-trigger="load"
-       hx-target="#my-content"
-       hx-select="#my-content"
-       hx-swap="outerHTML">
-  ```
-- **Without `hx-select`, the full HTML document is injected into the target element**, causing duplicate nav/footer and broken layout.
+- Direct GET is the canonical render path: each route renders usable, authorized page data on first response, with JavaScript disabled too. Do not gate data loading on partial-request headers or render permanent skeletons.
+- Use native URLs and forms as the no-JavaScript behavior. Add Unpoly attributes (`up-follow`, `up-submit`, `up-target`, `up-defer`, `up-poll`) only where partial updates improve a real interaction.
+- For Razor POST forms, use a unique `@formname` and `@onsubmit`; execute mutations in the submit handler after antiforgery validation, not during initialization.
+- Unpoly requests still receive a valid server-rendered document. Keep target IDs stable, scope authorization from the authenticated principal and route data, and keep personal responses `no-store`.
+- Keep Unpoly opt-in. Forms, polling, redirects, and cache variance need behavior-specific Unpoly or native HTTP implementations.
+- `MainLayout` remains a regular `LayoutComponentBase`; Unpoly chrome handling belongs to the Unpoly integration.
 
 ## Code Style
 
@@ -126,25 +52,25 @@ protected override async Task OnInitializedAsync()
 - **A provisioning path must revoke as well as create** (issue #146). "What happens at
   offboarding" is the question the feature is bought to answer; a deactivate that returns 200 and
   leaves access live is the precise failure it exists to prevent.
-- **Isolation CSS** — use scoped CSS (`.razor.css`) per component. JS is authored as TypeScript in `src/QuickShare/ts/` (do not use `.razor.js`). **`wwwroot/js/**` is `tsc` output and is gitignored** — a script written straight into it is absent from a fresh clone, so the page ships with dead buttons. Ten page scripts were in exactly that state until the audit follow-up; the shared helper they now use is `ts/page-actions.ts`. **Exception:** markup returned inside an HTMX partial does not carry the requesting component's scope attribute, so anything rendered that way must be styled from `wwwroot/css/app.css` with a prefixed global class (`account-`, `files-`, …).
+- **Isolation CSS** — use scoped CSS (`.razor.css`) per component. JS is authored as TypeScript in `src/QuickShare/ts/` (do not use `.razor.js`). **`wwwroot/js/**` is `tsc` output and is gitignored** — a script written straight into it is absent from a fresh clone, so the page ships with dead buttons. Ten page scripts were in exactly that state until the audit follow-up; the shared helper they now use is `ts/page-actions.ts`. Unpoly-swapped markup must be checked for scoped-style behavior; use global prefixed styles only when the swap crosses component scope.
 - **User-facing strings live in `SharedLoc.{en,vi}.resx`** — never hardcode display copy in a page. Strings that JavaScript needs are handed to it as a JSON block rendered by the page (see `download-i18n`), so no `.js` file carries English literals.
 - **Product analytics are anonymous** — new lifecycle events MUST be recorded via `AnalyticsService.RecordAsync()` (see `docs/analytics-architecture.md`). Never store email, user id, or raw IP in an analytics event; use the `qs_visitor` cookie id + `CF-IPCountry` code only. New event names go in `AnalyticsEvents` constants. Recording must never break the primary flow — wrap in try/catch or use the captured-context overload.
 
 ## Design System
 
-`DESIGN.md` is the source of record for everything visible. Read it before writing CSS.
+`DESIGN.md` records the legacy DAUB surfaces. New or migrated surfaces use the vendored
+Unpoly.Blazor.Shadcn components and tokens; do not mix both systems inside one component.
 
-- **`--db-*` tokens are an override layer on the DAUB vendor stylesheet** (`https://daub.dev/daub.css`). Change *values*, **never names** — ~322 `db-*` class usages in markup depend on them.
-- **Foil gold is a fill and never a text colour** (2.1:1 on the sheet). Typographic uses take `--db-color-accent-text`. Valley blue marks the active cell; mountain gray is everything at rest.
-- Radius is zeroed at token level. The sheet's geometry is `skewX(-14deg)` with glyphs counter-skewed `skewX(14deg)`.
-- Font sizes must come from the closed set in `DESIGN.md` (`typography.scale`). Anything outside it is a defect, not a choice.
+- **Legacy `db-*` tokens/classes stay intact while legacy surfaces remain.** Do not add new `db-*` use to migrated pages.
+- Shadcn markup uses library components, semantic utility classes, and the library's `--background`, `--foreground`, `--primary`, `--border`, `--radius`, and control tokens. Do not edit generated CSS; update `src/QuickShare/tailwind.css` and run `npm run css:build` through the project build.
+- Keep a migrated component on one visual system; do not layer DAUB button/card classes onto Shadcn components.
 - **The download page must work with no JavaScript**: the server renders a usable phase and JS only moves on from it. Never put `class="hidden"` back on the default phase — `DownloadNoScriptTests` will fail.
 - Browser-only logic (clipboard, sessionStorage, JS phase switching) is covered by `BrowserAppFixture` + Playwright (see `PasteBrowserTests`), which runs the app as a real process and drives the installed Chrome rather than downloading a browser bundle.
 
-## HTMX Usage
+## Unpoly Usage
 
-- **Never use HTMX for static data toggles** — if the data doesn't change server-side between states (e.g., billing monthly/yearly pricing, theme toggle, show/hide content), handle it client-side with vanilla JS or CSS classes. Server round-trips for static data are pure latency waste.
-- **Prefer Blazor enhanced navigation over `hx-boost`** — Blazor SSR has built-in enhanced navigation since .NET 9. Do NOT add `hx-boost="true"` globally. Only use explicit `hx-get`/`hx-post`/`hx-trigger` on elements that genuinely need partial server updates (search, form submissions, real-time data).
+- **Never use Unpoly for static data toggles** — if data does not change server-side between states (e.g., billing monthly/yearly pricing, theme toggle, show/hide content), handle it client-side with vanilla JS or CSS classes.
+- Prefer native links and forms as fallback. Add Unpoly interception only to interactions with a real server-rendered partial update; preserve URL/history semantics, validation errors, focus, and direct navigation.
 
 ## Architecture Rules
 
@@ -454,7 +380,7 @@ Write a `## Manual Test Checklist` section in the feature issue body BEFORE impl
 
 Rules:
 - One checkbox per scenario. Each step states BOTH the action and the expected result.
-- Cover: happy path, validation errors, empty states, permission boundaries (guest/free/paid), and the no-JS / HTMX-partial path where relevant (see `DownloadNoScriptTests`).
+- Cover: happy path, validation errors, empty states, permission boundaries (guest/free/paid), and the no-JavaScript or Unpoly request path where relevant (see `DownloadNoScriptTests`).
 - The checklist is written at issue creation time, not after implementation — it drives the work, it does not document it.
 
 ### Option B — Separate manual-test issue (LARGE / CRITICAL features only)

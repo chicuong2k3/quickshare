@@ -31,6 +31,7 @@ public sealed class OfficePreviewTests : IClassFixture<TestWebAppFactory>
             FileName = fileName,
             ContentType = contentType,
             FileSize = 512,
+            MaxDownloads = 10,
             ShareCode = shareCode,
             Status = DeliveryStatus.Active,
             ExpiresAt = DateTime.UtcNow.AddHours(2),

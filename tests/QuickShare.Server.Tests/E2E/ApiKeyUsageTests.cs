@@ -91,7 +91,6 @@ public sealed class ApiKeyUsageTests
         var (owner, _, _) = await KeyAsync();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/account/developer");
-        request.Headers.Add("HX-Request", "true");
         var html = await (await owner.SendAsync(request)).Content.ReadAsStringAsync();
 
         Assert.Contains("dev.key.usage", html, StringComparison.Ordinal);

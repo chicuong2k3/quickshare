@@ -1,0 +1,94 @@
+@inherits UiComponentBase
+
+@* NumberTicker — a number that counts towards its value the first time it comes into view.
+
+   The FINAL value is what the server renders, so a reader with scripting off sees the real
+   number, not a zero waiting for a script that may never arrive. The animation is an
+   enhancement over text that is already correct; it is never the only path to the content. A
+   counter that starts at 0 and needs JavaScript to become 1,240 is a counter that reads 0 to a
+   crawler, to anyone whose script failed, and to anyone who prints the page.
+
+   Not for a number that has to be read at a glance, copied, or compared with a second animated
+   figure. It is unreadable until it settles and nothing says when it has; for those, interpolate
+   the number as text. Nor for a figure the server replaces after a fragment swap — the count
+   plays once, on first view, and the new value arrives as text exactly as it always did.
+
+   The animation is a spring integrated by hand rather than a CSS transition, because what moves
+   here is TEXT: there is no box to transition, and rewriting the number each frame is the whole
+   of it. Upstream's stiffness and damping are kept, so the timing is the one this has always
+   had. *@
+
+<span data-slot="number-ticker"
+      class="@Classes"
+      data-ticker-value="@ValueText"
+      data-ticker-start="@StartText"
+      data-ticker-direction="@ResolvedDirection"
+      data-ticker-delay="@DelayText"
+      data-ticker-decimals="@Digits"
+      data-ticker-prefix="@PrefixText"
+      data-ticker-suffix="@SuffixText"
+      @attributes="AdditionalAttributes">@Formatted</span>
+
+@code {
+    /// <summary>The number the ticker settles on — and the number the server writes into the
+    /// markup, so it is what everyone without scripting reads.</summary>
+    [Parameter] public double Value { get; set; }
+
+    /// <summary>Where the count begins. Zero is right for a figure arriving for the first time;
+    /// anything else reads as a number that MOVED, which is what a dashboard looks like when it
+    /// is re-rendered mid-session.</summary>
+    [Parameter] public double StartValue { get; set; }
+
+    /// <summary><c>up</c> to count from <see cref="StartValue"/> to <see cref="Value"/>,
+    /// <c>down</c> to count back towards it. A falling figure is the honest direction for a
+    /// number that is going down. Anything else is read as <c>up</c> rather than reaching the
+    /// animation as a third direction it has no case for.</summary>
+    [Parameter] public string Direction { get; set; } = "up";
+
+    /// <summary>Seconds to wait after the ticker first comes into view before it starts. For a
+    /// row of figures that should not all count at the same instant.</summary>
+    [Parameter] public double Delay { get; set; }
+
+    /// <summary>Digits after the decimal separator, thousands-grouped. Zero — the default — is
+    /// right for nearly every ticker on a page. Clamped to what the formatter can actually
+    /// carry, so a number no format can express fails here rather than as an exception on
+    /// render.</summary>
+    [Parameter] public int DecimalPlaces { get; set; }
+
+    /// <summary>Written in front of the number and outside the grouping, so a currency reads
+    /// <c>$1,240.00</c> rather than <c>1,240.00$</c>.</summary>
+    [Parameter] public string? Prefix { get; set; }
+
+    /// <summary>Written after the number: <c>99.9%</c>, <c>+12</c>, <c>ms</c>.</summary>
+    [Parameter] public string? Suffix { get; set; }
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    // Every number that reaches the DOM is formatted here rather than left to the machine's
+    // locale. Under one that separates decimals with a comma, data-ticker-value="1,5" reads back
+    // as NaN and the ticker sits at its start value forever, with nothing in any console to say
+    // why. Midpoints round AWAY from zero, which is what JavaScript's toFixed does, so the last
+    // frame the animation writes is character-for-character the number this markup already had.
+    int Digits => Math.Clamp(DecimalPlaces, 0, 15);
+
+    string Number(double value) => Math.Round(value, Digits, System.MidpointRounding.AwayFromZero)
+        .ToString("N" + Digits, Inv);
+
+    // "N" is the grouped fixed-point format; the capital N is the one that does not depend on the
+    // machine's DigitSubstitution, which is exactly why it is the one to write here.
+    string Formatted => PrefixText + Number(Value) + SuffixText;
+    string ValueText => N(Value);
+    string StartText => N(StartValue);
+    string DelayText => N(Delay);
+    string PrefixText => Prefix ?? string.Empty;
+    string SuffixText => Suffix ?? string.Empty;
+    string N(double value) => value.ToString("0.####", Inv);
+
+    string ResolvedDirection =>
+        string.Equals(Direction?.Trim(), "down", System.StringComparison.OrdinalIgnoreCase)
+            ? "down" : "up";
+
+    // tabular-nums is not decoration: a number whose digits change width as it counts makes the
+    // whole row twitch once per frame.
+    string Classes => Cn("inline-block tabular-nums tracking-wider", Class);
+}

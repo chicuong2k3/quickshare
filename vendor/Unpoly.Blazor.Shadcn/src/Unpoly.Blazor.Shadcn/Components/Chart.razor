@@ -1,0 +1,50 @@
+@inherits UiComponentBase
+
+@* The container shadcn's chart is built on, without recharts.
+
+   What ChartContainer actually does upstream is two things: it declares one CSS custom property
+   per series — `--color-revenue`, `--color-refunds` — so the drawing and the legend and the
+   tooltip all read the same colour from one place, and it carries a wall of `[&_.recharts-*]`
+   selectors that dress a library this port does not ship. The first is the useful half, and it
+   is what this keeps.
+
+   What draws the chart is up to you. A <table> with a percentage height per bar reads to a
+   screen reader, prints, and survives CSS being off; the AnalyticsBlock in the demo is a worked
+   example and needs no library at all. Reach for a real charting library when you need axes,
+   tooltips, zoom or a line through irregular time — and when you do, it renders inside this and
+   reads the same custom properties.
+
+   The `--color-*` names are not decoration: they are the contract between whatever draws and
+   whatever labels. *@
+
+<div data-slot="chart" data-chart="@Id" style="@Variables" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Identifies this chart when a page has several. Upstream uses it the same way.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Series name to colour, e.g. <c>["revenue"] = "var(--chart-1)"</c>.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string>? Series { get; set; }
+
+    string Variables => Series is null
+        ? ""
+        : string.Concat(Series.Select(s => $"--color-{s.Key}: {s.Value};"));
+
+    const string Base =
+        "flex aspect-video justify-center text-xs " +
+        "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground " +
+        "[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 " +
+        "[&_.recharts-curve.recharts-tooltip-cursor]:stroke-border " +
+        "[&_.recharts-dot[stroke='#fff']]:stroke-transparent " +
+        "[&_.recharts-layer]:outline-hidden " +
+        "[&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border " +
+        "[&_.recharts-radial-bar-background-sector]:fill-muted " +
+        "[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted " +
+        "[&_.recharts-reference-line_[stroke='#ccc']]:stroke-border " +
+        "[&_.recharts-sector]:outline-hidden " +
+        "[&_.recharts-sector[stroke='#fff']]:stroke-transparent " +
+        "[&_.recharts-surface]:outline-hidden";
+
+    string Classes => Cn(Base, Class);
+}

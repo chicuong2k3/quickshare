@@ -2,8 +2,7 @@
 @page "/abuse"
 @using System.Globalization
 
-@* Static legal page — no async work, no DB; the HTMX lazy-load rule's
-   static-page exception applies. Prose is culture-switched markup, not resx
+@* Static legal page — no async work or DB. Prose is culture-switched markup, not resx
    (same precedent as /terms and the /tools landing pages). *@
 
 <PageTitle>@(IsVi ? "Báo cáo lạm dụng & DMCA" : "Abuse & DMCA Report")</PageTitle>
@@ -12,40 +11,40 @@
 </HeadContent>
 
 <PageWrapper Variant="PageVariant.Padded">
-    <article class="legal">
+    <article class="legal mx-auto max-w-3xl">
         @if (IsVi)
         {
-            <h1 class="db-h1">Báo cáo lạm dụng &amp; DMCA</h1>
-            <p class="db-p db-text-muted legal__version">Phiên bản @DocVersion — cập nhật @DocDate.</p>
+            <h1 class="text-3xl font-semibold tracking-tight">Báo cáo lạm dụng &amp; DMCA</h1>
+            <p class="leading-7 text-muted-foreground legal__version mb-8">Phiên bản @DocVersion — cập nhật @DocDate.</p>
 
-            <h2 class="db-h2">1. Cách báo cáo</h2>
-            <p class="db-p">Mỗi trang tải tệp (liên kết /d/...) đều có nút "Báo cáo". Bấm vào đó, chọn loại vi phạm (lạm dụng, bản quyền, phần mềm độc hại, khác) và gửi — không cần tài khoản. Bạn cũng có thể gửi trực tiếp tới <a class="db-link" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a> kèm liên kết gốc và mô tả vi phạm.</p>
+            <h2 class="mt-8 text-xl font-semibold">1. Cách báo cáo</h2>
+            <p class="leading-7">Mỗi trang tải tệp (liên kết /d/...) đều có nút "Báo cáo". Bấm vào đó, chọn loại vi phạm (lạm dụng, bản quyền, phần mềm độc hại, khác) và gửi — không cần tài khoản. Bạn cũng có thể gửi trực tiếp tới <a class="text-primary underline underline-offset-4" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a> kèm liên kết gốc và mô tả vi phạm.</p>
 
-            <h2 class="db-h2">2. Chúng tôi xử lý thế nào</h2>
-            <p class="db-p">Báo cáo vào hàng đợi để đội ngũ xem xét, thường trong 24–48 giờ làm việc. Nếu xác minh vi phạm, chúng tôi tạm ngưng liên kết ngay (tệp không còn tải được) và xoá dữ liệu khỏi hệ thống. Nếu không vi phạm, liên kết được khôi phục.</p>
+            <h2 class="mt-8 text-xl font-semibold">2. Chúng tôi xử lý thế nào</h2>
+            <p class="leading-7">Báo cáo vào hàng đợi để đội ngũ xem xét, thường trong 24–48 giờ làm việc. Nếu xác minh vi phạm, chúng tôi tạm ngưng liên kết ngay (tệp không còn tải được) và xoá dữ liệu khỏi hệ thống. Nếu không vi phạm, liên kết được khôi phục.</p>
 
-            <h2 class="db-h2">3. Yêu cầu gỡ theo DMCA (bản quyền)</h2>
-            <p class="db-p">Nếu bạn là chủ sở hữu bản quyền và thấy nội dung của mình được chia sẻ, gửi yêu cầu gỡ kèm: (a) mô tả và liên kết nội dung vi phạm, (b) tuyên bố bạn sở hữu hoặc được uỷ quyền thay mặt chủ sở hữu, (c) thông tin liên hệ, (d) tuyên bố thiện chí rằng nội dung bị gỡ do nhầm lẫn. Gửi tới <a class="db-link" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a>.</p>
+            <h2 class="mt-8 text-xl font-semibold">3. Yêu cầu gỡ theo DMCA (bản quyền)</h2>
+            <p class="leading-7">Nếu bạn là chủ sở hữu bản quyền và thấy nội dung của mình được chia sẻ, gửi yêu cầu gỡ kèm: (a) mô tả và liên kết nội dung vi phạm, (b) tuyên bố bạn sở hữu hoặc được uỷ quyền thay mặt chủ sở hữu, (c) thông tin liên hệ, (d) tuyên bố thiện chí rằng nội dung bị gỡ do nhầm lẫn. Gửi tới <a class="text-primary underline underline-offset-4" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a>.</p>
 
-            <h2 class="db-h2">4. Chống báo cáo sai</h2>
-            <p class="db-p">Báo cáo cố ý sai có thể bị giới hạn tần suất và, nếu lặp lại, bị chặn quyền báo cáo. Quyền riêng tư của người báo cáo được bảo vệ: chúng tôi chỉ lưu địa chỉ IP dạng băm, không lưu dữ liệu định danh khác.</p>
+            <h2 class="mt-8 text-xl font-semibold">4. Chống báo cáo sai</h2>
+            <p class="leading-7">Báo cáo cố ý sai có thể bị giới hạn tần suất và, nếu lặp lại, bị chặn quyền báo cáo. Quyền riêng tư của người báo cáo được bảo vệ: chúng tôi chỉ lưu địa chỉ IP dạng băm, không lưu dữ liệu định danh khác.</p>
         }
         else
         {
-            <h1 class="db-h1">Abuse &amp; DMCA Report</h1>
-            <p class="db-p db-text-muted legal__version">Version @DocVersion — last updated @DocDate.</p>
+            <h1 class="text-3xl font-semibold tracking-tight">Abuse &amp; DMCA Report</h1>
+            <p class="leading-7 text-muted-foreground legal__version mb-8">Version @DocVersion — last updated @DocDate.</p>
 
-            <h2 class="db-h2">1. How to report</h2>
-            <p class="db-p">Every file page (a /d/... link) has a "Report" button. Click it, pick the violation type (abuse, copyright, malware, other) and submit — no account needed. You can also email <a class="db-link" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a> with the original link and a description of the violation.</p>
+            <h2 class="mt-8 text-xl font-semibold">1. How to report</h2>
+            <p class="leading-7">Every file page (a /d/... link) has a "Report" button. Click it, pick the violation type (abuse, copyright, malware, other) and submit — no account needed. You can also email <a class="text-primary underline underline-offset-4" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a> with the original link and a description of the violation.</p>
 
-            <h2 class="db-h2">2. What happens next</h2>
-            <p class="db-p">Reports enter a queue our team reviews, typically within 24–48 business hours. If a violation is confirmed, we suspend the link immediately (the file becomes undownloadable) and delete the data from our systems. If not, the link is restored.</p>
+            <h2 class="mt-8 text-xl font-semibold">2. What happens next</h2>
+            <p class="leading-7">Reports enter a queue our team reviews, typically within 24–48 business hours. If a violation is confirmed, we suspend the link immediately (the file becomes undownloadable) and delete the data from our systems. If not, the link is restored.</p>
 
-            <h2 class="db-h2">3. DMCA takedown (copyright)</h2>
-            <p class="db-p">If you are a rights holder and see your content being shared, send a takedown notice including: (a) a description and link to the infringing content, (b) a statement that you own or are authorized to act for the rights holder, (c) contact information, (d) a good-faith statement that the content was removed by mistake. Send it to <a class="db-link" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a>.</p>
+            <h2 class="mt-8 text-xl font-semibold">3. DMCA takedown (copyright)</h2>
+            <p class="leading-7">If you are a rights holder and see your content being shared, send a takedown notice including: (a) a description and link to the infringing content, (b) a statement that you own or are authorized to act for the rights holder, (c) contact information, (d) a good-faith statement that the content was removed by mistake. Send it to <a class="text-primary underline underline-offset-4" href="mailto:support@quicksharecloud.com">support@quicksharecloud.com</a>.</p>
 
-            <h2 class="db-h2">4. Against false reports</h2>
-            <p class="db-p">Knowingly false reports may be rate-limited and, if repeated, blocked from reporting. Reporter privacy is protected: we store only a hashed IP address and no other identifying data.</p>
+            <h2 class="mt-8 text-xl font-semibold">4. Against false reports</h2>
+            <p class="leading-7">Knowingly false reports may be rate-limited and, if repeated, blocked from reporting. Reporter privacy is protected: we store only a hashed IP address and no other identifying data.</p>
         }
     </article>
 </PageWrapper>

@@ -1,6 +1,5 @@
 @layout MainLayout
 @page "/d/{ShareCode}/stats"
-@attribute [StreamRendering]
 @using QuickShare.Features.Downloads.PublicStats
 @using QuickShare.Features.Workspaces.Domains
 @inject IMediator Bus
@@ -15,26 +14,26 @@
 </HeadContent>
 
 <PageWrapper id="public-stats-app" Variant="PageVariant.Centered">
-    <div class="card db-card">
-        <div class="qs-titlebar">
-            <span class="qs-titlebar__box" aria-hidden="true"></span>
-            <span class="qs-titlebar__label">@Loc["ps_title"]</span>
-            <span class="qs-titlebar__box" aria-hidden="true"></span>
+    <Card class="p-6">
+        <div class="mb-6 flex items-center justify-between gap-3 border-b pb-4">
+            <span class="h-2 w-2 rounded-sm bg-primary" aria-hidden="true"></span>
+            <h1 class="text-xl font-semibold">@Loc["ps_title"]</h1>
+            <span class="h-2 w-2 rounded-sm bg-primary" aria-hidden="true"></span>
         </div>
-        <div class="db-card__body">
+        <div>
             @if (Unavailable)
             {
-                <div class="db-text-center" style="padding: 2.5rem 0">
-                    <p class="db-h1" style="font-size: 1.25rem">@Loc["dl_notfound_h1"]</p>
-                    <p class="db-p db-text-muted" style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_notfound_sub"]</p>
-                    <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                <div class="py-10 text-center">
+                    <p class="text-xl font-semibold">@Loc["dl_notfound_h1"]</p>
+                    <p class="mt-2 text-sm text-muted-foreground">@Loc["dl_notfound_sub"]</p>
+                    <Button Href="/" class="mt-8">@Loc["dl_send_a_file"]</Button>
                 </div>
             }
             else if (Stats is null)
             {
-                <div class="db-text-center" style="padding: 2.5rem 0">
-                    <div class="db-spinner"></div>
-                    <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">@Loc["dl_checking"]</p>
+                <div class="py-10 text-center">
+                    <div class="mx-auto size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" role="status" aria-label="@Loc["dl_checking"]"></div>
+                    <p class="mt-5 text-sm">@Loc["dl_checking"]</p>
                 </div>
             }
             else
@@ -80,12 +79,12 @@
                         <p class="ps-stats__meta">@Loc["ps_first", first.ToLocalTime().ToString("g")]</p>
                     }
                     <div class="ps-stats__back">
-                        <a href="/d/@ShareCode" class="link" hx-boost="false">@Loc["ps_back"]</a>
+                        <a href="/d/@ShareCode" class="text-primary underline-offset-4 hover:underline">@Loc["ps_back"]</a>
                     </div>
                 </div>
             }
         </div>
-    </div>
+    </Card>
 </PageWrapper>
 
 @code {

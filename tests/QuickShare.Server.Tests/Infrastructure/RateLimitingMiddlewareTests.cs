@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using QuickShare.Infrastructure.Middleware;
+using QuickShare.Infrastructure.Constants;
 
 namespace QuickShare.Server.Tests.Infrastructure;
 
@@ -53,6 +54,32 @@ public sealed class RateLimitingMiddlewareTests
             var response = await RequestAsync();
             return int.Parse(response.Headers.RetryAfter.ToString(), CultureInfo.InvariantCulture);
         }
+    }
+
+    [Fact]
+    public async Task MfaPost_SharesApiRateLimit_WhileGetRemainsAvailable()
+    {
+        var middleware = new RateLimitingMiddleware(_ => Task.CompletedTask, anonymousLimit: 1);
+        var api = new DefaultHttpContext();
+        api.Request.Path = "/api/account/totp/verify";
+        api.Request.Method = HttpMethods.Post;
+        api.Connection.RemoteIpAddress = IPAddress.Loopback;
+        await middleware.InvokeAsync(api);
+        Assert.NotEqual(StatusCodes.Status429TooManyRequests, api.Response.StatusCode);
+
+        var post = new DefaultHttpContext();
+        post.Request.Path = RoutePaths.MfaChallenge;
+        post.Request.Method = HttpMethods.Post;
+        post.Connection.RemoteIpAddress = IPAddress.Loopback;
+        await middleware.InvokeAsync(post);
+        Assert.Equal(StatusCodes.Status429TooManyRequests, post.Response.StatusCode);
+
+        var get = new DefaultHttpContext();
+        get.Request.Path = RoutePaths.MfaChallenge;
+        get.Request.Method = HttpMethods.Get;
+        get.Connection.RemoteIpAddress = IPAddress.Loopback;
+        await middleware.InvokeAsync(get);
+        Assert.NotEqual(StatusCodes.Status429TooManyRequests, get.Response.StatusCode);
     }
 
     [Fact]

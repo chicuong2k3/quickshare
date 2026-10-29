@@ -1,0 +1,27 @@
+.account-onboarding-step {
+    position: relative;
+    padding-left: 1.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+}
+
+.account-onboarding-step::before {
+    content: "";
+    position: absolute;
+    top: 0.1rem;
+    left: 0;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+
+.account-onboarding-step--done {
+    color: var(--foreground);
+    text-decoration: line-through;
+}
+
+.account-onboarding-step--done::before {
+    background: var(--primary);
+    border-color: var(--primary);
+}

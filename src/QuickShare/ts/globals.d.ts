@@ -253,16 +253,6 @@ interface QsPageModule {
     send(url: string, method: string, payload: unknown, options?: QsSendOptions): Promise<void>;
 }
 
-interface HtmxSwapOptions {
-    target: string;
-    select?: string;
-    swap?: string;
-}
-
-interface HtmxModule {
-    ajax(method: string, url: string, options: HtmxSwapOptions): void;
-}
-
 interface Window {
     ZAPDROP_CONFIG?: ZapDropConfig;
     P2P: P2PNamespace;
@@ -283,7 +273,6 @@ interface Window {
     p2pSend?: P2pSendPage;
     p2pDownload?: P2pDownloadPage;
     qsPaste?: QsPaste;
-    htmx?: HtmxModule;
     qsPage: QsPageModule;
     quickShareApprovals: QsPageActions;
     quickShareBackup: QsPageActions;
@@ -298,7 +287,6 @@ interface Window {
     quickShareDomain: QsPageActions;
     quickSharePasskeys: QsPageActions;
     quickShareDpa: QsPageActions;
-    quickShareMfa: QsPageActions;
     quickShareSecurity: QsPageActions;
     quickShareSso: QsPageActions;
     quickShareRecurring: QsPageActions;

@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* A real <ul>. The count a screen reader announces — "list, 5 items" — comes from the element,
+   not from the styling, and it is the thing that tells someone how much navigation there is. *@
+
+<ul data-slot="navigation-menu-list" class="@Classes"
+    @attributes="AdditionalAttributes">@ChildContent</ul>
+
+@code {
+    const string Base =
+        "group flex flex-1 list-none items-center justify-center gap-1";
+
+    string Classes => Cn(Base, Class);
+}

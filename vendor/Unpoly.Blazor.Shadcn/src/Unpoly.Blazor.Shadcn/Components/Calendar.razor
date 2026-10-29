@@ -1,0 +1,476 @@
+@inherits UiComponentBase
+@inject NavigationManager Nav
+
+@* A month, as a table — because a calendar is a table: seven columns of days under seven column
+   headers, and every screen reader already knows how to read one. react-day-picker builds it out
+   of divs and then reimplements that, mostly correctly.
+
+   Months renders several side by side under one nav, as shadcn's numberOfMonths does.
+
+   Mode decides what a day IS, and that is the whole of range selection here:
+
+     single  a radio named Name. One of them wins, the browser gives the arrow keys, Home and
+             End inside the group for nothing, and choosing one posts a date with no script.
+
+     range   a CHECKBOX named Name. Tick the first day and the last and the server takes the min
+             and the max — a working range picker with JavaScript switched off, which is not
+             something a component built on a state variable can offer. ui.js then makes it
+             behave the way a range picker should: a third click starts again, and the days
+             between fill in as you go.
+
+   The month table sizes itself rather than filling its container. A day is a fixed 36px box, so
+   there is nothing for w-full to distribute — and inside a [popover], whose width is fit-content,
+   a percentage width is circular: the table asked for all of the available width, the popover
+   grew to the viewport, and the panel hung off the right edge of the window.
+
+   For picking a single date in a form, <DatePicker> around <input type="date"> is smaller and
+   better still. This is for when the month has to be visible — availability, a booking grid,
+   anything where the shape of the month is the information. *@
+
+<div id="@ElementId" data-slot="calendar" data-mode="@Mode" data-month="@First.ToString("yyyy-MM")"
+     data-months="@Months" class="@Classes" @attributes="AdditionalAttributes">
+    @* Two links to two real URLs, not two buttons and a state variable — so a month is
+       bookmarkable, the back button moves through months, and it all works before any JavaScript
+       has run. Unpoly swaps this calendar and nothing else, which is why the id matters: a target
+       of [data-slot=calendar] matched every calendar on the page and moved the first of them.
+
+       Drawn whether or not the caller named a MonthUrl. It used to be drawn only for callers who
+       did, and every date picker in the library is a caller who did not — so each one showed one
+       month with no way to leave it, which is not a date picker. *@
+    <div data-slot="calendar-nav" class="mb-2 flex items-center justify-between gap-2">
+        <a href="@Where(AddMonths(First, -1))" up-target="#@ElementId"
+           class="@Cn(ButtonVariants.Of("ghost", "icon-sm"))"
+           aria-label="@PreviousLabel"><Icon Name="chevron-left" Class="rtl:rotate-180" /></a>
+
+        @if (CaptionLayout == "label")
+        {
+            <span class="text-sm font-medium" aria-live="polite">@Caption</span>
+        }
+        else
+        {
+            @* shadcn's captionLayout="dropdown": pick the month and the year rather than paging
+               to them, which is the difference between choosing a birthday and clicking four
+               hundred times. A GET form, so it is the same navigation the arrows do. *@
+            <form method="get" up-autosubmit up-target="#@ElementId"
+                  data-slot="calendar-caption-dropdowns" class="flex items-center gap-1">
+                @foreach (var carried in Carried)
+                {
+                    <input type="hidden" name="@carried.Key" value="@carried.Value" />
+                }
+                @if (CaptionLayout != "dropdown-years")
+                {
+                    <Select name="@MonthKey" aria-label="@MonthLabel" Size="sm" Class="w-fit">
+                        @foreach (var m in Enumerable.Range(1, 12))
+                        {
+                            <SelectItem Value="@m.ToString()" Selected="@(m == First.Month)">
+                                @Words.DateTimeFormat.GetAbbreviatedMonthName(m)
+                            </SelectItem>
+                        }
+                    </Select>
+                }
+                else
+                {
+                    <span class="text-sm font-medium">@Words.DateTimeFormat.GetMonthName(First.Month)</span>
+                    <input type="hidden" name="@MonthKey" value="@First.Month" />
+                }
+                @if (CaptionLayout != "dropdown-months")
+                {
+                    <Select name="@YearKey" aria-label="@YearLabel" Size="sm" Class="w-fit">
+                        @foreach (var y in Years)
+                        {
+                            <SelectItem Value="@y.ToString()" Selected="@(y == First.Year)">@y</SelectItem>
+                        }
+                    </Select>
+                }
+                else
+                {
+                    <span class="text-sm font-medium">@First.Year</span>
+                    <input type="hidden" name="@YearKey" value="@First.Year" />
+                }
+            </form>
+        }
+
+        <a href="@Where(AddMonths(First, Span))" up-target="#@ElementId"
+           class="@Cn(ButtonVariants.Of("ghost", "icon-sm"))"
+           aria-label="@NextLabel"><Icon Name="chevron-right" Class="rtl:rotate-180" /></a>
+    </div>
+
+    <div data-slot="calendar-months" class="flex flex-col gap-4 sm:flex-row">
+        @for (var offset = 0; offset < Span; offset++)
+        {
+            var month = AddMonths(First, offset);
+            <table data-slot="calendar-month"
+                   class="w-auto border-separate border-spacing-y-1">
+                <caption class="@(Span == 1 ? "sr-only" : "pb-2 text-sm font-medium")">
+                    @MonthName(month)
+                </caption>
+                <thead>
+                    <tr>
+                        @if (ShowWeekNumber)
+                        {
+                            <th scope="col" class="pb-2 pe-1 text-xs font-normal text-muted-foreground">
+                                <span aria-hidden="true">#</span><span class="sr-only">@WeekLabel</span>
+                            </th>
+                        }
+                        @foreach (var day in Weekdays)
+                        {
+                            <th scope="col" class="pb-2 text-xs font-normal text-muted-foreground">
+                                <span aria-hidden="true">@day.Head</span>
+                                <span class="sr-only">@day.Full</span>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var week in WeeksOf(month))
+                    {
+                        <tr>
+                            @if (ShowWeekNumber)
+                            {
+                                <th scope="row" class="num pe-1 text-xs font-normal text-muted-foreground">
+                                    @WeekNumber(week)
+                                </th>
+                            }
+                            @foreach (var date in week)
+                            {
+                                <td class="@CellClasses(date)">
+                                    @if (date is { } d)
+                                    {
+                                        var disabled = Disabled?.Invoke(d) ?? false;
+                                        <label aria-current="@(d == Today ? "date" : null)"
+                                               class="@DayClasses(d, disabled)">
+                                            <input type="@(Mode == "range" ? "checkbox" : "radio")"
+                                                   name="@Name" value="@d.ToString("yyyy-MM-dd")"
+                                                   class="sr-only peer" checked="@IsChecked(d)"
+                                                   disabled="@disabled" @onchange="@(() => DateSelected.InvokeAsync(d))" />
+                                            <span class="num">@d.Day</span>
+                                            @DayContent?.Invoke(d)
+                                        </label>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Any date in the first month to show. Only the year and month are read.</summary>
+    [Parameter] public DateOnly Month { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>How many consecutive months to draw, as shadcn's numberOfMonths.</summary>
+    [Parameter] public int Months { get; set; } = 1;
+
+    /// <summary>single | range. Range makes each day a checkbox — see the note above.</summary>
+    [Parameter] public string Mode { get; set; } = "single";
+
+    /// <summary>The field the chosen day posts under. Without it nothing is selectable.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public DateOnly? Selected { get; set; }
+
+    /// <summary>Called when a selectable day is chosen in an interactive Blazor host.</summary>
+    [Parameter] public EventCallback<DateOnly> DateSelected { get; set; }
+
+    /// <summary>The first day of the range, when Mode is range.</summary>
+    [Parameter] public DateOnly? From { get; set; }
+
+    /// <summary>The last day of the range, when Mode is range.</summary>
+    [Parameter] public DateOnly? To { get; set; }
+
+    /// <summary>Today, marked with aria-current. Null in tests, so the render is deterministic.</summary>
+    [Parameter] public DateOnly? Today { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>Days that cannot be chosen — a booked date, a closing day, the past.</summary>
+    [Parameter] public Func<DateOnly, bool>? Disabled { get; set; }
+
+    /// <summary>
+    /// A leading column numbering the weeks, as shadcn's showWeekNumber. ISO 8601 numbering,
+    /// which is what a planning screen means by "week 32".
+    /// </summary>
+    [Parameter] public bool ShowWeekNumber { get; set; }
+
+    [Parameter] public string WeekLabel { get; set; } = "Week";
+
+    /// <summary>
+    /// Extra classes for particular days, as shadcn's modifiersClassNames: a booked date struck
+    /// through, a holiday tinted. Return null for the ordinary ones.
+    /// </summary>
+    [Parameter] public Func<DateOnly, string?>? Modifier { get; set; }
+
+    /// <summary>
+    /// Anything to draw under the number — a price, a count, a dot. shadcn does this by
+    /// replacing the whole DayButton component; a fragment is the same freedom without asking a
+    /// caller to reproduce the day's own markup to add one line to it. Give the cells room with
+    /// [--cell-size:…] or the extra line will make them ragged.
+    /// </summary>
+    [Parameter] public RenderFragment<DateOnly>? DayContent { get; set; }
+
+    /// <summary>Monday first. Set it for a locale that starts on Sunday.</summary>
+    [Parameter] public DayOfWeek FirstDay { get; set; } = DayOfWeek.Monday;
+
+    /// <summary>
+    /// The language the month and day names are written in, and the digits they are written
+    /// with. Null follows the request's own culture. An Arabic calendar in English words is a
+    /// direction, not a translation, which is what dir="rtl" alone produces.
+    /// </summary>
+    [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
+
+    /// <summary>
+    /// Where the previous and next months live, as a function of the month — for an application
+    /// that has its own month routes. Without it the arrows point back at this page, carrying the
+    /// month in two query keys of this calendar's own, so several calendars on a page move
+    /// independently and each month stays bookmarkable.
+    /// </summary>
+    [Parameter] public Func<DateOnly, string>? MonthUrl { get; set; }
+
+    /// <summary>
+    /// label | dropdown | dropdown-months | dropdown-years, as shadcn's captionLayout. The
+    /// dropdowns are a GET form, so they navigate exactly as the arrows do.
+    /// </summary>
+    [Parameter] public string CaptionLayout { get; set; } = "label";
+
+    /// <summary>The first year the year dropdown offers. A century back by default.</summary>
+    [Parameter] public int? FromYear { get; set; }
+
+    /// <summary>The last year the year dropdown offers.</summary>
+    [Parameter] public int? ToYear { get; set; }
+
+    [Parameter] public string MonthLabel { get; set; } = "Month";
+    [Parameter] public string YearLabel { get; set; } = "Year";
+
+    [Parameter] public string PreviousLabel { get; set; } = "Previous month";
+    [Parameter] public string NextLabel { get; set; } = "Next month";
+
+    /// <summary>
+    /// The calendar SYSTEM to count months in — a Hijri month is not a Gregorian month with
+    /// Arabic numerals, it starts on a different day and is 29 or 30 days long. Leave it null
+    /// for the culture's own. .NET ships these, which is the only reason this is a parameter and
+    /// not a rewrite: HijriCalendar, UmAlQuraCalendar, PersianCalendar, all of them.
+    /// </summary>
+    [Parameter] public System.Globalization.Calendar? CalendarSystem { get; set; }
+
+    int Span => Math.Max(1, Months);
+
+    // Everything below is what makes a calendar navigable without the caller arranging it.
+    //
+    // The month lives in the query string under keys of this calendar's own, so a page may hold
+    // fourteen of them — this demo does — and moving one moves only that one. Name is what makes
+    // the keys distinct; calendars sharing a name are already sharing a radio group, so sharing a
+    // month is the same decision.
+    string Key => Name ?? "calendar";
+    string MonthKey => $"m-{Key}";
+    string YearKey => $"y-{Key}";
+
+    // A caller's own id wins: it is the one their up-target names.
+    string ElementId =>
+        AdditionalAttributes?.TryGetValue("id", out var given) == true && given is string id && id.Length > 0
+            ? id
+            : $"calendar-{Key}";
+
+    // The month actually drawn: the query first, the parameter as the starting point. A caller
+    // sets Month once and never hears about it again.
+    DateOnly Shown
+    {
+        get
+        {
+            var query = System.Web.HttpUtility.ParseQueryString(new Uri(Nav.Uri).Query);
+            var month = int.TryParse(query[MonthKey], out var m) && m is >= 1 and <= 12 ? m : Month.Month;
+            var year = int.TryParse(query[YearKey], out var y) && y is >= 1 and <= 9999 ? y : Month.Year;
+            return new DateOnly(year, month, 1);
+        }
+    }
+
+    // Where an arrow points. MonthUrl when the application has month routes of its own; otherwise
+    // this page again, with this calendar's two keys rewritten and every other one left alone —
+    // which is what keeps the other thirteen calendars where they were.
+    string Where(DateOnly month)
+    {
+        if (MonthUrl is not null) return MonthUrl(month);
+
+        var url = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(url.Query);
+        query[MonthKey] = month.Month.ToString();
+        query[YearKey] = month.Year.ToString();
+        return $"{url.AbsolutePath}?{query}";
+    }
+
+    // The rest of the query, carried through the dropdown form as hidden fields. A GET form
+    // replaces the whole query string, so without these one calendar's dropdown would send every
+    // other calendar on the page back to its starting month.
+    IEnumerable<KeyValuePair<string, string>> Carried
+    {
+        get
+        {
+            var query = System.Web.HttpUtility.ParseQueryString(new Uri(Nav.Uri).Query);
+            foreach (var key in query.AllKeys)
+            {
+                if (key is null || key == MonthKey || key == YearKey) continue;
+                yield return new(key, query[key] ?? "");
+            }
+        }
+    }
+
+    IEnumerable<int> Years
+    {
+        get
+        {
+            var now = (Today ?? DateOnly.FromDateTime(DateTime.Today)).Year;
+            var first = FromYear ?? now - 100;
+            var last = ToYear ?? now + 10;
+            // A year already on screen must be offerable, or the select would show no selection
+            // at all and the first option would silently become the answer.
+            return Enumerable.Range(Math.Min(first, Shown.Year), Math.Max(last, Shown.Year) - Math.Min(first, Shown.Year) + 1);
+        }
+    }
+
+    System.Globalization.Calendar Cal =>
+        CalendarSystem ?? System.Globalization.CultureInfo.CurrentCulture.Calendar;
+
+    // The first of the month IN THE CHOSEN SYSTEM, as a Gregorian date — which is what every
+    // other date here is, so nothing below has to know which system produced it.
+    DateOnly First
+    {
+        get
+        {
+            var day = new DateTime(Shown.Year, Shown.Month, 1);
+            return DateOnly.FromDateTime(
+                Cal.ToDateTime(Cal.GetYear(day), Cal.GetMonth(day), 1, 0, 0, 0, 0));
+        }
+    }
+
+    // Written in the chosen system: "رمضان ١٤٤٦", not the Gregorian month those days fall in.
+    //
+    // A culture will only accept a calendar it lists as optional — en-US cannot format a Hijri
+    // date, and asking it to throws rather than approximating. So the month name comes from a
+    // culture that CAN express the system, and from the current one when there is nothing to
+    // convert; anything unforeseen falls back to the calendar's own numbers, which are still
+    // true even when nobody has a name for them.
+    string MonthName(DateOnly month)
+    {
+        var stamp = month.ToDateTime(TimeOnly.MinValue);
+        var culture = (System.Globalization.CultureInfo)Words.Clone();
+        try
+        {
+            if (CalendarSystem is not null) culture.DateTimeFormat.Calendar = CalendarSystem;
+            return stamp.ToString("MMMM yyyy", culture);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return $"{Cal.GetMonth(stamp)}/{Cal.GetYear(stamp)}";
+        }
+    }
+
+    // A culture that lists this calendar among the ones it can format.
+    static System.Globalization.CultureInfo Speaks(System.Globalization.Calendar? system)
+    {
+        var current = System.Globalization.CultureInfo.CurrentCulture;
+        if (system is null || current.OptionalCalendars.Any(c => c.GetType() == system.GetType()))
+        {
+            return current;
+        }
+
+        foreach (var name in new[] { "ar-SA", "fa-IR", "th-TH", "he-IL", "ja-JP", "zh-TW", "ko-KR" })
+        {
+            var candidate = System.Globalization.CultureInfo.GetCultureInfo(name);
+            if (candidate.OptionalCalendars.Any(c => c.GetType() == system.GetType()))
+            {
+                return candidate;
+            }
+        }
+
+        return current;
+    }
+
+    string Caption
+    {
+        get
+        {
+            var last = AddMonths(First, Span - 1);
+            return First == last ? MonthName(First) : MonthName(First) + " – " + MonthName(last);
+        }
+    }
+
+    // Months are added in the chosen system too: adding one to a Hijri month is 29 or 30 days,
+    // and DateOnly.AddMonths would quietly add a Gregorian one.
+    DateOnly AddMonths(DateOnly from, int months) =>
+        DateOnly.FromDateTime(Cal.AddMonths(from.ToDateTime(TimeOnly.MinValue), months));
+
+    bool IsChecked(DateOnly d) => Mode == "range" ? d == From || d == To : d == Selected;
+
+    bool Between(DateOnly d) => From is { } f && To is { } t && d > f && d < t;
+
+    bool IsEnd(DateOnly d) => From is not null && To is not null && (d == From || d == To);
+
+    System.Globalization.CultureInfo Words => Culture ?? Speaks(CalendarSystem);
+
+    // The platform already has a name for "as short as a column header can be", and it is not
+    // the first two letters of the abbreviation: every Arabic day name begins with ال, so
+    // slicing gave seven identical columns. The full name goes in the sr-only span beside it.
+    (string Head, string Full)[] Weekdays =>
+        Enumerable.Range(0, 7)
+            .Select(i => (DayOfWeek)(((int)FirstDay + i) % 7))
+            .Select(day => (Head: Head(day), Full: Words.DateTimeFormat.GetDayName(day)))
+            .ToArray();
+
+    // Two letters where the language has two to give, which is what shadcn shows and what tells
+    // Tuesday from Thursday. Some cultures — and the invariant one — call a single glyph the
+    // shortest name, and for Arabic that single glyph is the right answer.
+    string Head(DayOfWeek day)
+    {
+        var shortest = Words.DateTimeFormat.GetShortestDayName(day);
+        if (shortest.Length >= 2) return shortest;
+        var abbreviated = Words.DateTimeFormat.GetAbbreviatedDayName(day);
+        return Words.TwoLetterISOLanguageName is "ar" or "he" or "fa" or "ja" or "zh" or "ko"
+            ? shortest
+            : abbreviated[..Math.Min(2, abbreviated.Length)];
+    }
+
+    IEnumerable<DateOnly?[]> WeeksOf(DateOnly month)
+    {
+        var first = month;
+        var lead = ((int)first.DayOfWeek - (int)FirstDay + 7) % 7;
+        var stamp = first.ToDateTime(TimeOnly.MinValue);
+        var days = Cal.GetDaysInMonth(Cal.GetYear(stamp), Cal.GetMonth(stamp));
+
+        var cells = new List<DateOnly?>();
+        cells.AddRange(Enumerable.Repeat((DateOnly?)null, lead));
+        cells.AddRange(Enumerable.Range(1, days).Select(d => (DateOnly?)first.AddDays(d - 1)));
+        while (cells.Count % 7 != 0) cells.Add(null);
+
+        for (var i = 0; i < cells.Count; i += 7) yield return cells.GetRange(i, 7).ToArray();
+    }
+
+    // The band between the two ends is painted on the CELL, not on the day, so it runs edge to
+    // edge across the gap between columns. The day itself keeps its own rounded box on top.
+    string CellClasses(DateOnly? date) => date is not { } d ? "p-0" : Cn(
+        "p-0",
+        Between(d) || IsEnd(d) ? "bg-accent" : "",
+        d == From && To is not null ? "rounded-s-md" : "",
+        d == To && From is not null ? "rounded-e-md" : "");
+
+    // aria-current is what tells a screen reader which day is today; a ring only tells eyes, and
+    // a calendar where today is a colour and nothing else is one half its readers cannot orient in.
+    static int WeekNumber(DateOnly?[] week)
+    {
+        var day = week.FirstOrDefault(d => d is not null);
+        return day is null ? 0
+            : System.Globalization.ISOWeek.GetWeekOfYear(day.Value.ToDateTime(TimeOnly.MinValue));
+    }
+
+    string DayClasses(DateOnly date, bool disabled) => Cn(
+        "flex size-(--cell-size) items-center justify-center rounded-md text-sm",
+        DayContent is null ? "" : "flex-col gap-0.5 leading-none",
+        disabled ? "pointer-events-none opacity-40" : "cursor-pointer hover:bg-accent",
+        "has-[:checked]:bg-primary has-[:checked]:text-primary-foreground",
+        "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50",
+        date == Today ? "ring-1 ring-primary" : "",
+        Modifier?.Invoke(date) ?? "");
+
+    // The cell size is one custom property, as upstream's, so a caller changes every day box —
+    // and the week-number column that lines up with them — with one class: [--cell-size:...].
+    string Classes => Cn("[--cell-size:--spacing(9)]", Class);
+}

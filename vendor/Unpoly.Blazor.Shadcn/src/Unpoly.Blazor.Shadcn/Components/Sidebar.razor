@@ -1,0 +1,104 @@
+@inherits UiComponentBase
+
+@* Three nested elements, as upstream: the group that carries the state, a spacer that reserves
+   the width in the document flow, and the fixed panel itself. The spacer is what stops the page
+   content jumping when the panel collapses — the panel is position:fixed and takes no space, so
+   something has to hold it.
+
+   `group` and `peer` on the root are load-bearing, not decoration: every collapsed-state
+   selector in this family is written group-data-[collapsible=icon], and <SidebarInset> keys its
+   own margin off peer-data-. *@
+
+@* data-collapsible carries the mode only WHILE collapsed, which is what every
+   group-data-[collapsible=icon] selector expects — but then an expanded sidebar says nothing
+   about which mode it would collapse into, and ui.js had to guess. It guessed offcanvas, so an
+   icon sidebar slid away instead of narrowing. data-mode says it at all times, and is the one
+   the toggle reads. *@
+<div data-slot="sidebar" data-state="@(Open ? "expanded" : "collapsed")"
+     data-collapsible="@(Open ? "" : Collapsible)" data-mode="@Collapsible"
+     data-variant="@Variant" data-side="@Side"
+     class="@Classes" @attributes="AdditionalAttributes">
+    <div data-slot="sidebar-gap" class="@GapClasses"></div>
+    <div data-slot="sidebar-container" class="@ContainerClasses">
+        <div data-slot="sidebar-inner" class="@InnerClasses">@ChildContent</div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Must match the provider's. Razor has no context to read it from.</summary>
+    [Parameter] public bool Open { get; set; } = true;
+
+    /// <summary>offcanvas — slides away entirely | icon — narrows to icons | none.</summary>
+    [Parameter] public string Collapsible { get; set; } = "offcanvas";
+
+    /// <summary>sidebar | floating | inset</summary>
+    [Parameter] public string Variant { get; set; } = "sidebar";
+
+    /// <summary>left | right</summary>
+    [Parameter] public string Side { get; set; } = "left";
+
+    // group and peer are the whole of the collapse. Every width rule on the gap and the container
+    // is written group-data-[collapsible=icon] / group-data-[collapsible=offcanvas], and
+    // SidebarInset keys its own margin off peer-data-[state=collapsed] — all of them selecting
+    // through THIS element. Without the two markers the state attributes flipped and nothing
+    // moved: the panel stayed 256px wide whether it said expanded or collapsed.
+    //
+    // They are missing upstream's cva because there is no cva: the extractor read the class list
+    // of the mobile sheet, and the desktop root is written inline on the component.
+    // No width, no flex, no background. This element is a MARKER: it carries the state that
+    // every selector in the family reads, and its two children do the work — the gap reserves
+    // the space in the document flow, the container is the fixed panel that fills it.
+    //
+    // It used to carry w-(--sidebar-width), so it was itself a 256px flex item beside the inset.
+    // The gap shrank on collapse and the root did not, so the inset never moved: the trigger
+    // sitting in it stayed exactly where it was while the panel narrowed away from it.
+    //
+    // The width came from upstream's cva, and upstream's cva is the MOBILE sheet — the desktop
+    // root is written inline on the component as `group peer text-sidebar-foreground hidden
+    // md:block`, which is what this is now.
+    const string Base =
+        "text-sidebar-foreground group peer hidden md:block";
+
+    string GapVariant => Variant switch
+    {
+        "floating" => "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]",
+        "inset" => "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]",
+        _ => "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
+    };
+
+    string ContainerVariant => Variant switch
+    {
+        "floating" => "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
+        "inset" => "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
+        _ => "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+    };
+
+    string ContainerSide => Side switch
+    {
+        "right" => "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+        _ => "start-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
+    };
+
+    string Classes => Cn(Base, Class);
+
+    string GapClasses => Cn(GapBase, GapVariant);
+
+    string ContainerClasses => Cn(ContainerBase, ContainerSide, ContainerVariant);
+
+    string InnerClasses => Cn(InnerBase);
+
+    const string GapBase =
+        "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 " +
+        "ease-linear group-data-[collapsible=offcanvas]:w-0 " +
+        "group-data-[side=right]:rotate-180";
+
+    const string ContainerBase =
+        "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] " +
+        "duration-200 ease-linear md:flex";
+
+    const string InnerBase =
+        "flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg " +
+        "group-data-[variant=floating]:border " +
+        "group-data-[variant=floating]:border-sidebar-border " +
+        "group-data-[variant=floating]:shadow-sm";
+}

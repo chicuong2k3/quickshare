@@ -4,7 +4,7 @@
 
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
-| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Mediator, Hangfire, EF Core, Npgsql, Htmxor, DAUB |
+| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Mediator, Hangfire, EF Core, Npgsql, Unpoly.Blazor, Unpoly.Blazor.Shadcn; DAUB remains on legacy surfaces |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 
@@ -134,7 +134,7 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | **RequestLoggingMiddleware** | Structured inbound request logging |
 | **P2P Signaling** | `P2PConnectionManager` (singleton) + `P2PSignalingMiddleware` — WebSocket-based WebRTC signaling relay |
 | **Rate Limiting** | `RateLimitingMiddleware` — configurable request throttling |
-| **HTTP Caching** | `HtmxCacheMiddleware` — `Cache-Control` headers for SSR/HTMX pages (2min private default, 5min public for home/pricing). Skips `/api/*`, `/send`, `/login`, `/logout`. |
+| **HTTP Caching** | `PageCacheMiddleware` sets five-minute public caching for anonymous home and pricing requests after consent is recorded, uses `no-store` for signed-in responses and pages displaying the antiforgery-protected consent form, defaults other GET responses to `no-store`, and varies public responses by cookie, language and Unpoly headers. Explicit cache policies remain in effect outside the public allowlist. |
 
 ---
 
@@ -147,12 +147,12 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: OTP gate (if set) → password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation, abuse reporting, sender branding |
 | `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling, data channel file streaming with progress |
 | `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, WebRTC answer, data channel file receipt, progress tracking |
-| `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop move, CRUD modals, htmx-powered live search, download button |
-| `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload), OAuth badge, delivery branding manager, htmx form + lazy-load |
+| `/files` | `Files.razor` | Vanilla JS + Unpoly | File browser: stats dashboard, folder controls, search and downloads |
+| `/account` | `Account.razor` | Native forms + Unpoly | Profile edit, notification preferences, security activity and account data |
 | `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler |
 | `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade, PayOS payment — form creates PaymentIntent + calls PayOS API |
 | `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub |
-| `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
+| `/pricing` | `Pricing.razor` | Vanilla JS | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
 
 ### SSR Data Access Pattern
 
@@ -170,24 +170,24 @@ SSR pages that previously called the API via HTTP (`IQuickShareApi`/Refit) now a
 JS-based pages (Upload, Download, P2PTransfer, P2PDownload) call `/api/*` via `fetch()`/`XMLHttpRequest` — these use **relative URLs** (empty `apiBaseUrl` in `window.ZAPDROP_CONFIG`), so they work same-origin with no CORS.
 
 ### Component Layout
-- **`MainLayout.razor`** — Flex-column layout: header (logo + nav) → `@Body` → footer. Inherits `HtmxLayoutComponentBase` for htmx partial rendering. Navbar: DAUB nav-menu + avatar dropdown (initials + email + Account/Sign out links).
-- **`HtmxorLayout.razor`** — Base htmx layout component
-- **`App.razor`** — Root HTML: DAUB anti-FOUC script, `daub.css` CDN, `hx-boost="true"` on body, `daub.js` CDN, theme init (grunge-dark default), QR lib
+- **`MainLayout.razor`** — Flex-column layout: header (logo + nav) → `@Body` → footer. Uses `LayoutComponentBase`.
+- **`EmptyLayout.razor`** — Minimal layout for the Outlook task pane.
+- **`App.razor`** — Root HTML, theme initialization, DAUB and Shadcn styles, and Unpoly assets.
 
 ### Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Framework** | .NET 10 Blazor Static SSR with Htmxor |
-| **UI** | DAUB (`daub.dev/daub.css` + `daub.js`) — grunge-dark theme, 84 components |
-| **Interactivity** | htmx (`hx-boost`, `hx-get`, `hx-post`, `hx-target`, `hx-swap`) + vanilla JS modules |
-| **Styling** | DAUB component classes + CSS isolation via `.razor.css` (Blazor auto-scope) |
+| **Framework** | .NET 10 Blazor Static SSR with Unpoly.Blazor |
+| **UI** | Unpoly.Blazor.Shadcn on migrated components; DAUB retained on legacy components |
+| **Interactivity** | Opt-in Unpoly and vanilla JS modules |
+| **Styling** | Tailwind v4 + Shadcn tokens on migrated components; DAUB classes and CSS isolation on legacy components |
 | **CSS Variables** | `--color-foreground`, `--color-background`, `--color-primary`, `--color-accent`, `--color-border`, `--color-muted`, `--color-destructive`, `--color-warning`, `--color-success`, `--color-ring` |
 | **P2P** | Custom `RTCPeerConnection` + data channels (`/wwwroot/js/p2p/`): `signaling.js`, `peerConnection.js`, `fileTransfer.js`, `fileReceiver.js` |
 | **QR** | `qrcode-generator` (npm vendor-copied to `wwwroot/lib/qrcode/qrcode.min.js`) |
 | **API** | JS pages call relative `/api/*` (same origin); SSR pages use in-process `IMediator` or `AppDbContext` |
 | **Auth** | `AuthorizeRouteView` + `[Authorize]` on protected pages; cookie auth with dual `/api` vs page redirect behavior |
-| **Anti-forgery** | `app.UseAntiforgery()` + `app.UseHtmxAntiforgery()` |
+| **Anti-forgery** | `app.UseAntiforgery()` and explicit validation for native form endpoints |
 
 ### Static Assets (`wwwroot/`)
 ```
@@ -374,7 +374,7 @@ Subsequent requests:
 - **Single app** — `DataProtection` uses `PersistKeysToFileSystem` + `SetApplicationName("QuickShare")`
 - **Storage Mode** — R2 is default (`IStorageProvider` → `R2StorageProvider`); dev can switch to local disk
 - **Plan Tiers** — Free (100MB/file, 2GB/mo, 5 transfers/mo, 7d expiry), Pro (1GB/file, 500GB/mo, 100 transfers/mo, 30d expiry), Studio (20GB/file, unlimited, unlimited, custom branding + API)
-- **`hx-boost="true"`** — All internal links get SPA-like behavior via htmx
+- **Unpoly** — Explicit `up-follow`, `up-submit` and `up-poll` enhance selected server-rendered interactions.
 - **Theme** — DAUB grunge-dark (typewriter / ink-stained aesthetic), persisted in localStorage
 
 ---
@@ -384,7 +384,7 @@ Subsequent requests:
 ```
 src/QuickShare/
 ├── Infrastructure/       # IStorageProvider, LocalDiskStorageProvider, Storage/ (R2), PlanTierLimits, AuthConstants, Jobs/ (Hangfire recurring jobs + dashboard auth)
-├── Components/            # Layout/ (MainLayout, HtmxorLayout)
+├── Components/            # Layout/ (MainLayout, EmptyLayout)
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor, Entities/
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
 ├── Features/              # FastEndpoints + Mediator handlers
@@ -400,7 +400,7 @@ src/QuickShare/
 │   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)
 │   ├── Analytics/         # Anonymous analytics: AnalyticsService, track endpoint, dashboard query (issue #24)
 │   └── Users/             # UserRegistrationService, UserMapper
-├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, HtmxCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware
+├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, PageCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware
 ├── Middleware/            # (empty — middleware lives in Infrastructure/)
 ├── Migrations/            # EF Core migrations
 ├── Models/                # Entity models, DTOs (User, Delivery, Folder, etc.)

@@ -1,0 +1,16 @@
+@inherits UiComponentBase
+
+@* onerror is the whole fallback mechanism: the image removes itself and whatever <AvatarFallback>
+   drew underneath is what remains. No compiler, so it also works inside a swapped fragment. *@
+
+<img src="@Src" alt="@Alt" data-slot="avatar-image" class="@Classes"
+     onerror="this.style.display='none'" @attributes="AdditionalAttributes" />
+
+@code {
+    [Parameter] public string? Src { get; set; }
+
+    /// <summary>Empty is a valid answer — a decorative avatar beside its own name is not content.</summary>
+    [Parameter] public string Alt { get; set; } = "";
+
+    string Classes => Cn("aspect-square size-full object-cover relative z-10 rounded-full", Class);
+}

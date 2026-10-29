@@ -1,17 +1,18 @@
 // QuickShare service worker (issue #14): caches the STATIC SHELL only —
-// CSS/JS/icons. NEVER caches HTML or HTMX partials: the server
-// HtmxCacheMiddleware owns those; two cache systems fighting is the 3am bug.
+// CSS/JS/icons. NEVER caches HTML or server-rendered partials: the server
+// PageCacheMiddleware owns those; two cache systems fighting is the 3am bug.
 // Bump SHELL_VERSION on deploy so an old SW does not pin the site.
 
-const SHELL_VERSION = 'qs-shell-v1';
+const SHELL_VERSION = 'qs-shell-v2';
 
 const SHELL = [
     '/css/app.css',
-    '/css/QuickShare.styles.css',
+    '/QuickShare.styles.css',
+    '/css/shadcn.generated.css',
     '/js/upload.js',
     '/js/download.js',
-    '/js/encryption.js',
-    '/js/qrcode.min.js',
+    '/js/p2p/encryption.js',
+    '/lib/qrcode/qrcode.min.js',
     '/js/paste-anywhere.js',
     '/og-cover.svg'
 ];

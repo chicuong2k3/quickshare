@@ -1,0 +1,26 @@
+@inherits UiComponentBase
+
+@* The scroller itself: overflow plus scroll-snap, which ui.behavior.css attaches to the slot.
+
+   tabindex=0 because a scrollable region has to be reachable by keyboard or its content cannot
+   be scrolled without a pointer. The browser then gives it arrow keys, Page Up and Page Down for
+   free — which is the same set Embla binds by hand. *@
+
+<div data-slot="carousel-content" tabindex="0" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Must match the &lt;Carousel&gt; it is in. Razor has no context to read it from.</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    const string Base =
+        "flex";
+
+    string VariantClass => Orientation switch
+    {
+        "vertical" => "-mt-4 flex-col",
+        _ => "-ms-4",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

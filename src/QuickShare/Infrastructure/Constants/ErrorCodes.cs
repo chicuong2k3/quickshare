@@ -159,6 +159,7 @@ public static class ErrorCodes
     public const string TotpAlreadyEnrolled = "totp_already_enrolled";
     public const string TotpNotEnrolled = "totp_not_enrolled";
     public const string TotpCodeInvalid = "totp_code_invalid";
+    public const string MfaRateLimited = "mfa_rate_limited";
     /// <summary>A workspace policy requires the authenticator that is being removed (issue #219).</summary>
     public const string MfaPolicyLocked = "mfa_policy_locked";
     /// <summary>The caller must answer the second-factor challenge before this operation.</summary>

@@ -24,7 +24,7 @@
                 </p>
             </div>
             <div class="cookie-consent__actions">
-                <button class="db-btn db-btn--primary db-btn--sm cookie-consent__btn" type="button"
+                <button type="button" data-slot="button" data-size="sm" class="cookie-consent__btn"
                         onclick="window.qsPage.send('/api/consents/pdpd', 'POST', null, {})"
                         data-ai-action="pdpd.grant">@Loc["pdpd_agree"]</button>
             </div>

@@ -1,0 +1,15 @@
+@inherits UiComponentBase
+
+@* role="log" with aria-relevant="additions" is what makes a screen reader read a new message as
+   it arrives without re-reading the thread above it — the one accessibility contract a chat
+   transcript has, and the reason this is a slot rather than a plain div. *@
+
+<div data-slot="message-scroller-content" role="log" aria-relevant="additions" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex h-max min-h-full flex-col gap-8";
+
+    string Classes => Cn(Base, Class);
+}

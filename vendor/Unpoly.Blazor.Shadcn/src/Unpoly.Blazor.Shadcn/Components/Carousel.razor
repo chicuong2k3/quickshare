@@ -1,0 +1,30 @@
+@inherits UiComponentBase
+
+@* Embla replaced by CSS scroll-snap.
+
+   The browser already has a snapping, momentum-scrolling, touch-driven, RTL-aware horizontal
+   scroller. Embla exists because in 2019 Safari's implementation was not usable; it is now, and
+   what is left of the JavaScript here is the two arrow buttons and their disabled state.
+
+   That has a consequence worth stating: with scripting off this is still a working carousel. You
+   can swipe it on a phone and scroll it with a trackpad; only the arrows go quiet, and they hide
+   themselves rather than sit there dead.
+
+   role=region + aria-roledescription is upstream's, and it is what makes a screen reader announce
+   "carousel" rather than "group". *@
+
+<div data-slot="carousel" role="region" aria-roledescription="carousel"
+     aria-label="@AriaLabel" data-orientation="@Orientation" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    /// <summary>A carousel is a landmark; two on a page are indistinguishable without a name.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Carousel";
+
+    const string Base =
+        "relative";
+
+    string Classes => Cn(Base, Class);
+}

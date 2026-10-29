@@ -1,0 +1,117 @@
+@inherits UiComponentBase
+
+@* ProgressRing — circular determinate progress, a real role="progressbar" shaped like a dial.
+   No JS — pure SVG from Value. For a linear bar use Progress; for indeterminate/spinner or
+   unknown-duration work, use Loader or a Button's IsLoading instead.
+
+   ChildContent is a custom centre: it is overlaid on the ring exactly where the label goes, so
+   pass it INSTEAD of ShowLabel, not with it — both at once draw two texts on top of each other. *@
+
+<div data-slot="progress-ring"
+     class="@Classes"
+     role="progressbar"
+     aria-valuemin="0"
+     aria-valuemax="@MaxText"
+     aria-valuenow="@ClampedText"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    <svg width="@Size" height="@Size" viewBox="0 0 @Size @Size" aria-hidden="true" focusable="false">
+        <circle cx="@Center" cy="@Center" r="@Radius" fill="none"
+                stroke="@TrackColor" stroke-width="@StrokeWidthText" />
+        <circle cx="@Center" cy="@Center" r="@Radius" fill="none"
+                stroke="@EffectiveColor" stroke-width="@StrokeWidthText" stroke-linecap="round"
+                stroke-dasharray="@CircumferenceText" stroke-dashoffset="@OffsetText"
+                transform="rotate(-90 @Center @Center)" />
+    </svg>
+    @if (ShowLabel)
+    {
+        <span data-slot="progress-ring-label" class="@LabelClasses">@(Label ?? PercentText)</span>
+    }
+    @if (ChildContent is not null)
+    {
+        @* A custom centre — an icon, a count with its unit, two lines of text. It gets the same
+           absolute overlay as the label rather than landing after the svg in the flex row,
+           where it would push the ring sideways instead of sitting inside it. The wrapper is
+           only written when there is something to wrap, so an empty ring renders no empty
+           span on top of itself. *@
+        <span data-slot="progress-ring-content" class="@ContentClasses">@ChildContent</span>
+    }
+</div>
+
+@code {
+    /// <summary>How far along the task is, in the same units as <see cref="Max"/>.</summary>
+    [Parameter] public double Value { get; set; }
+
+    /// <summary>The value that means complete.</summary>
+    [Parameter] public double Max { get; set; } = 100;
+
+    /// <summary>Outer diameter in pixels. The stroke is drawn inside it.</summary>
+    [Parameter] public int Size { get; set; } = 48;
+
+    /// <summary>Stroke thickness in pixels. The radius is derived from it, so the arc never
+    /// spills outside <see cref="Size"/>.</summary>
+    [Parameter] public double StrokeWidth { get; set; } = 4;
+
+    /// <summary>Any CSS colour for the indicator arc. Defaults to the theme's primary. The track
+    /// behind the arc is the same colour at 18%, so a custom colour gets a matching groove.</summary>
+    [Parameter] public string? Color { get; set; }
+
+    /// <summary>Draw the value as centred text over the ring.</summary>
+    [Parameter] public bool ShowLabel { get; set; }
+
+    /// <summary>Replaces the percentage in the centred label. Implies nothing on its own — set
+    /// <see cref="ShowLabel"/> to render it.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>What the ring means, for anything that cannot see it.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    /// <summary>Every number that reaches the DOM is written in invariant culture: under a locale
+    /// that separates decimals with a comma, a <c>stroke-dasharray</c> or an <c>aria-valuenow</c>
+    /// stops being a number and the arc silently fails to draw — with no error anywhere.</summary>
+    static string N(double value) => value.ToString("0.##", Inv);
+
+    double Clamped => Math.Clamp(Value, 0, Math.Max(0, Max));
+
+    double Center => Size / 2.0;
+
+    double Radius => Math.Max(0, (Size - StrokeWidth) / 2.0);
+
+    double Circumference => 2 * Math.PI * Radius;
+
+    /// <summary>How much of the arc is hidden. A <see cref="Max"/> of zero or less has no
+    /// progress to report, so the ring stays empty rather than dividing by it.</summary>
+    double Offset => Max <= 0 ? Circumference : Circumference * (1 - Clamped / Max);
+
+    double Percent => Max <= 0 ? 0 : Math.Round(Clamped / Max * 100);
+
+    string CenterText => N(Center);
+    string RadiusText => N(Radius);
+    string CircumferenceText => N(Circumference);
+    string OffsetText => N(Offset);
+    string StrokeWidthText => N(StrokeWidth);
+    string ClampedText => N(Clamped);
+    string MaxText => N(Max);
+    string PercentText => Percent.ToString("0", Inv) + "%";
+
+    // var() resolves inside SVG presentation attributes, and the themes write --primary in
+    // oklch — so the legacy hsl(var(--primary)) wrapper produced an invalid colour and the
+    // computed stroke was 'none': the ring drew nothing at all. Alpha comes from
+    // color-mix, the same construct Tailwind generates for bg-primary/20.
+    string EffectiveColor => Color ?? "var(--primary)";
+    // The track is the arc's own colour, faded — not always --primary. A ring given a custom
+    // Color used to sit on a primary-tinted track, so a destructive arc ran over a blue groove
+    // and read as two unrelated signals.
+    string TrackColor => $"color-mix(in oklab, {EffectiveColor} 18%, transparent)";
+
+    // relative on the root is what anchors the label overlay, and the overlay is what makes the
+    // ring readable at a glance without a screen reader.
+    string Classes => Cn("relative inline-flex shrink-0 items-center justify-center", Class);
+    string LabelClasses => "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-medium tabular-nums";
+
+    // Not pointer-events-none, unlike the label: a caller's centre may hold a link or a button,
+    // and one that cannot be clicked is a bug rather than a style.
+    string ContentClasses => "absolute inset-0 flex flex-col items-center justify-center text-center";
+}

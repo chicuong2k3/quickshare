@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+@* The keyboard hint on the right of a menu row. Decorative: the shortcut itself is bound
+   elsewhere, and reading "⌘K" aloud after the label helps nobody. *@
+
+<span data-slot="context-menu-shortcut" aria-hidden="true" class="@Cn("ms-auto text-xs tracking-widest text-muted-foreground", Class)"
+      @attributes="AdditionalAttributes">@ChildContent</span>

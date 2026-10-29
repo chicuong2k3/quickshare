@@ -1,95 +1,94 @@
 using System.Net;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QuickShare.Data;
+using QuickShare.Infrastructure.Constants;
 
 namespace QuickShare.Server.Tests.E2E;
 
-/// <summary>
-/// Account pages (issue #6): profile rename via the Htmxor form persists to the DB.
-/// Htmxor protocol: the form's hxor-eventid goes back as the HXOR-Event-Handler-Id
-/// header, and the HX-XSRF-TOKEN cookie value as the RequestVerificationToken header
-/// (mirrors what _content/Htmxor/htmxor.js does in the browser).
-/// </summary>
-public sealed partial class AccountProfileTests : IClassFixture<TestWebAppFactory>
+public sealed class AccountProfileTests : IClassFixture<TestWebAppFactory>
 {
-    private const string ProfileUrl = "/account/profile";
-    private const string HxRequestHeader = "HX-Request";
-    private const string EventHandlerHeader = "HXOR-Event-Handler-Id";
-    private const string TokenHeader = "RequestVerificationToken";
-    private const string XsrfCookieName = "HX-XSRF-TOKEN";
-    private const string NewDisplayName = "Renamed Via Test";
-
-    [GeneratedRegex("""hxor-eventid="([^"]+)""")]
-    private static partial Regex EventIdAttr();
-
     private readonly TestWebAppFactory _factory;
 
     public AccountProfileTests(TestWebAppFactory factory) => _factory = factory;
 
-    /// <summary>POSTs the profile form through the full Htmxor protocol and returns the response HTML.</summary>
-    private async Task<string> SubmitProfileFormAsync(string name)
-    {
-        // Cookies handled manually so the XSRF cookie value can be read.
-        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
-        client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, TestWebAppFactory.TestUserProviderKey);
-
-        var getRequest = new HttpRequestMessage(HttpMethod.Get, ProfileUrl);
-        getRequest.Headers.Add(HxRequestHeader, "true");
-        var getResponse = await client.SendAsync(getRequest);
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
-
-        var eventId = EventIdAttr().Match(await getResponse.Content.ReadAsStringAsync());
-        Assert.True(eventId.Success, "hxor-eventid not found in profile form");
-
-        var setCookies = getResponse.Headers.GetValues("Set-Cookie")
-            .Select(c => c.Split(';')[0])
-            .ToList();
-        var xsrfToken = setCookies
-            .First(c => c.StartsWith($"{XsrfCookieName}=", StringComparison.Ordinal))[(XsrfCookieName.Length + 1)..];
-
-        var form = new MultipartFormDataContent
-        {
-            { new StringContent(name), "name" },
-        };
-        var postRequest = new HttpRequestMessage(HttpMethod.Post, ProfileUrl) { Content = form };
-        postRequest.Headers.Add(HxRequestHeader, "true");
-        postRequest.Headers.Add(EventHandlerHeader, eventId.Groups[1].Value);
-        postRequest.Headers.Add(TokenHeader, Uri.UnescapeDataString(xsrfToken));
-        postRequest.Headers.Add("Cookie", string.Join("; ", setCookies));
-        var postResponse = await client.SendAsync(postRequest);
-        Assert.Equal(HttpStatusCode.OK, postResponse.StatusCode);
-        return await postResponse.Content.ReadAsStringAsync();
-    }
-
     [Fact]
-    public async Task ProfileUpdate_ChangesName_PersistsToDb()
+    public async Task NativeProfileForm_ChangesName()
     {
-        var html = await SubmitProfileFormAsync(NewDisplayName);
-        Assert.Contains(NewDisplayName, html);
+        const string newName = "Renamed Via Test";
+        var userKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(userKey);
+        using var client = _factory.CreateAuthenticatedClient(userKey);
+        var page = await client.GetStringAsync(RoutePaths.AccountProfile);
+        var token = AntiforgeryHelper.ExtractToken(page);
+        using var form = ProfileForm(newName, token);
 
+        using var response = await client.PostAsync(RoutePaths.AccountProfile, form);
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(newName, html);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == _factory.TestUserId);
-        Assert.Equal(NewDisplayName, user.Name);
+        var saved = await db.Users.AsNoTracking().SingleAsync(u => u.Id == user.Id);
+        Assert.Equal(newName, saved.Name);
     }
 
     [Fact]
-    public async Task ProfileUpdate_EmptyName_ShowsValidationError()
+    public async Task NativeProfileForm_EmptyNameShowsError()
     {
-        var html = await SubmitProfileFormAsync("");
-        Assert.Contains("Name is required", html);
+        using var client = _factory.CreateAuthenticatedClient();
+        var page = await client.GetStringAsync(RoutePaths.AccountProfile);
+        using var form = ProfileForm(string.Empty, AntiforgeryHelper.ExtractToken(page));
+
+        using var response = await client.PostAsync(RoutePaths.AccountProfile, form);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Name is required", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task NativeProfileForm_MissingTokenIsRejected()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+        using var form = ProfileForm("Unexpected Name", string.Empty);
+
+        using var response = await client.PostAsync(RoutePaths.AccountProfile, form);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NativeProfileForm_RejectsOversizedAvatar()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+        var page = await client.GetStringAsync(RoutePaths.AccountProfile);
+        using var form = ProfileForm("Test User", AntiforgeryHelper.ExtractToken(page));
+        using var image = new ByteArrayContent(new byte[5 * 1024 * 1024 + 1]);
+        image.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        form.Add(image, "avatar", "large.png");
+
+        using var response = await client.PostAsync(RoutePaths.AccountProfile, form);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Image must be under 5 MB", await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
     public async Task ProfilePage_Unauthenticated_RedirectsToLogin()
     {
-        var client = _factory.CreateClient(
-            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        var response = await client.GetAsync(ProfileUrl);
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        using var response = await client.GetAsync(RoutePaths.AccountProfile);
+
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
         Assert.Contains("/login", response.Headers.Location!.ToString());
     }
+
+    private static MultipartFormDataContent ProfileForm(string name, string token) => new()
+    {
+        { new StringContent(name), "name" },
+        { new StringContent("account-profile"), "_handler" },
+        { new StringContent(token), "__RequestVerificationToken" },
+    };
 }

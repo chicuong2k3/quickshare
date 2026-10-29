@@ -21,8 +21,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["approvals_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["approvals_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["approvals_title"]</h1>
+        <p class="text-muted-foreground">@Loc["approvals_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceApprovals" />
@@ -42,19 +42,19 @@
     private RenderFragment Chunk => @<section id="workspace-approvals-body" data-unpoly-reload>
         @if (!isAdmin || workspace is null)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
             @* The policy switches. Until now these columns could only be set in the database. *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["approvals_policy_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["approvals_policy_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["approvals_policy_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["approvals_policy_hint"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-checkbox">
@@ -67,23 +67,23 @@
                                    disabled="@(!isOwner)" />
                             <span>@Loc["approvals_self_label"]</span>
                         </label>
-                        <p class="db-p db-text-muted workspace-hint">@Loc["approvals_self_hint"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["approvals_self_hint"]</p>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["approvals_saved"]"
                                 onclick="window.quickShareApprovals.savePolicy(this)"
                                 data-ai-action="approvals.policy.save">@Loc["approvals_policy_save"]</button>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["approvals_queue_title", pending.Count]</h2>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["approvals_queue_title", pending.Count]</h2>
 
                     @if (pending.Count == 0)
                     {
-                        <p class="db-p db-text-muted workspace-hint">@Loc["approvals_queue_empty"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["approvals_queue_empty"]</p>
                     }
                     else
                     {
@@ -102,11 +102,11 @@
                                         </span>
                                     </div>
                                     <div class="workspace-member__actions">
-                                        <button type="button" class="db-btn db-btn--primary db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="default"
                                                 data-delivery-id="@item.Id"
                                                 onclick="window.quickShareApprovals.approve(this)"
                                                 data-ai-action="approval.approve">@Loc["approvals_approve"]</button>
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-delivery-id="@item.Id"
                                                 data-prompt="@Loc["approvals_deny_prompt"]"
                                                 onclick="window.quickShareApprovals.deny(this)"
@@ -116,8 +116,8 @@
                             }
                         </ul>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     </section>;
 

@@ -12,9 +12,9 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["notifications_center_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["notifications_center_lead"]</p>
-        <button type="button" class="db-btn db-btn--ghost db-btn--sm" id="enable-push-btn"
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["notifications_center_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["notifications_center_lead"]</p>
+        <button type="button" data-slot="button" data-variant="ghost" id="enable-push-btn"
                 data-enabled-label="@Loc["notifications_push_enabled"]"
                 onclick="window.enablePush && window.enablePush().then(function (ok) { if (ok) { var b = document.getElementById('enable-push-btn'); b.textContent = b.getAttribute('data-enabled-label'); b.disabled = true; } })"
                 data-ai-action="notifications.enablePush">@Loc["notifications_enable_push"]</button>
@@ -34,7 +34,7 @@
                       data-notification-read-all
                       class="notif-filters__markall">
                     <AntiforgeryToken />
-                    <button type="submit" class="db-btn db-btn--ghost db-btn--sm"
+                    <button type="submit" data-slot="button" data-variant="ghost"
                             data-error="@Loc["notifications_mark_all_error"]">@Loc["notifications_mark_all_read"]</button>
                 </form>
             }
@@ -43,7 +43,7 @@
             @if (items.Count == 0)
             {
                 <div class="account-deliveries-empty">
-                    <p class="db-p">@(CurrentFilter == NotificationFilter.Unread ? Loc["notifications_center_empty_unread"] : Loc["notifications_center_empty"])</p>
+                    <p>@(CurrentFilter == NotificationFilter.Unread ? Loc["notifications_center_empty_unread"] : Loc["notifications_center_empty"])</p>
                 </div>
             }
             else
@@ -109,11 +109,11 @@
                     {
                         <span class="notif__message">@MessageFor(item)</span>
                     }
-                    <time class="db-text-muted notif__time" datetime="@item.CreatedAt.ToString("o")">@item.CreatedAt.ToLocalTime().ToString("g")</time>
+                    <time class="text-muted-foreground notif__time" datetime="@item.CreatedAt.ToString("o")">@item.CreatedAt.ToLocalTime().ToString("g")</time>
                 </div>
                 @if (!item.IsRead)
                 {
-                    <button type="button" class="db-btn db-btn--ghost db-btn--sm notif__read"
+                    <button type="button" class="notif__read" data-slot="button" data-variant="ghost" data-size="sm"
                             onclick="markNotificationRead(this)" data-ai-action="notification.markRead">@Loc["notifications_mark_read"]</button>
                 }
             </article>
@@ -125,7 +125,7 @@
         @if (nextCursor is not null)
         {
             <a id="notifications-next-page" href="@BodyUrl(CurrentFilter, nextCursor)"
-               class="db-btn db-btn--ghost db-btn--sm"
+               data-slot="button" data-variant="ghost"
                up-defer="reveal"
                up-follow="false"
                up-history="false"

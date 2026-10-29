@@ -1,0 +1,40 @@
+@inherits UiComponentBase
+
+@* role="group" and data-orientation are both upstream's, and both load-bearing: the role is what
+   makes a label, a control and its help text read as one thing, and the orientation is what the
+   recipe keys off. Without the attribute the vertical classes never applied and every Field in
+   the library laid itself out as a row. *@
+
+<div data-slot="field" role="group" data-orientation="@Orientation"
+     data-invalid="@(Invalid ? "true" : null)" data-disabled="@(Disabled ? "true" : null)"
+     class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>
+    /// vertical | horizontal | responsive. Horizontal is for a checkbox or a switch, where the
+    /// label belongs beside the control; responsive stacks below <c>@md</c> and turns at it.
+    /// </summary>
+    [Parameter] public string Orientation { get; set; } = "vertical";
+
+    /// <summary>Turns the whole group destructive, label and description included.</summary>
+    [Parameter] public bool Invalid { get; set; }
+
+    /// <summary>
+    /// Greys the label with the control, which is what upstream's <c>data-disabled</c> does. The
+    /// control still needs its own <c>disabled</c> — this says the group is unavailable, it does
+    /// not make it so, and a group that only looked disabled would still submit.
+    /// </summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    const string Base =
+        "group/field flex w-full gap-3 data-[invalid=true]:text-destructive";
+
+    string VariantClass => Orientation switch
+    {
+        "horizontal" => "flex-row items-center [&>[data-slot=field-label]]:flex-auto has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+        "responsive" => "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*:not([popover])]:w-full @md/field-group:[&>*:not([popover])]:w-auto [&>.sr-only]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+        _ => "flex-col [&>*:not([popover])]:w-full [&>.sr-only]:w-auto",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

@@ -199,6 +199,50 @@ public sealed class WhiteLabelTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task Domain_DownloadAndPreviewsRefuseForeignShares()
+    {
+        const string host = "files.preview-isolation.test";
+        var (owner, _) = await WorkspaceClientAsync();
+        await VerifiedDomainAsync(owner, host);
+        var ownCode = await ShareCodeAsync(owner);
+        var (other, _) = await WorkspaceClientAsync();
+        var foreignCode = await ShareCodeAsync(other);
+        using var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = false,
+        });
+
+        foreach (var suffix in new[] { string.Empty, "/preview", "/office-preview", "/zip-contents" })
+        {
+            using var foreignRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/downloads/{foreignCode}{suffix}");
+            foreignRequest.Headers.Host = host;
+            using var foreign = await client.SendAsync(foreignRequest);
+            using var missingRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/downloads/{Guid.NewGuid():N}{suffix}");
+            missingRequest.Headers.Host = host;
+            using var missing = await client.SendAsync(missingRequest);
+
+            Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+            Assert.Equal(missing.StatusCode, foreign.StatusCode);
+        }
+
+        using var ownRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/downloads/{ownCode}");
+        ownRequest.Headers.Host = host;
+        using var own = await client.SendAsync(ownRequest);
+        Assert.Equal(HttpStatusCode.Redirect, own.StatusCode);
+
+        using var styleRequest = new HttpRequestMessage(HttpMethod.Get, RoutePaths.ScopedStyles);
+        styleRequest.Headers.Host = host;
+        using var styles = await client.SendAsync(styleRequest);
+        Assert.Equal(HttpStatusCode.OK, styles.StatusCode);
+
+        using var accountRequest = new HttpRequestMessage(HttpMethod.Get, RoutePaths.Account);
+        accountRequest.Headers.Host = host;
+        using var account = await client.SendAsync(accountRequest);
+        Assert.Equal(HttpStatusCode.Redirect, account.StatusCode);
+    }
+
+    [Fact]
     public async Task Domain_RemovalFallsBackToTheCanonicalAddress()
     {
         const string Host = "files.temporary.test";

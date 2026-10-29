@@ -1,5 +1,4 @@
-@* Shared shell for the static /tools SEO pages. No async work, no DB — the
-   HTMX lazy-load rule's static-page exception applies (CLAUDE.md). *@
+@* Shared shell for static /tools SEO pages, with no async work or DB. *@
 
 <PageTitle>@Heading</PageTitle>
 <HeadContent>
@@ -7,16 +6,18 @@
 </HeadContent>
 
 <PageWrapper Variant="PageVariant.Padded">
-    <article class="tools-landing">
-        <h1 class="db-h1">@Heading</h1>
-        <p class="db-p db-text-muted tools-landing__lede">@Lede</p>
+    <article class="mx-auto max-w-3xl">
+        <h1 class="text-3xl font-semibold tracking-tight">@Heading</h1>
+        <p class="mt-3 text-lg text-muted-foreground">@Lede</p>
 
-        <a href="@RoutePaths.Send" class="tools-landing__box">
-            <span class="tools-landing__kbd">Ctrl</span> + <span class="tools-landing__kbd">V</span>
-            <span class="tools-landing__box-hint">@PasteHint</span>
-        </a>
+        <Card class="mt-8 p-6">
+            <Button Href="@RoutePaths.Send" class="h-auto w-full flex-wrap whitespace-normal py-4">
+                <span><kbd>Ctrl</kbd> + <kbd>V</kbd></span>
+                <span>@PasteHint</span>
+            </Button>
+        </Card>
 
-        <div class="tools-landing__body">
+        <div class="mt-10 space-y-4 leading-7">
             @Body
         </div>
     </article>

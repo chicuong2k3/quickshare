@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+<li data-slot="sidebar-menu-item" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</li>
+
+@code {
+    const string Base =
+        "group/menu-item relative";
+
+    string Classes => Cn(Base, Class);
+}

@@ -20,8 +20,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["backup_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["backup_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["backup_title"]</h1>
+        <p class="text-muted-foreground">@Loc["backup_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceBackup" />
@@ -39,54 +39,54 @@
     private RenderFragment Chunk => @<section id="workspace-backup-body" data-unpoly-reload>
         @if (!isAdmin)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["backup_destination_title"]</h2>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["backup_destination_title"]</h2>
                     @* Said here rather than discovered during an actual disaster. *@
-                    <p class="db-p workspace-notice">@Loc["backup_metadata_only"]</p>
+                    <p class="workspace-notice">@Loc["backup_metadata_only"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="backup-endpoint">@Loc["backup_endpoint"]</label>
-                        <input id="backup-endpoint" class="db-input" type="url" placeholder="https://"
+                        <Input id="backup-endpoint"  type="url" placeholder="https://"
                                maxlength="@WorkspaceBackupPolicy.EndpointMaxLength" value="@policy?.Endpoint" />
 
                         <label class="workspace-label" for="backup-bucket">@Loc["backup_bucket"]</label>
-                        <input id="backup-bucket" class="db-input" type="text"
+                        <Input id="backup-bucket"  type="text"
                                maxlength="@WorkspaceBackupPolicy.BucketMaxLength" value="@policy?.BucketName" />
 
                         <label class="workspace-label" for="backup-region">@Loc["backup_region"]</label>
-                        <input id="backup-region" class="db-input" type="text"
+                        <Input id="backup-region"  type="text"
                                value="@(policy?.Region ?? ObjectStoreDefaults.Region)" />
 
                         <label class="workspace-label" for="backup-prefix">@Loc["backup_prefix"]</label>
-                        <input id="backup-prefix" class="db-input" type="text"
+                        <Input id="backup-prefix"  type="text"
                                maxlength="@WorkspaceBackupPolicy.PrefixMaxLength" value="@policy?.KeyPrefix" />
 
                         <label class="workspace-label" for="backup-key">@Loc["backup_access_key"]</label>
-                        <input id="backup-key" class="db-input" type="text" autocomplete="off"
+                        <Input id="backup-key"  type="text" autocomplete="off"
                                maxlength="@WorkspaceBackupPolicy.SecretMaxLength" value="@policy?.AccessKeyId" />
 
                         <label class="workspace-label" for="backup-secret">@Loc["backup_secret"]</label>
-                        <input id="backup-secret" class="db-input" type="password" autocomplete="off"
+                        <Input id="backup-secret"  type="password" autocomplete="off"
                                maxlength="@WorkspaceBackupPolicy.SecretMaxLength"
                                placeholder="@(policy is not null && !string.IsNullOrEmpty(policy.AccessKeySecret) ? Loc["backup_secret_set"] : string.Empty)" />
 
                         <label class="workspace-label" for="backup-frequency">@Loc["backup_frequency"]</label>
-                        <select id="backup-frequency" class="db-input">
-                            <option value="@BackupFrequency.Daily" selected="@(Frequency == BackupFrequency.Daily)">@Loc["backup_daily"]</option>
-                            <option value="@BackupFrequency.Weekly" selected="@(Frequency == BackupFrequency.Weekly)">@Loc["backup_weekly"]</option>
-                        </select>
+                        <NativeSelect id="backup-frequency">
+                            <NativeSelectOption value="@BackupFrequency.Daily" selected="@(Frequency == BackupFrequency.Daily)">@Loc["backup_daily"]</NativeSelectOption>
+                            <NativeSelectOption value="@BackupFrequency.Weekly" selected="@(Frequency == BackupFrequency.Weekly)">@Loc["backup_weekly"]</NativeSelectOption>
+                        </NativeSelect>
 
                         <label class="workspace-label" for="backup-retained">@Loc["backup_retained"]</label>
-                        <input id="backup-retained" class="db-input" type="number"
+                        <input id="backup-retained" type="number"
                                min="@WorkspaceBackupPolicy.MinRetainedCopies"
                                max="@WorkspaceBackupPolicy.MaxRetainedCopies"
                                value="@(policy?.RetainedCopies ?? 4)" />
@@ -96,31 +96,31 @@
                             <span>@Loc["backup_enabled"]</span>
                         </label>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["backup_saved"]"
                                 onclick="window.quickShareBackup.save(this)"
                                 data-ai-action="backup.save">@Loc["backup_save"]</button>
 
                         @if (policy is not null)
                         {
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     onclick="window.quickShareBackup.runNow(this)"
                                     data-ai-action="backup.run">@Loc["backup_run_now"]</button>
 
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     data-confirm="@Loc["backup_remove_confirm"]"
                                     onclick="window.quickShareBackup.remove(this)"
                                     data-ai-action="backup.remove">@Loc["backup_remove"]</button>
                         }
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @if (policy is not null)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["backup_last_run_title"]</h2>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["backup_last_run_title"]</h2>
 
                         <dl class="workspace-stats">
                             <div class="workspace-stat">
@@ -139,15 +139,15 @@
 
                         @if (!string.IsNullOrEmpty(policy.LastManifestKey))
                         {
-                            <p class="db-p db-text-muted workspace-hint">@Loc["backup_manifest_key", policy.LastManifestKey]</p>
+                            <p class="text-muted-foreground workspace-hint">@Loc["backup_manifest_key", policy.LastManifestKey]</p>
                         }
 
                         @if (!string.IsNullOrEmpty(policy.LastError))
                         {
-                            <p class="db-p db-text-muted workspace-hint">@Loc["backup_last_error", policy.LastError]</p>
+                            <p class="text-muted-foreground workspace-hint">@Loc["backup_last_error", policy.LastError]</p>
                         }
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;

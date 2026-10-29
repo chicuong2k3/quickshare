@@ -69,10 +69,10 @@
         <section id="p2ps-waiting" class="p2p-section hidden">
             <p class="p2p-status-p">@Loc["p2p_send_share_prompt"]</p>
 
-            <div class="db-card p2p-share-card">
-                <div class="db-input-group">
-                    <input id="p2ps-share-link" type="text" readonly class="db-input" aria-label="@Loc["p2p_send_share_link_aria"]" />
-                    <button class="db-btn db-btn--primary" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="@Loc["p2p_send_copy_link_aria"]">
+            <div class="p2p-share-card" data-slot="card">
+                <div class="flex gap-2">
+                    <input id="p2ps-share-link" type="text" readonly class="rounded-md border bg-transparent px-3 py-1 text-sm flex-1" aria-label="@Loc["p2p_send_share_link_aria"]" />
+                    <button class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="@Loc["p2p_send_copy_link_aria"]">
                         <span id="p2ps-copy-text">@Loc["p2p_send_copy_link"]</span>
                         <span id="p2ps-copy-done" class="hidden">@Loc["p2p_send_copied"]</span>
                     </button>
@@ -87,12 +87,12 @@
             </div>
 
             <p class="p2p-expiry-note">@Loc["p2p_send_expiry_note"]</p>
-            <button class="db-btn db-btn--ghost p2p-cancel-btn" onclick="p2pSend.cancel()">@Loc["p2p_send_cancel"]</button>
+            <button class="p2p-cancel-btn inline-flex items-center rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="p2pSend.cancel()">@Loc["p2p_send_cancel"]</button>
         </section>
 
         @* FAILED *@
         <section id="p2ps-failed" class="p2p-section hidden">
-            <div class="db-alert db-alert--error p2p-error-alert" role="alert">
+            <div class="p2p-error-alert text-destructive rounded-md border border-destructive/50 p-3" role="alert">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
@@ -100,8 +100,8 @@
                 </svg>
                 <span id="p2ps-error-msg">@Loc["p2p_send_error_part1"]<a href="/send" style="color:var(--db-color-accent);text-decoration:underline">@Loc["p2p_send_error_cloud_link"]</a>@Loc["p2p_send_error_part2"]</span>
             </div>
-            <button id="p2ps-ad-unlock-btn" class="db-btn db-btn--primary p2p-retry-btn hidden" data-ai-action="p2p.ad.unlock" type="button">@Loc["p2p_send_watch_ad"]</button>
-            <button class="db-btn db-btn--primary p2p-retry-btn" onclick="p2pSend.reset()">@Loc["p2p_send_try_again"]</button>
+            <button id="p2ps-ad-unlock-btn" class="p2p-retry-btn hidden inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" data-ai-action="p2p.ad.unlock" type="button">@Loc["p2p_send_watch_ad"]</button>
+            <button class="p2p-retry-btn inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onclick="p2pSend.reset()">@Loc["p2p_send_try_again"]</button>
         </section>
     </div>
 

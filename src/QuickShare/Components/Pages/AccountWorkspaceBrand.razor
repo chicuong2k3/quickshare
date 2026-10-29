@@ -21,8 +21,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["brand_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["brand_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["brand_title"]</h1>
+        <p class="text-muted-foreground">@Loc["brand_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceBrand" />
@@ -40,18 +40,18 @@
     private RenderFragment Chunk => @<section id="workspace-brand-body" data-unpoly-reload>
         @if (!isAdmin)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <p class="db-p">@Loc["ws_admin_only"]</p>
-                </div>
-            </div>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
         }
         else
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["brand_appearance_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["brand_scope_note"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["brand_appearance_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["brand_scope_note"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-checkbox">
@@ -60,20 +60,20 @@
                         </label>
 
                         <label class="workspace-label" for="brand-accent">@Loc["brand_accent"]</label>
-                        <input id="brand-accent" class="db-input" type="text" placeholder="#c8a24a"
+                        <Input id="brand-accent"  type="text" placeholder="#c8a24a"
                                maxlength="@WorkspaceBrand.ColorMaxLength" value="@brand?.AccentColor" />
 
                         <label class="workspace-label" for="brand-accent-text">@Loc["brand_accent_text"]</label>
-                        <input id="brand-accent-text" class="db-input" type="text" placeholder="#101010"
+                        <Input id="brand-accent-text"  type="text" placeholder="#101010"
                                maxlength="@WorkspaceBrand.ColorMaxLength" value="@brand?.AccentTextColor" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["brand_contrast_note"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["brand_contrast_note"]</p>
 
                         <label class="workspace-label" for="brand-header">@Loc["brand_header"]</label>
-                        <input id="brand-header" class="db-input" type="text"
+                        <Input id="brand-header"  type="text"
                                maxlength="@WorkspaceBrand.HeaderMaxLength" value="@brand?.HeaderText" />
 
                         <label class="workspace-label" for="brand-footer">@Loc["brand_footer"]</label>
-                        <input id="brand-footer" class="db-input" type="text"
+                        <Input id="brand-footer"  type="text"
                                maxlength="@WorkspaceBrand.FooterMaxLength" value="@brand?.FooterText" />
 
                         <label class="workspace-checkbox">
@@ -81,19 +81,19 @@
                             <span>@Loc["brand_hide_qs"]</span>
                         </label>
 
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-saved-label="@Loc["brand_saved"]"
                                 onclick="window.quickShareBrand.save(this)"
                                 data-ai-action="brand.save">@Loc["brand_save"]</button>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @* Logo (issue #285). *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["brand_logo_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["brand_logo_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["brand_logo_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["brand_logo_hint"]</p>
 
                     @if (brand?.LogoKey is not null)
                     {
@@ -102,9 +102,9 @@
                     }
 
                     <div class="workspace-form">
-                        <input id="brand-logo-file" class="db-input" type="file"
+                        <Input id="brand-logo-file"  type="file"
                                accept="image/png,image/jpeg,image/webp" />
-                        <button type="button" class="db-btn db-btn--primary"
+                        <button type="button" data-slot="button" data-variant="default"
                                 data-kind="@BrandAssetKind.Logo"
                                 data-input="brand-logo-file"
                                 onclick="window.quickShareBrand.upload(this)"
@@ -112,56 +112,56 @@
 
                         @if (brand?.LogoKey is not null)
                         {
-                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                            <button type="button" data-slot="button" data-variant="ghost"
                                     data-kind="@BrandAssetKind.Logo"
                                     onclick="window.quickShareBrand.removeAsset(this)"
                                     data-ai-action="brand.logo.remove">@Loc["brand_remove"]</button>
                         }
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @* Typography (issue #286). *@
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["brand_fonts_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["brand_fonts_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["brand_fonts_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["brand_fonts_hint"]</p>
 
                     <div class="workspace-form">
                         <label class="workspace-label" for="brand-heading-name">@Loc["brand_heading_font"]</label>
-                        <input id="brand-heading-name" class="db-input" type="text"
+                        <Input id="brand-heading-name"  type="text"
                                maxlength="@WorkspaceBrand.FontNameMaxLength" value="@brand?.HeadingFontName" />
-                        <input id="brand-heading-file" class="db-input" type="file" accept="font/woff2,.woff2" />
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        <Input id="brand-heading-file"  type="file" accept="font/woff2,.woff2" />
+                        <button type="button" data-slot="button" data-variant="ghost"
                                 data-kind="@BrandAssetKind.HeadingFont"
                                 data-input="brand-heading-file"
                                 onclick="window.quickShareBrand.upload(this)"
                                 data-ai-action="brand.font.heading">@Loc["brand_upload"]</button>
 
                         <label class="workspace-label" for="brand-body-name">@Loc["brand_body_font"]</label>
-                        <input id="brand-body-name" class="db-input" type="text"
+                        <Input id="brand-body-name"  type="text"
                                maxlength="@WorkspaceBrand.FontNameMaxLength" value="@brand?.BodyFontName" />
-                        <input id="brand-body-file" class="db-input" type="file" accept="font/woff2,.woff2" />
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        <Input id="brand-body-file"  type="file" accept="font/woff2,.woff2" />
+                        <button type="button" data-slot="button" data-variant="ghost"
                                 data-kind="@BrandAssetKind.BodyFont"
                                 data-input="brand-body-file"
                                 onclick="window.quickShareBrand.upload(this)"
                                 data-ai-action="brand.font.body">@Loc["brand_upload"]</button>
 
                         <label class="workspace-label" for="brand-license">@Loc["brand_license"]</label>
-                        <input id="brand-license" class="db-input" type="text"
+                        <Input id="brand-license"  type="text"
                                maxlength="@WorkspaceBrand.LicenseNoteMaxLength" value="@brand?.FontLicenseNote" />
-                        <p class="db-p db-text-muted workspace-hint">@Loc["brand_license_note"]</p>
+                        <p class="text-muted-foreground workspace-hint">@Loc["brand_license_note"]</p>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @* Preview: the same CSS the recipient page emits, scoped to this card. *@
             @if (Preview is { } preview)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["brand_preview_title"]</h2>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["brand_preview_title"]</h2>
                         <style>@PreviewCss(preview)</style>
                         <div class="brand-preview">
                             @if (preview.HasLogo)
@@ -173,16 +173,16 @@
                             {
                                 <p class="dl-brand__header">@header</p>
                             }
-                            <p class="db-h3 brand-preview__heading">@Loc["brand_preview_heading"]</p>
-                            <p class="db-p brand-preview__body">@Loc["brand_preview_body"]</p>
+                            <p class="brand-preview__heading text-xl font-semibold">@Loc["brand_preview_heading"]</p>
+                            <p class="brand-preview__body">@Loc["brand_preview_body"]</p>
                             <span class="brand-preview__chip">@Loc["brand_preview_chip"]</span>
                             @if (preview.FooterText is { } footer)
                             {
                                 <p class="dl-brand__footer">@footer</p>
                             }
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;

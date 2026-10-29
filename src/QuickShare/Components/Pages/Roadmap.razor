@@ -11,18 +11,18 @@
 
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="db-h1">@(IsVi ? "Lộ trình" : "Roadmap")</h1>
-        <p class="db-p db-text-muted">@(IsVi ? "Bình chọn tính năng bạn cần nhất — bình chọn ẩn danh, không cần tài khoản." : "Vote for what you need most — anonymous, no account required.")</p>
+        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Lộ trình" : "Roadmap")</h1>
+        <p class="text-muted-foreground">@(IsVi ? "Bình chọn tính năng bạn cần nhất — bình chọn ẩn danh, không cần tài khoản." : "Vote for what you need most — anonymous, no account required.")</p>
 
         @foreach (var group in Groups)
         {
-            <h2 class="db-h2">@GroupName(group)</h2>
-            <ul class="db-p legal__list" style="list-style: none; padding-left: 0">
+            <h2 class="text-2xl font-bold">@GroupName(group)</h2>
+            <ul class="legal__list" style="list-style: none; padding-left: 0">
                 @foreach (var item in Items.Where(i => i.Group == group))
                 {
                     <li style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0">
                         <span>@ItemName(item)</span>
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
                                 data-voted="@VotedLabel"
                                 onclick="voteRoadmap('@item.Id', this)">@VoteLabel</button>
                     </li>

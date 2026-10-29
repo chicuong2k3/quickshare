@@ -1,0 +1,10 @@
+@inherits UiComponentBase
+
+<div data-slot="card-description" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "text-control text-muted-foreground";
+
+    string Classes => Cn(Base, Class);
+}

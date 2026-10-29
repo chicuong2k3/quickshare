@@ -1,0 +1,19 @@
+@inherits UiComponentBase
+
+@* popovertarget is what opens it, and it is an ordinary HTML attribute — so the menu opens
+   before any JavaScript has run, and keeps opening if ui.js fails to load. The compiler only
+   adds positioning and the roving focus. *@
+
+<button type="button" data-slot="dropdown-menu-trigger" data-target="@Target"
+        popovertarget="@Target" aria-haspopup="menu" aria-expanded="false"
+        class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    /// <summary>The id of the <see cref="DropdownMenuContent"/> to open.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    [Parameter] public string Variant { get; set; } = "outline";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

@@ -18,8 +18,8 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["ws_title"]</h1>
-        <p class="db-p db-text-muted">@Loc["ws_subtitle"]</p>
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_title"]</h1>
+        <p class="text-muted-foreground">@Loc["ws_subtitle"]</p>
     </section>
 
     <WorkspaceTabs Current="@RoutePaths.AccountWorkspace" />
@@ -42,41 +42,41 @@
     private RenderFragment Chunk => @<section id="workspace-body" data-unpoly-reload>
         @if (workspace is null)
         {
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@Loc["ws_create_title"]</h2>
-                    <p class="db-p db-text-muted workspace-hint">@Loc["ws_none"] @Loc["ws_create_hint"]</p>
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["ws_create_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["ws_none"] @Loc["ws_create_hint"]</p>
 
                     @if (!canCreate)
                     {
-                        <p class="db-p workspace-notice">@Loc["ws_requires_paid"]</p>
+                        <p class="workspace-notice">@Loc["ws_requires_paid"]</p>
                     }
                     else
                     {
                         <div class="workspace-form">
                             <label class="workspace-label" for="ws-name">@Loc["ws_name_label"]</label>
-                            <input id="ws-name" class="db-input" type="text" maxlength="@Workspace.NameMaxLength" />
+                            <Input id="ws-name"  type="text" maxlength="@Workspace.NameMaxLength" />
 
                             <label class="workspace-label" for="ws-seats">@Loc["ws_seats_label"]</label>
-                            <input id="ws-seats" class="db-input" type="number"
+                            <input id="ws-seats" type="number"
                                    min="@Workspace.MinSeats" max="@Workspace.MaxSeats" value="@Workspace.MinSeats" />
 
-                            <button type="button" class="db-btn db-btn--primary"
+                            <button type="button" data-slot="button" data-variant="default"
                                     onclick="window.quickShareWorkspace.create()"
                                     data-ai-action="workspace.create">@Loc["ws_create_btn"]</button>
                         </div>
                     }
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
         else
         {
             var isAdmin = workspace.Role is RoleOwner or RoleAdmin;
 
-            <div class="db-card account-card workspace-card">
-                <div class="db-card__body">
-                    <h2 class="db-h3">@workspace.Name</h2>
-                    <p class="db-p db-text-muted workspace-hint">
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@workspace.Name</h2>
+                    <p class="text-muted-foreground workspace-hint">
                         @Loc["ws_seats_used", workspace.SeatsUsed, workspace.Seats]
                         ·
                         @Loc["ws_pooled_quota", Bytes(workspace.PooledUsedBytes), Bytes(workspace.PooledQuotaBytes)]
@@ -99,13 +99,13 @@
                                     <div class="workspace-member__actions">
                                         @if (workspace.IsOwner && !member.Pending)
                                         {
-                                            <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                            <button type="button" data-slot="button" data-variant="ghost"
                                                     data-member-id="@member.Id"
                                                     data-confirm="@Loc["ws_transfer_confirm"]"
                                                     onclick="window.quickShareWorkspace.transfer(this)"
                                                     data-ai-action="workspace.transfer">@Loc["ws_transfer_btn"]</button>
                                         }
-                                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                                        <button type="button" data-slot="button" data-variant="ghost"
                                                 data-member-id="@member.Id"
                                                 data-confirm="@Loc["ws_revoke_confirm"]"
                                                 onclick="window.quickShareWorkspace.revoke(this)"
@@ -115,46 +115,46 @@
                             </li>
                         }
                     </ul>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             @if (isAdmin)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["ws_invite_title"]</h2>
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_invite_title"]</h2>
                         <div class="workspace-form">
                             <label class="workspace-label" for="ws-invite-email">@Loc["ws_invite_email"]</label>
-                            <input id="ws-invite-email" class="db-input" type="email"
+                            <Input id="ws-invite-email"  type="email"
                                    maxlength="@WorkspaceMember.EmailMaxLength" />
 
                             <label class="workspace-label" for="ws-invite-role">@Loc["ws_invite_role"]</label>
-                            <select id="ws-invite-role" class="db-input">
-                                <option value="@RoleMember">@Loc["ws_role_member"]</option>
-                                <option value="@RoleAdmin">@Loc["ws_role_admin"]</option>
-                                <option value="@RoleViewer">@Loc["ws_role_viewer"]</option>
-                            </select>
+                            <NativeSelect id="ws-invite-role">
+                                <NativeSelectOption value="@RoleMember">@Loc["ws_role_member"]</NativeSelectOption>
+                                <NativeSelectOption value="@RoleAdmin">@Loc["ws_role_admin"]</NativeSelectOption>
+                                <NativeSelectOption value="@RoleViewer">@Loc["ws_role_viewer"]</NativeSelectOption>
+                            </NativeSelect>
 
-                            <button type="button" class="db-btn db-btn--primary"
+                            <button type="button" data-slot="button" data-variant="default"
                                     onclick="window.quickShareWorkspace.invite(this)"
                                     data-sent-label="@Loc["ws_invite_sent"]"
                                     data-ai-action="workspace.invite">@Loc["ws_invite_btn"]</button>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
 
             @if (workspace.IsOwner)
             {
-                <div class="db-card account-card workspace-card">
-                    <div class="db-card__body">
-                        <h2 class="db-h3">@Loc["ws_transfer_title"]</h2>
-                        <p class="db-p db-text-muted workspace-hint">@Loc["ws_transfer_hint"]</p>
-                        <button type="button" class="db-btn db-btn--ghost db-btn--sm"
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_transfer_title"]</h2>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_transfer_hint"]</p>
+                        <button type="button" data-slot="button" data-variant="ghost"
                                 onclick="window.quickShareWorkspace.cancelTransfer(this)"
                                 data-ai-action="workspace.transfer.cancel">@Loc["ws_transfer_cancel"]</button>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             }
         }
     </section>;

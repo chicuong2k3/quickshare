@@ -111,7 +111,7 @@ browser download needed.
 | Security activity audit trail | `SecurityEventTests` |
 | Abuse/DMCA reports + admin | `AbuseReportTests` |
 | Localization vi/en | `LocalizationTests`, `LanguageSwitchTests` |
-| HTMX lazy-load / cache / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `PageCoverageTests` |
+| SSR / Unpoly cache / page render | `PageRenderingTests`, `ResponseCacheTests`, `PageLoadTests`, `PageCoverageTests` |
 | Quick Paste | `QuickPasteTests`, `PasteBrowserTests` |
 | R2 storage | `R2ObjectKeyTests`, `OrphanSweepJobTests`, `LocalDiskStorageProviderStubTests`, `R2StorageExceptionTests` |
 | Smoke / no-JS-error pages | `SmokeTests` |
@@ -147,7 +147,7 @@ checklist of the touched issue. Minimum regression set per change:
 | **Any provisioning or offboarding path** | `EnterpriseIdentityTests` | it revokes as well as creates — half a lifecycle is exactly what procurement is asking about |
 | Analytics | `AnalyticsTrackingTests` | — |
 | Localization | `LocalizationTests`, `LanguageSwitchTests` | — |
-| HTMX / page render | `HtmxLazyLoadTests`, `HtmxCacheTests`, `PageLoadTests`, `SmokeTests` | — |
+| SSR / Unpoly page render | `PageRenderingTests`, `ResponseCacheTests`, `PageLoadTests`, `SmokeTests` | — |
 | Any visible UI | `SmokeTests` | drag&drop, clipboard feel |
 
 ## Manual-only (automation cannot cover — always a human)

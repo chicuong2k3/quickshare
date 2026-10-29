@@ -1,0 +1,107 @@
+@inherits UiComponentBase
+
+@* A row in the sidebar. An <a> when it goes somewhere — which is nearly always — so Unpoly
+   follows it, middle-click opens a tab and the status bar shows the destination.
+
+   Active is a parameter, but with [up-nav] on <SidebarMenu> you rarely need it: Unpoly compares
+   each href with the address bar and marks the match, which keeps working after a fragment swap
+   because the swap is what changes the address bar. aria-current is set from the same flag,
+   because .up-current is a class and a class tells a screen reader nothing. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="sidebar-menu-button" data-size="@Size" data-variant="@Variant"
+       data-active="@(Active ? "true" : null)" aria-current="@(Active ? "page" : null)"
+       data-tooltip-target="@TipId" data-tooltip-when="@(Tooltip is null ? null : "collapsed")"
+       aria-describedby="@TipId" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    @* Target makes the row open a menu, which is what the header and footer rows do in every
+       sidebar shadcn ships. popovertarget alone would open it and leave it unplaced: the compiler
+       that anchors a panel matches on the trigger's slot, so this slot is on its list. *@
+    <button type="button" data-slot="sidebar-menu-button" data-size="@Size" data-variant="@Variant"
+            data-active="@(Active ? "true" : null)" aria-pressed="@(Active ? "true" : null)"
+            data-target="@Target" popovertarget="@Target"
+            aria-haspopup="@(Target is null ? null : "menu")"
+            aria-expanded="@(Target is null ? null : "false")"
+            data-tooltip-target="@TipId" data-tooltip-when="@(Tooltip is null ? null : "collapsed")"
+            aria-describedby="@TipId" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@if (Tooltip is not null)
+{
+    @* The tip is a sibling rather than a child: it is a [popover] in the top layer, and a popover
+       inside the row would be inside the thing it describes. Side is inline-end because the rail
+       is on the reading-start edge — in Arabic that is the left, and nothing here has to say so. *@
+    <div id="@TipId" popover="manual" role="tooltip" data-slot="tooltip-content"
+         data-side="inline-end" data-placed-side="inline-end" data-side-offset="8"
+         class="z-50 w-fit rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background">
+        @Tooltip
+    </div>
+}
+
+@code {
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>default | outline</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    /// <summary>default | sm | lg</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    [Parameter] public bool Active { get; set; }
+
+    /// <summary>
+    /// The id of a <see cref="DropdownMenuContent"/> this row opens — the workspace switcher
+    /// in a header, the account menu in a footer. Upstream writes it as
+    /// <c>&lt;DropdownMenuTrigger render={&lt;SidebarMenuButton/&gt;}&gt;</c>; Razor has no
+    /// cloneElement, so it is a parameter. Ignored when the row is a link, because a row
+    /// cannot both go somewhere and open something.
+    /// </summary>
+    [Parameter] public string? Target { get; set; }
+
+    /// <summary>
+    /// A label shown beside the row while the sidebar is collapsed to icons — upstream's
+    /// tooltip prop, and shown at the same moment: it is the only time the row's own words are
+    /// not on screen, and a tip repeating a word the reader can see is noise.
+    /// </summary>
+    [Parameter] public string? Tooltip { get; set; }
+
+    static int seq;
+    string? tipId;
+
+    /// <summary>Minted once per instance, so a re-render does not hand out a new id.</summary>
+    string? TipId => Tooltip is null ? null : (tipId ??= $"sidebar-tip-{++seq}");
+
+    const string Base =
+        "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 " +
+        "text-start text-control ring-sidebar-ring outline-hidden " +
+        "transition-[width,height,padding] " +
+        "group-has-data-[sidebar=menu-action]/menu-item:pe-8 " +
+        "group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! " +
+        "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 " +
+        "active:bg-sidebar-accent active:text-sidebar-accent-foreground " +
+        "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none " +
+        "aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent " +
+        "data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground " +
+        "data-[state=open]:hover:bg-sidebar-accent " +
+        "data-[state=open]:hover:text-sidebar-accent-foreground [&>span:last-child]:truncate " +
+        "[&>svg]:size-4 [&>svg]:shrink-0 [&.up-current]:bg-sidebar-accent " +
+        "[&.up-current]:font-medium [&.up-current]:text-sidebar-accent-foreground";
+
+    string VariantClass => Variant switch
+    {
+        "outline" => "bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
+        _ => "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    };
+
+    string SizeClass => Size switch
+    {
+        "lg" => "h-12 text-control group-data-[collapsible=icon]:p-0!",
+        "sm" => "h-7 text-xs",
+        _ => "h-8 text-control",
+    };
+
+    string Classes => Cn(Base, VariantClass, SizeClass, Class);
+}

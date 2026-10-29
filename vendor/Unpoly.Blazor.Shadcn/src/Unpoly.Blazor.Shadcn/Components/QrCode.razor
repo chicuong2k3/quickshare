@@ -1,0 +1,71 @@
+@inherits UiComponentBase
+
+@* QR Code — qrcodejs (https://github.com/davidshimjs/qrcodejs) behind lumeo.nativ.sh/components/qr-code API.
+   Static SSR renders an empty <div> with data-* attributes; a up.compiler creates the QR via
+   `new QRCode(el, {text, width, height, colorDark, colorLight, correctLevel})` and tears it
+   down on fragment swap. No dependencies beyond the vendored qrcode.js.
+
+   Theme-aware defaults: when ForegroundColor/BackgroundColor are null the JS resolves
+   `var(--foreground)` / `var(--card)` via getComputedStyle, so dark mode just works.
+   Margin maps to the quiet zone (CSS padding on the generated canvas/img).
+*@
+
+<div data-slot="qr-code"
+     data-qrcode
+     data-value="@Value"
+     data-size="@Size"
+     data-correct-level="@CorrectLevelValue"
+     data-color-dark="@ForegroundColor"
+     data-color-light="@BackgroundColor"
+     data-margin="@(ShowMargin ? Margin.ToString() : "0")"
+     role="img"
+     aria-label="@EffectiveAriaLabel"
+     class="@Classes"
+     style="@StyleValue"
+     @attributes="AdditionalAttributes"></div>
+
+@code {
+    /// <summary>The string to encode — URL, vCard, Wi-Fi, etc. Required.</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+
+    /// <summary>Square size in pixels. Both width and height. Default 128.</summary>
+    [Parameter] public int Size { get; set; } = 128;
+
+    /// <summary>Error correction: Low (~7%), Medium (~15%), Quartile (~25%), High (~30%). Default Medium.</summary>
+    [Parameter] public QrCodeErrorCorrection ErrorCorrectionLevel { get; set; } = QrCodeErrorCorrection.Medium;
+
+    /// <summary>String alias for ErrorCorrectionLevel — "L","M","Q","H" or "Low","Medium","Quartile","High". Takes precedence when set.</summary>
+    [Parameter] public string? CorrectLevel { get; set; }
+
+    /// <summary>Foreground (dark) modules. Null → theme-aware (var(--foreground)). A bare var(--token) is resolved before drawing; hsl(var(--token)) is not, and the tokens are oklch, so it would be an invalid colour.</summary>
+    [Parameter] public string? ForegroundColor { get; set; }
+
+    /// <summary>Background (light) modules. Null → var(--card) via JS. Use "#ffffff" for white.</summary>
+    [Parameter] public string? BackgroundColor { get; set; }
+
+    /// <summary>Quiet zone margin in pixels. Default 4. Set ShowMargin=false for 0.</summary>
+    [Parameter] public int Margin { get; set; } = 4;
+
+    /// <summary>Whether to keep the quiet zone. Default true.</summary>
+    [Parameter] public bool ShowMargin { get; set; } = true;
+
+    /// <summary>Accessible label. When null, Value is used so screen readers announce the encoded string.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    string CorrectLevelValue => CorrectLevel ?? ErrorCorrectionLevel switch
+    {
+        QrCodeErrorCorrection.Low => "L",
+        QrCodeErrorCorrection.Medium => "M",
+        QrCodeErrorCorrection.Quartile => "Q",
+        QrCodeErrorCorrection.High => "H",
+        _ => "M"
+    };
+
+    string EffectiveAriaLabel => string.IsNullOrWhiteSpace(AriaLabel) ? Value : AriaLabel!;
+
+    string StyleValue => $"width:{Size}px;height:{Size}px;";
+
+    // QR is an image; keep it block and let the generated canvas/img fill it.
+    // `overflow-hidden` prevents the canvas from spilling when Margin is 0.
+    string Classes => Cn("inline-block shrink-0 overflow-hidden rounded-md", Class);
+}

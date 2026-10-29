@@ -27,6 +27,7 @@
             try {
                 var family = window.localStorage.getItem('db-family') || 'grunge';
                 var scheme = window.localStorage.getItem('db-scheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.classList.toggle('dark', scheme === 'dark');
                 // Map family+scheme to theme variant
                 var familyMap = {
                     grunge: { dark: 'grunge-dark', light: 'grunge-light' },
@@ -42,13 +43,20 @@
         })();
     </script>
 
-    <link rel="stylesheet" href="/css/QuickShare.styles.css" />
+    <link rel="stylesheet" href="@RoutePaths.ScopedStyles" />
     <link rel="stylesheet" href="https://daub.dev/daub.css" />
     <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/shadcn.generated.css" />
+    <link rel="stylesheet" href="_content/Unpoly.Blazor.Shadcn/ui.safari15.css" />
 
-    @* Unpoly is opt-in until remaining HTMX surfaces are migrated. *@
+    <script src="_content/Unpoly.Blazor.Shadcn/compat/safari15-shim.js"></script>
+    <script src="_content/Unpoly.Blazor.Shadcn/compat/dialog-shim.js"></script>
+    <script src="_content/Unpoly.Blazor.Shadcn/compat/popover.iife.min.js"></script>
+    <script src="_content/Unpoly.Blazor.Shadcn/compat/css-has-pseudo.js"></script>
+    <script src="_content/Unpoly.Blazor.Shadcn/compat/has-pseudo-boot.js"></script>
+    <script src="_content/Unpoly.Blazor.Shadcn/toastify/toastify.js" defer></script>
+    <script src="_content/Unpoly.Blazor.Shadcn/ui.js" defer></script>
     <UnpolyHead />
-    <HtmxHeadOutlet />
     <HeadOutlet />
 </head>
 <body>
@@ -76,6 +84,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             if (window.DAUB) {
                 var family = window.localStorage.getItem('db-family') || 'grunge';
                 var scheme = window.localStorage.getItem('db-scheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.classList.toggle('dark', scheme === 'dark');
                 window.DAUB.setFamily(family);
                 window.DAUB.setScheme(scheme);
             }

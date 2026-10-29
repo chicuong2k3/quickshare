@@ -11,35 +11,20 @@
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <h1 class="db-h1">@Loc["labels_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["labels_lead"]</p>
+        <h1 class="text-3xl font-semibold">@Loc["labels_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["labels_lead"]</p>
     </section>
 
-    @if (!isLoaded)
-    {
-        @* Shell skeleton — rendered instantly, no DB calls. *@
-        <section id="labels-body"
-                 hx-get="@RoutePaths.AccountDeliveryLabels"
-                 hx-trigger="load"
-                 hx-target="#labels-body"
-                 hx-select="#labels-body"
-                 hx-swap="outerHTML"
-                 aria-busy="true">
-            <p class="db-text-muted">@Loc["labels_loading"]</p>
-        </section>
-    }
-    else
-    {
-        <section id="labels-body">
+    <section id="labels-body">
             @if (labels.Count == 0)
             {
-                <p class="db-text-muted">@Loc["labels_empty"]</p>
+                <p class="text-muted-foreground">@Loc["labels_empty"]</p>
             }
             else
             {
                 <div class="account-labels-toolbar">
-                    <button type="button" class="db-btn db-btn--primary" onclick="window.print()">@Loc["labels_print"]</button>
-                    <a href="@RoutePaths.AccountDeliveries" class="db-btn db-btn--ghost">@Loc["labels_back"]</a>
+                    <button type="button" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" onclick="window.print()">@Loc["labels_print"]</button>
+                    <Button Href="@RoutePaths.AccountDeliveries" Variant="ghost">@Loc["labels_back"]</Button>
                 </div>
                 <div class="account-labels">
                     @foreach (var label in labels)
@@ -48,7 +33,7 @@
                         <div class="account-label">
                             <div class="account-label__qr" data-url="@url"></div>
                             <div class="account-label__name" title="@label.FileName">@label.FileName</div>
-                            <div class="account-label__meta db-text-muted">
+                            <div class="account-label__meta">
                                 @(label.ExpiresAt is { } exp ? string.Format(Loc["labels_expires"], exp.ToLocalTime().ToString("d")) : Loc["labels_no_expiry"])
                             </div>
                             <div class="account-label__url">@url</div>
@@ -73,8 +58,7 @@
                     })();
                 </script>
             }
-        </section>
-    }
+    </section>
 
 </PageWrapper>
 
@@ -84,22 +68,12 @@
 
     private sealed record LabelRow(string FileName, string ShareCode, string? Alias, DateTime? ExpiresAt);
 
-    private bool isLoaded;
     private List<LabelRow> labels = [];
     private string baseUrl = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         var ctx = HttpContextAccessor.HttpContext!;
-        var isHtmxRequest = string.Equals(
-            ctx.Request.Headers[HtmxHeaders.Request].FirstOrDefault(),
-            HtmxHeaders.RequestValue,
-            StringComparison.OrdinalIgnoreCase);
-
-        // Shell render: return immediately, no DB calls.
-        if (!isHtmxRequest) return;
-
-        isLoaded = true;
         baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
 
         var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);

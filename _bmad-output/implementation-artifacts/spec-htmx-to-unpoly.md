@@ -16,7 +16,7 @@ context:
 
 **Problem:** HTMX/Htmxor is embedded in application startup, dozens of lazy-loaded Razor pages, forms, polling, navigation, cache headers, TypeScript and tests. Replacing just scripts or attribute prefixes leaves pages blank, forms broken, or private fragments cacheable.
 
-**Approach:** Replace HTMX/Htmxor with Unpoly.Blazor and Unpoly 3 across the project. Preserve current DAUB presentation and behavior while migrating navigation, lazy data, forms, polling, events and server protocol together. Defer DAUB → Unpoly.Blazor.Shadcn to a separate phase.
+**Approach:** Replace HTMX/Htmxor with Unpoly.Blazor and Unpoly 3 across the project. Migrate each converted surface to Unpoly.Blazor.Shadcn components and tokens while preserving behavior, authorization, and no-JavaScript paths. Existing DAUB surfaces remain during the phased migration; do not mix DAUB and Shadcn inside one component.
 
 ## Boundaries & Constraints
 
@@ -24,7 +24,7 @@ context:
 
 **Ask First:** If a route cannot support both no-JS usable content and instant shell without a new endpoint/negotiation mechanism, or if Unpoly.Blazor cannot support existing Razor event/form binding under .NET 10, pause and present the options before changing behavior.
 
-**Never:** Change DAUB classes/tokens/theme, install Shadcn yet, blindly replace `hx-*` with `up-*`, leave a hidden HTMX dependency, drop protection on mutating endpoints, or treat `X-Up-Target` as trusted authorization input.
+**Never:** Rename legacy `--db-*` tokens used by unmigrated surfaces, blindly replace `hx-*` with `up-*`, leave a hidden HTMX dependency, drop protection on mutating endpoints, or treat `X-Up-Target` as trusted authorization input.
 
 ## I/O & Edge-Case Matrix
 
@@ -50,6 +50,7 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
+- [ ] `vendor/Unpoly.Blazor.Shadcn/`, `src/QuickShare/tailwind.css`, `package.json`, `QuickShare.csproj`, `App.razor` — vendor the pinned component source, build Tailwind CSS, wire required runtime assets, and adopt Shadcn components per converted surface.
 - [ ] `src/QuickShare/QuickShare.csproj`, `Program.cs`, `App.razor`, `_Imports.razor`, `Components/Layout/*` — wire supported Unpoly.Blazor version and `UseUnpoly` before antiforgery, swap head/chrome while keeping `HeadOutlet`, drop Htmxor when safe.
 - [ ] `src/QuickShare/Components/Pages/**/*.razor`, `Components/Shared/*.razor` — inventory and migrate all HTMX consumers by interaction type; use real links/forms and documented Unpoly attributes/server headers, preserve no-JS paths and accessible status.
 - [ ] `src/QuickShare/Infrastructure/`, `src/QuickShare/ts/` — migrate request detection, response events/redirects, cache Vary, antiforgery and TypeScript refresh hooks; remove dead HTMX wiring.
@@ -60,9 +61,11 @@ context:
 - Given a clean clone, when dependencies restore and app starts, then no HTMX/Htmxor runtime package, markup, calls or headers are required.
 - Given disabled JavaScript, when user opens a supported route, then core content/actions render and work without an empty permanent skeleton.
 - Given Unpoly client, when user performs navigation, searches, mutations and polls, then results render in the intended target without duplicate chrome or unauthorized data.
-- Given existing design, when migration finishes, then DAUB visuals and CSS contracts remain unchanged.
+- Given a converted surface, when migration finishes, then it uses Shadcn components/tokens and Unpoly behavior without legacy DAUB classes; unmigrated surfaces keep their existing CSS contracts until converted.
 
 ## Spec Change Log
+
+- 2026-10-27: User expanded migration scope to include Unpoly.Blazor.Shadcn. Vendored upstream source at commit `134da689c0b7a178fea7ab657d189e433fe389fa`, added Tailwind v4 build integration, and began replacing migrated delivery controls with Shadcn components.
 
 ## Design Notes
 

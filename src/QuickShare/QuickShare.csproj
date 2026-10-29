@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\QuickShare.Querying\QuickShare.Querying.csproj" />
     <ProjectReference Include="..\QuickShare.Querying.Generators\QuickShare.Querying.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\vendor\Unpoly.Blazor.Shadcn\src\Unpoly.Blazor.Shadcn\Unpoly.Blazor.Shadcn.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +30,8 @@
       because "nothing references it directly": that is precisely why it needs to be here.
     -->
     <PackageReference Include="ITfoxtec.Identity.Saml2.MvcCore" Version="4.20.1" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" NoWarn="NU1510" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.14" NoWarn="NU1510" />
     <PackageReference Include="LightResults" Version="10.0.4" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.10" />
@@ -59,8 +62,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
 
-    <!-- Web (Blazor SSR + htmx) dependencies -->
-    <PackageReference Include="Htmxor" Version="1.0.0-beta.1.24" />
+    <!-- Web (Blazor SSR + Unpoly) -->
     <PackageReference Include="Unpoly.Blazor" Version="0.1.0" />
     <PackageReference Include="Lib.Net.Http.WebPush" Version="3.2.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
@@ -76,18 +78,24 @@
     <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.*" />
   </ItemGroup>
 
-  <!-- TypeScript build: npm ci once (when toolchain missing), then tsc.
+  <ItemGroup>
+    <!-- Generated assets are added after compilation so clean checkouts publish them too. -->
+    <Content Remove="wwwroot/js/**/*;wwwroot/css/shadcn.generated.css" />
+  </ItemGroup>
+
+  <!-- Client build: npm ci once when TypeScript or Tailwind tools are missing, then build both.
        Runs on every dotnet build/publish — CI and the Docker image both get
-       fresh JS from the ts/ sources. Generated wwwroot/js is NOT committed. -->
-  <Target Name="BuildTypeScript" BeforeTargets="Build" Condition="'$(BuildingProject)' == 'true'">
-    <Exec Command="npm ci" WorkingDirectory="$(ProjectDir)" Condition="!Exists('$(ProjectDir)node_modules\.bin\tsc.cmd') And '$(OS)' == 'Windows_NT'" />
-    <Exec Command="npm ci" WorkingDirectory="$(ProjectDir)" Condition="!Exists('$(ProjectDir)node_modules\.bin\tsc') And '$(OS)' != 'Windows_NT'" />
+       fresh JS and Shadcn CSS from source. Generated client assets are NOT committed. -->
+  <Target Name="BuildTypeScript" BeforeTargets="AssignTargetPaths;ResolveCurrentProjectStaticWebAssetsInputs" Condition="'$(BuildingProject)' == 'true'">
+    <Exec Command="npm ci" WorkingDirectory="$(ProjectDir)" Condition="(!Exists('$(ProjectDir)node_modules\.bin\tsc.cmd') Or !Exists('$(ProjectDir)node_modules\.bin\tailwindcss.cmd')) And '$(OS)' == 'Windows_NT'" />
+    <Exec Command="npm ci" WorkingDirectory="$(ProjectDir)" Condition="(!Exists('$(ProjectDir)node_modules\.bin\tsc') Or !Exists('$(ProjectDir)node_modules\.bin\tailwindcss')) And '$(OS)' != 'Windows_NT'" />
     <Exec Command="npm run tsc" WorkingDirectory="$(ProjectDir)" />
+    <Exec Command="npm run css:build" WorkingDirectory="$(ProjectDir)" />
+    <ItemGroup>
+      <Content Include="wwwroot/js/**/*;wwwroot/css/shadcn.generated.css" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
   </Target>
 
-  <Target Name="CopyScopedCss" AfterTargets="Build">
-    <Copy SourceFiles="$(IntermediateOutputPath)scopedcss\bundle\QuickShare.styles.css" DestinationFolder="$(ProjectDir)wwwroot\css" />
-  </Target>
   <ItemGroup>
     <InternalsVisibleTo Include="QuickShare.Server.Tests" />
   </ItemGroup>

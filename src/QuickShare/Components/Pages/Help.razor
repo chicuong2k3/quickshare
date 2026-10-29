@@ -11,38 +11,38 @@
 
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="db-h1">@(IsVi ? "Trợ giúp" : "Help center")</h1>
+        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Trợ giúp" : "Help center")</h1>
 
-        <label class="db-field" style="max-width: 24rem; margin-top: 1rem">
-            <span class="db-label">@(IsVi ? "Tìm kiếm" : "Search")</span>
-            <input type="search" id="help-search" class="db-field__input db-input" oninput="helpFilter(this.value)" placeholder="@(IsVi ? "Tìm câu hỏi…" : "Search questions…")" />
+        <label class="block" style="max-width: 24rem; margin-top: 1rem">
+            <span class="text-sm font-medium">@(IsVi ? "Tìm kiếm" : "Search")</span>
+            <Input type="search" id="help-search" oninput="helpFilter(this.value)" placeholder="@(IsVi ? "Tìm câu hỏi…" : "Search questions…")" />
         </label>
 
         @foreach (var section in Sections)
         {
-            <h2 class="db-h2">@SectionName(section)</h2>
+            <h2 class="text-2xl font-bold">@SectionName(section)</h2>
             @foreach (var q in Questions.Where(q => q.Section == section))
             {
                 <details class="help-faq" data-search="@(SectionName(section) + " " + QuestionText(q))">
-                    <summary class="db-p" style="font-weight: 500; cursor: pointer">@QuestionText(q)</summary>
-                    <p class="db-p db-text-muted">@AnswerText(q)</p>
+                    <summary style="font-weight: 500; cursor: pointer">@QuestionText(q)</summary>
+                    <p class="text-muted-foreground">@AnswerText(q)</p>
                 </details>
             }
         }
 
-        <h2 class="db-h2">@(IsVi ? "Hướng dẫn" : "Guides")</h2>
-        <ul class="db-p legal__list">
+        <h2 class="text-2xl font-bold">@(IsVi ? "Hướng dẫn" : "Guides")</h2>
+        <ul class="legal__list">
             @if (IsVi)
             {
-                <li><a class="db-link" href="@RoutePaths.Send">Gửi file lớn miễn phí</a></li>
-                <li><a class="db-link" href="@RoutePaths.Compare">So sánh với WeTransfer / SwissTransfer / Smash</a></li>
-                <li><a class="db-link" href="@RoutePaths.WhyPrivate">Vì sao file của bạn riêng tư</a></li>
+                <li><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Send">Gửi file lớn miễn phí</a></li>
+                <li><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Compare">So sánh với WeTransfer / SwissTransfer / Smash</a></li>
+                <li><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.WhyPrivate">Vì sao file của bạn riêng tư</a></li>
             }
             else
             {
-                <li><a class="db-link" href="@RoutePaths.Send">Send a large file free</a></li>
-                <li><a class="db-link" href="@RoutePaths.Compare">Compare WeTransfer / SwissTransfer / Smash</a></li>
-                <li><a class="db-link" href="@RoutePaths.WhyPrivate">Why your files are private</a></li>
+                <li><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Send">Send a large file free</a></li>
+                <li><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.Compare">Compare WeTransfer / SwissTransfer / Smash</a></li>
+                <li><a class="text-primary underline-offset-4 hover:underline" href="@RoutePaths.WhyPrivate">Why your files are private</a></li>
             }
         </ul>
     </article>

@@ -1,0 +1,22 @@
+@inherits UiComponentBase
+
+@* A command palette. Upstream is built on cmdk, which keeps the filtered list in React state.
+
+   Here every item is already in the DOM — as a link, usually — and ui.js hides the ones that do
+   not match what has been typed. For a list the server can render, that is the same thing, and it
+   buys two properties cmdk cannot have on static SSR: the palette is usable with scripting off
+   (it is a list of links), and it needs no round trip to filter.
+
+   Where the list is too long to render — every product in a catalogue — do not filter in the
+   browser at all. Put `up-autosubmit` and `up-target` on the input and let the server answer;
+   `<CommandList>` is the fragment it swaps. *@
+
+<div data-slot="command" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover " +
+        "text-popover-foreground";
+
+    string Classes => Cn(Base, Class);
+}

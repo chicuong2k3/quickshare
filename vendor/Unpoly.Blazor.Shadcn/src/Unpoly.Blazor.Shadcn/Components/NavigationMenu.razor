@@ -1,0 +1,22 @@
+@inherits UiComponentBase
+
+@* Site navigation with panels under it. A <nav> with a list inside, which is what a screen
+   reader's landmark list and "skip to navigation" both look for — a bar of divs is neither.
+
+   Radix animates every panel through one shared viewport so they cross-fade into each other.
+   That needs a measured height and a motion attribute per panel, i.e. React. Here each panel is
+   its own [popover] in the top layer: no shared viewport, no cross-fade, and in exchange no
+   overflow clipping and no z-index to lose. *@
+
+<nav data-slot="navigation-menu" aria-label="@AriaLabel" data-viewport="false" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</nav>
+
+@code {
+    /// <summary>A page can hold several navs; without a name they are announced identically.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Main";
+
+    const string Base =
+        "group/navigation-menu relative flex max-w-max flex-1 items-center justify-center";
+
+    string Classes => Cn(Base, Class);
+}
