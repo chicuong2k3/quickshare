@@ -4,7 +4,7 @@
 
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
-| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Mediator, Hangfire, EF Core, Npgsql, Unpoly.Blazor, Unpoly.Blazor.Shadcn; DAUB remains on legacy surfaces |
+| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Mediator, Hangfire, EF Core, Npgsql, Unpoly.Blazor, Unpoly.Blazor.Shadcn |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 

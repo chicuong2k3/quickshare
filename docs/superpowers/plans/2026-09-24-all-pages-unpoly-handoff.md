@@ -1,6 +1,6 @@
 # Migrate every page to Unpoly.Blazor.Shadcn + Unpoly.Blazor, then remove Htmxor
 
-Status: implementation in progress under `_bmad-output/implementation-artifacts/spec-htmx-to-unpoly.md`. **Do not remove Htmxor early.** Convert page behavior and page components together. Keep legacy DAUB surfaces intact until each surface is migrated; do not mix DAUB and Shadcn styles within one component.
+**Status: COMPLETE** (commit `f0ddbbc`, 2026-10-29). All 82 Razor components migrated to Unpoly.Blazor.Shadcn; Htmxor and all DAUB component classes removed. Build: 0 errors. 54 regression tests green.
 
 ## Baseline and blockers
 

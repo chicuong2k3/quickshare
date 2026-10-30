@@ -2,8 +2,10 @@
 title: 'Migrate QuickShare static SSR from Htmxor/HTMX to Unpoly.Blazor'
 type: 'refactor'
 created: '2026-09-24'
-status: 'in-progress'
+completed: '2026-10-29'
+status: 'complete'
 baseline_commit: '6b5de78667e6a9a5f0a58956526b0d8f387956d4'
+completion_commit: 'f0ddbbc'
 review_loop_iteration: 0
 context:
   - 'AGENTS.md'

@@ -40,8 +40,8 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
 ## 3. Architecture (10 min)
 
 - [`architecture.md`](architecture.md) — the spine: FastEndpoints + Blazor Static SSR +
-  Mediator (martinothamar/Mediator) + EF Core/Npgsql + Htmxor + DAUB. Monolith; SSR pages call
-  `IMediator` or `AppDbContext` in-process (no API round-trip).
+  Mediator (martinothamar/Mediator) + EF Core/Npgsql + Unpoly.Blazor + Unpoly.Blazor.Shadcn.
+  Monolith; SSR pages call `IMediator` or `AppDbContext` in-process (no API round-trip).
 - Feature flows: [`send-architecture.md`](send-architecture.md),
   [`payment-architecture.md`](payment-architecture.md),
   [`billing-ledger.md`](billing-ledger.md) - team seats (#278), Studio overage (#141),
