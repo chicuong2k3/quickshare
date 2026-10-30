@@ -68,6 +68,7 @@ public class AppDbContext : DbContext
     public DbSet<PromoRedemption> PromoRedemptions => Set<PromoRedemption>();
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
+    public DbSet<UploadPreset> UploadPresets => Set<UploadPreset>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

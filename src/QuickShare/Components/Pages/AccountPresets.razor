@@ -1,0 +1,175 @@
+@layout MainLayout
+@page "/account/presets"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Uploads.Presets
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["presets_title"]</PageTitle>
+
+@* Upload configs are personal — never index. *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["presets_title"]</h1>
+        <p class="text-muted-foreground">@Loc["presets_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountPresets" />
+
+    @Chunk
+
+</PageWrapper>
+
+<script src="/js/presets.js" defer></script>
+
+@code {
+    private bool canUsePresets;
+    private List<UploadPreset> presets = [];
+
+    private RenderFragment Chunk => @<section id="presets-body">
+        @if (!canUsePresets)
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["presets_requires_paid"]</p>
+                    <Button Href="@RoutePaths.Pricing" class="mt-4">@Loc["billing_btn_upgrade"]</Button>
+                </CardContent>
+            </Card>
+        }
+        else
+        {
+            @* List *@
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["presets_list_title"]</h2>
+
+                    @if (presets.Count == 0)
+                    {
+                        <p class="text-muted-foreground workspace-hint">@Loc["presets_empty"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-member-list">
+                            @foreach (var preset in presets)
+                            {
+                                <li class="workspace-member" id="preset-@preset.Id">
+                                    <div class="workspace-member__info">
+                                        <span class="workspace-member__name">@preset.Name</span>
+                                        <span class="workspace-member__meta">
+                                            @PresetSummary(preset)
+                                        </span>
+                                    </div>
+                                    <div class="workspace-member__actions">
+                                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                                data-preset-id="@preset.Id"
+                                                data-preset-name="@preset.Name"
+                                                data-preset-expiry="@(preset.ExpiryHours?.ToString() ?? string.Empty)"
+                                                data-preset-password="@(preset.Password ?? string.Empty)"
+                                                data-preset-burn="@preset.BurnAfterDownload.ToString().ToLowerInvariant()"
+                                                data-preset-privacy="@preset.PrivacyMode.ToString().ToLowerInvariant()"
+                                                data-preset-recipients="@(preset.Recipients ?? string.Empty)"
+                                                onclick="window.quickSharePresets.copyToClipboard(this)"
+                                                data-ai-action="preset.copy">@Loc["upload_copy_link"]</button>
+                                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                                data-id="@preset.Id"
+                                                data-confirm="@Loc["presets_delete_confirm"]"
+                                                onclick="window.quickSharePresets.delete(this)"
+                                                data-ai-action="preset.delete">@Loc["presets_delete_btn"]</button>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </CardContent>
+            </Card>
+
+            @* Create form *@
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["presets_create_title"]</h2>
+
+                    <div class="workspace-form" id="preset-create-form">
+                        <label class="workspace-label" for="preset-name">@Loc["presets_name_label"]</label>
+                        <Input id="preset-name" type="text" maxlength="@UploadPreset.NameMaxLength"
+                               placeholder="@Loc["presets_name_placeholder"]" />
+
+                        <label class="workspace-label" for="preset-expiry">@Loc["presets_expiry_label"]</label>
+                        <NativeSelect id="preset-expiry">
+                            <NativeSelectOption value="">@Loc["presets_expiry_default"]</NativeSelectOption>
+                            <NativeSelectOption value="2">@Loc["presets_expiry_2h"]</NativeSelectOption>
+                            <NativeSelectOption value="24">@Loc["presets_expiry_24h"]</NativeSelectOption>
+                            <NativeSelectOption value="168">@Loc["presets_expiry_168h"]</NativeSelectOption>
+                        </NativeSelect>
+
+                        <label class="workspace-label" for="preset-password">@Loc["presets_password_label"]</label>
+                        <Input id="preset-password" type="text" maxlength="@UploadPreset.PasswordMaxLength"
+                               placeholder="@Loc["presets_password_placeholder"]" />
+
+                        <label class="burn-toggle">
+                            <input type="checkbox" id="preset-burn" />
+                            <span>@Loc["presets_burn_label"]</span>
+                        </label>
+
+                        <label class="burn-toggle">
+                            <input type="checkbox" id="preset-privacy" />
+                            <span>@Loc["presets_privacy_label"]</span>
+                        </label>
+
+                        <label class="workspace-label" for="preset-recipients">@Loc["presets_recipients_label"]</label>
+                        <Input id="preset-recipients" type="text"
+                               maxlength="@UploadPreset.RecipientsMaxLength"
+                               placeholder="@Loc["presets_recipients_placeholder"]" />
+
+                        <p id="preset-error" class="text-destructive hidden" role="alert"></p>
+
+                        <button type="button" data-slot="button" data-variant="default"
+                                onclick="window.quickSharePresets.create(this)"
+                                data-error="@Loc["presets_save_btn"]"
+                                data-ai-action="preset.create">@Loc["presets_save_btn"]</button>
+                    </div>
+                </CardContent>
+            </Card>
+        }
+    </section>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = HttpContextAccessor.HttpContext?.User.GetUserId();
+        if (userId is null) return;
+
+        var user = await Db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.Plan })
+            .FirstOrDefaultAsync(CancellationToken.None);
+
+        canUsePresets = user?.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+
+        if (canUsePresets)
+        {
+            presets = await Db.UploadPresets
+                .AsNoTracking()
+                .Where(p => p.OwnerId == userId)
+                .OrderBy(p => p.Name)
+                .ToListAsync(CancellationToken.None);
+        }
+    }
+
+    private string PresetSummary(UploadPreset p)
+    {
+        var parts = new List<string>();
+        if (p.ExpiryHours is { } h) parts.Add(h < 24 ? $"{h}h" : $"{h / 24:0}d");
+        if (!string.IsNullOrEmpty(p.Password)) parts.Add("🔒");
+        if (p.BurnAfterDownload) parts.Add(Loc["dl_badge_burn"].Value);
+        if (p.PrivacyMode) parts.Add(Loc["dl_privacy_badge"].Value);
+        if (!string.IsNullOrEmpty(p.Recipients)) parts.Add($"→ {p.Recipients.Split(',').Length} {Loc["upload_recipients_label"].Value}");
+        return parts.Count > 0 ? string.Join(" · ", parts) : "—";
+    }
+}

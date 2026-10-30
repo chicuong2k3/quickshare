@@ -1893,6 +1893,47 @@ namespace QuickShare.Migrations
                     b.ToTable("temp_uploads", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.UploadPreset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("BurnAfterDownload")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("ExpiryHours")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Password")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PrivacyMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Recipients")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("UploadPresets");
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3390,6 +3431,17 @@ namespace QuickShare.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.UploadPreset", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UploadSession", b =>

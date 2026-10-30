@@ -171,6 +171,21 @@
                             <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="uploadUrl.copy()">@Loc["upload_copy_link"]</button>
                         </div>
                     </div>
+
+                    @* Load preset (#100) — shown only for Pro/Studio, fetches presets on demand. *@
+                    <div class="sender-email-wrap" id="upload-preset-wrap">
+                        <span class="otp-label">@Loc["presets_load_label"]</span>
+                        <div class="upload-url-row">
+                            <select id="upload-preset-select" class="sender-email-input"
+                                    aria-label="@Loc["presets_load_label"]"
+                                    onchange="window.quickSharePresets.loadPreset(this)">
+                                <option value="">—</option>
+                            </select>
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                    onclick="window.quickSharePresets.fetchPresets()"
+                                    data-ai-action="upload.preset.load">↻</button>
+                        </div>
+                    </div>
                 }
 
                 @* Protect your link (issues #44 + OTP gate) — optional password and/or 6-digit code *@
@@ -508,6 +523,7 @@
 
 <script src="/js/paste-anywhere.js"></script>
 <script src="/js/password-breach.js"></script>
+<script src="/js/presets.js" defer></script>
 <script src="/js/upload.js"></script>
 
 <script>

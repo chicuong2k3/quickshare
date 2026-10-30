@@ -292,6 +292,7 @@ interface Window {
     quickShareRecurring: QsPageActions;
     quickShareSiem: QsPageActions;
     quickShareWorkspace: QsPageActions;
+    quickSharePresets: QsPageActions;
     checkPasswordBreach?: (password: string) => Promise<number | null>;
     generateStrongPassword?: (length?: number) => string;
 }

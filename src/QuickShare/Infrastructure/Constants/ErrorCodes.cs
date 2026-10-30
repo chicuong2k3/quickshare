@@ -207,4 +207,8 @@ public static class ErrorCodes
     public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
     public const string ScimTokenNotFound = "scim_token_not_found";
     public const string ScimUnauthorized = "scim_unauthorized";
+    // Upload presets (#100).
+    public const string PresetNotFound = "preset_not_found";
+    public const string PresetNameInvalid = "preset_name_invalid";
+    public const string PresetLimitReached = "preset_limit_reached";
 }

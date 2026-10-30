@@ -1704,6 +1704,79 @@
   <data name="channel_last_error" xml:space="preserve">
     <value>Lỗi gần nhất: {0}</value>
   </data>
+
+  <data name="presets_title" xml:space="preserve">
+    <value>Cấu hình mẫu</value>
+  </data>
+  <data name="presets_subtitle" xml:space="preserve">
+    <value>Lưu cài đặt gửi file và tải lại bằng một cú nhấn.</value>
+  </data>
+  <data name="presets_requires_paid" xml:space="preserve">
+    <value>Cấu hình mẫu chỉ dành cho gói Pro và Studio.</value>
+  </data>
+  <data name="presets_list_title" xml:space="preserve">
+    <value>Cấu hình của bạn</value>
+  </data>
+  <data name="presets_empty" xml:space="preserve">
+    <value>Chưa có cấu hình nào. Tạo cấu hình đầu tiên bên dưới.</value>
+  </data>
+  <data name="presets_create_title" xml:space="preserve">
+    <value>Tạo cấu hình mẫu</value>
+  </data>
+  <data name="presets_name_label" xml:space="preserve">
+    <value>Tên</value>
+  </data>
+  <data name="presets_name_placeholder" xml:space="preserve">
+    <value>VD: Hợp đồng khách hàng</value>
+  </data>
+  <data name="presets_expiry_label" xml:space="preserve">
+    <value>Thời hạn</value>
+  </data>
+  <data name="presets_expiry_default" xml:space="preserve">
+    <value>Mặc định theo gói</value>
+  </data>
+  <data name="presets_password_label" xml:space="preserve">
+    <value>Mật khẩu</value>
+  </data>
+  <data name="presets_password_placeholder" xml:space="preserve">
+    <value>Tuỳ chọn</value>
+  </data>
+  <data name="presets_burn_label" xml:space="preserve">
+    <value>Tự huỷ sau khi tải</value>
+  </data>
+  <data name="presets_privacy_label" xml:space="preserve">
+    <value>Chế độ riêng tư</value>
+  </data>
+  <data name="presets_recipients_label" xml:space="preserve">
+    <value>Người nhận</value>
+  </data>
+  <data name="presets_recipients_placeholder" xml:space="preserve">
+    <value>email1@example.com, email2@example.com</value>
+  </data>
+  <data name="presets_save_btn" xml:space="preserve">
+    <value>Lưu cấu hình</value>
+  </data>
+  <data name="presets_delete_btn" xml:space="preserve">
+    <value>Xoá</value>
+  </data>
+  <data name="presets_delete_confirm" xml:space="preserve">
+    <value>Xoá cấu hình này?</value>
+  </data>
+  <data name="presets_load_label" xml:space="preserve">
+    <value>Tải cấu hình</value>
+  </data>
+  <data name="presets_loaded" xml:space="preserve">
+    <value>Đã tải cấu hình</value>
+  </data>
+  <data name="presets_expiry_2h" xml:space="preserve">
+    <value>2 giờ</value>
+  </data>
+  <data name="presets_expiry_24h" xml:space="preserve">
+    <value>24 giờ</value>
+  </data>
+  <data name="presets_expiry_168h" xml:space="preserve">
+    <value>7 ngày</value>
+  </data>
   <data name="recurring_title" xml:space="preserve">
     <value>Lịch gửi</value>
   </data>

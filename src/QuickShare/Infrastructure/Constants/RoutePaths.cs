@@ -89,4 +89,6 @@ public static class RoutePaths
     public const string Soc2 = "/soc2";
     /// <summary>Invite and transfer accept landing page — the token rides in the query string.</summary>
     public const string WorkspaceJoin = "/workspace/join";
+    /// <summary>Upload presets management page (issue #100).</summary>
+    public const string AccountPresets = "/account/presets";
 }
