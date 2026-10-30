@@ -1135,9 +1135,6 @@
   <data name="request_expired" xml:space="preserve">
     <value>This request has expired</value>
   </data>
-  <data name="request_closed" xml:space="preserve">
-    <value>This request has been closed</value>
-  </data>
   <data name="request_upload_button" xml:space="preserve">
     <value>Send files</value>
   </data>

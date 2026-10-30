@@ -88,24 +88,24 @@
                     <span>@Loc["deliveries_select_all"]</span>
                 </label>
                 <span id="bulk-count" class="text-muted-foreground"></span>
-                <button type="button" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
+                <button type="button" data-slot="button" data-variant="default" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
                         data-error="@Loc["deliveries_bulk_error"]"
                         onclick="bulkExtend(this)" data-ai-action="deliveries.bulkExtend" disabled>@Loc["deliveries_bulk_extend"]</button>
-                <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
                         data-confirm="@Loc["deliveries_bulk_trash_confirm"]"
                         onclick="bulkTrash(this)" data-ai-action="deliveries.bulkTrash" disabled>@Loc["deliveries_bulk_trash"]</button>
                 @* Move many at once (issues #244, #284). Shown only when there is somewhere to
                    move things to — a destination picker with no destinations is furniture. *@
                 @if (folders.Count > 0)
                 {
-                    <select id="bulk-folder" class="rounded-md border bg-background px-3 py-2 text-sm" aria-label="@Loc["deliveries_bulk_move_label"]">
-                        <option value="">@Loc["deliveries_bulk_move_loose"]</option>
+                    <NativeSelect id="bulk-folder" aria-label="@Loc["deliveries_bulk_move_label"]">
+                        <NativeSelectOption value="">@Loc["deliveries_bulk_move_loose"]</NativeSelectOption>
                         @foreach (var folder in folders)
                         {
-                            <option value="@folder.Id">@folder.Name</option>
+                            <NativeSelectOption value="@folder.Id.ToString()">@folder.Name</NativeSelectOption>
                         }
-                    </select>
-                    <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                    </NativeSelect>
+                    <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
                             data-error="@Loc["deliveries_bulk_error"]"
                             onclick="bulkMove(this)" data-ai-action="deliveries.bulkMove" disabled>@Loc["deliveries_bulk_move"]</button>
                 }
@@ -652,76 +652,76 @@
                     }
                     @if (DeletedOnly)
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
                                 onclick="restoreDelivery(this)" data-ai-action="delivery.restore">@Loc["deliveries_restore"]</button>
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__purge"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__purge"
                                 data-confirm="@Loc["deliveries_purge_confirm"]"
                                 onclick="purgeDelivery(this)" data-ai-action="delivery.purge">@Loc["deliveries_purge"]</button>
                     }
                     else if (item.Status == DeliveryStatus.Active)
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__delete"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__delete"
                                 data-confirm="@Loc["deliveries_delete_confirm"]"
                                 onclick="deleteDelivery(this)" data-ai-action="delivery.delete">@Loc["deliveries_delete"]</button>
                     }
                     @if (item.Status == DeliveryStatus.Scheduled)
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__cancel"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__cancel"
                                 data-confirm="@Loc["deliveries_cancel_confirm"]"
                                 onclick="cancelDelivery(this)">@Loc["deliveries_cancel"]</button>
                     }
                     @if (item.Status is not (DeliveryStatus.Scheduled or DeliveryStatus.Revoked) && !exhausted)
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__extend"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__extend"
                                 onclick="extendDelivery(this)" data-ai-action="delivery.extend">@Loc["deliveries_extend"]</button>
                     }
 @if (item.Status == DeliveryStatus.Active && (item.Lock is null || item.Lock.LockedBySelf))
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
                                 data-error="@Loc["deliveries_replace_error"]"
                                 onclick="replaceDeliveryFile(this)" data-ai-action="delivery.replace">@Loc["deliveries_replace"]</button>
                     }
                     @if (item.Status != DeliveryStatus.Revoked)
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__rename"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__rename"
                                 data-prompt="@Loc["deliveries_rename_prompt"]"
                                 onclick="renameDelivery(this)" data-ai-action="delivery.rename">@Loc["deliveries_rename"]</button>
                     }
                     @if (item.Status == DeliveryStatus.Active)
                     {
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
                                 data-error="@Loc["deliveries_replace_error"]"
                                 onclick="replaceDeliveryFile(this)" data-ai-action="delivery.replace">@Loc["deliveries_replace"]</button>
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__clone"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__clone"
                                 onclick="cloneDelivery(this)" data-ai-action="delivery.clone">@Loc["deliveries_clone"]</button>
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__set-alias"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__set-alias"
                                 data-prompt="@Loc["deliveries_alias_prompt"]" data-current="@item.Alias"
                                 data-error="@Loc["deliveries_alias_error"]"
                                 onclick="setDeliveryAlias(this)" data-ai-action="delivery.alias">@Loc["deliveries_alias"]</button>
-                        <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__daily-limit"
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__daily-limit"
                                 data-prompt="@Loc["deliveries_daily_limit_prompt"]"
                                 data-error="@Loc["deliveries_daily_limit_error"]"
                                 onclick="setDailyLimit(this)" data-ai-action="delivery.dailyLimit">@Loc["deliveries_daily_limit"]</button>
                         @if (item.Lock is null)
                         {
-                            <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
                                     data-error="@Loc["deliveries_lock_error"]"
                                     onclick="lockDelivery(this)" data-ai-action="delivery.lock">@Loc["deliveries_lock"]</button>
                         }
                         else if (item.Lock.LockedBySelf)
                         {
-                            <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__unlock-btn"
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__unlock-btn"
                                     onclick="unlockDelivery(this)" data-ai-action="delivery.unlock">@Loc["deliveries_unlock"]</button>
                         }
                         else
                         {
-                            <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
                                     data-error="@Loc["deliveries_lock_error"]"
                                     onclick="lockDelivery(this)" data-ai-action="delivery.takeover">@Loc["deliveries_lock_takeover"]</button>
                         }
                         @if (item.IsUnderLegalHold)
                         {
-                            <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-lift"
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-lift"
                                     data-confirm="@Loc["deliveries_hold_lift_confirm"]"
                                     data-confirm-again="@Loc["deliveries_hold_lift_confirm_again"]"
                                     data-error="@Loc["deliveries_hold_error"]"
@@ -729,7 +729,7 @@
                         }
                         else
                         {
-                            <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-btn"
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-btn"
                                     data-prompt="@Loc["deliveries_hold_prompt"]"
                                     data-error="@Loc["deliveries_hold_error"]"
                                     onclick="holdDelivery(this)" data-ai-action="delivery.hold">@Loc["deliveries_hold"]</button>
@@ -741,7 +741,7 @@
                            href="@($"/api/downloads/{item.ShareCode}/calendar.ics")" download
                            data-ai-action="delivery.calendar">@Loc["deliveries_calendar"]</a>
                     }
-                    <button type="button" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                    <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
                             onclick="toggleDeliveryStats(this)" data-ai-action="delivery.toggleStats"
                             data-hide-label="@Loc["deliveries_hide_stats"]" data-show-label="@Loc["deliveries_show_stats"]">
                         @(item.HideDownloadStats ? Loc["deliveries_show_stats"] : Loc["deliveries_hide_stats"])

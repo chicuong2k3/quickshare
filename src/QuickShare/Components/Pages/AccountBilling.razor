@@ -101,12 +101,12 @@
                                 <AntiforgeryToken />
                                 <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
                                 <label class="block text-sm font-medium" for="cancel-reason">@Loc["billing_cancel_reason"]</label>
-                                <select id="cancel-reason" name="Reason" class="rounded-md border bg-background px-3 py-2">
+                                <NativeSelect id="cancel-reason" name="Reason">
                                     @foreach (var reason in CancellationReasons.All)
                                     {
-                                        <option value="@reason">@Loc[$"billing_reason_{reason}"]</option>
+                                        <NativeSelectOption value="@reason">@Loc[$"billing_reason_{reason}"]</NativeSelectOption>
                                     }
-                                </select>
+                                </NativeSelect>
                                 <label class="block text-sm font-medium" for="cancel-feedback">@Loc["billing_cancel_feedback"]</label>
                                 <textarea id="cancel-feedback" name="Feedback" class="rounded-md border bg-background px-3 py-2" rows="2"
                                           maxlength="@Subscription.CancellationFeedbackMaxLength"></textarea>

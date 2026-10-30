@@ -41,14 +41,14 @@
             }
             <label class="block space-y-2">
                 <span class="block text-sm font-medium">@Loc["account_retention_window_label"]</span>
-                <select name="@RetentionDaysField" class="rounded-md border bg-background px-3 py-2"
+                <NativeSelect name="@RetentionDaysField"
                         disabled="@(!retentionAllowed)" data-ai-action="retention.window.select">
-                    <option value="" selected="@(retentionDays is null)">@Loc["account_retention_window_none"]</option>
+                    <NativeSelectOption value="" Selected="@(retentionDays is null)">@Loc["account_retention_window_none"]</NativeSelectOption>
                     @foreach (var preset in RetentionPolicy.Presets)
                     {
-                        <option value="@preset" selected="@(retentionDays == preset)">@string.Format(Loc["account_retention_window_days"], preset)</option>
+                        <NativeSelectOption value="@preset.ToString()" Selected="@(retentionDays == preset)">@string.Format(Loc["account_retention_window_days"], preset)</NativeSelectOption>
                     }
-                </select>
+                </NativeSelect>
             </label>
             <Button Type="submit" Variant="outline" name="@ActionField" value="@PreviewAction" disabled="@(!retentionAllowed)">@Loc["account_retention_preview_btn"]</Button>
 

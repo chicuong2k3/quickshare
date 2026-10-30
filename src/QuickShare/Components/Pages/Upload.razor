@@ -371,11 +371,11 @@
                     }
                     else
                     {
-                        <select id="upload-expiry" class="sender-email-input">
-                            <option value="2">@Loc["upload_expiry_2h"]</option>
-                            <option value="24" selected>@Loc["upload_expiry_24h"]</option>
-                            <option value="168">@Loc["upload_expiry_7d"]</option>
-                        </select>
+                        <NativeSelect id="upload-expiry" class="sender-email-input">
+                            <NativeSelectOption value="2">@Loc["upload_expiry_2h"]</NativeSelectOption>
+                            <NativeSelectOption value="24" Selected>@Loc["upload_expiry_24h"]</NativeSelectOption>
+                            <NativeSelectOption value="168">@Loc["upload_expiry_7d"]</NativeSelectOption>
+                        </NativeSelect>
                         <span class="otp-hint">@Loc["upload_expiry_hint"]</span>
                     }
                 </div>

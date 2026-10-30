@@ -1135,9 +1135,6 @@
   <data name="request_expired" xml:space="preserve">
     <value>Yêu cầu này đã hết hạn</value>
   </data>
-  <data name="request_closed" xml:space="preserve">
-    <value>Yêu cầu này đã bị đóng</value>
-  </data>
   <data name="request_upload_button" xml:space="preserve">
     <value>Gửi file</value>
   </data>

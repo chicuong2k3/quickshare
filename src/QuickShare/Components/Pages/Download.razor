@@ -106,7 +106,7 @@
                             @* role="alert" (issue #95): a wrong password that is only *shown* is a dead end for
                                anybody not looking at that spot on the screen. *@
                             <p id="dl-password-error" class="error hidden" role="alert"></p>
-                            <button id="dl-password-btn" type="button" class="btn" onclick="downloadApp.verifyPassword()" data-ai-action="download.password.unlock">
+                            <button id="dl-password-btn" type="button" data-slot="button" data-variant="default" class="btn" onclick="downloadApp.verifyPassword()" data-ai-action="download.password.unlock">
                                 <span id="dl-password-btn-text">@Loc["dl_password_unlock"]</span>
                             </button>
                         </div>
@@ -135,7 +135,7 @@
                             </div>
                             <p id="dl-otp-error" class="error hidden" role="alert"></p>
                             <div id="dl-captcha" class="dl-captcha hidden"></div>
-                            <button id="dl-otp-btn" type="button" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
+                            <button id="dl-otp-btn" type="button" data-slot="button" data-variant="default" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
                                 <span id="dl-otp-btn-text">@Loc["dl_otp_unlock"]</span>
                             </button>
                         </div>
@@ -229,7 +229,7 @@
                         <div id="dl-text-preview" class="text-preview hidden">
                             <div class="text-preview__bar">
                                 <span id="dl-text-status" class="text-preview__status"></span>
-                                <button type="button" id="dl-text-copy" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copyText()">
+                                <button type="button" id="dl-text-copy" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copyText()">
                                     <span id="dl-text-copy-label">@Loc["dl_preview_copy"]</span>
                                 </button>
                             </div>
@@ -239,7 +239,7 @@
                                 <button type="button" id="dl-diff-mode-btn" class="hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
                                     <span id="dl-diff-mode-label">@Loc["dl_diff_split"]</span>
                                 </button>
-                                <button type="button" id="dl-diff-raw-btn" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
+                                <button type="button" id="dl-diff-raw-btn" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
                                     <span id="dl-diff-raw-label">@Loc["dl_diff_raw"]</span>
                                 </button>
                             </div>
@@ -302,7 +302,7 @@
                                 <span class="text-sm font-medium" style="display:block; margin-bottom: 0.25rem">SHA-256</span>
                                 <div style="display:flex; gap: 0.5rem; align-items: flex-start">
                                     <code class="dl-sha__value" style="word-break: break-all; flex: 1">@Info.Sha256</code>
-                                    <button type="button" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copySha256()" data-ai-action="download.sha.copy">
+                                    <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copySha256()" data-ai-action="download.sha.copy">
                                         <span id="dl-sha-copy-label">@Loc["dl_sha_copy"]</span>
                                     </button>
                                 </div>
@@ -320,7 +320,7 @@
                                     <input type="checkbox" id="dl-recipient-consent" />
                                     <span>@Loc["dl_recipient_consent"]</span>
                                 </label>
-                                <button type="button" id="dl-recipient-download" class="btn" onclick="recipientGate.download()" data-ai-action="download.recipientGate.download">@Loc["dl_download"]</button>
+                                <button type="button" id="dl-recipient-download" data-slot="button" data-variant="default" class="btn" onclick="recipientGate.download()" data-ai-action="download.recipientGate.download">@Loc["dl_download"]</button>
                             </div>
                         }
 
@@ -331,11 +331,11 @@
                                 <p>@Loc["dl_email_otp_title"]</p>
                                 <input type="email" id="dl-email-otp-email" class="rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="@Loc["dl_email_otp_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_email_otp_email_placeholder"]" />
                                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
-                                    <button type="button" id="dl-email-otp-send" class="btn" onclick="emailOtp.send()" data-ai-action="download.emailOtp.send">@Loc["dl_email_otp_send"]</button>
+                                    <button type="button" id="dl-email-otp-send" data-slot="button" data-variant="default" class="btn" onclick="emailOtp.send()" data-ai-action="download.emailOtp.send">@Loc["dl_email_otp_send"]</button>
                                     <p id="dl-email-otp-sent" class="hidden" style="margin: 0">@Loc["dl_email_otp_sent"]</p>
                                 </div>
                                 <input type="text" id="dl-email-otp-code" class="rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="@Loc["dl_email_otp_placeholder"]" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="max-width: 20rem; width: 100%; margin-top: 0.5rem" aria-label="@Loc["dl_email_otp_placeholder"]" />
-                                <button type="button" id="dl-email-otp-download" class="btn" onclick="emailOtp.download()" data-ai-action="download.emailOtp.download" style="margin-top: 0.75rem">@Loc["dl_email_otp_download"]</button>
+                                <button type="button" id="dl-email-otp-download" data-slot="button" data-variant="default" class="btn" onclick="emailOtp.download()" data-ai-action="download.emailOtp.download" style="margin-top: 0.75rem">@Loc["dl_email_otp_download"]</button>
                             </div>
                         }
 
@@ -350,7 +350,7 @@
                                 </a>
                             }
                             @* Native share sheet (issue #283) — shares the link only, never the password/OTP. *@
-                            <button type="button" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" style="margin-top: 0.75rem"
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" style="margin-top: 0.75rem"
                                     onclick="downloadApp.sharePage()" data-ai-action="download.share">
                                 <svg style="width: 1rem; height: 1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
@@ -394,12 +394,12 @@
                             <form id="dl-report-form" onsubmit="return downloadApp.submitReport(event)">
                                 <label class="block" style="margin-top: 1rem">
                                     <span class="text-sm font-medium">@Loc["dl_report_category"]</span>
-                                    <select id="dl-report-category" class="rounded-md border bg-transparent px-3 py-1 text-sm" required>
-                                        <option value="abuse">@Loc["dl_report_cat_abuse"]</option>
-                                        <option value="copyright">@Loc["dl_report_cat_copyright"]</option>
-                                        <option value="malware">@Loc["dl_report_cat_malware"]</option>
-                                        <option value="other">@Loc["dl_report_cat_other"]</option>
-                                    </select>
+                                <NativeSelect id="dl-report-category" required>
+                                        <NativeSelectOption value="abuse">@Loc["dl_report_cat_abuse"]</NativeSelectOption>
+                                        <NativeSelectOption value="copyright">@Loc["dl_report_cat_copyright"]</NativeSelectOption>
+                                        <NativeSelectOption value="malware">@Loc["dl_report_cat_malware"]</NativeSelectOption>
+                                        <NativeSelectOption value="other">@Loc["dl_report_cat_other"]</NativeSelectOption>
+                                    </NativeSelect>
                                 </label>
                                 <label class="block" style="margin-top: 0.75rem">
                                     <span class="text-sm font-medium">@Loc["dl_report_note"]</span>
@@ -407,8 +407,8 @@
                                 </label>
                                 <p id="dl-report-error" class="error hidden" style="margin-top: 0.5rem"></p>
                                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem">
-                                    <button type="submit" class="btn" data-ai-action="download.report.submit">@Loc["dl_report_submit"]</button>
-                                    <button type="button" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.closeReport()">@Loc["dl_report_cancel"]</button>
+                                    <button type="submit" data-slot="button" data-variant="default" class="btn" data-ai-action="download.report.submit">@Loc["dl_report_submit"]</button>
+                                    <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.closeReport()">@Loc["dl_report_cancel"]</button>
                                 </div>
                             </form>
                             <p id="dl-report-done" class="text-muted-foreground hidden" style="margin-top: 1rem; font-size: 0.875rem">@Loc["dl_report_done"]</p>
@@ -430,7 +430,7 @@
                             @if (Info?.AllowExtensionRequests == true)
                             {
                                 <div id="dl-ext-request" style="margin-top: 1.5rem">
-                                    <button type="button" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
+                                    <button type="button" data-slot="button" data-variant="default" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
                                     <p id="dl-ext-request-done" class="hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
                                 </div>
                             }
@@ -467,7 +467,7 @@
                         @if (allowExtensionRequests)
                         {
                             <div id="dl-ext-request" style="margin-top: 1.5rem">
-                                <button type="button" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
+                                <button type="button" data-slot="button" data-variant="default" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
                                 <p id="dl-ext-request-done" class="hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
                             </div>
                         }
@@ -717,7 +717,7 @@
                                 data-ai-action="comment.reply.cancel">@Loc["dl_comments_cancel_reply"]</button>
                     </p>
 
-                    <button type="button" class="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+                    <button type="button" data-slot="button" data-variant="default" data-size="sm" class="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
                             data-error-label="@Loc["dl_comments_failed"]"
                             onclick="window.quickShareComments.post(this)"
                             data-ai-action="comment.post">@Loc["dl_comments_post"]</button>

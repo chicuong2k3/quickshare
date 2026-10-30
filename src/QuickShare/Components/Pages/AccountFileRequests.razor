@@ -32,10 +32,10 @@
                        maxlength="@FileRequest.TitleMaxLength" placeholder="@Loc["requests_create_placeholder"]" />
 
                 <label class="workspace-label" for="request-new-kind">@Loc["requests_create_kind"]</label>
-                <select id="request-new-kind" class="rounded-md border bg-transparent px-3 py-1 text-sm">
-                    <option value="@FileRequestKind.Request">@Loc["requests_kind_request"]</option>
-                    <option value="@FileRequestKind.Room">@Loc["requests_kind_room"]</option>
-                </select>
+                <NativeSelect id="request-new-kind">
+                    <NativeSelectOption value="@FileRequestKind.Request.ToString()">@Loc["requests_kind_request"]</NativeSelectOption>
+                    <NativeSelectOption value="@FileRequestKind.Room.ToString()">@Loc["requests_kind_room"]</NativeSelectOption>
+                </NativeSelect>
 
                 <button type="button" data-slot="button" data-variant="default"
                         data-error="@Loc["requests_create_failed"]"

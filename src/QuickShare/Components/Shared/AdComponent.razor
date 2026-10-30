@@ -56,7 +56,7 @@
         <p id="ad-reward-error" class="ad-reward-card__description" style="color:var(--color-destructive);display:none"></p>
         @if (RemainingAds > 0)
         {
-            <button id="ad-reward-watch-btn"
+            <button id="ad-reward-watch-btn" data-slot="button" data-variant="default"
                     type="button"
                     class="ad-reward-btn"
                     data-ai-action="ad.reward.watch">
@@ -68,7 +68,7 @@
         }
         else
         {
-            <button id="ad-reward-watch-btn"
+            <button id="ad-reward-watch-btn" data-slot="button" data-variant="default"
                     type="button"
                     class="ad-reward-btn"
                     disabled
@@ -78,7 +78,7 @@
         }
         @if (RemainingAds > 0 && _allowDevSimulation)
         {
-            <button id="ad-reward-dev-btn"
+            <button id="ad-reward-dev-btn" data-slot="button" data-variant="ghost"
                     type="button"
                     class="ad-reward-btn"
                     data-ai-action="ad.reward.dev-simulate"
