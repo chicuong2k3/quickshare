@@ -136,17 +136,53 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
         if (!completion.Success)
             return Result.Failure(new LightResults.Error(completion.ErrorMessage ?? "R2 commit returned failure"));
 
-        // Delete the old object after the new one is durably committed — never before.
-        if (!string.IsNullOrEmpty(delivery.StoragePath) && delivery.StoragePath != cmd.ObjectKey)
+        // ── Version snapshot (issue #110) ──
+        // Pro/Studio: preserve the previous bytes as a version before overwriting.
+        // Free: keep the old overwrite-and-delete behavior.
+        var plan = user.Plan;
+        var canVersion = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+        var hasOldObject = !string.IsNullOrEmpty(delivery.StoragePath) && delivery.StoragePath != cmd.ObjectKey;
+
+        if (canVersion && hasOldObject)
         {
-            try
+            var existingVersions = await db.DeliveryVersions
+                .Where(v => v.DeliveryId == delivery.Id)
+                .OrderBy(v => v.VersionNumber)
+                .ToListAsync(cancellationToken);
+
+            var maxVersions = plan == PlanTierLimits.Studio ? int.MaxValue : DeliveryVersion.MaxVersionsPro;
+
+            // If at the limit, drop the oldest version and delete its object.
+            if (existingVersions.Count >= maxVersions)
             {
-                await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken);
+                var oldest = existingVersions.First();
+                try { await storage.DeleteObjectsAsync(oldest.StoragePath, cancellationToken); }
+                catch (Exception ex) { logger.LogWarning(ex, "Failed to delete old version object for delivery {Id}", delivery.Id); }
+                db.DeliveryVersions.Remove(oldest);
             }
-            catch (Exception ex)
+
+            var nextNumber = existingVersions.Count > 0
+                ? existingVersions.Max(v => v.VersionNumber) + 1
+                : 1;
+
+            db.DeliveryVersions.Add(new DeliveryVersion
             {
-                logger.LogWarning(ex, "Failed to delete old object for replaced delivery {DeliveryId}", delivery.Id);
-            }
+                Id = Guid.CreateVersion7(),
+                DeliveryId = delivery.Id,
+                VersionNumber = nextNumber,
+                FileName = delivery.FileName,
+                ContentType = delivery.ContentType,
+                FileSize = delivery.FileSize,
+                StoragePath = delivery.StoragePath,
+                Sha256 = delivery.Sha256,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+        else if (!canVersion && hasOldObject)
+        {
+            // Free plan: delete the old object as before.
+            try { await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken); }
+            catch (Exception ex) { logger.LogWarning(ex, "Failed to delete old object for replaced delivery {DeliveryId}", delivery.Id); }
         }
 
         // FileSize/ContentType/ChunkCount/TotalBytes are init-only on Delivery — update

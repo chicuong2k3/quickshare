@@ -6,6 +6,9 @@ namespace QuickShare.Features.Downloads.Info;
 
 public record DownloadInfoQuery(string ShareCode) : IRequest<Result<DownloadInfoResponse>>;
 
+/// <summary>A previous file version available for download (issue #110).</summary>
+public record VersionInfo(int VersionNumber, string FileName, long FileSize, DateTime ReplacedAt);
+
 public record DownloadInfoResponse(
     string FileName,
     string ContentType,
@@ -26,7 +29,8 @@ public record DownloadInfoResponse(
     bool AllowExtensionRequests,
     bool PrivacyMode,
     bool EmailOtpEnabled,
-    bool RequireRecipientEmail
+    bool RequireRecipientEmail,
+    IReadOnlyList<VersionInfo>? Versions = null
 );
 
 public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, DeliveryAccessService access)
@@ -84,6 +88,14 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
 
                 var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
 
+                // Version history (issue #110): include past versions so the download page can render a picker.
+                var versions = await db.DeliveryVersions
+                    .AsNoTracking()
+                    .Where(v => v.DeliveryId == delivery.Id)
+                    .OrderByDescending(v => v.VersionNumber)
+                    .Select(v => new VersionInfo(v.VersionNumber, v.FileName, v.FileSize, v.CreatedAt))
+                    .ToListAsync(ct2);
+
                 // Privacy mode (issue #187): expose the flag and zero the visible counts —
                 // the recipient sees "no tracking", never a partial or misleading number.
                 return Result.Success(new DownloadInfoResponse(
@@ -106,7 +118,8 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                     AllowExtensionRequests: delivery.AllowExtensionRequests,
                     PrivacyMode: delivery.PrivacyMode,
                     EmailOtpEnabled: delivery.EmailOtpEnabled,
-                    RequireRecipientEmail: delivery.RequireRecipientEmail
+                    RequireRecipientEmail: delivery.RequireRecipientEmail,
+                    Versions: versions.Count > 0 ? versions : null
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

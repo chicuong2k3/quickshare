@@ -211,4 +211,6 @@ public static class ErrorCodes
     public const string PresetNotFound = "preset_not_found";
     public const string PresetNameInvalid = "preset_name_invalid";
     public const string PresetLimitReached = "preset_limit_reached";
+    // File version history (#110).
+    public const string VersionNotFound = "version_not_found";
 }

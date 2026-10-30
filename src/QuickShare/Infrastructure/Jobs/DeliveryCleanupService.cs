@@ -44,6 +44,15 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
                     logger.LogError(ex, "Failed to delete R2 objects for trashed delivery {DeliveryId}", delivery.Id);
                 }
             }
+
+            // Version history (#110): delete all version objects for this delivery.
+            var versions = await db.DeliveryVersions.Where(v => v.DeliveryId == delivery.Id).ToListAsync(ct);
+            foreach (var version in versions)
+            {
+                try { await storage.DeleteObjectsAsync(version.StoragePath, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Failed to delete version object for delivery {Id}", delivery.Id); }
+            }
+            db.DeliveryVersions.RemoveRange(versions);
         }
 
         db.Deliveries.RemoveRange(trashed);
@@ -86,6 +95,15 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
                     logger.LogError(ex, "Failed to delete R2 objects for delivery {DeliveryId}", delivery.Id);
                 }
             }
+
+            // Version history (#110): delete version objects when the delivery expires.
+            var versions = await db.DeliveryVersions.Where(v => v.DeliveryId == delivery.Id).ToListAsync(ct);
+            foreach (var version in versions)
+            {
+                try { await storage.DeleteObjectsAsync(version.StoragePath, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Failed to delete version object for delivery {Id}", delivery.Id); }
+            }
+            db.DeliveryVersions.RemoveRange(versions);
         }
 
         db.Deliveries.RemoveRange(expired);
