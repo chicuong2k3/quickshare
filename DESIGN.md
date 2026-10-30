@@ -378,11 +378,11 @@ HyperCard's native transition, and the page's **only** authored motion: when a d
 ## Do's and Don'ts
 
 ### Do:
-- **Do** define every new token inside the two theme blocks at the top of `app.css`, under a DAUB-shaped `--db-*` name, so existing `db-*` markup re-skins for free — and give it a value in **both** blocks.
+- **Do** define every new token inside the two theme blocks at the top of `app.css`, under a `--db-*` name, so custom CSS re-skins for free — and give it a value in **both** blocks.
 - **Do** draw every structural edge as 2px solid `var(--db-mountain)`; reserve 1px for hairline sub-rules inside a card.
 - **Do** use hard offset shadows only: `2/3/5px`, zero blur, full opacity, via the shadow tokens.
 - **Do** keep cards and fields square and buttons at 14px (16px primary) radius.
-- **Do** put exactly one default button (`.db-btn--primary`) per card, with ≥6px clearance for its ring, and let press invert it to the active blue.
+- **Do** put exactly one default button (`<Button>`, Shadcn default variant) per card, with ≥6px clearance for its ring, and let press invert it to the active blue.
 - **Do** put real measurements in Courier Prime with `tabular-nums`; give state a wash (`--db-wash-*`), activity the valley, progress the rainbow.
 - **Do** draw icons as inline SVG rect grids with `shape-rendering: crispEdges`, filled with `var(--db-*)` so they re-skin per theme.
 - **Do** check scoped styles when Unpoly swaps markup across component boundaries; use namespaced global styles when component scope does not reach the swapped markup.
@@ -390,7 +390,7 @@ HyperCard's native transition, and the page's **only** authored motion: when a d
 - **Do** keep the download page usable without JS: the server renders a working phase; JS only advances from it (`DownloadNoScriptTests` enforces this).
 
 ### Don't:
-- **Don't** rename a `--db-*` token — ~322 `db-*` class uses depend on the vendor's names. Change values only.
+- **Don't** rename a `--db-*` token — the design token CSS custom properties are still used by custom `.razor.css` files and `app.css`. Change values only; do not remove or rename tokens.
 - **Don't** put Apple yellow on text over paper (2.1:1); accent type is `--db-color-accent-text`.
 - **Don't** use the rainbow anywhere but a progress fill (and the drawn floppy's label). Decoration never earns it.
 - **Don't** blur a shadow, lift a card on hover, or scale anything. Depth is drawn.
