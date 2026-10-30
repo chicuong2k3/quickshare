@@ -572,7 +572,7 @@
             <article id="delivery-@item.Id" class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
                 <div class="account-delivery__head">
                     <input type="checkbox" class="account-delivery__select" value="@item.Id" onchange="bulkUpdateBar()" aria-label="@Loc["deliveries_select"]" />
-                    <button type="button" class="account-delivery__star" onclick="toggleFavorite(this)"
+                    <button type="button" data-slot="button" data-variant="ghost" data-size="icon" class="account-delivery__star" onclick="toggleFavorite(this)"
                             aria-pressed="@(item.IsFavorite ? "true" : "false")"
                             aria-label="@Loc["deliveries_favorite"]" title="@Loc["deliveries_favorite"]"
                             data-ai-action="delivery.favorite">@(item.IsFavorite ? "★" : "☆")</button>
@@ -586,7 +586,7 @@
                     {
                         <span class="account-delivery__tag" style="background: @TagColor(item.Tag)">@item.Tag</span>
                     }
-                    <button type="button" class="account-delivery__tag-edit" onclick="editTag(this)" data-ai-action="delivery.tag" data-prompt="@Loc["deliveries_tag_prompt"]" aria-label="@Loc["deliveries_tag"]" title="@Loc["deliveries_tag"]">#</button>
+                    <button type="button" data-slot="button" data-variant="ghost" data-size="icon" class="account-delivery__tag-edit" onclick="editTag(this)" data-ai-action="delivery.tag" data-prompt="@Loc["deliveries_tag_prompt"]" aria-label="@Loc["deliveries_tag"]" title="@Loc["deliveries_tag"]">#</button>
                     <span class="account-delivery__expiry text-muted-foreground">
                         @if (item.Status == DeliveryStatus.Scheduled)
                         {

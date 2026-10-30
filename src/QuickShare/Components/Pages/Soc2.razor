@@ -24,26 +24,26 @@
         <p>@Loc["soc2_subtitle"]</p>
 
         <h2 class="text-2xl font-bold">@Loc["soc2_controls_title"]</h2>
-        <div class="workspace-table-wrap">
-            <table class="workspace-table">
-                <thead>
-                    <tr>
-                        <th scope="col">@Loc["soc2_col_control"]</th>
-                        <th scope="col">@Loc["soc2_col_how"]</th>
-                        <th scope="col">@Loc["soc2_col_status"]</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div >
+            <Table class="workspace-table">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead scope="col">@Loc["soc2_col_control"]</TableHead>
+                        <TableHead scope="col">@Loc["soc2_col_how"]</TableHead>
+                        <TableHead scope="col">@Loc["soc2_col_status"]</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     @foreach (var row in Controls)
                     {
-                        <tr>
-                            <td>@row.Control</td>
-                            <td>@row.How</td>
-                            <td><span class="soc2-status soc2-status--@row.Status">@StatusLabel(row.Status)</span></td>
-                        </tr>
+                        <TableRow>
+                            <TableCell>@row.Control</TableCell>
+                            <TableCell>@row.How</TableCell>
+                            <TableCell><span class="soc2-status soc2-status--@row.Status">@StatusLabel(row.Status)</span></TableCell>
+                        </TableRow>
                     }
-                </tbody>
-            </table>
+                </TableBody>
+            </Table>
         </div>
 
         <h2 class="text-2xl font-bold">@Loc["soc2_gaps_title"]</h2>

@@ -28,51 +28,51 @@
         }
         else
         {
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b text-left">
-                        <th scope="col" class="p-2">@Loc["admin_flags_col_key"]</th>
-                        <th scope="col" class="p-2">@Loc["admin_flags_col_enabled"]</th>
-                        <th scope="col" class="p-2">@Loc["admin_flags_col_rollout"]</th>
-                        <th scope="col" class="p-2"><span class="sr-only">@Loc["admin_flags_col_actions"]</span></th>
-                    </tr>
-                </thead>
-                <tbody>
+            <Table class="text-sm">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead class="p-2">@Loc["admin_flags_col_key"]</TableHead>
+                        <TableHead class="p-2">@Loc["admin_flags_col_enabled"]</TableHead>
+                        <TableHead class="p-2">@Loc["admin_flags_col_rollout"]</TableHead>
+                        <TableHead class="p-2"><span class="sr-only">@Loc["admin_flags_col_actions"]</span></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     @foreach (var flag in flags)
                     {
                         var formId = $"flag-{flag.Key}";
-                        <tr class="border-b">
-                            <td class="p-2">
+                        <TableRow>
+                            <TableCell class="p-2">
                                 <span class="font-medium">@flag.Key</span>
                                 @if (!string.IsNullOrEmpty(flag.Description))
                                 {
                                     <span class="block text-muted-foreground">@flag.Description</span>
                                 }
-                            </td>
-                            <td class="p-2">
+                            </TableCell>
+                            <TableCell class="p-2">
                                 <label class="flex items-center gap-2">
                                     <input type="checkbox" form="@formId" name="@UpdateFlagFormEndpoint.EnabledField" checked="@flag.EffectiveEnabled" data-ai-action="admin.flags.enabled.@flag.Key" />
                                     <span>@Loc[flag.EffectiveEnabled ? "admin_flags_on" : "admin_flags_off"]</span>
                                 </label>
-                            </td>
-                            <td class="p-2">
+                            </TableCell>
+                            <TableCell class="p-2">
                                 <label class="flex items-center gap-2">
                                     <span class="sr-only">@Loc["admin_flags_rollout_label"]</span>
                                     <input type="number" form="@formId" name="@UpdateFlagFormEndpoint.RolloutField" min="0" max="100" step="1" value="@flag.EffectiveRolloutPercent" class="w-20 rounded-md border bg-background px-2 py-1" data-ai-action="admin.flags.rollout.@flag.Key" />
                                     <span aria-hidden="true">%</span>
                                 </label>
-                            </td>
-                            <td class="p-2">
+                            </TableCell>
+                            <TableCell class="p-2">
                                 <form id="@formId" method="post" action="@UpdateFlagFormEndpoint.FormRoute" data-ai-action="admin.flags.save.@flag.Key">
                                     <AntiforgeryToken />
                                     <input type="hidden" name="@UpdateFlagFormEndpoint.KeyField" value="@flag.Key" />
                                     <Button Type="submit">@Loc["admin_flags_save_btn"]</Button>
                                 </form>
-                            </td>
-                        </tr>
+                            </TableCell>
+                        </TableRow>
                     }
-                </tbody>
-            </table>
+                </TableBody>
+            </Table>
         }
     </Card>
 </PageWrapper>

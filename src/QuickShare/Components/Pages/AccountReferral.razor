@@ -14,7 +14,7 @@
 
         <div class="referral-code mt-4 flex items-center gap-2">
             <code class="text-xl">@referralCode</code>
-            <button type="button" class="@(ButtonVariants.Of("ghost", "sm"))" onclick="copyReferralCode(this)" data-ai-action="referral.copy">@Loc["referral_copy"]</button>
+            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="copyReferralCode(this)" data-ai-action="referral.copy">@Loc["referral_copy"]</button>
         </div>
 
         <p class="mt-3 text-sm text-muted-foreground">

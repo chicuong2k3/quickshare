@@ -208,63 +208,63 @@
     <section class="compare">
         <h2 class="text-2xl font-bold compare__title">@Loc["pricing_compare_title"]</h2>
         <div class="compare__scroll">
-            <table class="compare__table">
+            <Table class="compare__table">
                 <caption class="visually-hidden">@Loc["pricing_compare_title"]</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">@Loc["pricing_compare_feature"]</th>
-                        <th scope="col">@Loc["pricing_free_name"]</th>
-                        <th scope="col">@Loc["pricing_pro_name"]</th>
-                        <th scope="col">@Loc["pricing_studio_name"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_max_file"]</th>
-                        <td>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Free))</td>
-                        <td>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Pro))</td>
-                        <td>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Studio))</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_monthly"]</th>
-                        <td>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Free))</td>
-                        <td>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Pro))</td>
-                        <td>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Studio))</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_expiry"]</th>
-                        <td>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Free))</td>
-                        <td>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Pro))</td>
-                        <td>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Studio))</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_downloads"]</th>
-                        <td>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free)</td>
-                        <td>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro)</td>
-                        <td>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio)</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_password"]</th>
-                        <td>✓</td><td>✓</td><td>✓</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_scheduled"]</th>
-                        <td>—</td><td>✓</td><td>✓</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_alias"]</th>
-                        <td>—</td><td>✓</td><td>✓</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_daily_cap"]</th>
-                        <td>—</td><td>✓</td><td>✓</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">@Loc["pricing_compare_noads"]</th>
-                        <td>—</td><td>✓</td><td>✓</td>
-                    </tr>
-                </tbody>
-            </table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead scope="col">@Loc["pricing_compare_feature"]</TableHead>
+                        <TableHead scope="col">@Loc["pricing_free_name"]</TableHead>
+                        <TableHead scope="col">@Loc["pricing_pro_name"]</TableHead>
+                        <TableHead scope="col">@Loc["pricing_studio_name"]</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_max_file"]</TableHead>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Studio))</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_monthly"]</TableHead>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Studio))</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_expiry"]</TableHead>
+                        <TableCell>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Studio))</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_downloads"]</TableHead>
+                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free)</TableCell>
+                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro)</TableCell>
+                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio)</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_password"]</TableHead>
+                        <TableCell>✓</TableCell><TableCell>✓</TableCell><TableCell>✓</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_scheduled"]</TableHead>
+                        <TableCell>—</TableCell><TableCell>✓</TableCell><TableCell>✓</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_alias"]</TableHead>
+                        <TableCell>—</TableCell><TableCell>✓</TableCell><TableCell>✓</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_daily_cap"]</TableHead>
+                        <TableCell>—</TableCell><TableCell>✓</TableCell><TableCell>✓</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_noads"]</TableHead>
+                        <TableCell>—</TableCell><TableCell>✓</TableCell><TableCell>✓</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
         </div>
     </section>
 

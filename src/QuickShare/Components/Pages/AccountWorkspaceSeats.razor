@@ -89,28 +89,28 @@
             </Card>
 
             <Card class="account-card workspace-card">
-                <CardContent class="workspace-table-wrap">
-                    <table class="workspace-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Loc["seats_col_member"]</th>
-                                <th scope="col">@Loc["seats_col_role"]</th>
-                                <th scope="col">@Loc["seats_col_status"]</th>
-                                <th scope="col">@Loc["seats_col_joined"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <CardContent >
+                    <Table class="workspace-table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">@Loc["seats_col_member"]</TableHead>
+                                <TableHead scope="col">@Loc["seats_col_role"]</TableHead>
+                                <TableHead scope="col">@Loc["seats_col_status"]</TableHead>
+                                <TableHead scope="col">@Loc["seats_col_joined"]</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             @foreach (var member in report.Members)
                             {
-                                <tr>
-                                    <td>@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</td>
-                                    <td>@member.Role</td>
-                                    <td>@(member.Status == StatusPending ? Loc["seats_status_pending"] : Loc["seats_status_active"])</td>
-                                    <td>@(member.JoinedAt is { } at ? at.ToLocalTime().ToString("d") : string.Empty)</td>
-                                </tr>
+                                <TableRow>
+                                    <TableCell>@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</TableCell>
+                                    <TableCell>@member.Role</TableCell>
+                                    <TableCell>@(member.Status == StatusPending ? Loc["seats_status_pending"] : Loc["seats_status_active"])</TableCell>
+                                    <TableCell>@(member.JoinedAt is { } at ? at.ToLocalTime().ToString("d") : string.Empty)</TableCell>
+                                </TableRow>
                             }
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
 

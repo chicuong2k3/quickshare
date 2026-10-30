@@ -44,24 +44,24 @@
 
                 <div class="admin-analytics-funnel">
                     <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_funnel_title"]</h2>
-                    <table class="admin-analytics-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Loc["admin_analytics_funnel_visitor"]</th>
-                                <th scope="col">@Loc["admin_analytics_funnel_upload_started"]</th>
-                                <th scope="col">@Loc["admin_analytics_funnel_upload_completed"]</th>
-                                <th scope="col">@Loc["admin_analytics_funnel_download_completed"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>@data.Funnel.Visitor</td>
-                                <td>@data.Funnel.UploadStarted</td>
-                                <td>@data.Funnel.UploadCompleted</td>
-                                <td>@data.Funnel.DownloadCompleted</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <Table class="admin-analytics-table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_visitor"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_upload_started"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_upload_completed"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_download_completed"]</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell>@data.Funnel.Visitor</TableCell>
+                                <TableCell>@data.Funnel.UploadStarted</TableCell>
+                                <TableCell>@data.Funnel.UploadCompleted</TableCell>
+                                <TableCell>@data.Funnel.DownloadCompleted</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
                 </div>
 
                 <div class="admin-analytics-grid">
@@ -73,23 +73,23 @@
                         }
                         else
                         {
-                            <table class="admin-analytics-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">@Loc["admin_analytics_file_col"]</th>
-                                        <th scope="col">@Loc["admin_analytics_downloads_col"]</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <Table class="admin-analytics-table">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead scope="col">@Loc["admin_analytics_file_col"]</TableHead>
+                                        <TableHead scope="col">@Loc["admin_analytics_downloads_col"]</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     @foreach (var file in data.TopFiles)
                                     {
-                                        <tr>
-                                            <td class="admin-analytics-file-name">@file.FileName</td>
-                                            <td>@file.DownloadCount</td>
-                                        </tr>
+                                        <TableRow>
+                                            <TableCell class="admin-analytics-file-name">@file.FileName</TableCell>
+                                            <TableCell>@file.DownloadCount</TableCell>
+                                        </TableRow>
                                     }
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         }
                     </div>
 
@@ -101,23 +101,23 @@
                         }
                         else
                         {
-                            <table class="admin-analytics-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">@Loc["admin_analytics_country_col"]</th>
-                                        <th scope="col">@Loc["admin_analytics_events_col"]</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <Table class="admin-analytics-table">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead scope="col">@Loc["admin_analytics_country_col"]</TableHead>
+                                        <TableHead scope="col">@Loc["admin_analytics_events_col"]</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     @foreach (var country in data.GeographicSpread)
                                     {
-                                        <tr>
-                                            <td>@(country.CountryCode ?? "?")</td>
-                                            <td>@country.Count</td>
-                                        </tr>
+                                        <TableRow>
+                                            <TableCell>@(country.CountryCode ?? "?")</TableCell>
+                                            <TableCell>@country.Count</TableCell>
+                                        </TableRow>
                                     }
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         }
                     </div>
                 </div>

@@ -86,32 +86,32 @@
             </Card>
 
             <Card class="account-card workspace-card">
-                <CardContent class="workspace-table-wrap">
-                    <table class="workspace-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Loc["ws_report_col_member"]</th>
-                                <th scope="col">@Loc["ws_report_col_role"]</th>
-                                <th scope="col">@Loc["ws_report_col_deliveries"]</th>
-                                <th scope="col">@Loc["ws_report_col_bytes"]</th>
-                                <th scope="col">@Loc["ws_report_col_downloads"]</th>
-                                <th scope="col">@Loc["ws_report_col_last"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <CardContent >
+                    <Table class="workspace-table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">@Loc["ws_report_col_member"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_report_col_role"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_report_col_deliveries"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_report_col_bytes"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_report_col_downloads"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_report_col_last"]</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             @foreach (var member in report.Members)
                             {
-                                <tr>
-                                    <td>@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</td>
-                                    <td>@member.Role</td>
-                                    <td>@member.Deliveries</td>
-                                    <td>@Bytes(member.BytesUploaded)</td>
-                                    <td>@member.Downloads</td>
-                                    <td>@(member.LastActivityAt is { } at ? at.ToLocalTime().ToString("g") : Loc["ws_report_never"].Value)</td>
-                                </tr>
+                                <TableRow>
+                                    <TableCell>@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</TableCell>
+                                    <TableCell>@member.Role</TableCell>
+                                    <TableCell>@member.Deliveries</TableCell>
+                                    <TableCell>@Bytes(member.BytesUploaded)</TableCell>
+                                    <TableCell>@member.Downloads</TableCell>
+                                    <TableCell>@(member.LastActivityAt is { } at ? at.ToLocalTime().ToString("g") : Loc["ws_report_never"].Value)</TableCell>
+                                </TableRow>
                             }
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
 

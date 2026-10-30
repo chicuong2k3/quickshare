@@ -40,7 +40,7 @@
         <h3 class="text-lg font-semibold">@Loc["account_data_title"]</h3>
         <div class="mt-4 flex flex-wrap gap-2">
             <Button Href="/api/me/export" Variant="ghost" Size="sm" data-ai-action="account.exportData">@Loc["account_data_export"]</Button>
-            <button type="button" class="@(ButtonVariants.Of("ghost", "sm", "text-destructive"))"
+            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="text-destructive"
                     data-prompt="@Loc["account_data_delete_prompt"]"
                     data-error="@Loc["account_data_delete_error"]"
                     onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>

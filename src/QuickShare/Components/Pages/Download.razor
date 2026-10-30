@@ -155,7 +155,7 @@
                             <svg class="badge--sovereign" style="width: 0.875rem; height: 0.875rem" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                             <span id="dl-ad-countdown"></span>
                         </div>
-                        <button type="button" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">@Loc["dl_ad_skip"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">@Loc["dl_ad_skip"]</button>
                     </div>
 
                     @* File Card *@
@@ -236,7 +236,7 @@
                             @* Diff toolbar (issue #248) — shown by download.js only when a
                                .patch/.diff file renders. Hidden by default for non-diff. *@
                             <div id="dl-diff-toolbar" class="dl-diff-toolbar hidden">
-                                <button type="button" id="dl-diff-mode-btn" class="hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
+                                <button type="button" id="dl-diff-mode-btn" data-slot="button" data-variant="ghost" data-size="sm" class="hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
                                     <span id="dl-diff-mode-label">@Loc["dl_diff_split"]</span>
                                 </button>
                                 <button type="button" id="dl-diff-raw-btn" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
@@ -244,7 +244,7 @@
                                 </button>
                             </div>
                             <div id="dl-text-body" class="text-preview__body"></div>
-                            <button type="button" id="dl-text-more" class="hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
+                            <button type="button" id="dl-text-more" data-slot="button" data-variant="ghost" data-size="sm" class="hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
                         </div>
 
                         @* Sender note (issue #137) — server-rendered escaped text. *@
@@ -364,7 +364,7 @@
 
                         @* Report abuse / DMCA — anonymous, no account needed (issue #53) *@
                         <div class="dl-report">
-                            <button type="button" class="dl-report__link" onclick="downloadApp.openReport()" data-ai-action="download.report.open">
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dl-report__link" onclick="downloadApp.openReport()" data-ai-action="download.report.open">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 0.875rem; height: 0.875rem"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                 @Loc["dl_report_link"]
                             </button>
@@ -687,7 +687,7 @@
 
                         @if (CanPost)
                         {
-                            <button type="button" class="dl-comments__js inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground"
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dl-comments__js"
                                     data-parent-id="@comment.Id"
                                     onclick="window.quickShareComments.reply(this)"
                                     data-ai-action="comment.reply">@Loc["dl_comments_reply"]</button>
@@ -712,7 +712,7 @@
 
                     <p class="dl-comments__hint text-muted-foreground" id="dl-comment-replying" hidden>
                         @Loc["dl_comments_replying"]
-                        <button type="button" class="dl-comments__cancel"
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dl-comments__cancel"
                                 onclick="window.quickShareComments.cancelReply()"
                                 data-ai-action="comment.reply.cancel">@Loc["dl_comments_cancel_reply"]</button>
                     </p>

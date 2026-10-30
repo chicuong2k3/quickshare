@@ -108,28 +108,28 @@
         else
         {
             <Card class="account-card workspace-card">
-                <CardContent class="workspace-table-wrap">
-                    <table class="workspace-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Loc["ws_audit_col_when"]</th>
-                                <th scope="col">@Loc["ws_audit_col_who"]</th>
-                                <th scope="col">@Loc["ws_audit_col_action"]</th>
-                                <th scope="col">@Loc["ws_audit_col_detail"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <CardContent >
+                    <Table class="workspace-table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">@Loc["ws_audit_col_when"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_audit_col_who"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_audit_col_action"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_audit_col_detail"]</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             @foreach (var row in page.Rows)
                             {
-                                <tr>
-                                    <td><time datetime="@row.CreatedAt.ToString("o")">@row.CreatedAt.ToLocalTime().ToString("g")</time></td>
-                                    <td>@(string.IsNullOrEmpty(row.ActorName) ? row.ActorEmail : row.ActorName)</td>
-                                    <td>@row.Action</td>
-                                    <td class="workspace-table__detail">@row.MetadataJson</td>
-                                </tr>
+                                <TableRow>
+                                    <TableCell><time datetime="@row.CreatedAt.ToString("o")">@row.CreatedAt.ToLocalTime().ToString("g")</time></TableCell>
+                                    <TableCell>@(string.IsNullOrEmpty(row.ActorName) ? row.ActorEmail : row.ActorName)</TableCell>
+                                    <TableCell>@row.Action</TableCell>
+                                    <TableCell class="workspace-table__detail">@row.MetadataJson</TableCell>
+                                </TableRow>
                             }
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         }

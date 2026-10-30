@@ -102,31 +102,29 @@
                            data-ai-action="invoices.export">@Loc["invoices_export"]</a>
                     </p>
 
-                    <div class="workspace-table-wrap">
-                        <table class="workspace-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">@Loc["invoices_col_number"]</th>
-                                    <th scope="col">@Loc["invoices_col_period"]</th>
-                                    <th scope="col">@Loc["invoices_col_status"]</th>
-                                    <th scope="col">@Loc["invoices_col_due"]</th>
-                                    <th scope="col">@Loc["invoices_col_total"]</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <Table class="workspace-table">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead scope="col">@Loc["invoices_col_number"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_period"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_status"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_due"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_total"]</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 @foreach (var invoice in invoices)
                                 {
-                                    <tr>
-                                        <td>@(invoice.IsDraft ? Loc["invoices_draft"].Value : invoice.Number)</td>
-                                        <td>@invoice.PeriodStart.ToString("yyyy-MM")</td>
-                                        <td>@StatusLabel(invoice)</td>
-                                        <td>@(invoice.DueAt is { } due ? due.ToLocalTime().ToString("d") : string.Empty)</td>
-                                        <td>@PlanCatalog.FormatPrice((int)invoice.Total, invoice.Currency)</td>
-                                    </tr>
+                                    <TableRow>
+                                        <TableCell>@(invoice.IsDraft ? Loc["invoices_draft"].Value : invoice.Number)</TableCell>
+                                        <TableCell>@invoice.PeriodStart.ToString("yyyy-MM")</TableCell>
+                                        <TableCell>@StatusLabel(invoice)</TableCell>
+                                        <TableCell>@(invoice.DueAt is { } due ? due.ToLocalTime().ToString("d") : string.Empty)</TableCell>
+                                        <TableCell>@PlanCatalog.FormatPrice((int)invoice.Total, invoice.Currency)</TableCell>
+                                    </TableRow>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
                 }
             </CardContent>
         </Card>
@@ -149,32 +147,30 @@
                         }
                     </p>
 
-                    <div class="workspace-table-wrap">
-                        <table class="workspace-table">
-                            <tbody>
+                    <Table class="workspace-table">
+                            <TableBody>
                                 @foreach (var line in printable.Lines.OrderBy(l => l.CreatedAt))
                                 {
-                                    <tr>
-                                        <td>@LineLabel(line.Kind)</td>
-                                        <td>@line.Description</td>
-                                        <td>@PlanCatalog.FormatPrice((int)line.Amount, printable.Currency)</td>
-                                    </tr>
+                                    <TableRow>
+                                        <TableCell>@LineLabel(line.Kind)</TableCell>
+                                        <TableCell>@line.Description</TableCell>
+                                        <TableCell>@PlanCatalog.FormatPrice((int)line.Amount, printable.Currency)</TableCell>
+                                    </TableRow>
                                 }
-                                <tr>
-                                    <td colspan="2">@Loc["invoices_subtotal"]</td>
-                                    <td>@PlanCatalog.FormatPrice((int)printable.Subtotal, printable.Currency)</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2">@Loc["invoices_tax"]</td>
-                                    <td>@PlanCatalog.FormatPrice((int)printable.TaxAmount, printable.Currency)</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2"><strong>@Loc["invoices_total"]</strong></td>
-                                    <td><strong>@PlanCatalog.FormatPrice((int)printable.Total, printable.Currency)</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                                <TableRow>
+                                    <TableCell colspan="2">@Loc["invoices_subtotal"]</TableCell>
+                                    <TableCell>@PlanCatalog.FormatPrice((int)printable.Subtotal, printable.Currency)</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell colspan="2">@Loc["invoices_tax"]</TableCell>
+                                    <TableCell>@PlanCatalog.FormatPrice((int)printable.TaxAmount, printable.Currency)</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell colspan="2"><strong>@Loc["invoices_total"]</strong></TableCell>
+                                    <TableCell><strong>@PlanCatalog.FormatPrice((int)printable.Total, printable.Currency)</strong></TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
 
                     <p class="text-muted-foreground workspace-hint">@Loc["invoices_not_certified"]</p>
 

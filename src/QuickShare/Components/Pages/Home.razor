@@ -74,43 +74,43 @@
                 <span class="qs-titlebar__box" aria-hidden="true"></span>
             </div>
             <CardContent>
-                <table class="home-why__table">
+                <Table class="home-why__table">
                     <caption class="sr-only">@Loc["home_table_caption"]</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">@Loc["home_table_what"]</th>
-                            <th scope="col">@Loc["home_table_cloud"]</th>
-                            <th scope="col">@Loc["home_table_p2p"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <th scope="row">@Loc["home_row1_label"]</th>
-                            <td>@Loc["home_row1_cloud"]</td>
-                            <td>@Loc["home_row1_p2p"]</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">@Loc["home_row2_label"]</th>
-                            <td>@Loc["home_row2_cloud"]</td>
-                            <td>@Loc["home_row2_p2p"]</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">@Loc["home_row3_label"]</th>
-                            <td>@Loc["home_row3_cloud"]</td>
-                            <td>@Loc["home_row3_p2p"]</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">@Loc["home_row4_label"]</th>
-                            <td>@Loc["home_row4_cloud"]</td>
-                            <td>@Loc["home_row4_p2p"]</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">@Loc["home_row5_label"]</th>
-                            <td>@Loc["home_row5_cloud"]</td>
-                            <td>@Loc["home_row5_p2p"]</td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead scope="col">@Loc["home_table_what"]</TableHead>
+                            <TableHead scope="col">@Loc["home_table_cloud"]</TableHead>
+                            <TableHead scope="col">@Loc["home_table_p2p"]</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableHead scope="row">@Loc["home_row1_label"]</TableHead>
+                            <TableCell>@Loc["home_row1_cloud"]</TableCell>
+                            <TableCell>@Loc["home_row1_p2p"]</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableHead scope="row">@Loc["home_row2_label"]</TableHead>
+                            <TableCell>@Loc["home_row2_cloud"]</TableCell>
+                            <TableCell>@Loc["home_row2_p2p"]</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableHead scope="row">@Loc["home_row3_label"]</TableHead>
+                            <TableCell>@Loc["home_row3_cloud"]</TableCell>
+                            <TableCell>@Loc["home_row3_p2p"]</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableHead scope="row">@Loc["home_row4_label"]</TableHead>
+                            <TableCell>@Loc["home_row4_cloud"]</TableCell>
+                            <TableCell>@Loc["home_row4_p2p"]</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableHead scope="row">@Loc["home_row5_label"]</TableHead>
+                            <TableCell>@Loc["home_row5_cloud"]</TableCell>
+                            <TableCell>@Loc["home_row5_p2p"]</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
                 <div class="home-why__actions">
                     <Button Href="/send">@Loc["home_btn_send_now"]</Button>
                     <Button Href="/pricing" Variant="ghost">@Loc["home_btn_pro_limits"]</Button>
