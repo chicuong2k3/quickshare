@@ -73,6 +73,13 @@ public class AppDbContext : DbContext
     public DbSet<EmailSuppression> EmailSuppressions => Set<EmailSuppression>();
     public DbSet<DiscountApplication> DiscountApplications => Set<DiscountApplication>();
     public DbSet<SubscriptionGift> SubscriptionGifts => Set<SubscriptionGift>();
+    public DbSet<Experiment> Experiments => Set<Experiment>();
+    public DbSet<TransferCreditPass> TransferCreditPasses => Set<TransferCreditPass>();
+    public DbSet<AffiliateProfile> AffiliateProfiles => Set<AffiliateProfile>();
+    public DbSet<AffiliateConversion> AffiliateConversions => Set<AffiliateConversion>();
+    public DbSet<SmsDeliveryLog> SmsDeliveryLogs => Set<SmsDeliveryLog>();
+    public DbSet<SmsOptOut> SmsOptOuts => Set<SmsOptOut>();
+    public DbSet<MigrationImportJob> MigrationImportJobs => Set<MigrationImportJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1069,6 +1076,92 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.DeliveryId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Experiment>(entity =>
+        {
+            entity.ToTable("experiments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Key).IsRequired().HasMaxLength(Experiment.KeyMaxLength);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(Experiment.NameMaxLength);
+            entity.Property(e => e.Surface).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.VariantACopy).HasMaxLength(Experiment.CopyMaxLength);
+            entity.Property(e => e.VariantBCopy).HasMaxLength(Experiment.CopyMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.Property(e => e.WinnerVariant).HasMaxLength(8);
+            entity.HasIndex(e => e.Key).IsUnique();
+        });
+
+        modelBuilder.Entity<TransferCreditPass>(entity =>
+        {
+            entity.ToTable("transfer_credit_passes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(TransferCreditPass.TokenLength);
+            entity.Property(e => e.BuyerEmail).HasMaxLength(TransferCreditPass.EmailMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.PaymentIntentId);
+        });
+
+        modelBuilder.Entity<AffiliateProfile>(entity =>
+        {
+            entity.ToTable("affiliate_profiles");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(AffiliateProfile.CodeMaxLength);
+            entity.Property(e => e.PayoutMethod).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.PayoutDetails).IsRequired().HasMaxLength(AffiliateProfile.PayoutInfoMaxLength);
+            entity.Property(e => e.TaxCode).HasMaxLength(AffiliateProfile.TaxIdMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AffiliateConversion>(entity =>
+        {
+            entity.ToTable("affiliate_conversions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Plan).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.HasIndex(e => new { e.AffiliateProfileId, e.ReferredUserId }).IsUnique();
+            entity.HasOne(e => e.AffiliateProfile)
+                .WithMany()
+                .HasForeignKey(e => e.AffiliateProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SmsDeliveryLog>(entity =>
+        {
+            entity.ToTable("sms_delivery_logs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RecipientPhone).IsRequired().HasMaxLength(SmsDeliveryLog.PhoneMaxLength);
+            entity.Property(e => e.MessageBody).IsRequired().HasMaxLength(SmsDeliveryLog.MessageMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.HasIndex(e => e.DeliveryId);
+            entity.HasIndex(e => e.SenderUserId);
+        });
+
+        modelBuilder.Entity<SmsOptOut>(entity =>
+        {
+            entity.ToTable("sms_opt_outs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(SmsOptOut.PhoneMaxLength);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(32);
+            entity.HasIndex(e => e.PhoneNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<MigrationImportJob>(entity =>
+        {
+            entity.ToTable("migration_import_jobs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SourceProvider).IsRequired().HasMaxLength(MigrationImportJob.SourceMaxLength);
+            entity.Property(e => e.ConflictPolicy).IsRequired().HasMaxLength(MigrationImportJob.ConflictPolicyMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.SummaryJson).IsRequired().HasMaxLength(MigrationImportJob.ItemsJsonMaxLength);
+            entity.HasIndex(e => e.UserId);
         });
 
     }

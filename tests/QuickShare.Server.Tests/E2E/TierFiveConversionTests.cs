@@ -1120,4 +1120,291 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.NotNull(privRes);
         Assert.Empty(privRes!.Files);
     }
+
+    // -----------------------------------------------------------------
+    // #92 — A/B testing framework: deterministic assignment, Z-score & winner promotion
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task AbTestingFramework_AssignsDeterministically_ComputesSignificance_AndPromotesWinner()
+    {
+        var adminClient = _factory.CreateAuthenticatedClient();
+
+        var createRes = await adminClient.PostAsJsonAsync(RoutePaths.AdminExperimentsApi, new
+        {
+            key = "landing_hero_headline",
+            name = "Landing Hero Copy Test",
+            surface = "landing",
+            variantACopy = "Send large files privately",
+            variantBCopy = "Zero-knowledge file sharing in seconds",
+            trafficSplitPercent = 50,
+        });
+        Assert.Equal(HttpStatusCode.OK, createRes.StatusCode);
+
+        // Deterministic assignment for the same visitor id
+        var vId = Guid.NewGuid();
+        var v1 = QuickShare.Features.Experiments.ExperimentEvaluator.AssignVariant(vId, "landing_hero_headline", 50);
+        var v2 = QuickShare.Features.Experiments.ExperimentEvaluator.AssignVariant(vId, "landing_hero_headline", 50);
+        Assert.Equal(v1, v2);
+
+        // Seed 500 exposures for A (25 conversions = 5%) and 500 exposures for B (60 conversions = 12%)
+        var (zScore, confidence, recWinner) = QuickShare.Features.Experiments.ExperimentEvaluator.ComputeSignificance(500, 25, 500, 60);
+        Assert.True(zScore > 2.5);
+        Assert.Equal(99.0, confidence);
+        Assert.Equal(Experiment.VariantB, recWinner);
+
+        // Promote Variant B to 100% traffic
+        var promoteRes = await adminClient.PostAsJsonAsync($"{RoutePaths.AdminExperimentsApi}/landing_hero_headline/promote", new
+        {
+            winnerVariant = Experiment.VariantB,
+        });
+        Assert.Equal(HttpStatusCode.OK, promoteRes.StatusCode);
+
+        var anonClient = _factory.CreateClient();
+        var assignDto = await anonClient.GetFromJsonAsync<QuickShare.Features.Experiments.ExperimentAssignmentDto>(
+            $"{RoutePaths.ExperimentsAssignApi}?key=landing_hero_headline");
+        Assert.NotNull(assignDto);
+        Assert.Equal(Experiment.VariantB, assignDto!.Variant);
+        Assert.Equal("Zero-knowledge file sharing in seconds", assignDto.Copy);
+        Assert.Equal(Experiment.StatusPromoted, assignDto.Status);
+    }
+
+    // -----------------------------------------------------------------
+    // #85 — Pay-per-transfer: one-time credits without subscription (anonymous-friendly)
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task PayPerTransferPass_AllowsAnonymousLargeFileUploadWithoutSubscription()
+    {
+        var anonClient = _factory.CreateClient();
+        var threeGb = 3L * 1024 * 1024 * 1024; // 3 GB > 2 GB Free/Anonymous cap
+
+        // 1. Without a pass, anonymous 3 GB upload is rejected at start-r2
+        var blockedRes = await anonClient.PostAsJsonAsync("/api/uploads/start-r2", new
+        {
+            fileName = "raw-footage-4k.mov",
+            fileSize = threeGb,
+            contentType = "video/quicktime",
+            partNumbers = new[] { 1 },
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, blockedRes.StatusCode);
+
+        // 2. Anonymous user purchases a one-time transfer pass
+        var buyRes = await anonClient.PostAsJsonAsync(RoutePaths.TransferCreditsApi, new
+        {
+            email = "anon-filmmaker@example.com",
+            quantity = 1,
+            currency = PricingKeys.DefaultCurrency,
+        });
+        Assert.Equal(HttpStatusCode.OK, buyRes.StatusCode);
+        var passDto = await buyRes.Content.ReadFromJsonAsync<QuickShare.Features.Payments.Credits.TransferPassDto>();
+        Assert.NotNull(passDto);
+        Assert.False(string.IsNullOrEmpty(passDto!.Token));
+
+        // 3. Activate pass after PayOS payment
+        var actRes = await anonClient.PostAsync($"{RoutePaths.TransferCreditsApi}/{passDto.Token}/activate", null);
+        Assert.Equal(HttpStatusCode.OK, actRes.StatusCode);
+
+        // 4. Anonymous user starts 3 GB upload with the activated transferPassToken -> succeeds!
+        var startRes = await anonClient.PostAsJsonAsync("/api/uploads/start-r2", new
+        {
+            fileName = "raw-footage-4k.mov",
+            fileSize = threeGb,
+            contentType = "video/quicktime",
+            partNumbers = new[] { 1 },
+            transferPassToken = passDto.Token,
+        });
+        Assert.Equal(HttpStatusCode.OK, startRes.StatusCode);
+    }
+
+    // -----------------------------------------------------------------
+    // #298 — Affiliate program: unique link, click tracking & 20% commission on first paid plan
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task AffiliateProgram_EnrollsTracksClicks_AndCreditsCommissionOnFirstPaidConversion()
+    {
+        var affKey = Guid.CreateVersion7().ToString();
+        var affUser = await _factory.SeedUserAsync(affKey, PlanTierLimits.Pro);
+        var buyerKey = Guid.CreateVersion7().ToString();
+        var buyerUser = await _factory.SeedUserAsync(buyerKey, PlanTierLimits.Free);
+
+        var affClient = _factory.CreateAuthenticatedClient(affKey);
+        var enrollRes = await affClient.PostAsJsonAsync(RoutePaths.AffiliateApi, new
+        {
+            customCode = $"creator-{affUser.Id.ToString("N")[^6..]}",
+            payoutMethod = "bank_transfer",
+            payoutDetails = "VCB 0011009999999",
+            taxCode = "0101234567",
+            termsAccepted = true,
+        });
+        Assert.Equal(HttpStatusCode.OK, enrollRes.StatusCode);
+        var enrolled = await enrollRes.Content.ReadFromJsonAsync<QuickShare.Features.Affiliates.AffiliateDashboardDto>();
+        Assert.NotNull(enrolled);
+
+        // Anonymous prospect clicks affiliate link
+        var anonClient = _factory.CreateClient();
+        var clickRes = await anonClient.PostAsync($"{RoutePaths.AffiliateApi}/{enrolled!.Code}/click", null);
+        Assert.Equal(HttpStatusCode.OK, clickRes.StatusCode);
+
+        // Link buyer to affiliate referrer and complete a paid Pro checkout (50,000 VND)
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var b = db.Users.First(u => u.Id == buyerUser.Id);
+            b.ReferredByUserId = affUser.Id;
+            await db.SaveChangesAsync();
+
+            var checkout = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Payments.CheckoutService>();
+            var (intent, _) = await checkout.CreatePaymentLinkAsync(b, PlanTierLimits.Pro, false, CancellationToken.None);
+            var completed = await checkout.CompleteAsync(intent, "AFF-INV-298", CancellationToken.None);
+            Assert.True(completed);
+        }
+
+        var dash = await affClient.GetFromJsonAsync<QuickShare.Features.Affiliates.AffiliateDashboardDto>(RoutePaths.AffiliateApi);
+        Assert.NotNull(dash);
+        Assert.Equal(1, dash!.ClicksCount);
+        Assert.Equal(1, dash.PaidConversionsCount);
+        Assert.True(dash.TotalEarnedVnd > 0);
+        Assert.Single(dash.RecentConversions);
+
+        var portalHtml = await affClient.GetStringAsync(RoutePaths.AccountAffiliate);
+        Assert.Contains("id=\"affiliate-portal-card\"", portalHtml);
+        Assert.Contains(enrolled.Code, portalHtml);
+    }
+
+    // -----------------------------------------------------------------
+    // #269 — SMS share: +84 normalization, 160-char budget, metered billing & STOP opt-out
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task SmsShare_NormalizesVnPhone_Enforces160CharLimit_MetersInvoice_AndHonorsStopOptOut()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var shareCode = $"sms{user.Id.ToString("N")[..7]}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = user.Id,
+                ShareCode = shareCode,
+                FileName = "contract-signed.pdf",
+                ContentType = "application/pdf",
+                FileSize = 4096,
+                TotalBytes = 4096,
+                StoragePath = "stub/sms-test",
+                Status = DeliveryStatus.Active,
+                ExpiresAt = DateTime.UtcNow.AddDays(3),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        // Send SMS to local VN number 0901234567 -> normalized to +84901234567
+        var smsRes = await client.PostAsJsonAsync($"/api/deliveries/{shareCode}/sms", new
+        {
+            recipientPhone = "0901234567",
+            passwordHint = "company tax code",
+            recipientConsentConfirmed = true,
+        });
+        Assert.Equal(HttpStatusCode.OK, smsRes.StatusCode);
+        var smsDto = await smsRes.Content.ReadFromJsonAsync<QuickShare.Features.Deliveries.Sms.SmsDeliveryResponse>();
+        Assert.NotNull(smsDto);
+        Assert.Equal("+84901234567", smsDto!.RecipientPhone);
+        Assert.True(smsDto.CharacterCount <= SmsDeliveryLog.MessageMaxLength);
+        Assert.Contains(shareCode, smsDto.MessageBody);
+
+        // Recipient replies STOP -> future SMS to same phone is refused with 409 Conflict
+        var anonClient = _factory.CreateClient();
+        var stopRes = await anonClient.PostAsJsonAsync(RoutePaths.SmsOptOutApi, new
+        {
+            phoneNumber = "0901234567",
+            keyword = "STOP",
+        });
+        Assert.Equal(HttpStatusCode.OK, stopRes.StatusCode);
+
+        var blockedSms = await client.PostAsJsonAsync($"/api/deliveries/{shareCode}/sms", new
+        {
+            recipientPhone = "+84901234567",
+            recipientConsentConfirmed = true,
+        });
+        Assert.Equal(HttpStatusCode.Conflict, blockedSms.StatusCode);
+    }
+
+    // -----------------------------------------------------------------
+    // #272 — Migration wizard: dry-run preview, conflict resolution (skip/rename/replace) & legal-hold guard
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task MigrationWizard_SupportsDryRun_ResolvesSameNameConflicts_AndRespectsLegalHold()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = user.Id,
+                ShareCode = $"mig{user.Id.ToString("N")[..7]}",
+                FileName = "brand-guidelines.pdf",
+                ContentType = "application/pdf",
+                FileSize = 1024,
+                TotalBytes = 1024,
+                StoragePath = "stub/existing-brand",
+                Status = DeliveryStatus.Active,
+                LegalHoldAt = DateTime.UtcNow,
+                LegalHoldReason = "Litigation hold #266",
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        // 1. ConflictPolicy = rename creates "brand-guidelines (imported).pdf" alongside existing file
+        var renameRes = await client.PostAsJsonAsync(RoutePaths.MigrationImportApi, new
+        {
+            sourceProvider = MigrationImportJob.SourceWeTransfer,
+            conflictPolicy = MigrationImportJob.ConflictRename,
+            dryRun = false,
+            items = new[]
+            {
+                new { fileName = "brand-guidelines.pdf", url = "https://example.com/brand-guidelines.pdf", estimatedBytes = 2048 },
+                new { fileName = "campaign-deck.pptx", url = "https://example.com/campaign-deck.pptx", estimatedBytes = 4096 },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, renameRes.StatusCode);
+        var renameDto = await renameRes.Content.ReadFromJsonAsync<QuickShare.Features.Migration.MigrationWizardResponse>();
+        Assert.NotNull(renameDto);
+        Assert.Equal(2, renameDto!.ImportedCount);
+        Assert.Contains(renameDto.Results, r => r.ResolvedFileName == "brand-guidelines (imported).pdf" && r.Action == "renamed");
+
+        // 2. ConflictPolicy = replace skips legal-hold delivery (#266 compliance invariant!)
+        var replaceRes = await client.PostAsJsonAsync(RoutePaths.MigrationImportApi, new
+        {
+            sourceProvider = MigrationImportJob.SourceGoogleDrive,
+            conflictPolicy = MigrationImportJob.ConflictReplace,
+            dryRun = false,
+            items = new[]
+            {
+                new { fileName = "brand-guidelines.pdf", url = "https://example.com/brand-guidelines.pdf", estimatedBytes = 2048 },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, replaceRes.StatusCode);
+        var replaceDto = await replaceRes.Content.ReadFromJsonAsync<QuickShare.Features.Migration.MigrationWizardResponse>();
+        Assert.NotNull(replaceDto);
+        Assert.Equal(1, replaceDto!.SkippedCount);
+        Assert.Equal("skipped_legal_hold", replaceDto.Results[0].Action);
+
+        var pageHtml = await client.GetStringAsync(RoutePaths.AccountMigration);
+        Assert.Contains("id=\"migration-wizard-card\"", pageHtml);
+    }
 }

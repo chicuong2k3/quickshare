@@ -60,6 +60,7 @@ public static class AnalyticsEvents
     public const string LegalHoldLifted = "legal_hold_lifted";
     public const string RetentionPolicyChanged = "retention_policy_changed";
     public const string RetentionEnforced = "retention_enforced";
+    public const string ExperimentExposure = "experiment_exposure";
 
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)

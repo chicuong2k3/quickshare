@@ -1,0 +1,92 @@
+@page "/account/affiliate"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.EntityFrameworkCore
+@using Unpoly.Blazor.Shadcn
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IConfiguration Config
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["affiliate_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <section class="mb-6">
+        <h1 class="text-2xl font-bold">@Loc["affiliate_title"]</h1>
+        <p class="mt-1 text-sm text-muted-foreground">@Loc["affiliate_subtitle"]</p>
+    </section>
+
+    <Card id="affiliate-portal-card" class="p-6">
+        <CardContent class="space-y-4">
+            @if (profile is null)
+            {
+                <h2 class="text-lg font-semibold">@Loc["affiliate_enroll_heading"]</h2>
+                <p class="text-sm text-muted-foreground">@Loc["affiliate_enroll_desc"]</p>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="block">
+                        <span class="text-xs font-medium">@Loc["affiliate_code_label"]</span>
+                        <Input id="affiliate-code-input" placeholder="creator-vn" />
+                    </label>
+                    <label class="block">
+                        <span class="text-xs font-medium">@Loc["affiliate_payout_label"]</span>
+                        <Input id="affiliate-payout-input" placeholder="Vietcombank 0123456789" />
+                    </label>
+                </div>
+            }
+            else
+            {
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs text-muted-foreground">@Loc["affiliate_link_label"]:</span>
+                        <code id="affiliate-share-link" class="ml-2 rounded border bg-muted/40 px-2 py-1 font-mono text-sm">@shareUrl</code>
+                    </div>
+                    <span class="rounded bg-primary/10 px-2.5 py-1 font-mono text-xs font-semibold text-primary">@profile.CommissionPercent% commission</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-t pt-4 sm:grid-cols-4">
+                    <div>
+                        <div class="text-xs text-muted-foreground">Clicks</div>
+                        <div id="affiliate-clicks-count" class="text-xl font-bold tabular-nums">@profile.ClicksCount</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-muted-foreground">Paid Conversions</div>
+                        <div id="affiliate-conversions-count" class="text-xl font-bold tabular-nums">@profile.PaidConversionsCount</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-muted-foreground">Total Earned</div>
+                        <div id="affiliate-earned-total" class="text-xl font-bold tabular-nums">@($"{profile.TotalEarnedVnd:N0}₫")</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-muted-foreground">Pending Payout</div>
+                        <div id="affiliate-pending-payout" class="text-xl font-bold tabular-nums">@($"{profile.PendingPayoutVnd:N0}₫")</div>
+                    </div>
+                </div>
+            }
+        </CardContent>
+    </Card>
+</PageWrapper>
+
+@code {
+    private AffiliateProfile? profile;
+    private string shareUrl = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            profile = await Db.AffiliateProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.UserId == user.Id);
+
+            if (profile is not null)
+            {
+                var baseUrl = (Config["Email:BaseUrl"] ?? "https://quicksharecloud.com").TrimEnd('/');
+                shareUrl = $"{baseUrl}/?aff={profile.Code}";
+            }
+        }
+        catch
+        {
+            profile = null;
+        }
+    }
+}

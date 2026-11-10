@@ -98,7 +98,8 @@ public sealed class CommitR2Handler(
         // File-request submissions are capped by the request budget, never the submitter
         // plan or monthly quota — the owner pre-paid for these with their own limits.
         var requestId = session.FileRequestId;
-        var quota = user is null || requestId is not null ? null : new QuotaService(db);
+        var hasTransferPass = !string.IsNullOrWhiteSpace(session.TransferPassToken);
+        var quota = user is null || requestId is not null || hasTransferPass ? null : new QuotaService(db);
 
         CompletionResult completionResult;
         try
@@ -138,7 +139,7 @@ public sealed class CommitR2Handler(
         }
         else
         {
-            var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
+            var maxFileSize = hasTransferPass ? TransferCreditPass.MaxSingleTransferBytes : PlanTierLimits.GetMaxFileSize(plan);
             if (maxFileSize.HasValue)
             {
                 var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, cancellationToken);
@@ -255,7 +256,7 @@ public sealed class CommitR2Handler(
                     .Select(w => w.RequireDeliveryApproval)
                     .FirstOrDefaultAsync(cancellationToken));
 
-        var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
+        var maxExpiry = hasTransferPass ? TimeSpan.FromDays(TransferCreditPass.ExtendedExpiryDays) : PlanTierLimits.GetMaxExpiry(plan);
 
         // Locked folder defaults are policy, not prefill (issue #245). Unlocked ones never
         // reach here: they are served to the upload form and the sender stays in control.
@@ -288,7 +289,7 @@ public sealed class CommitR2Handler(
         // Retention policy (issue #161): the sender's own choice is clamped to the
         // account-wide window. Clamping, not rejecting — the upload already landed in R2,
         // and a compliance window is a ceiling, not a validation error.
-        var expiresAt = RetentionPolicy.Clamp(ResolveExpiry(cmd, plan), user?.RetentionDays);
+        var expiresAt = RetentionPolicy.Clamp(hasTransferPass ? (cmd.DeliverAt ?? DateTime.UtcNow).Add(cmd.ExpiryHours.HasValue ? TimeSpan.FromHours(cmd.ExpiryHours.Value) : maxExpiry) : ResolveExpiry(cmd, plan), user?.RetentionDays);
 
         var delivery = new Delivery
         {
@@ -353,6 +354,19 @@ public sealed class CommitR2Handler(
 
         session.Status = UploadSessionStatus.Committed;
         session.R2UploadId = null;
+
+        if (hasTransferPass)
+        {
+            var passRow = await db.TransferCreditPasses.FirstOrDefaultAsync(p => p.Token == session.TransferPassToken, cancellationToken);
+            if (passRow is null || passRow.Status != TransferCreditPass.StatusAvailable || passRow.CreditsRemaining <= 0)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.TransferPassInvalid));
+
+            passRow.CreditsRemaining--;
+            passRow.RedeemedDeliveryId = delivery.Id;
+            passRow.RedeemedAt = DateTime.UtcNow;
+            if (passRow.CreditsRemaining <= 0)
+                passRow.Status = TransferCreditPass.StatusRedeemed;
+        }
 
         if (quota is not null)
             await quota.RecordAsync(user!.Id, plan, actualSize, cancellationToken);

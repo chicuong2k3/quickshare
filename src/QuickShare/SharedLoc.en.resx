@@ -3191,4 +3191,55 @@
   <data name="apidocs_version_stable" xml:space="preserve">
     <value>Stable</value>
   </data>
+  <data name="migration_conflict_replace" xml:space="preserve">
+    <value>Replace existing file</value>
+  </data>
+  <data name="migration_dryrun_btn" xml:space="preserve">
+    <value>Preview dry run</value>
+  </data>
+  <data name="affiliate_title" xml:space="preserve">
+    <value>Affiliate Partner Portal</value>
+  </data>
+  <data name="migration_title" xml:space="preserve">
+    <value>Migration Wizard</value>
+  </data>
+  <data name="affiliate_payout_label" xml:space="preserve">
+    <value>Bank / PayOS payout details</value>
+  </data>
+  <data name="affiliate_enroll_heading" xml:space="preserve">
+    <value>Become a QuickShareCloud Affiliate</value>
+  </data>
+  <data name="migration_start_btn" xml:space="preserve">
+    <value>Start migration</value>
+  </data>
+  <data name="migration_source_label" xml:space="preserve">
+    <value>Source platform</value>
+  </data>
+  <data name="affiliate_enroll_desc" xml:space="preserve">
+    <value>Create your tracking code and enter payout details to start earning.</value>
+  </data>
+  <data name="migration_conflict_label" xml:space="preserve">
+    <value>If a file with the same name exists</value>
+  </data>
+  <data name="migration_urls_label" xml:space="preserve">
+    <value>Source file URLs (one per line)</value>
+  </data>
+  <data name="affiliate_subtitle" xml:space="preserve">
+    <value>Earn 20% commission on the first paid subscription of every customer you refer.</value>
+  </data>
+  <data name="migration_conflict_skip" xml:space="preserve">
+    <value>Skip duplicate file</value>
+  </data>
+  <data name="migration_conflict_rename" xml:space="preserve">
+    <value>Keep both (rename imported file)</value>
+  </data>
+  <data name="migration_subtitle" xml:space="preserve">
+    <value>Import your active transfers and files from WeTransfer, Google Drive, S3, or URLs in one step.</value>
+  </data>
+  <data name="affiliate_link_label" xml:space="preserve">
+    <value>Your affiliate link</value>
+  </data>
+  <data name="affiliate_code_label" xml:space="preserve">
+    <value>Custom affiliate code</value>
+  </data>
 </root>

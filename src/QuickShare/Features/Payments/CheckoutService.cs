@@ -232,9 +232,17 @@ public sealed class CheckoutService(
             return false;
         }
 
-        // Check whether this payment intent is for a gift subscription (issue #102).
-        var gift = await db.SubscriptionGifts.FirstOrDefaultAsync(g => g.PaymentIntentId == intent.Id, ct);
-        if (gift is not null)
+        // Check whether this payment intent is for a one-time transfer pass (issue #85) or gift subscription (issue #102).
+        var transferPass = await db.TransferCreditPasses.FirstOrDefaultAsync(p => p.PaymentIntentId == intent.Id, ct);
+        var gift = transferPass is null
+            ? await db.SubscriptionGifts.FirstOrDefaultAsync(g => g.PaymentIntentId == intent.Id, ct)
+            : null;
+
+        if (transferPass is not null)
+        {
+            transferPass.Status = TransferCreditPass.StatusAvailable;
+        }
+        else if (gift is not null)
         {
             gift.Status = SubscriptionGift.StatusClaimable;
             if (emailSender.IsConfigured)
@@ -250,6 +258,7 @@ public sealed class CheckoutService(
         else
         {
             await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, db, ct);
+            await QuickShare.Features.Affiliates.AffiliateService.RecordPaidConversionAsync(db, user, intent, ct);
         }
 
         if (!string.IsNullOrEmpty(intent.PromoCode))

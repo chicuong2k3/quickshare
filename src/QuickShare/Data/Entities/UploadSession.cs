@@ -16,6 +16,8 @@ public record UploadSession : BaseAuditEntity
     public Guid? ReplaceDeliveryId { get; init; }
     /// <summary>When set, this upload is a submission to a file request (issue #16).</summary>
     public Guid? FileRequestId { get; init; }
+    /// <summary>When set, this upload was authorized by a one-time pay-per-transfer credit pass (issue #85).</summary>
+    public string? TransferPassToken { get; init; }
 }
 
 public static class UploadSessionStatus

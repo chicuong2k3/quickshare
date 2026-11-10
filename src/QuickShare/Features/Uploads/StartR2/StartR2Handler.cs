@@ -4,7 +4,7 @@ using QuickShare.Features.Uploads.Shared;
 
 namespace QuickShare.Features.Uploads.StartR2;
 
-public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null)
+public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null, string? TransferPassToken = null)
     : IRequest<Result<StartR2Response>>;
 
 public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
@@ -41,8 +41,25 @@ public sealed class StartR2Handler(
             fileRequestId = requestId;
         }
 
+        string? validatedPassToken = null;
+        if (!string.IsNullOrWhiteSpace(cmd.TransferPassToken))
+        {
+            var normToken = cmd.TransferPassToken.Trim().ToLowerInvariant();
+            var pass = await db.TransferCreditPasses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Token == normToken, cancellationToken);
+
+            if (pass is null || pass.Status != TransferCreditPass.StatusAvailable || pass.CreditsRemaining <= 0 || pass.ExpiresAt <= DateTime.UtcNow)
+                return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.TransferPassInvalid));
+
+            if (cmd.FileSize > pass.MaxFileSizeBytes)
+                return Result.Failure<StartR2Response>(new LightResults.Error(
+                    $"File size {cmd.FileSize} exceeds transfer pass limit of {pass.MaxFileSizeBytes} bytes"));
+
+            validatedPassToken = normToken;
+        }
         // File-request submissions are capped by the request budget, never the submitter plan.
-        if (fileRequestId is null)
+        else if (fileRequestId is null)
         {
             var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
             if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
@@ -94,7 +111,8 @@ public sealed class StartR2Handler(
             ExpiresAt = DateTime.UtcNow.Add(maxExpiry),
             R2UploadId = initResult.UploadId,
             StoragePath = initResult.ObjectKey,
-            FileRequestId = fileRequestId
+            FileRequestId = fileRequestId,
+            TransferPassToken = validatedPassToken
         };
 
         db.UploadSessions.Add(session);

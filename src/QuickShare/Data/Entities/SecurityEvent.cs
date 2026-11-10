@@ -111,4 +111,5 @@ public enum SecurityEventType
     SubscriptionDunningRecovered,
     SubscriptionGiftCreated,
     SubscriptionGiftClaimed,
+    MigrationImportCompleted,
 }

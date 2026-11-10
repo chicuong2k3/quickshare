@@ -3191,4 +3191,55 @@
   <data name="apidocs_version_stable" xml:space="preserve">
     <value>Ổn định</value>
   </data>
+  <data name="migration_conflict_replace" xml:space="preserve">
+    <value>Ghi đè file hiện có</value>
+  </data>
+  <data name="migration_dryrun_btn" xml:space="preserve">
+    <value>Xem trước (Dry run)</value>
+  </data>
+  <data name="affiliate_title" xml:space="preserve">
+    <value>Cổng Đối tác Tiếp thị (Affiliate)</value>
+  </data>
+  <data name="migration_title" xml:space="preserve">
+    <value>Trình hướng dẫn Chuyển dữ liệu</value>
+  </data>
+  <data name="affiliate_payout_label" xml:space="preserve">
+    <value>Thông tin tài khoản ngân hàng / PayOS</value>
+  </data>
+  <data name="affiliate_enroll_heading" xml:space="preserve">
+    <value>Đăng ký đối tác Affiliate QuickShareCloud</value>
+  </data>
+  <data name="migration_start_btn" xml:space="preserve">
+    <value>Bắt đầu nhập dữ liệu</value>
+  </data>
+  <data name="migration_source_label" xml:space="preserve">
+    <value>Nguồn dữ liệu</value>
+  </data>
+  <data name="affiliate_enroll_desc" xml:space="preserve">
+    <value>Tạo mã giới thiệu và nhập thông tin nhận thanh toán để bắt đầu.</value>
+  </data>
+  <data name="migration_conflict_label" xml:space="preserve">
+    <value>Khi trùng tên file</value>
+  </data>
+  <data name="migration_urls_label" xml:space="preserve">
+    <value>Danh sách URL file nguồn (mỗi dòng 1 URL)</value>
+  </data>
+  <data name="affiliate_subtitle" xml:space="preserve">
+    <value>Nhận 20% hoa hồng cho gói trả phí đầu tiên của mỗi khách hàng bạn giới thiệu.</value>
+  </data>
+  <data name="migration_conflict_skip" xml:space="preserve">
+    <value>Bỏ qua file trùng</value>
+  </data>
+  <data name="migration_conflict_rename" xml:space="preserve">
+    <value>Giữ cả hai (đổi tên file mới)</value>
+  </data>
+  <data name="migration_subtitle" xml:space="preserve">
+    <value>Nhập nhanh các file đang chia sẻ từ WeTransfer, Google Drive, S3 hoặc danh sách URL.</value>
+  </data>
+  <data name="affiliate_link_label" xml:space="preserve">
+    <value>Liên kết affiliate của bạn</value>
+  </data>
+  <data name="affiliate_code_label" xml:space="preserve">
+    <value>Mã affiliate tùy chọn</value>
+  </data>
 </root>

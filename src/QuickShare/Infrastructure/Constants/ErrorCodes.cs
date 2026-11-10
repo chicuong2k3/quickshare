@@ -222,4 +222,15 @@ public static class ErrorCodes
     public const string GiftNotFound = "gift_not_found";
     public const string GiftAlreadyClaimed = "gift_already_claimed";
     public const string GiftNotClaimable = "gift_not_claimable";
+    public const string ExperimentKeyInvalid = "experiment_key_invalid";
+    public const string ExperimentNotFound = "experiment_not_found";
+    public const string TransferPassNotFound = "transfer_pass_not_found";
+    public const string TransferPassInvalid = "transfer_pass_invalid";
+    public const string AffiliateTermsRequired = "affiliate_terms_required";
+    public const string AffiliateCodeInvalid = "affiliate_code_invalid";
+    public const string AffiliateCodeTaken = "affiliate_code_taken";
+    public const string SmsConsentRequired = "sms_consent_required";
+    public const string SmsPhoneInvalid = "sms_phone_invalid";
+    public const string SmsRecipientOptedOut = "sms_recipient_opted_out";
+    public const string MigrationItemsInvalid = "migration_items_invalid";
 }

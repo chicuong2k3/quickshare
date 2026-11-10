@@ -109,4 +109,13 @@ public static class RoutePaths
     public const string GiftsApi = "/api/gifts";
     public const string GiftClaim = "/gift/claim";
     public const string SearchApi = "/api/search";
+    public const string ExperimentsAssignApi = "/api/experiments/assign";
+    public const string AdminExperimentsApi = "/api/admin/experiments";
+    public const string TransferCreditsApi = "/api/credits/transfer-pass";
+    public const string AffiliateApi = "/api/affiliate";
+    public const string AccountAffiliate = "/account/affiliate";
+    public const string DeliverySmsApi = "/api/deliveries/{ShareCode}/sms";
+    public const string SmsOptOutApi = "/api/webhooks/sms/opt-out";
+    public const string MigrationImportApi = "/api/migration/import";
+    public const string AccountMigration = "/account/migrate";
 }
