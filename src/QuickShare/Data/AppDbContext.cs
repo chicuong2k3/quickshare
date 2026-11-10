@@ -80,6 +80,7 @@ public class AppDbContext : DbContext
     public DbSet<SmsDeliveryLog> SmsDeliveryLogs => Set<SmsDeliveryLog>();
     public DbSet<SmsOptOut> SmsOptOuts => Set<SmsOptOut>();
     public DbSet<MigrationImportJob> MigrationImportJobs => Set<MigrationImportJob>();
+    public DbSet<DeduplicatedBlob> DeduplicatedBlobs => Set<DeduplicatedBlob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1162,6 +1163,18 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Status).IsRequired().HasMaxLength(32);
             entity.Property(e => e.SummaryJson).IsRequired().HasMaxLength(MigrationImportJob.ItemsJsonMaxLength);
             entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<DeduplicatedBlob>(entity =>
+        {
+            entity.ToTable("deduplicated_blobs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ScopeKey).IsRequired().HasMaxLength(DeduplicatedBlob.ScopeKeyMaxLength);
+            entity.Property(e => e.Sha256).IsRequired().HasMaxLength(DeduplicatedBlob.Sha256Length);
+            entity.Property(e => e.StoragePath).IsRequired().HasMaxLength(DeduplicatedBlob.StoragePathMaxLength);
+            entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
+            entity.HasIndex(e => new { e.ScopeKey, e.Sha256, e.FileSize, e.StorageRegion }).IsUnique();
+            entity.HasIndex(e => e.StoragePath);
         });
 
     }

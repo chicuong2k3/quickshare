@@ -291,6 +291,26 @@ public sealed class CommitR2Handler(
         // and a compliance window is a ceiling, not a validation error.
         var expiresAt = RetentionPolicy.Clamp(hasTransferPass ? (cmd.DeliverAt ?? DateTime.UtcNow).Add(cmd.ExpiryHours.HasValue ? TimeSpan.FromHours(cmd.ExpiryHours.Value) : maxExpiry) : ResolveExpiry(cmd, plan), user?.RetentionDays);
 
+        var storageRegion = StorageRegions.FromKey(cmd.ObjectKey);
+        var dedupOutcome = new DeduplicationService.DedupOutcome(false, cmd.ObjectKey);
+        if (bundle.Files.Count == 0 && requestId is null)
+        {
+            var scopeKey = DeduplicationService.BuildScopeKey(workspaceId, user?.Id, cmd.PrivacyMode);
+            dedupOutcome = await DeduplicationService.RegisterOrReuseAsync(
+                db,
+                storage,
+                scopeKey,
+                sha256,
+                actualSize,
+                storageRegion,
+                cmd.ObjectKey,
+                cancellationToken);
+        }
+
+        var virusScanStatus = plan is PlanTierLimits.Pro or PlanTierLimits.Studio
+            ? DeliveryVirusScanStatus.Pending
+            : DeliveryVirusScanStatus.NotApplicable;
+
         var delivery = new Delivery
         {
             Id = cmd.DeliveryId,
@@ -301,7 +321,7 @@ public sealed class CommitR2Handler(
             FolderId = folderId,
             // Read back out of the key rather than carried through the request: the key is
             // where the bytes actually went, so this cannot disagree with reality (issue #119).
-            StorageRegion = StorageRegions.FromKey(cmd.ObjectKey),
+            StorageRegion = storageRegion,
             // Privacy mode wins: a share that keeps no download record should not grow a
             // thread instead (issues #289/#187).
             CommentsEnabled = cmd.CommentsEnabled && !cmd.PrivacyMode,
@@ -324,7 +344,10 @@ public sealed class CommitR2Handler(
             ChunkCount = cmd.Parts.Count,
             ShareCode = shareCode,
             MaxDownloads = cmd.BurnAfterDownload ? 1 : PlanTierLimits.GetMaxDownloads(plan),
-            StoragePath = cmd.ObjectKey,
+            StoragePath = dedupOutcome.CanonicalStoragePath,
+            IsDeduplicated = dedupOutcome.ReusedExisting,
+            VirusScanStatus = virusScanStatus,
+            StorageTier = DeliveryStorageTier.Hot,
             ExpiresAt = expiresAt,
             DeliverAt = cmd.DeliverAt,
             Status = requiresApproval

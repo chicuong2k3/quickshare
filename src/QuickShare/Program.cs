@@ -277,6 +277,10 @@ builder.Services.AddScoped<QuickShare.Features.Deliveries.Recipients.RecipientTr
 builder.Services.AddSingleton<QuickShare.Features.Deliveries.Ocr.IOcrEngine,
     QuickShare.Features.Deliveries.Ocr.TesseractOcrEngine>();
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Ocr.OcrJob>();
+builder.Services.AddSingleton<QuickShare.Features.Deliveries.VirusScan.IVirusScanner,
+    QuickShare.Features.Deliveries.VirusScan.ClamAvVirusScanner>();
+builder.Services.AddScoped<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>();
+builder.Services.AddScoped<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>();
 
 // Crypto checkout (issue #225): a second payment rail behind the same intent.
 builder.Services.AddScoped<QuickShare.Features.Payments.Crypto.CryptoCheckoutService>();

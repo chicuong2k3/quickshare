@@ -3242,4 +3242,40 @@
   <data name="affiliate_code_label" xml:space="preserve">
     <value>Mã affiliate tùy chọn</value>
   </data>
+  <data name="dl_badge_virus_clean" xml:space="preserve">
+    <value>Quét virus: An toàn</value>
+  </data>
+  <data name="dl_badge_virus_pending" xml:space="preserve">
+    <value>Quét virus: Đang kiểm tra</value>
+  </data>
+  <data name="dl_infected_h1" xml:space="preserve">
+    <value>Đã chặn do phát hiện mã độc</value>
+  </data>
+  <data name="dl_infected_sub" xml:space="preserve">
+    <value>Hệ thống bảo mật phát hiện mã độc trong tệp này và đã chặn truy cập.</value>
+  </data>
+  <data name="dl_queue_notice" xml:space="preserve">
+    <value>Hàng đợi tiêu chuẩn #{0} (~{1} giây). Gói Pro &amp; Studio tải ngay không chờ.</value>
+  </data>
+  <data name="dl_cold_title" xml:space="preserve">
+    <value>Đang lưu trữ lạnh (Cold storage)</value>
+  </data>
+  <data name="dl_cold_sub" xml:space="preserve">
+    <value>Tệp ít truy cập này đã chuyển sang kho lưu trữ lạnh. Nhấn nút bên dưới để khôi phục trước khi tải.</value>
+  </data>
+  <data name="dl_cold_restore_btn" xml:space="preserve">
+    <value>Khôi phục tệp ngay</value>
+  </data>
+  <data name="dl_cold_restored" xml:space="preserve">
+    <value>Tệp đã khôi phục và sẵn sàng tải xuống.</value>
+  </data>
+  <data name="upload_queue_notice" xml:space="preserve">
+    <value>Hàng đợi tải lên tệp lớn miễn phí: vị trí #{0} (~{1} giây). Nâng cấp Pro để bỏ qua hàng đợi.</value>
+  </data>
+  <data name="account_usage_cold_saved" xml:space="preserve">
+    <value>Giải phóng dung lượng lưu trữ lạnh: {0} đã lưu trữ (không tính vào hạn mức đang dùng)</value>
+  </data>
+  <data name="account_usage_dedup_saved" xml:space="preserve">
+    <value>Tiết kiệm nhờ chống trùng lặp dữ liệu: {0} tái sử dụng</value>
+  </data>
 </root>

@@ -53,7 +53,18 @@ public sealed class DownloadDeliveryHandler(
             return Unit.Value;
         }
 
-        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
+        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked || delivery.VirusScanStatus == DeliveryVirusScanStatus.Infected)
+        {
+            response.StatusCode = StatusCodes.Status410Gone;
+            return Unit.Value;
+        }
+
+        if (delivery.StorageTier is DeliveryStorageTier.Cold or DeliveryStorageTier.Restoring)
+        {
+            response.StatusCode = StatusCodes.Status409Conflict;
+            return Unit.Value;
+        }
+        if (delivery.StorageTier is DeliveryStorageTier.Cold)
         {
             response.StatusCode = StatusCodes.Status410Gone;
             return Unit.Value;

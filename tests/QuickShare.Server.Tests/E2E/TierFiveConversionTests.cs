@@ -1407,4 +1407,399 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         var pageHtml = await client.GetStringAsync(RoutePaths.AccountMigration);
         Assert.Contains("id=\"migration-wizard-card\"", pageHtml);
     }
+
+    // -----------------------------------------------------------------
+    // #41 — Download speed queue (Smash boarding model)
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task DownloadSpeedQueue_QueuesLargeFreeTransfers_SuppressesAdsWhenQueued_AndBypassesForPaidPlans()
+    {
+        var freeKey = Guid.CreateVersion7().ToString();
+        var freeUser = await _factory.SeedUserAsync(freeKey, PlanTierLimits.Free);
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+
+        var freeLargeCode = $"qfree{freeUser.Id.ToString("N")[..5]}";
+        var proLargeCode = $"qpro{proUser.Id.ToString("N")[..6]}";
+        var largeSize = 300L * 1024 * 1024; // 300 MB >= 200 MB threshold
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = freeUser.Id,
+                    ShareCode = freeLargeCode,
+                    FileName = "indie-film-master.mp4",
+                    ContentType = "video/mp4",
+                    FileSize = largeSize,
+                    TotalBytes = largeSize,
+                    StoragePath = "stub/qfree-large",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = proUser.Id,
+                    ShareCode = proLargeCode,
+                    FileName = "studio-grade-export.mp4",
+                    ContentType = "video/mp4",
+                    FileSize = largeSize,
+                    TotalBytes = largeSize,
+                    StoragePath = "stub/qpro-large",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var anonClient = _factory.CreateClient();
+
+        // 1. Free large transfer enters standard boarding queue and suppresses ad interstitial
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var bus = scope.ServiceProvider.GetRequiredService<Mediator.IMediator>();
+            var freeRes = await bus.Send(new QuickShare.Features.Downloads.Info.DownloadInfoQuery(freeLargeCode));
+            Assert.True(freeRes.IsSuccess(out var freeInfo));
+            Assert.True(freeInfo!.IsQueued);
+            Assert.True(freeInfo.QueuePosition >= 1);
+            Assert.True(freeInfo.QueueEtaSeconds >= 5);
+            Assert.True(freeInfo.SuppressAdInterstitial);
+
+            var proRes = await bus.Send(new QuickShare.Features.Downloads.Info.DownloadInfoQuery(proLargeCode));
+            Assert.True(proRes.IsSuccess(out var proInfo));
+            Assert.False(proInfo!.IsQueued);
+            Assert.Equal(0, proInfo.QueuePosition);
+        }
+
+        var freePage = await anonClient.GetStringAsync($"/d/{freeLargeCode}");
+        Assert.Contains("id=\"dl-queue-banner\"", freePage);
+    }
+
+    // -----------------------------------------------------------------
+    // #54 — Upload queue for large free files
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task UploadQueue_QueuesLargeFreeUploads_AndBypassesForPaidUsers()
+    {
+        var freeKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(freeKey, PlanTierLimits.Free);
+        var proKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+
+        var largeSize = 250L * 1024 * 1024; // 250 MB >= 200 MB threshold
+
+        var freeClient = _factory.CreateAuthenticatedClient(freeKey);
+        var freeStart = await freeClient.PostAsJsonAsync("/api/uploads/start-r2", new
+        {
+            fileName = "large-free-archive.zip",
+            fileSize = largeSize,
+            contentType = "application/zip",
+            partNumbers = new[] { 1, 2 },
+        });
+        Assert.Equal(HttpStatusCode.OK, freeStart.StatusCode);
+        var freeDto = await freeStart.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.StartR2.StartR2Response>();
+        Assert.NotNull(freeDto);
+        Assert.True(freeDto!.IsQueued);
+        Assert.True(freeDto.QueuePosition >= 1);
+        Assert.True(freeDto.QueueEtaSeconds >= 5);
+
+        var proClient = _factory.CreateAuthenticatedClient(proKey);
+        var proStart = await proClient.PostAsJsonAsync("/api/uploads/start-r2", new
+        {
+            fileName = "large-pro-archive.zip",
+            fileSize = largeSize,
+            contentType = "application/zip",
+            partNumbers = new[] { 1, 2 },
+        });
+        Assert.Equal(HttpStatusCode.OK, proStart.StatusCode);
+        var proDto = await proStart.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.StartR2.StartR2Response>();
+        Assert.NotNull(proDto);
+        Assert.False(proDto!.IsQueued);
+        Assert.Equal(0, proDto.QueuePosition);
+    }
+
+    // -----------------------------------------------------------------
+    // #48 — Virus scan for Pro/Studio: ClamAV scan badge & infected quarantine block
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task VirusScan_MarksCleanForSafeFiles_AndBlocksInfectedFilesWithQuarantineNotice()
+    {
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+        var cleanId = Guid.CreateVersion7();
+        var infectedId = Guid.CreateVersion7();
+        var cleanCode = $"vclean{proUser.Id.ToString("N")[..4]}";
+        var infectedCode = $"vinf{proUser.Id.ToString("N")[..6]}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var storage = scope.ServiceProvider.GetRequiredService<QuickShare.Infrastructure.Storage.IStorageProvider>();
+            await storage.UploadObjectAsync(
+                "stub/virus-eicar",
+                new MemoryStream(System.Text.Encoding.ASCII.GetBytes(QuickShare.Features.Deliveries.VirusScan.ClamAvVirusScanner.EicarMarker)),
+                "application/octet-stream",
+                CancellationToken.None);
+
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = cleanId,
+                    SenderId = proUser.Id,
+                    ShareCode = cleanCode,
+                    FileName = "quarterly-report.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 4096,
+                    TotalBytes = 4096,
+                    StoragePath = "stub/virus-clean",
+                    Sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    VirusScanStatus = DeliveryVirusScanStatus.Pending,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                },
+                new Delivery
+                {
+                    Id = infectedId,
+                    SenderId = proUser.Id,
+                    ShareCode = infectedCode,
+                    FileName = "eicar-test-sample.com",
+                    ContentType = "application/octet-stream",
+                    FileSize = 68,
+                    TotalBytes = 68,
+                    StoragePath = "stub/virus-eicar",
+                    Sha256 = "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    VirusScanStatus = DeliveryVirusScanStatus.Pending,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                });
+            await db.SaveChangesAsync();
+
+            var job = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>();
+            await job.RunAsync();
+        }
+
+        var anonClient = _factory.CreateClient();
+
+        // 1. Clean file renders #dl-badge-virus-clean on recipient page
+        var cleanPage = await anonClient.GetStringAsync($"/d/{cleanCode}");
+        Assert.Contains("id=\"dl-badge-virus-clean\"", cleanPage);
+
+        // 2. Infected file is blocked on /download (410 Gone), and renders #download-phase-infected
+        var infDlRes = await anonClient.GetAsync($"/api/downloads/{infectedCode}");
+        Assert.Equal(HttpStatusCode.Gone, infDlRes.StatusCode);
+
+        var infPage = await anonClient.GetStringAsync($"/d/{infectedCode}");
+        Assert.Contains("id=\"download-phase-infected\"", infPage);
+    }
+
+    // -----------------------------------------------------------------
+    // #197 — Chunk/file-level deduplication: tenant-scoped reuse, privacy bypass & ref-counted GC
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task Deduplication_ReusesIdenticalBlobWithinSameScope_IsolatesTenants_AndRefCountsCleanup()
+    {
+        var userAKey = Guid.CreateVersion7().ToString();
+        var userA = await _factory.SeedUserAsync(userAKey, PlanTierLimits.Pro);
+        var userBKey = Guid.CreateVersion7().ToString();
+        var userB = await _factory.SeedUserAsync(userBKey, PlanTierLimits.Pro);
+
+        var sha = "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e";
+        var d1Id = Guid.CreateVersion7();
+        var d2Id = Guid.CreateVersion7();
+        var dOtherTenantId = Guid.CreateVersion7();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var r2 = scope.ServiceProvider.GetRequiredService<QuickShare.Infrastructure.Storage.IStorageProvider>();
+            var scopeA = QuickShare.Features.Uploads.Shared.DeduplicationService.BuildScopeKey(null, userA.Id, false);
+            var scopeB = QuickShare.Features.Uploads.Shared.DeduplicationService.BuildScopeKey(null, userB.Id, false);
+
+            var d1 = new Delivery
+            {
+                Id = d1Id,
+                SenderId = userA.Id,
+                ShareCode = $"dedup1{userA.Id.ToString("N")[..4]}",
+                FileName = "design-system-v1.fig",
+                ContentType = "application/octet-stream",
+                FileSize = 10 * 1024 * 1024,
+                TotalBytes = 10 * 1024 * 1024,
+                StoragePath = $"uploads/{userA.Id:N}/{d1Id:N}/design-system-v1.fig",
+                Sha256 = sha,
+                Status = DeliveryStatus.Active,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            };
+            var d2 = new Delivery
+            {
+                Id = d2Id,
+                SenderId = userA.Id,
+                ShareCode = $"dedup2{userA.Id.ToString("N")[..4]}",
+                FileName = "design-system-copy.fig",
+                ContentType = "application/octet-stream",
+                FileSize = 10 * 1024 * 1024,
+                TotalBytes = 10 * 1024 * 1024,
+                StoragePath = $"uploads/{userA.Id:N}/{d2Id:N}/design-system-copy.fig",
+                Sha256 = sha,
+                Status = DeliveryStatus.Active,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            };
+            var dOther = new Delivery
+            {
+                Id = dOtherTenantId,
+                SenderId = userB.Id,
+                ShareCode = $"dedupb{userB.Id.ToString("N")[..4]}",
+                FileName = "other-tenant.fig",
+                ContentType = "application/octet-stream",
+                FileSize = 10 * 1024 * 1024,
+                TotalBytes = 10 * 1024 * 1024,
+                StoragePath = $"uploads/{userB.Id:N}/{dOtherTenantId:N}/other-tenant.fig",
+                Sha256 = sha,
+                Status = DeliveryStatus.Active,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            };
+
+            db.Deliveries.AddRange(d1, d2, dOther);
+            await db.SaveChangesAsync();
+
+            // 1st upload registers canonical blob (RefCount = 1, IsDeduplicated = false)
+            var out1 = await QuickShare.Features.Uploads.Shared.DeduplicationService.RegisterOrReuseAsync(
+                db, r2, scopeA, d1.Sha256, d1.FileSize, d1.StorageRegion, d1.StoragePath, CancellationToken.None);
+            Assert.False(out1.ReusedExisting);
+            await db.SaveChangesAsync();
+
+            // 2nd upload by same user with same SHA-256 reuses canonical StoragePath (RefCount = 2, IsDeduplicated = true)
+            var out2 = await QuickShare.Features.Uploads.Shared.DeduplicationService.RegisterOrReuseAsync(
+                db, r2, scopeA, d2.Sha256, d2.FileSize, d2.StorageRegion, d2.StoragePath, CancellationToken.None);
+            Assert.True(out2.ReusedExisting);
+            d2.StoragePath = out2.CanonicalStoragePath;
+            d2.IsDeduplicated = true;
+            Assert.Equal(d1.StoragePath, d2.StoragePath);
+
+            // Cross-tenant upload by userB with identical SHA-256 NEVER shares userA's blob (#190 isolation)
+            var outOther = await QuickShare.Features.Uploads.Shared.DeduplicationService.RegisterOrReuseAsync(
+                db, r2, scopeB, dOther.Sha256, dOther.FileSize, dOther.StorageRegion, dOther.StoragePath, CancellationToken.None);
+            Assert.False(outOther.ReusedExisting);
+            Assert.NotEqual(d1.StoragePath, outOther.CanonicalStoragePath);
+
+            await db.SaveChangesAsync();
+
+            var blob = db.DeduplicatedBlobs.First(b => b.StoragePath == d1.StoragePath);
+            Assert.Equal(2, blob.RefCount);
+
+            // Releasing 1st reference decrements RefCount to 1 without deleting underlying R2 object
+            await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, r2, d1.StoragePath, true, CancellationToken.None);
+            await db.SaveChangesAsync();
+            var blobAfterOne = db.DeduplicatedBlobs.FirstOrDefault(b => b.StoragePath == d1.StoragePath);
+            Assert.NotNull(blobAfterOne);
+            Assert.Equal(1, blobAfterOne!.RefCount);
+        }
+
+        var clientA = _factory.CreateAuthenticatedClient(userAKey);
+        var usageHtml = await clientA.GetStringAsync(RoutePaths.AccountUsage);
+        Assert.Contains("id=\"usage-dedup-bytes\"", usageHtml);
+    }
+
+    // -----------------------------------------------------------------
+    // #314 — Cold storage tier: auto-transition, live quota relief & restore flow
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task ColdStorageTier_ArchivesInactiveDeliveries_RelievesLiveQuota_AndRestoresToHotTier()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var deliveryId = Guid.CreateVersion7();
+        var shareCode = $"cold{user.Id.ToString("N")[..6]}";
+        var fiveGb = 5L * 1024 * 1024 * 1024;
+        var periodStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        // 1. Configure account cold storage threshold to 7 days
+        var putPolicy = await client.PutAsJsonAsync(RoutePaths.AccountColdStorageApi, new
+        {
+            coldStorageDays = 7,
+        });
+        Assert.Equal(HttpStatusCode.OK, putPolicy.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.UserUsages.Add(new UserUsage
+            {
+                Id = Guid.CreateVersion7(),
+                UserId = user.Id,
+                PeriodStart = periodStart,
+                TotalBytesUploaded = fiveGb,
+                TransferCount = 1,
+            });
+            var d = new Delivery
+            {
+                Id = deliveryId,
+                SenderId = user.Id,
+                ShareCode = shareCode,
+                FileName = "raw-camera-cards.tar",
+                ContentType = "application/x-tar",
+                FileSize = fiveGb,
+                TotalBytes = fiveGb,
+                StoragePath = "stub/cold-archive-tar",
+                MaxDownloads = 10,
+                Status = DeliveryStatus.Active,
+                StorageTier = DeliveryStorageTier.Hot,
+                ExpiresAt = DateTime.UtcNow.AddDays(60),
+            };
+            db.Deliveries.Add(d);
+            await db.SaveChangesAsync();
+
+            // Backdate CreatedAt to 10 days ago (> 7-day threshold)
+            db.Entry(d).Property(x => x.CreatedAt).CurrentValue = DateTime.UtcNow.AddDays(-10);
+            await db.SaveChangesAsync();
+
+            var sweep = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>();
+            await sweep.SweepAsync();
+        }
+
+        // 2. Verify ColdBytesTotal relief is reflected on /api/account/cold-storage and /account/usage
+        var policyDto = await client.GetFromJsonAsync<QuickShare.Features.Deliveries.ColdStorage.ColdStoragePolicyResponse>(
+            RoutePaths.AccountColdStorageApi);
+        Assert.NotNull(policyDto);
+        Assert.Equal(7, policyDto!.ColdStorageDays);
+        Assert.Equal(fiveGb, policyDto.ColdBytesTotal);
+
+        var usageHtml = await client.GetStringAsync(RoutePaths.AccountUsage);
+        Assert.Contains("id=\"usage-cold-bytes\"", usageHtml);
+
+        // 3. Direct download while Cold returns 409 Conflict, and recipient page renders #dl-cold-storage-panel
+        var anonClient = _factory.CreateClient();
+        var coldDlRes = await anonClient.GetAsync($"/api/downloads/{shareCode}");
+        Assert.Equal(HttpStatusCode.Conflict, coldDlRes.StatusCode);
+
+        var coldPage = await anonClient.GetStringAsync($"/d/{shareCode}");
+        Assert.Contains("id=\"dl-cold-storage-panel\"", coldPage);
+        Assert.Contains("id=\"dl-cold-restore-btn\"", coldPage);
+
+        // 4. Trigger restore -> transitions back to Hot and becomes downloadable
+        var restoreRes = await anonClient.PostAsync($"/api/downloads/{shareCode}/restore", null);
+        Assert.Equal(HttpStatusCode.OK, restoreRes.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var restored = db.Deliveries.First(x => x.Id == deliveryId);
+            Assert.Equal(DeliveryStorageTier.Hot, restored.StorageTier);
+            Assert.NotNull(restored.RestoredUntil);
+        }
+    }
 }

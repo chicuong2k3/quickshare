@@ -1,4 +1,5 @@
 using LightResults;
+using Microsoft.Extensions.Options;
 using QuickShare.Features.Uploads.Shared;
 
 
@@ -7,7 +8,7 @@ namespace QuickShare.Features.Uploads.StartR2;
 public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null, string? TransferPassToken = null)
     : IRequest<Result<StartR2Response>>;
 
-public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
+public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, bool IsQueued = false, int QueuePosition = 0, int QueueEtaSeconds = 0);
 
 public sealed class StartR2Handler(
     IStorageProvider storage,
@@ -15,7 +16,8 @@ public sealed class StartR2Handler(
     AnalyticsService analytics,
     ILogger<StartR2Handler> logger,
     AppDbContext db,
-    StorageRegionResolver regions)
+    StorageRegionResolver regions,
+    IOptions<QuickShareOptions> quickShareOptions)
     : IRequestHandler<StartR2Command, Result<StartR2Response>>
 {
     // S3/R2 minimum part size (all parts except the last). Caps how many presigned
@@ -121,8 +123,11 @@ public sealed class StartR2Handler(
         await analytics.RecordAsync(AnalyticsEvents.UploadStarted,
             new AnalyticsEventData(cmd.FileName, cmd.FileSize, cmd.ContentType, plan), cancellationToken);
 
+        var queue = BoardingQueuePolicy.Evaluate(plan, cmd.FileSize, validatedPassToken is not null || fileRequestId is not null, quickShareOptions.Value);
+
         return Result.Success(new StartR2Response(
-            deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls));
+            deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls,
+            queue.IsQueued, queue.Position, queue.EtaSeconds));
     }
 
     private async Task<(Guid? RequestId, LightResults.Error? Failure)> ValidateRequestAsync(

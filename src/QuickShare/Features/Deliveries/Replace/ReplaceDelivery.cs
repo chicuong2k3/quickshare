@@ -192,7 +192,7 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
             // Free plan: delete the old object as before (unless held #266).
             try
             {
-                await storage.DeleteObjectsAsync(oldStoragePath!, cancellationToken);
+                await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, oldStoragePath!, delivery.IsDeduplicated, cancellationToken);
             }
             catch (Exception ex)
             {

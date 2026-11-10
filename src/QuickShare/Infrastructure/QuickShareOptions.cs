@@ -6,6 +6,9 @@ public sealed class QuickShareOptions
 
     public int CleanupIntervalMinutes { get; init; } = 60;
     public int MaxP2PConnections { get; init; } = 1000;
+    public long FreeQueueThresholdBytes { get; init; } = 200L * 1024 * 1024;
+    public bool DisableAdInterstitialWhenQueued { get; init; } = true;
+    public int DefaultColdStorageDays { get; init; } = 30;
 
     // ── Orphan R2 sweep (issue #107) ──
     /// <summary>Dry-run by default: report orphans without deleting. Flip to true to reclaim.</summary>

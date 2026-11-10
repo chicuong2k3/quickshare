@@ -36,6 +36,8 @@ public static class HangfireJobs
     public const string RecurringDelivery = "recurring-delivery";
     public const string ImageOcr = "image-ocr";
     public const string ApiKeyUsageFlush = "api-key-usage-flush";
+    public const string VirusScan = "virus-scan";
+    public const string ColdStorageSweep = "cold-storage-sweep";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -66,6 +68,8 @@ public static class HangfireJobs
         // Every minute, and a no-op when nothing was called (issue #273).
         recurring.AddOrUpdate<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageFlushJob>(
             ApiKeyUsageFlush, j => j.FlushAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>(VirusScan, j => j.RunAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>(ColdStorageSweep, j => j.SweepAsync(), Cron.Hourly());
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
         recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),

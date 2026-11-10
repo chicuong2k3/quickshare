@@ -233,4 +233,7 @@ public static class ErrorCodes
     public const string SmsPhoneInvalid = "sms_phone_invalid";
     public const string SmsRecipientOptedOut = "sms_recipient_opted_out";
     public const string MigrationItemsInvalid = "migration_items_invalid";
+    public const string DeliveryInfected = "delivery_infected";
+    public const string ColdStorageDaysInvalid = "cold_storage_days_invalid";
+    public const string DeliveryNotCold = "delivery_not_cold";
 }

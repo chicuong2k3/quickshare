@@ -118,4 +118,6 @@ public static class RoutePaths
     public const string SmsOptOutApi = "/api/webhooks/sms/opt-out";
     public const string MigrationImportApi = "/api/migration/import";
     public const string AccountMigration = "/account/migrate";
+    public const string DeliveryRestoreApi = "/api/downloads/{ShareCode}/restore";
+    public const string AccountColdStorageApi = "/api/account/cold-storage";
 }

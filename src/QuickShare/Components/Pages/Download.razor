@@ -180,6 +180,18 @@
                         </div>
 
                         <div class="badges">
+                            @if (Info?.VirusScanStatus == DeliveryVirusScanStatus.Clean)
+                            {
+                                <div id="dl-badge-virus-clean" class="badge --sovereign" role="status">
+                                    <span>@Loc["dl_badge_virus_clean"]</span>
+                                </div>
+                            }
+                            else if (Info?.VirusScanStatus == DeliveryVirusScanStatus.Pending)
+                            {
+                                <div id="dl-badge-virus-pending" class="badge --sovereign" role="status">
+                                    <span>@Loc["dl_badge_virus_pending"]</span>
+                                </div>
+                            }
                             @if (Info?.VerifiedSender == true)
                             {
                                 <div id="dl-badge-verified" class="badge --sovereign" title="@Loc["dl_badge_verified_tooltip"]" role="status">
@@ -349,6 +361,24 @@
                             </div>
                         }
 
+                        @if (Info?.IsQueued == true)
+                        {
+                            <div id="dl-queue-banner" class="mt-4 rounded-md border bg-muted/40 p-3 text-sm" role="status">
+                                <p>@Loc["dl_queue_notice", Info.QueuePosition, Info.QueueEtaSeconds]</p>
+                                <a href="/pricing" class="link text-xs">@Loc["dl_ad_upgrade"]</a>
+                            </div>
+                        }
+
+                        @if (Info?.StorageTier == DeliveryStorageTier.Cold || Info?.StorageTier == DeliveryStorageTier.Restoring)
+                        {
+                            <div id="dl-cold-storage-panel" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm" role="status">
+                                <p class="font-medium">@Loc["dl_cold_title"]</p>
+                                <p class="mt-1 text-muted-foreground">@Loc["dl_cold_sub"]</p>
+                                <button type="button" id="dl-cold-restore-btn" data-slot="button" data-variant="default" class="btn mt-3" onclick="restoreColdDelivery()" data-ai-action="download.cold.restore">@Loc["dl_cold_restore_btn"]</button>
+                                <p id="dl-cold-restore-done" class="mt-2 hidden text-xs text-muted-foreground">@Loc["dl_cold_restored"]</p>
+                            </div>
+                        }
+
                         <div style="margin-top: 2rem">
                             @if (Info?.EmailOtpEnabled != true && Info?.RequireRecipientEmail != true)
                             {
@@ -484,6 +514,19 @@
                     </div>
                     break;
 
+                case DownloadRenderState.Infected:
+                    <div id="download-phase-infected" class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_infected_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_infected_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
                 case DownloadRenderState.Suspended:
                     <div id="download-phase-suspended" class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
@@ -613,6 +656,20 @@
 </script>
 
 <script>
+    window.restoreColdDelivery = function () {
+        var btn = document.getElementById('dl-cold-restore-btn');
+        if (!btn) return;
+        btn.disabled = true;
+        fetch('/api/downloads/' + '@ShareCode' + '/restore', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                var done = document.getElementById('dl-cold-restore-done');
+                if (done) done.classList.remove('hidden');
+                window.location.reload();
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
     window.requestExtension = function () {
         var btn = document.getElementById('dl-ext-request-btn');
         if (!btn) return;
@@ -1092,6 +1149,8 @@
                 // contains none of their needles today, but the ordering is the guarantee.
                 if (string.Equals(msg, ErrorCodes.DeliveryRestricted, StringComparison.Ordinal))
                     RenderState = DownloadRenderState.Restricted;
+                else if (string.Equals(msg, ErrorCodes.DeliveryInfected, StringComparison.Ordinal))
+                    RenderState = DownloadRenderState.Infected;
                 else if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
                 {
                     RenderState = DownloadRenderState.Expired;
@@ -1137,7 +1196,14 @@
                 RequireRecipientEmail = value.RequireRecipientEmail,
                 Versions = value.Versions,
                 VerifiedSender = value.VerifiedSender,
-                SenderDisplayName = value.SenderDisplayName
+                SenderDisplayName = value.SenderDisplayName,
+                VirusScanStatus = value.VirusScanStatus,
+                VirusSignature = value.VirusSignature,
+                StorageTier = value.StorageTier,
+                IsQueued = value.IsQueued,
+                QueuePosition = value.QueuePosition,
+                QueueEtaSeconds = value.QueueEtaSeconds,
+                SuppressAdInterstitial = value.SuppressAdInterstitial
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -1194,7 +1260,7 @@
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Suspended, Revoked, Restricted, NotFound, LimitReached, DailyLimit, Error }
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Infected, Suspended, Revoked, Restricted, NotFound, LimitReached, DailyLimit, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }
@@ -1213,5 +1279,12 @@
         public IReadOnlyList<VersionInfo>? Versions { get; set; }
         public bool VerifiedSender { get; set; }
         public string? SenderDisplayName { get; set; }
+        public string? VirusScanStatus { get; set; }
+        public string? VirusSignature { get; set; }
+        public string StorageTier { get; set; } = DeliveryStorageTier.Hot;
+        public bool IsQueued { get; set; }
+        public int QueuePosition { get; set; }
+        public int QueueEtaSeconds { get; set; }
+        public bool SuppressAdInterstitial { get; set; }
     }
 }

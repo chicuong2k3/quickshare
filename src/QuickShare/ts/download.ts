@@ -128,7 +128,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         }
         if (info.hasPassword) state.phase = 'password';
         else if (info.hasOtp) state.phase = 'otp';
-        else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
+        else if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
         else state.phase = 'file';
         if (state.expiresAt) startExpiryTimer();
         render();
@@ -256,7 +256,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
             .then(function () {
                 state.verifiedOtp = otp;
                 const info = infoFromDom();
-                if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
+                if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
                 else state.phase = 'file';
             })
             .catch(function (e) {
@@ -286,7 +286,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
                 state.verifiedPassword = password;
                 const info = infoFromDom();
                 if (info.hasOtp) state.phase = 'otp';
-                else if (info.senderPlan === 'free') { state.phase = 'ad'; startAdTimer(); trackAdView(); }
+                else if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
                 else state.phase = 'file';
             })
             .catch(function (e) {

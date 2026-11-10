@@ -32,7 +32,7 @@ public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<Purge
         {
             try
             {
-                await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken);
+                await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, cancellationToken);
             }
             catch (Exception ex)
             {

@@ -37,7 +37,7 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                    await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, ct);
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +88,7 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                    await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, ct);
                 }
                 catch (Exception ex)
                 {

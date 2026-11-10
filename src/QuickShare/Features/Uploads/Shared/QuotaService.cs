@@ -37,7 +37,7 @@ public sealed class QuotaService(AppDbContext db)
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.UserId == bucketId && u.PeriodStart == CurrentMonthStartUtc(), ct);
 
-        var used = usage?.TotalBytesUploaded ?? 0;
+        var used = Math.Max(0, (usage?.TotalBytesUploaded ?? 0) - (usage?.ColdArchivedBytes ?? 0));
         if (size > quota - used)
         {
             return PlanCatalog.AllowsOverage(plan)
@@ -67,6 +67,18 @@ public sealed class QuotaService(AppDbContext db)
         var quota = planQuota.Value + await BonusAsync(bucketId, ct);
         await MeterOverageAsync(bucketId, plan, usage, quota, ct);
         await AlertThresholdAsync(bucketId, usage, quota, ct);
+    }
+
+    public async Task RelieveColdBytesAsync(Guid userId, long size, CancellationToken ct)
+    {
+        if (size <= 0)
+        {
+            return;
+        }
+
+        var bucketId = await ResolveBucketAsync(userId, ct);
+        var usage = await GetOrCreateAsync(bucketId, ct);
+        usage.ColdArchivedBytes += size;
     }
 
     /// <summary>

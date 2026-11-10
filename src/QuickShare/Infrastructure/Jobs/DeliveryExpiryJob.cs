@@ -45,7 +45,7 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
                 {
                     try
                     {
-                        await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                        await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, ct);
                         break;
                     }
                     catch

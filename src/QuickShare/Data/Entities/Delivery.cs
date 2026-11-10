@@ -153,6 +153,13 @@ public record Delivery : BaseAuditEntity
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }
+    public string VirusScanStatus { get; set; } = DeliveryVirusScanStatus.NotApplicable;
+    public string? VirusSignature { get; set; }
+    public DateTime? VirusScannedAt { get; set; }
+    public bool IsDeduplicated { get; set; }
+    public string StorageTier { get; set; } = DeliveryStorageTier.Hot;
+    public DateTime? ArchivedAt { get; set; }
+    public DateTime? RestoredUntil { get; set; }
     public User? Sender { get; init; }
     /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
     public Guid? FileRequestId { get; set; }
@@ -168,4 +175,19 @@ public static class DeliveryStatus
     public const string Expired = "Expired";
     public const string Suspended = "Suspended";
     public const string Revoked = "Revoked";
+}
+
+public static class DeliveryVirusScanStatus
+{
+    public const string NotApplicable = "NotApplicable";
+    public const string Pending = "Pending";
+    public const string Clean = "Clean";
+    public const string Infected = "Infected";
+}
+
+public static class DeliveryStorageTier
+{
+    public const string Hot = "Hot";
+    public const string Cold = "Cold";
+    public const string Restoring = "Restoring";
 }

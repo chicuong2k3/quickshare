@@ -40,4 +40,5 @@ public record User : BaseAuditEntity
     public int? RetentionDays { get; set; }
     /// <summary>Regulated mode (issue #161): extends may never push a share past the retention window.</summary>
     public bool RetentionNoExtend { get; set; }
+    public int? ColdStorageDays { get; set; }
 }

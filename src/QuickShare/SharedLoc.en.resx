@@ -3242,4 +3242,40 @@
   <data name="affiliate_code_label" xml:space="preserve">
     <value>Custom affiliate code</value>
   </data>
+  <data name="dl_badge_virus_clean" xml:space="preserve">
+    <value>Virus scan: Clean</value>
+  </data>
+  <data name="dl_badge_virus_pending" xml:space="preserve">
+    <value>Virus scan: Pending</value>
+  </data>
+  <data name="dl_infected_h1" xml:space="preserve">
+    <value>Blocked due to malware</value>
+  </data>
+  <data name="dl_infected_sub" xml:space="preserve">
+    <value>Our security scan detected malicious content in this transfer and blocked access.</value>
+  </data>
+  <data name="dl_queue_notice" xml:space="preserve">
+    <value>Standard queue position #{0} (~{1}s). Pro &amp; Studio downloads bypass the queue.</value>
+  </data>
+  <data name="dl_cold_title" xml:space="preserve">
+    <value>Archived in cold storage</value>
+  </data>
+  <data name="dl_cold_sub" xml:space="preserve">
+    <value>This inactive file was moved to low-cost cold storage. Click below to restore it for download.</value>
+  </data>
+  <data name="dl_cold_restore_btn" xml:space="preserve">
+    <value>Restore file now</value>
+  </data>
+  <data name="dl_cold_restored" xml:space="preserve">
+    <value>File restored and ready to download.</value>
+  </data>
+  <data name="upload_queue_notice" xml:space="preserve">
+    <value>Large free transfer queue: position #{0} (~{1}s). Upgrade to Pro to skip the queue.</value>
+  </data>
+  <data name="account_usage_cold_saved" xml:space="preserve">
+    <value>Cold storage quota relief: {0} archived (not counted against live quota)</value>
+  </data>
+  <data name="account_usage_dedup_saved" xml:space="preserve">
+    <value>Content deduplication savings: {0} reused</value>
+  </data>
 </root>

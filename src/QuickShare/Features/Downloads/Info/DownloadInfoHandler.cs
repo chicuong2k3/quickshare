@@ -1,4 +1,5 @@
 using LightResults;
+using Microsoft.Extensions.Options;
 using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Caching;
 
@@ -32,10 +33,21 @@ public record DownloadInfoResponse(
     bool RequireRecipientEmail,
     IReadOnlyList<VersionInfo>? Versions = null,
     bool VerifiedSender = false,
-    string? SenderDisplayName = null
+    string? SenderDisplayName = null,
+    string VirusScanStatus = DeliveryVirusScanStatus.NotApplicable,
+    string? VirusSignature = null,
+    string StorageTier = DeliveryStorageTier.Hot,
+    bool IsQueued = false,
+    int QueuePosition = 0,
+    int QueueEtaSeconds = 0,
+    bool SuppressAdInterstitial = false
 );
 
-public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, DeliveryAccessService access)
+public sealed class DownloadInfoHandler(
+    AppDbContext db,
+    CacheService cache,
+    DeliveryAccessService access,
+    IOptions<QuickShareOptions> quickShareOptions)
     : IRequestHandler<DownloadInfoQuery, Result<DownloadInfoResponse>>
 {
     public async ValueTask<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, CancellationToken cancellationToken)
@@ -64,6 +76,9 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                 // about the sender's organisation, not about the recipient.
                 if (delivery.Status == DeliveryStatus.PendingApproval)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
+
+                if (delivery.VirusScanStatus == DeliveryVirusScanStatus.Infected)
+                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryInfected));
 
                 if (delivery.Status == DeliveryStatus.Suspended)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliverySuspended));
@@ -104,6 +119,11 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                     .Select(v => new VersionInfo(v.VersionNumber, v.FileName, v.FileSize, v.CreatedAt))
                     .ToListAsync(ct2);
 
+                var effectiveBytes = delivery.TotalFileBytes > 0 ? delivery.TotalFileBytes : delivery.FileSize;
+                var queue = BoardingQueuePolicy.Evaluate(senderPlan, effectiveBytes, false, quickShareOptions.Value);
+                var storageTier = string.IsNullOrEmpty(delivery.StorageTier) ? DeliveryStorageTier.Hot : delivery.StorageTier;
+                var scanStatus = string.IsNullOrEmpty(delivery.VirusScanStatus) ? DeliveryVirusScanStatus.NotApplicable : delivery.VirusScanStatus;
+
                 // Privacy mode (issue #187): expose the flag and zero the visible counts —
                 // the recipient sees "no tracking", never a partial or misleading number.
                 return Result.Success(new DownloadInfoResponse(
@@ -129,7 +149,14 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                     RequireRecipientEmail: delivery.RequireRecipientEmail,
                     Versions: versions.Count > 0 ? versions : null,
                     VerifiedSender: isVerifiedSender,
-                    SenderDisplayName: senderDisplayName
+                    SenderDisplayName: senderDisplayName,
+                    VirusScanStatus: scanStatus,
+                    VirusSignature: delivery.VirusSignature,
+                    StorageTier: storageTier,
+                    IsQueued: queue.IsQueued,
+                    QueuePosition: queue.Position,
+                    QueueEtaSeconds: queue.EtaSeconds,
+                    SuppressAdInterstitial: queue.SuppressAdInterstitial
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

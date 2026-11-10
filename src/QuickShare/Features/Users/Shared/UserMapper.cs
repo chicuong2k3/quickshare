@@ -21,5 +21,6 @@ public static partial class UserMapper
     // The upload-by-email address (issue #104) has its own endpoint: it is a credential-ish
     // route into the account, not something to hand out with every profile render.
     [MapperIgnoreSource(nameof(User.EmailIngestToken))]
+    [MapperIgnoreSource(nameof(User.ColdStorageDays))]
     public static partial ProfileResponse ToProfileResponse(this User source);
 }

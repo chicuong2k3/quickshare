@@ -30,6 +30,15 @@
 
         <p class="mt-3 text-xs text-muted-foreground">@Loc["account_usage_rate_limit", RateLimitPerMinute]</p>
 
+        @if (coldArchivedBytes > 0)
+        {
+            <p id="usage-cold-bytes" class="mt-2 text-xs text-muted-foreground">@Loc["account_usage_cold_saved", FormatBytes(coldArchivedBytes)]</p>
+        }
+        @if (deduplicatedSavedBytes > 0)
+        {
+            <p id="usage-dedup-bytes" class="mt-1 text-xs text-muted-foreground">@Loc["account_usage_dedup_saved", FormatBytes(deduplicatedSavedBytes)]</p>
+        }
+
 
         @* Largest files (issue #315) — the cleanup shortlist, biggest first. *@
         @if (largest.Count > 0)
@@ -101,6 +110,8 @@
     private string barClass = "account-usage-bar__fill--ok";
     private string usedText = string.Empty;
     private string quotaText = string.Empty;
+    private long coldArchivedBytes;
+    private long deduplicatedSavedBytes;
 
     protected override async Task OnInitializedAsync()
     {
@@ -143,6 +154,14 @@
                 .ToList();
 
             var quota = PlanTierLimits.GetMonthlyQuota(user.Plan);
+            coldArchivedBytes = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.SenderId == user.Id && d.DeletedAt == null && d.StorageTier == DeliveryStorageTier.Cold)
+                .SumAsync(d => (long?)d.FileSize) ?? 0L;
+            deduplicatedSavedBytes = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.SenderId == user.Id && d.DeletedAt == null && d.IsDeduplicated)
+                .SumAsync(d => (long?)d.FileSize) ?? 0L;
             if (quota is null)
             {
                 unlimited = true;
@@ -154,7 +173,7 @@
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserId == user.Id && u.PeriodStart == periodStart);
 
-            var used = usage?.TotalBytesUploaded ?? 0;
+            var used = Math.Max(0L, (usage?.TotalBytesUploaded ?? 0L) - (usage?.ColdArchivedBytes ?? 0L));
             pct = quota.Value == 0 ? 100 : (int)(used * 100 / quota.Value);
             barWidth = Math.Min(100, pct);
             barClass = pct switch

@@ -134,7 +134,7 @@ public sealed class DeleteAccountHandler(AppDbContext db, IHttpContextAccessor h
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(d.StoragePath, cancellationToken);
+                    await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, d.StoragePath, d.IsDeduplicated, cancellationToken);
                 }
                 catch
                 {

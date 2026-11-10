@@ -753,6 +753,16 @@
         if (!startResp.ok) { const errT = await startResp.text(); throw new Error(errT || t('startFailed')); }
         const session = await startResp.json();
         state._deliveryId = session.deliveryId; state._uploadId = session.uploadId; state.objectKey = session.objectKey;
+        const queueBanner = document.getElementById('upload-queue-banner');
+        if (queueBanner) {
+            if (session.isQueued) {
+                const tpl = queueBanner.getAttribute('data-notice') || '';
+                queueBanner.textContent = tpl.replace('{0}', String(session.queuePosition || 1)).replace('{1}', String(session.queueEtaSeconds || 0));
+                queueBanner.classList.remove('hidden');
+            } else {
+                queueBanner.classList.add('hidden');
+            }
+        }
 
         const ctx: UploadContext = {
             fileName: sourceName, contentType: sourceType,
