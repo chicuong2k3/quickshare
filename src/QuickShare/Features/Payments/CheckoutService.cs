@@ -26,9 +26,11 @@ public sealed class CheckoutService(
     private const string CodePrefix = "QSC-";
 
     public async Task<(PaymentIntent Intent, PayOSPaymentResult Result)> CreatePaymentLinkAsync(
-        User user, string plan, bool isYearly, CancellationToken ct, string? promoCode = null, string? currency = null)
+        User user, string plan, bool isYearly, CancellationToken ct, string? promoCode = null, string? currency = null, string? paymentMethod = null)
     {
-        var intent = await CreateIntentAsync(user, plan, isYearly, PaymentProviders.PayOS, promoCode, currency, ct);
+        var normalizedMethod = PaymentMethods.Normalize(paymentMethod);
+        var provider = PaymentMethods.ProviderForMethod(normalizedMethod);
+        var intent = await CreateIntentAsync(user, plan, isYearly, provider, promoCode, currency, ct, paymentMethod: normalizedMethod);
         var description = $"{CodePrefix}{intent.Code[^CodeRandomLength..]}";
         var result = await payOS.CreatePaymentLinkAsync(intent.PayOSOrderCode, (int)intent.Amount, description, ct);
 
@@ -102,8 +104,9 @@ public sealed class CheckoutService(
     public bool CryptoAvailable => crypto.IsConfigured;
 
     private async Task<PaymentIntent> CreateIntentAsync(
-        User user, string plan, bool isYearly, string provider, string? promoCode, string? requestedCurrency, CancellationToken ct, bool isGift = false)
+        User user, string plan, bool isYearly, string provider, string? promoCode, string? requestedCurrency, CancellationToken ct, bool isGift = false, string? paymentMethod = null)
     {
+        var resolvedMethod = PaymentMethods.Normalize(paymentMethod ?? (provider == PaymentProviders.Crypto ? PaymentMethods.CryptoWallet : PaymentMethods.BankQr));
         plan = PlanCatalog.Normalize(plan);
         var defaultCurr = config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
         var currency = string.IsNullOrWhiteSpace(requestedCurrency)
@@ -165,6 +168,7 @@ public sealed class CheckoutService(
             PromoCode = quote.Valid ? PromoCode.NormalizeCode(promoCode) : null,
             ProrationCredit = credit,
             Provider = provider,
+            PaymentMethod = resolvedMethod,
             Status = PaymentIntentStatus.Pending,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddHours(1)

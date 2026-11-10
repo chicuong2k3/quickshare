@@ -236,4 +236,11 @@ public static class ErrorCodes
     public const string DeliveryInfected = "delivery_infected";
     public const string ColdStorageDaysInvalid = "cold_storage_days_invalid";
     public const string DeliveryNotCold = "delivery_not_cold";
+    public const string SendingDomainInvalid = "sending_domain_invalid";
+    public const string SendingDomainTaken = "sending_domain_taken";
+    public const string SendingDomainNotFound = "sending_domain_not_found";
+    public const string SupportChatNotFound = "support_chat_not_found";
+    public const string SupportMessageEmpty = "support_message_empty";
+    public const string AutomationNameInvalid = "automation_name_invalid";
+    public const string AutomationNotFound = "automation_not_found";
 }

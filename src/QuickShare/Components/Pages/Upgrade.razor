@@ -122,6 +122,17 @@ else
                             <AntiforgeryToken />
                             <input type="hidden" name="Plan" value="@selectedPlan" />
                             <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
+                            <label class="block space-y-2" for="upgrade-payment-method">
+                                <span class="block text-sm font-medium">@Loc["upgrade_payment_channel_label"]</span>
+                                <NativeSelect id="upgrade-payment-method" name="PaymentMethod">
+                                    <NativeSelectOption value="@PaymentMethods.BankQr">@Loc["upgrade_method_bank_qr"]</NativeSelectOption>
+                                    <NativeSelectOption value="@PaymentMethods.MoMo">@Loc["upgrade_method_momo"]</NativeSelectOption>
+                                    <NativeSelectOption value="@PaymentMethods.ZaloPay">@Loc["upgrade_method_zalopay"]</NativeSelectOption>
+                                    <NativeSelectOption value="@PaymentMethods.VisaCard">@Loc["upgrade_method_visa"]</NativeSelectOption>
+                                    <NativeSelectOption value="@PaymentMethods.StripeCard">@Loc["upgrade_method_stripe"]</NativeSelectOption>
+                                    <NativeSelectOption value="@PaymentMethods.PayPalWallet">@Loc["upgrade_method_paypal"]</NativeSelectOption>
+                                </NativeSelect>
+                            </label>
                             <label class="block space-y-2" for="upgrade-promo">
                                 <span class="block text-sm font-medium">@Loc["upgrade_promo_label"]</span>
                                 <Input id="upgrade-promo" name="PromoCode" class="w-full" Type="text" Value="@prefilledPromo" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
@@ -419,13 +430,14 @@ else
         Billing = form["Billing"].FirstOrDefault();
         var promo = form["PromoCode"].FirstOrDefault();
         var provider = form["Provider"].FirstOrDefault();
+        var paymentMethod = form["PaymentMethod"].FirstOrDefault();
         if (string.Equals(provider, PaymentProviders.Crypto, StringComparison.Ordinal))
         {
             (paymentIntent, cryptoResult) = await Checkout.CreateCryptoCheckoutAsync(user, selectedPlan, IsYearly, ct, promo);
         }
         else
         {
-            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct, promo);
+            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct, promo, paymentMethod: paymentMethod);
         }
         pollOrderCode = paymentIntent?.PayOSOrderCode ?? 0;
     }

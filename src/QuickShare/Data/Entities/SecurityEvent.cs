@@ -112,4 +112,10 @@ public enum SecurityEventType
     SubscriptionGiftCreated,
     SubscriptionGiftClaimed,
     MigrationImportCompleted,
+    SendingDomainChanged,
+    SendingDomainVerified,
+    SupportChatStarted,
+    SupportChatEscalated,
+    AutomationConnected,
+    AutomationRevoked,
 }

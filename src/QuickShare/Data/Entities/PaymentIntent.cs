@@ -18,6 +18,9 @@ public sealed class PaymentIntent
     /// </summary>
     public string Provider { get; set; } = PaymentProviders.PayOS;
 
+    /// <summary>Payment method channel selected at checkout: bank_qr, momo, zalopay, visa, stripe_card, paypal_wallet, crypto_wallet (#164, #177).</summary>
+    public string PaymentMethod { get; set; } = PaymentMethods.BankQr;
+
     /// <summary>The provider's own id for a hosted charge; null for the PayOS order-code path.</summary>
     public string? ProviderChargeId { get; set; }
     public string Plan { get; set; } = string.Empty;

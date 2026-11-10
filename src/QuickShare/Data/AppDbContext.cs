@@ -81,6 +81,10 @@ public class AppDbContext : DbContext
     public DbSet<SmsOptOut> SmsOptOuts => Set<SmsOptOut>();
     public DbSet<MigrationImportJob> MigrationImportJobs => Set<MigrationImportJob>();
     public DbSet<DeduplicatedBlob> DeduplicatedBlobs => Set<DeduplicatedBlob>();
+    public DbSet<CustomSendingDomain> CustomSendingDomains => Set<CustomSendingDomain>();
+    public DbSet<SupportChatThread> SupportChatThreads => Set<SupportChatThread>();
+    public DbSet<SupportChatMessage> SupportChatMessages => Set<SupportChatMessage>();
+    public DbSet<AutomationConnection> AutomationConnections => Set<AutomationConnection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1175,6 +1179,59 @@ public class AppDbContext : DbContext
             entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
             entity.HasIndex(e => new { e.ScopeKey, e.Sha256, e.FileSize, e.StorageRegion }).IsUnique();
             entity.HasIndex(e => e.StoragePath);
+        });
+
+        modelBuilder.Entity<CustomSendingDomain>(entity =>
+        {
+            entity.ToTable("custom_sending_domains");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Domain).IsRequired().HasMaxLength(CustomSendingDomain.DomainMaxLength);
+            entity.Property(e => e.FromLocalPart).IsRequired().HasMaxLength(CustomSendingDomain.FromLocalPartMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.Property(e => e.VerificationToken).IsRequired().HasMaxLength(CustomSendingDomain.TokenLength);
+            entity.Property(e => e.SpfRecord).IsRequired().HasMaxLength(CustomSendingDomain.RecordValueMaxLength);
+            entity.Property(e => e.DkimHost).IsRequired().HasMaxLength(CustomSendingDomain.DomainMaxLength);
+            entity.Property(e => e.DkimValue).IsRequired().HasMaxLength(CustomSendingDomain.RecordValueMaxLength);
+            entity.Property(e => e.DmarcRecord).IsRequired().HasMaxLength(CustomSendingDomain.RecordValueMaxLength);
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasIndex(e => e.Domain).IsUnique();
+        });
+
+        modelBuilder.Entity<SupportChatThread>(entity =>
+        {
+            entity.ToTable("support_chat_threads");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TicketNumber).IsRequired().HasMaxLength(SupportChatThread.TicketNumberMaxLength);
+            entity.Property(e => e.Subject).IsRequired().HasMaxLength(SupportChatThread.SubjectMaxLength);
+            entity.Property(e => e.Plan).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.QueueTier).IsRequired().HasMaxLength(24);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.Property(e => e.EscalatedEmail).HasMaxLength(SupportChatThread.EmailMaxLength);
+            entity.HasIndex(e => e.TicketNumber).IsUnique();
+            entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<SupportChatMessage>(entity =>
+        {
+            entity.ToTable("support_chat_messages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SenderRole).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.SenderName).IsRequired().HasMaxLength(80);
+            entity.Property(e => e.Body).IsRequired().HasMaxLength(SupportChatThread.MessageMaxLength);
+            entity.HasIndex(e => e.ThreadId);
+        });
+
+        modelBuilder.Entity<AutomationConnection>(entity =>
+        {
+            entity.ToTable("automation_connections");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Platform).IsRequired().HasMaxLength(AutomationConnection.PlatformMaxLength);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(AutomationConnection.NameMaxLength);
+            entity.Property(e => e.Scopes).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.TokenPrefixValue).IsRequired().HasMaxLength(AutomationConnection.PrefixLength + 4);
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(AutomationConnection.HashLength);
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => e.UserId);
         });
 
     }

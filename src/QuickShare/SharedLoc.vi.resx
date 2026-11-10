@@ -3278,4 +3278,61 @@
   <data name="account_usage_dedup_saved" xml:space="preserve">
     <value>Tiết kiệm nhờ chống trùng lặp dữ liệu: {0} tái sử dụng</value>
   </data>
+  <data name="support_chat_title" xml:space="preserve">
+    <value>Hỗ trợ Trực tuyến &amp; Help Desk</value>
+  </data>
+  <data name="support_chat_sub_priority" xml:space="preserve">
+    <value>Hàng đợi Ưu tiên Trực tiếp Pro/Studio (SLA &lt; 15 phút)</value>
+  </data>
+  <data name="support_chat_sub_free" xml:space="preserve">
+    <value>Trợ lý FAQ Tự động · Chuyển sang Ticket Email bất cứ lúc nào</value>
+  </data>
+  <data name="support_chat_empty" xml:space="preserve">
+    <value>Chưa có tin nhắn. Gửi câu hỏi bên dưới để bắt đầu phiên hỗ trợ.</value>
+  </data>
+  <data name="support_chat_message_label" xml:space="preserve">
+    <value>Nội dung tin nhắn</value>
+  </data>
+  <data name="support_chat_send_btn" xml:space="preserve">
+    <value>Gửi tin nhắn</value>
+  </data>
+  <data name="support_chat_escalate_btn" xml:space="preserve">
+    <value>Chuyển sang Ticket Email</value>
+  </data>
+  <data name="automations_title" xml:space="preserve">
+    <value>Tự động hóa Zapier &amp; Make</value>
+  </data>
+  <data name="automations_sub" xml:space="preserve">
+    <value>Kết nối QuickShareCloud với Google Sheets, Slack, Notion và hơn 6.000 ứng dụng không cần viết code.</value>
+  </data>
+  <data name="automations_zapier_desc" xml:space="preserve">
+    <value>Kích hoạt Zap khi tạo liên kết, tải xuống hoặc hết hạn.</value>
+  </data>
+  <data name="automations_make_desc" xml:space="preserve">
+    <value>Xây dựng kịch bản Make.com với token phân quyền và webhook ký số.</value>
+  </data>
+  <data name="automations_connected_heading" xml:space="preserve">
+    <value>Ứng dụng tự động hóa đã kết nối</value>
+  </data>
+  <data name="upgrade_payment_channel_label" xml:space="preserve">
+    <value>Phương thức thanh toán</value>
+  </data>
+  <data name="upgrade_method_bank_qr" xml:space="preserve">
+    <value>VietQR / Chuyển khoản ngân hàng (PayOS)</value>
+  </data>
+  <data name="upgrade_method_momo" xml:space="preserve">
+    <value>Ví điện tử MoMo</value>
+  </data>
+  <data name="upgrade_method_zalopay" xml:space="preserve">
+    <value>Ví điện tử ZaloPay</value>
+  </data>
+  <data name="upgrade_method_visa" xml:space="preserve">
+    <value>Thẻ quốc tế VISA / Mastercard / JCB</value>
+  </data>
+  <data name="upgrade_method_stripe" xml:space="preserve">
+    <value>Stripe (Thẻ quốc tế &amp; Apple/Google Pay)</value>
+  </data>
+  <data name="upgrade_method_paypal" xml:space="preserve">
+    <value>Ví PayPal</value>
+  </data>
 </root>

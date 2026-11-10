@@ -98,6 +98,9 @@ public record Invoice : BaseAuditEntity
     /// <summary>The PayOS payment this invoice was issued against; null for a net-terms bill.</summary>
     public Guid? PaymentEventId { get; set; }
 
+    /// <summary>Payment method channel recorded when paid (#164, #177).</summary>
+    public string? PaymentMethod { get; set; }
+
     public User User { get; init; } = null!;
     public List<InvoiceLine> Lines { get; init; } = [];
 

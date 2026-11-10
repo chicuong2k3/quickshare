@@ -3278,4 +3278,61 @@
   <data name="account_usage_dedup_saved" xml:space="preserve">
     <value>Content deduplication savings: {0} reused</value>
   </data>
+  <data name="support_chat_title" xml:space="preserve">
+    <value>Live Support &amp; Help Desk</value>
+  </data>
+  <data name="support_chat_sub_priority" xml:space="preserve">
+    <value>Pro/Studio Priority Live Support Queue (SLA &lt; 15 min)</value>
+  </data>
+  <data name="support_chat_sub_free" xml:space="preserve">
+    <value>Instant FAQ Assistant · Escalate to Email Ticket anytime</value>
+  </data>
+  <data name="support_chat_empty" xml:space="preserve">
+    <value>No messages yet. Ask a question below to start a support thread.</value>
+  </data>
+  <data name="support_chat_message_label" xml:space="preserve">
+    <value>Your message</value>
+  </data>
+  <data name="support_chat_send_btn" xml:space="preserve">
+    <value>Send message</value>
+  </data>
+  <data name="support_chat_escalate_btn" xml:space="preserve">
+    <value>Escalate to Email Ticket</value>
+  </data>
+  <data name="automations_title" xml:space="preserve">
+    <value>Zapier &amp; Make Automations</value>
+  </data>
+  <data name="automations_sub" xml:space="preserve">
+    <value>Connect QuickShareCloud to Google Sheets, Slack, Notion, and 6,000+ apps without writing code.</value>
+  </data>
+  <data name="automations_zapier_desc" xml:space="preserve">
+    <value>Trigger Zaps on delivery.created, delivery.downloaded, and delivery.expired.</value>
+  </data>
+  <data name="automations_make_desc" xml:space="preserve">
+    <value>Build visual Make.com scenarios with scoped tokens and signed webhooks.</value>
+  </data>
+  <data name="automations_connected_heading" xml:space="preserve">
+    <value>Connected Automation Apps</value>
+  </data>
+  <data name="upgrade_payment_channel_label" xml:space="preserve">
+    <value>Payment Method</value>
+  </data>
+  <data name="upgrade_method_bank_qr" xml:space="preserve">
+    <value>VietQR / Bank Transfer (PayOS)</value>
+  </data>
+  <data name="upgrade_method_momo" xml:space="preserve">
+    <value>MoMo E-Wallet</value>
+  </data>
+  <data name="upgrade_method_zalopay" xml:space="preserve">
+    <value>ZaloPay E-Wallet</value>
+  </data>
+  <data name="upgrade_method_visa" xml:space="preserve">
+    <value>VISA / Mastercard / JCB</value>
+  </data>
+  <data name="upgrade_method_stripe" xml:space="preserve">
+    <value>Stripe (International Cards &amp; Apple/Google Pay)</value>
+  </data>
+  <data name="upgrade_method_paypal" xml:space="preserve">
+    <value>PayPal</value>
+  </data>
 </root>

@@ -23,7 +23,8 @@ public sealed record EmailBrandIdentity(
     string? HeaderText = null,
     string? FooterText = null,
     string? LogoUrl = null,
-    bool HideQuickShareBranding = false)
+    bool HideQuickShareBranding = false,
+    string? VerifiedFromAddress = null)
 {
     public static EmailBrandIdentity? FromBrand(BrandView? brand, string baseUrl)
     {
@@ -172,8 +173,13 @@ public sealed class EmailSender(
             ? brand!.SenderName!
             : _options.FromName;
 
+        var fromAddress = !string.IsNullOrWhiteSpace(brand?.VerifiedFromAddress)
+            && MailboxAddress.TryParse(brand!.VerifiedFromAddress, out var customFrom)
+            ? customFrom.Address
+            : _options.From;
+
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(fromName, _options.From));
+        message.From.Add(new MailboxAddress(fromName, fromAddress));
         message.To.Add(new MailboxAddress(toName, toEmail));
 
         if (!string.IsNullOrWhiteSpace(brand?.ReplyTo) && MailboxAddress.TryParse(brand!.ReplyTo, out var replyToAddr))

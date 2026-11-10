@@ -1802,4 +1802,240 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
             Assert.NotNull(restored.RestoredUntil);
         }
     }
+
+    // -----------------------------------------------------------------
+    // #150 — Custom sending domain: SPF/DKIM/DMARC verification, custom From & fallback on revoke
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task CustomSendingDomain_VerifiesDnsRecords_UsesCustomFromWhenVerified_AndFallsBackWhenRevoked()
+    {
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+        var client = _factory.CreateAuthenticatedClient(proKey);
+
+        // 1. Configure custom sending domain share@studionam.vn
+        var putRes = await client.PutAsJsonAsync(RoutePaths.AccountSendingDomainApi, new
+        {
+            domain = "studionam.vn",
+            fromLocalPart = "share",
+        });
+        Assert.Equal(HttpStatusCode.OK, putRes.StatusCode);
+        var domainDto = await putRes.Content.ReadFromJsonAsync<QuickShare.Features.Email.SendingDomains.CustomSendingDomainDto>();
+        Assert.NotNull(domainDto);
+        Assert.Equal("share@studionam.vn", domainDto!.FullFromAddress);
+        Assert.Equal(CustomSendingDomain.StatusPending, domainDto.Status);
+        Assert.Contains("v=spf1", domainDto.SpfRecord);
+        Assert.Contains("v=DKIM1", domainDto.DkimValue);
+        Assert.Contains("v=DMARC1", domainDto.DmarcRecord);
+
+        // 2. Before verification, Resolver returns null -> fallback to platform sender
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var beforeVerify = await QuickShare.Features.Email.SendingDomains.SendingDomainResolver.GetVerifiedFromAddressAsync(
+                db, proUser.Id, null, CancellationToken.None);
+            Assert.Null(beforeVerify);
+        }
+
+        // 3. Verify DNS records -> Status becomes Verified
+        var verifyRes = await client.PostAsync(RoutePaths.AccountSendingDomainVerifyApi, null);
+        Assert.Equal(HttpStatusCode.OK, verifyRes.StatusCode);
+        var verifiedDto = await verifyRes.Content.ReadFromJsonAsync<QuickShare.Features.Email.SendingDomains.CustomSendingDomainDto>();
+        Assert.NotNull(verifiedDto);
+        Assert.Equal(CustomSendingDomain.StatusVerified, verifiedDto!.Status);
+        Assert.True(verifiedDto.SpfVerified && verifiedDto.DkimVerified && verifiedDto.DmarcVerified);
+
+        // 4. EmailSender uses share@studionam.vn when VerifiedFromAddress is supplied
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var sender = scope.ServiceProvider.GetRequiredService<QuickShare.Infrastructure.Email.EmailSender>();
+            var fromAddr = await QuickShare.Features.Email.SendingDomains.SendingDomainResolver.GetVerifiedFromAddressAsync(
+                db, proUser.Id, null, CancellationToken.None);
+            Assert.Equal("share@studionam.vn", fromAddr);
+
+            var msg = sender.BuildMessage(
+                "client@acme.vn",
+                "Client",
+                "Delivery ready",
+                "<p>Download</p>",
+                new QuickShare.Infrastructure.Email.EmailBrandIdentity(SenderName: "Studio Nam", VerifiedFromAddress: fromAddr));
+            Assert.Equal("share@studionam.vn", msg.From.Mailboxes.Single().Address);
+        }
+
+        // 5. Revoke custom sending domain -> falls back to default platform From address
+        var delRes = await client.DeleteAsync(RoutePaths.AccountSendingDomainApi);
+        Assert.Equal(HttpStatusCode.NoContent, delRes.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var afterRevoke = await QuickShare.Features.Email.SendingDomains.SendingDomainResolver.GetVerifiedFromAddressAsync(
+                db, proUser.Id, null, CancellationToken.None);
+            Assert.Null(afterRevoke);
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // #167 — In-app live chat: Pro/Studio priority queue, Free FAQ bot & email ticket escalation
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task InAppLiveChat_RoutesPaidToPriorityQueue_FreeToFaqBot_AndEscalatesWithTicketId()
+    {
+        var freeKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(freeKey, PlanTierLimits.Free);
+        var proKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+
+        // 1. Free user opens chat -> routed to FAQ bot queue
+        var freeClient = _factory.CreateAuthenticatedClient(freeKey);
+        var freeMsgRes = await freeClient.PostAsJsonAsync(RoutePaths.SupportChatApi, new
+        {
+            body = "My upload is stuck at 50%, how do I resume?",
+        });
+        Assert.Equal(HttpStatusCode.OK, freeMsgRes.StatusCode);
+        var freeThread = await freeMsgRes.Content.ReadFromJsonAsync<QuickShare.Features.Support.SupportChatThreadDto>();
+        Assert.NotNull(freeThread);
+        Assert.Equal(SupportChatThread.QueueFaqBot, freeThread!.QueueTier);
+        Assert.StartsWith("SUP-", freeThread.TicketNumber);
+        Assert.Equal(2, freeThread.Messages.Count);
+        Assert.Contains("FAQ Bot", freeThread.Messages[1].Body);
+
+        // 2. Pro user opens chat -> routed to Priority Live queue + escalates to email thread
+        var proClient = _factory.CreateAuthenticatedClient(proKey);
+        var proMsgRes = await proClient.PostAsJsonAsync(RoutePaths.SupportChatApi, new
+        {
+            body = "Need urgent help with VAT invoice billing",
+        });
+        Assert.Equal(HttpStatusCode.OK, proMsgRes.StatusCode);
+        var proThread = await proMsgRes.Content.ReadFromJsonAsync<QuickShare.Features.Support.SupportChatThreadDto>();
+        Assert.NotNull(proThread);
+        Assert.Equal(SupportChatThread.QueuePriorityLive, proThread!.QueueTier);
+        Assert.Contains("Priority Queue", proThread.Messages[1].Body);
+
+        var escRes = await proClient.PostAsJsonAsync($"{RoutePaths.SupportChatApi}/escalate", new
+        {
+            email = "finance@studionam.vn",
+        });
+        Assert.Equal(HttpStatusCode.OK, escRes.StatusCode);
+        var escThread = await escRes.Content.ReadFromJsonAsync<QuickShare.Features.Support.SupportChatThreadDto>();
+        Assert.NotNull(escThread);
+        Assert.Equal(SupportChatThread.StatusEscalated, escThread!.Status);
+        Assert.Equal("finance@studionam.vn", escThread.EscalatedEmail);
+
+        var pageHtml = await proClient.GetStringAsync(RoutePaths.AccountSupport);
+        Assert.Contains("id=\"support-chat-card\"", pageHtml);
+        Assert.Contains(proThread.TicketNumber, pageHtml);
+    }
+
+    // -----------------------------------------------------------------
+    // #186 — Zapier + Make integration: catalog, scoped token + webhook connection & revocation
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task ZapierAndMakeIntegration_PublishesCatalog_MintsScopedTokenAndWebhook_AndRevokesCleanly()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+
+        var anonClient = _factory.CreateClient();
+        var catalog = await anonClient.GetFromJsonAsync<QuickShare.Features.Automations.AutomationCatalogResponse>(
+            RoutePaths.AutomationsCatalogApi);
+        Assert.NotNull(catalog);
+        Assert.Contains(WebhookEvents.DeliveryCreated, catalog!.Triggers);
+        Assert.NotEmpty(catalog.Templates);
+
+        var client = _factory.CreateAuthenticatedClient(key);
+        var createRes = await client.PostAsJsonAsync(RoutePaths.AutomationsApi, new
+        {
+            platform = AutomationConnection.PlatformZapier,
+            name = "New Transfer -> Google Sheets Row",
+            scopes = "read,write",
+            webhookUrl = "https://hooks.zapier.com/hooks/catch/123456/abcdef",
+            events = "delivery.created,delivery.expired",
+        });
+        Assert.Equal(HttpStatusCode.OK, createRes.StatusCode);
+        var created = await createRes.Content.ReadFromJsonAsync<QuickShare.Features.Automations.AutomationConnectionDto>();
+        Assert.NotNull(created);
+        Assert.Equal(AutomationConnection.PlatformZapier, created!.Platform);
+        Assert.Equal("read,write", created.Scopes);
+        Assert.NotNull(created.IssuedToken);
+        Assert.StartsWith(ApiKey.TokenPrefix, created.IssuedToken);
+        Assert.NotNull(created.WebhookEndpointId);
+
+        var pageHtml = await client.GetStringAsync(RoutePaths.AccountAutomations);
+        Assert.Contains("id=\"automations-card\"", pageHtml);
+        Assert.Contains("New Transfer -&gt; Google Sheets Row", pageHtml);
+
+        // Revoke connection -> disables both AutomationConnection, underlying ApiKey, and WebhookEndpoint
+        var delRes = await client.DeleteAsync($"{RoutePaths.AutomationsApi}/{created.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, delRes.StatusCode);
+
+        var listAfter = await client.GetFromJsonAsync<List<QuickShare.Features.Automations.AutomationConnectionDto>>(RoutePaths.AutomationsApi);
+        Assert.NotNull(listAfter);
+        Assert.Single(listAfter!);
+        Assert.False(listAfter[0].IsActive);
+    }
+
+    // -----------------------------------------------------------------
+    // #164 & #177 — More payment methods: MoMo / ZaloPay / VISA via PayOS + Stripe & PayPal rails
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task PaymentMethods_SupportsMoMoZaloPayVisaDeepLinks_AndStripePayPalCheckoutRails()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(key, PlanTierLimits.Free);
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        // 1. MoMo wallet checkout session -> PayOS provider + momo:// deep link
+        var momoRes = await client.PostAsJsonAsync(RoutePaths.CheckoutSessionApi, new
+        {
+            plan = PlanTierLimits.Pro,
+            billing = BillingPeriods.Monthly,
+            paymentMethod = PaymentMethods.MoMo,
+            currency = PricingKeys.DefaultCurrency,
+        });
+        Assert.Equal(HttpStatusCode.OK, momoRes.StatusCode);
+        var momoDto = await momoRes.Content.ReadFromJsonAsync<QuickShare.Features.Payments.CheckoutSessionResponse>();
+        Assert.NotNull(momoDto);
+        Assert.Equal(PaymentProviders.PayOS, momoDto!.Provider);
+        Assert.Equal(PaymentMethods.MoMo, momoDto.PaymentMethod);
+        Assert.StartsWith("momo://", momoDto.DeepLinkUrl);
+
+        // 2. Stripe international card checkout session -> Stripe provider + USD currency
+        var stripeRes = await client.PostAsJsonAsync(RoutePaths.CheckoutSessionApi, new
+        {
+            plan = PlanTierLimits.Studio,
+            billing = BillingPeriods.Yearly,
+            paymentMethod = PaymentMethods.StripeCard,
+            currency = PricingKeys.CurrencyUsd,
+        });
+        Assert.Equal(HttpStatusCode.OK, stripeRes.StatusCode);
+        var stripeDto = await stripeRes.Content.ReadFromJsonAsync<QuickShare.Features.Payments.CheckoutSessionResponse>();
+        Assert.NotNull(stripeDto);
+        Assert.Equal(PaymentProviders.Stripe, stripeDto!.Provider);
+        Assert.Equal(PaymentMethods.StripeCard, stripeDto.PaymentMethod);
+        Assert.Contains("checkout.stripe.com", stripeDto.CheckoutUrl);
+
+        // 3. PayPal wallet checkout session -> PayPal provider
+        var paypalRes = await client.PostAsJsonAsync(RoutePaths.CheckoutSessionApi, new
+        {
+            plan = PlanTierLimits.Pro,
+            billing = BillingPeriods.Monthly,
+            paymentMethod = PaymentMethods.PayPalWallet,
+            currency = PricingKeys.CurrencyEur,
+        });
+        Assert.Equal(HttpStatusCode.OK, paypalRes.StatusCode);
+        var paypalDto = await paypalRes.Content.ReadFromJsonAsync<QuickShare.Features.Payments.CheckoutSessionResponse>();
+        Assert.NotNull(paypalDto);
+        Assert.Equal(PaymentProviders.PayPal, paypalDto!.Provider);
+        Assert.Equal(PaymentMethods.PayPalWallet, paypalDto.PaymentMethod);
+        Assert.Contains("paypal.com", paypalDto.CheckoutUrl);
+
+        var upgradeHtml = await client.GetStringAsync(RoutePaths.Upgrade);
+        Assert.Contains("id=\"upgrade-payment-method\"", upgradeHtml);
+    }
 }

@@ -120,4 +120,12 @@ public static class RoutePaths
     public const string AccountMigration = "/account/migrate";
     public const string DeliveryRestoreApi = "/api/downloads/{ShareCode}/restore";
     public const string AccountColdStorageApi = "/api/account/cold-storage";
+    public const string AccountSendingDomainApi = "/api/account/sending-domain";
+    public const string AccountSendingDomainVerifyApi = "/api/account/sending-domain/verify";
+    public const string SupportChatApi = "/api/support/chat";
+    public const string AccountSupport = "/account/support";
+    public const string AutomationsApi = "/api/automations";
+    public const string AutomationsCatalogApi = "/api/automations/catalog";
+    public const string AccountAutomations = "/account/automations";
+    public const string CheckoutSessionApi = "/api/payments/checkout-session";
 }
