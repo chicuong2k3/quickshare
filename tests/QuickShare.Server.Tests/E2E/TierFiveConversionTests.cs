@@ -2581,4 +2581,174 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("id=\"dl-live-streaming-banner\"", liveHtml);
         Assert.Contains("50%", liveHtml);
     }
+
+    // -----------------------------------------------------------------
+    // #196 — SFTP ingest into workspace folders
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task SftpIngest_RegistersSshKey_IngestsIntoWorkspaceChrootFolder_AndBlocksRevokedKey()
+    {
+        var ownerKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(ownerKey, PlanTierLimits.Studio);
+        var client = _factory.CreateAuthenticatedClient(ownerKey);
+
+        var createWs = await client.PostAsJsonAsync("/api/workspace", new
+        {
+            name = "SFTP Broadcast Pipeline",
+            seats = 3,
+        });
+        Assert.Equal(HttpStatusCode.OK, createWs.StatusCode);
+
+        // Register SSH public key
+        var keyRes = await client.PostAsJsonAsync(RoutePaths.WorkspaceSftpKeysApi, new
+        {
+            label = "render-farm-01",
+            publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMockRenderFarmPublicKey001 render@studio.vn",
+        });
+        Assert.Equal(HttpStatusCode.OK, keyRes.StatusCode);
+        var sftpKey = await keyRes.Content.ReadFromJsonAsync<QuickShare.Features.Developer.Ecosystem.SftpKeyItemResponse>();
+        Assert.NotNull(sftpKey);
+        Assert.StartsWith("SHA256:", sftpKey!.Fingerprint);
+
+        // Ingest file via SFTP gateway bridge using fingerprint
+        var anonClient = _factory.CreateClient();
+        var ingestRes = await anonClient.PostAsJsonAsync(RoutePaths.SftpIngestApi, new
+        {
+            fingerprint = sftpKey.Fingerprint,
+            fileName = "daily-rushes.mov",
+            contentType = "video/quicktime",
+            contentBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("prores-daily-rushes-payload")),
+        });
+        Assert.Equal(HttpStatusCode.OK, ingestRes.StatusCode);
+        var ingested = await ingestRes.Content.ReadFromJsonAsync<QuickShare.Features.Developer.Ecosystem.SftpIngestResponse>();
+        Assert.NotNull(ingested);
+        Assert.Equal(DeliveryVirusScanStatus.Clean, ingested!.ScanStatus);
+
+        // Revoke SSH key -> subsequent SFTP ingest is rejected with 401 Unauthorized
+        var delRes = await client.DeleteAsync($"/api/workspace/sftp/keys/{sftpKey.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, delRes.StatusCode);
+
+        var blockedRes = await anonClient.PostAsJsonAsync(RoutePaths.SftpIngestApi, new
+        {
+            fingerprint = sftpKey.Fingerprint,
+            fileName = "after-revoke.mov",
+            contentBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("blocked")),
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, blockedRes.StatusCode);
+    }
+
+    // -----------------------------------------------------------------
+    // #198 — GitHub release-asset sharing
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task GitHubReleaseAssetSharing_VerifiesWebhookHmac_AndMirrorsReleaseAssetsIntoDeliveries()
+    {
+        var ownerKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(ownerKey, PlanTierLimits.Studio);
+        var client = _factory.CreateAuthenticatedClient(ownerKey);
+
+        await client.PostAsJsonAsync("/api/workspace", new
+        {
+            name = "OSS Release Team",
+            seats = 3,
+        });
+
+        var secret = "gh-webhook-secret-key-2026";
+        var linkRes = await client.PostAsJsonAsync(RoutePaths.WorkspaceGitHubReleasesApi, new
+        {
+            repoFullName = "chicuong2k3/quickshare-desktop",
+            webhookSecret = secret,
+            defaultExpiryHours = 168,
+        });
+        Assert.Equal(HttpStatusCode.OK, linkRes.StatusCode);
+
+        // Compute valid HMAC-SHA256 signature over "repoFullName:tagName"
+        var signingInput = "chicuong2k3/quickshare-desktop:v2.1.0";
+        var sigBytes = System.Security.Cryptography.HMACSHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(secret),
+            System.Text.Encoding.UTF8.GetBytes(signingInput));
+        var signature = $"sha256={Convert.ToHexStringLower(sigBytes)}";
+
+        var anonClient = _factory.CreateClient();
+        var hookRes = await anonClient.PostAsJsonAsync(RoutePaths.GitHubReleaseWebhookApi, new
+        {
+            action = "published",
+            repoFullName = "chicuong2k3/quickshare-desktop",
+            tagName = "v2.1.0",
+            signatureSha256 = signature,
+            assets = new[]
+            {
+                new { name = "QuickShare-2.1.0-x64.msi", browserDownloadUrl = "https://github.com/chicuong2k3/quickshare-desktop/releases/download/v2.1.0/QuickShare-2.1.0-x64.msi", contentType = "application/x-msi", size = 14500000L },
+                new { name = "QuickShare-2.1.0-universal.dmg", browserDownloadUrl = "https://github.com/chicuong2k3/quickshare-desktop/releases/download/v2.1.0/QuickShare-2.1.0-universal.dmg", contentType = "application/x-apple-diskimage", size = 18200000L },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, hookRes.StatusCode);
+        var mirrored = await hookRes.Content.ReadFromJsonAsync<QuickShare.Features.Developer.Ecosystem.GitHubReleaseWebhookResponse>();
+        Assert.NotNull(mirrored);
+        Assert.Equal(2, mirrored!.MirroredAssets.Count);
+        Assert.Contains("/d/", mirrored.MirroredAssets[0].ShareLink);
+        Assert.Contains("qr.svg", mirrored.MirroredAssets[0].MarkdownBadge);
+    }
+
+    // -----------------------------------------------------------------
+    // #131, #70, #46, #71, #200 — SDKs, CLI, Self-Hosted Docker, Telegram Bot & Discord Bot
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task DeveloperEcosystem_ExposesSdksCliAndSelfHostManifests_AndCreatesSharesViaTelegramAndDiscordBots()
+    {
+        var client = _factory.CreateClient();
+
+        // 1. Official JS & Python SDKs (#131) + quickshare-cli (#70) manifest & /api-docs section
+        var sdkManifest = await client.GetFromJsonAsync<QuickShare.Features.Developer.Ecosystem.SdkManifestResponse>(RoutePaths.SdkManifestApi);
+        Assert.NotNull(sdkManifest);
+        Assert.Contains(sdkManifest!.Sdks, s => s.PackageName == "@quickshare/sdk");
+        Assert.Contains(sdkManifest.Sdks, s => s.PackageName == "quickshare-sdk");
+        Assert.Equal("qrs", sdkManifest.Cli.BinaryName);
+
+        var apiDocsHtml = await client.GetStringAsync(RoutePaths.ApiDocs);
+        Assert.Contains("id=\"apidocs-sdks-cli\"", apiDocsHtml);
+
+        // 2. Self-hosted Docker deployment manifest (#46)
+        var selfHost = await client.GetFromJsonAsync<QuickShare.Features.Developer.Ecosystem.SelfHostManifestResponse>(RoutePaths.SelfHostManifestApi);
+        Assert.NotNull(selfHost);
+        Assert.Equal("docker-compose.selfhost.yml", selfHost!.ComposeFile);
+        Assert.Contains(selfHost.Services, s => s.ServiceName == "minio");
+
+        // 3. Telegram bot webhook (#71) creates instant share link + QR URL
+        var tgRes = await client.PostAsJsonAsync(RoutePaths.TelegramBotWebhookApi, new
+        {
+            chatId = 987654321L,
+            username = "cuong_dev",
+            fileName = "pitch-deck.pdf",
+            fileSize = 512000L,
+            mimeType = "application/pdf",
+        });
+        Assert.Equal(HttpStatusCode.OK, tgRes.StatusCode);
+        var tgDto = await tgRes.Content.ReadFromJsonAsync<QuickShare.Features.Developer.Ecosystem.TelegramBotUpdateResponse>();
+        Assert.NotNull(tgDto);
+        Assert.False(string.IsNullOrWhiteSpace(tgDto!.ShareCode));
+        Assert.Contains("/qr.svg", tgDto.QrSvgUrl);
+
+        // 4. Discord community hub + /share slash command (#200)
+        var discordHub = await client.GetFromJsonAsync<QuickShare.Features.Developer.Ecosystem.DiscordCommunityHubResponse>(RoutePaths.DiscordCommunityApi);
+        Assert.NotNull(discordHub);
+        Assert.Contains("#tieng-viet", discordHub!.Channels);
+
+        var discordShare = await client.PostAsJsonAsync(RoutePaths.DiscordBotWebhookApi, new
+        {
+            command = "/share",
+            guildId = "guild-quickshare-vn",
+            channelName = "showcase",
+            fileName = "ui-mockup.png",
+            fileSize = 256000L,
+            contentType = "image/png",
+        });
+        Assert.Equal(HttpStatusCode.OK, discordShare.StatusCode);
+        var discordDto = await discordShare.Content.ReadFromJsonAsync<QuickShare.Features.Developer.Ecosystem.DiscordSlashCommandResponse>();
+        Assert.NotNull(discordDto);
+        Assert.False(string.IsNullOrWhiteSpace(discordDto!.ShareCode));
+    }
 }

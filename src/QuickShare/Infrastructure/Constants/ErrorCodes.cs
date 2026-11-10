@@ -260,4 +260,10 @@ public static class ErrorCodes
     public const string VideoCompressionRequiresPro = "video_compression_requires_pro";
     public const string VideoCompressionPresetInvalid = "video_compression_preset_invalid";
     public const string HlsNotAvailable = "hls_not_available";
+    public const string SftpKeyInvalid = "sftp_key_invalid";
+    public const string SftpKeyNotFound = "sftp_key_not_found";
+    public const string SftpUnauthorized = "sftp_unauthorized";
+    public const string GitHubRepoInvalid = "github_repo_invalid";
+    public const string GitHubWebhookSignatureInvalid = "github_webhook_signature_invalid";
+    public const string ChatBotCommandInvalid = "chat_bot_command_invalid";
 }

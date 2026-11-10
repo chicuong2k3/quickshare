@@ -148,4 +148,14 @@ public static class RoutePaths
     public const string DeliveryHlsMasterApi = "/api/downloads/{ShareCode}/hls/master.m3u8";
     public const string DeliveryHlsVariantApi = "/api/downloads/{ShareCode}/hls/{Quality}/playlist.m3u8";
     public const string LiveStreamProgressApi = "/api/uploads/live-progress";
+    public const string WorkspaceSftpKeysApi = "/api/workspace/sftp/keys";
+    public const string WorkspaceSftpKeyDeleteApi = "/api/workspace/sftp/keys/{Id:guid}";
+    public const string SftpIngestApi = "/api/sftp/ingest";
+    public const string WorkspaceGitHubReleasesApi = "/api/workspace/github-releases";
+    public const string GitHubReleaseWebhookApi = "/api/webhooks/github/release";
+    public const string SdkManifestApi = "/api/sdk/manifest";
+    public const string SelfHostManifestApi = "/api/self-host/manifest";
+    public const string TelegramBotWebhookApi = "/api/webhooks/telegram/bot";
+    public const string DiscordBotWebhookApi = "/api/webhooks/discord/bot";
+    public const string DiscordCommunityApi = "/api/community/discord";
 }

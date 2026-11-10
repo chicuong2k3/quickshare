@@ -13,10 +13,15 @@ public static class DeliverySources
     /// <summary>Forwarded to the account's private ingest address (issue #104).</summary>
     public const string Email = "email";
 
-    private static readonly string[] Known = [Web, Paste, Url, Mount, Email, Cloud, OfflineQueue];
+    private static readonly string[] Known = [Web, Paste, Url, Mount, Email, Cloud, OfflineQueue, Sftp, GitHubRelease, Cli, TelegramBot, DiscordBot];
 
     public const string Cloud = "cloud";
     public const string OfflineQueue = "offline_queue";
+    public const string Sftp = "sftp";
+    public const string GitHubRelease = "github_release";
+    public const string Cli = "cli";
+    public const string TelegramBot = "telegram_bot";
+    public const string DiscordBot = "discord_bot";
 
     public static string Normalize(string? source)
         => Known.Contains(source) ? source! : Web;

@@ -88,6 +88,8 @@ public class AppDbContext : DbContext
     public DbSet<UserPasskeyRecovery> UserPasskeyRecoveries => Set<UserPasskeyRecovery>();
     public DbSet<PenetrationTestRecord> PenetrationTestRecords => Set<PenetrationTestRecord>();
     public DbSet<WorkspaceByokConfig> WorkspaceByokConfigs => Set<WorkspaceByokConfig>();
+    public DbSet<WorkspaceSftpKey> WorkspaceSftpKeys => Set<WorkspaceSftpKey>();
+    public DbSet<GitHubReleaseRepo> GitHubReleaseRepos => Set<GitHubReleaseRepo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1268,6 +1270,26 @@ public class AppDbContext : DbContext
             entity.Property(e => e.KeyRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
             entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
             entity.HasIndex(e => e.WorkspaceId).IsUnique();
+        });
+
+        modelBuilder.Entity<WorkspaceSftpKey>(entity =>
+        {
+            entity.ToTable("workspace_sftp_keys");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Label).IsRequired().HasMaxLength(WorkspaceSftpKey.LabelMaxLength);
+            entity.Property(e => e.PublicKey).IsRequired().HasMaxLength(WorkspaceSftpKey.PublicKeyMaxLength);
+            entity.Property(e => e.Fingerprint).IsRequired().HasMaxLength(WorkspaceSftpKey.FingerprintMaxLength);
+            entity.HasIndex(e => e.WorkspaceId);
+            entity.HasIndex(e => new { e.WorkspaceId, e.Fingerprint });
+        });
+
+        modelBuilder.Entity<GitHubReleaseRepo>(entity =>
+        {
+            entity.ToTable("github_release_repos");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RepoFullName).IsRequired().HasMaxLength(GitHubReleaseRepo.RepoFullNameMaxLength);
+            entity.Property(e => e.WebhookSecret).IsRequired().HasMaxLength(GitHubReleaseRepo.WebhookSecretMaxLength);
+            entity.HasIndex(e => new { e.WorkspaceId, e.RepoFullName }).IsUnique();
         });
 
     }

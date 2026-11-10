@@ -126,4 +126,10 @@ public enum SecurityEventType
     ByokKeyRotated,
     ByokKeyRevoked,
     CloudImportCompleted,
+    SftpKeyIssued,
+    SftpKeyRevoked,
+    SftpFileIngested,
+    GitHubRepoLinked,
+    GitHubReleaseMirrored,
+    ChatBotDeliveryCreated,
 }
