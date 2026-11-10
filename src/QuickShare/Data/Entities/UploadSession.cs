@@ -18,6 +18,11 @@ public record UploadSession : BaseAuditEntity
     public Guid? FileRequestId { get; init; }
     /// <summary>When set, this upload was authorized by a one-time pay-per-transfer credit pass (issue #85).</summary>
     public string? TransferPassToken { get; init; }
+    /// <summary>Pre-allocated share code for instant P2P/live streaming before upload completes (issue #32).</summary>
+    public string? ShareCode { get; set; }
+    public int UploadedPartsCount { get; set; }
+    public int TotalPartsCount { get; set; }
+    public long UploadedBytes { get; set; }
 }
 
 public static class UploadSessionStatus

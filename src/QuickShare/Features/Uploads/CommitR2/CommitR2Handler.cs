@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, bool OcrEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null, string? EncryptionMode = null, string? EncryptionKdfSalt = null, int? EncryptionKdfIterations = null, string? EncryptedKeyEscrow = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, bool OcrEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null, string? EncryptionMode = null, string? EncryptionKdfSalt = null, int? EncryptionKdfIterations = null, string? EncryptedKeyEscrow = null, string? VideoCompressionQuality = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -216,7 +216,9 @@ public sealed class CommitR2Handler(
         if (sha256 is not null && (sha256.Length != 64 || sha256.Any(c => !char.IsAsciiHexDigit(c))))
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.Sha256Invalid));
 
-        var shareCode = ShareCodes.Generate();
+        var shareCode = !string.IsNullOrWhiteSpace(session.ShareCode)
+            ? session.ShareCode
+            : ShareCodes.Generate();
 
         // The uploader's live workspace seat (issue #106), resolved once — null for personal
         // shares and for anonymous uploads.
@@ -361,6 +363,29 @@ public sealed class CommitR2Handler(
             ? DeliveryVirusScanStatus.Pending
             : DeliveryVirusScanStatus.NotApplicable;
 
+        var isVideo = session.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
+            || session.FileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
+            || session.FileName.EndsWith(".mov", StringComparison.OrdinalIgnoreCase)
+            || session.FileName.EndsWith(".webm", StringComparison.OrdinalIgnoreCase);
+
+        string? videoCompressPreset = null;
+        long? originalVideoSizeBytes = null;
+        if (!string.IsNullOrWhiteSpace(cmd.VideoCompressionQuality) &&
+            !string.Equals(cmd.VideoCompressionQuality, VideoCompressionPreset.None, StringComparison.OrdinalIgnoreCase))
+        {
+            if (plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.VideoCompressionRequiresPro));
+
+            var normPreset = cmd.VideoCompressionQuality.Trim().ToLowerInvariant();
+            if (!VideoCompressionPreset.All.Contains(normPreset))
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.VideoCompressionPresetInvalid));
+
+            videoCompressPreset = normPreset;
+            originalVideoSizeBytes = session.FileSize;
+        }
+
+        var hlsAvailable = isVideo && encryptionMode == DeliveryEncryptionMode.None;
+
         var delivery = new Delivery
         {
             Id = cmd.DeliveryId,
@@ -430,6 +455,9 @@ public sealed class CommitR2Handler(
             ByokKeyId = byokKeyId,
             ByokKeyVersion = byokKeyVersion,
             ByokWrappedDek = byokWrappedDek,
+            VideoCompressionQuality = videoCompressPreset,
+            OriginalVideoSizeBytes = originalVideoSizeBytes,
+            HlsAvailable = hlsAvailable,
         };
 
         session.Status = UploadSessionStatus.Committed;

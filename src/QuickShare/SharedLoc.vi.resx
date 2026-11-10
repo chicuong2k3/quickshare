@@ -3476,4 +3476,67 @@
   <data name="dl_save_offline_done" xml:space="preserve">
     <value>Đã lưu để xem ngoại tuyến trên trình duyệt này.</value>
   </data>
+  <data name="upload_image_editor_toggle" xml:space="preserve">
+    <value>Sửa ảnh (Cắt / Làm mờ / Ghi chú)</value>
+  </data>
+  <data name="upload_image_editor_crop" xml:space="preserve">
+    <value>Cắt khung</value>
+  </data>
+  <data name="upload_image_editor_blur" xml:space="preserve">
+    <value>Làm mờ / Che thông tin</value>
+  </data>
+  <data name="upload_image_editor_annotate" xml:space="preserve">
+    <value>Vẽ ghi chú</value>
+  </data>
+  <data name="upload_image_editor_apply" xml:space="preserve">
+    <value>Áp dụng &amp; Chia sẻ ảnh đã sửa</value>
+  </data>
+  <data name="upload_video_trim_toggle" xml:space="preserve">
+    <value>Cắt ngắn Video</value>
+  </data>
+  <data name="upload_video_trim_start" xml:space="preserve">
+    <value>Bắt đầu (giây)</value>
+  </data>
+  <data name="upload_video_trim_end" xml:space="preserve">
+    <value>Kết thúc (giây)</value>
+  </data>
+  <data name="upload_video_trim_speed" xml:space="preserve">
+    <value>Tốc độ phát</value>
+  </data>
+  <data name="upload_video_trim_apply" xml:space="preserve">
+    <value>Áp dụng cắt Video</value>
+  </data>
+  <data name="upload_pdf_tools_toggle" xml:space="preserve">
+    <value>Công cụ PDF (Gộp / Tách / Nén)</value>
+  </data>
+  <data name="upload_pdf_merge" xml:space="preserve">
+    <value>Gộp tệp PDF</value>
+  </data>
+  <data name="upload_pdf_split" xml:space="preserve">
+    <value>Tách trang PDF</value>
+  </data>
+  <data name="upload_pdf_compress" xml:space="preserve">
+    <value>Nén dung lượng PDF</value>
+  </data>
+  <data name="upload_pdf_apply" xml:space="preserve">
+    <value>Xử lý PDF</value>
+  </data>
+  <data name="upload_video_compress_label" xml:space="preserve">
+    <value>Nén Video khi tải lên (H.264/AAC)</value>
+  </data>
+  <data name="upload_video_compress_none" xml:space="preserve">
+    <value>Giữ nguyên gốc (Không nén video)</value>
+  </data>
+  <data name="dl_live_streaming_title" xml:space="preserve">
+    <value>Đang nhận luồng tải lên trực tiếp...</value>
+  </data>
+  <data name="dl_live_streaming_sub" xml:space="preserve">
+    <value>Người gửi đang tải tệp lên theo thời gian thực (đã nhận {0}%). Bạn có thể bắt đầu tải ngay khi các phần dữ liệu tới.</value>
+  </data>
+  <data name="dl_hls_stream_title" xml:space="preserve">
+    <value>Phát trực tuyến Video thích ứng (HLS)</value>
+  </data>
+  <data name="dl_hls_quality_label" xml:space="preserve">
+    <value>Chất lượng phát</value>
+  </data>
 </root>

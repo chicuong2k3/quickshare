@@ -393,6 +393,34 @@
                             </div>
                         }
 
+                        @if (Info?.IsLiveStreaming == true)
+                        {
+                            <div id="dl-live-streaming-banner" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm" role="status" aria-live="polite">
+                                <p class="font-medium">@Loc["dl_live_streaming_title"]</p>
+                                <p class="mt-1 text-muted-foreground">@Loc["dl_live_streaming_sub", Info.LiveProgressPercent]</p>
+                            </div>
+                        }
+
+                        @if (Info?.HlsAvailable == true)
+                        {
+                            <div id="dl-hls-player" class="mt-4 rounded-md border bg-muted/30 p-3 text-sm" data-manifest="/api/downloads/@ShareCode/hls/master.m3u8">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="font-medium">@Loc["dl_hls_stream_title"]</span>
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <label for="dl-hls-quality" class="text-muted-foreground">@Loc["dl_hls_quality_label"]</label>
+                                        <NativeSelect id="dl-hls-quality" aria-label="@Loc["dl_hls_quality_label"]">
+                                            <NativeSelectOption value="480p" Selected>480p SD</NativeSelectOption>
+                                            @if (Info.SenderPlan is PlanTierLimits.Pro or PlanTierLimits.Studio)
+                                            {
+                                                <NativeSelectOption value="720p">720p HD</NativeSelectOption>
+                                                <NativeSelectOption value="1080p">1080p Full HD</NativeSelectOption>
+                                            }
+                                        </NativeSelect>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                         <div style="margin-top: 2rem">
                             @if (Info?.EmailOtpEnabled != true && Info?.RequireRecipientEmail != true)
                             {
@@ -1248,7 +1276,11 @@
                 EncryptionMode = value.EncryptionMode,
                 EncryptionKdfSalt = value.EncryptionKdfSalt,
                 EncryptionKdfIterations = value.EncryptionKdfIterations,
-                HasKeyEscrow = value.HasKeyEscrow
+                HasKeyEscrow = value.HasKeyEscrow,
+                IsLiveStreaming = value.IsLiveStreaming,
+                LiveProgressPercent = value.LiveProgressPercent,
+                HlsAvailable = value.HlsAvailable,
+                VideoCompressionQuality = value.VideoCompressionQuality
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -1335,5 +1367,9 @@
         public string? EncryptionKdfSalt { get; set; }
         public int? EncryptionKdfIterations { get; set; }
         public bool HasKeyEscrow { get; set; }
+        public bool IsLiveStreaming { get; set; }
+        public int LiveProgressPercent { get; set; }
+        public bool HlsAvailable { get; set; }
+        public string? VideoCompressionQuality { get; set; }
     }
 }

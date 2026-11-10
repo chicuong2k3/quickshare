@@ -2413,4 +2413,172 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.True(queueCheck.Items[0].Allowed);
         Assert.False(queueCheck.Items[1].Allowed);
     }
+
+    // -----------------------------------------------------------------
+    // #228, #320, #317 — Pre-share media tools: Image editor, Video trim, PDF merge/split/compress
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task PreShareMediaTools_RendersImageAndVideoEditors_AndProcessesPdfMergeSplitCompress()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        // 1. Verify Send page renders Image Editor (#228), Video Trim (#320), and PDF Tools (#317)
+        var sendHtml = await client.GetStringAsync(RoutePaths.Send);
+        Assert.Contains("id=\"upload-image-editor\"", sendHtml);
+        Assert.Contains("id=\"upload-image-editor-canvas\"", sendHtml);
+        Assert.Contains("id=\"upload-video-trim\"", sendHtml);
+        Assert.Contains("id=\"upload-pdf-tools\"", sendHtml);
+
+        // 2. Build two valid minimal PDFs (2 pages + 1 page) and merge them (#317)
+        var pdf1 = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(
+            "%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n2 0 obj << /Type /Page >> endobj\n%%EOF"));
+        var pdf2 = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(
+            "%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n%%EOF"));
+
+        var mergeRes = await client.PostAsJsonAsync(RoutePaths.PdfToolsApi, new
+        {
+            operation = "merge",
+            documentsBase64 = new[] { pdf1, pdf2 },
+            outputFileName = "combined-contract.pdf",
+        });
+        Assert.Equal(HttpStatusCode.OK, mergeRes.StatusCode);
+        var merged = await mergeRes.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.MediaTools.PdfToolOperationResponse>();
+        Assert.NotNull(merged);
+        Assert.Equal("merge", merged!.Operation);
+        Assert.Equal(2, merged.InputDocumentCount);
+        Assert.Equal(3, merged.OutputPageCount);
+        Assert.Equal("combined-contract.pdf", merged.OutputFileName);
+
+        // 3. Split merged 3-page PDF to pages 2..3 -> 2 output pages
+        var splitRes = await client.PostAsJsonAsync(RoutePaths.PdfToolsApi, new
+        {
+            operation = "split",
+            documentsBase64 = new[] { merged.PdfBase64 },
+            startPage = 2,
+            endPage = 3,
+        });
+        Assert.Equal(HttpStatusCode.OK, splitRes.StatusCode);
+        var split = await splitRes.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.MediaTools.PdfToolOperationResponse>();
+        Assert.NotNull(split);
+        Assert.Equal(2, split!.OutputPageCount);
+    }
+
+    // -----------------------------------------------------------------
+    // #136 & #165 — Video compression presets at upload + HLS adaptive video streaming on delivery page
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task VideoCompressionAndHlsStreaming_EstimatesCompression_AndServesAdaptiveM3u8Manifests()
+    {
+        var freeKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(freeKey, PlanTierLimits.Free);
+        var freeClient = _factory.CreateAuthenticatedClient(freeKey);
+
+        // Free user is blocked from Pro video compression estimate
+        var freeEst = await freeClient.PostAsJsonAsync(RoutePaths.VideoCompressEstimateApi, new
+        {
+            fileSizeBytes = 500L * 1024 * 1024,
+            preset = VideoCompressionPreset.P720,
+        });
+        Assert.Equal(HttpStatusCode.Forbidden, freeEst.StatusCode);
+
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+        var proClient = _factory.CreateAuthenticatedClient(proKey);
+
+        var proEst = await proClient.PostAsJsonAsync(RoutePaths.VideoCompressEstimateApi, new
+        {
+            fileSizeBytes = 500L * 1024 * 1024,
+            preset = VideoCompressionPreset.P720,
+        });
+        Assert.Equal(HttpStatusCode.OK, proEst.StatusCode);
+        var estimate = await proEst.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.MediaTools.VideoCompressEstimateResponse>();
+        Assert.NotNull(estimate);
+        Assert.Equal(65, estimate!.SavingsPercent);
+        Assert.True(estimate.EstimatedOutputBytes < estimate.OriginalSizeBytes);
+
+        // Seed a video delivery with HlsAvailable = true and verify master + variant M3U8 playlists and player UI
+        var shareCode = $"hls{proUser.Id.ToString("N")[..7]}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = proUser.Id,
+                ShareCode = shareCode,
+                FileName = "demo-reel.mp4",
+                ContentType = "video/mp4",
+                FileSize = 150L * 1024 * 1024,
+                TotalBytes = 150L * 1024 * 1024,
+                StoragePath = $"uploads/{proUser.Id:N}/{shareCode}/demo-reel.mp4",
+                MaxDownloads = 10,
+                Status = DeliveryStatus.Active,
+                EncryptionMode = DeliveryEncryptionMode.None,
+                VideoCompressionQuality = VideoCompressionPreset.P720,
+                OriginalVideoSizeBytes = 500L * 1024 * 1024,
+                HlsAvailable = true,
+                ExpiresAt = DateTime.UtcNow.AddDays(5),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var masterM3u8 = await proClient.GetStringAsync($"/api/downloads/{shareCode}/hls/master.m3u8");
+        Assert.Contains("#EXTM3U", masterM3u8);
+        Assert.Contains("480p/playlist.m3u8", masterM3u8);
+        Assert.Contains("720p/playlist.m3u8", masterM3u8);
+        Assert.Contains("1080p/playlist.m3u8", masterM3u8);
+
+        var variantM3u8 = await proClient.GetStringAsync($"/api/downloads/{shareCode}/hls/720p/playlist.m3u8");
+        Assert.Contains("#EXT-X-TARGETDURATION:6", variantM3u8);
+        Assert.Contains("quality=720p", variantM3u8);
+
+        var dlHtml = await proClient.GetStringAsync($"/d/{shareCode}");
+        Assert.Contains("id=\"dl-hls-player\"", dlHtml);
+        Assert.Contains("id=\"dl-hls-quality\"", dlHtml);
+    }
+
+    // -----------------------------------------------------------------
+    // #32 — P2P / Wormhole-style instant live streaming before upload completes
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task InstantLiveStreaming_MintsShareCodeAtStartR2_ShowsLiveReceivingProgress_AndPreservesCodeAtCommit()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        // 1. Start multipart upload -> ShareCode and ShareLink are minted immediately before commit
+        var startRes = await client.PostAsJsonAsync("/api/uploads/start-r2", new
+        {
+            fileName = "live-broadcast.mp4",
+            fileSize = 20L * 1024 * 1024,
+            contentType = "video/mp4",
+            partNumbers = new[] { 1, 2, 3, 4 },
+        });
+        Assert.Equal(HttpStatusCode.OK, startRes.StatusCode);
+        var started = await startRes.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.StartR2.StartR2Response>();
+        Assert.NotNull(started);
+        Assert.False(string.IsNullOrWhiteSpace(started!.ShareCode));
+        Assert.Contains($"/d/{started.ShareCode}", started.ShareLink);
+
+        // 2. Sender reports 2 of 4 parts uploaded (50%)
+        var progRes = await client.PostAsJsonAsync(RoutePaths.LiveStreamProgressApi, new
+        {
+            deliveryId = started.DeliveryId,
+            uploadId = started.UploadId,
+            uploadedPartsCount = 2,
+            uploadedBytes = 10L * 1024 * 1024,
+        });
+        Assert.Equal(HttpStatusCode.OK, progRes.StatusCode);
+
+        // 3. Recipient visits /d/{shareCode} while upload is still in progress -> sees #dl-live-streaming-banner with 50%
+        var liveHtml = await client.GetStringAsync($"/d/{started.ShareCode}");
+        Assert.Contains("id=\"dl-live-streaming-banner\"", liveHtml);
+        Assert.Contains("50%", liveHtml);
+    }
 }

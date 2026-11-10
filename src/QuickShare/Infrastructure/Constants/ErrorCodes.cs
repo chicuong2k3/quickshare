@@ -256,4 +256,8 @@ public static class ErrorCodes
     public const string CloudImportProviderInvalid = "cloud_import_provider_invalid";
     public const string CloudImportTokenInvalid = "cloud_import_token_invalid";
     public const string OfflineCacheForbidden = "offline_cache_forbidden";
+    public const string PdfOperationInvalid = "pdf_operation_invalid";
+    public const string VideoCompressionRequiresPro = "video_compression_requires_pro";
+    public const string VideoCompressionPresetInvalid = "video_compression_preset_invalid";
+    public const string HlsNotAvailable = "hls_not_available";
 }

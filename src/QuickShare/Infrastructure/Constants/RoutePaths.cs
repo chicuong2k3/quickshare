@@ -143,4 +143,9 @@ public static class RoutePaths
     public const string CloudImportApi = "/api/uploads/cloud-import";
     public const string DeliveryOfflineBundleApi = "/api/downloads/{ShareCode}/offline-bundle";
     public const string OfflineUploadQueueApi = "/api/uploads/offline-queue";
+    public const string PdfToolsApi = "/api/tools/pdf";
+    public const string VideoCompressEstimateApi = "/api/uploads/video-compress/estimate";
+    public const string DeliveryHlsMasterApi = "/api/downloads/{ShareCode}/hls/master.m3u8";
+    public const string DeliveryHlsVariantApi = "/api/downloads/{ShareCode}/hls/{Quality}/playlist.m3u8";
+    public const string LiveStreamProgressApi = "/api/uploads/live-progress";
 }

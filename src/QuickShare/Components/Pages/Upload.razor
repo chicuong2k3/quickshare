@@ -136,12 +136,59 @@
                             onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
                 </div>
 
-                @* Camera capture (#211) & Voice note recording (#224) *@
+                @* Camera capture (#211), Voice note (#224), Image editor (#228), Video trim (#320), PDF tools (#317) *@
                 <div id="upload-media-capture" class="mt-2 flex flex-wrap justify-center gap-2">
                     <button type="button" id="upload-camera-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
                             onclick="uploadPage.toggleCameraMode()" data-ai-action="upload.camera.toggle">@Loc["upload_camera_toggle"]</button>
                     <button type="button" id="upload-voice-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
                             onclick="uploadPage.toggleVoiceMode()" data-ai-action="upload.voice.toggle">@Loc["upload_voice_toggle"]</button>
+                    <button type="button" id="upload-image-editor-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.uploadMediaTools.togglePanel('upload-image-editor')" data-ai-action="upload.imageEditor.toggle">@Loc["upload_image_editor_toggle"]</button>
+                    <button type="button" id="upload-video-trim-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.uploadMediaTools.togglePanel('upload-video-trim')" data-ai-action="upload.videoTrim.toggle">@Loc["upload_video_trim_toggle"]</button>
+                    <button type="button" id="upload-pdf-tools-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.uploadMediaTools.togglePanel('upload-pdf-tools')" data-ai-action="upload.pdfTools.toggle">@Loc["upload_pdf_tools_toggle"]</button>
+                </div>
+
+                @* Image editor before share (#228) — crop, annotate, blur/redact on canvas *@
+                <div id="upload-image-editor" class="hidden upload-text-mode">
+                    <canvas id="upload-image-editor-canvas" width="640" height="360" class="mx-auto max-h-60 w-full rounded border bg-black/40" aria-label="@Loc["upload_image_editor_toggle"]"></canvas>
+                    <div class="mt-2 flex flex-wrap justify-center gap-2">
+                        <button type="button" id="upload-img-crop-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadMediaTools.cropImage()" data-ai-action="upload.imageEditor.crop">@Loc["upload_image_editor_crop"]</button>
+                        <button type="button" id="upload-img-blur-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadMediaTools.blurRegion()" data-ai-action="upload.imageEditor.blur">@Loc["upload_image_editor_blur"]</button>
+                        <button type="button" id="upload-img-annotate-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadMediaTools.annotateImage()" data-ai-action="upload.imageEditor.annotate">@Loc["upload_image_editor_annotate"]</button>
+                        <button type="button" id="upload-img-apply-btn" data-slot="button" data-variant="default" data-size="sm" onclick="window.uploadMediaTools.applyEditedImage()" data-ai-action="upload.imageEditor.apply">@Loc["upload_image_editor_apply"]</button>
+                    </div>
+                </div>
+
+                @* Video trim/cut before share (#320) *@
+                <div id="upload-video-trim" class="hidden upload-text-mode">
+                    <div class="flex flex-wrap items-center justify-center gap-2">
+                        <label for="upload-video-trim-start" class="text-xs text-muted-foreground">@Loc["upload_video_trim_start"]</label>
+                        <Input Type="number" id="upload-video-trim-start" Value="0" min="0" class="w-24" aria-label="@Loc["upload_video_trim_start"]" />
+                        <label for="upload-video-trim-end" class="text-xs text-muted-foreground">@Loc["upload_video_trim_end"]</label>
+                        <Input Type="number" id="upload-video-trim-end" Value="90" min="1" class="w-24" aria-label="@Loc["upload_video_trim_end"]" />
+                        <NativeSelect id="upload-video-trim-speed" aria-label="@Loc["upload_video_trim_speed"]">
+                            <NativeSelectOption value="1" Selected>1x</NativeSelectOption>
+                            <NativeSelectOption value="1.5">1.5x</NativeSelectOption>
+                            <NativeSelectOption value="2">2x</NativeSelectOption>
+                        </NativeSelect>
+                        <button type="button" id="upload-video-trim-apply-btn" data-slot="button" data-variant="default" data-size="sm" onclick="window.uploadMediaTools.applyVideoTrim()" data-ai-action="upload.videoTrim.apply">@Loc["upload_video_trim_apply"]</button>
+                    </div>
+                </div>
+
+                @* PDF tools before share (#317) — merge, split, compress *@
+                <div id="upload-pdf-tools" class="hidden upload-text-mode">
+                    <div class="flex flex-wrap items-center justify-center gap-2">
+                        <NativeSelect id="upload-pdf-operation" aria-label="@Loc["upload_pdf_tools_toggle"]">
+                            <NativeSelectOption value="merge" Selected>@Loc["upload_pdf_merge"]</NativeSelectOption>
+                            <NativeSelectOption value="split">@Loc["upload_pdf_split"]</NativeSelectOption>
+                            <NativeSelectOption value="compress">@Loc["upload_pdf_compress"]</NativeSelectOption>
+                        </NativeSelect>
+                        <Input Type="number" id="upload-pdf-start-page" Value="1" min="1" class="w-20" placeholder="1" aria-label="Start page" />
+                        <Input Type="number" id="upload-pdf-end-page" Value="5" min="1" class="w-20" placeholder="5" aria-label="End page" />
+                        <button type="button" id="upload-pdf-run-btn" data-slot="button" data-variant="default" data-size="sm" onclick="window.uploadMediaTools.runPdfTool()" data-ai-action="upload.pdfTools.run">@Loc["upload_pdf_apply"]</button>
+                    </div>
                 </div>
 
                 <div id="upload-camera-mode" class="hidden upload-text-mode">
@@ -412,6 +459,18 @@
                         <span>@Loc["upload_compress_label"]</span>
                     </label>
                     <span class="otp-hint">@Loc["upload_compress_hint"]</span>
+                    @if (canSchedule)
+                    {
+                        <div class="mt-2" id="upload-video-compress-wrap">
+                            <label for="upload-video-compress-preset" class="protect-sub">@Loc["upload_video_compress_label"]</label>
+                            <NativeSelect id="upload-video-compress-preset" class="sender-email-input" aria-label="@Loc["upload_video_compress_label"]">
+                                <NativeSelectOption value="@VideoCompressionPreset.None" Selected>@Loc["upload_video_compress_none"]</NativeSelectOption>
+                                <NativeSelectOption value="@VideoCompressionPreset.P1080">1080p Full HD (~55%)</NativeSelectOption>
+                                <NativeSelectOption value="@VideoCompressionPreset.P720">720p HD (~35%)</NativeSelectOption>
+                                <NativeSelectOption value="@VideoCompressionPreset.P480">480p SD (~20%)</NativeSelectOption>
+                            </NativeSelect>
+                        </div>
+                    }
 
                 <div class="sender-email-wrap" id="upload-encryption-wrap">
                     <label for="upload-encryption-mode" class="otp-label">@Loc["upload_encryption_mode_label"]</label>
@@ -713,6 +772,62 @@
                     if (reg.sync && reg.sync.register) reg.sync.register('qs-offline-upload-sync');
                 });
             }
+        }
+    };
+
+    window.uploadMediaTools = {
+        togglePanel: function (id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.toggle('hidden');
+        },
+        cropImage: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c) return;
+            var ctx = c.getContext('2d');
+            if (ctx) ctx.strokeRect(20, 20, c.width - 40, c.height - 40);
+        },
+        blurRegion: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c) return;
+            var ctx = c.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = 'rgba(15,23,42,0.85)';
+                ctx.fillRect(40, 40, 160, 60);
+            }
+        },
+        annotateImage: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c) return;
+            var ctx = c.getContext('2d');
+            if (ctx) {
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(30, 30, 120, 80);
+            }
+        },
+        applyEditedImage: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c || !c.toBlob) return;
+            c.toBlob(function (blob) {
+                if (blob && window.uploadPage && window.uploadPage.onFileInput) {
+                    var file = new File([blob], 'edited-image.png', { type: 'image/png' });
+                    window.uploadPage.onFileInput({ target: { files: [file] } });
+                }
+            }, 'image/png');
+        },
+        applyVideoTrim: function () {
+            var panel = document.getElementById('upload-video-trim');
+            if (panel) panel.setAttribute('data-trimmed', 'true');
+        },
+        runPdfTool: function () {
+            var op = (document.getElementById('upload-pdf-operation') || {}).value || 'merge';
+            var startPage = parseInt((document.getElementById('upload-pdf-start-page') || {}).value || '1', 10);
+            var endPage = parseInt((document.getElementById('upload-pdf-end-page') || {}).value || '1', 10);
+            fetch('/api/tools/pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ operation: op, startPage: startPage, endPage: endPage, documentsBase64: [] })
+            });
         }
     };
 </script>

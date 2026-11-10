@@ -8,7 +8,7 @@ namespace QuickShare.Features.Uploads.StartR2;
 public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null, string? TransferPassToken = null)
     : IRequest<Result<StartR2Response>>;
 
-public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, bool IsQueued = false, int QueuePosition = 0, int QueueEtaSeconds = 0);
+public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, bool IsQueued = false, int QueuePosition = 0, int QueueEtaSeconds = 0, string? ShareCode = null, string? ShareLink = null);
 
 public sealed class StartR2Handler(
     IStorageProvider storage,
@@ -101,6 +101,7 @@ public sealed class StartR2Handler(
             initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, cancellationToken);
 
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
+        var shareCode = ShareCodes.Generate();
         var session = new UploadSession
         {
             Id = deliveryId,
@@ -114,7 +115,11 @@ public sealed class StartR2Handler(
             R2UploadId = initResult.UploadId,
             StoragePath = initResult.ObjectKey,
             FileRequestId = fileRequestId,
-            TransferPassToken = validatedPassToken
+            TransferPassToken = validatedPassToken,
+            ShareCode = shareCode,
+            TotalPartsCount = Math.Max(1, cmd.PartNumbers.Count),
+            UploadedPartsCount = 0,
+            UploadedBytes = 0,
         };
 
         db.UploadSessions.Add(session);
@@ -124,10 +129,12 @@ public sealed class StartR2Handler(
             new AnalyticsEventData(cmd.FileName, cmd.FileSize, cmd.ContentType, plan), cancellationToken);
 
         var queue = BoardingQueuePolicy.Evaluate(plan, cmd.FileSize, validatedPassToken is not null || fileRequestId is not null, quickShareOptions.Value);
+        var req = httpContextAccessor.HttpContext!.Request;
+        var shareLink = $"{req.Scheme}://{req.Host}{RoutePaths.DeliveryPage}{shareCode}";
 
         return Result.Success(new StartR2Response(
             deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls,
-            queue.IsQueued, queue.Position, queue.EtaSeconds));
+            queue.IsQueued, queue.Position, queue.EtaSeconds, shareCode, shareLink));
     }
 
     private async Task<(Guid? RequestId, LightResults.Error? Failure)> ValidateRequestAsync(

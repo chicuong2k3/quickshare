@@ -3476,4 +3476,67 @@
   <data name="dl_save_offline_done" xml:space="preserve">
     <value>Saved for offline reading in this browser.</value>
   </data>
+  <data name="upload_image_editor_toggle" xml:space="preserve">
+    <value>Edit Image (Crop / Blur / Annotate)</value>
+  </data>
+  <data name="upload_image_editor_crop" xml:space="preserve">
+    <value>Crop</value>
+  </data>
+  <data name="upload_image_editor_blur" xml:space="preserve">
+    <value>Blur / Redact</value>
+  </data>
+  <data name="upload_image_editor_annotate" xml:space="preserve">
+    <value>Annotate</value>
+  </data>
+  <data name="upload_image_editor_apply" xml:space="preserve">
+    <value>Apply &amp; Share Edited Image</value>
+  </data>
+  <data name="upload_video_trim_toggle" xml:space="preserve">
+    <value>Trim Video Clip</value>
+  </data>
+  <data name="upload_video_trim_start" xml:space="preserve">
+    <value>Start (sec)</value>
+  </data>
+  <data name="upload_video_trim_end" xml:space="preserve">
+    <value>End (sec)</value>
+  </data>
+  <data name="upload_video_trim_speed" xml:space="preserve">
+    <value>Playback Speed</value>
+  </data>
+  <data name="upload_video_trim_apply" xml:space="preserve">
+    <value>Apply Video Trim</value>
+  </data>
+  <data name="upload_pdf_tools_toggle" xml:space="preserve">
+    <value>PDF Tools (Merge / Split / Compress)</value>
+  </data>
+  <data name="upload_pdf_merge" xml:space="preserve">
+    <value>Merge PDFs</value>
+  </data>
+  <data name="upload_pdf_split" xml:space="preserve">
+    <value>Split Page Range</value>
+  </data>
+  <data name="upload_pdf_compress" xml:space="preserve">
+    <value>Compress PDF</value>
+  </data>
+  <data name="upload_pdf_apply" xml:space="preserve">
+    <value>Process PDF</value>
+  </data>
+  <data name="upload_video_compress_label" xml:space="preserve">
+    <value>Video Compression Preset (H.264/AAC)</value>
+  </data>
+  <data name="upload_video_compress_none" xml:space="preserve">
+    <value>Original Quality (No video transcode)</value>
+  </data>
+  <data name="dl_live_streaming_title" xml:space="preserve">
+    <value>Receiving live upload stream...</value>
+  </data>
+  <data name="dl_live_streaming_sub" xml:space="preserve">
+    <value>Sender is uploading in real time ({0}% received). Your download will stream as chunks arrive.</value>
+  </data>
+  <data name="dl_hls_stream_title" xml:space="preserve">
+    <value>HLS Adaptive Video Stream</value>
+  </data>
+  <data name="dl_hls_quality_label" xml:space="preserve">
+    <value>Stream Quality</value>
+  </data>
 </root>

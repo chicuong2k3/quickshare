@@ -44,7 +44,11 @@ public record DownloadInfoResponse(
     string EncryptionMode = DeliveryEncryptionMode.FragmentKey,
     string? EncryptionKdfSalt = null,
     int? EncryptionKdfIterations = null,
-    bool HasKeyEscrow = false
+    bool HasKeyEscrow = false,
+    bool IsLiveStreaming = false,
+    int LiveProgressPercent = 100,
+    bool HlsAvailable = false,
+    string? VideoCompressionQuality = null
 );
 
 public sealed class DownloadInfoHandler(
@@ -72,7 +76,41 @@ public sealed class DownloadInfoHandler(
                     .FirstOrDefaultAsync(ct2);
 
                 if (delivery is null || delivery.DeletedAt is not null)
+                {
+                    var liveSession = await db.UploadSessions
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(s => s.ShareCode == query.ShareCode && s.Status == UploadSessionStatus.InProgress && s.ExpiresAt > DateTime.UtcNow, ct2);
+                    if (liveSession is not null)
+                    {
+                        var totalParts = Math.Max(1, liveSession.TotalPartsCount);
+                        var pct = Math.Clamp((int)Math.Round(liveSession.UploadedPartsCount * 100.0 / totalParts), 0, 99);
+                        return Result.Success(new DownloadInfoResponse(
+                            liveSession.FileName,
+                            liveSession.ContentType,
+                            liveSession.FileSize,
+                            liveSession.ExpiresAt,
+                            null,
+                            DeliveryStatus.Active,
+                            0,
+                            100,
+                            HasOtp: false,
+                            HasPassword: false,
+                            SenderPlan: PlanTierLimits.Anonymous,
+                            Message: null,
+                            Sha256: null,
+                            FirstDownloadedAt: null,
+                            HideDownloadStats: false,
+                            BurnAfterDownload: false,
+                            AllowExtensionRequests: false,
+                            PrivacyMode: false,
+                            EmailOtpEnabled: false,
+                            RequireRecipientEmail: false,
+                            IsLiveStreaming: true,
+                            LiveProgressPercent: pct));
+                    }
+
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
+                }
 
                 // Held for review (issue #162). Reported as not-found rather than as a distinct
                 // state: a recipient who was sent the link early should learn nothing about an
@@ -175,7 +213,11 @@ public sealed class DownloadInfoHandler(
                     EncryptionMode: string.IsNullOrEmpty(delivery.EncryptionMode) ? DeliveryEncryptionMode.FragmentKey : delivery.EncryptionMode,
                     EncryptionKdfSalt: delivery.EncryptionKdfSalt,
                     EncryptionKdfIterations: delivery.EncryptionKdfIterations,
-                    HasKeyEscrow: !string.IsNullOrEmpty(delivery.EncryptedKeyEscrow)
+                    HasKeyEscrow: !string.IsNullOrEmpty(delivery.EncryptedKeyEscrow),
+                    IsLiveStreaming: false,
+                    LiveProgressPercent: 100,
+                    HlsAvailable: delivery.HlsAvailable,
+                    VideoCompressionQuality: delivery.VideoCompressionQuality
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

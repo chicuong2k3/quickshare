@@ -167,6 +167,9 @@ public record Delivery : BaseAuditEntity
     public string? ByokKeyId { get; set; }
     public int? ByokKeyVersion { get; set; }
     public string? ByokWrappedDek { get; set; }
+    public string? VideoCompressionQuality { get; set; }
+    public long? OriginalVideoSizeBytes { get; set; }
+    public bool HlsAvailable { get; set; }
     public User? Sender { get; init; }
     /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
     public Guid? FileRequestId { get; set; }
@@ -206,4 +209,22 @@ public static class DeliveryStorageTier
     public const string Hot = "Hot";
     public const string Cold = "Cold";
     public const string Restoring = "Restoring";
+}
+
+public static class VideoCompressionPreset
+{
+    public const string None = "none";
+    public const string P1080 = "1080p";
+    public const string P720 = "720p";
+    public const string P480 = "480p";
+
+    public static readonly string[] All = [None, P1080, P720, P480];
+
+    public static double TargetRatioFor(string? preset) => preset switch
+    {
+        P1080 => 0.55,
+        P720 => 0.35,
+        P480 => 0.20,
+        _ => 1.0,
+    };
 }
