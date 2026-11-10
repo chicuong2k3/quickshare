@@ -175,6 +175,12 @@ interface UploadPage {
     triggerFileInput(): void;
     toggleTextMode(): void;
     shareText(): void;
+    toggleCameraMode?(): void;
+    snapCamera?(): void;
+    closeCamera?(): void;
+    toggleVoiceMode?(): void;
+    startVoiceRecord?(): void;
+    stopVoiceRecord?(): void;
     copyLink(): void;
     copyMarkdown?(): void;
     copyHtml?(): void;

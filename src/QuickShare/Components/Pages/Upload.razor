@@ -81,6 +81,10 @@
             <input type="file" id="upload-folder-input" webkitdirectory multiple class="sr-only"
                    aria-label="@Loc["upload_folder_input_label"]" onchange="uploadPage.onFileInput(event)" />
 
+            @* Camera capture (#211) — mobile capture="environment" fallback when getUserMedia is unavailable *@
+            <input type="file" id="upload-camera-input" accept="image/*" capture="environment" class="sr-only"
+                   aria-label="@Loc["upload_camera_toggle"]" onchange="uploadPage.onFileInput(event)" />
+
             @* IDLE / DRAGGING *@
             <section id="upload-idle" class="section">
                 <h1 class="h1" id="upload-idle-h1">
@@ -130,6 +134,35 @@
                               placeholder="@Loc["upload_share_text_placeholder"]" maxlength="100000" />
                     <button type="button" data-slot="button" data-variant="default"
                             onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
+                </div>
+
+                @* Camera capture (#211) & Voice note recording (#224) *@
+                <div id="upload-media-capture" class="mt-2 flex flex-wrap justify-center gap-2">
+                    <button type="button" id="upload-camera-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="uploadPage.toggleCameraMode()" data-ai-action="upload.camera.toggle">@Loc["upload_camera_toggle"]</button>
+                    <button type="button" id="upload-voice-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="uploadPage.toggleVoiceMode()" data-ai-action="upload.voice.toggle">@Loc["upload_voice_toggle"]</button>
+                </div>
+
+                <div id="upload-camera-mode" class="hidden upload-text-mode">
+                    <video id="upload-camera-video" autoplay playsinline muted class="mx-auto max-h-60 w-full rounded border bg-black"></video>
+                    <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" id="upload-camera-snap-btn" data-slot="button" data-variant="default" data-size="sm"
+                                onclick="uploadPage.snapCamera()" data-ai-action="upload.camera.snap">@Loc["upload_camera_snap"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                onclick="uploadPage.closeCamera()" data-ai-action="upload.camera.close">@Loc["upload_camera_close"]</button>
+                    </div>
+                </div>
+
+                <div id="upload-voice-mode" class="hidden upload-text-mode">
+                    <p id="upload-voice-status" class="text-sm text-muted-foreground" role="status" aria-live="polite"
+                       data-ready="@Loc["upload_voice_ready"]" data-recording="@Loc["upload_voice_recording"]">@Loc["upload_voice_ready"]</p>
+                    <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" id="upload-voice-start-btn" data-slot="button" data-variant="default" data-size="sm"
+                                onclick="uploadPage.startVoiceRecord()" data-ai-action="upload.voice.start">@Loc["upload_voice_start"]</button>
+                        <button type="button" id="upload-voice-stop-btn" data-slot="button" data-variant="outline" data-size="sm" class="hidden"
+                                onclick="uploadPage.stopVoiceRecord()" data-ai-action="upload.voice.stop">@Loc["upload_voice_stop"]</button>
+                    </div>
                 </div>
 
                 @* Upload by email (issue #104) — signed-in accounts get a private forwarding

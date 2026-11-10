@@ -1,0 +1,73 @@
+@layout EmptyLayout
+@page "/widget/{Code}"
+@using QuickShare.Features.FileRequests.Get
+@using Microsoft.Extensions.Localization
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@* Embeddable upload widget (issue #101) — chromeless iframe drop-zone backed by FileRequest (#16). *@
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@(Request?.Title ?? Loc["request_title"])</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/shadcn.generated.css" />
+</head>
+<body class="bg-background p-4 text-foreground">
+    <main id="widget-dropzone" class="mx-auto max-w-md rounded-lg border bg-card p-5 shadow-xs">
+        @if (Request is null)
+        {
+            <h1 class="text-base font-semibold">@Loc["request_unavailable_title"]</h1>
+            <p class="mt-1 text-xs text-muted-foreground">@Loc["request_unavailable_body"]</p>
+        }
+        else if (Request.IsClosed)
+        {
+            <h1 class="text-base font-semibold">@Request.Title</h1>
+            <p class="mt-1 text-xs text-muted-foreground">@Loc["request_closed"]</p>
+        }
+        else
+        {
+            <div class="mb-3">
+                <h1 class="text-base font-semibold">@Request.Title</h1>
+                <p class="text-xs text-muted-foreground">@Loc["request_from", Request.OwnerName]</p>
+                @if (!string.IsNullOrWhiteSpace(Request.Message))
+                {
+                    <p class="mt-1 text-xs">@Request.Message</p>
+                }
+            </div>
+
+            <div class="space-y-3">
+                <Input Type="file" id="request-file" multiple aria-label="@Loc["request_choose"]" />
+                <button type="button" id="widget-upload-btn" data-slot="button" data-variant="default" class="w-full"
+                        onclick="requestUpload.send(this)"
+                        data-code="@Code"
+                        data-uploading="@Loc["request_uploading"]"
+                        data-done="@Loc["request_done"]"
+                        data-failed="@Loc["request_failed"]"
+                        data-ai-action="widget.upload">@Loc["request_send"]</button>
+                <p id="request-status" class="text-xs text-muted-foreground" role="status" aria-live="polite"></p>
+            </div>
+        }
+    </main>
+    <script src="/js/request-upload.js" defer></script>
+</body>
+</html>
+
+@code {
+    [Parameter]
+    public string Code { get; set; } = string.Empty;
+
+    private GetFileRequestResponse? Request { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Bus.Send<LightResults.Result<GetFileRequestResponse>>(
+            new GetFileRequestQuery(Code), CancellationToken.None);
+
+        if (result.IsSuccess(out var value))
+            Request = value;
+    }
+}

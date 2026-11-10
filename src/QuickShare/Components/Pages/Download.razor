@@ -823,7 +823,7 @@
         ? string.Empty
         : $"{FormatBytes(Info.FileSize)} · {(Info.ExpiresAt.HasValue ? ExpiryCountdown(Info.ExpiresAt.Value) : Loc["dl_expiry_none"])}";
     private string OgUrl => $"{RequestBase}{HttpContextAccessor.HttpContext!.Request.Path}{HttpContextAccessor.HttpContext.Request.QueryString}";
-    private string OgImageUrl => $"{RequestBase}/og-cover.svg";
+    private string OgImageUrl => $"{RequestBase}/api/downloads/{Uri.EscapeDataString(ShareCode)}/card.svg";
     private bool ShowViralCta => Info is not null && Info.SenderPlan is not (PlanTierLimits.Pro or PlanTierLimits.Studio);
 
     /// <summary>

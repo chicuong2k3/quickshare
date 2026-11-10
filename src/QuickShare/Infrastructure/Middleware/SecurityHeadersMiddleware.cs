@@ -19,6 +19,7 @@ public sealed class SecurityHeadersMiddleware
     private const string HstsValue = "max-age=31536000; includeSubDomains";
     private const string NoSniff = "nosniff";
     private const string AddinPathPrefix = "/addins";
+    private const string WidgetPathPrefix = "/widget";
     private const string ReferrerStrictOriginWhenCrossOrigin = "strict-origin-when-cross-origin";
     private const string PermissionsDefault =
         "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()";
@@ -60,7 +61,9 @@ public sealed class SecurityHeadersMiddleware
         // clickjacked.
         var policy = context.Request.Path.StartsWithSegments(AddinPathPrefix, StringComparison.OrdinalIgnoreCase)
             ? options.AddinContentSecurityPolicy
-            : options.ContentSecurityPolicy;
+            : context.Request.Path.StartsWithSegments(WidgetPathPrefix, StringComparison.OrdinalIgnoreCase)
+                ? options.WidgetContentSecurityPolicy
+                : options.ContentSecurityPolicy;
 
         if (!string.IsNullOrWhiteSpace(policy))
             context.Response.Headers[HttpHeaders.ContentSecurityPolicy] = policy;
@@ -107,6 +110,22 @@ public sealed class SecurityHeaderOptions
         "connect-src 'self' https:; " +
         "frame-ancestors https://outlook.office.com https://outlook.office365.com " +
             "https://outlook.live.com https://*.officeapps.live.com https://*.office.com; " +
+        "base-uri 'self'; " +
+        "form-action 'self'; " +
+        "object-src 'none'";
+
+    /// <summary>
+    /// Embeddable upload widget policy (issue #101). Allows external sites to frame <c>/widget/{code}</c>
+    /// while keeping scripts and styles locked to self.
+    /// </summary>
+    public string WidgetContentSecurityPolicy { get; set; } =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "font-src 'self' data:; " +
+        "img-src 'self' data: blob: https:; " +
+        "connect-src 'self' https:; " +
+        "frame-ancestors 'self' https: http:; " +
         "base-uri 'self'; " +
         "form-action 'self'; " +
         "object-src 'none'";

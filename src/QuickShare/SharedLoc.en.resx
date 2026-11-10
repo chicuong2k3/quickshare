@@ -2930,4 +2930,31 @@
   <data name="apidocs_ep_webhooks" xml:space="preserve">
     <value>Register or manage outbound webhooks</value>
   </data>
+  <data name="requests_copy_embed" xml:space="preserve">
+    <value>Copy iframe</value>
+  </data>
+  <data name="upload_camera_toggle" xml:space="preserve">
+    <value>Camera</value>
+  </data>
+  <data name="upload_camera_snap" xml:space="preserve">
+    <value>Snap &amp; upload</value>
+  </data>
+  <data name="upload_camera_close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="upload_voice_toggle" xml:space="preserve">
+    <value>Voice note</value>
+  </data>
+  <data name="upload_voice_ready" xml:space="preserve">
+    <value>Record a voice note to share as an encrypted audio clip.</value>
+  </data>
+  <data name="upload_voice_recording" xml:space="preserve">
+    <value>Recording… click Stop &amp; send when finished.</value>
+  </data>
+  <data name="upload_voice_start" xml:space="preserve">
+    <value>Start recording</value>
+  </data>
+  <data name="upload_voice_stop" xml:space="preserve">
+    <value>Stop &amp; send</value>
+  </data>
 </root>

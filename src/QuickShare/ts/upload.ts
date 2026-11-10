@@ -41,6 +41,9 @@
     }
 
     let breachTimer: number | null = null;
+    let cameraStream: MediaStream | null = null;
+    let voiceRecorder: MediaRecorder | null = null;
+    let voiceChunks: BlobPart[] = [];
 
     function hideBreach() {
         const el = document.getElementById('upload-password-breach');
@@ -435,6 +438,102 @@
             if (!ta || !ta.value || !ta.value.trim()) return;
             const file = new File([ta.value], 'snippet.txt', { type: 'text/plain;charset=utf-8' });
             startUpload(file, SOURCE_WEB);
+        },
+
+        toggleCameraMode: function () {
+            const panel = document.getElementById('upload-camera-mode');
+            const video = document.getElementById('upload-camera-video') as HTMLVideoElement | null;
+            if (!panel || !video) return;
+            if (!panel.classList.contains('hidden')) {
+                window.uploadPage!.closeCamera!();
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const fallback = document.getElementById('upload-camera-input') as HTMLInputElement | null;
+                if (fallback) fallback.click();
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+                .then(function (stream) {
+                    cameraStream = stream;
+                    video.srcObject = stream;
+                    panel.classList.remove('hidden');
+                })
+                .catch(function () {
+                    const fallback = document.getElementById('upload-camera-input') as HTMLInputElement | null;
+                    if (fallback) fallback.click();
+                });
+        },
+
+        snapCamera: function () {
+            const video = document.getElementById('upload-camera-video') as HTMLVideoElement | null;
+            if (!video || !video.videoWidth) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx2d = canvas.getContext('2d');
+            if (!ctx2d) return;
+            ctx2d.drawImage(video, 0, 0);
+            canvas.toBlob(function (blob) {
+                window.uploadPage!.closeCamera!();
+                if (!blob) return;
+                const file = new File([blob], 'capture-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                startUpload(file, SOURCE_WEB);
+            }, 'image/jpeg', 0.9);
+        },
+
+        closeCamera: function () {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(function (tr) { tr.stop(); });
+                cameraStream = null;
+            }
+            const video = document.getElementById('upload-camera-video') as HTMLVideoElement | null;
+            if (video) video.srcObject = null;
+            const panel = document.getElementById('upload-camera-mode');
+            if (panel) panel.classList.add('hidden');
+        },
+
+        toggleVoiceMode: function () {
+            const panel = document.getElementById('upload-voice-mode');
+            if (!panel) return;
+            panel.classList.toggle('hidden');
+        },
+
+        startVoiceRecord: function () {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') return;
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    voiceChunks = [];
+                    voiceRecorder = new MediaRecorder(stream);
+                    voiceRecorder.ondataavailable = function (ev) {
+                        if (ev.data && ev.data.size > 0) voiceChunks.push(ev.data);
+                    };
+                    voiceRecorder.onstop = function () {
+                        stream.getTracks().forEach(function (tr) { tr.stop(); });
+                        const statusEl = document.getElementById('upload-voice-status');
+                        if (statusEl) statusEl.textContent = statusEl.getAttribute('data-ready') || '';
+                        show('upload-voice-start-btn');
+                        hide('upload-voice-stop-btn');
+                        hide('upload-voice-mode');
+                        if (voiceChunks.length === 0) return;
+                        const mime = voiceRecorder && voiceRecorder.mimeType ? voiceRecorder.mimeType : 'audio/webm';
+                        const blob = new Blob(voiceChunks, { type: mime });
+                        const file = new File([blob], 'voice-note-' + Date.now() + '.webm', { type: mime });
+                        startUpload(file, SOURCE_WEB);
+                    };
+                    voiceRecorder.start();
+                    const statusEl = document.getElementById('upload-voice-status');
+                    if (statusEl) statusEl.textContent = statusEl.getAttribute('data-recording') || '';
+                    hide('upload-voice-start-btn');
+                    show('upload-voice-stop-btn');
+                })
+                .catch(function () { /* microphone refused */ });
+        },
+
+        stopVoiceRecord: function () {
+            if (voiceRecorder && voiceRecorder.state !== 'inactive') {
+                voiceRecorder.stop();
+            }
         },
 
         copyLink: function () {

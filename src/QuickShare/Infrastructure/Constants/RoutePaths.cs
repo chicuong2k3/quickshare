@@ -93,4 +93,6 @@ public static class RoutePaths
     public const string AccountPresets = "/account/presets";
     public const string ChangelogRss = "/changelog.xml";
     public const string ApiDocs = "/api-docs";
+    public const string WidgetPage = "/widget/";
+    public const string DeliveryCardRoute = "/api/downloads/{shareCode}/card.svg";
 }

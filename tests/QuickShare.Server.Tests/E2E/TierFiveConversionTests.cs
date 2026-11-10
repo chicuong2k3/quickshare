@@ -297,4 +297,131 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("id=\"apidocs-snippet-py\"", html);
         Assert.Contains("id=\"api-reference\"", html);
     }
+
+    [Fact]
+    public async Task EmbeddableWidget_RendersDropZone_WithFrameableCsp()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var reqCode = Guid.NewGuid().ToString("N")[..10];
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.FileRequests.Add(new FileRequest
+            {
+                Id = Guid.CreateVersion7(),
+                OwnerId = user.Id,
+                Code = reqCode,
+                Title = "Client Asset Drop",
+                Kind = FileRequestKind.Request,
+                MaxFiles = 20,
+                MaxTotalBytes = 100 * 1024 * 1024,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateClient();
+        var res = await client.GetAsync($"{RoutePaths.WidgetPage}{reqCode}");
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+
+        var csp = res.Headers.TryGetValues(HttpHeaders.ContentSecurityPolicy, out var vals)
+            ? string.Join(";", vals)
+            : string.Empty;
+        Assert.Contains("frame-ancestors 'self' https: http:", csp);
+
+        var html = await res.Content.ReadAsStringAsync();
+        Assert.Contains("id=\"widget-dropzone\"", html);
+        Assert.Contains("Client Asset Drop", html);
+        Assert.Contains("id=\"widget-upload-btn\"", html);
+    }
+
+    [Fact]
+    public async Task DeliveryCardEndpoint_RendersSvg_RespectsPendingApprovalAndPasswordGate()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var openCode = Guid.NewGuid().ToString("N")[..10];
+        var gatedCode = Guid.NewGuid().ToString("N")[..10];
+        var pendingCode = Guid.NewGuid().ToString("N")[..10];
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = user.Id,
+                    FileName = "brand-deck-2026.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 4096,
+                    TotalBytes = 4096,
+                    ShareCode = openCode,
+                    StoragePath = "stub/open",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = user.Id,
+                    FileName = "top-secret-acquisition.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 4096,
+                    TotalBytes = 4096,
+                    ShareCode = gatedCode,
+                    StoragePath = "stub/gated",
+                    PasswordHash = "hashed-pw",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = user.Id,
+                    FileName = "pending-review.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 4096,
+                    TotalBytes = 4096,
+                    ShareCode = pendingCode,
+                    StoragePath = "stub/pending",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.PendingApproval,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateClient();
+
+        var openRes = await client.GetAsync($"/api/downloads/{openCode}/card.svg");
+        Assert.Equal(HttpStatusCode.OK, openRes.StatusCode);
+        Assert.Contains("image/svg+xml", openRes.Content.Headers.ContentType?.ToString() ?? string.Empty);
+        var openSvg = await openRes.Content.ReadAsStringAsync();
+        Assert.Contains("brand-deck-2026.pdf", openSvg);
+
+        var gatedSvg = await client.GetStringAsync($"/api/downloads/{gatedCode}/card.svg");
+        Assert.DoesNotContain("top-secret-acquisition.pdf", gatedSvg);
+        Assert.Contains("Protected delivery", gatedSvg);
+
+        var pendingRes = await client.GetAsync($"/api/downloads/{pendingCode}/card.svg");
+        Assert.Equal(HttpStatusCode.NotFound, pendingRes.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadPage_RendersCameraCaptureAndVoiceNoteControls()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync(RoutePaths.Send);
+        Assert.Contains("id=\"upload-camera-toggle\"", html);
+        Assert.Contains("id=\"upload-camera-mode\"", html);
+        Assert.Contains("id=\"upload-voice-toggle\"", html);
+        Assert.Contains("id=\"upload-voice-mode\"", html);
+        Assert.Contains("id=\"upload-voice-start-btn\"", html);
+        Assert.Contains("id=\"upload-voice-stop-btn\"", html);
+    }
 }
