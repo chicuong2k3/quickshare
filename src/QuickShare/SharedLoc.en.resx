@@ -2846,4 +2846,88 @@
   <data name="pricing_calc_recommend_label" xml:space="preserve">
     <value>Recommended plan</value>
   </data>
+  <data name="dl_badge_verified" xml:space="preserve">
+    <value>Verified sender</value>
+  </data>
+  <data name="dl_badge_verified_tooltip" xml:space="preserve">
+    <value>Sent by a verified Pro or Studio account</value>
+  </data>
+  <data name="ps_countries" xml:space="preserve">
+    <value>Top countries</value>
+  </data>
+  <data name="account_usage_countries_title" xml:space="preserve">
+    <value>Downloads by country</value>
+  </data>
+  <data name="referral_milestones_title" xml:space="preserve">
+    <value>Invite milestones</value>
+  </data>
+  <data name="referral_badge_1" xml:space="preserve">
+    <value>1+ Invited</value>
+  </data>
+  <data name="referral_badge_5" xml:space="preserve">
+    <value>5+ Connector</value>
+  </data>
+  <data name="referral_badge_10" xml:space="preserve">
+    <value>10+ Champion</value>
+  </data>
+  <data name="referral_leaderboard_title" xml:space="preserve">
+    <value>Top inviters this month</value>
+  </data>
+  <data name="referral_leaderboard_empty" xml:space="preserve">
+    <value>No referrals recorded this month yet.</value>
+  </data>
+  <data name="apidocs_title" xml:space="preserve">
+    <value>API Reference &amp; Playground</value>
+  </data>
+  <data name="apidocs_subtitle" xml:space="preserve">
+    <value>Explore endpoints, generate cURL/JS/Python snippets, and test requests with your scoped API key.</value>
+  </data>
+  <data name="apidocs_playground_title" xml:space="preserve">
+    <value>Interactive API Playground</value>
+  </data>
+  <data name="apidocs_playground_hint" xml:space="preserve">
+    <value>Enter a real API key from your Developer dashboard to execute live requests.</value>
+  </data>
+  <data name="apidocs_key_label" xml:space="preserve">
+    <value>API Key (Bearer)</value>
+  </data>
+  <data name="apidocs_endpoint_label" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="apidocs_run_btn" xml:space="preserve">
+    <value>Send request</value>
+  </data>
+  <data name="apidocs_manage_keys" xml:space="preserve">
+    <value>Manage API keys</value>
+  </data>
+  <data name="apidocs_response_label" xml:space="preserve">
+    <value>Response</value>
+  </data>
+  <data name="apidocs_response_placeholder" xml:space="preserve">
+    <value>Click "Send request" to view the live HTTP status and JSON body.</value>
+  </data>
+  <data name="apidocs_ref_title" xml:space="preserve">
+    <value>Core Endpoints</value>
+  </data>
+  <data name="apidocs_ep_list_deliveries" xml:space="preserve">
+    <value>List deliveries</value>
+  </data>
+  <data name="apidocs_ep_list_presets" xml:space="preserve">
+    <value>List upload presets</value>
+  </data>
+  <data name="apidocs_ep_list_keys" xml:space="preserve">
+    <value>List API keys</value>
+  </data>
+  <data name="apidocs_ep_list_webhooks" xml:space="preserve">
+    <value>List webhook endpoints</value>
+  </data>
+  <data name="apidocs_ep_download_info" xml:space="preserve">
+    <value>Fetch delivery metadata and version history</value>
+  </data>
+  <data name="apidocs_ep_download_version" xml:space="preserve">
+    <value>Download a specific file version</value>
+  </data>
+  <data name="apidocs_ep_webhooks" xml:space="preserve">
+    <value>Register or manage outbound webhooks</value>
+  </data>
 </root>

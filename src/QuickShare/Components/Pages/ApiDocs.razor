@@ -1,0 +1,129 @@
+@layout MainLayout
+@page "/api-docs"
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@* Interactive API playground & SDK reference (issues #185, #281). *@
+
+<PageTitle>@Loc["apidocs_title"]</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Loc["apidocs_subtitle"]" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <section class="hero mb-6">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["apidocs_title"]</h1>
+        <p class="text-muted-foreground">@Loc["apidocs_subtitle"]</p>
+    </section>
+
+    <Card id="api-playground" class="p-6">
+        <CardContent>
+            <h2 class="text-xl font-semibold">@Loc["apidocs_playground_title"]</h2>
+            <p class="mt-1 text-sm text-muted-foreground">@Loc["apidocs_playground_hint"]</p>
+
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <label class="block">
+                    <span class="text-sm font-medium">@Loc["apidocs_key_label"]</span>
+                    <Input id="apidocs-api-key" Type="password" placeholder="qs_live_..." autocomplete="off" oninput="window.quickShareApiDocs.updateSnippets()" />
+                </label>
+
+                <label class="block">
+                    <span class="text-sm font-medium">@Loc["apidocs_endpoint_label"]</span>
+                    <NativeSelect id="apidocs-endpoint" onchange="window.quickShareApiDocs.updateSnippets()">
+                        <NativeSelectOption value="GET|/api/deliveries">@Loc["apidocs_ep_list_deliveries"] (GET /api/deliveries)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/presets">@Loc["apidocs_ep_list_presets"] (GET /api/presets)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/developer/keys">@Loc["apidocs_ep_list_keys"] (GET /api/developer/keys)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/developer/webhooks">@Loc["apidocs_ep_list_webhooks"] (GET /api/developer/webhooks)</NativeSelectOption>
+                    </NativeSelect>
+                </label>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" id="apidocs-run-btn" data-slot="button" data-variant="default" onclick="window.quickShareApiDocs.run()" data-ai-action="apidocs.run">
+                    @Loc["apidocs_run_btn"]
+                </button>
+                <a href="@RoutePaths.AccountDeveloper" data-slot="button" data-variant="outline" data-ai-action="apidocs.manageKeys">
+                    @Loc["apidocs_manage_keys"]
+                </a>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-3">
+                <div>
+                    <p class="mb-1 text-xs font-semibold uppercase text-muted-foreground">cURL</p>
+                    <pre id="apidocs-snippet-curl" class="overflow-x-auto rounded border bg-muted/40 p-3 font-mono text-xs">curl -H "Authorization: Bearer &lt;API_KEY&gt;" https://quicksharecloud.com/api/deliveries</pre>
+                </div>
+                <div>
+                    <p class="mb-1 text-xs font-semibold uppercase text-muted-foreground">JavaScript (fetch)</p>
+                    <pre id="apidocs-snippet-js" class="overflow-x-auto rounded border bg-muted/40 p-3 font-mono text-xs">fetch('/api/deliveries', { headers: { Authorization: 'Bearer &lt;API_KEY&gt;' } })</pre>
+                </div>
+                <div>
+                    <p class="mb-1 text-xs font-semibold uppercase text-muted-foreground">Python (requests)</p>
+                    <pre id="apidocs-snippet-py" class="overflow-x-auto rounded border bg-muted/40 p-3 font-mono text-xs">requests.get('https://quicksharecloud.com/api/deliveries', headers={'Authorization': 'Bearer &lt;API_KEY&gt;'})</pre>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <p class="mb-1 text-xs font-semibold uppercase text-muted-foreground">@Loc["apidocs_response_label"]</p>
+                <pre id="apidocs-response" class="max-h-80 overflow-auto rounded border bg-muted/40 p-3 font-mono text-xs" role="status" aria-live="polite">@Loc["apidocs_response_placeholder"]</pre>
+            </div>
+        </CardContent>
+    </Card>
+
+    <Card id="api-reference" class="mt-6 p-6">
+        <CardContent>
+            <h2 class="text-xl font-semibold">@Loc["apidocs_ref_title"]</h2>
+            <ul class="mt-3 space-y-2 text-sm">
+                <li><code class="font-mono font-semibold">GET /api/deliveries</code> — @Loc["apidocs_ep_list_deliveries"]</li>
+                <li><code class="font-mono font-semibold">GET /api/downloads/{shareCode}/info</code> — @Loc["apidocs_ep_download_info"]</li>
+                <li><code class="font-mono font-semibold">GET /api/downloads/{shareCode}/versions/{version}</code> — @Loc["apidocs_ep_download_version"]</li>
+                <li><code class="font-mono font-semibold">GET /api/presets</code> — @Loc["apidocs_ep_list_presets"]</li>
+                <li><code class="font-mono font-semibold">POST /api/developer/webhooks</code> — @Loc["apidocs_ep_webhooks"]</li>
+            </ul>
+        </CardContent>
+    </Card>
+</PageWrapper>
+
+<script>
+    window.quickShareApiDocs = {
+        updateSnippets: function () {
+            var sel = document.getElementById('apidocs-endpoint');
+            var keyEl = document.getElementById('apidocs-api-key');
+            if (!sel) return;
+            var parts = (sel.value || 'GET|/api/deliveries').split('|');
+            var method = parts[0] || 'GET';
+            var path = parts[1] || '/api/deliveries';
+            var token = (keyEl && keyEl.value) ? keyEl.value.trim() : '<API_KEY>';
+            var origin = window.location.origin || 'https://quicksharecloud.com';
+
+            var curlEl = document.getElementById('apidocs-snippet-curl');
+            var jsEl = document.getElementById('apidocs-snippet-js');
+            var pyEl = document.getElementById('apidocs-snippet-py');
+
+            if (curlEl) curlEl.textContent = 'curl -X ' + method + ' -H "Authorization: Bearer ' + token + '" "' + origin + path + '"';
+            if (jsEl) jsEl.textContent = "fetch('" + path + "', { method: '" + method + "', headers: { Authorization: 'Bearer " + token + "' } }).then(r => r.json())";
+            if (pyEl) pyEl.textContent = "requests.request('" + method + "', '" + origin + path + "', headers={'Authorization': 'Bearer " + token + "'})";
+        },
+        run: async function () {
+            var sel = document.getElementById('apidocs-endpoint');
+            var keyEl = document.getElementById('apidocs-api-key');
+            var outEl = document.getElementById('apidocs-response');
+            if (!sel || !outEl) return;
+
+            var parts = (sel.value || 'GET|/api/deliveries').split('|');
+            var method = parts[0] || 'GET';
+            var path = parts[1] || '/api/deliveries';
+            var headers = { 'Accept': 'application/json' };
+            if (keyEl && keyEl.value.trim()) {
+                headers['Authorization'] = 'Bearer ' + keyEl.value.trim();
+            }
+
+            outEl.textContent = '...';
+            try {
+                var res = await fetch(path, { method: method, headers: headers, credentials: 'same-origin' });
+                var text = await res.text();
+                outEl.textContent = 'HTTP ' + res.status + '\n\n' + text;
+            } catch (err) {
+                outEl.textContent = String(err);
+            }
+        }
+    };
+</script>

@@ -30,7 +30,9 @@ public record DownloadInfoResponse(
     bool PrivacyMode,
     bool EmailOtpEnabled,
     bool RequireRecipientEmail,
-    IReadOnlyList<VersionInfo>? Versions = null
+    IReadOnlyList<VersionInfo>? Versions = null,
+    bool VerifiedSender = false,
+    string? SenderDisplayName = null
 );
 
 public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, DeliveryAccessService access)
@@ -87,6 +89,12 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                 }
 
                 var senderPlan = string.IsNullOrEmpty(delivery.Sender?.Plan) ? PlanTierLimits.Anonymous : delivery.Sender.Plan;
+                var isVerifiedSender = !delivery.PrivacyMode
+                    && delivery.Sender is not null
+                    && senderPlan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+                var senderDisplayName = isVerifiedSender && !string.IsNullOrWhiteSpace(delivery.Sender?.Name)
+                    ? delivery.Sender.Name
+                    : null;
 
                 // Version history (issue #110): include past versions so the download page can render a picker.
                 var versions = await db.DeliveryVersions
@@ -119,7 +127,9 @@ public sealed class DownloadInfoHandler(AppDbContext db, CacheService cache, Del
                     PrivacyMode: delivery.PrivacyMode,
                     EmailOtpEnabled: delivery.EmailOtpEnabled,
                     RequireRecipientEmail: delivery.RequireRecipientEmail,
-                    Versions: versions.Count > 0 ? versions : null
+                    Versions: versions.Count > 0 ? versions : null,
+                    VerifiedSender: isVerifiedSender,
+                    SenderDisplayName: senderDisplayName
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

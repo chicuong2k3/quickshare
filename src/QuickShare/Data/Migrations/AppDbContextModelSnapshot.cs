@@ -716,6 +716,10 @@ namespace QuickShare.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CountryCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.Property<Guid>("DeliveryId")
                         .HasColumnType("uuid");
 

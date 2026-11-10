@@ -14,4 +14,6 @@ public record DownloadTracking
     public string? RecipientEmail { get; set; }
     /// <summary>Whether the recipient opted into marketing when surrendering their email (#324).</summary>
     public bool MarketingConsent { get; set; }
+    /// <summary>Two-letter ISO 3166-1 country code from CF-IPCountry header (issue #267); null when absent.</summary>
+    public string? CountryCode { get; set; }
 }

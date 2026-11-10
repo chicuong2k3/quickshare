@@ -1,14 +1,24 @@
 using System.Net;
+using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
+using QuickShare.Data;
+using QuickShare.Data.Entities;
+using QuickShare.Features.Downloads.Info;
+using QuickShare.Features.Downloads.PublicStats;
 using QuickShare.Infrastructure.Constants;
 
 namespace QuickShare.Server.Tests.E2E;
 
 /// <summary>
-/// Tier 5 conversion & distribution features:
+/// Tier 5 conversion, trust &amp; developer features:
 /// - #130 wider share sheet (X, LinkedIn, Threads, Telegram, Email + copy Markdown/HTML)
 /// - #135 live social proof on landing page
 /// - #169 pricing calculator on pricing page
 /// - #207 changelog RSS 2.0 feed + alternate link discovery
+/// - #160 verified sender badge on delivery page for Pro/Studio (suppressed on Free &amp; PrivacyMode)
+/// - #267 download geolocation (CountryCode on DownloadTracking, PublicStats &amp; CSV export)
+/// - #209 referral milestones &amp; monthly leaderboard on /account/referral
+/// - #185/#281 interactive API playground &amp; SDK reference on /api-docs
 /// </summary>
 public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
 {
@@ -83,5 +93,208 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         var html = WebUtility.HtmlDecode(await pageRes.Content.ReadAsStringAsync());
         Assert.Contains("type=\"application/rss+xml\"", html);
         Assert.Contains(RoutePaths.ChangelogRss, html);
+    }
+
+    [Fact]
+    public async Task VerifiedSenderBadge_ShownForPro_HiddenForFreeAndPrivacyMode()
+    {
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+
+        var freeKey = Guid.CreateVersion7().ToString();
+        var freeUser = await _factory.SeedUserAsync(freeKey, PlanTierLimits.Free);
+
+        string proCode;
+        string proPrivateCode;
+        string freeCode;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            proCode = Guid.NewGuid().ToString("N")[..10];
+            proPrivateCode = Guid.NewGuid().ToString("N")[..10];
+            freeCode = Guid.NewGuid().ToString("N")[..10];
+
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = proUser.Id,
+                    FileName = "pro-verified.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 1024,
+                    TotalBytes = 1024,
+                    ShareCode = proCode,
+                    StoragePath = "stub/pro",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                    PrivacyMode = false,
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = proUser.Id,
+                    FileName = "pro-private.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 1024,
+                    TotalBytes = 1024,
+                    ShareCode = proPrivateCode,
+                    StoragePath = "stub/pro-priv",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                    PrivacyMode = true,
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = freeUser.Id,
+                    FileName = "free.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 1024,
+                    TotalBytes = 1024,
+                    ShareCode = freeCode,
+                    StoragePath = "stub/free",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                    PrivacyMode = false,
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateClient();
+
+        var proPage = await client.GetStringAsync($"/d/{proCode}");
+        Assert.Contains("id=\"dl-badge-verified\"", proPage);
+        Assert.Contains("\"verifiedSender\":true", proPage);
+
+        var privPage = await client.GetStringAsync($"/d/{proPrivateCode}");
+        Assert.DoesNotContain("id=\"dl-badge-verified\"", privPage);
+        Assert.Contains("\"verifiedSender\":false", privPage);
+
+        var freePage = await client.GetStringAsync($"/d/{freeCode}");
+        Assert.DoesNotContain("id=\"dl-badge-verified\"", freePage);
+        Assert.Contains("\"verifiedSender\":false", freePage);
+    }
+
+    [Fact]
+    public async Task DownloadGeolocation_AggregatesCountryInPublicStats_AndExportsCountryColumn()
+    {
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+        var shareCode = Guid.NewGuid().ToString("N")[..10];
+        var deliveryId = Guid.CreateVersion7();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = deliveryId,
+                SenderId = proUser.Id,
+                FileName = "geo-report.pdf",
+                ContentType = "application/pdf",
+                FileSize = 2048,
+                TotalBytes = 2048,
+                ShareCode = shareCode,
+                StoragePath = "stub/geo",
+                MaxDownloads = 50,
+                Status = DeliveryStatus.Active,
+                PublicStatsEnabled = true,
+                ExpiresAt = DateTime.UtcNow.AddDays(5),
+            });
+
+            db.DownloadTrackings.AddRange(
+                new DownloadTracking
+                {
+                    Id = Guid.CreateVersion7(),
+                    DeliveryId = deliveryId,
+                    IpAddress = "203.0.113.10",
+                    DownloadedAt = DateTime.UtcNow.AddMinutes(-10),
+                    CountryCode = "VN",
+                },
+                new DownloadTracking
+                {
+                    Id = Guid.CreateVersion7(),
+                    DeliveryId = deliveryId,
+                    IpAddress = "203.0.113.11",
+                    DownloadedAt = DateTime.UtcNow.AddMinutes(-5),
+                    CountryCode = "VN",
+                },
+                new DownloadTracking
+                {
+                    Id = Guid.CreateVersion7(),
+                    DeliveryId = deliveryId,
+                    IpAddress = "198.51.100.7",
+                    DownloadedAt = DateTime.UtcNow.AddMinutes(-2),
+                    CountryCode = "US",
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var anonClient = _factory.CreateClient();
+        var stats = await anonClient.GetFromJsonAsync<PublicStatsResponse>($"/api/deliveries/{shareCode}/public-stats");
+        Assert.NotNull(stats);
+        Assert.NotNull(stats.Countries);
+        Assert.Equal(2, stats.Countries.Count);
+        Assert.Equal("VN", stats.Countries[0].CountryCode);
+        Assert.Equal(2, stats.Countries[0].Count);
+        Assert.Equal("US", stats.Countries[1].CountryCode);
+        Assert.Equal(1, stats.Countries[1].Count);
+
+        var statsHtml = await anonClient.GetStringAsync($"/d/{shareCode}/stats");
+        Assert.Contains("id=\"ps-countries\"", statsHtml);
+        Assert.Contains("VN", statsHtml);
+
+        var proClient = _factory.CreateAuthenticatedClient(proKey);
+        var csv = await proClient.GetStringAsync("/api/deliveries/export?days=30");
+        Assert.Contains("ShareCode,FileName,DownloadedAt,IpHash,Country", csv);
+        Assert.Contains("\"VN\"", csv);
+        Assert.Contains("\"US\"", csv);
+    }
+
+    [Fact]
+    public async Task ReferralPage_RendersMilestonesAndLeaderboard()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Free);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.ReferralEvents.Add(new ReferralEvent
+            {
+                Id = Guid.CreateVersion7(),
+                ReferrerUserId = user.Id,
+                ReferredUserId = Guid.CreateVersion7(),
+                Type = ReferralEventTypes.Rewarded,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+        var html = await client.GetStringAsync(RoutePaths.AccountReferral);
+        Assert.Contains("id=\"referral-milestones\"", html);
+        Assert.Contains("id=\"referral-leaderboard\"", html);
+    }
+
+    [Fact]
+    public async Task ApiDocsPage_RendersInteractivePlaygroundAndSdkSnippets()
+    {
+        var client = _factory.CreateClient();
+        var res = await client.GetAsync(RoutePaths.ApiDocs);
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+
+        var html = await res.Content.ReadAsStringAsync();
+        Assert.Contains("id=\"api-playground\"", html);
+        Assert.Contains("id=\"apidocs-api-key\"", html);
+        Assert.Contains("id=\"apidocs-endpoint\"", html);
+        Assert.Contains("id=\"apidocs-snippet-curl\"", html);
+        Assert.Contains("id=\"apidocs-snippet-js\"", html);
+        Assert.Contains("id=\"apidocs-snippet-py\"", html);
+        Assert.Contains("id=\"api-reference\"", html);
     }
 }

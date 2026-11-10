@@ -179,6 +179,15 @@
                         </div>
 
                         <div class="badges">
+                            @if (Info?.VerifiedSender == true)
+                            {
+                                <div id="dl-badge-verified" class="badge --sovereign" title="@Loc["dl_badge_verified_tooltip"]" role="status">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    <span>@Loc["dl_badge_verified"]@(string.IsNullOrEmpty(Info.SenderDisplayName) ? string.Empty : $" · {Info.SenderDisplayName}")</span>
+                                </div>
+                            }
                             <div id="dl-badge-encrypted" class="badge --encrypted hidden">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
@@ -1045,7 +1054,9 @@
                 PrivacyMode = value.PrivacyMode,
                 EmailOtpEnabled = value.EmailOtpEnabled,
                 RequireRecipientEmail = value.RequireRecipientEmail,
-                Versions = value.Versions
+                Versions = value.Versions,
+                VerifiedSender = value.VerifiedSender,
+                SenderDisplayName = value.SenderDisplayName
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -1119,5 +1130,7 @@
         public bool EmailOtpEnabled { get; set; }
         public bool RequireRecipientEmail { get; set; }
         public IReadOnlyList<VersionInfo>? Versions { get; set; }
+        public bool VerifiedSender { get; set; }
+        public string? SenderDisplayName { get; set; }
     }
 }

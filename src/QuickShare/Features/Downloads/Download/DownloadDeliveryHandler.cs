@@ -309,6 +309,7 @@ public sealed class DownloadDeliveryHandler(
                                 UserId = trackUserId,
                                 RecipientEmail = delivery.RequireRecipientEmail ? query.RecipientEmail?.Trim() : null,
                                 MarketingConsent = delivery.RequireRecipientEmail && query.MarketingConsent,
+                                CountryCode = analyticsContext.CountryCode,
                             });
                         }
 

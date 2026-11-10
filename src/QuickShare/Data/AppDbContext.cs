@@ -190,6 +190,7 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("download_tracking");
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.CountryCode).HasMaxLength(2);
             entity.HasIndex(e => e.DeliveryId);
             entity.HasIndex(e => e.DownloadedAt);
             entity.HasIndex(e => e.Notified);

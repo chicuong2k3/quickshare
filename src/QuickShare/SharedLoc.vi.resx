@@ -2846,4 +2846,88 @@
   <data name="pricing_calc_recommend_label" xml:space="preserve">
     <value>Gói khuyên dùng</value>
   </data>
+  <data name="dl_badge_verified" xml:space="preserve">
+    <value>Người gửi đã xác minh</value>
+  </data>
+  <data name="dl_badge_verified_tooltip" xml:space="preserve">
+    <value>Được gửi từ tài khoản Pro hoặc Studio đã xác minh</value>
+  </data>
+  <data name="ps_countries" xml:space="preserve">
+    <value>Quốc gia hàng đầu</value>
+  </data>
+  <data name="account_usage_countries_title" xml:space="preserve">
+    <value>Lượt tải theo quốc gia</value>
+  </data>
+  <data name="referral_milestones_title" xml:space="preserve">
+    <value>Cột mốc giới thiệu</value>
+  </data>
+  <data name="referral_badge_1" xml:space="preserve">
+    <value>1+ Đã mời</value>
+  </data>
+  <data name="referral_badge_5" xml:space="preserve">
+    <value>5+ Kết nối</value>
+  </data>
+  <data name="referral_badge_10" xml:space="preserve">
+    <value>10+ Đại sứ</value>
+  </data>
+  <data name="referral_leaderboard_title" xml:space="preserve">
+    <value>Top giới thiệu tháng này</value>
+  </data>
+  <data name="referral_leaderboard_empty" xml:space="preserve">
+    <value>Chưa có lượt giới thiệu nào trong tháng này.</value>
+  </data>
+  <data name="apidocs_title" xml:space="preserve">
+    <value>Tài liệu API &amp; Playground</value>
+  </data>
+  <data name="apidocs_subtitle" xml:space="preserve">
+    <value>Khám phá endpoint, tạo mã mẫu cURL/JS/Python và thử nghiệm trực tiếp bằng API key của bạn.</value>
+  </data>
+  <data name="apidocs_playground_title" xml:space="preserve">
+    <value>API Playground tương tác</value>
+  </data>
+  <data name="apidocs_playground_hint" xml:space="preserve">
+    <value>Nhập API key từ bảng điều khiển Nhà phát triển để chạy truy vấn trực tiếp.</value>
+  </data>
+  <data name="apidocs_key_label" xml:space="preserve">
+    <value>API Key (Bearer)</value>
+  </data>
+  <data name="apidocs_endpoint_label" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="apidocs_run_btn" xml:space="preserve">
+    <value>Gửi yêu cầu</value>
+  </data>
+  <data name="apidocs_manage_keys" xml:space="preserve">
+    <value>Quản lý API key</value>
+  </data>
+  <data name="apidocs_response_label" xml:space="preserve">
+    <value>Phản hồi</value>
+  </data>
+  <data name="apidocs_response_placeholder" xml:space="preserve">
+    <value>Nhấn "Gửi yêu cầu" để xem mã trạng thái HTTP và phản hồi JSON trực tiếp.</value>
+  </data>
+  <data name="apidocs_ref_title" xml:space="preserve">
+    <value>Các Endpoint chính</value>
+  </data>
+  <data name="apidocs_ep_list_deliveries" xml:space="preserve">
+    <value>Danh sách liên kết chia sẻ</value>
+  </data>
+  <data name="apidocs_ep_list_presets" xml:space="preserve">
+    <value>Danh sách mẫu cấu hình tải lên</value>
+  </data>
+  <data name="apidocs_ep_list_keys" xml:space="preserve">
+    <value>Danh sách API key</value>
+  </data>
+  <data name="apidocs_ep_list_webhooks" xml:space="preserve">
+    <value>Danh sách webhook endpoint</value>
+  </data>
+  <data name="apidocs_ep_download_info" xml:space="preserve">
+    <value>Lấy thông tin tệp và lịch sử phiên bản</value>
+  </data>
+  <data name="apidocs_ep_download_version" xml:space="preserve">
+    <value>Tải xuống phiên bản tệp cụ thể</value>
+  </data>
+  <data name="apidocs_ep_webhooks" xml:space="preserve">
+    <value>Đăng ký hoặc quản lý webhook</value>
+  </data>
 </root>

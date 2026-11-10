@@ -20,6 +20,43 @@
         <p class="mt-3 text-sm text-muted-foreground">
             @Loc["referral_stats", referredCount.ToString(), bonusText]
         </p>
+
+        @* Referral milestones & monthly leaderboard (#209) *@
+        <div id="referral-milestones" class="mt-5 border-t pt-4">
+            <h4 class="mb-2 text-sm font-semibold">@Loc["referral_milestones_title"]</h4>
+            <div class="flex flex-wrap gap-2">
+                <span class="rounded border px-2 py-0.5 font-mono text-xs @(referredCount >= 1 ? "border-primary bg-primary/10 text-primary font-semibold" : "text-muted-foreground")">
+                    @(referredCount >= 1 ? "✓ " : string.Empty)@Loc["referral_badge_1"]
+                </span>
+                <span class="rounded border px-2 py-0.5 font-mono text-xs @(referredCount >= 5 ? "border-primary bg-primary/10 text-primary font-semibold" : "text-muted-foreground")">
+                    @(referredCount >= 5 ? "✓ " : string.Empty)@Loc["referral_badge_5"]
+                </span>
+                <span class="rounded border px-2 py-0.5 font-mono text-xs @(referredCount >= 10 ? "border-primary bg-primary/10 text-primary font-semibold" : "text-muted-foreground")">
+                    @(referredCount >= 10 ? "✓ " : string.Empty)@Loc["referral_badge_10"]
+                </span>
+            </div>
+        </div>
+
+        <div id="referral-leaderboard" class="mt-5 border-t pt-4">
+            <h4 class="mb-2 text-sm font-semibold">@Loc["referral_leaderboard_title"]</h4>
+            @if (leaders.Count == 0)
+            {
+                <p class="text-xs text-muted-foreground">@Loc["referral_leaderboard_empty"]</p>
+            }
+            else
+            {
+                <ol class="space-y-1 text-sm">
+                    @for (var i = 0; i < leaders.Count; i++)
+                    {
+                        var entry = leaders[i];
+                        <li class="flex justify-between gap-3 py-0.5">
+                            <span class="font-mono">#@(i + 1) @entry.MaskedCode</span>
+                            <span class="font-mono tabular-nums text-muted-foreground">@entry.Count</span>
+                        </li>
+                    }
+                </ol>
+            }
+        </div>
 </Card>
 
 <script>
@@ -35,9 +72,12 @@
 </script>
 
 @code {
+    private sealed record LeaderEntry(string MaskedCode, int Count);
+
     private string referralCode = string.Empty;
     private int referredCount;
     private string bonusText = string.Empty;
+    private List<LeaderEntry> leaders = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,6 +90,38 @@
                 .AsNoTracking()
                 .CountAsync(e => e.ReferrerUserId == user.Id && e.Type == ReferralEventTypes.Rewarded);
             bonusText = FormatBytes(user.BonusQuotaBytes);
+
+            var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var rawEvents = await Db.ReferralEvents
+                .AsNoTracking()
+                .Where(e => e.Type == ReferralEventTypes.Rewarded && e.CreatedAt >= monthStart)
+                .Select(e => e.ReferrerUserId)
+                .ToListAsync();
+
+            var topGroups = rawEvents
+                .GroupBy(id => id)
+                .Select(g => new { UserId = g.Key, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(10)
+                .ToList();
+
+            if (topGroups.Count > 0)
+            {
+                var topUserIds = topGroups.Select(g => g.UserId).ToList();
+                var codes = await Db.Users
+                    .AsNoTracking()
+                    .Where(u => topUserIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.ReferralCode })
+                    .ToDictionaryAsync(u => u.Id, u => u.ReferralCode);
+
+                leaders = topGroups.Select(g =>
+                {
+                    codes.TryGetValue(g.UserId, out var code);
+                    var raw = string.IsNullOrEmpty(code) ? g.UserId.ToString("N")[..8] : code;
+                    var prefix = raw.Length >= 4 ? raw[..4] : raw;
+                    return new LeaderEntry($"{prefix}••••", g.Count);
+                }).ToList();
+            }
         }
         catch
         {

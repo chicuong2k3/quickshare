@@ -55,8 +55,29 @@
                 @foreach (var dl in recentDownloads)
                 {
                     <li class="flex justify-between gap-3 py-1 text-sm">
-                        <span class="min-w-0 truncate" title="@dl.FileName">@dl.FileName</span>
+                        <span class="min-w-0 truncate" title="@dl.FileName">
+                            @dl.FileName
+                            @if (!string.IsNullOrEmpty(dl.CountryCode))
+                            {
+                                <span class="ml-1 font-mono text-xs text-muted-foreground">[@dl.CountryCode]</span>
+                            }
+                        </span>
                         <span class="whitespace-nowrap font-mono tabular-nums text-muted-foreground">@dl.DownloadedAt.ToLocalTime().ToString("g")</span>
+                    </li>
+                }
+            </ul>
+        }
+
+        @* Download geolocation breakdown (issue #267) *@
+        @if (countryBreakdown.Count > 0)
+        {
+            <h4 class="mb-2 mt-5 font-semibold">@Loc["account_usage_countries_title"]</h4>
+            <ul id="usage-country-list" class="mb-3">
+                @foreach (var c in countryBreakdown)
+                {
+                    <li class="flex justify-between gap-3 py-1 text-sm">
+                        <span class="font-mono">@c.CountryCode</span>
+                        <span class="font-mono tabular-nums text-muted-foreground">@c.Count</span>
                     </li>
                 }
             </ul>
@@ -68,10 +89,12 @@
     private const int RateLimitPerMinute = 1500;
 
     private sealed record LargestFile(string FileName, long FileSize);
-    private sealed record RecentDownload(string FileName, DateTime DownloadedAt);
+    private sealed record RecentDownload(string FileName, DateTime DownloadedAt, string? CountryCode);
+    private sealed record CountryBreakdown(string CountryCode, int Count);
 
     private List<LargestFile> largest = [];
     private List<RecentDownload> recentDownloads = [];
+    private List<CountryBreakdown> countryBreakdown = [];
     private bool unlimited;
     private int pct;
     private int barWidth;
@@ -100,8 +123,24 @@
                 join d in Db.Deliveries on t.DeliveryId equals d.Id
                 where d.SenderId == user.Id
                 orderby t.DownloadedAt descending
-                select new RecentDownload(d.FileName, t.DownloadedAt)
+                select new RecentDownload(d.FileName, t.DownloadedAt, t.CountryCode)
             ).AsNoTracking().Take(5).ToListAsync();
+
+            // Geolocation breakdown (issue #267) — top recipient countries.
+            var rawCountries = await (
+                from t in Db.DownloadTrackings
+                join d in Db.Deliveries on t.DeliveryId equals d.Id
+                where d.SenderId == user.Id && t.CountryCode != null && t.CountryCode != string.Empty
+                select t.CountryCode
+            ).AsNoTracking().ToListAsync();
+
+            countryBreakdown = rawCountries
+                .GroupBy(c => c!)
+                .Select(g => new CountryBreakdown(g.Key, g.Count()))
+                .OrderByDescending(c => c.Count)
+                .ThenBy(c => c.CountryCode)
+                .Take(10)
+                .ToList();
 
             var quota = PlanTierLimits.GetMonthlyQuota(user.Plan);
             if (quota is null)

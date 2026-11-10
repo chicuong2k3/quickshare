@@ -92,4 +92,5 @@ public static class RoutePaths
     /// <summary>Upload presets management page (issue #100).</summary>
     public const string AccountPresets = "/account/presets";
     public const string ChangelogRss = "/changelog.xml";
+    public const string ApiDocs = "/api-docs";
 }

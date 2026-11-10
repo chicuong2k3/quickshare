@@ -33,11 +33,11 @@ public sealed class ExportDeliveriesHandler(AppDbContext db, IHttpContextAccesso
             join d in db.Deliveries on t.DeliveryId equals d.Id
             where d.SenderId == user.Id && t.DownloadedAt >= cutoff
             orderby t.DownloadedAt descending
-            select new { d.ShareCode, d.FileName, t.DownloadedAt, t.IpAddress }
+            select new { d.ShareCode, d.FileName, t.DownloadedAt, t.IpAddress, t.CountryCode }
         ).AsNoTracking().ToListAsync(cancellationToken);
 
         var csv = new StringBuilder();
-        csv.AppendLine("ShareCode,FileName,DownloadedAt,IpHash");
+        csv.AppendLine("ShareCode,FileName,DownloadedAt,IpHash,Country");
         foreach (var row in rows)
         {
             csv.Append(Csv(row.ShareCode));
@@ -47,6 +47,8 @@ public sealed class ExportDeliveriesHandler(AppDbContext db, IHttpContextAccesso
             csv.Append(Csv(row.DownloadedAt.ToString("o")));
             csv.Append(',');
             csv.Append(HashIp(row.IpAddress));
+            csv.Append(',');
+            csv.Append(Csv(row.CountryCode));
             csv.AppendLine();
         }
 

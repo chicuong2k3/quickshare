@@ -7,13 +7,16 @@ public record PublicStatsQuery(string ShareCode) : IRequest<Result<PublicStatsRe
 
 public record DailyStat(string Day, int Count);
 
+public record CountryStat(string CountryCode, int Count);
+
 public record PublicStatsResponse(
     string FileName,
     long FileSize,
     int TotalDownloads,
     int UniqueVisitors,
     DateTime? FirstDownloadedAt,
-    IReadOnlyList<DailyStat> Timeline
+    IReadOnlyList<DailyStat> Timeline,
+    IReadOnlyList<CountryStat>? Countries = null
 );
 
 /// <summary>
@@ -55,7 +58,7 @@ public sealed class PublicStatsHandler(AppDbContext db, CacheService cache)
                 var trackings = await db.DownloadTrackings
                     .AsNoTracking()
                     .Where(t => t.DeliveryId == delivery.Id)
-                    .Select(t => new { t.DownloadedAt, t.IpAddress })
+                    .Select(t => new { t.DownloadedAt, t.IpAddress, t.CountryCode })
                     .ToListAsync(ct2);
 
                 var today = DateTime.UtcNow.Date;
@@ -64,13 +67,23 @@ public sealed class PublicStatsHandler(AppDbContext db, CacheService cache)
                     .Select(day => new DailyStat(day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), trackings.Count(t => t.DownloadedAt.Date == day)))
                     .ToList();
 
+                var countries = trackings
+                    .Where(t => !string.IsNullOrEmpty(t.CountryCode))
+                    .GroupBy(t => t.CountryCode!)
+                    .Select(g => new CountryStat(g.Key, g.Count()))
+                    .OrderByDescending(c => c.Count)
+                    .ThenBy(c => c.CountryCode)
+                    .Take(10)
+                    .ToList();
+
                 return Result.Success(new PublicStatsResponse(
                     delivery.FileName,
                     delivery.FileSize,
                     trackings.Count,
                     trackings.Select(t => t.IpAddress).Distinct().Count(),
                     delivery.FirstDownloadedAt,
-                    timeline));
+                    timeline,
+                    countries));
             },
             duration: TimeSpan.FromSeconds(30),
             token: cancellationToken
