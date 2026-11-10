@@ -2792,4 +2792,58 @@
   <data name="deliveries_versions_download" xml:space="preserve">
     <value>Tải xuống</value>
   </data>
+  <data name="upload_share_markdown" xml:space="preserve">
+    <value>Chép Markdown</value>
+  </data>
+  <data name="upload_share_html" xml:space="preserve">
+    <value>Chép HTML</value>
+  </data>
+  <data name="upload_share_x" xml:space="preserve">
+    <value>Chia sẻ lên X</value>
+  </data>
+  <data name="upload_share_linkedin" xml:space="preserve">
+    <value>Chia sẻ lên LinkedIn</value>
+  </data>
+  <data name="upload_share_threads" xml:space="preserve">
+    <value>Chia sẻ lên Threads</value>
+  </data>
+  <data name="upload_share_telegram" xml:space="preserve">
+    <value>Chia sẻ qua Telegram</value>
+  </data>
+  <data name="upload_share_email" xml:space="preserve">
+    <value>Chia sẻ qua Email</value>
+  </data>
+  <data name="home_proof_heading" xml:space="preserve">
+    <value>Tin cậy cho trao đổi tệp nhanh và riêng tư</value>
+  </data>
+  <data name="home_proof_deliveries" xml:space="preserve">
+    <value>{0} lượt chia sẻ</value>
+  </data>
+  <data name="home_proof_volume" xml:space="preserve">
+    <value>{0} GB đã truyền tải</value>
+  </data>
+  <data name="home_proof_e2e" xml:space="preserve">
+    <value>Mã hoá trình duyệt AES-256-GCM</value>
+  </data>
+  <data name="pricing_calc_title" xml:space="preserve">
+    <value>Ước tính gói phù hợp</value>
+  </data>
+  <data name="pricing_calc_sub" xml:space="preserve">
+    <value>Nhập nhu cầu gửi tệp hàng tháng để xem gói phù hợp với dung lượng truyền tải và giới hạn kích thước tệp.</value>
+  </data>
+  <data name="pricing_calc_files_label" xml:space="preserve">
+    <value>Số tệp mỗi tháng</value>
+  </data>
+  <data name="pricing_calc_size_label" xml:space="preserve">
+    <value>Kích thước tệp trung bình (MB)</value>
+  </data>
+  <data name="pricing_calc_retention_label" xml:space="preserve">
+    <value>Thời hạn lưu liên kết (ngày)</value>
+  </data>
+  <data name="pricing_calc_volume_label" xml:space="preserve">
+    <value>Tổng dung lượng hàng tháng</value>
+  </data>
+  <data name="pricing_calc_recommend_label" xml:space="preserve">
+    <value>Gói khuyên dùng</value>
+  </data>
 </root>

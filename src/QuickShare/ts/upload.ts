@@ -188,6 +188,20 @@
             const shareLinkEl = document.getElementById('share-link') as HTMLInputElement | null;
             if (successNameEl) successNameEl.textContent = state.filename;
             if (shareLinkEl) shareLinkEl.value = state.link;
+            if (state.link) {
+                const encUrl = encodeURIComponent(state.link);
+                const encText = encodeURIComponent((t('shareText') || state.filename) + ' ' + state.link);
+                const xEl = document.getElementById('upload-share-x') as HTMLAnchorElement | null;
+                const liEl = document.getElementById('upload-share-linkedin') as HTMLAnchorElement | null;
+                const thEl = document.getElementById('upload-share-threads') as HTMLAnchorElement | null;
+                const tgEl = document.getElementById('upload-share-telegram') as HTMLAnchorElement | null;
+                const emEl = document.getElementById('upload-share-email') as HTMLAnchorElement | null;
+                if (xEl) xEl.href = 'https://twitter.com/intent/tweet?url=' + encUrl + '&text=' + encodeURIComponent(state.filename || t('shareTitle'));
+                if (liEl) liEl.href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encUrl;
+                if (thEl) thEl.href = 'https://www.threads.net/intent/post?text=' + encText;
+                if (tgEl) tgEl.href = 'https://t.me/share/url?url=' + encUrl + '&text=' + encodeURIComponent(state.filename || t('shareTitle'));
+                if (emEl) emEl.href = 'mailto:?subject=' + encodeURIComponent(state.filename || t('shareTitle')) + '&body=' + encText;
+            }
             show('upload-success-encrypt-badge');
         }
         if (state.phase === 'error') {
@@ -428,6 +442,25 @@
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(state.link).then(function () { state.copied = true; render(); }, function () { copyFallback(); });
             } else { copyFallback(); }
+        },
+
+        copyMarkdown: function () {
+            if (!state.link) return;
+            const label = (state.filename || 'QuickShare').replace(/[\[\]]/g, '');
+            const md = '[' + label + '](' + state.link + ')';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(md).then(function () { state.copied = true; render(); });
+            }
+        },
+
+        copyHtml: function () {
+            if (!state.link) return;
+            const safeName = (state.filename || 'QuickShare').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const safeUrl = state.link.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            const html = '<a href="' + safeUrl + '" rel="noopener noreferrer">' + safeName + '</a>';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(html).then(function () { state.copied = true; render(); });
+            }
         },
 
         // Native share sheet (issue #38): Zalo/WhatsApp/Telegram/email on mobile,

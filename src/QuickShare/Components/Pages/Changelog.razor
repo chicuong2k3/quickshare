@@ -7,11 +7,15 @@
 <PageTitle>@(IsVi ? "Nhật ký thay đổi" : "Changelog")</PageTitle>
 <HeadContent>
     <meta name="description" content="@(IsVi ? "Nhật ký thay đổi của QuickShareCloud." : "QuickShareCloud release changelog.")" />
+    <link rel="alternate" type="application/rss+xml" title="QuickShareCloud Changelog RSS" href="@RoutePaths.ChangelogRss" />
 </HeadContent>
 
 <PageWrapper Variant="PageVariant.Padded">
     <article class="legal">
-        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Nhật ký thay đổi" : "Changelog")</h1>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Nhật ký thay đổi" : "Changelog")</h1>
+            <a href="@RoutePaths.ChangelogRss" type="application/rss+xml" data-slot="button" data-variant="outline" data-size="sm">RSS</a>
+        </div>
         <p class="text-muted-foreground">@(IsVi ? "Cập nhật gần nhất: " : "Last updated: ")@DocDate</p>
 
         @if (IsVi)

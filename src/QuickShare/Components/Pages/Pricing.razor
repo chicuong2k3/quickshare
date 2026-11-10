@@ -204,6 +204,71 @@
     </section>
 
 
+    @* Pricing calculator (issue #169) — client-side estimation from real PlanTierLimits *@
+    <section id="pricing-calculator" class="my-8" aria-labelledby="pricing-calc-title">
+        <Card>
+            <CardContent class="space-y-4 py-6">
+                <div>
+                    <h2 id="pricing-calc-title" class="text-2xl font-bold">@Loc["pricing_calc_title"]</h2>
+                    <p class="text-muted-foreground" style="margin-top: 0.25rem">@Loc["pricing_calc_sub"]</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                        <label for="calc-files" class="block text-sm font-medium">@Loc["pricing_calc_files_label"]</label>
+                        <Input id="calc-files" Type="number" min="1" max="10000" Value="20" oninput="window.quickSharePricingCalc && window.quickSharePricingCalc.update()" data-ai-action="pricing.calc.files" />
+                    </div>
+                    <div>
+                        <label for="calc-size-mb" class="block text-sm font-medium">@Loc["pricing_calc_size_label"]</label>
+                        <Input id="calc-size-mb" Type="number" min="1" max="102400" Value="250" oninput="window.quickSharePricingCalc && window.quickSharePricingCalc.update()" data-ai-action="pricing.calc.size" />
+                    </div>
+                    <div>
+                        <label for="calc-retention-days" class="block text-sm font-medium">@Loc["pricing_calc_retention_label"]</label>
+                        <Input id="calc-retention-days" Type="number" min="1" max="365" Value="7" oninput="window.quickSharePricingCalc && window.quickSharePricingCalc.update()" data-ai-action="pricing.calc.retention" />
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+                    <div>
+                        <span class="text-sm text-muted-foreground">@Loc["pricing_calc_volume_label"]: </span>
+                        <strong id="calc-volume-out">5.0 GB</strong>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-muted-foreground">@Loc["pricing_calc_recommend_label"]:</span>
+                        <strong id="calc-plan-out" data-free="@Loc["pricing_free_name"]" data-pro="@Loc["pricing_pro_name"]" data-studio="@Loc["pricing_studio_name"]">@Loc["pricing_free_name"]</strong>
+                        <Button id="calc-cta-btn" Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)" Size="sm">@Loc["btn_start_free_trial"]</Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    </section>
+    <script>
+        window.quickSharePricingCalc = {
+            update: function () {
+                var filesEl = document.getElementById('calc-files');
+                var sizeEl = document.getElementById('calc-size-mb');
+                var daysEl = document.getElementById('calc-retention-days');
+                var volOut = document.getElementById('calc-volume-out');
+                var planOut = document.getElementById('calc-plan-out');
+                var ctaBtn = document.getElementById('calc-cta-btn');
+                if (!filesEl || !sizeEl || !daysEl || !volOut || !planOut) return;
+                var files = Math.max(1, parseInt(filesEl.value || '1', 10));
+                var sizeMb = Math.max(1, parseFloat(sizeEl.value || '1'));
+                var days = Math.max(1, parseInt(daysEl.value || '1', 10));
+                var totalGb = (files * sizeMb) / 1024;
+                volOut.textContent = totalGb.toFixed(1) + ' GB';
+                var planKey = 'free';
+                if (totalGb > 200 || sizeMb > 10240 || days > 30) {
+                    planKey = 'studio';
+                } else if (totalGb > 15 || sizeMb > 2048 || days > 7) {
+                    planKey = 'pro';
+                }
+                planOut.textContent = planOut.getAttribute('data-' + planKey) || planKey;
+                if (ctaBtn) {
+                    ctaBtn.setAttribute('href', planKey === 'studio' ? '/upgrade?plan=studio' : '/upgrade?plan=pro');
+                }
+            }
+        };
+    </script>
+
     @* Side-by-side comparison (issue #299) — real limits from PlanTierLimits, no fabricated features. *@
     <section class="compare">
         <h2 class="text-2xl font-bold compare__title">@Loc["pricing_compare_title"]</h2>

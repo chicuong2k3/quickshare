@@ -91,4 +91,5 @@ public static class RoutePaths
     public const string WorkspaceJoin = "/workspace/join";
     /// <summary>Upload presets management page (issue #100).</summary>
     public const string AccountPresets = "/account/presets";
+    public const string ChangelogRss = "/changelog.xml";
 }

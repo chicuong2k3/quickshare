@@ -1,7 +1,21 @@
 @layout MainLayout
 @page "/"
 @using Microsoft.Extensions.Localization
+@inject AppDbContext Db
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@{
+    var stats = QuickShare.Infrastructure.Caching.StaticCache.Instance.GetOrSet(
+        "home:social-proof",
+        () =>
+        {
+            var count = Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AsNoTracking(Db.Deliveries).LongCount(d => d.DeletedAt == null);
+            var bytes = Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AsNoTracking(Db.Deliveries).Where(d => d.DeletedAt == null).Sum(d => (long?)d.FileSize) ?? 0L;
+            return (Count: count, Gigabytes: Math.Max(0L, bytes / (1024L * 1024L * 1024L)));
+        },
+        TimeSpan.FromMinutes(5)
+    );
+}
 
 <PageTitle>@Loc["home_title"]</PageTitle>
 
@@ -50,6 +64,20 @@
                 </div>
             </div>
         </div>
+    </section>
+
+    @* Live social proof (issue #135) — real DB counts cached 5min via StaticCache *@
+    <section id="home-social-proof" class="my-6" aria-labelledby="home-proof-heading">
+        <Card>
+            <CardContent class="flex flex-wrap items-center justify-between gap-4 py-4">
+                <h2 id="home-proof-heading" class="text-sm font-medium text-muted-foreground">@Loc["home_proof_heading"]</h2>
+                <div class="flex flex-wrap items-center gap-6 text-sm font-semibold">
+                    <span id="home-proof-deliveries">@string.Format(Loc["home_proof_deliveries"], stats.Count.ToString("N0"))</span>
+                    <span id="home-proof-volume">@string.Format(Loc["home_proof_volume"], stats.Gigabytes.ToString("N0"))</span>
+                    <span id="home-proof-e2e">@Loc["home_proof_e2e"]</span>
+                </div>
+            </CardContent>
+        </Card>
     </section>
 
     <section class="home-why" aria-labelledby="why-use-app">

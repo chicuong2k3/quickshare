@@ -176,6 +176,8 @@ interface UploadPage {
     toggleTextMode(): void;
     shareText(): void;
     copyLink(): void;
+    copyMarkdown?(): void;
+    copyHtml?(): void;
     shareLink(): void;
     cancelUpload(): void;
     resumeUpload(): void;
@@ -205,6 +207,8 @@ interface P2pSendPage {
     onDragLeave(e: DragEvent): void;
     onDrop(e: DragEvent): void;
     copyLink(): void;
+    copyMarkdown?(): void;
+    copyHtml?(): void;
     cancel(): void;
     cancelTransfer(): void;
     reset(): void;

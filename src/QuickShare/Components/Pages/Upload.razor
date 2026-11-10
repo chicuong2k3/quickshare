@@ -483,6 +483,16 @@
                             <span id="upload-copied-text" class="hidden">@Loc["upload_copied"]</span>
                         </button>
                     </div>
+                    @* Wider share sheet (issue #130) — X, LinkedIn, Threads, Telegram, Email + copy Markdown/HTML *@
+                    <div id="upload-share-targets" class="flex flex-wrap items-center gap-2" style="margin-top: 0.75rem">
+                        <button type="button" id="upload-copy-markdown-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="uploadPage.copyMarkdown()" data-ai-action="upload.share.markdown">@Loc["upload_share_markdown"]</button>
+                        <button type="button" id="upload-copy-html-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="uploadPage.copyHtml()" data-ai-action="upload.share.html">@Loc["upload_share_html"]</button>
+                        <a id="upload-share-x" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_x"]" data-ai-action="upload.share.x">X</a>
+                        <a id="upload-share-linkedin" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_linkedin"]" data-ai-action="upload.share.linkedin">LinkedIn</a>
+                        <a id="upload-share-threads" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_threads"]" data-ai-action="upload.share.threads">Threads</a>
+                        <a id="upload-share-telegram" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_telegram"]" data-ai-action="upload.share.telegram">Telegram</a>
+                        <a id="upload-share-email" href="#" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_email"]" data-ai-action="upload.share.email">Email</a>
+                    </div>
                     <p id="upload-expiry-label" style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--db-color-text-muted)"></p>
                 </div>
 
