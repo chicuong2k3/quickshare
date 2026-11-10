@@ -20,6 +20,10 @@ public sealed class EmailOptions
 
     /// <summary>Shared secret the inbound webhook must present. Empty refuses every call.</summary>
     public string InboundSecret { get; init; } = string.Empty;
+
+    /// <summary>Shared secret the Brevo bounce/complaint webhook presents (issue #108).</summary>
+    public string BounceWebhookSecret { get; init; } = string.Empty;
+
     public int DigestIntervalMinutes { get; init; } = 15;
 
     public bool IsConfigured =>

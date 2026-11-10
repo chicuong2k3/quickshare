@@ -205,6 +205,9 @@ interface DownloadPage {
     copyText(): void;
     copySha256(): void;
     sharePage(): void;
+    selectSubtitleTrack?(value: string): void;
+    setCompareSplit?(val: string | number): void;
+    swapCompareImages?(): void;
 }
 
 interface P2pSendPage {
@@ -219,6 +222,11 @@ interface P2pSendPage {
     cancelTransfer(): void;
     reset(): void;
     fetchQuota(): void;
+    openQrImagePicker?(): void;
+    connectPairingCode?(): void;
+    startQrScanner?(): void;
+    stopQrScanner?(): void;
+    decodeQrImage?(event: Event): void;
 }
 
 interface P2pDownloadPage {

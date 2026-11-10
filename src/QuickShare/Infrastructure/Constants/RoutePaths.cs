@@ -95,4 +95,9 @@ public static class RoutePaths
     public const string ApiDocs = "/api-docs";
     public const string WidgetPage = "/widget/";
     public const string DeliveryCardRoute = "/api/downloads/{shareCode}/card.svg";
+    public const string BrevoEmailWebhook = "/api/webhooks/email/brevo";
+    public const string AdminEmailSuppressions = "/admin/email-suppressions";
+    public const string AdminEmailSuppressionsApi = "/api/admin/email-suppressions";
+    public const string DeliverySubtitlesRoute = "/api/downloads/{ShareCode}/subtitles/{FileId}";
+    public const string P2pPairRoute = "/api/shares/p2p/pair";
 }

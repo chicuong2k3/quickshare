@@ -5,6 +5,7 @@ namespace QuickShare.Features.Notifications.SenderUnsubscribe;
 /// <summary>
 /// One-click opt-out from sender link emails. Linked at the bottom of the sender link email.
 /// Distinct from /unsubscribe, which targets User.EmailOnDownload for digest emails.
+/// Also records the opt-out in <see cref="EmailSuppression"/> (issue #108).
 /// </summary>
 // ponytail: no handler/validator slice — a single tracked flag flip doesn't need a message bus hop.
 public sealed class SenderUnsubscribeEndpoint : EndpointWithoutRequest
@@ -46,6 +47,20 @@ public sealed class SenderUnsubscribeEndpoint : EndpointWithoutRequest
         }
 
         delivery.SenderEmailConsent = false;
+
+        var email = EmailSuppression.Normalize(delivery.SenderEmail);
+        if (!string.IsNullOrEmpty(email) && !await db.EmailSuppressions.AnyAsync(s => s.Email == email, ct))
+        {
+            db.EmailSuppressions.Add(new EmailSuppression
+            {
+                Id = Guid.CreateVersion7(),
+                Email = email,
+                Reason = EmailSuppression.ReasonUnsubscribed,
+                Source = EmailSuppression.SourceUnsubscribeLink,
+                BounceCount = 1
+            });
+        }
+
         await db.SaveChangesAsync(ct);
 
         await Send.StringAsync(DonePage, 200, MediaTypes.Html, ct);

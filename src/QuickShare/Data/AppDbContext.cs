@@ -70,6 +70,7 @@ public class AppDbContext : DbContext
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
     public DbSet<UploadPreset> UploadPresets => Set<UploadPreset>();
     public DbSet<DeliveryVersion> DeliveryVersions => Set<DeliveryVersion>();
+    public DbSet<EmailSuppression> EmailSuppressions => Set<EmailSuppression>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1002,6 +1003,16 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EmailSuppression>(entity =>
+        {
+            entity.ToTable("email_suppressions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(EmailSuppression.EmailMaxLength);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(EmailSuppression.ReasonMaxLength);
+            entity.Property(e => e.Source).IsRequired().HasMaxLength(EmailSuppression.SourceMaxLength);
+            entity.HasIndex(e => e.Email).IsUnique();
         });
 
         modelBuilder.Entity<DeliveryVersion>(entity =>

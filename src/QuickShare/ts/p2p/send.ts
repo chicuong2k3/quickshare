@@ -305,6 +305,7 @@
             .then(function (data) {
                 state.shareCode = data.shareCode;
                 state.shareLink = data.shareLink || (window.location.origin + '/p2p/d/' + data.shareCode);
+                if (data.pairingCode) text('p2ps-pairing-code', data.pairingCode);
                 state.phase = 'waiting';
                 render();
                 fetchQuota();
@@ -633,7 +634,95 @@
             cancel: cancel,
             cancelTransfer: cancelTransfer,
             reset: reset,
-            fetchQuota: fetchQuota
+            fetchQuota: fetchQuota,
+            openQrImagePicker: function () {
+                const el = document.getElementById('p2ps-qr-image-input');
+                if (el) el.click();
+            },
+            connectPairingCode: function () {
+                const input = document.getElementById('p2ps-pair-input') as HTMLInputElement | null;
+                const code = input ? input.value.trim() : '';
+                hide('p2ps-pair-error');
+                if (!/^\d{6}$/.test(code)) {
+                    text('p2ps-pair-error', t('pairInvalid'));
+                    show('p2ps-pair-error');
+                    return;
+                }
+                fetch(apiBase() + '/api/shares/p2p/pair/' + encodeURIComponent(code))
+                    .then(function (r) { if (!r.ok) throw r; return r.json(); })
+                    .then(function (data: { shareCode: string; shareLink: string }) {
+                        window.location.href = data.shareLink || ('/p2p/d/' + data.shareCode);
+                    })
+                    .catch(function () {
+                        text('p2ps-pair-error', t('pairInvalid'));
+                        show('p2ps-pair-error');
+                    });
+            },
+            startQrScanner: function () {
+                hide('p2ps-qr-error');
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    text('p2ps-qr-error', t('qrScanFailed'));
+                    show('p2ps-qr-error');
+                    return;
+                }
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(function (stream) {
+                        const video = document.getElementById('p2ps-qr-video') as HTMLVideoElement | null;
+                        if (video) {
+                            video.srcObject = stream;
+                            video.play().catch(function () {});
+                        }
+                        show('p2ps-qr-camera-box');
+                    })
+                    .catch(function () {
+                        text('p2ps-qr-error', t('qrScanFailed'));
+                        show('p2ps-qr-error');
+                    });
+            },
+            stopQrScanner: function () {
+                const video = document.getElementById('p2ps-qr-video') as HTMLVideoElement | null;
+                const stream = video && video.srcObject ? (video.srcObject as MediaStream) : null;
+                if (stream) stream.getTracks().forEach(function (tr) { tr.stop(); });
+                if (video) video.srcObject = null;
+                hide('p2ps-qr-camera-box');
+            },
+            decodeQrImage: function (event: Event) {
+                hide('p2ps-qr-error');
+                const input = event.target as HTMLInputElement;
+                const file = input.files ? input.files[0] : null;
+                if (!file) return;
+                input.value = '';
+                const BD = (window as unknown as { BarcodeDetector?: new (opts: { formats: string[] }) => { detect(src: ImageBitmapSource): Promise<Array<{ rawValue?: string }>> } }).BarcodeDetector;
+                if (!BD) {
+                    text('p2ps-qr-error', t('qrScanFailed'));
+                    show('p2ps-qr-error');
+                    return;
+                }
+                createImageBitmap(file)
+                    .then(function (bmp) { return new BD({ formats: ['qr_code'] }).detect(bmp); })
+                    .then(function (codes) {
+                        const raw = (codes && codes.length > 0 && codes[0].rawValue) ? codes[0].rawValue : null;
+                        if (!raw) {
+                            text('p2ps-qr-error', t('qrScanFailed'));
+                            show('p2ps-qr-error');
+                            return;
+                        }
+                        text('p2ps-qr-result-url', raw);
+                        const link = document.getElementById('p2ps-qr-open-link') as HTMLAnchorElement | null;
+                        if (link) link.href = raw;
+                        try {
+                            const parsed = new URL(raw, window.location.origin);
+                            if (parsed.origin !== window.location.origin) show('p2ps-qr-warning'); else hide('p2ps-qr-warning');
+                        } catch (e) {
+                            show('p2ps-qr-warning');
+                        }
+                        show('p2ps-qr-result-box');
+                    })
+                    .catch(function () {
+                        text('p2ps-qr-error', t('qrScanFailed'));
+                        show('p2ps-qr-error');
+                    });
+            }
         };
     })();
 })();

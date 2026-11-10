@@ -673,6 +673,23 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
             el.setAttribute('controls', '');
             el.setAttribute('playsinline', '');
             el.setAttribute('preload', 'metadata');
+            el.setAttribute('crossorigin', 'anonymous');
+            const select = document.getElementById('dl-subtitle-track-select') as HTMLSelectElement | null;
+            if (select) {
+                for (let idx = 0; idx < select.options.length; idx++) {
+                    const opt = select.options[idx];
+                    const trackSrc = opt.getAttribute('data-src');
+                    if (!trackSrc) continue;
+                    const track = document.createElement('track');
+                    track.setAttribute('kind', 'subtitles');
+                    track.setAttribute('src', trackSrc);
+                    track.setAttribute('srclang', opt.getAttribute('data-srclang') || 'en');
+                    track.setAttribute('label', opt.getAttribute('data-label') || opt.textContent || 'CC');
+                    if (idx === 1) track.setAttribute('default', '');
+                    el.appendChild(track);
+                }
+            }
+            el.setAttribute('preload', 'metadata');
         } else if (kind === 'audio') {
             el.setAttribute('src', url);
             el.setAttribute('controls', '');
@@ -754,5 +771,38 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         }
     }
 
-    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage };
+    function selectSubtitleTrack(value: string) {
+        const container = document.getElementById('dl-media-preview');
+        const video = container ? container.querySelector('video') : null;
+        if (!video || !video.textTracks) return;
+        const select = document.getElementById('dl-subtitle-track-select') as HTMLSelectElement | null;
+        const selectedLabel = select && select.selectedOptions[0] ? select.selectedOptions[0].getAttribute('data-label') : null;
+        for (let i = 0; i < video.textTracks.length; i++) {
+            const tr = video.textTracks[i];
+            tr.mode = (value !== 'off' && selectedLabel && tr.label === selectedLabel) ? 'showing' : 'disabled';
+        }
+    }
+
+    function setCompareSplit(val: string | number) {
+        const pct = Math.max(0, Math.min(100, Number(val) || 0));
+        const clip = document.getElementById('dl-compare-before-clip');
+        if (clip) clip.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+        const slider = document.getElementById('dl-compare-slider') as HTMLInputElement | null;
+        if (slider) slider.value = String(pct);
+        text('dl-compare-value', pct + '%');
+    }
+
+    function swapCompareImages() {
+        const beforeImg = document.getElementById('dl-compare-before-img') as HTMLImageElement | null;
+        const afterImg = document.getElementById('dl-compare-after-img') as HTMLImageElement | null;
+        if (!beforeImg || !afterImg) return;
+        const tmpSrc = beforeImg.src;
+        beforeImg.src = afterImg.src;
+        afterImg.src = tmpSrc;
+        const tmpAlt = beforeImg.alt;
+        beforeImg.alt = afterImg.alt;
+        afterImg.alt = tmpAlt;
+    }
+
+    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage, selectSubtitleTrack: selectSubtitleTrack, setCompareSplit: setCompareSplit, swapCompareImages: swapCompareImages };
 })();

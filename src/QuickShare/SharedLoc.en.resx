@@ -2957,4 +2957,88 @@
   <data name="upload_voice_stop" xml:space="preserve">
     <value>Stop &amp; send</value>
   </data>
+  <data name="admin_suppressions_page_title" xml:space="preserve">
+    <value>Email Suppressions — Admin</value>
+  </data>
+  <data name="admin_suppressions_title" xml:space="preserve">
+    <value>Email Suppression List</value>
+  </data>
+  <data name="admin_suppressions_subtitle" xml:space="preserve">
+    <value>Addresses blocked due to hard bounces, repeated soft bounces, or spam complaints.</value>
+  </data>
+  <data name="admin_suppressions_empty" xml:space="preserve">
+    <value>No suppressed email addresses.</value>
+  </data>
+  <data name="admin_suppressions_bounces" xml:space="preserve">
+    <value>{0} bounces</value>
+  </data>
+  <data name="admin_suppressions_release" xml:space="preserve">
+    <value>Release</value>
+  </data>
+  <data name="dl_subtitles_title" xml:space="preserve">
+    <value>Subtitles &amp; Captions</value>
+  </data>
+  <data name="dl_subtitles_track" xml:space="preserve">
+    <value>Track</value>
+  </data>
+  <data name="dl_subtitles_off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="dl_compare_title" xml:space="preserve">
+    <value>Before / After Comparison</value>
+  </data>
+  <data name="dl_compare_swap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="dl_compare_reset" xml:space="preserve">
+    <value>Reset 50%</value>
+  </data>
+  <data name="dl_compare_before" xml:space="preserve">
+    <value>Before</value>
+  </data>
+  <data name="dl_compare_after" xml:space="preserve">
+    <value>After</value>
+  </data>
+  <data name="dl_compare_slider_aria" xml:space="preserve">
+    <value>Before and after comparison split percentage</value>
+  </data>
+  <data name="p2p_pair_enter_title" xml:space="preserve">
+    <value>Receive with 6-digit key</value>
+  </data>
+  <data name="p2p_pair_enter_sub" xml:space="preserve">
+    <value>Enter the sender's 6-digit security key to pair directly.</value>
+  </data>
+  <data name="p2p_pair_connect_btn" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="p2p_pair_code_label" xml:space="preserve">
+    <value>6-digit direct pairing key</value>
+  </data>
+  <data name="p2p_pair_ttl_note" xml:space="preserve">
+    <value>One-time · expires in 10m</value>
+  </data>
+  <data name="p2p_pair_invalid" xml:space="preserve">
+    <value>Invalid or expired 6-digit pairing key.</value>
+  </data>
+  <data name="qr_scan_title" xml:space="preserve">
+    <value>Open QR Code</value>
+  </data>
+  <data name="qr_scan_sub" xml:space="preserve">
+    <value>Scan a QuickShare QR with your camera or pick a saved screenshot.</value>
+  </data>
+  <data name="qr_scan_camera_btn" xml:space="preserve">
+    <value>Scan camera</value>
+  </data>
+  <data name="qr_scan_photo_btn" xml:space="preserve">
+    <value>Open QR from photo</value>
+  </data>
+  <data name="qr_scan_external_warning" xml:space="preserve">
+    <value>Warning: this QR points outside QuickShare.</value>
+  </data>
+  <data name="qr_scan_open_btn" xml:space="preserve">
+    <value>Open delivery</value>
+  </data>
+  <data name="qr_scan_failed" xml:space="preserve">
+    <value>Could not read a valid QR code from that source.</value>
+  </data>
 </root>

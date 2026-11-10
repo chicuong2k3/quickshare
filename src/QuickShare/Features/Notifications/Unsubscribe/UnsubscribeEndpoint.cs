@@ -4,6 +4,7 @@ namespace QuickShare.Features.Notifications.Unsubscribe;
 
 /// <summary>
 /// One-click opt-out from download notifications. Linked at the bottom of every digest email.
+/// Also records the opt-out in <see cref="EmailSuppression"/> (issue #108) when the user has a known email.
 /// </summary>
 // ponytail: no handler/validator slice — a single tracked flag flip doesn't need a message bus hop.
 public sealed class UnsubscribeEndpoint : EndpointWithoutRequest
@@ -45,6 +46,20 @@ public sealed class UnsubscribeEndpoint : EndpointWithoutRequest
         }
 
         user.EmailOnDownload = false;
+
+        var email = EmailSuppression.Normalize(user.Email);
+        if (!string.IsNullOrEmpty(email) && !await db.EmailSuppressions.AnyAsync(s => s.Email == email, ct))
+        {
+            db.EmailSuppressions.Add(new EmailSuppression
+            {
+                Id = Guid.CreateVersion7(),
+                Email = email,
+                Reason = EmailSuppression.ReasonUnsubscribed,
+                Source = EmailSuppression.SourceUnsubscribeLink,
+                BounceCount = 1
+            });
+        }
+
         await db.SaveChangesAsync(ct);
 
         await Send.StringAsync(DonePage, 200, MediaTypes.Html, ct);

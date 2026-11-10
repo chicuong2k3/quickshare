@@ -1,0 +1,75 @@
+@page "/admin/email-suppressions"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.Extensions.Options
+@using QuickShare.Features.Notifications.EmailDeliverability
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_suppressions_page_title"]</PageTitle>
+
+<PageWrapper id="admin-suppressions-shell" Variant="PageVariant.Padded">
+    <div class="mb-6">
+        <h1 class="text-3xl font-semibold">@Loc["admin_suppressions_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_suppressions_subtitle"]</p>
+    </div>
+
+    <Card id="admin-suppressions-app" class="px-6">
+        @if (!isAdmin)
+        {
+            <div class="text-destructive" role="alert">@Loc["admin_reports_forbidden"]</div>
+        }
+        else if (items.Count == 0)
+        {
+            <p class="text-muted-foreground">@Loc["admin_suppressions_empty"]</p>
+        }
+        else
+        {
+            <ul class="space-y-4">
+                @foreach (var item in items)
+                {
+                    <li class="border-b pb-4" data-suppression-id="@item.Id" data-suppression-email="@item.Email">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p class="font-medium">@item.Email</p>
+                                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    <span class="rounded border px-1.5 py-0.5">@item.Reason</span>
+                                    <span>@item.Source</span>
+                                    <span>@Loc["admin_suppressions_bounces", item.BounceCount]</span>
+                                    <time datetime="@item.CreatedAt.ToString("o")">@item.CreatedAt.ToLocalTime().ToString("g")</time>
+                                </div>
+                            </div>
+                            <form method="post" action="@ReleaseEmailSuppressionFormEndpoint.FormRoute">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="@ReleaseEmailSuppressionFormEndpoint.IdField" value="@item.Id" />
+                                <Button Type="submit" Variant="outline" Size="sm" data-ai-action="suppression.release">@Loc["admin_suppressions_release"]</Button>
+                            </form>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </Card>
+</PageWrapper>
+
+@code {
+    private bool isAdmin;
+    private List<EmailSuppressionItem> items = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+        if (isAdmin)
+        {
+            items = await Db.EmailSuppressions
+                .AsNoTracking()
+                .OrderByDescending(s => s.CreatedAt)
+                .Select(s => new EmailSuppressionItem(s.Id, s.Email, s.Reason, s.Source, s.BounceCount, s.CreatedAt))
+                .ToListAsync(CancellationToken.None);
+        }
+    }
+}

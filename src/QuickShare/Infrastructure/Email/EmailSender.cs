@@ -7,17 +7,63 @@ namespace QuickShare.Infrastructure.Email;
 
 /// <summary>
 /// SMTP sender. Configured against Brevo's relay by default, but any SMTP provider works —
-/// only appsettings/env change.
+/// only appsettings/env change. Checks <see cref="EmailSuppression"/> before sending (issue #108)
+/// so hard-bounced or complaining addresses are never contacted again.
 /// </summary>
-public sealed class EmailSender(IOptions<EmailOptions> options)
+public sealed class EmailSender(
+    IOptions<EmailOptions> options,
+    IServiceScopeFactory? scopeFactory = null,
+    ILogger<EmailSender>? logger = null)
 {
+    public const int SoftBounceThreshold = 3;
+
     private readonly EmailOptions _options = options.Value;
 
     public bool IsConfigured => _options.IsConfigured;
 
+    /// <summary>Returns true if <paramref name="email"/> is currently on the suppression list (issue #108).</summary>
+    public async Task<bool> IsSuppressedAsync(string? email, CancellationToken ct = default)
+    {
+        var normalized = EmailSuppression.Normalize(email);
+        if (string.IsNullOrEmpty(normalized) || scopeFactory is null)
+        {
+            return false;
+        }
+
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetService<AppDbContext>();
+        if (db is null)
+        {
+            return false;
+        }
+
+        var row = await db.EmailSuppressions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Email == normalized, ct);
+
+        if (row is null)
+        {
+            return false;
+        }
+
+        // Soft bounces only suppress once they reach the 3x threshold.
+        if (row.Reason == EmailSuppression.ReasonSoftBounce && row.BounceCount < SoftBounceThreshold)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     // ponytail: one connection per email — pool the SmtpClient if we ever send more than a few per minute.
     public async Task SendAsync(string toEmail, string toName, string subject, string htmlBody, CancellationToken ct)
     {
+        if (await IsSuppressedAsync(toEmail, ct))
+        {
+            logger?.LogInformation("Skipping outbound email to suppressed address.");
+            return;
+        }
+
         if (!_options.IsConfigured)
             throw new InvalidOperationException("Email is not configured.");
 

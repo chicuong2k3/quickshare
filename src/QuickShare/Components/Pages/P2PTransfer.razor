@@ -61,6 +61,42 @@
 
 
         @* CREATING LINK *@
+        <section id="p2ps-pair-tools" class="p2p-section mt-6 grid gap-4 md:grid-cols-2">
+            <Card id="p2ps-pair-card" class="p-4">
+                <h2 class="text-sm font-semibold">@Loc["p2p_pair_enter_title"]</h2>
+                <p class="mt-1 text-xs text-muted-foreground">@Loc["p2p_pair_enter_sub"]</p>
+                <div class="mt-3 flex gap-2">
+                    <Input id="p2ps-pair-input" Type="text" inputmode="numeric" maxlength="6" placeholder="000000" class="flex-1 font-mono tracking-widest" aria-label="@Loc["p2p_pair_enter_title"]" />
+                    <button type="button" id="p2ps-pair-connect-btn" data-slot="button" data-variant="default" class="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground" onclick="p2pSend.connectPairingCode()" data-ai-action="p2p.pair.connect">@Loc["p2p_pair_connect_btn"]</button>
+                </div>
+                <p id="p2ps-pair-error" class="mt-2 hidden text-xs text-destructive" role="alert"></p>
+            </Card>
+
+            <Card id="p2ps-qr-scan-card" class="p-4">
+                <h2 class="text-sm font-semibold">@Loc["qr_scan_title"]</h2>
+                <p class="mt-1 text-xs text-muted-foreground">@Loc["qr_scan_sub"]</p>
+                <input type="file" id="p2ps-qr-image-input" accept="image/*" class="hidden" onchange="p2pSend.decodeQrImage(event)" />
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button type="button" id="p2ps-qr-camera-btn" data-slot="button" data-variant="outline" data-size="sm" class="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium" onclick="p2pSend.startQrScanner()" data-ai-action="qr.scan.camera">@Loc["qr_scan_camera_btn"]</button>
+                    <button type="button" id="p2ps-qr-photo-btn" data-slot="button" data-variant="outline" data-size="sm" class="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium" onclick="p2pSend.openQrImagePicker()" data-ai-action="qr.scan.photo">@Loc["qr_scan_photo_btn"]</button>
+                </div>
+                <div id="p2ps-qr-camera-box" class="mt-3 hidden">
+                    <video id="p2ps-qr-video" autoplay playsinline muted class="w-full rounded border bg-black" style="max-height: 12rem"></video>
+                    <div class="mt-2 flex justify-end">
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center rounded px-2 py-1 text-xs text-muted-foreground" onclick="p2pSend.stopQrScanner()" data-ai-action="qr.scan.stop">@Loc["p2p_send_cancel"]</button>
+                    </div>
+                </div>
+                <div id="p2ps-qr-result-box" class="mt-3 hidden rounded border bg-muted/40 p-2.5 text-xs">
+                    <p id="p2ps-qr-result-url" class="font-mono break-all"></p>
+                    <p id="p2ps-qr-warning" class="mt-1 hidden text-destructive" role="alert">@Loc["qr_scan_external_warning"]</p>
+                    <div class="mt-2 flex gap-2">
+                        <a id="p2ps-qr-open-link" href="#" class="inline-flex items-center rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground" data-ai-action="qr.scan.open">@Loc["qr_scan_open_btn"]</a>
+                    </div>
+                </div>
+                <p id="p2ps-qr-error" class="mt-2 hidden text-xs text-destructive" role="alert"></p>
+            </Card>
+        </section>
+
         <section id="p2ps-creating" class="p2p-section hidden">
             <h1 class="p2p-status-h1">@Loc["p2p_send_creating"]</h1>
         </section>
@@ -77,6 +113,14 @@
                         <span id="p2ps-copy-done" class="hidden">@Loc["p2p_send_copied"]</span>
                     </button>
                 </div>
+            </div>
+
+            <div id="p2ps-pairing-box" class="mt-3 flex items-center justify-between rounded border bg-muted/40 px-3 py-2">
+                <div>
+                    <span class="block text-xs text-muted-foreground">@Loc["p2p_pair_code_label"]</span>
+                    <strong id="p2ps-pairing-code" class="font-mono text-lg tracking-widest">------</strong>
+                </div>
+                <span class="text-xs text-muted-foreground">@Loc["p2p_pair_ttl_note"]</span>
             </div>
 
             <div id="p2ps-qrcode" class="p2p-qr-frame"></div>
@@ -142,6 +186,8 @@
         ["qrNotLoaded"] = Loc["p2p_send_qr_not_loaded"],
         ["qrUnavailable"] = Loc["p2p_send_qr_unavailable"],
         ["qrAria"] = Loc["p2p_send_qr_aria"],
+        ["pairInvalid"] = Loc["p2p_pair_invalid"],
+        ["qrScanFailed"] = Loc["qr_scan_failed"],
     };
 
     private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));

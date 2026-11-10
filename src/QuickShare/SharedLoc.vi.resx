@@ -2957,4 +2957,88 @@
   <data name="upload_voice_stop" xml:space="preserve">
     <value>Dừng &amp; gửi</value>
   </data>
+  <data name="admin_suppressions_page_title" xml:space="preserve">
+    <value>Danh sách chặn Email — Quản trị</value>
+  </data>
+  <data name="admin_suppressions_title" xml:space="preserve">
+    <value>Danh sách chặn gửi Email</value>
+  </data>
+  <data name="admin_suppressions_subtitle" xml:space="preserve">
+    <value>Các địa chỉ bị chặn do lỗi gửi cứng, lỗi tạm thời lặp lại hoặc báo cáo thư rác.</value>
+  </data>
+  <data name="admin_suppressions_empty" xml:space="preserve">
+    <value>Không có địa chỉ email nào bị chặn.</value>
+  </data>
+  <data name="admin_suppressions_bounces" xml:space="preserve">
+    <value>{0} lần lỗi</value>
+  </data>
+  <data name="admin_suppressions_release" xml:space="preserve">
+    <value>Gỡ chặn</value>
+  </data>
+  <data name="dl_subtitles_title" xml:space="preserve">
+    <value>Phụ đề</value>
+  </data>
+  <data name="dl_subtitles_track" xml:space="preserve">
+    <value>Bản phụ đề</value>
+  </data>
+  <data name="dl_subtitles_off" xml:space="preserve">
+    <value>Tắt</value>
+  </data>
+  <data name="dl_compare_title" xml:space="preserve">
+    <value>So sánh Trước / Sau</value>
+  </data>
+  <data name="dl_compare_swap" xml:space="preserve">
+    <value>Đổi chiều</value>
+  </data>
+  <data name="dl_compare_reset" xml:space="preserve">
+    <value>Đặt lại 50%</value>
+  </data>
+  <data name="dl_compare_before" xml:space="preserve">
+    <value>Trước</value>
+  </data>
+  <data name="dl_compare_after" xml:space="preserve">
+    <value>Sau</value>
+  </data>
+  <data name="dl_compare_slider_aria" xml:space="preserve">
+    <value>Thanh trượt so sánh hình ảnh trước và sau</value>
+  </data>
+  <data name="p2p_pair_enter_title" xml:space="preserve">
+    <value>Nhận bằng mã 6 chữ số</value>
+  </data>
+  <data name="p2p_pair_enter_sub" xml:space="preserve">
+    <value>Nhập mã bảo mật 6 số của người gửi để kết nối trực tiếp.</value>
+  </data>
+  <data name="p2p_pair_connect_btn" xml:space="preserve">
+    <value>Kết nối</value>
+  </data>
+  <data name="p2p_pair_code_label" xml:space="preserve">
+    <value>Mã ghép nối trực tiếp 6 số</value>
+  </data>
+  <data name="p2p_pair_ttl_note" xml:space="preserve">
+    <value>Dùng 1 lần · hết hạn sau 10 phút</value>
+  </data>
+  <data name="p2p_pair_invalid" xml:space="preserve">
+    <value>Mã ghép nối 6 chữ số không hợp lệ hoặc đã hết hạn.</value>
+  </data>
+  <data name="qr_scan_title" xml:space="preserve">
+    <value>Mở mã QR</value>
+  </data>
+  <data name="qr_scan_sub" xml:space="preserve">
+    <value>Quét mã QR QuickShare bằng camera hoặc chọn từ ảnh chụp màn hình.</value>
+  </data>
+  <data name="qr_scan_camera_btn" xml:space="preserve">
+    <value>Quét bằng camera</value>
+  </data>
+  <data name="qr_scan_photo_btn" xml:space="preserve">
+    <value>Mở QR từ ảnh</value>
+  </data>
+  <data name="qr_scan_external_warning" xml:space="preserve">
+    <value>Cảnh báo: mã QR này dẫn tới trang ngoài QuickShare.</value>
+  </data>
+  <data name="qr_scan_open_btn" xml:space="preserve">
+    <value>Mở liên kết</value>
+  </data>
+  <data name="qr_scan_failed" xml:space="preserve">
+    <value>Không đọc được mã QR hợp lệ từ nguồn này.</value>
+  </data>
 </root>

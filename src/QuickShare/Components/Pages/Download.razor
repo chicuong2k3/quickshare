@@ -14,6 +14,7 @@
 @using QuickShare.Features.Deliveries.Recipients
 @using QuickShare.Features.Uploads.Shared
 @using QuickShare.Features.Deliveries.Comments
+@using QuickShare.Features.Downloads.Subtitles
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject BrandReader Brands
 @inject WorkspaceDomainReader Domains
@@ -651,6 +652,59 @@
         </section>
     }
 
+    @if (SubtitleFiles.Count > 0 && InitialPhase == PhaseFile)
+    {
+        <section id="dl-subtitles" class="dl-files mt-4" data-share-code="@ShareCode">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="dl-files__title text-base font-semibold">@Loc["dl_subtitles_title"]</h2>
+                <div class="flex items-center gap-2 text-xs">
+                    <label for="dl-subtitle-track-select" class="text-muted-foreground">@Loc["dl_subtitles_track"]</label>
+                    <NativeSelect id="dl-subtitle-track-select" onchange="downloadApp.selectSubtitleTrack(this.value)" aria-label="@Loc["dl_subtitles_track"]">
+                        <NativeSelectOption value="off">@Loc["dl_subtitles_off"]</NativeSelectOption>
+                        @foreach (var sub in SubtitleFiles)
+                        {
+                            var subSrc = $"/api/downloads/{ShareCode}/subtitles/{sub.Id}";
+                            <NativeSelectOption value="@sub.Id.ToString()" data-src="@subSrc" data-srclang="@SubtitleLang(sub.FileName)" data-label="@SubtitleLabel(sub.FileName)">@SubtitleLabel(sub.FileName) (@sub.FileName)</NativeSelectOption>
+                        }
+                    </NativeSelect>
+                </div>
+            </div>
+        </section>
+    }
+
+    @if (ImageFiles.Count >= 2 && InitialPhase == PhaseFile)
+    {
+        <section id="dl-image-compare" class="dl-files mt-4" data-share-code="@ShareCode">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h2 class="dl-files__title text-base font-semibold">@Loc["dl_compare_title"]</h2>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="dl-compare-swap-btn" data-slot="button" data-variant="outline" data-size="sm" class="rounded border px-2.5 py-1 text-xs font-medium" onclick="downloadApp.swapCompareImages()" data-ai-action="download.compare.swap">@Loc["dl_compare_swap"]</button>
+                    <button type="button" id="dl-compare-reset-btn" data-slot="button" data-variant="ghost" data-size="sm" class="rounded px-2.5 py-1 text-xs font-medium text-muted-foreground" onclick="downloadApp.setCompareSplit(50)" data-ai-action="download.compare.reset">@Loc["dl_compare_reset"]</button>
+                </div>
+            </div>
+            <div id="dl-compare-stage" class="relative overflow-hidden rounded-md border bg-muted/30" style="min-height: 14rem"
+                 data-before-src="/api/downloads/@ShareCode/files/@ImageFiles[0].Id"
+                 data-after-src="/api/downloads/@ShareCode/files/@ImageFiles[1].Id"
+                 data-before-name="@ImageFiles[0].FileName"
+                 data-after-name="@ImageFiles[1].FileName">
+                <img id="dl-compare-after-img" src="/api/downloads/@ShareCode/files/@ImageFiles[1].Id" alt="@ImageFiles[1].FileName" class="block w-full select-none object-contain" style="max-height: 24rem" />
+                <div id="dl-compare-before-clip" class="absolute inset-0 overflow-hidden" style="clip-path: inset(0 50% 0 0)">
+                    <img id="dl-compare-before-img" src="/api/downloads/@ShareCode/files/@ImageFiles[0].Id" alt="@ImageFiles[0].FileName" class="block w-full select-none object-contain" style="max-height: 24rem" />
+                </div>
+                <div class="pointer-events-none absolute inset-x-3 top-2 flex justify-between text-xs font-medium">
+                    <span id="dl-compare-before-label" class="rounded bg-background/80 px-2 py-0.5">@Loc["dl_compare_before"]: @ImageFiles[0].FileName</span>
+                    <span id="dl-compare-after-label" class="rounded bg-background/80 px-2 py-0.5">@Loc["dl_compare_after"]: @ImageFiles[1].FileName</span>
+                </div>
+            </div>
+            <div class="mt-2 flex items-center gap-3">
+                <input type="range" id="dl-compare-slider" min="0" max="100" value="50" class="w-full accent-primary"
+                       aria-label="@Loc["dl_compare_slider_aria"]"
+                       oninput="downloadApp.setCompareSplit(this.value)" />
+                <span id="dl-compare-value" class="text-xs font-mono text-muted-foreground">50%</span>
+            </div>
+        </section>
+    }
+
     @if (Info?.Versions is { Count: > 0 } versions && InitialPhase == PhaseFile)
     {
         @* Version history (issue #110) — server-rendered so recipients can download past versions even with JS off. *@
@@ -852,6 +906,33 @@
     private List<DeliveryFile> Files { get; set; } = [];
 
     private long TotalFileBytes => Files.Sum(f => f.FileSize);
+
+    private List<DeliveryFile> SubtitleFiles => Files.Where(f => DownloadSubtitleEndpoint.IsSubtitleFileName(f.FileName)).ToList();
+
+    private List<DeliveryFile> ImageFiles => Files.Where(f =>
+        f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private static string SubtitleLabel(string fileName)
+    {
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        var lastDot = stem.LastIndexOf('.');
+        return lastDot > 0 && stem.Length - lastDot - 1 is >= 2 and <= 8
+            ? stem[(lastDot + 1)..].ToUpperInvariant()
+            : stem;
+    }
+
+    private static string SubtitleLang(string fileName)
+    {
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        var lastDot = stem.LastIndexOf('.');
+        return lastDot > 0 && stem.Length - lastDot - 1 is >= 2 and <= 5
+            ? stem[(lastDot + 1)..].ToLowerInvariant()
+            : "en";
+    }
 
     /// <summary>Thread state (issue #289), resolved through the same gate the API uses.</summary>
     private bool CommentsOpen { get; set; }

@@ -424,4 +424,140 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("id=\"upload-voice-start-btn\"", html);
         Assert.Contains("id=\"upload-voice-stop-btn\"", html);
     }
+
+    [Fact]
+    public async Task BrevoEmailWebhook_SuppressesHardBouncesAndRepeatedSoftBounces()
+    {
+        var client = _factory.CreateClient();
+        var hardEmail = $"hard-{Guid.NewGuid():N}@example.com";
+        var softEmail = $"soft-{Guid.NewGuid():N}@example.com";
+
+        var hardRes = await client.PostAsJsonAsync(RoutePaths.BrevoEmailWebhook, new { @event = "hard_bounce", email = hardEmail });
+        Assert.Equal(HttpStatusCode.OK, hardRes.StatusCode);
+
+        var sender = _factory.Services.GetRequiredService<QuickShare.Infrastructure.Email.EmailSender>();
+        Assert.True(await sender.IsSuppressedAsync(hardEmail));
+
+        await client.PostAsJsonAsync(RoutePaths.BrevoEmailWebhook, new { @event = "soft_bounce", email = softEmail });
+        Assert.False(await sender.IsSuppressedAsync(softEmail));
+        await client.PostAsJsonAsync(RoutePaths.BrevoEmailWebhook, new { @event = "soft_bounce", email = softEmail });
+        Assert.False(await sender.IsSuppressedAsync(softEmail));
+        await client.PostAsJsonAsync(RoutePaths.BrevoEmailWebhook, new { @event = "soft_bounce", email = softEmail });
+        Assert.True(await sender.IsSuppressedAsync(softEmail));
+    }
+
+    [Fact]
+    public async Task DownloadPage_RendersSubtitlesAndImageCompareSlider_AndConvertsSrtToVtt()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var shareCode = Guid.NewGuid().ToString("N")[..10];
+        var deliveryId = Guid.CreateVersion7();
+        var subFileId = Guid.CreateVersion7();
+        var imgBeforeId = Guid.CreateVersion7();
+        var imgAfterId = Guid.CreateVersion7();
+        var subObjectKey = $"sub/{subFileId:N}.srt";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var storage = scope.ServiceProvider.GetRequiredService<QuickShare.Infrastructure.Storage.IStorageProvider>();
+            var srtBytes = System.Text.Encoding.UTF8.GetBytes("1\r\n00:00:01,250 --> 00:00:04,500\r\nXin chao QuickShare\r\n");
+            await using var ms = new MemoryStream(srtBytes);
+            await storage.UploadObjectAsync(subObjectKey, ms, "text/plain");
+
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = deliveryId,
+                SenderId = user.Id,
+                FileName = "demo.mp4",
+                ContentType = "video/mp4",
+                FileSize = 10240,
+                TotalBytes = 10240,
+                ShareCode = shareCode,
+                StoragePath = "stub/demo.mp4",
+                MaxDownloads = 10,
+                Status = DeliveryStatus.Active,
+                ExpiresAt = DateTime.UtcNow.AddDays(3),
+            });
+            db.DeliveryFiles.AddRange(
+                new DeliveryFile
+                {
+                    Id = subFileId,
+                    DeliveryId = deliveryId,
+                    FileName = "demo.vi.srt",
+                    ContentType = "text/plain",
+                    FileSize = srtBytes.Length,
+                    ObjectKey = subObjectKey,
+                    SortOrder = 1,
+                },
+                new DeliveryFile
+                {
+                    Id = imgBeforeId,
+                    DeliveryId = deliveryId,
+                    FileName = "before.png",
+                    ContentType = "image/png",
+                    FileSize = 2048,
+                    ObjectKey = "stub/before.png",
+                    SortOrder = 2,
+                },
+                new DeliveryFile
+                {
+                    Id = imgAfterId,
+                    DeliveryId = deliveryId,
+                    FileName = "after.png",
+                    ContentType = "image/png",
+                    FileSize = 2048,
+                    ObjectKey = "stub/after.png",
+                    SortOrder = 3,
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateClient();
+        var vttRes = await client.GetAsync($"/api/downloads/{shareCode}/subtitles/{subFileId}");
+        Assert.Equal(HttpStatusCode.OK, vttRes.StatusCode);
+        Assert.Contains("text/vtt", vttRes.Content.Headers.ContentType?.ToString() ?? string.Empty);
+        var vttBody = await vttRes.Content.ReadAsStringAsync();
+        Assert.StartsWith("WEBVTT", vttBody);
+        Assert.Contains("00:00:01.250 --> 00:00:04.500", vttBody);
+        Assert.Contains("Xin chao QuickShare", vttBody);
+
+        var pageHtml = await client.GetStringAsync($"{RoutePaths.DeliveryPage}{shareCode}");
+        Assert.Contains("id=\"dl-subtitles\"", pageHtml);
+        Assert.Contains("id=\"dl-subtitle-track-select\"", pageHtml);
+        Assert.Contains("id=\"dl-image-compare\"", pageHtml);
+        Assert.Contains("id=\"dl-compare-slider\"", pageHtml);
+    }
+
+    [Fact]
+    public async Task P2PPairingAndQrScanner_MintsAndConsumesOneTimeSixDigitKey()
+    {
+        var client = _factory.CreateClient();
+        var createRes = await client.PostAsJsonAsync("/api/shares/p2p", new
+        {
+            FileName = "pair-test.zip",
+            FileSize = 1024L,
+            MimeType = "application/zip",
+            BaseUrl = "https://localhost"
+        });
+        Assert.Equal(HttpStatusCode.OK, createRes.StatusCode);
+
+        var created = await createRes.Content.ReadFromJsonAsync<QuickShare.Features.Shares.P2P.CreateP2PShareResponse>();
+        Assert.NotNull(created);
+        Assert.Equal(6, created!.PairingCode.Length);
+        Assert.All(created.PairingCode, c => Assert.True(char.IsAsciiDigit(c)));
+
+        var resolveRes = await client.GetAsync($"{RoutePaths.P2pPairRoute}/{created.PairingCode}");
+        Assert.Equal(HttpStatusCode.OK, resolveRes.StatusCode);
+        var resolved = await resolveRes.Content.ReadFromJsonAsync<QuickShare.Features.Shares.P2P.ResolveP2PPairingResponse>();
+        Assert.Equal(created.ShareCode, resolved!.ShareCode);
+
+        var secondRes = await client.GetAsync($"{RoutePaths.P2pPairRoute}/{created.PairingCode}");
+        Assert.Equal(HttpStatusCode.NotFound, secondRes.StatusCode);
+
+        var p2pHtml = await client.GetStringAsync(RoutePaths.P2pSend);
+        Assert.Contains("id=\"p2ps-pair-card\"", p2pHtml);
+        Assert.Contains("id=\"p2ps-qr-scan-card\"", p2pHtml);
+    }
 }
