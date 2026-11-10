@@ -2932,3 +2932,12 @@ html, body {
 .workspace-folder-list [draggable="true"] {
     cursor: grab;
 }
+
+/* ─── RTL Layout & BiDi Filename Support (issue #152) ─── */
+[dir="rtl"] { direction: rtl; text-align: start; }
+[dir="rtl"] .account-delivery__activity-body ul { padding-left: 0; padding-right: var(--db-space-4); }
+[dir="rtl"] .account-delivery__ocr { margin-left: 0; margin-right: var(--db-space-2); }
+.file-name, .dl-file__name, [data-bidi="plaintext"] { unicode-bidi: plaintext; }
+.rtl-ready {
+    cursor: grab;
+}

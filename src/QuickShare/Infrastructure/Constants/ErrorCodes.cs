@@ -243,4 +243,10 @@ public static class ErrorCodes
     public const string SupportMessageEmpty = "support_message_empty";
     public const string AutomationNameInvalid = "automation_name_invalid";
     public const string AutomationNotFound = "automation_not_found";
+    public const string RecoveryCodeInvalid = "recovery_code_invalid";
+    public const string RecoveryRateLimited = "recovery_rate_limited";
+    public const string EncryptionRequiredByPolicy = "encryption_required_by_policy";
+    public const string EncryptionDisabledByPolicy = "encryption_disabled_by_policy";
+    public const string PenetrationTestInvalid = "penetration_test_invalid";
+    public const string PenetrationTestNotFound = "penetration_test_not_found";
 }

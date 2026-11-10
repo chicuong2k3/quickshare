@@ -160,6 +160,10 @@ public record Delivery : BaseAuditEntity
     public string StorageTier { get; set; } = DeliveryStorageTier.Hot;
     public DateTime? ArchivedAt { get; set; }
     public DateTime? RestoredUntil { get; set; }
+    public string EncryptionMode { get; set; } = DeliveryEncryptionMode.FragmentKey;
+    public string? EncryptionKdfSalt { get; set; }
+    public int? EncryptionKdfIterations { get; set; }
+    public string? EncryptedKeyEscrow { get; set; }
     public User? Sender { get; init; }
     /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
     public Guid? FileRequestId { get; set; }
@@ -183,6 +187,15 @@ public static class DeliveryVirusScanStatus
     public const string Pending = "Pending";
     public const string Clean = "Clean";
     public const string Infected = "Infected";
+}
+
+public static class DeliveryEncryptionMode
+{
+    public const string None = "none";
+    public const string FragmentKey = "fragment";
+    public const string Passphrase = "passphrase";
+
+    public static readonly string[] All = [None, FragmentKey, Passphrase];
 }
 
 public static class DeliveryStorageTier

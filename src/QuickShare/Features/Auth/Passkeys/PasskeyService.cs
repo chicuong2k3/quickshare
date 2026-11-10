@@ -87,6 +87,12 @@ public sealed class PasskeyService(AppDbContext db, IFido2 fido2, IOptions<Email
         };
 
         db.UserPasskeys.Add(passkey);
+        var recovery = await db.UserPasskeyRecoveries.FirstOrDefaultAsync(r => r.UserId == user.Id, ct);
+        if (recovery is not null && recovery.RequirePasskeyReAdd)
+        {
+            recovery.RequirePasskeyReAdd = false;
+        }
+        await db.SaveChangesAsync(ct);
         await db.SaveChangesAsync(ct);
 
         return passkey;

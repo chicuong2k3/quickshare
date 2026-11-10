@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, bool OcrEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, bool OcrEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null, string? EncryptionMode = null, string? EncryptionKdfSalt = null, int? EncryptionKdfIterations = null, string? EncryptedKeyEscrow = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -256,6 +256,27 @@ public sealed class CommitR2Handler(
                     .Select(w => w.RequireDeliveryApproval)
                     .FirstOrDefaultAsync(cancellationToken));
 
+        var encryptionMode = string.IsNullOrWhiteSpace(cmd.EncryptionMode)
+            ? DeliveryEncryptionMode.FragmentKey
+            : cmd.EncryptionMode.Trim().ToLowerInvariant();
+        if (!DeliveryEncryptionMode.All.Contains(encryptionMode))
+            encryptionMode = DeliveryEncryptionMode.FragmentKey;
+
+        if (workspaceId is { } encWorkspaceId)
+        {
+            var wsEncryptionPolicy = await db.Workspaces
+                .AsNoTracking()
+                .Where(w => w.Id == encWorkspaceId)
+                .Select(w => w.EncryptionPolicy)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (wsEncryptionPolicy == WorkspaceEncryptionPolicy.Required && encryptionMode == DeliveryEncryptionMode.None)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.EncryptionRequiredByPolicy));
+
+            if (wsEncryptionPolicy == WorkspaceEncryptionPolicy.Disabled && encryptionMode != DeliveryEncryptionMode.None)
+                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.EncryptionDisabledByPolicy));
+        }
+
         var maxExpiry = hasTransferPass ? TimeSpan.FromDays(TransferCreditPass.ExtendedExpiryDays) : PlanTierLimits.GetMaxExpiry(plan);
 
         // Locked folder defaults are policy, not prefill (issue #245). Unlocked ones never
@@ -373,6 +394,10 @@ public sealed class CommitR2Handler(
             AllowedIpRanges = allowedIpRanges,
             AllowedCountries = allowedCountries,
             BlockedCountries = blockedCountries,
+            EncryptionMode = encryptionMode,
+            EncryptionKdfSalt = string.IsNullOrWhiteSpace(cmd.EncryptionKdfSalt) ? null : cmd.EncryptionKdfSalt.Trim(),
+            EncryptionKdfIterations = cmd.EncryptionKdfIterations,
+            EncryptedKeyEscrow = string.IsNullOrWhiteSpace(cmd.EncryptedKeyEscrow) ? null : cmd.EncryptedKeyEscrow.Trim(),
         };
 
         session.Status = UploadSessionStatus.Committed;

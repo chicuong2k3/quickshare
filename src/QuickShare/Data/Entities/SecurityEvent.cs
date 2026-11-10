@@ -118,4 +118,8 @@ public enum SecurityEventType
     SupportChatEscalated,
     AutomationConnected,
     AutomationRevoked,
+    PasskeyRecoveryGenerated,
+    PasskeyRecoveryUsed,
+    WorkspaceEncryptionPolicyChanged,
+    PenetrationTestRecorded,
 }

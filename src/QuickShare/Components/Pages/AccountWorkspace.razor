@@ -142,6 +142,25 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_encryption_policy_title"]</h2>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_encryption_policy_hint"]</p>
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="ws-encryption-policy">@Loc["ws_encryption_policy_label"]</label>
+                            <NativeSelect id="ws-encryption-policy">
+                                <NativeSelectOption value="@WorkspaceEncryptionPolicy.Default" Selected="@(workspace.EncryptionPolicy == WorkspaceEncryptionPolicy.Default)">@Loc["ws_encryption_default"]</NativeSelectOption>
+                                <NativeSelectOption value="@WorkspaceEncryptionPolicy.Required" Selected="@(workspace.EncryptionPolicy == WorkspaceEncryptionPolicy.Required)">@Loc["ws_encryption_required"]</NativeSelectOption>
+                                <NativeSelectOption value="@WorkspaceEncryptionPolicy.Disabled" Selected="@(workspace.EncryptionPolicy == WorkspaceEncryptionPolicy.Disabled)">@Loc["ws_encryption_disabled"]</NativeSelectOption>
+                            </NativeSelect>
+                            <button type="button" data-slot="button" data-variant="default"
+                                    onclick="window.quickShareWorkspace.saveEncryptionPolicy(this)"
+                                    data-saved-label="@Loc["security_confirm_saved"]"
+                                    data-ai-action="workspace.encryptionPolicy.save">@Loc["ws_encryption_policy_save"]</button>
+                        </div>
+                    </CardContent>
+                </Card>
             }
 
             @if (workspace.IsOwner)

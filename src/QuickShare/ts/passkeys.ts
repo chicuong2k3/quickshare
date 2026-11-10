@@ -83,6 +83,22 @@ window.quickSharePasskeys = (function () {
                         window.alert(qsPage.attr(btn, 'data-error-label'));
                         return;
                     }
+                    if (result.recoveryCodes && Array.isArray(result.recoveryCodes) && result.recoveryCodes.length > 0) {
+                        const outWrap = document.getElementById('passkey-recovery-output');
+                        const listEl = document.getElementById('passkey-recovery-list');
+                        const countEl = document.getElementById('passkey-recovery-count');
+                        if (listEl) {
+                            listEl.innerHTML = '';
+                            result.recoveryCodes.forEach(function (c: string) {
+                                const li = document.createElement('li');
+                                li.textContent = c;
+                                listEl.appendChild(li);
+                            });
+                        }
+                        if (countEl) countEl.textContent = String(result.recoveryCodes.length);
+                        if (outWrap) outWrap.removeAttribute('hidden');
+                        return;
+                    }
                     qsPage.reload(BODY);
                 })
                 .catch(function () {
@@ -150,6 +166,43 @@ window.quickSharePasskeys = (function () {
 
         // Always reports the same thing back, matching what the endpoint does: the response must
         // not reveal whether an address has an account.
+        generateRecoveryCodes: function (btn: HTMLButtonElement): void {
+            btn.disabled = true;
+            postJson('/api/account/passkeys/recovery-codes', null).then(function (res: { codes?: string[]; codesRemaining?: number } | null) {
+                btn.disabled = false;
+                if (!res || !res.codes) return;
+                const outWrap = document.getElementById('passkey-recovery-output');
+                const listEl = document.getElementById('passkey-recovery-list');
+                const countEl = document.getElementById('passkey-recovery-count');
+                if (listEl) {
+                    listEl.innerHTML = '';
+                    res.codes.forEach(function (c: string) {
+                        const li = document.createElement('li');
+                        li.textContent = c;
+                        listEl.appendChild(li);
+                    });
+                }
+                if (countEl) countEl.textContent = String(res.codesRemaining ?? res.codes.length);
+                if (outWrap) outWrap.removeAttribute('hidden');
+            });
+        },
+
+        signInWithRecovery: function (btn: HTMLButtonElement): void {
+            const email = qsPage.value('login-email');
+            const code = qsPage.value('login-recovery-code');
+            if (!email || !code) return;
+
+            btn.disabled = true;
+            postJson('/api/auth/passkey/recovery', { email: email, code: code }).then(function (res: { redirectUrl?: string } | null) {
+                btn.disabled = false;
+                if (!res) {
+                    window.alert(qsPage.attr(btn, 'data-error-label'));
+                    return;
+                }
+                window.location.href = res.redirectUrl || '/account/security?readd=1';
+            });
+        },
+
         sendLink: function (btn: HTMLButtonElement): void {
             const email = qsPage.value('login-email');
             if (!email) return;

@@ -128,4 +128,13 @@ public static class RoutePaths
     public const string AutomationsCatalogApi = "/api/automations/catalog";
     public const string AccountAutomations = "/account/automations";
     public const string CheckoutSessionApi = "/api/payments/checkout-session";
+    public const string AccountPasskeyRecoveryCodesApi = "/api/account/passkeys/recovery-codes";
+    public const string PasskeyRecoveryLoginApi = "/api/auth/passkey/recovery";
+    public const string DeliveryKeyEscrowApi = "/api/downloads/{ShareCode}/key-escrow";
+    public const string SecurityPentestApi = "/api/security/pentest";
+    public const string AdminSecurityPentestApi = "/api/admin/security/pentest";
+    public const string SeoZhSendLargeFilesFree = "/zh/send-large-files-free";
+    public const string SeoJaSendLargeFilesFree = "/ja/send-large-files-free";
+    public const string SeoEsSendLargeFilesFree = "/es/enviar-archivos-grandes-gratis";
+    public const string SeoArSendLargeFilesFree = "/ar/send-large-files-free";
 }

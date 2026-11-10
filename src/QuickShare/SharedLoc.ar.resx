@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="lang_ar" xml:space="preserve"><value>العربية</value></data>
+  <data name="nav_home" xml:space="preserve"><value>الرئيسية</value></data>
+  <data name="nav_send" xml:space="preserve"><value>إرسال</value></data>
+  <data name="nav_files" xml:space="preserve"><value>الملفات</value></data>
+  <data name="nav_pricing" xml:space="preserve"><value>الأسعار</value></data>
+  <data name="nav_account" xml:space="preserve"><value>الحساب</value></data>
+  <data name="nav_login" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="nav_logout" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="nav_p2p" xml:space="preserve"><value>نقل مباشر P2P</value></data>
+  <data name="nav_help" xml:space="preserve"><value>مساعدة</value></data>
+  <data name="home_title" xml:space="preserve"><value>QuickShareCloud — إرسال الملفات الكبيرة بأمان وسرعة</value></data>
+  <data name="home_tag" xml:space="preserve"><value>مشفر · سريع · مؤقت</value></data>
+  <data name="home_h1_send" xml:space="preserve"><value>أرسل</value></data>
+  <data name="home_h1_anything" xml:space="preserve"><value>أي ملف</value></data>
+  <data name="home_h1_zero" xml:space="preserve"><value>بلا تعقيد</value></data>
+  <data name="home_sub" xml:space="preserve"><value>مشاركة ملفات مشفرة مع انتهاء صلاحية تلقائي. لا حاجة لحساب للمستلم.</value></data>
+  <data name="home_btn_start" xml:space="preserve"><value>ابدأ الإرسال</value></data>
+  <data name="seo_send_h1" xml:space="preserve"><value>إرسال الملفات الكبيرة مجاناً — تشفير شامل من الطرف إلى الطرف</value></data>
+  <data name="seo_send_desc" xml:space="preserve"><value>أرسل الملفات الكبيرة مجاناً عبر المتصفح مع تشفير كامل وروابط تنتهي صلاحيتها تلقائياً.</value></data>
+  <data name="seo_send_lede" xml:space="preserve"><value>اختر ملفاتك، يتم تشفيرها داخل متصفحك، واحصل على رابط مشاركة آمن ومؤقت فوراً.</value></data>
+  <data name="seo_send_cta" xml:space="preserve"><value>أرسل الملفات مجاناً الآن</value></data>
+  <data name="seo_send_how_title" xml:space="preserve"><value>كيف يعمل</value></data>
+  <data name="seo_send_how_body" xml:space="preserve"><value>يتم تشفير الملفات بمعيار AES-GCM داخل المتصفح قبل الرفع بحيث لا يطلع الخادم على المحتوى.</value></data>
+  <data name="seo_send_why_title" xml:space="preserve"><value>لماذا QuickShareCloud</value></data>
+  <data name="seo_send_why_1" xml:space="preserve"><value>تشفير من الطرف إلى الطرف داخل المتصفح.</value></data>
+  <data name="seo_send_why_2" xml:space="preserve"><value>حذف تلقائي عند انتهاء الصلاحية.</value></data>
+  <data name="seo_send_why_3" xml:space="preserve"><value>دعم الروابط السحابية والنقل المباشر P2P.</value></data>
+  <data name="seo_send_free_title" xml:space="preserve"><value>مجاني للبدء</value></data>
+  <data name="seo_send_free_body" xml:space="preserve"><value>أرسل الملفات مجاناً أو قم بالترقية إلى خطط Pro و Studio للأحجام الأكبر وإدارة الفرق.</value></data>
+</root>

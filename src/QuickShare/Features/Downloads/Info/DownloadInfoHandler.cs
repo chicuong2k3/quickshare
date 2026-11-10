@@ -40,7 +40,11 @@ public record DownloadInfoResponse(
     bool IsQueued = false,
     int QueuePosition = 0,
     int QueueEtaSeconds = 0,
-    bool SuppressAdInterstitial = false
+    bool SuppressAdInterstitial = false,
+    string EncryptionMode = DeliveryEncryptionMode.FragmentKey,
+    string? EncryptionKdfSalt = null,
+    int? EncryptionKdfIterations = null,
+    bool HasKeyEscrow = false
 );
 
 public sealed class DownloadInfoHandler(
@@ -156,7 +160,11 @@ public sealed class DownloadInfoHandler(
                     IsQueued: queue.IsQueued,
                     QueuePosition: queue.Position,
                     QueueEtaSeconds: queue.EtaSeconds,
-                    SuppressAdInterstitial: queue.SuppressAdInterstitial
+                    SuppressAdInterstitial: queue.SuppressAdInterstitial,
+                    EncryptionMode: string.IsNullOrEmpty(delivery.EncryptionMode) ? DeliveryEncryptionMode.FragmentKey : delivery.EncryptionMode,
+                    EncryptionKdfSalt: delivery.EncryptionKdfSalt,
+                    EncryptionKdfIterations: delivery.EncryptionKdfIterations,
+                    HasKeyEscrow: !string.IsNullOrEmpty(delivery.EncryptedKeyEscrow)
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

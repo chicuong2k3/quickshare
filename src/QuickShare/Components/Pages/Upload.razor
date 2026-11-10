@@ -397,6 +397,20 @@
                         <span>@Loc["upload_compress_label"]</span>
                     </label>
                     <span class="otp-hint">@Loc["upload_compress_hint"]</span>
+
+                <div class="sender-email-wrap" id="upload-encryption-wrap">
+                    <label for="upload-encryption-mode" class="otp-label">@Loc["upload_encryption_mode_label"]</label>
+                    <NativeSelect id="upload-encryption-mode" class="sender-email-input" aria-label="@Loc["upload_encryption_mode_label"]">
+                        <NativeSelectOption value="@DeliveryEncryptionMode.FragmentKey" Selected>@Loc["upload_encryption_mode_fragment"]</NativeSelectOption>
+                        <NativeSelectOption value="@DeliveryEncryptionMode.Passphrase">@Loc["upload_encryption_mode_passphrase"]</NativeSelectOption>
+                        <NativeSelectOption value="@DeliveryEncryptionMode.None">@Loc["upload_encryption_mode_none"]</NativeSelectOption>
+                    </NativeSelect>
+                    <div id="upload-passphrase-row" class="mt-2">
+                        <label for="upload-encryption-passphrase" class="protect-sub">@Loc["upload_encryption_passphrase_label"]</label>
+                        <Input Type="password" id="upload-encryption-passphrase" class="sender-email-input" autocomplete="new-password" placeholder="@Loc["upload_encryption_passphrase_placeholder"]" />
+                    </div>
+                    <p id="upload-encryption-honesty" class="otp-hint mt-1">@Loc["upload_encryption_honesty_notice"]</p>
+                </div>
                 </div>
 
 

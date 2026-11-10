@@ -3335,4 +3335,100 @@
   <data name="upgrade_method_paypal" xml:space="preserve">
     <value>Ví PayPal</value>
   </data>
+  <data name="lang_zh" xml:space="preserve">
+    <value>中文</value>
+  </data>
+  <data name="lang_ja" xml:space="preserve">
+    <value>日本語</value>
+  </data>
+  <data name="lang_es" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="lang_ar" xml:space="preserve">
+    <value>العربية</value>
+  </data>
+  <data name="lang_he" xml:space="preserve">
+    <value>עברית</value>
+  </data>
+  <data name="passkeys_recovery_readd_notice" xml:space="preserve">
+    <value>Bạn vừa đăng nhập bằng mã khôi phục Passkey dùng một lần. Vui lòng đăng ký lại Passkey mới để khôi phục bảo mật phần cứng.</value>
+  </data>
+  <data name="passkeys_recovery_left" xml:space="preserve">
+    <value>Số mã khôi phục Passkey chưa dùng còn lại: {0}</value>
+  </data>
+  <data name="passkeys_recovery_generate" xml:space="preserve">
+    <value>Tạo mã khôi phục Passkey</value>
+  </data>
+  <data name="login_passkey_recovery_toggle" xml:space="preserve">
+    <value>Mất thiết bị Passkey? Dùng mã khôi phục</value>
+  </data>
+  <data name="login_passkey_recovery_label" xml:space="preserve">
+    <value>Mã khôi phục Passkey</value>
+  </data>
+  <data name="login_passkey_recovery_submit" xml:space="preserve">
+    <value>Đăng nhập bằng mã khôi phục</value>
+  </data>
+  <data name="ws_encryption_policy_title" xml:space="preserve">
+    <value>Chính sách mã hóa phía trình duyệt</value>
+  </data>
+  <data name="ws_encryption_policy_hint" xml:space="preserve">
+    <value>Kiểm soát việc thành viên workspace sử dụng mã hóa đầu cuối zero-knowledge hay bắt buộc quét virus và tạo xem trước trên máy chủ.</value>
+  </data>
+  <data name="ws_encryption_policy_label" xml:space="preserve">
+    <value>Chế độ mã hóa Workspace</value>
+  </data>
+  <data name="ws_encryption_default" xml:space="preserve">
+    <value>Mặc định (Người gửi tự chọn chế độ mã hóa)</value>
+  </data>
+  <data name="ws_encryption_required" xml:space="preserve">
+    <value>Bắt buộc (Luôn mã hóa đầu cuối phía trình duyệt)</value>
+  </data>
+  <data name="ws_encryption_disabled" xml:space="preserve">
+    <value>Tắt mã hóa client (Để máy chủ quét virus &amp; tạo xem trước)</value>
+  </data>
+  <data name="ws_encryption_policy_save" xml:space="preserve">
+    <value>Lưu chính sách mã hóa</value>
+  </data>
+  <data name="upload_encryption_mode_label" xml:space="preserve">
+    <value>Quản lý khóa mã hóa</value>
+  </data>
+  <data name="upload_encryption_mode_fragment" xml:space="preserve">
+    <value>Khóa trên URL Fragment Zero-knowledge (#k=)</value>
+  </data>
+  <data name="upload_encryption_mode_passphrase" xml:space="preserve">
+    <value>Khóa dẫn xuất từ cụm mật khẩu (PBKDF2-SHA256)</value>
+  </data>
+  <data name="upload_encryption_mode_none" xml:space="preserve">
+    <value>Máy chủ quản lý (Hỗ trợ quét virus &amp; xem trước)</value>
+  </data>
+  <data name="upload_encryption_passphrase_label" xml:space="preserve">
+    <value>Cụm mật khẩu mã hóa (chia sẻ riêng cho người nhận)</value>
+  </data>
+  <data name="upload_encryption_passphrase_placeholder" xml:space="preserve">
+    <value>Nhập cụm mật khẩu mạnh để dẫn xuất khóa PBKDF2</value>
+  </data>
+  <data name="upload_encryption_honesty_notice" xml:space="preserve">
+    <value>Lưu ý minh bạch: Tệp mã hóa phía trình duyệt không thể quét virus hoặc tạo ảnh thu nhỏ trên máy chủ vì máy chủ không có khóa giải mã.</value>
+  </data>
+  <data name="dl_fact_honesty_title" xml:space="preserve">
+    <value>Đánh đổi bảo mật Zero-knowledge</value>
+  </data>
+  <data name="dl_fact_honesty_body" xml:space="preserve">
+    <value>Tệp mã hóa đầu cuối tại trình duyệt sẽ bỏ qua bước quét virus và tạo ảnh xem trước trên máy chủ.</value>
+  </data>
+  <data name="dl_passphrase_title" xml:space="preserve">
+    <value>Yêu cầu cụm mật khẩu giải mã</value>
+  </data>
+  <data name="dl_passphrase_sub" xml:space="preserve">
+    <value>Liên kết này sử dụng mã hóa dẫn xuất PBKDF2. Nhập cụm mật khẩu do người gửi cung cấp để tạo khóa giải mã ngay trong trình duyệt.</value>
+  </data>
+  <data name="dl_passphrase_placeholder" xml:space="preserve">
+    <value>Nhập cụm mật khẩu giải mã</value>
+  </data>
+  <data name="dl_passphrase_unlock" xml:space="preserve">
+    <value>Dẫn xuất khóa &amp; Mở khóa</value>
+  </data>
+  <data name="dl_passphrase_unlocked" xml:space="preserve">
+    <value>Đã dẫn xuất khóa giải mã trong trình duyệt.</value>
+  </data>
 </root>

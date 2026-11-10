@@ -85,6 +85,8 @@ public class AppDbContext : DbContext
     public DbSet<SupportChatThread> SupportChatThreads => Set<SupportChatThread>();
     public DbSet<SupportChatMessage> SupportChatMessages => Set<SupportChatMessage>();
     public DbSet<AutomationConnection> AutomationConnections => Set<AutomationConnection>();
+    public DbSet<UserPasskeyRecovery> UserPasskeyRecoveries => Set<UserPasskeyRecovery>();
+    public DbSet<PenetrationTestRecord> PenetrationTestRecords => Set<PenetrationTestRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1232,6 +1234,27 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(AutomationConnection.HashLength);
             entity.HasIndex(e => e.TokenHash).IsUnique();
             entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<UserPasskeyRecovery>(entity =>
+        {
+            entity.ToTable("user_passkey_recoveries");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RecoveryCodeHashes).IsRequired().HasMaxLength(UserPasskeyRecovery.HashesMaxLength);
+            entity.HasIndex(e => e.UserId).IsUnique();
+        });
+
+        modelBuilder.Entity<PenetrationTestRecord>(entity =>
+        {
+            entity.ToTable("penetration_test_records");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.VendorName).IsRequired().HasMaxLength(PenetrationTestRecord.VendorMaxLength);
+            entity.Property(e => e.Scope).IsRequired().HasMaxLength(PenetrationTestRecord.ScopeMaxLength);
+            entity.Property(e => e.Methodology).IsRequired().HasMaxLength(PenetrationTestRecord.MethodologyMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.PublicSummary).IsRequired().HasMaxLength(PenetrationTestRecord.SummaryMaxLength);
+            entity.Property(e => e.NdaReportReference).HasMaxLength(PenetrationTestRecord.ReportRefMaxLength);
+            entity.HasIndex(e => e.AssessmentYear).IsUnique();
         });
 
     }

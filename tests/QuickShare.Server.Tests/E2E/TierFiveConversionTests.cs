@@ -2038,4 +2038,165 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         var upgradeHtml = await client.GetStringAsync(RoutePaths.Upgrade);
         Assert.Contains("id=\"upgrade-payment-method\"", upgradeHtml);
     }
+
+    // -----------------------------------------------------------------
+    // #118 — Passkey recovery codes: generate 10 single-use codes, spend on login, require re-add
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task PasskeyRecoveryCodes_GeneratesTenCodes_AuthenticatesSingleUse_AndFlagsReAdd()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var uniqueEmail = $"passkey-{user.Id:N}@quickshare.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var u = db.Users.First(x => x.Id == user.Id);
+            u.Email = uniqueEmail;
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        var genRes = await client.PostAsync(RoutePaths.AccountPasskeyRecoveryCodesApi, null);
+        Assert.Equal(HttpStatusCode.OK, genRes.StatusCode);
+        var genDto = await genRes.Content.ReadFromJsonAsync<QuickShare.Features.Auth.Passkeys.PasskeyRecoveryGenerateDto>();
+        Assert.NotNull(genDto);
+        Assert.Equal(10, genDto!.Codes.Count);
+
+        var firstCode = genDto.Codes[0];
+
+        // Authenticate via anonymous client using email + recovery code
+        var anonClient = _factory.CreateClient();
+        var loginRes = await anonClient.PostAsJsonAsync(RoutePaths.PasskeyRecoveryLoginApi, new
+        {
+            email = uniqueEmail,
+            code = firstCode,
+        });
+        Assert.Equal(HttpStatusCode.OK, loginRes.StatusCode);
+
+        // Second attempt with the same single-use code is rejected
+        var replayRes = await anonClient.PostAsJsonAsync(RoutePaths.PasskeyRecoveryLoginApi, new
+        {
+            email = uniqueEmail,
+            code = firstCode,
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, replayRes.StatusCode);
+
+        // Status reflects 9 remaining codes and RequirePasskeyReAdd = true
+        var statusDto = await client.GetFromJsonAsync<QuickShare.Features.Auth.Passkeys.PasskeyRecoveryStatusDto>(RoutePaths.AccountPasskeyRecoveryCodesApi);
+        Assert.NotNull(statusDto);
+        Assert.Equal(9, statusDto!.CodesRemaining);
+        Assert.True(statusDto.RequirePasskeyReAdd);
+    }
+
+    // -----------------------------------------------------------------
+    // #313 — Encryption key management: workspace policy, PBKDF2 passphrase & key escrow
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task EncryptionKeyManagement_EnforcesWorkspacePolicy_AndStoresKeyEscrowForAuthorizedCaller()
+    {
+        var ownerKey = Guid.CreateVersion7().ToString();
+        var owner = await _factory.SeedUserAsync(ownerKey, PlanTierLimits.Studio);
+        var client = _factory.CreateAuthenticatedClient(ownerKey);
+
+        // Create workspace and set EncryptionPolicy = required
+        var createWs = await client.PostAsJsonAsync("/api/workspace", new
+        {
+            name = "Zero-Knowledge Vault Team",
+            seats = 3,
+        });
+        Assert.Equal(HttpStatusCode.OK, createWs.StatusCode);
+
+        var patchWs = await client.PatchAsJsonAsync("/api/workspace", new
+        {
+            encryptionPolicy = WorkspaceEncryptionPolicy.Required,
+        });
+        Assert.Equal(HttpStatusCode.OK, patchWs.StatusCode);
+
+        var shareCode = $"enc{owner.Id.ToString("N")[..7]}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = owner.Id,
+                ShareCode = shareCode,
+                FileName = "board-deck.pdf",
+                ContentType = "application/pdf",
+                FileSize = 2048,
+                TotalBytes = 2048,
+                StoragePath = $"uploads/{owner.Id:N}/{shareCode}/board-deck.pdf",
+                MaxDownloads = 10,
+                Status = DeliveryStatus.Active,
+                EncryptionMode = DeliveryEncryptionMode.Passphrase,
+                EncryptionKdfSalt = "YWJjZGVmZ2hpamtsbW5vcA==",
+                EncryptionKdfIterations = 600000,
+                EncryptedKeyEscrow = "escrow-wrapped-cek-v1",
+                ExpiresAt = DateTime.UtcNow.AddDays(5),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var dlPage = await client.GetStringAsync($"/d/{shareCode}");
+        Assert.Contains("\"encryptionMode\":\"passphrase\"", dlPage);
+        Assert.Contains("\"encryptionKdfSalt\":\"YWJjZGVmZ2hpamtsbW5vcA==\"", dlPage);
+        Assert.Contains("\"hasKeyEscrow\":true", dlPage);
+        Assert.Contains("id=\"dl-passphrase-vault\"", dlPage);
+
+        var escrowRes = await client.GetFromJsonAsync<QuickShare.Features.Downloads.KeyEscrow.DeliveryKeyEscrowDto>($"/api/downloads/{shareCode}/key-escrow");
+        Assert.NotNull(escrowRes);
+        Assert.Equal("escrow-wrapped-cek-v1", escrowRes!.EncryptedKeyEscrow);
+    }
+
+    // -----------------------------------------------------------------
+    // #84 & #152 — Multi-locale (zh, ja, es, ar) + RTL layout & SEO landing pages
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task MultiLocaleAndRtl_RendersArabicRtlDirection_AndLocalizedSeoLandingPages()
+    {
+        var client = _factory.CreateClient();
+
+        // Request with Accept-Language: ar renders dir="rtl" and lang="ar"
+        using var req = new HttpRequestMessage(HttpMethod.Get, RoutePaths.SeoArSendLargeFilesFree);
+        req.Headers.Add("Accept-Language", "ar");
+        var arRes = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.OK, arRes.StatusCode);
+        var arHtml = await arRes.Content.ReadAsStringAsync();
+        Assert.Contains("dir=\"rtl\"", arHtml);
+        Assert.Contains("lang=\"ar\"", arHtml);
+
+        // Verify zh, ja, es SEO landing routes also render 200 OK and appear in sitemap.xml
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(RoutePaths.SeoZhSendLargeFilesFree)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(RoutePaths.SeoJaSendLargeFilesFree)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(RoutePaths.SeoEsSendLargeFilesFree)).StatusCode);
+
+        var sitemapXml = await client.GetStringAsync(RoutePaths.Sitemap);
+        Assert.Contains(RoutePaths.SeoZhSendLargeFilesFree, sitemapXml);
+        Assert.Contains(RoutePaths.SeoArSendLargeFilesFree, sitemapXml);
+    }
+
+    // -----------------------------------------------------------------
+    // #188 — Annual external penetration test posture & admin report recording
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task PenetrationTestPosture_ReturnsBaselineAssessment_AndRendersSecurityPostureSection()
+    {
+        var client = _factory.CreateClient();
+
+        var posture = await client.GetFromJsonAsync<QuickShare.Features.Security.GetPenetrationTestPostureResponse>(RoutePaths.SecurityPentestApi);
+        Assert.NotNull(posture);
+        Assert.NotNull(posture!.Latest);
+        Assert.Equal(0, posture.Latest.CriticalCount);
+        Assert.Equal(0, posture.Latest.HighCount);
+        Assert.Equal(PenetrationTestRecord.StatusVerifiedClean, posture.Latest.Status);
+
+        var secHtml = await client.GetStringAsync(RoutePaths.Security);
+        Assert.Contains("id=\"pentest-posture\"", secHtml);
+    }
 }

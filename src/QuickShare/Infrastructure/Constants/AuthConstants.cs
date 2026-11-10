@@ -13,6 +13,7 @@ public static class AuthConstants
     public const string EntraProvider = "entra";
     /// <summary>Signed in with a passkey (issue #68). Not a registration provider — an extra door.</summary>
     public const string PasskeyProvider = "passkey";
+    public const string PasskeyRecoveryProvider = "passkey-recovery";
     /// <summary>Signed in via an emailed link (issue #132).</summary>
     public const string MagicLinkProvider = "magic-link";
 }

@@ -29,7 +29,8 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
             req.DeliveryId, req.UploadId, req.ObjectKey,
             req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId, req.CommentsEnabled, req.WatermarkEnabled, req.OcrEnabled,
             req.AdditionalFiles?.Select(f => new CommitFile(
-                f.ObjectKey, f.UploadId, f.FileName, f.ContentType, f.FileSize, f.Parts, f.Sha256)).ToList());
+                f.ObjectKey, f.UploadId, f.FileName, f.ContentType, f.FileSize, f.Parts, f.Sha256)).ToList(),
+            req.EncryptionMode, req.EncryptionKdfSalt, req.EncryptionKdfIterations, req.EncryptedKeyEscrow);
         var result = await Resolve<IMediator>().Send<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -86,6 +87,10 @@ public class CommitR2Request
     /// always has.
     /// </summary>
     public List<CommitFileRequest>? AdditionalFiles { get; set; }
+    public string? EncryptionMode { get; set; }
+    public string? EncryptionKdfSalt { get; set; }
+    public int? EncryptionKdfIterations { get; set; }
+    public string? EncryptedKeyEscrow { get; set; }
 }
 
 /// <summary>One extra file of a bundle, as posted at commit (issue #79).</summary>

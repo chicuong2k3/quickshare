@@ -804,5 +804,26 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         afterImg.alt = tmpAlt;
     }
 
-    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage, selectSubtitleTrack: selectSubtitleTrack, setCompareSplit: setCompareSplit, swapCompareImages: swapCompareImages };
+    let sessionVaultKey: CryptoKey | null = null;
+
+    async function unlockPassphraseVault(): Promise<void> {
+        const input = document.getElementById('dl-passphrase-input') as HTMLInputElement | null;
+        if (!input || !input.value) return;
+        const info = infoFromDom();
+        const saltStr = info.encryptionKdfSalt || shareCode();
+        const iterations = info.encryptionKdfIterations || 100000;
+        const enc = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey('raw', enc.encode(input.value), 'PBKDF2', false, ['deriveKey']);
+        sessionVaultKey = await crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: enc.encode(saltStr), iterations: iterations, hash: 'SHA-256' },
+            baseKey,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['decrypt']
+        );
+        state.isEncrypted = true;
+        show('dl-passphrase-unlocked');
+    }
+
+    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage, selectSubtitleTrack: selectSubtitleTrack, setCompareSplit: setCompareSplit, swapCompareImages: swapCompareImages, unlockPassphraseVault: unlockPassphraseVault };
 })();

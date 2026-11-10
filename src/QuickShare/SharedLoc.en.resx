@@ -3335,4 +3335,100 @@
   <data name="upgrade_method_paypal" xml:space="preserve">
     <value>PayPal</value>
   </data>
+  <data name="lang_zh" xml:space="preserve">
+    <value>中文</value>
+  </data>
+  <data name="lang_ja" xml:space="preserve">
+    <value>日本語</value>
+  </data>
+  <data name="lang_es" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="lang_ar" xml:space="preserve">
+    <value>العربية</value>
+  </data>
+  <data name="lang_he" xml:space="preserve">
+    <value>עברית</value>
+  </data>
+  <data name="passkeys_recovery_readd_notice" xml:space="preserve">
+    <value>You recently signed in using a single-use passkey recovery code. Please register a new passkey to restore full hardware-backed security.</value>
+  </data>
+  <data name="passkeys_recovery_left" xml:space="preserve">
+    <value>Unused passkey recovery codes remaining: {0}</value>
+  </data>
+  <data name="passkeys_recovery_generate" xml:space="preserve">
+    <value>Generate Passkey Recovery Codes</value>
+  </data>
+  <data name="login_passkey_recovery_toggle" xml:space="preserve">
+    <value>Lost your passkey? Use a recovery code</value>
+  </data>
+  <data name="login_passkey_recovery_label" xml:space="preserve">
+    <value>Passkey Recovery Code</value>
+  </data>
+  <data name="login_passkey_recovery_submit" xml:space="preserve">
+    <value>Sign in with Recovery Code</value>
+  </data>
+  <data name="ws_encryption_policy_title" xml:space="preserve">
+    <value>Client-Side Encryption Policy</value>
+  </data>
+  <data name="ws_encryption_policy_hint" xml:space="preserve">
+    <value>Control whether workspace members may use zero-knowledge client-side encryption or must allow server-side virus scanning and preview generation.</value>
+  </data>
+  <data name="ws_encryption_policy_label" xml:space="preserve">
+    <value>Workspace Encryption Mode</value>
+  </data>
+  <data name="ws_encryption_default" xml:space="preserve">
+    <value>Default (Sender chooses encryption mode)</value>
+  </data>
+  <data name="ws_encryption_required" xml:space="preserve">
+    <value>Required (Enforce zero-knowledge client-side encryption)</value>
+  </data>
+  <data name="ws_encryption_disabled" xml:space="preserve">
+    <value>Disabled (Require server-side virus scan &amp; previews)</value>
+  </data>
+  <data name="ws_encryption_policy_save" xml:space="preserve">
+    <value>Save Encryption Policy</value>
+  </data>
+  <data name="upload_encryption_mode_label" xml:space="preserve">
+    <value>Encryption Key Management</value>
+  </data>
+  <data name="upload_encryption_mode_fragment" xml:space="preserve">
+    <value>Zero-knowledge URL Fragment Key (#k=)</value>
+  </data>
+  <data name="upload_encryption_mode_passphrase" xml:space="preserve">
+    <value>Passphrase-derived Key (PBKDF2-SHA256)</value>
+  </data>
+  <data name="upload_encryption_mode_none" xml:space="preserve">
+    <value>Standard Server-Managed (Enables AV Scan &amp; Previews)</value>
+  </data>
+  <data name="upload_encryption_passphrase_label" xml:space="preserve">
+    <value>Encryption Passphrase (shared out-of-band)</value>
+  </data>
+  <data name="upload_encryption_passphrase_placeholder" xml:space="preserve">
+    <value>Enter a strong passphrase for PBKDF2 key derivation</value>
+  </data>
+  <data name="upload_encryption_honesty_notice" xml:space="preserve">
+    <value>Honesty note: Client-side encrypted uploads cannot be virus-scanned or thumbnailed by the server because the server never sees your plaintext key.</value>
+  </data>
+  <data name="dl_fact_honesty_title" xml:space="preserve">
+    <value>Zero-knowledge trade-off</value>
+  </data>
+  <data name="dl_fact_honesty_body" xml:space="preserve">
+    <value>Client-side encrypted files bypass server-side antivirus scanning and server-generated thumbnails.</value>
+  </data>
+  <data name="dl_passphrase_title" xml:space="preserve">
+    <value>Passphrase Required to Decrypt</value>
+  </data>
+  <data name="dl_passphrase_sub" xml:space="preserve">
+    <value>This delivery uses PBKDF2 passphrase-derived encryption. Enter the passphrase provided by the sender to derive the decryption key in your browser.</value>
+  </data>
+  <data name="dl_passphrase_placeholder" xml:space="preserve">
+    <value>Enter decryption passphrase</value>
+  </data>
+  <data name="dl_passphrase_unlock" xml:space="preserve">
+    <value>Derive Key &amp; Unlock</value>
+  </data>
+  <data name="dl_passphrase_unlocked" xml:space="preserve">
+    <value>Decryption key derived in browser.</value>
+  </data>
 </root>

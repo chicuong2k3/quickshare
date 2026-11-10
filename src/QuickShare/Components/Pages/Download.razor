@@ -227,6 +227,7 @@
                             <div class="zk-row hidden" id="dl-fact-key">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                 <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_key_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_key_body"]</p></div>
+                                <p id="dl-fact-encrypted-honesty" style="color: var(--db-color-text-muted); margin-top: 0.25rem">@Loc["dl_fact_honesty_body"]</p>
                             </div>
                             <div class="zk-row">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -376,6 +377,19 @@
                                 <p class="mt-1 text-muted-foreground">@Loc["dl_cold_sub"]</p>
                                 <button type="button" id="dl-cold-restore-btn" data-slot="button" data-variant="default" class="btn mt-3" onclick="restoreColdDelivery()" data-ai-action="download.cold.restore">@Loc["dl_cold_restore_btn"]</button>
                                 <p id="dl-cold-restore-done" class="mt-2 hidden text-xs text-muted-foreground">@Loc["dl_cold_restored"]</p>
+                            </div>
+                        }
+
+                        @if (Info?.EncryptionMode == DeliveryEncryptionMode.Passphrase)
+                        {
+                            <div id="dl-passphrase-vault" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm">
+                                <p class="font-medium">@Loc["dl_passphrase_title"]</p>
+                                <p class="mt-1 text-muted-foreground">@Loc["dl_passphrase_sub"]</p>
+                                <div class="mt-2 flex gap-2">
+                                    <Input Type="password" id="dl-passphrase-input" placeholder="@Loc["dl_passphrase_placeholder"]" autocomplete="off" />
+                                    <button type="button" id="dl-passphrase-unlock-btn" data-slot="button" data-variant="default" class="btn" onclick="downloadApp.unlockPassphraseVault()" data-ai-action="download.vault.unlock">@Loc["dl_passphrase_unlock"]</button>
+                                </div>
+                                <p id="dl-passphrase-unlocked" class="mt-2 hidden text-xs text-muted-foreground">@Loc["dl_passphrase_unlocked"]</p>
                             </div>
                         }
 
@@ -1203,7 +1217,11 @@
                 IsQueued = value.IsQueued,
                 QueuePosition = value.QueuePosition,
                 QueueEtaSeconds = value.QueueEtaSeconds,
-                SuppressAdInterstitial = value.SuppressAdInterstitial
+                SuppressAdInterstitial = value.SuppressAdInterstitial,
+                EncryptionMode = value.EncryptionMode,
+                EncryptionKdfSalt = value.EncryptionKdfSalt,
+                EncryptionKdfIterations = value.EncryptionKdfIterations,
+                HasKeyEscrow = value.HasKeyEscrow
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -1286,5 +1304,9 @@
         public int QueuePosition { get; set; }
         public int QueueEtaSeconds { get; set; }
         public bool SuppressAdInterstitial { get; set; }
+        public string EncryptionMode { get; set; } = DeliveryEncryptionMode.FragmentKey;
+        public string? EncryptionKdfSalt { get; set; }
+        public int? EncryptionKdfIterations { get; set; }
+        public bool HasKeyEscrow { get; set; }
     }
 }

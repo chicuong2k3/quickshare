@@ -11,7 +11,19 @@ using QuickShare.Features.Users.Shared;
 namespace QuickShare.Features.Auth.Passkeys;
 
 /// <summary>A registered passkey as the security page lists it (issue #68).</summary>
-public sealed record PasskeyDto(Guid Id, string? Name, DateTime CreatedAt, DateTime? LastUsedAt);
+public sealed record PasskeyDto(Guid Id, string? Name, DateTime CreatedAt, DateTime? LastUsedAt, IReadOnlyList<string>? RecoveryCodes = null);
+
+public sealed record PasskeyRecoveryStatusDto(int CodesRemaining, bool RequirePasskeyReAdd, DateTime? LastUsedAt);
+
+public sealed record PasskeyRecoveryGenerateDto(IReadOnlyList<string> Codes, int CodesRemaining);
+
+public sealed record PasskeyRecoveryLoginDto(bool Authenticated, bool RequirePasskeyReAdd, string RedirectUrl);
+
+public sealed class PasskeyRecoveryLoginRequest
+{
+    public string? Email { get; set; }
+    public string? Code { get; set; }
+}
 
 /// <summary>A ceremony in flight: the handle to send back, and the options to hand the browser.</summary>
 public sealed record CeremonyDto(string Handle, object Options);
@@ -125,7 +137,29 @@ public sealed class CompletePasskeyRegistrationEndpoint : Endpoint<CompleteRegis
             HttpContext.Request.Headers.UserAgent.ToString(),
             HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty, ct);
 
-        await Send.OkAsync(new PasskeyDto(passkey.Id, passkey.Name, passkey.CreatedAt, null), ct);
+        IReadOnlyList<string>? initialRecoveryCodes = null;
+        var existingRecovery = await db.UserPasskeyRecoveries.FirstOrDefaultAsync(r => r.UserId == user.Id, ct);
+        if (existingRecovery is null || TotpService.CountRecoveryCodes(existingRecovery.RecoveryCodeHashes) == 0)
+        {
+            var (codes, hashesJson) = TotpService.GenerateRecoveryCodes();
+            initialRecoveryCodes = codes;
+            if (existingRecovery is null)
+            {
+                db.UserPasskeyRecoveries.Add(new UserPasskeyRecovery
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = user.Id,
+                    RecoveryCodeHashes = hashesJson,
+                });
+            }
+            else
+            {
+                existingRecovery.RecoveryCodeHashes = hashesJson;
+            }
+            await db.SaveChangesAsync(ct);
+        }
+
+        await Send.OkAsync(new PasskeyDto(passkey.Id, passkey.Name, passkey.CreatedAt, null, initialRecoveryCodes), ct);
     }
 }
 
@@ -290,7 +324,7 @@ public static class AuthSignIn
         // A passkey is a possession factor with user verification — it already satisfies what the
         // second-factor gate is asking for, so the session starts verified. A magic link is not:
         // it proves control of an inbox, which is the first factor, not a second one.
-        if (provider == AuthConstants.PasskeyProvider)
+        if (provider == AuthConstants.PasskeyProvider || provider == AuthConstants.PasskeyRecoveryProvider)
             identity.AddClaim(new Claim(MfaSession.VerifiedClaimType, "1"));
 
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));

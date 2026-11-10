@@ -88,6 +88,11 @@ window.quickShareWorkspace = (function () {
             if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
             send('/api/workspace/transfer', 'POST', { memberId: qsPage.attr(btn, 'data-member-id') }, btn);
         },
+        saveEncryptionPolicy: function (btn: HTMLButtonElement): void {
+            send('/api/workspace', 'PATCH', {
+                encryptionPolicy: qsPage.value('ws-encryption-policy'),
+            }, btn, qsPage.attr(btn, 'data-saved-label'));
+        },
         cancelTransfer: function (btn: HTMLButtonElement): void {
             send('/api/workspace/transfer/cancel', 'POST', null, btn);
         },

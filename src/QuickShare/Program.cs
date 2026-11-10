@@ -677,14 +677,27 @@ if (app.Environment.IsDevelopment())
 // Serve wwwroot/ (and optimized static assets if a manifest is present).
 app.UseStaticFiles();
 
-// ── Localization (cookie-based culture, falls back to Accept-Language header) ──
-var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("vi") };
+// ── Localization (cookie-based culture, falls back to Accept-Language header; issues #84, #152) ──
+var supportedCultures = new[]
+{
+    new CultureInfo("en"),
+    new CultureInfo("vi"),
+    new CultureInfo("zh"),
+    new CultureInfo("ja"),
+    new CultureInfo("es"),
+    new CultureInfo("ar"),
+    new CultureInfo("he"),
+};
 app.UseRequestLocalization(new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture("en"),
     SupportedCultures = supportedCultures,
     SupportedUICultures = supportedCultures,
-    RequestCultureProviders = { new CookieRequestCultureProvider() }
+    RequestCultureProviders =
+    {
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider(),
+    }
 });
 
 app.UseMiddleware<RateLimitingMiddleware>();

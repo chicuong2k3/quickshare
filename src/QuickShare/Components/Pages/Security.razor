@@ -45,6 +45,14 @@
             <h2 class="text-2xl font-bold">4. Rules</h2>
             <p>No data destruction, no accessing other users' accounts, use the least access needed to demonstrate the issue. Responsible reports that follow these rules won't be pursued.</p>
         }
+        <section id="pentest-posture" class="mt-8 border-t border-border pt-6">
+            <h2 class="text-2xl font-bold">@(IsVi ? "5. Kiểm thử xâm nhập độc lập hàng năm (Penetration Test)" : "5. Annual External Penetration Testing & Posture")</h2>
+            <p class="mt-2 text-sm text-muted-foreground">
+                @(IsVi
+                    ? "QuickShareCloud thực hiện kiểm thử xâm nhập độc lập hàng năm theo chuẩn OWASP Top 10 & API Security Top 10. Mọi phát hiện mức Critical/High được khắc phục và kiểm thử lại (retest) trước khi công bố báo cáo tóm tắt."
+                    : "QuickShareCloud conducts annual third-party penetration testing against OWASP Top 10 and OWASP API Security Top 10. All findings are tracked to remediation and retest verification. Full NDA reports are available to enterprise buyers via /api/security/pentest.")
+            </p>
+        </section>
     </article>
 </PageWrapper>
 

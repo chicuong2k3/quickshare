@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="lang_es" xml:space="preserve"><value>Español</value></data>
+  <data name="nav_home" xml:space="preserve"><value>Inicio</value></data>
+  <data name="nav_send" xml:space="preserve"><value>Enviar</value></data>
+  <data name="nav_files" xml:space="preserve"><value>Archivos</value></data>
+  <data name="nav_pricing" xml:space="preserve"><value>Precios</value></data>
+  <data name="nav_account" xml:space="preserve"><value>Cuenta</value></data>
+  <data name="nav_login" xml:space="preserve"><value>Iniciar sesión</value></data>
+  <data name="nav_logout" xml:space="preserve"><value>Cerrar sesión</value></data>
+  <data name="nav_p2p" xml:space="preserve"><value>P2P</value></data>
+  <data name="nav_help" xml:space="preserve"><value>Ayuda</value></data>
+  <data name="home_title" xml:space="preserve"><value>QuickShareCloud — envía archivos grandes sin fricción</value></data>
+  <data name="home_tag" xml:space="preserve"><value>Seguro · Rápido · Temporal</value></data>
+  <data name="home_h1_send" xml:space="preserve"><value>Envía</value></data>
+  <data name="home_h1_anything" xml:space="preserve"><value>cualquier archivo</value></data>
+  <data name="home_h1_zero" xml:space="preserve"><value>sin fricción</value></data>
+  <data name="home_sub" xml:space="preserve"><value>Compartición de archivos cifrada con caducidad automática. Sin cuenta para el destinatario.</value></data>
+  <data name="home_btn_start" xml:space="preserve"><value>Empezar a enviar</value></data>
+  <data name="seo_send_h1" xml:space="preserve"><value>Enviar archivos grandes gratis — cifrado extremo a extremo</value></data>
+  <data name="seo_send_desc" xml:space="preserve"><value>Transfiere archivos pesados gratis con cifrado en el navegador y enlaces que caducan automáticamente.</value></data>
+  <data name="seo_send_lede" xml:space="preserve"><value>Elige tus archivos, cífralos en tu navegador y comparte un enlace temporal seguro sin necesidad de registro.</value></data>
+  <data name="seo_send_cta" xml:space="preserve"><value>Enviar archivos gratis ahora</value></data>
+  <data name="seo_send_how_title" xml:space="preserve"><value>Cómo funciona</value></data>
+  <data name="seo_send_how_body" xml:space="preserve"><value>Los archivos se cifran con AES-GCM en tu navegador antes de subirse; el servidor nunca ve tu clave.</value></data>
+  <data name="seo_send_why_title" xml:space="preserve"><value>Por qué elegir QuickShareCloud</value></data>
+  <data name="seo_send_why_1" xml:space="preserve"><value>Cifrado en el navegador antes de enviar.</value></data>
+  <data name="seo_send_why_2" xml:space="preserve"><value>Caducidad automática para que los enlaces antiguos no queden expuestos.</value></data>
+  <data name="seo_send_why_3" xml:space="preserve"><value>Envío en la nube o transferencia directa P2P.</value></data>
+  <data name="seo_send_free_title" xml:space="preserve"><value>Gratis para empezar</value></data>
+  <data name="seo_send_free_body" xml:space="preserve"><value>Envía archivos gratis al instante o actualiza a Pro y Studio para mayor capacidad y controles de equipo.</value></data>
+</root>

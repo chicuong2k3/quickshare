@@ -100,4 +100,19 @@ public record LoginToken
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     public bool IsUsable(DateTime now) => UsedAt is null && ExpiresAt > now;
+
+    public const int RecoveryCodeCount = 10;
+}
+
+public record UserPasskeyRecovery : BaseAuditEntity
+{
+    public const int CodeCount = 10;
+    public const int HashesMaxLength = 1024;
+
+    public Guid UserId { get; set; }
+    public string RecoveryCodeHashes { get; set; } = "[]";
+    public bool RequirePasskeyReAdd { get; set; }
+    public DateTime? LastUsedAt { get; set; }
+
+    public User User { get; init; } = null!;
 }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="lang_ja" xml:space="preserve"><value>日本語</value></data>
+  <data name="nav_home" xml:space="preserve"><value>ホーム</value></data>
+  <data name="nav_send" xml:space="preserve"><value>送信</value></data>
+  <data name="nav_files" xml:space="preserve"><value>ファイル</value></data>
+  <data name="nav_pricing" xml:space="preserve"><value>料金</value></data>
+  <data name="nav_account" xml:space="preserve"><value>アカウント</value></data>
+  <data name="nav_login" xml:space="preserve"><value>ログイン</value></data>
+  <data name="nav_logout" xml:space="preserve"><value>ログアウト</value></data>
+  <data name="nav_p2p" xml:space="preserve"><value>P2P転送</value></data>
+  <data name="nav_help" xml:space="preserve"><value>ヘルプ</value></data>
+  <data name="home_title" xml:space="preserve"><value>QuickShareCloud — 安全・高速なファイル共有</value></data>
+  <data name="home_tag" xml:space="preserve"><value>暗号化 · 高速 · 自動削除</value></data>
+  <data name="home_h1_send" xml:space="preserve"><value>大容量ファイルを</value></data>
+  <data name="home_h1_anything" xml:space="preserve"><value>安全に共有</value></data>
+  <data name="home_h1_zero" xml:space="preserve"><value>手間ゼロ</value></data>
+  <data name="home_sub" xml:space="preserve"><value>自動有効期限付きのエンドツーエンド暗号化ファイル共有。受信者のアカウント登録は不要です。</value></data>
+  <data name="home_btn_start" xml:space="preserve"><value>送信を開始</value></data>
+  <data name="seo_send_h1" xml:space="preserve"><value>大容量ファイルを無料で安全に送信 — 登録不要・暗号化対応</value></data>
+  <data name="seo_send_desc" xml:space="preserve"><value>ブラウザ内暗号化と自動削除リンクで大容量ファイルを安全に無料転送。</value></data>
+  <data name="seo_send_lede" xml:space="preserve"><value>ファイルを選択してブラウザで暗号化し、共有リンクを発行。受信者はすぐにダウンロードできます。</value></data>
+  <data name="seo_send_cta" xml:space="preserve"><value>今すぐ無料でファイルを送信</value></data>
+  <data name="seo_send_how_title" xml:space="preserve"><value>仕組み</value></data>
+  <data name="seo_send_how_body" xml:space="preserve"><value>ファイルは送信前にブラウザ内で AES-GCM により暗号化され、鍵はサーバーに保存されません。</value></data>
+  <data name="seo_send_why_title" xml:space="preserve"><value>選ばれる理由</value></data>
+  <data name="seo_send_why_1" xml:space="preserve"><value>エンドツーエンド暗号化によりサーバー側でも内容は閲覧不可。</value></data>
+  <data name="seo_send_why_2" xml:space="preserve"><value>有効期限が過ぎると自動的に削除され情報漏洩を防止。</value></data>
+  <data name="seo_send_why_3" xml:space="preserve"><value>クラウド共有と P2P 直接転送の両方に対応。</value></data>
+  <data name="seo_send_free_title" xml:space="preserve"><value>無料プランとアップグレード</value></data>
+  <data name="seo_send_free_body" xml:space="preserve"><value>無料ですぐに利用可能。Pro や Studio プランでは大容量転送や監査ログが利用できます。</value></data>
+</root>

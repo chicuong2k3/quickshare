@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="lang_zh" xml:space="preserve"><value>中文</value></data>
+  <data name="nav_home" xml:space="preserve"><value>首页</value></data>
+  <data name="nav_send" xml:space="preserve"><value>发送</value></data>
+  <data name="nav_files" xml:space="preserve"><value>文件</value></data>
+  <data name="nav_pricing" xml:space="preserve"><value>价格</value></data>
+  <data name="nav_account" xml:space="preserve"><value>账户</value></data>
+  <data name="nav_login" xml:space="preserve"><value>登录</value></data>
+  <data name="nav_logout" xml:space="preserve"><value>退出登录</value></data>
+  <data name="nav_p2p" xml:space="preserve"><value>P2P直传</value></data>
+  <data name="nav_help" xml:space="preserve"><value>帮助</value></data>
+  <data name="home_title" xml:space="preserve"><value>QuickShareCloud — 安全快速的文件传输</value></data>
+  <data name="home_tag" xml:space="preserve"><value>端到端加密 · 极速 · 自动销毁</value></data>
+  <data name="home_h1_send" xml:space="preserve"><value>轻松发送</value></data>
+  <data name="home_h1_anything" xml:space="preserve"><value>任意大文件</value></data>
+  <data name="home_h1_zero" xml:space="preserve"><value>零阻碍</value></data>
+  <data name="home_sub" xml:space="preserve"><value>支持自动过期的端到端加密文件分享。接收方无需注册账号，文件到期自动销毁。</value></data>
+  <data name="home_btn_start" xml:space="preserve"><value>开始发送</value></data>
+  <data name="seo_send_h1" xml:space="preserve"><value>免费在线发送大文件 — 无需注册，端到端加密</value></data>
+  <data name="seo_send_desc" xml:space="preserve"><value>通过浏览器端到端加密免费发送大文件，链接到期自动销毁。</value></data>
+  <data name="seo_send_lede" xml:space="preserve"><value>选择文件，在浏览器内完成加密上传，生成安全分享链接。接收方无需安装软件即可直接下载。</value></data>
+  <data name="seo_send_cta" xml:space="preserve"><value>立即免费发送文件</value></data>
+  <data name="seo_send_how_title" xml:space="preserve"><value>工作原理</value></data>
+  <data name="seo_send_how_body" xml:space="preserve"><value>文件在离开您的设备前使用 AES-GCM 在浏览器中加密，密钥仅保存在链接片段或口令中。</value></data>
+  <data name="seo_send_why_title" xml:space="preserve"><value>为什么选择 QuickShareCloud</value></data>
+  <data name="seo_send_why_1" xml:space="preserve"><value>零知识端到端加密，服务器无法读取文件内容。</value></data>
+  <data name="seo_send_why_2" xml:space="preserve"><value>自动过期销毁，避免历史链接长期泄露。</value></data>
+  <data name="seo_send_why_3" xml:space="preserve"><value>支持云端分享链接与 WebRTC 点对点直传两种模式。</value></data>
+  <data name="seo_send_free_title" xml:space="preserve"><value>免费额度与专业版</value></data>
+  <data name="seo_send_free_body" xml:space="preserve"><value>免费版即可直接发送文件；升级 Pro 或 Studio 可解锁超大文件、更长有效期及团队管理。</value></data>
+</root>

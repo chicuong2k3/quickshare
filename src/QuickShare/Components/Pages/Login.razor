@@ -87,6 +87,18 @@
                             data-sent-label="@Loc["login_link_sent"]"
                             onclick="window.quickSharePasskeys.sendLink(this)"
                             data-ai-action="login.magiclink">@Loc["login_send_link"]</button>
+
+                    <details class="mt-3" id="login-recovery-panel">
+                        <summary class="text-xs text-muted-foreground cursor-pointer">@Loc["login_passkey_recovery_toggle"]</summary>
+                        <div class="mt-2 space-y-2">
+                            <label class="workspace-label" for="login-recovery-code">@Loc["login_passkey_recovery_label"]</label>
+                            <Input id="login-recovery-code" name="login-recovery-code" Type="text" autocomplete="off" maxlength="32" />
+                            <button type="button" id="login-recovery-btn" data-slot="button" data-variant="outline" data-size="sm"
+                                    data-error-label="@Loc["passkeys_signin_failed"]"
+                                    onclick="window.quickSharePasskeys.signInWithRecovery(this)"
+                                    data-ai-action="login.passkey.recovery">@Loc["login_passkey_recovery_submit"]</button>
+                        </div>
+                    </details>
                 </div>
             </CardContent>
         </Card>

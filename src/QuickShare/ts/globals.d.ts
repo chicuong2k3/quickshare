@@ -208,6 +208,7 @@ interface DownloadPage {
     selectSubtitleTrack?(value: string): void;
     setCompareSplit?(val: string | number): void;
     swapCompareImages?(): void;
+    unlockPassphraseVault?(): Promise<void>;
 }
 
 interface P2pSendPage {
