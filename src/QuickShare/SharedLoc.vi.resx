@@ -3125,4 +3125,70 @@
   <data name="admin_analytics_cohort_w8" xml:space="preserve">
     <value>Tuần 8</value>
   </data>
+  <data name="pricing_currency_label" xml:space="preserve">
+    <value>Tiền tệ</value>
+  </data>
+  <data name="dunning_banner_title" xml:space="preserve">
+    <value>Thanh toán gia hạn quá hạn — đang trong thời gian ân hạn</value>
+  </data>
+  <data name="dunning_banner_sub" xml:space="preserve">
+    <value>Quyền lợi gói trả phí được giữ đến {0}. Gia hạn ngay để tránh hạ xuống gói Miễn phí.</value>
+  </data>
+  <data name="dunning_banner_cta" xml:space="preserve">
+    <value>Gia hạn ngay</value>
+  </data>
+  <data name="gift_card_title" xml:space="preserve">
+    <value>Mua tặng Gói Pro/Studio cho Bạn bè</value>
+  </data>
+  <data name="gift_card_sub" xml:space="preserve">
+    <value>Gửi tặng gói thuê bao trả trước qua email cho bạn bè hoặc đồng nghiệp.</value>
+  </data>
+  <data name="gift_recipient_email_label" xml:space="preserve">
+    <value>Email người nhận</value>
+  </data>
+  <data name="gift_message_label" xml:space="preserve">
+    <value>Lời nhắn (tuỳ chọn)</value>
+  </data>
+  <data name="gift_buy_btn" xml:space="preserve">
+    <value>Mua gói quà tặng</value>
+  </data>
+  <data name="gift_created_msg" xml:space="preserve">
+    <value>Đã tạo quà tặng cho {0}. Sau khi thanh toán hoàn tất, người nhận có thể kích hoạt.</value>
+  </data>
+  <data name="gift_claim_title" xml:space="preserve">
+    <value>Nhận quà tặng thuê bao — QuickShareCloud</value>
+  </data>
+  <data name="gift_claim_not_found_title" xml:space="preserve">
+    <value>Quà tặng không khả dụng</value>
+  </data>
+  <data name="gift_claim_not_found_desc" xml:space="preserve">
+    <value>Liên kết quà tặng không hợp lệ, đã hết hạn hoặc đang chờ xác nhận thanh toán.</value>
+  </data>
+  <data name="gift_claim_success_title" xml:space="preserve">
+    <value>Đã nhận quà tặng!</value>
+  </data>
+  <data name="gift_claim_success_desc" xml:space="preserve">
+    <value>Gói {0} của bạn đã được kích hoạt.</value>
+  </data>
+  <data name="gift_claim_heading" xml:space="preserve">
+    <value>{0} đã tặng bạn gói QuickShareCloud {1}</value>
+  </data>
+  <data name="gift_claim_sub" xml:space="preserve">
+    <value>Đã thanh toán trước {0} tháng — không cần thẻ thanh toán.</value>
+  </data>
+  <data name="gift_claim_btn" xml:space="preserve">
+    <value>Kích hoạt quà tặng</value>
+  </data>
+  <data name="gift_claim_login_btn" xml:space="preserve">
+    <value>Đăng nhập để nhận quà</value>
+  </data>
+  <data name="gift_claim_self_error" xml:space="preserve">
+    <value>Không thể mua hoặc nhận quà tặng cho chính tài khoản của bạn.</value>
+  </data>
+  <data name="apidocs_version_label" xml:space="preserve">
+    <value>Phiên bản API</value>
+  </data>
+  <data name="apidocs_version_stable" xml:space="preserve">
+    <value>Ổn định</value>
+  </data>
 </root>

@@ -821,4 +821,303 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("id=\"admin-analytics-cohorts\"", pageHtml);
         Assert.Contains("id=\"admin-analytics-export-csv\"", pageHtml);
     }
+
+    // -----------------------------------------------------------------
+    // #140 — Failed payment recovery: dunning emails + 7-day grace period
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task FailedPaymentDunning_EntersGracePeriod_KeepsPaidFeatures_AndDowngradesAfterGrace()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var subId = Guid.CreateVersion7();
+        var now = DateTime.UtcNow;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Subscriptions.Add(new Subscription
+            {
+                Id = subId,
+                UserId = user.Id,
+                Plan = PlanTierLimits.Pro,
+                Status = SubscriptionStatus.Active,
+                BillingPeriod = BillingPeriod.Monthly,
+                CurrentPeriodStart = now.AddDays(-31),
+                CurrentPeriodEnd = now.AddMinutes(-5),
+            });
+            await db.SaveChangesAsync();
+
+            var expiredCount = await QuickShare.Features.Payments.Subscriptions.SubscriptionService.ExpireStaleAsync(db, CancellationToken.None);
+            Assert.Equal(0, expiredCount);
+
+            var sub = db.Subscriptions.First(s => s.Id == subId);
+            var u = db.Users.First(x => x.Id == user.Id);
+            Assert.Equal(1, sub.DunningAttemptCount);
+            Assert.NotNull(sub.DunningGraceEndsAt);
+            Assert.True(sub.IsInDunningGrace);
+            Assert.Equal(PlanTierLimits.Pro, u.Plan);
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+        var billingHtml = await client.GetStringAsync(RoutePaths.AccountBilling);
+        Assert.Contains("id=\"billing-dunning-banner\"", billingHtml);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var sub = db.Subscriptions.First(s => s.Id == subId);
+            sub.DunningGraceEndsAt = DateTime.UtcNow.AddMinutes(-1);
+            await db.SaveChangesAsync();
+
+            var expiredCount = await QuickShare.Features.Payments.Subscriptions.SubscriptionService.ExpireStaleAsync(db, CancellationToken.None);
+            Assert.True(expiredCount >= 1);
+
+            var updatedSub = db.Subscriptions.First(s => s.Id == subId);
+            var updatedUser = db.Users.First(x => x.Id == user.Id);
+            Assert.Equal(SubscriptionStatus.Expired, updatedSub.Status);
+            Assert.Equal(PlanTierLimits.Free, updatedUser.Plan);
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // #102 — Gift Pro subscription: buy for a friend + claim flow
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task GiftSubscription_RefusesSelfGift_ActivatesOnPayment_AndClaimsForFriend()
+    {
+        var senderKey = Guid.CreateVersion7().ToString();
+        var sender = await _factory.SeedUserAsync(senderKey, PlanTierLimits.Pro);
+        var friendKey = Guid.CreateVersion7().ToString();
+        var friend = await _factory.SeedUserAsync(friendKey, PlanTierLimits.Free);
+        var friendEmail = $"friend-{friend.Id:N}@quickshare.test";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var f = db.Users.First(u => u.Id == friend.Id);
+            f.Email = friendEmail;
+            await db.SaveChangesAsync();
+        }
+
+        var senderClient = _factory.CreateAuthenticatedClient(senderKey);
+
+        var selfRes = await senderClient.PostAsJsonAsync(RoutePaths.GiftsApi, new
+        {
+            recipientEmail = sender.Email,
+            plan = PlanTierLimits.Pro,
+            billing = BillingPeriods.Monthly,
+            message = "For myself",
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, selfRes.StatusCode);
+
+        var createRes = await senderClient.PostAsJsonAsync(RoutePaths.GiftsApi, new
+        {
+            recipientEmail = friendEmail,
+            plan = PlanTierLimits.Pro,
+            billing = BillingPeriods.Monthly,
+            message = "Happy shipping!",
+        });
+        Assert.Equal(HttpStatusCode.OK, createRes.StatusCode);
+        var created = await createRes.Content.ReadFromJsonAsync<QuickShare.Features.Payments.Gifts.GiftSubscriptionDto>();
+        Assert.NotNull(created);
+        Assert.False(string.IsNullOrWhiteSpace(created!.Token));
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var intent = db.PaymentIntents.First(i => i.Id == created.PaymentIntentId);
+            var checkout = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Payments.CheckoutService>();
+            var completed = await checkout.CompleteAsync(intent, "GIFT-TX-102", CancellationToken.None);
+            Assert.True(completed);
+        }
+
+        var anonClient = _factory.CreateClient();
+        var preview = await anonClient.GetFromJsonAsync<QuickShare.Features.Payments.Gifts.GiftSubscriptionDto>(
+            $"{RoutePaths.GiftsApi}/{created.Token}");
+        Assert.NotNull(preview);
+        Assert.Equal(SubscriptionGift.StatusClaimable, preview!.Status);
+
+        var selfClaim = await senderClient.PostAsync($"{RoutePaths.GiftsApi}/{created.Token}/claim", null);
+        Assert.Equal(HttpStatusCode.BadRequest, selfClaim.StatusCode);
+
+        var friendClient = _factory.CreateAuthenticatedClient(friendKey);
+        var claimRes = await friendClient.PostAsync($"{RoutePaths.GiftsApi}/{created.Token}/claim", null);
+        Assert.Equal(HttpStatusCode.OK, claimRes.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var friendUser = db.Users.First(u => u.Id == friend.Id);
+            var giftRow = db.SubscriptionGifts.First(g => g.Id == created.Id);
+            Assert.Equal(PlanTierLimits.Pro, friendUser.Plan);
+            Assert.Equal(SubscriptionGift.StatusClaimed, giftRow.Status);
+            Assert.Equal(friend.Id, giftRow.ClaimedByUserId);
+        }
+
+        var dupClaim = await friendClient.PostAsync($"{RoutePaths.GiftsApi}/{created.Token}/claim", null);
+        Assert.Equal(HttpStatusCode.Conflict, dupClaim.StatusCode);
+    }
+
+    // -----------------------------------------------------------------
+    // #120 — Multi-currency pricing & checkout (USD / EUR / VND)
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task MultiCurrencyPricing_DetectsRegionAndFormatsUsdEurVnd()
+    {
+        Assert.Equal(PricingKeys.DefaultCurrency, QuickShare.Features.Payments.PlanCatalog.DetectCurrency(null, "VN", "en-US"));
+        Assert.Equal(PricingKeys.CurrencyEur, QuickShare.Features.Payments.PlanCatalog.DetectCurrency(null, "DE", "de-DE"));
+        Assert.Equal(PricingKeys.CurrencyUsd, QuickShare.Features.Payments.PlanCatalog.DetectCurrency(null, "US", "en-US"));
+        Assert.Equal(PricingKeys.CurrencyEur, QuickShare.Features.Payments.PlanCatalog.DetectCurrency("eur", "VN", "vi-VN"));
+
+        var client = _factory.CreateClient();
+        var usdHtml = await client.GetStringAsync($"{RoutePaths.Pricing}?currency=USD");
+        Assert.Contains("id=\"pricing-currency-selector\"", usdHtml);
+        Assert.Contains("$9", usdHtml);
+
+        var eurHtml = await client.GetStringAsync($"{RoutePaths.Pricing}?currency=EUR");
+        Assert.Contains("8", WebUtility.HtmlDecode(eurHtml));
+
+        var vndHtml = await client.GetStringAsync($"{RoutePaths.Pricing}?currency=VND");
+        Assert.Contains("50", WebUtility.HtmlDecode(vndHtml));
+    }
+
+    // -----------------------------------------------------------------
+    // #199 — API versioning strategy: /api/v1/* + X-API-Version + Sunset
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task ApiVersioning_RoutesV1Endpoints_AndEmitsVersionAndSunsetHeaders()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var v1Res = await client.GetAsync("/api/v1/gifts");
+        Assert.Equal(HttpStatusCode.OK, v1Res.StatusCode);
+        Assert.True(v1Res.Headers.TryGetValues(QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware.VersionHeader, out var versions));
+        Assert.Contains(QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware.CurrentVersion, versions!);
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/gifts");
+        req.Headers.Add(QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware.VersionHeader, "v0");
+        var depRes = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.OK, depRes.StatusCode);
+        Assert.True(depRes.Headers.Contains(QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware.DeprecationHeader));
+        Assert.True(depRes.Headers.Contains(QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware.SunsetHeader));
+
+        var docsHtml = await client.GetStringAsync(RoutePaths.ApiDocs);
+        Assert.Contains("id=\"apidocs-version\"", docsHtml);
+        Assert.Contains("/api/v1/deliveries", docsHtml);
+    }
+
+    // -----------------------------------------------------------------
+    // #307 — Full-text search: filename, tag, message, OCR content + privacy gate
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task FullTextSearch_FindsByFileNameTagMessageAndContent_AndExcludesPrivateModeContent()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var publicDeliveryId = Guid.CreateVersion7();
+        var privateDeliveryId = Guid.CreateVersion7();
+        var workspaceId = Guid.CreateVersion7();
+        var folderId = Guid.CreateVersion7();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Workspaces.Add(new Workspace
+            {
+                Id = workspaceId,
+                OwnerId = user.Id,
+                Name = "Search Workspace",
+            });
+            db.WorkspaceMembers.Add(new WorkspaceMember
+            {
+                Id = Guid.CreateVersion7(),
+                WorkspaceId = workspaceId,
+                UserId = user.Id,
+                InviteEmail = user.Email,
+                Role = WorkspaceRole.Owner,
+                JoinedAt = DateTime.UtcNow,
+            });
+            db.WorkspaceFolders.Add(new WorkspaceFolder
+            {
+                Id = folderId,
+                WorkspaceId = workspaceId,
+                Name = "Quarterly Tax Audit",
+                CreatedById = user.Id,
+            });
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = publicDeliveryId,
+                    ShareCode = $"srchpub{user.Id.ToString("N")[..5]}",
+                    SenderId = user.Id,
+                    WorkspaceId = workspaceId,
+                    FolderId = folderId,
+                    FileName = "invoice-2026.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 2048,
+                    TotalBytes = 2048,
+                    StoragePath = "stub/search-pub",
+                    Message = "Contains nebula-quantum topology notes",
+                    PrivacyMode = false,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                },
+                new Delivery
+                {
+                    Id = privateDeliveryId,
+                    ShareCode = $"srchprv{user.Id.ToString("N")[..5]}",
+                    SenderId = user.Id,
+                    WorkspaceId = workspaceId,
+                    FileName = "secret-vault.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 1024,
+                    TotalBytes = 1024,
+                    StoragePath = "stub/search-prv",
+                    Message = "classified-omegasignal passphrase inside",
+                    PrivacyMode = true,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                });
+            db.DeliveryOcrTexts.AddRange(
+                new DeliveryOcrText
+                {
+                    Id = Guid.CreateVersion7(),
+                    DeliveryId = publicDeliveryId,
+                    Text = "Payment due to Acme Hyperion Holdings by Friday.",
+                },
+                new DeliveryOcrText
+                {
+                    Id = Guid.CreateVersion7(),
+                    DeliveryId = privateDeliveryId,
+                    Text = "classified-omegasignal top secret body text",
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+
+        var ocrRes = await client.GetFromJsonAsync<QuickShare.Features.Search.GlobalSearchResponse>(
+            $"{RoutePaths.SearchApi}?q=Hyperion");
+        Assert.NotNull(ocrRes);
+        Assert.Single(ocrRes!.Files);
+        Assert.Equal("content", ocrRes.Files[0].MatchSource);
+        Assert.Contains("Hyperion", ocrRes.Files[0].Snippet);
+
+        var folderRes = await client.GetFromJsonAsync<QuickShare.Features.Search.GlobalSearchResponse>(
+            $"{RoutePaths.SearchApi}?q=Quarterly");
+        Assert.NotNull(folderRes);
+        Assert.Single(folderRes!.Folders);
+        Assert.Single(folderRes.Files);
+
+        var privRes = await client.GetFromJsonAsync<QuickShare.Features.Search.GlobalSearchResponse>(
+            $"{RoutePaths.SearchApi}?q=omegasignal");
+        Assert.NotNull(privRes);
+        Assert.Empty(privRes!.Files);
+    }
 }

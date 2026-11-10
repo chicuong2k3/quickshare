@@ -3125,4 +3125,70 @@
   <data name="admin_analytics_cohort_w8" xml:space="preserve">
     <value>Week 8</value>
   </data>
+  <data name="pricing_currency_label" xml:space="preserve">
+    <value>Currency</value>
+  </data>
+  <data name="dunning_banner_title" xml:space="preserve">
+    <value>Renewal payment overdue — grace period active</value>
+  </data>
+  <data name="dunning_banner_sub" xml:space="preserve">
+    <value>Your Pro/Studio features remain active until {0}. Renew now to avoid downgrade.</value>
+  </data>
+  <data name="dunning_banner_cta" xml:space="preserve">
+    <value>Renew subscription</value>
+  </data>
+  <data name="gift_card_title" xml:space="preserve">
+    <value>Buy as a Gift for a Friend</value>
+  </data>
+  <data name="gift_card_sub" xml:space="preserve">
+    <value>Send a prepaid Pro or Studio subscription to a colleague or friend via email.</value>
+  </data>
+  <data name="gift_recipient_email_label" xml:space="preserve">
+    <value>Recipient Email</value>
+  </data>
+  <data name="gift_message_label" xml:space="preserve">
+    <value>Personal Note (optional)</value>
+  </data>
+  <data name="gift_buy_btn" xml:space="preserve">
+    <value>Buy Gift Subscription</value>
+  </data>
+  <data name="gift_created_msg" xml:space="preserve">
+    <value>Gift created for {0}. Once payment completes, the recipient can claim it.</value>
+  </data>
+  <data name="gift_claim_title" xml:space="preserve">
+    <value>Claim Gift Subscription — QuickShareCloud</value>
+  </data>
+  <data name="gift_claim_not_found_title" xml:space="preserve">
+    <value>Gift not available</value>
+  </data>
+  <data name="gift_claim_not_found_desc" xml:space="preserve">
+    <value>This gift link is invalid, expired, or still awaiting payment confirmation.</value>
+  </data>
+  <data name="gift_claim_success_title" xml:space="preserve">
+    <value>Gift claimed!</value>
+  </data>
+  <data name="gift_claim_success_desc" xml:space="preserve">
+    <value>Your {0} subscription is now active.</value>
+  </data>
+  <data name="gift_claim_heading" xml:space="preserve">
+    <value>{0} gifted you QuickShareCloud {1}</value>
+  </data>
+  <data name="gift_claim_sub" xml:space="preserve">
+    <value>Prepaid for {0} month(s) — no payment method required.</value>
+  </data>
+  <data name="gift_claim_btn" xml:space="preserve">
+    <value>Claim Subscription</value>
+  </data>
+  <data name="gift_claim_login_btn" xml:space="preserve">
+    <value>Sign in to Claim Gift</value>
+  </data>
+  <data name="gift_claim_self_error" xml:space="preserve">
+    <value>You cannot buy or claim a gift subscription for your own account.</value>
+  </data>
+  <data name="apidocs_version_label" xml:space="preserve">
+    <value>API Version</value>
+  </data>
+  <data name="apidocs_version_stable" xml:space="preserve">
+    <value>Stable</value>
+  </data>
 </root>

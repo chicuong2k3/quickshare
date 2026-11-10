@@ -140,6 +140,46 @@ else
                 </p>
             </Card>
 
+            @* Buy as a Gift Subscription (issue #102) *@
+            <Card id="upgrade-gift-card" class="px-6 py-5">
+                <div class="space-y-3">
+                    <h2 class="text-lg font-semibold">@Loc["gift_card_title"]</h2>
+                    <p class="text-sm text-muted-foreground">@Loc["gift_card_sub"]</p>
+
+                    @if (!string.IsNullOrEmpty(giftError))
+                    {
+                        <p class="text-sm text-destructive" role="alert">@giftError</p>
+                    }
+                    @if (createdGift is not null)
+                    {
+                        <div id="upgrade-gift-created" class="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm" role="status">
+                            <p class="font-medium">@string.Format(Loc["gift_created_msg"], createdGift.RecipientEmail)</p>
+                            <p class="mt-1 font-mono text-xs">/gift/claim?token=@createdGift.Token</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" class="space-y-3" @formname="upgrade-gift-buy" @onsubmit="HandleSubmit">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="@ActionField" value="@GiftBuyAction" />
+                            <input type="hidden" name="Plan" value="@selectedPlan" />
+                            <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <label class="block space-y-1 text-sm" for="gift-recipient-email">
+                                    <span class="font-medium">@Loc["gift_recipient_email_label"]</span>
+                                    <Input id="gift-recipient-email" name="RecipientEmail" Type="email" maxlength="@SubscriptionGift.EmailMaxLength" required />
+                                </label>
+                                <label class="block space-y-1 text-sm" for="gift-message">
+                                    <span class="font-medium">@Loc["gift_message_label"]</span>
+                                    <Input id="gift-message" name="GiftMessage" Type="text" maxlength="@SubscriptionGift.MessageMaxLength" />
+                                </label>
+                            </div>
+                            <Button Type="submit" Variant="outline" Size="sm" data-ai-action="upgrade.gift.submit">@Loc["gift_buy_btn"]</Button>
+                        </form>
+                    }
+                </div>
+            </Card>
+
             @* Student + Nonprofit Verification (issue #203) *@
             <Card id="upgrade-discount-card" class="px-6 py-5">
                 <div class="space-y-3">
@@ -209,6 +249,7 @@ else
     private const string ActionField = "Action";
     private const string TrialAction = "trial";
     private const string DiscountApplyAction = "discount-apply";
+    private const string GiftBuyAction = "gift-buy";
 
     private string selectedPlan = PlanTierLimits.Pro;
     private string currentPlan = PlanTierLimits.Free;
@@ -217,6 +258,8 @@ else
     private QuickShare.Features.Payments.Crypto.CryptoChargeResult? cryptoResult;
     private ActiveCampaignDto? activeCampaign;
     private DiscountApplication? discountApp;
+    private SubscriptionGift? createdGift;
+    private string? giftError;
     private string prefilledPromo = string.Empty;
     private bool isPollRequest;
     private bool paymentCompleted;
@@ -350,6 +393,24 @@ else
                 }
                 await Db.SaveChangesAsync(ct);
                 discountApp = app;
+            }
+            return;
+        }
+
+        if (form[ActionField] == GiftBuyAction)
+        {
+            var recipient = form["RecipientEmail"].FirstOrDefault()?.Trim().ToLowerInvariant() ?? string.Empty;
+            var msg = form["GiftMessage"].FirstOrDefault();
+            if (string.Equals(recipient, user.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                giftError = Loc["gift_claim_self_error"];
+                return;
+            }
+            if (!string.IsNullOrEmpty(recipient) && recipient.Contains('@', StringComparison.Ordinal))
+            {
+                (createdGift, paymentIntent, payOSResult) = await Checkout.CreateGiftCheckoutAsync(
+                    user, recipient, selectedPlan, IsYearly, msg, null, null, ct);
+                pollOrderCode = paymentIntent?.PayOSOrderCode ?? 0;
             }
             return;
         }

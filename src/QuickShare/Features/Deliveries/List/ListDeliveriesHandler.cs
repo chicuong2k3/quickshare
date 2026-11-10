@@ -46,25 +46,17 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
         var userId = user.Id;
         var limit = Math.Clamp(query.Limit, 1, DeliveryPaging.MaxLimit);
 
-        // Shared workspace history (issue #106): a seat holder sees their own shares plus
-        // everything sent into the workspace. Read-only — every mutation path still matches
-        // on SenderId, so seeing a team-mate's share is not the same as being able to
-        // delete it.
         var workspaceId = await db.WorkspaceMembers
             .AsNoTracking()
             .Where(m => m.UserId == userId && m.RevokedAt == null && m.JoinedAt != null)
             .Select(m => (Guid?)m.WorkspaceId)
             .FirstOrDefaultAsync(cancellationToken);
 
-        // Not cached: this list changes on every download, and a stale count here is exactly
-        // the bug the page exists to avoid.
         var source = db.Deliveries
             .AsNoTracking()
             .Where(d => d.SenderId == userId
                 || (workspaceId != null && d.WorkspaceId == workspaceId));
 
-        // Folder filter (issue #151). Only meaningful inside a workspace; a personal caller
-        // asking for a folder gets nothing rather than someone else's shared files.
         if (query.FolderId is { } folder)
             source = source.Where(d => d.FolderId == folder && d.WorkspaceId == workspaceId);
 
@@ -72,8 +64,6 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
             ? source.Where(d => d.DeletedAt != null)
             : source.Where(d => d.DeletedAt == null);
 
-        // Status filter + name search (issue #214). Sort stays newest-first: the cursor is
-        // keyed on CreatedAt, so arbitrary sort orders don't compose with keyset paging.
         if (!string.IsNullOrEmpty(query.Status))
             source = source.Where(d => d.Status == query.Status);
 
@@ -82,15 +72,16 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
-            // ToLower here translates to SQL LOWER() — the analyzer's culture concern
-            // doesn't apply inside an EF expression tree.
 #pragma warning disable CA1304, CA1311, CA1862
             var term = query.Search.Trim().ToLower();
-            // Name *or* the text read out of the image (issue #243). One predicate, because a
-            // separate "search inside images" box would make people choose which search to run
-            // before they know which one will find it.
-            source = source.Where(d => d.FileName.ToLower().Contains(term)
-                || db.DeliveryOcrTexts.Any(o => o.DeliveryId == d.Id && o.Text != null && o.Text.ToLower().Contains(term)));
+            // Full-text search across filename, tag, message, folder name, and indexed text/OCR (issues #243, #307).
+            // Privacy mode (#187) deliveries are never matched by content or message.
+            source = source.Where(d =>
+                d.FileName.ToLower().Contains(term)
+                || (d.Tag != null && d.Tag.ToLower().Contains(term))
+                || (!d.PrivacyMode && d.Message != null && d.Message.ToLower().Contains(term))
+                || (!d.PrivacyMode && db.DeliveryOcrTexts.Any(o => o.DeliveryId == d.Id && o.Text != null && o.Text.ToLower().Contains(term)))
+                || (d.FolderId != null && db.WorkspaceFolders.Any(f => f.Id == d.FolderId && f.Name.ToLower().Contains(term))));
 #pragma warning restore CA1304, CA1311, CA1862
         }
 
@@ -100,9 +91,6 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
                 d.DownloadCount, d.MaxDownloads, d.ExpiresAt, d.CreatedAt, d.Status, d.DeliverAt, d.HideDownloadStats,
                 d.IsFavorite, d.Alias, d.Tag, d.LegalHoldAt, d.LegalHoldReason), cancellationToken);
 
-        // Batched lock enrichment (issue #308). ToCursorPageAsync materializes the page
-        // before applying the selector, so a correlated per-row lock query would be N+1 —
-        // fetch every active lock for the page's deliveries in one round-trip instead.
         var now = DateTime.UtcNow;
         var pageIds = page.Items.Select(i => i.Id).ToArray();
         var activeLocks = await db.FileLocks
@@ -112,9 +100,6 @@ public sealed class ListDeliveriesHandler(AppDbContext db, IHttpContextAccessor 
                 && l.ExpiresAt > now)
             .ToListAsync(cancellationToken);
 
-        // Which of these matched inside an image rather than by name (issue #243) — one extra
-        // round-trip for the page, the same shape as the lock enrichment above. Without it the
-        // result looks like a name match that is not there, and the search looks broken.
         var ocrMatches = new HashSet<Guid>();
         if (!string.IsNullOrWhiteSpace(query.Search))
         {

@@ -72,6 +72,7 @@ public class AppDbContext : DbContext
     public DbSet<DeliveryVersion> DeliveryVersions => Set<DeliveryVersion>();
     public DbSet<EmailSuppression> EmailSuppressions => Set<EmailSuppression>();
     public DbSet<DiscountApplication> DiscountApplications => Set<DiscountApplication>();
+    public DbSet<SubscriptionGift> SubscriptionGifts => Set<SubscriptionGift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1034,6 +1035,25 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SubscriptionGift>(entity =>
+        {
+            entity.ToTable("subscription_gifts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RecipientEmail).IsRequired().HasMaxLength(SubscriptionGift.EmailMaxLength);
+            entity.Property(e => e.Plan).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Billing).IsRequired().HasMaxLength(16);
+            entity.Property(e => e.Message).HasMaxLength(SubscriptionGift.MessageMaxLength);
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(SubscriptionGift.TokenLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.SenderUserId);
+            entity.HasIndex(e => e.PaymentIntentId);
+            entity.HasOne(e => e.Sender)
+                .WithMany()
+                .HasForeignKey(e => e.SenderUserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

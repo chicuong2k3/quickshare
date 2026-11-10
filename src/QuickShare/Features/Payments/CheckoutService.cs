@@ -1,29 +1,34 @@
+using System.Globalization;
+using System.Security.Cryptography;
 using QuickShare.Features.Payments.Crypto;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Payments.Subscriptions;
 using QuickShare.Infrastructure.Caching;
+using QuickShare.Infrastructure.Email;
 
 namespace QuickShare.Features.Payments;
 
 /// <summary>
 /// Money-path logic extracted from Upgrade.razor: creating a PaymentIntent + PayOS
-/// checkout link, and finalizing a successful PayOS redirect callback (idempotent).
+/// checkout link, finalizing a successful PayOS redirect callback (idempotent),
+/// multi-currency pricing snapshots (issue #120), and gift subscriptions (issue #102).
 /// </summary>
 public sealed class CheckoutService(
     AppDbContext db,
     IConfiguration config,
     PayOSService payOS,
     CryptoCheckoutService crypto,
-    QuickShare.Features.Payments.Promos.PromoCodeService promos)
+    QuickShare.Features.Payments.Promos.PromoCodeService promos,
+    EmailSender emailSender)
 {
     private const string CodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private const int CodeRandomLength = 6;
     private const string CodePrefix = "QSC-";
 
     public async Task<(PaymentIntent Intent, PayOSPaymentResult Result)> CreatePaymentLinkAsync(
-        User user, string plan, bool isYearly, CancellationToken ct, string? promoCode = null)
+        User user, string plan, bool isYearly, CancellationToken ct, string? promoCode = null, string? currency = null)
     {
-        var intent = await CreateIntentAsync(user, plan, isYearly, PaymentProviders.PayOS, promoCode, ct);
+        var intent = await CreateIntentAsync(user, plan, isYearly, PaymentProviders.PayOS, promoCode, currency, ct);
         var description = $"{CodePrefix}{intent.Code[^CodeRandomLength..]}";
         var result = await payOS.CreatePaymentLinkAsync(intent.PayOSOrderCode, (int)intent.Amount, description, ct);
 
@@ -32,15 +37,11 @@ public sealed class CheckoutService(
 
     /// <summary>
     /// The same intent, taken on the crypto rail instead (issue #225).
-    ///
-    /// Identical price, plan, proration and promo handling — the only difference is where the
-    /// buyer is sent and what tells us they paid. A second provider that computed its own prices
-    /// would be a second product to keep in step.
     /// </summary>
     public async Task<(PaymentIntent Intent, CryptoChargeResult Result)> CreateCryptoCheckoutAsync(
-        User user, string plan, bool isYearly, CancellationToken ct, string? promoCode = null)
+        User user, string plan, bool isYearly, CancellationToken ct, string? promoCode = null, string? currency = null)
     {
-        var intent = await CreateIntentAsync(user, plan, isYearly, PaymentProviders.Crypto, promoCode, ct);
+        var intent = await CreateIntentAsync(user, plan, isYearly, PaymentProviders.Crypto, promoCode, currency, ct);
         var description = $"{CodePrefix}{intent.Code[^CodeRandomLength..]}";
 
         var result = await crypto.CreateChargeAsync(intent.Code, intent.Amount, intent.Currency, description, ct);
@@ -54,41 +55,88 @@ public sealed class CheckoutService(
         return (intent, result);
     }
 
+    /// <summary>
+    /// Creates a gift subscription checkout intent (issue #102).
+    /// </summary>
+    public async Task<(SubscriptionGift Gift, PaymentIntent Intent, PayOSPaymentResult Result)> CreateGiftCheckoutAsync(
+        User sender,
+        string recipientEmail,
+        string plan,
+        bool isYearly,
+        string? message,
+        string? promoCode,
+        string? currency,
+        CancellationToken ct)
+    {
+        var normalizedRecipient = recipientEmail.Trim().ToLowerInvariant();
+        var intent = await CreateIntentAsync(sender, plan, isYearly, PaymentProviders.PayOS, promoCode, currency, ct, isGift: true);
+        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
+
+        var gift = new SubscriptionGift
+        {
+            Id = Guid.CreateVersion7(),
+            SenderUserId = sender.Id,
+            RecipientEmail = normalizedRecipient,
+            Plan = intent.Plan,
+            Billing = intent.Billing,
+            Months = isYearly ? 12 : 1,
+            Message = string.IsNullOrWhiteSpace(message)
+                ? null
+                : message.Trim()[..Math.Min(message.Trim().Length, SubscriptionGift.MessageMaxLength)],
+            Token = token,
+            Status = SubscriptionGift.StatusPendingPayment,
+            PaymentIntentId = intent.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(SubscriptionGift.ClaimWindowDays),
+        };
+
+        db.SubscriptionGifts.Add(gift);
+        await db.SaveChangesAsync(ct);
+
+        var description = $"{CodePrefix}{intent.Code[^CodeRandomLength..]}";
+        var result = await payOS.CreatePaymentLinkAsync(intent.PayOSOrderCode, (int)intent.Amount, description, ct);
+
+        return (gift, intent, result);
+    }
+
     /// <summary>Whether the crypto rail is offered at all — no key configured, no button.</summary>
     public bool CryptoAvailable => crypto.IsConfigured;
 
     private async Task<PaymentIntent> CreateIntentAsync(
-        User user, string plan, bool isYearly, string provider, string? promoCode, CancellationToken ct)
+        User user, string plan, bool isYearly, string provider, string? promoCode, string? requestedCurrency, CancellationToken ct, bool isGift = false)
     {
         plan = PlanCatalog.Normalize(plan);
-        var pricingKey = PlanCatalog.PricingKey(plan, isYearly);
-        var listAmount = config.GetValue(pricingKey, PlanCatalog.DefaultAmount(plan, isYearly));
-        var currency = config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
+        var defaultCurr = config[PricingKeys.Currency] ?? PricingKeys.DefaultCurrency;
+        var currency = string.IsNullOrWhiteSpace(requestedCurrency)
+            ? PlanCatalog.NormalizeCurrency(defaultCurr)
+            : PlanCatalog.NormalizeCurrency(requestedCurrency);
 
-        // ── Proration (issue #114) ──
-        // An upgrade mid-cycle should not make somebody pay twice for the days they already
-        // bought. Without this, upgrading is a penalty — which is why people wait for renewal,
-        // and some of them never come back to it.
-        var current = await db.Subscriptions
-            .AsNoTracking()
-            .Where(s => s.UserId == user.Id)
-            .OrderByDescending(s => s.CurrentPeriodEnd)
-            .FirstOrDefaultAsync(ct);
+        var pricingKey = PlanCatalog.PricingKey(plan, isYearly);
+        var listAmount = currency == PricingKeys.DefaultCurrency
+            ? config.GetValue(pricingKey, PlanCatalog.DefaultAmount(plan, isYearly, currency))
+            : PlanCatalog.DefaultAmount(plan, isYearly, currency);
 
         var credit = 0;
-        if (current is not null && Subscriptions.SubscriptionLifecycle.IsUpgrade(current.Plan, plan))
+        if (!isGift)
         {
-            var paidKey = PlanCatalog.PricingKey(current.Plan, current.BillingPeriod == BillingPeriod.Yearly);
-            var paidAmount = config.GetValue(
-                paidKey, PlanCatalog.DefaultAmount(current.Plan, current.BillingPeriod == BillingPeriod.Yearly));
+            // Proration (issue #114): only for self-upgrades, never for gifts.
+            var current = await db.Subscriptions
+                .AsNoTracking()
+                .Where(s => s.UserId == user.Id)
+                .OrderByDescending(s => s.CurrentPeriodEnd)
+                .FirstOrDefaultAsync(ct);
 
-            credit = Subscriptions.SubscriptionLifecycle.ProrationCredit(
-                current, paidAmount, listAmount, DateTime.UtcNow);
+            if (current is not null && Subscriptions.SubscriptionLifecycle.IsUpgrade(current.Plan, plan))
+            {
+                var paidKey = PlanCatalog.PricingKey(current.Plan, current.BillingPeriod == BillingPeriod.Yearly);
+                var paidAmount = currency == PricingKeys.DefaultCurrency
+                    ? config.GetValue(paidKey, PlanCatalog.DefaultAmount(current.Plan, current.BillingPeriod == BillingPeriod.Yearly, currency))
+                    : PlanCatalog.DefaultAmount(current.Plan, current.BillingPeriod == BillingPeriod.Yearly, currency);
+
+                credit = Subscriptions.SubscriptionLifecycle.ProrationCredit(
+                    current, paidAmount, listAmount, DateTime.UtcNow);
+            }
         }
 
-        // ── Promo code (issue #98) ──
-        // Quoted, not redeemed: redemption happens when the payment actually completes, so an
-        // abandoned checkout does not burn a limited code.
         var afterCredit = Math.Max(listAmount - credit, 0);
         var quote = await promos.QuoteAsync(promoCode, user.Id, plan, afterCredit, ct);
         var expectedAmount = quote.Valid ? quote.FinalAmount : afterCredit;
@@ -113,8 +161,7 @@ public sealed class CheckoutService(
             Billing = isYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly,
             Amount = expectedAmount,
             Currency = currency,
-            // Kept on the intent so the completing side knows which code to consume, and so a
-            // discounted payment can be reconciled against a list price later.
+            ExchangeRateSnapshot = PlanCatalog.ExchangeRateFor(currency),
             PromoCode = quote.Valid ? PromoCode.NormalizeCode(promoCode) : null,
             ProrationCredit = credit,
             Provider = provider,
@@ -137,11 +184,6 @@ public sealed class CheckoutService(
                 i.PayOSOrderCode == orderCode &&
                 i.Status == PaymentIntentStatus.Completed, ct);
 
-    /// <summary>
-    /// Completes the pending intent for an order PayOS confirms as paid. Safe to call twice,
-    /// and independent of who is browsing — the PayOS return URL is loaded inside an iframe
-    /// where our auth cookie may not travel, so the intent itself identifies the user.
-    /// </summary>
     public async Task<bool> FinalizeByOrderCodeAsync(long orderCode, CancellationToken ct)
     {
         var intent = await db.PaymentIntents
@@ -151,7 +193,6 @@ public sealed class CheckoutService(
 
         if (intent is null)
         {
-            // Already completed by the webhook (or unknown order) — treat a completed one as success.
             return await db.PaymentIntents
                 .AsNoTracking()
                 .AnyAsync(i => i.PayOSOrderCode == orderCode && i.Status == PaymentIntentStatus.Completed, ct);
@@ -165,13 +206,6 @@ public sealed class CheckoutService(
         return await CompleteAsync(intent, orderCode.ToString(CultureInfo.InvariantCulture), ct);
     }
 
-    /// <summary>
-    /// Completes the pending intent behind a confirmed crypto charge (issue #225).
-    ///
-    /// There is no second call to the provider to confirm it: the webhook's HMAC over the raw
-    /// body already proved where the message came from, and asking again would only add a way
-    /// for a paid customer to be told no because an API was briefly down.
-    /// </summary>
     public async Task<bool> FinalizeByChargeIdAsync(string chargeId, CancellationToken ct)
     {
         var intent = await db.PaymentIntents
@@ -181,8 +215,6 @@ public sealed class CheckoutService(
 
         if (intent is null)
         {
-            // Already completed by an earlier delivery of the same event, or unknown. A repeat
-            // is the normal case: providers retry until they get a 200.
             return await db.PaymentIntents
                 .AsNoTracking()
                 .AnyAsync(i => i.ProviderChargeId == chargeId && i.Status == PaymentIntentStatus.Completed, ct);
@@ -192,7 +224,7 @@ public sealed class CheckoutService(
     }
 
     /// <summary>Everything that happens once money has moved, whichever rail moved it.</summary>
-    private async Task<bool> CompleteAsync(PaymentIntent intent, string invoiceId, CancellationToken ct)
+    public async Task<bool> CompleteAsync(PaymentIntent intent, string invoiceId, CancellationToken ct)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == intent.UserId, ct);
         if (user is null)
@@ -200,14 +232,26 @@ public sealed class CheckoutService(
             return false;
         }
 
-        await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, db, ct);
+        // Check whether this payment intent is for a gift subscription (issue #102).
+        var gift = await db.SubscriptionGifts.FirstOrDefaultAsync(g => g.PaymentIntentId == intent.Id, ct);
+        if (gift is not null)
+        {
+            gift.Status = SubscriptionGift.StatusClaimable;
+            if (emailSender.IsConfigured)
+            {
+                var baseUrl = (config["Email:BaseUrl"] ?? "https://quicksharecloud.com").TrimEnd('/');
+                var claimUrl = $"{baseUrl}/gift/claim?token={Uri.EscapeDataString(gift.Token)}";
+                var html = $"<p><strong>{System.Net.WebUtility.HtmlEncode(user.Name)}</strong> gifted you QuickShareCloud {PlanCatalog.Get(gift.Plan).Display} ({gift.Months} month(s)).</p>"
+                    + (string.IsNullOrEmpty(gift.Message) ? string.Empty : $"<blockquote>{System.Net.WebUtility.HtmlEncode(gift.Message)}</blockquote>")
+                    + $"<p><a href=\"{claimUrl}\">Claim your gift subscription</a></p>";
+                await emailSender.SendAsync(gift.RecipientEmail, gift.RecipientEmail, $"{user.Name} gifted you QuickShareCloud {PlanCatalog.Get(gift.Plan).Display}", html, ct);
+            }
+        }
+        else
+        {
+            await SubscriptionService.HandlePaymentAsync(user, intent.Plan, intent.Billing, db, ct);
+        }
 
-        // Consume the code now that money has actually moved (issue #98). Quoting at checkout
-        // deliberately did not, so an abandoned checkout leaves a limited code intact.
-        //
-        // A failure here is not worth failing the payment over: the customer has already been
-        // charged the discounted amount by the provider, and refusing to record the redemption
-        // would lose them the plan they just paid for over an accounting detail.
         if (!string.IsNullOrEmpty(intent.PromoCode))
         {
             await promos.RedeemAsync(
@@ -240,8 +284,6 @@ public sealed class CheckoutService(
         intent.CompletedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
-        // Evict the cached User entity (plan) and billing-history snapshot so the
-        // next page render shows the activated plan immediately.
         await UserCacheInvalidator.EvictAsync(db, user.Id, ct);
         return true;
     }

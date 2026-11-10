@@ -107,4 +107,8 @@ public enum SecurityEventType
     S3CredentialRevoked,
     DiscountVerificationSubmitted,
     DiscountVerificationDecided,
+    SubscriptionDunningStarted,
+    SubscriptionDunningRecovered,
+    SubscriptionGiftCreated,
+    SubscriptionGiftClaimed,
 }

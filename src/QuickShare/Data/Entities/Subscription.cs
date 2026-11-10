@@ -28,6 +28,14 @@ public record Subscription : BaseAuditEntity
     /// <summary>Longest a hold can run before it is resumed automatically.</summary>
     public const int MaxPauseDays = 90;
 
+    /// <summary>
+    /// Failed-payment recovery / dunning (issue #140). When a renewal charge fails, the
+    /// subscription enters a 7-day grace window (<see cref="DunningGraceEndsAt"/>) and retries
+    /// at day 0, day 3 and day 7 before downgrading gracefully to Free.
+    /// </summary>
+    public const int DunningGraceDays = 7;
+    public const int DunningMaxAttempts = 3;
+
     public Guid UserId { get; set; }
     public string Plan { get; set; } = PlanTierLimits.Free;
     public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
@@ -58,7 +66,12 @@ public record Subscription : BaseAuditEntity
     /// <summary>Whether a save offer has already been shown, so it is offered once, not on a loop.</summary>
     public bool SaveOfferShown { get; set; }
 
+    public int DunningAttemptCount { get; set; }
+    public DateTime? LastDunningAttemptAt { get; set; }
+    public DateTime? DunningGraceEndsAt { get; set; }
+
     public bool IsPaused => PausedAt is not null;
+    public bool IsInDunningGrace => DunningGraceEndsAt is not null;
 
     public User User { get; init; } = null!;
 }

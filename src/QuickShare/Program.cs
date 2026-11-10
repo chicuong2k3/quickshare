@@ -686,6 +686,9 @@ app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
+// Rewrite /api/v1/* and /api/v2/* before routing (issue #199).
+app.UseMiddleware<QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware>();
+app.UseRouting();
 app.UseAuthentication();
 // API keys authenticate the JSON API (issue #115). Between authentication and authorization,
 // because it *is* authentication: authorization evaluates the endpoint's requirements right

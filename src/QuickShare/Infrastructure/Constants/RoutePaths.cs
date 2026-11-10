@@ -106,4 +106,7 @@ public static class RoutePaths
     public const string AdminCampaignsApi = "/api/admin/campaigns";
     public const string ActiveCampaignsApi = "/api/campaigns/active";
     public const string AdminAnalyticsCsvRoute = "/api/admin/analytics/export.csv";
+    public const string GiftsApi = "/api/gifts";
+    public const string GiftClaim = "/gift/claim";
+    public const string SearchApi = "/api/search";
 }

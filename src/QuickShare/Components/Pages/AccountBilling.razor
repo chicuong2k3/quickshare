@@ -31,6 +31,14 @@
         }
         else
         {
+            @if (subscription?.IsInDunningGrace == true && subscription.DunningGraceEndsAt is { } graceEnd)
+            {
+                <div id="billing-dunning-banner" class="mb-5 flex flex-wrap items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-5 py-4" role="alert">
+                    <strong>@Loc["dunning_banner_title"]</strong>
+                    <span class="text-sm text-muted-foreground">@string.Format(Loc["dunning_banner_sub"], graceEnd.ToString("yyyy-MM-dd"))</span>
+                    <Button Href="@RoutePaths.Upgrade" Size="sm" class="ml-auto" data-ai-action="billing.dunning.recover">@Loc["dunning_banner_cta"]</Button>
+                </div>
+            }
             @if (trialDaysLeft is { } daysLeft)
             {
                 <div class="mb-5 flex flex-wrap items-center gap-3 rounded-md border bg-card px-5 py-4" role="status">

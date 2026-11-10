@@ -24,6 +24,13 @@ public sealed class PaymentIntent
     public string Billing { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "VND";
+
+    /// <summary>
+    /// Snapshot of the VND-to-charged-currency exchange rate at checkout (issue #120).
+    /// Prevents FX drift disputes when reconciling multi-currency payments (VND, USD, EUR).
+    /// </summary>
+    public decimal ExchangeRateSnapshot { get; set; } = 1m;
+
     public PaymentIntentStatus Status { get; set; } = PaymentIntentStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }

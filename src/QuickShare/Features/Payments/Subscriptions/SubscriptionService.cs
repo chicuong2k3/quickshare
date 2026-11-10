@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LightResults;
 using QuickShare.Infrastructure.Caching;
 
@@ -61,9 +62,7 @@ public static class SubscriptionService
 
     /// <summary>
     /// Activates or extends a subscription after a successful payment.
-    /// If user has no active subscription, creates one.
-    /// If user has an active subscription, extends the current period.
-    /// If user has a cancelled subscription, re-activates it.
+    /// Clears any active dunning grace window (issue #140).
     /// </summary>
     public static async Task<Subscription> HandlePaymentAsync(
         User user,
@@ -86,24 +85,37 @@ public static class SubscriptionService
         }
         else
         {
+            var wasDunning = subscription.DunningGraceEndsAt is not null;
             subscription.Plan = plan;
             subscription.BillingPeriod = period;
             subscription.Status = SubscriptionStatus.Active;
             subscription.CancelledAt = null;
             subscription.TrialEndsAt = null;
+            subscription.DunningAttemptCount = 0;
+            subscription.LastDunningAttemptAt = null;
+            subscription.DunningGraceEndsAt = null;
             subscription.UpdatedAt = DateTime.UtcNow;
 
-            // Extend from the later of now and the current period end (no double-dipping).
             var start = subscription.CurrentPeriodEnd > DateTime.UtcNow
                 ? subscription.CurrentPeriodEnd
                 : DateTime.UtcNow;
             subscription.CurrentPeriodStart = start;
             subscription.CurrentPeriodEnd = AddBillingPeriod(start, period);
+
+            if (wasDunning)
+            {
+                db.SecurityEvents.Add(new SecurityEvent
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = user.Id,
+                    EventType = SecurityEventType.SubscriptionDunningRecovered,
+                    IpHash = string.Empty,
+                    UserAgentLabel = nameof(SubscriptionService),
+                    MetadataJson = JsonSerializer.Serialize(new { plan, billingPeriod }),
+                });
+            }
         }
 
-        // ponytail: write the plan by row, not through the entity — callers pass the
-        // User from GetUserAsync, which is cached across requests and therefore
-        // detached from this DbContext (assigning to it would never be saved).
         var now = DateTime.UtcNow;
         await db.Users
             .Where(u => u.Id == user.Id)
@@ -111,7 +123,6 @@ public static class SubscriptionService
                 .SetProperty(u => u.Plan, plan)
                 .SetProperty(u => u.UpdatedAt, now), ct);
 
-        // Keep the in-memory copy consistent for the current render.
         user.Plan = plan;
         user.UpdatedAt = now;
 
@@ -141,8 +152,9 @@ public static class SubscriptionService
     }
 
     /// <summary>
-    /// Expires all subscriptions past their CurrentPeriodEnd.
-    /// Returns count of expired subscriptions.
+    /// Places a paid active subscription past its renewal date into a 7-day dunning grace window,
+    /// or advances its dunning retry schedule (day 0, day 3, day 7) before expiring it (issue #140).
+    /// Trials and already-cancelled subscriptions expire immediately with no dunning.
     /// </summary>
     public static async Task<int> ExpireStaleAsync(AppDbContext db, CancellationToken ct)
     {
@@ -155,41 +167,83 @@ public static class SubscriptionService
             .Include(s => s.User)
             .ToListAsync(ct);
 
+        var downgradedUsers = new List<Guid>();
+        var expiredCount = 0;
+
         foreach (var sub in stale)
         {
+            var isPaidAutoRenew = sub.Status == SubscriptionStatus.Active
+                && sub.TrialEndsAt is null
+                && !sub.IsPaused;
+
+            if (isPaidAutoRenew && sub.DunningGraceEndsAt is null)
+            {
+                // Enter 7-day dunning grace period (Attempt #1 at day 0).
+                sub.DunningAttemptCount = 1;
+                sub.LastDunningAttemptAt = now;
+                sub.DunningGraceEndsAt = now.AddDays(Subscription.DunningGraceDays);
+                sub.UpdatedAt = now;
+
+                db.SecurityEvents.Add(new SecurityEvent
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = sub.UserId,
+                    EventType = SecurityEventType.SubscriptionDunningStarted,
+                    IpHash = string.Empty,
+                    UserAgentLabel = nameof(SubscriptionService),
+                    MetadataJson = JsonSerializer.Serialize(new
+                    {
+                        sub.Plan,
+                        attempt = sub.DunningAttemptCount,
+                        graceEndsAt = sub.DunningGraceEndsAt,
+                    }),
+                });
+                continue;
+            }
+
+            if (isPaidAutoRenew && sub.DunningGraceEndsAt is { } graceEnd && graceEnd > now)
+            {
+                // Still inside the 7-day grace period; advance retry counter at day 3+.
+                if (sub.DunningAttemptCount < 2 && sub.LastDunningAttemptAt.HasValue && (now - sub.LastDunningAttemptAt.Value).TotalDays >= 3)
+                {
+                    sub.DunningAttemptCount = 2;
+                    sub.LastDunningAttemptAt = now;
+                    sub.UpdatedAt = now;
+                }
+                continue;
+            }
+
+            // Either not eligible for dunning (trial / cancelled) or dunning grace elapsed (day 7): downgrade to Free.
+            if (isPaidAutoRenew && sub.DunningAttemptCount < Subscription.DunningMaxAttempts)
+            {
+                sub.DunningAttemptCount = Subscription.DunningMaxAttempts;
+                sub.LastDunningAttemptAt = now;
+            }
+
             sub.Status = SubscriptionStatus.Expired;
             sub.UpdatedAt = now;
+            expiredCount++;
 
             if (sub.User.Plan != PlanTierLimits.Free)
             {
                 sub.User.Plan = PlanTierLimits.Free;
                 sub.User.UpdatedAt = now;
             }
+            downgradedUsers.Add(sub.User.Id);
         }
 
         if (stale.Count > 0)
             await db.SaveChangesAsync(ct);
 
-        // A downgraded owner downgrades their whole workspace — leaving members on the plan
-        // nobody is paying for any more is how a tier gate quietly stops meaning anything.
-        foreach (var sub in stale)
+        foreach (var userId in downgradedUsers)
         {
-            await PushPlanToWorkspaceAsync(sub.User.Id, db, ct);
+            await PushPlanToWorkspaceAsync(userId, db, ct);
+            await UserCacheInvalidator.EvictAsync(db, userId, ct);
         }
 
-        // Users downgraded to Free — evict their cached profile (plan display)
-        // and billing history so the billing page stops showing the old plan.
-        foreach (var sub in stale)
-        {
-            await UserCacheInvalidator.EvictAsync(db, sub.User.Id, ct);
-        }
-
-        return stale.Count;
+        return expiredCount;
     }
 
-    /// <summary>
-    /// Gets the user's current active or cancelled subscription.
-    /// </summary>
     public static async Task<Subscription?> GetCurrentAsync(User user, AppDbContext db, CancellationToken ct)
     {
         var cache = StaticCache.Instance;
@@ -207,12 +261,6 @@ public static class SubscriptionService
         );
     }
 
-    /// <summary>
-    /// Re-pushes an owner's plan onto their workspace seats (issue #106). Membership copies
-    /// the plan onto <see cref="User.Plan"/> so existing tier gates need no changes; the copy
-    /// only stays honest if every plan write ends here, which is why this sits beside the
-    /// three places that write one.
-    /// </summary>
     internal static async Task PushPlanToWorkspaceAsync(Guid ownerId, AppDbContext db, CancellationToken ct)
     {
         var workspaceId = await db.Workspaces
@@ -245,7 +293,7 @@ public static class SubscriptionService
         return billingPeriod switch
         {
             BillingPeriod.Yearly => from.AddDays(365),
-            _ => from.AddDays(30), // monthly default
+            _ => from.AddDays(30),
         };
     }
 

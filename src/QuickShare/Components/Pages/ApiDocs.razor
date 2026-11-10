@@ -20,7 +20,15 @@
             <h2 class="text-xl font-semibold">@Loc["apidocs_playground_title"]</h2>
             <p class="mt-1 text-sm text-muted-foreground">@Loc["apidocs_playground_hint"]</p>
 
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                <label class="block">
+                    <span class="text-sm font-medium">@Loc["apidocs_version_label"]</span>
+                    <NativeSelect id="apidocs-version" onchange="window.quickShareApiDocs.updateSnippets()">
+                        <NativeSelectOption value="/api/v1">v1.0 (@Loc["apidocs_version_stable"])</NativeSelectOption>
+                        <NativeSelectOption value="/api">Unversioned (/api)</NativeSelectOption>
+                    </NativeSelect>
+                </label>
+
                 <label class="block">
                     <span class="text-sm font-medium">@Loc["apidocs_key_label"]</span>
                     <Input id="apidocs-api-key" Type="password" placeholder="qs_live_..." autocomplete="off" oninput="window.quickShareApiDocs.updateSnippets()" />
@@ -29,10 +37,10 @@
                 <label class="block">
                     <span class="text-sm font-medium">@Loc["apidocs_endpoint_label"]</span>
                     <NativeSelect id="apidocs-endpoint" onchange="window.quickShareApiDocs.updateSnippets()">
-                        <NativeSelectOption value="GET|/api/deliveries">@Loc["apidocs_ep_list_deliveries"] (GET /api/deliveries)</NativeSelectOption>
-                        <NativeSelectOption value="GET|/api/presets">@Loc["apidocs_ep_list_presets"] (GET /api/presets)</NativeSelectOption>
-                        <NativeSelectOption value="GET|/api/developer/keys">@Loc["apidocs_ep_list_keys"] (GET /api/developer/keys)</NativeSelectOption>
-                        <NativeSelectOption value="GET|/api/developer/webhooks">@Loc["apidocs_ep_list_webhooks"] (GET /api/developer/webhooks)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/v1/deliveries">@Loc["apidocs_ep_list_deliveries"] (GET /api/v1/deliveries)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/v1/presets">@Loc["apidocs_ep_list_presets"] (GET /api/v1/presets)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/v1/developer/keys">@Loc["apidocs_ep_list_keys"] (GET /api/v1/developer/keys)</NativeSelectOption>
+                        <NativeSelectOption value="GET|/api/v1/developer/webhooks">@Loc["apidocs_ep_list_webhooks"] (GET /api/v1/developer/webhooks)</NativeSelectOption>
                     </NativeSelect>
                 </label>
             </div>

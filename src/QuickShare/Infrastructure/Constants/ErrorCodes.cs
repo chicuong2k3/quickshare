@@ -217,4 +217,9 @@ public static class ErrorCodes
     public const string DiscountApplicationInvalid = "discount_application_invalid";
     public const string DiscountApplicationNotFound = "discount_application_not_found";
     public const string CampaignCodeInvalid = "campaign_code_invalid";
+    public const string GiftEmailInvalid = "gift_email_invalid";
+    public const string GiftSelfNotAllowed = "gift_self_not_allowed";
+    public const string GiftNotFound = "gift_not_found";
+    public const string GiftAlreadyClaimed = "gift_already_claimed";
+    public const string GiftNotClaimable = "gift_not_claimable";
 }

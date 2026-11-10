@@ -8,4 +8,6 @@ public static class PricingKeys
     public const string StudioMonthly = "Pricing:StudioMonthly";
     public const string StudioYearly = "Pricing:StudioYearly";
     public const string DefaultCurrency = "VND";
+    public const string CurrencyUsd = "USD";
+    public const string CurrencyEur = "EUR";
 }

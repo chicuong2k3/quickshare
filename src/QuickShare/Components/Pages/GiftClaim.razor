@@ -1,0 +1,123 @@
+@layout MainLayout
+@page "/gift/claim"
+@using Microsoft.AspNetCore.Antiforgery
+@using QuickShare.Features.Payments
+@using QuickShare.Features.Payments.Subscriptions
+@using QuickShare.Infrastructure.Caching
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IAntiforgery Antiforgery
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["gift_claim_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <section class="mx-auto max-w-lg space-y-6">
+        <Card id="gift-claim-card" class="p-6">
+            @if (gift is null)
+            {
+                <h1 class="text-2xl font-semibold">@Loc["gift_claim_not_found_title"]</h1>
+                <p class="mt-2 text-muted-foreground">@Loc["gift_claim_not_found_desc"]</p>
+            }
+            else if (gift.Status == SubscriptionGift.StatusClaimed)
+            {
+                <h1 class="text-2xl font-semibold">@Loc["gift_claim_success_title"]</h1>
+                <p class="mt-2 text-muted-foreground">@string.Format(Loc["gift_claim_success_desc"], PlanCatalog.Get(gift.Plan).Display)</p>
+                <Button Href="@RoutePaths.AccountBilling" class="mt-4 w-full">@Loc["billing_view_receipt"]</Button>
+            }
+            else
+            {
+                <h1 class="text-2xl font-semibold">@string.Format(Loc["gift_claim_heading"], gift.Sender?.Name ?? "A friend", PlanCatalog.Get(gift.Plan).Display)</h1>
+                <p class="mt-2 text-sm text-muted-foreground">@string.Format(Loc["gift_claim_sub"], gift.Months)</p>
+
+                @if (!string.IsNullOrEmpty(gift.Message))
+                {
+                    <blockquote id="gift-claim-message" class="mt-4 rounded-md border-l-4 border-primary bg-muted/40 p-3 text-sm italic">
+                        "@gift.Message"
+                    </blockquote>
+                }
+
+                @if (!string.IsNullOrEmpty(claimError))
+                {
+                    <p class="mt-3 text-sm text-destructive" role="alert">@claimError</p>
+                }
+
+                @if (isAuthenticated)
+                {
+                    <form method="post" class="mt-6" @formname="gift-claim-form" @onsubmit="HandleClaim">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="Token" value="@gift.Token" />
+                        <Button Type="submit" class="w-full" data-ai-action="gift.claim.submit">@Loc["gift_claim_btn"]</Button>
+                    </form>
+                }
+                else
+                {
+                    <Button Href="@($"{RoutePaths.Login}?returnUrl={Uri.EscapeDataString($"/gift/claim?token={gift.Token}")}")" class="mt-6 w-full" data-ai-action="gift.claim.login">
+                        @Loc["gift_claim_login_btn"]
+                    </Button>
+                }
+            }
+        </Card>
+    </section>
+</PageWrapper>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "token")] public string? Token { get; set; }
+
+    private SubscriptionGift? gift;
+    private bool isAuthenticated;
+    private string? claimError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        isAuthenticated = ctx.User.Identity?.IsAuthenticated == true;
+        var normToken = (Token ?? string.Empty).Trim().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(normToken))
+        {
+            gift = await Db.SubscriptionGifts
+                .Include(g => g.Sender)
+                .FirstOrDefaultAsync(g => g.Token == normToken, CancellationToken.None);
+        }
+    }
+
+    private async Task HandleClaim()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var ct = CancellationToken.None;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var user = await ctx.User.GetUserOrDefaultAsync(Db, ct);
+        if (user is null || gift is null)
+        {
+            return;
+        }
+
+        if (gift.SenderUserId == user.Id)
+        {
+            claimError = Loc["gift_claim_self_error"];
+            return;
+        }
+
+        if (gift.Status != SubscriptionGift.StatusClaimable || gift.ExpiresAt <= DateTime.UtcNow)
+        {
+            claimError = Loc["gift_claim_not_found_desc"];
+            return;
+        }
+
+        await SubscriptionService.HandlePaymentAsync(user, gift.Plan, gift.Billing, Db, ct);
+        gift.Status = SubscriptionGift.StatusClaimed;
+        gift.ClaimedByUserId = user.Id;
+        gift.ClaimedAt = DateTime.UtcNow;
+        await Db.SaveChangesAsync(ct);
+        await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+    }
+}
