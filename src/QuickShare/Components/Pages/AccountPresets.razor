@@ -34,7 +34,7 @@
     private bool canUsePresets;
     private List<UploadPreset> presets = [];
 
-    private RenderFragment Chunk => @<section id="presets-body">
+    private RenderFragment Chunk => @<section id="presets-body" data-unpoly-reload>
         @if (!canUsePresets)
         {
             <Card class="account-card workspace-card">
@@ -132,6 +132,7 @@
 
                         <button type="button" data-slot="button" data-variant="default"
                                 onclick="window.quickSharePresets.create(this)"
+                                data-name-required="@Loc["account_profile_error_name_required"]"
                                 data-error="@Loc["presets_save_btn"]"
                                 data-ai-action="preset.create">@Loc["presets_save_btn"]</button>
                     </div>

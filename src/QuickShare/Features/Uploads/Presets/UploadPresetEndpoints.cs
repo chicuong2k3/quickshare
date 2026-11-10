@@ -112,7 +112,6 @@ public sealed class CreatePresetEndpoint : Endpoint<CreatePresetRequest, PresetD
             BurnAfterDownload = req.BurnAfterDownload,
             PrivacyMode = req.PrivacyMode,
             Recipients = string.IsNullOrEmpty(recipients) ? null : recipients,
-            CreatedAt = DateTime.UtcNow,
         };
 
         db.UploadPresets.Add(preset);

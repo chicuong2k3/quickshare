@@ -122,7 +122,7 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
                 TimeSpan.FromMinutes(5),
                 ct);
 
-            await Send.RedirectAsync(url.ToString(), isPermanent: false, cancellationToken: ct);
+            await Send.RedirectAsync(url.ToString(), isPermanent: false, allowRemoteRedirects: true);
         }
         catch (R2StorageException)
         {

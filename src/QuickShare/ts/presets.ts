@@ -26,7 +26,7 @@ const quickSharePresets = {
         const errorEl = document.getElementById('preset-error');
 
         if (!name) {
-            if (errorEl) { errorEl.textContent = 'Name is required.'; errorEl.classList.remove('hidden'); }
+            if (errorEl) { errorEl.textContent = btn.dataset['nameRequired'] || btn.dataset['error'] || ''; errorEl.classList.remove('hidden'); }
             return;
         }
         if (errorEl) errorEl.classList.add('hidden');
@@ -48,16 +48,16 @@ const quickSharePresets = {
                 body: JSON.stringify(body),
             });
             if (res.ok) {
-                window.location.reload();
+                qsPage.reload('#presets-body');
             } else {
                 const err = await res.json().catch(() => ({})) as Record<string, unknown>;
                 if (errorEl) {
-                    errorEl.textContent = String(err.message ?? 'Failed to save preset.');
+                    errorEl.textContent = String(err.message ?? btn.dataset['error'] ?? '');
                     errorEl.classList.remove('hidden');
                 }
             }
         } catch {
-            if (errorEl) { errorEl.textContent = 'Network error.'; errorEl.classList.remove('hidden'); }
+            if (errorEl) { errorEl.textContent = btn.dataset['error'] || ''; errorEl.classList.remove('hidden'); }
         } finally {
             btn.disabled = false;
         }
@@ -66,13 +66,12 @@ const quickSharePresets = {
     async delete(btn: HTMLButtonElement): Promise<void> {
         const id = btn.dataset['id'];
         const confirmMsg = btn.dataset['confirm'];
-        if (!id || !window.confirm(confirmMsg ?? 'Delete this preset?')) return;
+        if (!id || !window.confirm(confirmMsg ?? '')) return;
         btn.disabled = true;
         try {
             const res = await fetch(`/api/upload-presets/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                const item = document.getElementById(`preset-${id}`);
-                item?.remove();
+                qsPage.reload('#presets-body');
             }
         } finally {
             btn.disabled = false;

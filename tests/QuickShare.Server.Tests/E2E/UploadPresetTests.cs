@@ -160,6 +160,15 @@ public sealed class UploadPresetTests : IClassFixture<TestWebAppFactory>
         var user = await ProUserAsync();
         var client = _factory.CreateAuthenticatedClient(user.Id.ToString());
         var res = await client.GetAsync(RoutePaths.AccountPresets);
+        var html = await res.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        Assert.Contains("id=\"presets-body\"", html);
+        Assert.Contains("data-unpoly-reload", html);
+
+        using var targetedRequest = new HttpRequestMessage(HttpMethod.Get, RoutePaths.AccountPresets);
+        targetedRequest.Headers.Add(UnpolyHeaders.Target, "#presets-body");
+        var targeted = await client.SendAsync(targetedRequest);
+        Assert.Equal(HttpStatusCode.OK, targeted.StatusCode);
+        Assert.Contains("id=\"presets-body\"", await targeted.Content.ReadAsStringAsync());
     }
 }

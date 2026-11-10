@@ -141,7 +141,8 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
         // Free: keep the old overwrite-and-delete behavior.
         var plan = user.Plan;
         var canVersion = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
-        var hasOldObject = !string.IsNullOrEmpty(delivery.StoragePath) && delivery.StoragePath != cmd.ObjectKey;
+        var oldStoragePath = delivery.StoragePath;
+        var hasOldObject = !string.IsNullOrEmpty(oldStoragePath) && oldStoragePath != cmd.ObjectKey;
 
         if (canVersion && hasOldObject)
         {
@@ -173,15 +174,14 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
                 FileName = delivery.FileName,
                 ContentType = delivery.ContentType,
                 FileSize = delivery.FileSize,
-                StoragePath = delivery.StoragePath,
+                StoragePath = oldStoragePath!,
                 Sha256 = delivery.Sha256,
-                CreatedAt = DateTime.UtcNow,
             });
         }
         else if (!canVersion && hasOldObject)
         {
             // Free plan: delete the old object as before.
-            try { await storage.DeleteObjectsAsync(delivery.StoragePath, cancellationToken); }
+            try { await storage.DeleteObjectsAsync(oldStoragePath!, cancellationToken); }
             catch (Exception ex) { logger.LogWarning(ex, "Failed to delete old object for replaced delivery {DeliveryId}", delivery.Id); }
         }
 
