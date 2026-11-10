@@ -17,7 +17,9 @@ public sealed record BrandDto(
     string? BodyFontName,
     bool HasHeadingFont,
     bool HasBodyFont,
-    string? FontLicenseNote);
+    string? FontLicenseNote,
+    string? EmailSenderName = null,
+    string? EmailReplyTo = null);
 
 public sealed class BrandRequest
 {
@@ -30,9 +32,11 @@ public sealed class BrandRequest
     public string? HeadingFontName { get; set; }
     public string? BodyFontName { get; set; }
     public string? FontLicenseNote { get; set; }
+    public string? EmailSenderName { get; set; }
+    public string? EmailReplyTo { get; set; }
 }
 
-/// <summary>GET /api/workspace/brand — the workspace's recipient-facing brand (issues #285, #286).</summary>
+/// <summary>GET /api/workspace/brand — the workspace's recipient-facing brand (issues #285, #286, #124).</summary>
 public sealed class GetBrandEndpoint : EndpointWithoutRequest<BrandDto?>
 {
     public override void Configure()
@@ -42,7 +46,7 @@ public sealed class GetBrandEndpoint : EndpointWithoutRequest<BrandDto?>
         Summary(s =>
         {
             s.Summary = "Get the workspace brand";
-            s.Description = "Workspace admins only. Colours, header and footer text, and which assets are uploaded.";
+            s.Description = "Workspace admins only. Colours, header and footer text, email sender identity, and which assets are uploaded.";
         });
     }
 
@@ -75,11 +79,13 @@ public sealed class GetBrandEndpoint : EndpointWithoutRequest<BrandDto?>
         brand.BodyFontName,
         brand.HeadingFontKey is not null,
         brand.BodyFontKey is not null,
-        brand.FontLicenseNote);
+        brand.FontLicenseNote,
+        brand.EmailSenderName,
+        brand.EmailReplyTo);
 }
 
 /// <summary>
-/// PUT /api/workspace/brand — set colours and copy (issues #285, #286).
+/// PUT /api/workspace/brand — set colours, copy, and email sender identity (issues #285, #286, #124).
 ///
 /// The accent pair is contrast-checked at 3:1. A brand that can make its own recipient page
 /// unreadable is not self-expression, it is a support ticket from the client who could not find
@@ -142,6 +148,13 @@ public sealed class UpdateBrandEndpoint : Endpoint<BrandRequest, BrandDto>
             return;
         }
 
+        var emailReplyTo = Truncate(req.EmailReplyTo, WorkspaceBrand.EmailReplyToMaxLength)?.ToLowerInvariant();
+        if (emailReplyTo is not null && (!emailReplyTo.Contains('@', StringComparison.Ordinal) || emailReplyTo.StartsWith('@') || emailReplyTo.EndsWith('@')))
+        {
+            ThrowError(ErrorCodes.BrandReplyToInvalid, StatusCodes.Status400BadRequest);
+            return;
+        }
+
         var brand = await db.WorkspaceBrands.FirstOrDefaultAsync(b => b.WorkspaceId == seat.WorkspaceId, ct);
         if (brand is null)
         {
@@ -149,7 +162,6 @@ public sealed class UpdateBrandEndpoint : Endpoint<BrandRequest, BrandDto>
             {
                 Id = Guid.CreateVersion7(),
                 WorkspaceId = seat.WorkspaceId,
-                CreatedAt = DateTime.UtcNow,
             };
             db.WorkspaceBrands.Add(brand);
         }
@@ -163,14 +175,15 @@ public sealed class UpdateBrandEndpoint : Endpoint<BrandRequest, BrandDto>
         brand.HeadingFontName = headingFont;
         brand.BodyFontName = bodyFont;
         brand.FontLicenseNote = Truncate(req.FontLicenseNote, WorkspaceBrand.LicenseNoteMaxLength);
-        brand.UpdatedAt = DateTime.UtcNow;
+        brand.EmailSenderName = Truncate(req.EmailSenderName, WorkspaceBrand.EmailSenderNameMaxLength);
+        brand.EmailReplyTo = emailReplyTo;
 
         await db.SaveChangesAsync(ct);
         await BrandReader.EvictAsync(Resolve<CacheService>(), seat.WorkspaceId, ct);
 
         await workspaces.AuditAsync(seat.WorkspaceId, seat.UserId!.Value,
             SecurityEventType.WorkspaceBrandChanged, HttpContext, ct,
-            JsonSerializer.Serialize(new { brand.Enabled, brand.HideQuickShareBranding }));
+            JsonSerializer.Serialize(new { brand.Enabled, brand.HideQuickShareBranding, brand.EmailSenderName }));
 
         await Send.OkAsync(GetBrandEndpoint.Map(brand), ct);
     }
@@ -268,7 +281,6 @@ public sealed class UploadBrandAssetEndpoint : EndpointWithoutRequest<BrandDto>
             {
                 Id = Guid.CreateVersion7(),
                 WorkspaceId = seat.WorkspaceId,
-                CreatedAt = DateTime.UtcNow,
             };
             db.WorkspaceBrands.Add(brand);
         }
@@ -284,7 +296,6 @@ public sealed class UploadBrandAssetEndpoint : EndpointWithoutRequest<BrandDto>
             ct);
 
         SetKey(brand, kind, newKey);
-        brand.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
         // Best-effort: an orphaned old asset costs a few hundred kilobytes, whereas failing the
@@ -373,7 +384,6 @@ public sealed class DeleteBrandAssetEndpoint : EndpointWithoutRequest<BrandDto>
 
         var key = UploadBrandAssetEndpoint.KeyOf(brand, kind);
         UploadBrandAssetEndpoint.SetKey(brand, kind, null);
-        brand.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
         if (!string.IsNullOrEmpty(key))

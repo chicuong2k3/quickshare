@@ -258,6 +258,8 @@ public sealed class DenyDeliveryEndpoint : Endpoint<DenyRequest>
 public sealed class ApprovalNotifier(
     EmailSender emailSender,
     WorkspaceDomainReader domains,
+    QuickShare.Features.Workspaces.Branding.BrandReader brands,
+    Microsoft.Extensions.Options.IOptions<EmailOptions> emailOptions,
     AppDbContext db,
     ILogger<ApprovalNotifier> logger)
 {
@@ -275,6 +277,8 @@ public sealed class ApprovalNotifier(
             return;
 
         var link = await domains.DeliveryUrlAsync(delivery.WorkspaceId, delivery.ShareCode, ct);
+        var brandView = await brands.ForWorkspaceAsync(delivery.WorkspaceId, ct);
+        var emailBrand = EmailBrandIdentity.FromBrand(brandView, emailOptions.Value.BaseUrl);
         var body = $"""
             <p>{System.Net.WebUtility.HtmlEncode(delivery.FileName)} is ready for you.</p>
             <p><a href="{link}">Open the delivery</a></p>
@@ -284,7 +288,7 @@ public sealed class ApprovalNotifier(
         {
             try
             {
-                await emailSender.SendAsync(recipient, "QuickShare", ReleaseSubject, body, ct);
+                await emailSender.SendAsync(recipient, "QuickShare", ReleaseSubject, body, emailBrand, ct);
             }
             catch (Exception ex)
             {

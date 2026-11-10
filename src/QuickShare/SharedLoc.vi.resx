@@ -3041,4 +3041,88 @@
   <data name="qr_scan_failed" xml:space="preserve">
     <value>Không đọc được mã QR hợp lệ từ nguồn này.</value>
   </data>
+  <data name="brand_email_sender" xml:space="preserve">
+    <value>Tên hiển thị người gửi email</value>
+  </data>
+  <data name="brand_email_reply_to" xml:space="preserve">
+    <value>Địa chỉ email nhận phản hồi (Reply-To)</value>
+  </data>
+  <data name="campaign_code_label" xml:space="preserve">
+    <value>Mã ưu đãi</value>
+  </data>
+  <data name="campaign_claim_btn" xml:space="preserve">
+    <value>Nhận ưu đãi</value>
+  </data>
+  <data name="campaign_auto_applied" xml:space="preserve">
+    <value>Tự động áp dụng</value>
+  </data>
+  <data name="discount_edu_title" xml:space="preserve">
+    <value>Ưu đãi Sinh viên &amp; Tổ chức phi lợi nhuận (Giảm 50% Pro)</value>
+  </data>
+  <data name="discount_edu_sub" xml:space="preserve">
+    <value>Sinh viên có email trường (.edu, .edu.vn) được duyệt tự động ngay lập tức. Tổ chức từ thiện và thẻ sinh viên được duyệt thủ công.</value>
+  </data>
+  <data name="discount_edu_cta" xml:space="preserve">
+    <value>Xác minh ưu đãi</value>
+  </data>
+  <data name="discount_edu_approved_msg" xml:space="preserve">
+    <value>Đã xác minh! Mã giảm 50% cá nhân của bạn</value>
+  </data>
+  <data name="discount_edu_pending_msg" xml:space="preserve">
+    <value>Hồ sơ xác minh đang chờ duyệt</value>
+  </data>
+  <data name="discount_edu_kind_label" xml:space="preserve">
+    <value>Đối tượng</value>
+  </data>
+  <data name="discount_edu_kind_student" xml:space="preserve">
+    <value>Sinh viên / Giảng viên</value>
+  </data>
+  <data name="discount_edu_kind_nonprofit" xml:space="preserve">
+    <value>Tổ chức phi lợi nhuận</value>
+  </data>
+  <data name="discount_edu_org_label" xml:space="preserve">
+    <value>Tên trường hoặc tổ chức</value>
+  </data>
+  <data name="discount_edu_email_label" xml:space="preserve">
+    <value>Email trường học hoặc tổ chức</value>
+  </data>
+  <data name="discount_edu_proof_label" xml:space="preserve">
+    <value>Mã số SV / Giấy phép đăng ký (tuỳ chọn với .edu.vn)</value>
+  </data>
+  <data name="discount_edu_submit_btn" xml:space="preserve">
+    <value>Xác minh &amp; Nhận mã giảm giá</value>
+  </data>
+  <data name="dl_wallet_pass" xml:space="preserve">
+    <value>Thêm vào Ví (Wallet)</value>
+  </data>
+  <data name="admin_analytics_export_csv" xml:space="preserve">
+    <value>Xuất CSV</value>
+  </data>
+  <data name="admin_analytics_funnel_signup" xml:space="preserve">
+    <value>Đăng ký</value>
+  </data>
+  <data name="admin_analytics_funnel_trial" xml:space="preserve">
+    <value>Dùng thử</value>
+  </data>
+  <data name="admin_analytics_cohorts_title" xml:space="preserve">
+    <value>Tỷ lệ giữ chân theo Cohort tuần</value>
+  </data>
+  <data name="admin_analytics_cohorts_empty" xml:space="preserve">
+    <value>Chưa có dữ liệu cohort.</value>
+  </data>
+  <data name="admin_analytics_cohort_week" xml:space="preserve">
+    <value>Tuần bắt đầu</value>
+  </data>
+  <data name="admin_analytics_cohort_size" xml:space="preserve">
+    <value>Khách truy cập</value>
+  </data>
+  <data name="admin_analytics_cohort_w1" xml:space="preserve">
+    <value>Tuần 1</value>
+  </data>
+  <data name="admin_analytics_cohort_w4" xml:space="preserve">
+    <value>Tuần 4</value>
+  </data>
+  <data name="admin_analytics_cohort_w8" xml:space="preserve">
+    <value>Tuần 8</value>
+  </data>
 </root>

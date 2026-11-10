@@ -560,4 +560,265 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("id=\"p2ps-pair-card\"", p2pHtml);
         Assert.Contains("id=\"p2ps-qr-scan-card\"", p2pHtml);
     }
+
+    [Fact]
+    public async Task BrandedEmails_AppliesWorkspaceSenderIdentityReplyToAndHtmlChrome()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Studio);
+        var workspaceId = Guid.CreateVersion7();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Workspaces.Add(new Workspace
+            {
+                Id = workspaceId,
+                Name = "Studio Nam",
+                OwnerId = user.Id,
+                Seats = 5,
+            });
+            db.WorkspaceMembers.Add(new WorkspaceMember
+            {
+                Id = Guid.CreateVersion7(),
+                WorkspaceId = workspaceId,
+                UserId = user.Id,
+                InviteEmail = user.Email,
+                Role = WorkspaceRole.Owner,
+                JoinedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(key);
+        var putRes = await client.PutAsJsonAsync("/api/workspace/brand", new
+        {
+            enabled = true,
+            accentColor = "#0f172a",
+            accentTextColor = "#f8fafc",
+            headerText = "Delivered by Studio Nam",
+            footerText = "Studio Nam Co., Ltd — District 1, HCMC",
+            hideQuickShareBranding = true,
+            emailSenderName = "Studio Nam Delivery",
+            emailReplyTo = "hello@studionam.vn",
+        });
+        Assert.Equal(HttpStatusCode.OK, putRes.StatusCode);
+
+        var brandDto = await putRes.Content.ReadFromJsonAsync<QuickShare.Features.Workspaces.Branding.BrandDto>();
+        Assert.NotNull(brandDto);
+        Assert.Equal("Studio Nam Delivery", brandDto!.EmailSenderName);
+        Assert.Equal("hello@studionam.vn", brandDto.EmailReplyTo);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var reader = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Workspaces.Branding.BrandReader>();
+            var view = await reader.ForWorkspaceAsync(workspaceId, CancellationToken.None);
+            Assert.NotNull(view);
+
+            var sender = scope.ServiceProvider.GetRequiredService<QuickShare.Infrastructure.Email.EmailSender>();
+            var identity = QuickShare.Infrastructure.Email.EmailBrandIdentity.FromBrand(view, "https://quickshare.test");
+            var msg = sender.BuildMessage("client@acme.vn", "Client", "Contract ready", "<p>Download link</p>", identity);
+
+            Assert.Equal("Studio Nam Delivery", msg.From.Mailboxes.Single().Name);
+            Assert.Equal("hello@studionam.vn", msg.ReplyTo.Mailboxes.Single().Address);
+            Assert.Contains("Delivered by Studio Nam", msg.HtmlBody);
+            Assert.Contains("Studio Nam Co., Ltd", msg.HtmlBody);
+            Assert.DoesNotContain("Powered by QuickShareCloud", msg.HtmlBody);
+        }
+    }
+
+    [Fact]
+    public async Task SeasonalCampaignsAndStudentDiscounts_AutoVerifiesEduVnAndEnforcesNonShareableCode()
+    {
+        var studentKey = Guid.CreateVersion7().ToString();
+        var student = await _factory.SeedUserAsync(studentKey, PlanTierLimits.Free);
+        var otherKey = Guid.CreateVersion7().ToString();
+        var otherUser = await _factory.SeedUserAsync(otherKey, PlanTierLimits.Free);
+
+        var adminClient = _factory.CreateAuthenticatedClient();
+        var campRes = await adminClient.PostAsJsonAsync(RoutePaths.AdminCampaignsApi, new
+        {
+            template = "tet",
+            code = "TET2026",
+            campaignName = "Tết Nguyên Đán 2026",
+            value = 30,
+            durationDays = 14,
+            autoApplyOnCheckout = true,
+        });
+        Assert.Equal(HttpStatusCode.OK, campRes.StatusCode);
+
+        var anonClient = _factory.CreateClient();
+        var activeRes = await anonClient.GetFromJsonAsync<QuickShare.Features.Payments.Promos.ActiveCampaignDto>(RoutePaths.ActiveCampaignsApi);
+        Assert.NotNull(activeRes);
+        Assert.Equal("TET2026", activeRes!.Code);
+
+        var pricingHtml = await anonClient.GetStringAsync(RoutePaths.Pricing);
+        Assert.Contains("id=\"pricing-campaign-banner\"", pricingHtml);
+        Assert.Contains("TET2026", pricingHtml);
+        Assert.Contains("id=\"pricing-education-discount\"", pricingHtml);
+
+        var studentClient = _factory.CreateAuthenticatedClient(studentKey);
+        var applyRes = await studentClient.PostAsJsonAsync(RoutePaths.AccountDiscountApi, new
+        {
+            kind = DiscountApplication.KindStudent,
+            organizationName = "Hanoi University of Science and Technology",
+            verificationEmail = "sv@hust.edu.vn",
+        });
+        Assert.Equal(HttpStatusCode.OK, applyRes.StatusCode);
+        var appDto = await applyRes.Content.ReadFromJsonAsync<QuickShare.Features.Payments.Promos.DiscountApplicationDto>();
+        Assert.NotNull(appDto);
+        Assert.Equal(DiscountApplication.StatusApproved, appDto!.Status);
+        Assert.NotNull(appDto.IssuedPromoCode);
+        Assert.StartsWith("EDU-", appDto.IssuedPromoCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var promos = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Payments.Promos.PromoCodeService>();
+            var studentQuote = await promos.QuoteAsync(appDto.IssuedPromoCode, student.Id, PlanTierLimits.Pro, 100, CancellationToken.None);
+            Assert.True(studentQuote.Valid);
+            Assert.Equal(50, studentQuote.FinalAmount);
+
+            // Another user trying to use the student's personal code is refused.
+            var otherQuote = await promos.QuoteAsync(appDto.IssuedPromoCode, otherUser.Id, PlanTierLimits.Pro, 100, CancellationToken.None);
+            Assert.False(otherQuote.Valid);
+            Assert.Equal(ErrorCodes.PromoCodeNotApplicable, otherQuote.Error);
+        }
+    }
+
+    [Fact]
+    public async Task WalletPass_GeneratesValidPkpassZip_AndMasksPrivateOrGatedDeliveries()
+    {
+        var key = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(key, PlanTierLimits.Pro);
+        var openCode = Guid.NewGuid().ToString("N")[..10];
+        var privateCode = Guid.NewGuid().ToString("N")[..10];
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = user.Id,
+                    FileName = "boarding-contract.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 8192,
+                    TotalBytes = 8192,
+                    ShareCode = openCode,
+                    StoragePath = "stub/open-pass",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(5),
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = user.Id,
+                    FileName = "confidential-payroll.xlsx",
+                    ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    FileSize = 8192,
+                    TotalBytes = 8192,
+                    ShareCode = privateCode,
+                    StoragePath = "stub/private-pass",
+                    PrivacyMode = true,
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    ExpiresAt = DateTime.UtcNow.AddDays(5),
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateClient();
+        var openRes = await client.GetAsync($"/api/downloads/{openCode}/wallet-pass");
+        Assert.Equal(HttpStatusCode.OK, openRes.StatusCode);
+        Assert.Equal("application/vnd.apple.pkpass", openRes.Content.Headers.ContentType?.MediaType);
+
+        var zipBytes = await openRes.Content.ReadAsByteArrayAsync();
+        using (var archive = new System.IO.Compression.ZipArchive(new MemoryStream(zipBytes), System.IO.Compression.ZipArchiveMode.Read))
+        {
+            var passEntry = archive.GetEntry("pass.json");
+            var manifestEntry = archive.GetEntry("manifest.json");
+            Assert.NotNull(passEntry);
+            Assert.NotNull(manifestEntry);
+
+            using var reader = new StreamReader(passEntry!.Open());
+            var passJson = await reader.ReadToEndAsync();
+            Assert.Contains("boarding-contract.pdf", passJson);
+            Assert.Contains("PKBarcodeFormatQR", passJson);
+        }
+
+        var privRes = await client.GetAsync($"/api/downloads/{privateCode}/wallet-pass");
+        Assert.Equal(HttpStatusCode.OK, privRes.StatusCode);
+        var privBytes = await privRes.Content.ReadAsByteArrayAsync();
+        using (var archive = new System.IO.Compression.ZipArchive(new MemoryStream(privBytes), System.IO.Compression.ZipArchiveMode.Read))
+        {
+            using var reader = new StreamReader(archive.GetEntry("pass.json")!.Open());
+            var passJson = await reader.ReadToEndAsync();
+            Assert.DoesNotContain("confidential-payroll.xlsx", passJson);
+            Assert.Contains("Protected Delivery", passJson);
+        }
+    }
+
+    [Fact]
+    public async Task CohortAndFunnelAnalytics_ComputesWeeklyRetentionAndExportsCsv()
+    {
+        var visitorA = Guid.NewGuid();
+        var visitorB = Guid.NewGuid();
+        var day0 = DateTime.UtcNow.Date.AddDays(-14);
+        var day8 = day0.AddDays(8);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.AnalyticsEvents.AddRange(
+                new AnalyticsEvent
+                {
+                    Id = Guid.CreateVersion7(),
+                    EventName = QuickShare.Features.Analytics.AnalyticsEvents.Visitor,
+                    VisitorId = visitorA,
+                    Plan = PlanTierLimits.Pro,
+                },
+                new AnalyticsEvent
+                {
+                    Id = Guid.CreateVersion7(),
+                    EventName = QuickShare.Features.Analytics.AnalyticsEvents.UploadCompleted,
+                    VisitorId = visitorA,
+                    Plan = PlanTierLimits.Pro,
+                },
+                new AnalyticsEvent
+                {
+                    Id = Guid.CreateVersion7(),
+                    EventName = QuickShare.Features.Analytics.AnalyticsEvents.Visitor,
+                    VisitorId = visitorB,
+                    Plan = PlanTierLimits.Pro,
+                });
+            await db.SaveChangesAsync();
+
+            // Backdate visitorA's first event and visitorB's event to day0, and visitorA's second event to day8 (+1 week)
+            var rows = db.AnalyticsEvents.Where(e => e.VisitorId == visitorA || e.VisitorId == visitorB).ToList();
+            db.Entry(rows[0]).Property(x => x.CreatedAt).CurrentValue = day0;
+            db.Entry(rows[1]).Property(x => x.CreatedAt).CurrentValue = day8;
+            db.Entry(rows[2]).Property(x => x.CreatedAt).CurrentValue = day0;
+            await db.SaveChangesAsync();
+        }
+
+        var adminClient = _factory.CreateAuthenticatedClient();
+        var data = await adminClient.GetFromJsonAsync<QuickShare.Features.Analytics.Dashboard.AnalyticsDashboardResponse>(
+            $"{QuickShare.Features.Analytics.AnalyticsConstants.AdminAnalyticsRoute}?plan=pro");
+        Assert.NotNull(data);
+        Assert.NotNull(data!.Cohorts);
+        Assert.NotEmpty(data.Cohorts!);
+        Assert.Contains(data.Cohorts!, c => c.CohortSize >= 2 && c.RetainedWeek1 >= 1);
+
+        var csvRes = await adminClient.GetAsync(RoutePaths.AdminAnalyticsCsvRoute);
+        Assert.Equal(HttpStatusCode.OK, csvRes.StatusCode);
+        var csv = await csvRes.Content.ReadAsStringAsync();
+        Assert.Contains("funnel,steps,", csv);
+        Assert.Contains("cohort,", csv);
+
+        var pageHtml = await adminClient.GetStringAsync(RoutePaths.AdminAnalytics);
+        Assert.Contains("id=\"admin-analytics-cohorts\"", pageHtml);
+        Assert.Contains("id=\"admin-analytics-export-csv\"", pageHtml);
+    }
 }

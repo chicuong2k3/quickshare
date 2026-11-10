@@ -12,7 +12,7 @@ public static class PromoKind
 }
 
 /// <summary>
-/// A discount code (issue #98).
+/// A discount code (issues #98, #183, #203).
 ///
 /// Codes are compared case-insensitively and stored upper-cased, because the one thing certain
 /// about a code printed on a conference sticker is that somebody will type it in lower case.
@@ -21,6 +21,7 @@ public record PromoCode : BaseAuditEntity
 {
     public const int CodeMaxLength = 32;
     public const int DescriptionMaxLength = 120;
+    public const int CampaignMaxLength = 80;
     public const int MaxPercent = 100;
 
     public string Code { get; set; } = string.Empty;
@@ -48,8 +49,23 @@ public record PromoCode : BaseAuditEntity
 
     public DateTime? RevokedAt { get; set; }
 
+    // ── Seasonal campaigns (issue #183) ──
+
+    /// <summary>Campaign name (e.g. "Tết 2026", "Black Friday 2026") when this code powers a seasonal campaign (issue #183).</summary>
+    public string? CampaignName { get; set; }
+
+    /// <summary>When the campaign opens (UTC). Null means immediately live (issue #183).</summary>
+    public DateTime? StartsAt { get; set; }
+
+    /// <summary>When true, displays on the landing/pricing banner and auto-fills on /upgrade (issue #183).</summary>
+    public bool AutoApplyOnCheckout { get; set; }
+
+    /// <summary>Optional country-code filter (e.g. "VN" for Tết campaigns) (issue #183).</summary>
+    public string? TargetCountry { get; set; }
+
     public bool IsLive(DateTime now) =>
         RevokedAt is null
+        && (StartsAt is null || StartsAt <= now)
         && (ExpiresAt is null || ExpiresAt > now)
         && (MaxRedemptions is null || RedeemedCount < MaxRedemptions);
 

@@ -105,4 +105,6 @@ public enum SecurityEventType
     MountFolderCreated,
     S3CredentialIssued,
     S3CredentialRevoked,
+    DiscountVerificationSubmitted,
+    DiscountVerificationDecided,
 }

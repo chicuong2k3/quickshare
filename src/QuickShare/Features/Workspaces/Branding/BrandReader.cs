@@ -3,7 +3,7 @@ using QuickShare.Infrastructure.Caching;
 
 namespace QuickShare.Features.Workspaces.Branding;
 
-/// <summary>What a recipient page needs to render a workspace's brand (issues #285, #286).</summary>
+/// <summary>What a recipient page or outbound email needs to render a workspace's brand (issues #285, #286, #124).</summary>
 public sealed record BrandView(
     Guid WorkspaceId,
     bool HasLogo,
@@ -15,11 +15,13 @@ public sealed record BrandView(
     string? HeadingFontName,
     string? BodyFontName,
     bool HasHeadingFont,
-    bool HasBodyFont);
+    bool HasBodyFont,
+    string? EmailSenderName = null,
+    string? EmailReplyTo = null);
 
 /// <summary>
 /// Resolves the brand a delivery should be shown under, and renders it to CSS (issues #285,
-/// #286).
+/// #286, #124).
 ///
 /// Cached per workspace, because the recipient page is the hottest page in the product and a
 /// brand changes about as often as a company rebrands. Eviction is explicit from every write
@@ -63,7 +65,9 @@ public sealed class BrandReader(AppDbContext db, CacheService cache)
                     brand.HeadingFontName,
                     brand.BodyFontName,
                     brand.HeadingFontKey is not null,
-                    brand.BodyFontKey is not null);
+                    brand.BodyFontKey is not null,
+                    brand.EmailSenderName,
+                    brand.EmailReplyTo);
             },
             duration: CacheDuration,
             token: ct);

@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Antiforgery
 @using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.PayOS
+@using QuickShare.Features.Payments.Promos
 @using QuickShare.Features.Payments.Subscriptions
 @using QuickShare.Features.Users.Shared
 @using QuickShare.Infrastructure.Caching
@@ -11,6 +12,7 @@
 @inject AppDbContext Db
 @inject IConfiguration Config
 @inject CheckoutService Checkout
+@inject CacheService Cache
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IAntiforgery Antiforgery
 @inject AnalyticsService Analytics
@@ -32,6 +34,19 @@ else
                     @string.Format(Loc["upgrade_plan_brings"], planDisplay, planSummary)
                 </p>
             </header>
+
+            @if (activeCampaign is not null)
+            {
+                <div id="upgrade-campaign-banner" class="rounded-md border border-primary/40 bg-primary/5 p-4 text-sm" role="status">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <span class="rounded bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">@activeCampaign.CampaignName</span>
+                            <strong class="ml-2">@(activeCampaign.Description ?? activeCampaign.CampaignName)</strong>
+                        </div>
+                        <span class="font-mono text-xs">@Loc["campaign_auto_applied"]: <strong>@activeCampaign.Code</strong> (-@activeCampaign.Value%)</span>
+                    </div>
+                </div>
+            }
 
             <Card class="px-6">
                 <div class="text-center">
@@ -109,7 +124,7 @@ else
                             <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                             <label class="block space-y-2" for="upgrade-promo">
                                 <span class="block text-sm font-medium">@Loc["upgrade_promo_label"]</span>
-                                <Input id="upgrade-promo" name="PromoCode" class="w-full" Type="text" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
+                                <Input id="upgrade-promo" name="PromoCode" class="w-full" Type="text" Value="@prefilledPromo" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
                             </label>
                             <Button Type="submit" class="w-full">@Loc["upgrade_pay_now_btn"]</Button>
                             @if (Checkout.CryptoAvailable)
@@ -124,6 +139,58 @@ else
                     @Loc["upgrade_need_help"] <a href="mailto:support@quicksharecloud.com" class="text-primary underline">@Loc["upgrade_contact_support"]</a>.
                 </p>
             </Card>
+
+            @* Student + Nonprofit Verification (issue #203) *@
+            <Card id="upgrade-discount-card" class="px-6 py-5">
+                <div class="space-y-3">
+                    <h2 class="text-lg font-semibold">@Loc["discount_edu_title"]</h2>
+                    <p class="text-sm text-muted-foreground">@Loc["discount_edu_sub"]</p>
+
+                    @if (discountApp is { Status: DiscountApplication.StatusApproved, IssuedPromoCode: not null })
+                    {
+                        <div id="upgrade-discount-approved" class="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm" role="status">
+                            <p class="font-medium">@Loc["discount_edu_approved_msg"]: <code class="rounded border bg-background px-2 py-0.5 font-mono font-bold">@discountApp.IssuedPromoCode</code></p>
+                        </div>
+                    }
+                    else if (discountApp is { Status: DiscountApplication.StatusPending })
+                    {
+                        <div id="upgrade-discount-pending" class="rounded-md border p-3 text-sm text-muted-foreground" role="status">
+                            @Loc["discount_edu_pending_msg"] (@discountApp.OrganizationName)
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" class="space-y-3" @formname="upgrade-discount-apply" @onsubmit="HandleSubmit">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="@ActionField" value="@DiscountApplyAction" />
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <label class="block space-y-1 text-sm" for="discount-kind">
+                                    <span class="font-medium">@Loc["discount_edu_kind_label"]</span>
+                                    <NativeSelect id="discount-kind" name="Kind">
+                                        <NativeSelectOption value="@DiscountApplication.KindStudent">@Loc["discount_edu_kind_student"]</NativeSelectOption>
+                                        <NativeSelectOption value="@DiscountApplication.KindNonprofit">@Loc["discount_edu_kind_nonprofit"]</NativeSelectOption>
+                                    </NativeSelect>
+                                </label>
+                                <label class="block space-y-1 text-sm" for="discount-org">
+                                    <span class="font-medium">@Loc["discount_edu_org_label"]</span>
+                                    <Input id="discount-org" name="OrganizationName" Type="text" maxlength="@DiscountApplication.OrganizationMaxLength" required />
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <label class="block space-y-1 text-sm" for="discount-email">
+                                    <span class="font-medium">@Loc["discount_edu_email_label"]</span>
+                                    <Input id="discount-email" name="VerificationEmail" Type="email" placeholder="student@hust.edu.vn" maxlength="@DiscountApplication.VerificationEmailMaxLength" required />
+                                </label>
+                                <label class="block space-y-1 text-sm" for="discount-proof">
+                                    <span class="font-medium">@Loc["discount_edu_proof_label"]</span>
+                                    <Input id="discount-proof" name="ProofReference" Type="text" maxlength="@DiscountApplication.ProofReferenceMaxLength" />
+                                </label>
+                            </div>
+                            <Button Type="submit" Variant="outline" Size="sm" data-ai-action="upgrade.discount.submit">@Loc["discount_edu_submit_btn"]</Button>
+                        </form>
+                    }
+                </div>
+            </Card>
         </section>
     </PageWrapper>
 }
@@ -131,6 +198,7 @@ else
 @code {
     [Parameter, SupplyParameterFromQuery] public string? Plan { get; set; }
     [Parameter, SupplyParameterFromQuery] public string? Billing { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name = "promo")] public string? PromoQuery { get; set; }
     [Parameter, SupplyParameterFromQuery(Name = PayOSOrderCodeQueryKey)] public long? PayOSOrderCode { get; set; }
 
     private const string PayOSOrderCodeQueryKey = "orderCode";
@@ -140,12 +208,16 @@ else
     private const string PaymentStatusId = "payment-status";
     private const string ActionField = "Action";
     private const string TrialAction = "trial";
+    private const string DiscountApplyAction = "discount-apply";
 
     private string selectedPlan = PlanTierLimits.Pro;
     private string currentPlan = PlanTierLimits.Free;
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
     private QuickShare.Features.Payments.Crypto.CryptoChargeResult? cryptoResult;
+    private ActiveCampaignDto? activeCampaign;
+    private DiscountApplication? discountApp;
+    private string prefilledPromo = string.Empty;
     private bool isPollRequest;
     private bool paymentCompleted;
     private bool trialError;
@@ -193,6 +265,22 @@ else
             paymentCompleted = await Checkout.IsCompletedAsync(user, pollOrderCode, ct);
             return;
         }
+
+        activeCampaign = await GetActiveCampaignEndpoint.ResolveActiveAsync(Db, Cache, ctx, ct);
+        discountApp = await Db.DiscountApplications.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == user.Id, ct);
+
+        if (!string.IsNullOrWhiteSpace(PromoQuery))
+        {
+            prefilledPromo = PromoCode.NormalizeCode(PromoQuery);
+        }
+        else if (discountApp is { Status: DiscountApplication.StatusApproved, IssuedPromoCode: not null })
+        {
+            prefilledPromo = discountApp.IssuedPromoCode;
+        }
+        else if (activeCampaign is not null)
+        {
+            prefilledPromo = activeCampaign.Code;
+        }
     }
 
     private async Task HandleSubmit()
@@ -227,6 +315,41 @@ else
             else
             {
                 trialError = true;
+            }
+            return;
+        }
+
+        if (form[ActionField] == DiscountApplyAction)
+        {
+            var kind = form["Kind"].FirstOrDefault() ?? DiscountApplication.KindStudent;
+            var org = form["OrganizationName"].FirstOrDefault()?.Trim() ?? string.Empty;
+            var email = form["VerificationEmail"].FirstOrDefault()?.Trim().ToLowerInvariant() ?? string.Empty;
+            var proof = form["ProofReference"].FirstOrDefault()?.Trim();
+            if (!string.IsNullOrEmpty(org) && email.Contains('@', StringComparison.Ordinal))
+            {
+                var app = await Db.DiscountApplications.FirstOrDefaultAsync(a => a.UserId == user.Id, ct);
+                if (app is null)
+                {
+                    app = new DiscountApplication { Id = Guid.CreateVersion7(), UserId = user.Id };
+                    Db.DiscountApplications.Add(app);
+                }
+                app.Kind = string.Equals(kind, DiscountApplication.KindNonprofit, StringComparison.OrdinalIgnoreCase)
+                    ? DiscountApplication.KindNonprofit
+                    : DiscountApplication.KindStudent;
+                app.OrganizationName = org;
+                app.VerificationEmail = email;
+                app.ProofReference = string.IsNullOrWhiteSpace(proof) ? null : proof;
+                if (app.Kind == DiscountApplication.KindStudent && DiscountApplication.IsAutoVerifiedAcademicEmail(email))
+                {
+                    await SubmitDiscountApplicationEndpoint.IssueDiscountCodeAsync(Db, app, DateTime.UtcNow, ct);
+                    prefilledPromo = app.IssuedPromoCode ?? prefilledPromo;
+                }
+                else
+                {
+                    app.Status = DiscountApplication.StatusPending;
+                }
+                await Db.SaveChangesAsync(ct);
+                discountApp = app;
             }
             return;
         }

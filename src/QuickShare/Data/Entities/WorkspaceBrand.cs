@@ -1,7 +1,7 @@
 namespace QuickShare.Data.Entities;
 
 /// <summary>
-/// A workspace's own look on the pages its clients see (issues #285, #286).
+/// A workspace's own look on the pages its clients see (issues #285, #286, #124).
 ///
 /// The recipient page is an agency's brand moment: a client opening a contract sees the studio
 /// that sent it, not us. Everything here is therefore scoped to surfaces the *workspace's own
@@ -20,6 +20,8 @@ public record WorkspaceBrand : BaseAuditEntity
     public const int FontNameMaxLength = 60;
     public const int LicenseNoteMaxLength = 200;
     public const int AssetKeyMaxLength = 400;
+    public const int EmailSenderNameMaxLength = 80;
+    public const int EmailReplyToMaxLength = 254;
 
     public Guid WorkspaceId { get; set; }
 
@@ -55,6 +57,14 @@ public record WorkspaceBrand : BaseAuditEntity
     /// <summary>The uploader's own declaration that they may embed these files. We cannot verify it.</summary>
     public string? FontLicenseNote { get; set; }
 
+    // ── Outbound email identity (issue #124) ──
+
+    /// <summary>Custom display name used in the From header of recipient-facing emails (issue #124).</summary>
+    public string? EmailSenderName { get; set; }
+
+    /// <summary>Optional Reply-To address on recipient-facing emails so replies go to the studio (issue #124).</summary>
+    public string? EmailReplyTo { get; set; }
+
     public Workspace Workspace { get; init; } = null!;
 
     /// <summary>A brand only applies once switched on and given something to show.</summary>
@@ -64,7 +74,9 @@ public record WorkspaceBrand : BaseAuditEntity
             || HeaderText is not null
             || FooterText is not null
             || HeadingFontKey is not null
-            || BodyFontKey is not null);
+            || BodyFontKey is not null
+            || EmailSenderName is not null
+            || EmailReplyTo is not null);
 }
 
 /// <summary>Which uploaded asset a request refers to (issues #285, #286).</summary>

@@ -31,6 +31,7 @@ public sealed class CommitR2Handler(
     CacheService cache,
     ChannelNotifier channels,
     WorkspaceDomainReader domains,
+    QuickShare.Features.Workspaces.Branding.BrandReader brands,
     QuickShare.Features.Developer.Webhooks.WebhookDispatcher webhooks)
     : IRequestHandler<CommitR2Command, Result<CommitR2Response>>
 {
@@ -633,6 +634,8 @@ public sealed class CommitR2Handler(
         Dictionary<string, string> tokens, CancellationToken cancellationToken)
     {
         var shareUrl = await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken);
+        var brandView = await brands.ForWorkspaceAsync(delivery.WorkspaceId, cancellationToken);
+        var emailBrand = EmailBrandIdentity.FromBrand(brandView, _emailOptions.BaseUrl);
 
         foreach (var email in recipients)
         {
@@ -652,7 +655,7 @@ public sealed class CommitR2Handler(
 
             try
             {
-                await emailSender.SendAsync(email, "QuickShare", LinkEmailSubject, body, cancellationToken);
+                await emailSender.SendAsync(email, "QuickShare", LinkEmailSubject, body, emailBrand, cancellationToken);
             }
             catch (Exception ex)
             {

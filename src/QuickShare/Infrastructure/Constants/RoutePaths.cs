@@ -100,4 +100,10 @@ public static class RoutePaths
     public const string AdminEmailSuppressionsApi = "/api/admin/email-suppressions";
     public const string DeliverySubtitlesRoute = "/api/downloads/{ShareCode}/subtitles/{FileId}";
     public const string P2pPairRoute = "/api/shares/p2p/pair";
+    public const string DeliveryWalletPassRoute = "/api/downloads/{ShareCode}/wallet-pass";
+    public const string AccountDiscountApi = "/api/account/discount-application";
+    public const string AdminDiscountsApi = "/api/admin/discount-applications";
+    public const string AdminCampaignsApi = "/api/admin/campaigns";
+    public const string ActiveCampaignsApi = "/api/campaigns/active";
+    public const string AdminAnalyticsCsvRoute = "/api/admin/analytics/export.csv";
 }

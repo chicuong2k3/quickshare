@@ -1,4 +1,4 @@
-// Workspace branding (issues #285 logo/colours, #286 fonts). One global object, page-scoped.
+// Workspace branding (issues #285 logo/colours, #286 fonts, #124 email sender identity). One global object, page-scoped.
 window.quickShareBrand = (function () {
     const BODY = '#workspace-brand-body';
 
@@ -18,6 +18,8 @@ window.quickShareBrand = (function () {
                 headingFontName: qsPage.value('brand-heading-name'),
                 bodyFontName: qsPage.value('brand-body-name'),
                 fontLicenseNote: qsPage.value('brand-license'),
+                emailSenderName: qsPage.value('brand-email-sender'),
+                emailReplyTo: qsPage.value('brand-email-reply-to'),
             }, { btn: btn, doneLabel: qsPage.attr(btn, 'data-saved-label'), body: BODY });
         },
         // Not qsPage.send: this posts multipart, not JSON. The colour, contrast and file-type

@@ -12,9 +12,17 @@
 <PageTitle>@Loc["admin_analytics_page_title"]</PageTitle>
 
 <PageWrapper id="admin-analytics-shell" Variant="PageVariant.Padded">
-    <div class="admin-analytics-heading">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["admin_analytics_title"]</h1>
-        <p class="text-muted-foreground">@Loc["admin_analytics_subtitle"]</p>
+    <div class="flex flex-wrap items-center justify-between gap-4 admin-analytics-heading">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">@Loc["admin_analytics_title"]</h1>
+            <p class="text-muted-foreground">@Loc["admin_analytics_subtitle"]</p>
+        </div>
+        @if (isAdmin)
+        {
+            <div class="flex items-center gap-2">
+                <a id="admin-analytics-export-csv" href="@RoutePaths.AdminAnalyticsCsvRoute" class="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium" data-ai-action="analytics.export.csv">@Loc["admin_analytics_export_csv"]</a>
+            </div>
+        }
     </div>
 
     <div id="admin-analytics-app" class="admin-analytics-card" data-slot="card">
@@ -48,20 +56,59 @@
                         <TableHeader>
                             <TableRow>
                                 <TableHead scope="col">@Loc["admin_analytics_funnel_visitor"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_signup"]</TableHead>
                                 <TableHead scope="col">@Loc["admin_analytics_funnel_upload_started"]</TableHead>
                                 <TableHead scope="col">@Loc["admin_analytics_funnel_upload_completed"]</TableHead>
                                 <TableHead scope="col">@Loc["admin_analytics_funnel_download_completed"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_trial"]</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow>
                                 <TableCell>@data.Funnel.Visitor</TableCell>
+                                <TableCell>@data.Funnel.Signup</TableCell>
                                 <TableCell>@data.Funnel.UploadStarted</TableCell>
                                 <TableCell>@data.Funnel.UploadCompleted</TableCell>
                                 <TableCell>@data.Funnel.DownloadCompleted</TableCell>
+                                <TableCell>@data.Funnel.TrialStarted</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
+                </div>
+
+                @* Cohort retention over time (issue #303) *@
+                <div id="admin-analytics-cohorts" class="my-6">
+                    <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_cohorts_title"]</h2>
+                    @if (data.Cohorts is null || data.Cohorts.Count == 0)
+                    {
+                        <p class="text-muted-foreground">@Loc["admin_analytics_cohorts_empty"]</p>
+                    }
+                    else
+                    {
+                        <Table class="admin-analytics-table">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_week"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_size"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_w1"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_w4"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_w8"]</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                @foreach (var cohort in data.Cohorts)
+                                {
+                                    <TableRow>
+                                        <TableCell class="font-mono">@cohort.CohortWeekStart.ToString("yyyy-MM-dd")</TableCell>
+                                        <TableCell>@cohort.CohortSize</TableCell>
+                                        <TableCell>@cohort.RetainedWeek1 (@cohort.Week1Percent%)</TableCell>
+                                        <TableCell>@cohort.RetainedWeek4 (@cohort.Week4Percent%)</TableCell>
+                                        <TableCell>@cohort.RetainedWeek8 (@cohort.Week8Percent%)</TableCell>
+                                    </TableRow>
+                                }
+                            </TableBody>
+                        </Table>
+                    }
                 </div>
 
                 <div class="admin-analytics-grid">
@@ -127,6 +174,8 @@
 </PageWrapper>
 
 @code {
+    [Parameter, SupplyParameterFromQuery(Name = "plan")] public string? PlanFilter { get; set; }
+
     private bool isAdmin;
     private AnalyticsDashboardResponse? data;
 
@@ -140,6 +189,6 @@
             return;
         }
 
-        data = await Bus.Send<AnalyticsDashboardResponse>(new AnalyticsDashboardQuery(), CancellationToken.None);
+        data = await Bus.Send<AnalyticsDashboardResponse>(new AnalyticsDashboardQuery(Plan: PlanFilter), CancellationToken.None);
     }
 }

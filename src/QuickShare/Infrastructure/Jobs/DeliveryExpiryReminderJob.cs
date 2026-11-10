@@ -28,6 +28,8 @@ public sealed class DeliveryExpiryReminderJob(
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var domains = scope.ServiceProvider.GetRequiredService<WorkspaceDomainReader>();
+        var brands = scope.ServiceProvider.GetRequiredService<QuickShare.Features.Workspaces.Branding.BrandReader>();
+        var emailOpts = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailOptions>>().Value;
 
         var candidates = await db.Deliveries
             .Where(d => d.Status == DeliveryStatus.Active)
@@ -46,8 +48,10 @@ public sealed class DeliveryExpiryReminderJob(
             try
             {
                 var shareUrl = await domains.DeliveryUrlAsync(delivery.WorkspaceId, delivery.ShareCode, ct);
+                var brandView = await brands.ForWorkspaceAsync(delivery.WorkspaceId, ct);
+                var emailBrand = EmailBrandIdentity.FromBrand(brandView, emailOpts.BaseUrl);
                 await emailSender.SendAsync(
-                    delivery.SenderEmail!, string.Empty, Subject, BuildBody(delivery, shareUrl), ct);
+                    delivery.SenderEmail!, string.Empty, Subject, BuildBody(delivery, shareUrl), emailBrand, ct);
                 sent++;
             }
             catch (Exception ex)

@@ -3041,4 +3041,88 @@
   <data name="qr_scan_failed" xml:space="preserve">
     <value>Could not read a valid QR code from that source.</value>
   </data>
+  <data name="brand_email_sender" xml:space="preserve">
+    <value>Email sender display name</value>
+  </data>
+  <data name="brand_email_reply_to" xml:space="preserve">
+    <value>Email Reply-To address</value>
+  </data>
+  <data name="campaign_code_label" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="campaign_claim_btn" xml:space="preserve">
+    <value>Claim offer</value>
+  </data>
+  <data name="campaign_auto_applied" xml:space="preserve">
+    <value>Auto-applied</value>
+  </data>
+  <data name="discount_edu_title" xml:space="preserve">
+    <value>Student &amp; Nonprofit Discount (50% off Pro)</value>
+  </data>
+  <data name="discount_edu_sub" xml:space="preserve">
+    <value>Students with a university email (.edu, .edu.vn) are verified instantly. Nonprofits and manual student IDs are reviewed by our team.</value>
+  </data>
+  <data name="discount_edu_cta" xml:space="preserve">
+    <value>Verify eligibility</value>
+  </data>
+  <data name="discount_edu_approved_msg" xml:space="preserve">
+    <value>Verified! Your personal 50%-off code</value>
+  </data>
+  <data name="discount_edu_pending_msg" xml:space="preserve">
+    <value>Verification application pending review</value>
+  </data>
+  <data name="discount_edu_kind_label" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="discount_edu_kind_student" xml:space="preserve">
+    <value>Student / Educator</value>
+  </data>
+  <data name="discount_edu_kind_nonprofit" xml:space="preserve">
+    <value>Registered Nonprofit</value>
+  </data>
+  <data name="discount_edu_org_label" xml:space="preserve">
+    <value>School or Organization Name</value>
+  </data>
+  <data name="discount_edu_email_label" xml:space="preserve">
+    <value>Academic or Organization Email</value>
+  </data>
+  <data name="discount_edu_proof_label" xml:space="preserve">
+    <value>Student ID / Registration Number (optional for .edu.vn)</value>
+  </data>
+  <data name="discount_edu_submit_btn" xml:space="preserve">
+    <value>Verify &amp; Get Discount Code</value>
+  </data>
+  <data name="dl_wallet_pass" xml:space="preserve">
+    <value>Add to Wallet</value>
+  </data>
+  <data name="admin_analytics_export_csv" xml:space="preserve">
+    <value>Export CSV</value>
+  </data>
+  <data name="admin_analytics_funnel_signup" xml:space="preserve">
+    <value>Signups</value>
+  </data>
+  <data name="admin_analytics_funnel_trial" xml:space="preserve">
+    <value>Trials Started</value>
+  </data>
+  <data name="admin_analytics_cohorts_title" xml:space="preserve">
+    <value>Weekly Cohort Retention</value>
+  </data>
+  <data name="admin_analytics_cohorts_empty" xml:space="preserve">
+    <value>No cohort activity recorded yet.</value>
+  </data>
+  <data name="admin_analytics_cohort_week" xml:space="preserve">
+    <value>Cohort Week</value>
+  </data>
+  <data name="admin_analytics_cohort_size" xml:space="preserve">
+    <value>Visitors</value>
+  </data>
+  <data name="admin_analytics_cohort_w1" xml:space="preserve">
+    <value>Week 1</value>
+  </data>
+  <data name="admin_analytics_cohort_w4" xml:space="preserve">
+    <value>Week 4</value>
+  </data>
+  <data name="admin_analytics_cohort_w8" xml:space="preserve">
+    <value>Week 8</value>
+  </data>
 </root>

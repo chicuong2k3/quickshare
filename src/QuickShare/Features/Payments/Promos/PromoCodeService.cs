@@ -29,6 +29,13 @@ public sealed class PromoCodeService(AppDbContext db)
         if (!promo.AppliesTo(plan))
             return new PromoQuote(false, ErrorCodes.PromoCodeNotApplicable, 0, amount, null);
 
+        if (code.StartsWith("EDU-", StringComparison.Ordinal) || code.StartsWith("NPO-", StringComparison.Ordinal))
+        {
+            var expectedSuffix = userId.ToString("N")[^10..].ToUpperInvariant();
+            if (!code.EndsWith(expectedSuffix, StringComparison.Ordinal))
+                return new PromoQuote(false, ErrorCodes.PromoCodeNotApplicable, 0, amount, null);
+        }
+
         var alreadyUsed = await db.PromoRedemptions
             .AsNoTracking()
             .AnyAsync(r => r.PromoCodeId == promo.Id && r.UserId == userId, ct);

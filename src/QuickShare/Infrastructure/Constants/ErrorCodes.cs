@@ -213,4 +213,8 @@ public static class ErrorCodes
     public const string PresetLimitReached = "preset_limit_reached";
     // File version history (#110).
     public const string VersionNotFound = "version_not_found";
+    public const string BrandReplyToInvalid = "brand_reply_to_invalid";
+    public const string DiscountApplicationInvalid = "discount_application_invalid";
+    public const string DiscountApplicationNotFound = "discount_application_not_found";
+    public const string CampaignCodeInvalid = "campaign_code_invalid";
 }

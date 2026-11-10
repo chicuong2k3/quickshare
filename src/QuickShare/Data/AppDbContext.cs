@@ -71,6 +71,7 @@ public class AppDbContext : DbContext
     public DbSet<UploadPreset> UploadPresets => Set<UploadPreset>();
     public DbSet<DeliveryVersion> DeliveryVersions => Set<DeliveryVersion>();
     public DbSet<EmailSuppression> EmailSuppressions => Set<EmailSuppression>();
+    public DbSet<DiscountApplication> DiscountApplications => Set<DiscountApplication>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -564,6 +565,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Kind).IsRequired().HasMaxLength(16);
             entity.Property(e => e.Description).HasMaxLength(PromoCode.DescriptionMaxLength);
             entity.Property(e => e.AppliesToPlans).HasMaxLength(64);
+            entity.Property(e => e.CampaignName).HasMaxLength(PromoCode.CampaignMaxLength);
+            entity.Property(e => e.TargetCountry).HasMaxLength(8);
         });
 
         modelBuilder.Entity<PromoRedemption>(entity =>
@@ -842,6 +845,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.LogoKey).HasMaxLength(WorkspaceBrand.AssetKeyMaxLength);
             entity.Property(e => e.HeadingFontKey).HasMaxLength(WorkspaceBrand.AssetKeyMaxLength);
             entity.Property(e => e.BodyFontKey).HasMaxLength(WorkspaceBrand.AssetKeyMaxLength);
+            entity.Property(e => e.EmailSenderName).HasMaxLength(WorkspaceBrand.EmailSenderNameMaxLength);
+            entity.Property(e => e.EmailReplyTo).HasMaxLength(WorkspaceBrand.EmailReplyToMaxLength);
             entity.HasIndex(e => e.WorkspaceId).IsUnique();
             entity.HasOne(e => e.Workspace)
                 .WithMany()
@@ -1013,6 +1018,23 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Reason).IsRequired().HasMaxLength(EmailSuppression.ReasonMaxLength);
             entity.Property(e => e.Source).IsRequired().HasMaxLength(EmailSuppression.SourceMaxLength);
             entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<DiscountApplication>(entity =>
+        {
+            entity.ToTable("discount_applications");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(DiscountApplication.KindMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(DiscountApplication.StatusMaxLength);
+            entity.Property(e => e.OrganizationName).IsRequired().HasMaxLength(DiscountApplication.OrganizationMaxLength);
+            entity.Property(e => e.VerificationEmail).IsRequired().HasMaxLength(DiscountApplication.VerificationEmailMaxLength);
+            entity.Property(e => e.ProofReference).HasMaxLength(DiscountApplication.ProofReferenceMaxLength);
+            entity.Property(e => e.IssuedPromoCode).HasMaxLength(PromoCode.CodeMaxLength);
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<DeliveryVersion>(entity =>
