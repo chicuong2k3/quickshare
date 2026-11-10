@@ -53,6 +53,15 @@
                     : "QuickShareCloud conducts annual third-party penetration testing against OWASP Top 10 and OWASP API Security Top 10. All findings are tracked to remediation and retest verification. Full NDA reports are available to enterprise buyers via /api/security/pentest.")
             </p>
         </section>
+
+        <section id="open-source-crypto-audit" class="mt-8 border-t border-border pt-6">
+            <h2 class="text-2xl font-bold">@(IsVi ? "6. Mã nguồn mở phía Client & Kiểm toán mật mã (#42)" : "6. Open-Source Client & Verifiable Cryptography Audit (#42)")</h2>
+            <p class="mt-2 text-sm text-muted-foreground">
+                @(IsVi
+                    ? "Toàn bộ mô-đun mã hoá AES-256-GCM (WebCrypto API), PBKDF2-SHA256 (600,000 vòng) và luồng truyền P2P WebRTC DTLS-SRTP được công bố công khai kèm mã băm SHA-256 có thể tái lập tại /api/security/open-source-audit."
+                    : "Our client-side AES-256-GCM WebCrypto implementation, PBKDF2-SHA256 (600,000 iterations) key derivation, and WebRTC P2P DTLS-SRTP transport are open-source under the MIT license with reproducible SHA-256 artifact hashes published at /api/security/open-source-audit.")
+            </p>
+        </section>
     </article>
 </PageWrapper>
 

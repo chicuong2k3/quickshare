@@ -2751,4 +2751,121 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         Assert.NotNull(discordDto);
         Assert.False(string.IsNullOrWhiteSpace(discordDto!.ShareCode));
     }
+
+    // -----------------------------------------------------------------
+    // #159, #122, #111, #50 — Desktop Tauri Tray, Browser Extension, Zalo Mini App & iOS Share Extension
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task CrossPlatformApps_PairsDesktopViaQr_AndSharesFromBrowserExtensionZaloMiniAppAndIosShareSheet()
+    {
+        var userKey = Guid.CreateVersion7().ToString();
+        await _factory.SeedUserAsync(userKey, PlanTierLimits.Pro);
+        var authClient = _factory.CreateAuthenticatedClient(userKey);
+        var anonClient = _factory.CreateClient();
+
+        // 1. Tauri Desktop App manifest + QR login pairing flow (#159)
+        var desktopManifest = await anonClient.GetFromJsonAsync<QuickShare.Features.Growth.Distribution.DesktopAppManifestResponse>(
+            RoutePaths.DesktopAppManifestApi);
+        Assert.NotNull(desktopManifest);
+        Assert.Equal("tauri-v2", desktopManifest!.Framework);
+        Assert.Equal(3, desktopManifest.Builds.Count);
+
+        var qrStartRes = await anonClient.PostAsJsonAsync(RoutePaths.DesktopQrAuthStartApi, new
+        {
+            deviceName = "MacBook-Pro-Tray",
+        });
+        Assert.Equal(HttpStatusCode.OK, qrStartRes.StatusCode);
+        var qrStart = await qrStartRes.Content.ReadFromJsonAsync<QuickShare.Features.Growth.Distribution.StartDesktopQrAuthResponse>();
+        Assert.NotNull(qrStart);
+
+        var qrApproveRes = await authClient.PostAsJsonAsync(RoutePaths.DesktopQrAuthApproveApi, new
+        {
+            challengeCode = qrStart!.ChallengeCode,
+        });
+        Assert.Equal(HttpStatusCode.OK, qrApproveRes.StatusCode);
+        var qrApproved = await qrApproveRes.Content.ReadFromJsonAsync<QuickShare.Features.Growth.Distribution.ApproveDesktopQrAuthResponse>();
+        Assert.NotNull(qrApproved);
+        Assert.StartsWith(ApiKey.TokenPrefix, qrApproved!.IssuedApiKeyToken);
+
+        // 2. Browser Extension Manifest V3 + right-click quick share (#122)
+        var extManifest = await anonClient.GetFromJsonAsync<QuickShare.Features.Growth.Distribution.BrowserExtensionManifestResponse>(
+            RoutePaths.BrowserExtensionManifestApi);
+        Assert.NotNull(extManifest);
+        Assert.Equal(3, extManifest!.ManifestVersion);
+        Assert.True(extManifest.StoreLinks.ContainsKey("chrome_web_store"));
+
+        var extShareRes = await anonClient.PostAsJsonAsync(RoutePaths.BrowserExtensionShareApi, new
+        {
+            fileName = "context-menu-capture.png",
+            contentType = "image/png",
+        });
+        Assert.Equal(HttpStatusCode.OK, extShareRes.StatusCode);
+        var extShare = await extShareRes.Content.ReadFromJsonAsync<QuickShare.Features.Growth.Distribution.QuickChannelShareResponse>();
+        Assert.NotNull(extShare);
+        Assert.Equal(DeliverySources.BrowserExtension, extShare!.Source);
+
+        // 3. Zalo Mini App manifest + in-app share (#111)
+        var zaloManifest = await anonClient.GetFromJsonAsync<QuickShare.Features.Growth.Distribution.ZaloMiniAppManifestResponse>(
+            RoutePaths.ZaloMiniAppManifestApi);
+        Assert.NotNull(zaloManifest);
+        Assert.Equal("vi", zaloManifest!.DefaultLocale);
+
+        var zaloShareRes = await anonClient.PostAsJsonAsync(RoutePaths.ZaloMiniAppShareApi, new
+        {
+            fileName = "hop-dong-dich-vu.pdf",
+            contentType = "application/pdf",
+            zaloUserId = "zalo-vn-84901234567",
+        });
+        Assert.Equal(HttpStatusCode.OK, zaloShareRes.StatusCode);
+        var zaloShare = await zaloShareRes.Content.ReadFromJsonAsync<QuickShare.Features.Growth.Distribution.QuickChannelShareResponse>();
+        Assert.NotNull(zaloShare);
+        Assert.Equal(DeliverySources.ZaloMiniApp, zaloShare!.Source);
+
+        // 4. iOS Share Extension & Apple Shortcut ingest (#50)
+        var iosManifest = await anonClient.GetFromJsonAsync<QuickShare.Features.Growth.Distribution.IosShareManifestResponse>(
+            RoutePaths.IosShareShortcutApi);
+        Assert.NotNull(iosManifest);
+        Assert.Equal("com.quicksharecloud.ios.ShareExtension", iosManifest!.BundleIdentifier);
+
+        var iosShareRes = await anonClient.PostAsJsonAsync(RoutePaths.IosShareIngestApi, new
+        {
+            fileName = "IMG_8492.HEIC",
+            contentType = "image/heic",
+        });
+        Assert.Equal(HttpStatusCode.OK, iosShareRes.StatusCode);
+        var iosShare = await iosShareRes.Content.ReadFromJsonAsync<QuickShare.Features.Growth.Distribution.QuickChannelShareResponse>();
+        Assert.NotNull(iosShare);
+        Assert.Equal(DeliverySources.IosShare, iosShare!.Source);
+    }
+
+    // -----------------------------------------------------------------
+    // #42, #30, #55, #86 — Open-Source Crypto Audit, Product Hunt Launch, VN Community & Influencer Tiers
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task OpenSourceCryptoAuditAndGrowthLaunchKit_VerifiesReproducibleHashes_AndExposesProductHuntAndVnCreatorPlaybooks()
+    {
+        var client = _factory.CreateClient();
+
+        // 1. Open-source client & verifiable cryptography audit (#42)
+        var audit = await client.GetFromJsonAsync<QuickShare.Features.Growth.Distribution.OpenSourceAuditResponse>(
+            RoutePaths.OpenSourceAuditApi);
+        Assert.NotNull(audit);
+        Assert.Equal("MIT", audit!.License);
+        Assert.True(audit.ReproducibleBuildVerified);
+        Assert.NotEmpty(audit.AuditedModules);
+
+        var secHtml = await client.GetStringAsync(RoutePaths.Security);
+        Assert.Contains("id=\"open-source-crypto-audit\"", secHtml);
+
+        // 2. Product Hunt (#30), Vietnamese community launch (#55) & VN influencer affiliate tiers (#86)
+        var kit = await client.GetFromJsonAsync<QuickShare.Features.Growth.Distribution.GrowthLaunchKitResponse>(
+            RoutePaths.LaunchKitApi);
+        Assert.NotNull(kit);
+        Assert.Contains(kit!.Channels, c => c.ChannelId == "product_hunt");
+        Assert.Contains(kit.Channels, c => c.ChannelId == "voz_forums");
+        Assert.Contains(kit.Channels, c => c.ChannelId == "zalo_oa");
+        Assert.Contains(kit.CreatorTiers, t => t.TierName == "tiktok_youtube_creator" && t.CommissionPercent == 30);
+    }
 }

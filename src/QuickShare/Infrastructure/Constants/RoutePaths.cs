@@ -158,4 +158,15 @@ public static class RoutePaths
     public const string TelegramBotWebhookApi = "/api/webhooks/telegram/bot";
     public const string DiscordBotWebhookApi = "/api/webhooks/discord/bot";
     public const string DiscordCommunityApi = "/api/community/discord";
+    public const string DesktopAppManifestApi = "/api/apps/desktop/manifest";
+    public const string DesktopQrAuthStartApi = "/api/apps/desktop/qr-auth";
+    public const string DesktopQrAuthApproveApi = "/api/apps/desktop/qr-auth/approve";
+    public const string BrowserExtensionManifestApi = "/api/apps/browser-extension/manifest.json";
+    public const string BrowserExtensionShareApi = "/api/apps/browser-extension/share";
+    public const string ZaloMiniAppManifestApi = "/api/zalo/mini-app/manifest";
+    public const string ZaloMiniAppShareApi = "/api/zalo/mini-app/share";
+    public const string IosShareShortcutApi = "/api/apps/ios/shortcut-manifest";
+    public const string IosShareIngestApi = "/api/apps/ios/share";
+    public const string OpenSourceAuditApi = "/api/security/open-source-audit";
+    public const string LaunchKitApi = "/api/growth/launch-kit";
 }
