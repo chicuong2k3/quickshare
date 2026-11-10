@@ -87,6 +87,7 @@ public class AppDbContext : DbContext
     public DbSet<AutomationConnection> AutomationConnections => Set<AutomationConnection>();
     public DbSet<UserPasskeyRecovery> UserPasskeyRecoveries => Set<UserPasskeyRecovery>();
     public DbSet<PenetrationTestRecord> PenetrationTestRecords => Set<PenetrationTestRecord>();
+    public DbSet<WorkspaceByokConfig> WorkspaceByokConfigs => Set<WorkspaceByokConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1255,6 +1256,18 @@ public class AppDbContext : DbContext
             entity.Property(e => e.PublicSummary).IsRequired().HasMaxLength(PenetrationTestRecord.SummaryMaxLength);
             entity.Property(e => e.NdaReportReference).HasMaxLength(PenetrationTestRecord.ReportRefMaxLength);
             entity.HasIndex(e => e.AssessmentYear).IsUnique();
+        });
+
+        modelBuilder.Entity<WorkspaceByokConfig>(entity =>
+        {
+            entity.ToTable("workspace_byok_configs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Provider).IsRequired().HasMaxLength(WorkspaceByokConfig.ProviderMaxLength);
+            entity.Property(e => e.KeyId).IsRequired().HasMaxLength(WorkspaceByokConfig.KeyIdMaxLength);
+            entity.Property(e => e.RoleArn).HasMaxLength(WorkspaceByokConfig.RoleArnMaxLength);
+            entity.Property(e => e.KeyRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
+            entity.HasIndex(e => e.WorkspaceId).IsUnique();
         });
 
     }

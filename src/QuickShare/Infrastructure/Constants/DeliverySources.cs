@@ -13,7 +13,10 @@ public static class DeliverySources
     /// <summary>Forwarded to the account's private ingest address (issue #104).</summary>
     public const string Email = "email";
 
-    private static readonly string[] Known = [Web, Paste, Url, Mount, Email];
+    private static readonly string[] Known = [Web, Paste, Url, Mount, Email, Cloud, OfflineQueue];
+
+    public const string Cloud = "cloud";
+    public const string OfflineQueue = "offline_queue";
 
     public static string Normalize(string? source)
         => Known.Contains(source) ? source! : Web;

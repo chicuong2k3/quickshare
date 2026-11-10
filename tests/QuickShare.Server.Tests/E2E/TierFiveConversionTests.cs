@@ -2199,4 +2199,218 @@ public sealed class TierFiveConversionTests : IClassFixture<TestWebAppFactory>
         var secHtml = await client.GetStringAsync(RoutePaths.Security);
         Assert.Contains("id=\"pentest-posture\"", secHtml);
     }
+
+    // -----------------------------------------------------------------
+    // #163 — BYOK encryption: customer-managed KMS key config, rotation, region check & revoke
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task ByokEncryption_ConfiguresRotatesEnforcesRegion_AndBlocksAccessOnRevoke()
+    {
+        var ownerKey = Guid.CreateVersion7().ToString();
+        var owner = await _factory.SeedUserAsync(ownerKey, PlanTierLimits.Studio);
+        var client = _factory.CreateAuthenticatedClient(ownerKey);
+
+        var createWs = await client.PostAsJsonAsync("/api/workspace", new
+        {
+            name = "BYOK Sovereign Vault",
+            seats = 3,
+        });
+        Assert.Equal(HttpStatusCode.OK, createWs.StatusCode);
+
+        // Configure AWS KMS key in region "eu"
+        var putRes = await client.PutAsJsonAsync(RoutePaths.WorkspaceByokApi, new
+        {
+            provider = WorkspaceByokConfig.ProviderAwsKms,
+            keyId = "arn:aws:kms:eu-central-1:123456789012:key/11112222-3333-4444-5555-666677778888",
+            roleArn = "arn:aws:iam::123456789012:role/QuickShareByokRole",
+            keyRegion = "eu",
+        });
+        Assert.Equal(HttpStatusCode.OK, putRes.StatusCode);
+        var byok = await putRes.Content.ReadFromJsonAsync<QuickShare.Features.Workspaces.Byok.WorkspaceByokDto>();
+        Assert.NotNull(byok);
+        Assert.True(byok!.Configured);
+        Assert.Equal(1, byok.KeyVersion);
+        Assert.Equal(WorkspaceByokConfig.StatusActive, byok.Status);
+
+        // Rotate key -> KeyVersion increments to 2
+        var rotRes = await client.PostAsJsonAsync(RoutePaths.WorkspaceByokRotateApi, new
+        {
+            keyId = "arn:aws:kms:eu-central-1:123456789012:key/99990000-aaaa-bbbb-cccc-ddddeeeeffff",
+        });
+        Assert.Equal(HttpStatusCode.OK, rotRes.StatusCode);
+        var rotated = await rotRes.Content.ReadFromJsonAsync<QuickShare.Features.Workspaces.Byok.WorkspaceByokDto>();
+        Assert.NotNull(rotated);
+        Assert.Equal(2, rotated!.KeyVersion);
+
+        // Seed a delivery bound to this workspace and verify access succeeds while active, then fails after revoke
+        Guid workspaceId;
+        var shareCode = $"byok{owner.Id.ToString("N")[..6]}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var ws = db.Workspaces.First(w => w.OwnerId == owner.Id);
+            workspaceId = ws.Id;
+            db.Deliveries.Add(new Delivery
+            {
+                Id = Guid.CreateVersion7(),
+                SenderId = owner.Id,
+                WorkspaceId = workspaceId,
+                ShareCode = shareCode,
+                FileName = "sovereign-contract.pdf",
+                ContentType = "application/pdf",
+                FileSize = 4096,
+                TotalBytes = 4096,
+                StoragePath = $"uploads/eu/{owner.Id:N}/{shareCode}/sovereign-contract.pdf",
+                StorageRegion = "eu",
+                MaxDownloads = 10,
+                Status = DeliveryStatus.Active,
+                ByokKeyId = rotated.KeyId,
+                ByokKeyVersion = rotated.KeyVersion,
+                ByokWrappedDek = QuickShare.Features.Workspaces.Byok.GetWorkspaceByokEndpoint.WrapEnvelopeKey(rotated.KeyId!, rotated.KeyVersion, Guid.NewGuid()),
+                EncryptedKeyEscrow = "escrow-cek-byok",
+                ExpiresAt = DateTime.UtcNow.AddDays(5),
+            });
+            await db.SaveChangesAsync();
+        }
+
+        // Before revoke: key escrow is accessible
+        var escrowBefore = await client.GetAsync($"/api/downloads/{shareCode}/key-escrow");
+        Assert.Equal(HttpStatusCode.OK, escrowBefore.StatusCode);
+
+        // Revoke BYOK key -> immediate access revocation
+        var revRes = await client.PostAsync(RoutePaths.WorkspaceByokRevokeApi, null);
+        Assert.Equal(HttpStatusCode.OK, revRes.StatusCode);
+
+        var escrowAfter = await client.GetAsync($"/api/downloads/{shareCode}/key-escrow");
+        Assert.Equal(HttpStatusCode.Gone, escrowAfter.StatusCode);
+
+        var dlHtml = await client.GetStringAsync($"/d/{shareCode}");
+        Assert.Contains("id=\"download-phase-revoked\"", dlHtml);
+    }
+
+    // -----------------------------------------------------------------
+    // #109 — Cloud import: stream from Google Drive / Dropbox / OneDrive without storing credentials
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task CloudImport_StreamsFromProvider_RecordsQuotaAndAudit_WithoutStoringCredentials()
+    {
+        var proKey = Guid.CreateVersion7().ToString();
+        var proUser = await _factory.SeedUserAsync(proKey, PlanTierLimits.Pro);
+        var client = _factory.CreateAuthenticatedClient(proKey);
+
+        var importRes = await client.PostAsJsonAsync(RoutePaths.CloudImportApi, new
+        {
+            provider = "google_drive",
+            fileName = "quarterly-roadmap.pdf",
+            downloadUrl = "https://www.googleapis.com/drive/v3/files/1a2b3c4d5e?alt=media",
+            contentType = "application/pdf",
+        });
+        Assert.Equal(HttpStatusCode.OK, importRes.StatusCode);
+        var imported = await importRes.Content.ReadFromJsonAsync<QuickShare.Features.Uploads.CloudImport.CloudImportResponse>();
+        Assert.NotNull(imported);
+        Assert.Equal("google_drive", imported!.Provider);
+        Assert.Equal("quarterly-roadmap.pdf", imported.FileName);
+        Assert.True(imported.FileSize > 0);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var delivery = db.Deliveries.FirstOrDefault(d => d.ShareCode == imported.ShareCode);
+            Assert.NotNull(delivery);
+            Assert.Equal(DeliverySources.Cloud, delivery!.Source);
+
+            var auditExists = db.SecurityEvents.Any(e =>
+                e.UserId == proUser.Id && e.EventType == SecurityEventType.CloudImportCompleted);
+            Assert.True(auditExists);
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // #279, #80, #26 — PWA offline delivery bundle, privacy-mode guard & offline upload queue check
+    // -----------------------------------------------------------------
+
+    [Fact]
+    public async Task PwaOfflineReadAndQueue_ServesOfflineBundle_BlocksPrivacyMode_AndValidatesOfflineUploadQueue()
+    {
+        var senderKey = Guid.CreateVersion7().ToString();
+        var sender = await _factory.SeedUserAsync(senderKey, PlanTierLimits.Pro);
+        var client = _factory.CreateAuthenticatedClient(senderKey);
+
+        var normalCode = $"off{sender.Id.ToString("N")[..7]}";
+        var privateCode = $"prv{sender.Id.ToString("N")[..7]}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Deliveries.AddRange(
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = sender.Id,
+                    ShareCode = normalCode,
+                    FileName = "field-manual.pdf",
+                    ContentType = "application/pdf",
+                    FileSize = 8192,
+                    TotalBytes = 8192,
+                    StoragePath = $"uploads/{sender.Id:N}/{normalCode}/field-manual.pdf",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    PrivacyMode = false,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                },
+                new Delivery
+                {
+                    Id = Guid.CreateVersion7(),
+                    SenderId = sender.Id,
+                    ShareCode = privateCode,
+                    FileName = "classified-notes.txt",
+                    ContentType = "text/plain",
+                    FileSize = 1024,
+                    TotalBytes = 1024,
+                    StoragePath = $"uploads/{sender.Id:N}/{privateCode}/classified-notes.txt",
+                    MaxDownloads = 10,
+                    Status = DeliveryStatus.Active,
+                    PrivacyMode = true,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3),
+                });
+            await db.SaveChangesAsync();
+        }
+
+        // 1. Normal delivery returns offline bundle and renders #dl-save-offline-btn
+        var bundleRes = await client.GetAsync($"/api/downloads/{normalCode}/offline-bundle");
+        Assert.Equal(HttpStatusCode.OK, bundleRes.StatusCode);
+        var bundle = await bundleRes.Content.ReadFromJsonAsync<QuickShare.Features.Downloads.Offline.OfflineDeliveryBundleDto>();
+        Assert.NotNull(bundle);
+        Assert.Equal(normalCode, bundle!.ShareCode);
+        Assert.True(bundle.MaxCacheQuotaBytes > 0);
+
+        var normalHtml = await client.GetStringAsync($"/d/{normalCode}");
+        Assert.Contains("id=\"dl-save-offline-btn\"", normalHtml);
+
+        // 2. PrivacyMode delivery refuses offline caching with 403 and hides button
+        var privBundleRes = await client.GetAsync($"/api/downloads/{privateCode}/offline-bundle");
+        Assert.Equal(HttpStatusCode.Forbidden, privBundleRes.StatusCode);
+
+        var privHtml = await client.GetStringAsync($"/d/{privateCode}");
+        Assert.DoesNotContain("id=\"dl-save-offline-btn\"", privHtml);
+
+        // 3. Offline upload queue preflight validates queued items against plan & quota
+        var queueRes = await client.PostAsJsonAsync(RoutePaths.OfflineUploadQueueApi, new
+        {
+            items = new[]
+            {
+                new { fileName = "site-photo-1.jpg", fileSize = 1024L * 1024L, contentType = "image/jpeg" },
+                new { fileName = "huge-archive.bin", fileSize = 50L * 1024L * 1024L * 1024L, contentType = "application/octet-stream" },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, queueRes.StatusCode);
+        var queueCheck = await queueRes.Content.ReadFromJsonAsync<QuickShare.Features.Downloads.Offline.OfflineQueueCheckResponse>();
+        Assert.NotNull(queueCheck);
+        Assert.Equal(1, queueCheck!.AllowedCount);
+        Assert.Equal(1, queueCheck.RejectedCount);
+        Assert.True(queueCheck.Items[0].Allowed);
+        Assert.False(queueCheck.Items[1].Allowed);
+    }
 }

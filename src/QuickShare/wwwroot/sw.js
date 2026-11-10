@@ -4,6 +4,8 @@
 // Bump SHELL_VERSION on deploy so an old SW does not pin the site.
 
 const SHELL_VERSION = 'qs-shell-v2';
+const OFFLINE_DELIVERY_CACHE = 'qs-offline-deliveries-v1';
+const OFFLINE_UPLOAD_SYNC_TAG = 'qs-offline-upload-sync';
 
 const SHELL = [
     '/css/app.css',
@@ -30,7 +32,7 @@ self.addEventListener('activate', function (event) {
         caches.keys()
             .then(function (keys) {
                 return Promise.all(
-                    keys.filter(function (key) { return key !== SHELL_VERSION; })
+                    keys.filter(function (key) { return key !== SHELL_VERSION && key !== OFFLINE_DELIVERY_CACHE; })
                         .map(function (key) { return caches.delete(key); })
                 );
             })
@@ -94,4 +96,17 @@ self.addEventListener('notificationclick', function (event) {
             if (self.clients.openWindow) return self.clients.openWindow(link);
         })
     );
+});
+
+// PWA Offline Upload Queue background sync (issue #80)
+self.addEventListener('sync', function (event) {
+    if (event.tag === OFFLINE_UPLOAD_SYNC_TAG) {
+        event.waitUntil(
+            self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+                clients.forEach(function (client) {
+                    client.postMessage({ type: OFFLINE_UPLOAD_SYNC_TAG });
+                });
+            })
+        );
+    }
 });

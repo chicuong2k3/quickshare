@@ -3431,4 +3431,49 @@
   <data name="dl_passphrase_unlocked" xml:space="preserve">
     <value>Decryption key derived in browser.</value>
   </data>
+  <data name="ws_byok_title" xml:space="preserve">
+    <value>Bring Your Own Key (BYOK) KMS Encryption</value>
+  </data>
+  <data name="ws_byok_hint" xml:space="preserve">
+    <value>Wrap workspace delivery data encryption keys (DEKs) with your own AWS KMS, Azure Key Vault, or Google Cloud KMS key. Revoking your key immediately blocks access to all wrapped deliveries.</value>
+  </data>
+  <data name="ws_byok_provider_label" xml:space="preserve">
+    <value>Cloud KMS Provider</value>
+  </data>
+  <data name="ws_byok_key_id_label" xml:space="preserve">
+    <value>Customer KMS Key ARN / URI</value>
+  </data>
+  <data name="ws_byok_region_label" xml:space="preserve">
+    <value>Key Residency Region</value>
+  </data>
+  <data name="ws_byok_save_btn" xml:space="preserve">
+    <value>Save BYOK Key</value>
+  </data>
+  <data name="ws_byok_rotate_btn" xml:space="preserve">
+    <value>Rotate Key Version</value>
+  </data>
+  <data name="ws_byok_revoke_btn" xml:space="preserve">
+    <value>Revoke BYOK Key</value>
+  </data>
+  <data name="upload_cloud_gdrive" xml:space="preserve">
+    <value>Google Drive</value>
+  </data>
+  <data name="upload_cloud_dropbox" xml:space="preserve">
+    <value>Dropbox</value>
+  </data>
+  <data name="upload_cloud_onedrive" xml:space="preserve">
+    <value>OneDrive</value>
+  </data>
+  <data name="upload_cloud_import_btn" xml:space="preserve">
+    <value>Import from Cloud</value>
+  </data>
+  <data name="upload_offline_queue_notice" xml:space="preserve">
+    <value>Waiting for network — queued for background sync</value>
+  </data>
+  <data name="dl_save_offline_btn" xml:space="preserve">
+    <value>Save for offline</value>
+  </data>
+  <data name="dl_save_offline_done" xml:space="preserve">
+    <value>Saved for offline reading in this browser.</value>
+  </data>
 </root>

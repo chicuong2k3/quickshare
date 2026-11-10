@@ -93,6 +93,19 @@ window.quickShareWorkspace = (function () {
                 encryptionPolicy: qsPage.value('ws-encryption-policy'),
             }, btn, qsPage.attr(btn, 'data-saved-label'));
         },
+        saveByok: function (btn: HTMLButtonElement): void {
+            send('/api/workspace/byok', 'PUT', {
+                provider: qsPage.value('ws-byok-provider'),
+                keyId: qsPage.value('ws-byok-key-id'),
+                keyRegion: qsPage.value('ws-byok-region') || null,
+            }, btn, qsPage.attr(btn, 'data-saved-label'));
+        },
+        rotateByok: function (btn: HTMLButtonElement): void {
+            send('/api/workspace/byok/rotate', 'POST', null, btn);
+        },
+        revokeByok: function (btn: HTMLButtonElement): void {
+            send('/api/workspace/byok/revoke', 'POST', null, btn);
+        },
         cancelTransfer: function (btn: HTMLButtonElement): void {
             send('/api/workspace/transfer/cancel', 'POST', null, btn);
         },

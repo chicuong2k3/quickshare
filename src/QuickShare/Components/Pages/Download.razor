@@ -411,6 +411,14 @@
                                 </svg>
                                 <span id="dl-share-label">@Loc["dl_share"]</span>
                             </button>
+                            @if (Info?.PrivacyMode != true)
+                            {
+                                <button type="button" id="dl-save-offline-btn" data-slot="button" data-variant="ghost" data-size="sm" style="margin-top: 0.5rem"
+                                        onclick="window.saveForOffline()" data-ai-action="download.offline.save">
+                                    <span id="dl-save-offline-label">@Loc["dl_save_offline_btn"]</span>
+                                </button>
+                                <p id="dl-offline-saved-status" class="mt-1 hidden text-xs text-muted-foreground" role="status">@Loc["dl_save_offline_done"]</p>
+                            }
                         </div>
 
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
@@ -697,6 +705,25 @@
                 btn.disabled = false;
             }
         }).catch(function () { btn.disabled = false; });
+    };
+    window.saveForOffline = function () {
+        var btn = document.getElementById('dl-save-offline-btn');
+        if (btn) btn.disabled = true;
+        fetch('/api/downloads/' + '@ShareCode' + '/offline-bundle').then(function (r) {
+            if (!r.ok) throw new Error('offline bundle refused');
+            return r.json();
+        }).then(function (bundle) {
+            if ('caches' in window && bundle && bundle.cacheName) {
+                return caches.open(bundle.cacheName).then(function (cache) {
+                    return cache.put('/d/' + '@ShareCode', new Response(JSON.stringify(bundle), { headers: { 'Content-Type': 'application/json' } }));
+                });
+            }
+        }).then(function () {
+            var done = document.getElementById('dl-offline-saved-status');
+            if (done) done.classList.remove('hidden');
+        }).catch(function () {
+            if (btn) btn.disabled = false;
+        });
     };
 </script>
 

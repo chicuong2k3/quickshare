@@ -122,4 +122,8 @@ public enum SecurityEventType
     PasskeyRecoveryUsed,
     WorkspaceEncryptionPolicyChanged,
     PenetrationTestRecorded,
+    ByokConfigChanged,
+    ByokKeyRotated,
+    ByokKeyRevoked,
+    CloudImportCompleted,
 }

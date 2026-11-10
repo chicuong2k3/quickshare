@@ -3431,4 +3431,49 @@
   <data name="dl_passphrase_unlocked" xml:space="preserve">
     <value>Đã dẫn xuất khóa giải mã trong trình duyệt.</value>
   </data>
+  <data name="ws_byok_title" xml:space="preserve">
+    <value>Mã hóa khóa tự quản lý (BYOK KMS)</value>
+  </data>
+  <data name="ws_byok_hint" xml:space="preserve">
+    <value>Bọc khóa mã hóa dữ liệu (DEK) bằng AWS KMS, Azure Key Vault hoặc Google Cloud KMS của bạn. Thu hồi khóa sẽ chặn truy cập tức thì vào mọi liên kết thuộc workspace.</value>
+  </data>
+  <data name="ws_byok_provider_label" xml:space="preserve">
+    <value>Nhà cung cấp Cloud KMS</value>
+  </data>
+  <data name="ws_byok_key_id_label" xml:space="preserve">
+    <value>ARN / URI khóa KMS khách hàng</value>
+  </data>
+  <data name="ws_byok_region_label" xml:space="preserve">
+    <value>Vùng lưu trữ khóa</value>
+  </data>
+  <data name="ws_byok_save_btn" xml:space="preserve">
+    <value>Lưu khóa BYOK</value>
+  </data>
+  <data name="ws_byok_rotate_btn" xml:space="preserve">
+    <value>Xoay vòng phiên bản khóa</value>
+  </data>
+  <data name="ws_byok_revoke_btn" xml:space="preserve">
+    <value>Thu hồi khóa BYOK</value>
+  </data>
+  <data name="upload_cloud_gdrive" xml:space="preserve">
+    <value>Google Drive</value>
+  </data>
+  <data name="upload_cloud_dropbox" xml:space="preserve">
+    <value>Dropbox</value>
+  </data>
+  <data name="upload_cloud_onedrive" xml:space="preserve">
+    <value>OneDrive</value>
+  </data>
+  <data name="upload_cloud_import_btn" xml:space="preserve">
+    <value>Nhập từ đám mây</value>
+  </data>
+  <data name="upload_offline_queue_notice" xml:space="preserve">
+    <value>Đang chờ mạng — đã xếp hàng đồng bộ nền</value>
+  </data>
+  <data name="dl_save_offline_btn" xml:space="preserve">
+    <value>Lưu xem ngoại tuyến</value>
+  </data>
+  <data name="dl_save_offline_done" xml:space="preserve">
+    <value>Đã lưu để xem ngoại tuyến trên trình duyệt này.</value>
+  </data>
 </root>

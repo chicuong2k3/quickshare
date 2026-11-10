@@ -161,6 +161,33 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                @if (workspace.Plan == PlanTierLimits.Studio)
+                {
+                    <Card class="account-card workspace-card" id="workspace-byok-card">
+                        <CardContent>
+                            <h2 class="text-xl font-semibold">@Loc["ws_byok_title"]</h2>
+                            <p class="text-muted-foreground workspace-hint">@Loc["ws_byok_hint"]</p>
+                            <div class="workspace-form">
+                                <label class="workspace-label" for="ws-byok-provider">@Loc["ws_byok_provider_label"]</label>
+                                <NativeSelect id="ws-byok-provider">
+                                    <NativeSelectOption value="@WorkspaceByokConfig.ProviderAwsKms">AWS KMS</NativeSelectOption>
+                                    <NativeSelectOption value="@WorkspaceByokConfig.ProviderAzureKeyVault">Azure Key Vault</NativeSelectOption>
+                                    <NativeSelectOption value="@WorkspaceByokConfig.ProviderGcpKms">Google Cloud KMS</NativeSelectOption>
+                                </NativeSelect>
+                                <label class="workspace-label" for="ws-byok-key-id">@Loc["ws_byok_key_id_label"]</label>
+                                <Input id="ws-byok-key-id" Type="text" maxlength="@WorkspaceByokConfig.KeyIdMaxLength" placeholder="arn:aws:kms:eu-central-1:123456789012:key/..." />
+                                <label class="workspace-label" for="ws-byok-region">@Loc["ws_byok_region_label"]</label>
+                                <Input id="ws-byok-region" Type="text" maxlength="12" placeholder="eu / us" />
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <button type="button" data-slot="button" data-variant="default" onclick="window.quickShareWorkspace.saveByok(this)" data-saved-label="@Loc["security_confirm_saved"]" data-ai-action="workspace.byok.save">@Loc["ws_byok_save_btn"]</button>
+                                    <button type="button" data-slot="button" data-variant="outline" onclick="window.quickShareWorkspace.rotateByok(this)" data-ai-action="workspace.byok.rotate">@Loc["ws_byok_rotate_btn"]</button>
+                                    <button type="button" data-slot="button" data-variant="ghost" onclick="window.quickShareWorkspace.revokeByok(this)" data-ai-action="workspace.byok.revoke">@Loc["ws_byok_revoke_btn"]</button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                }
             }
 
             @if (workspace.IsOwner)

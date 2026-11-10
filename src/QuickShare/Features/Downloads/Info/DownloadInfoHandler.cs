@@ -90,6 +90,17 @@ public sealed class DownloadInfoHandler(
                 if (delivery.Status == DeliveryStatus.Revoked)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryRevoked));
 
+                if (!string.IsNullOrEmpty(delivery.ByokKeyId) && delivery.WorkspaceId is { } byokWsId)
+                {
+                    var byokStatus = await db.WorkspaceByokConfigs
+                        .AsNoTracking()
+                        .Where(x => x.WorkspaceId == byokWsId)
+                        .Select(x => x.Status)
+                        .FirstOrDefaultAsync(ct2);
+                    if (byokStatus == WorkspaceByokConfig.StatusRevoked)
+                        return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.ByokKeyRevoked));
+                }
+
                 if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryExpired));
 

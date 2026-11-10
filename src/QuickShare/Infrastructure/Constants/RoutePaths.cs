@@ -137,4 +137,10 @@ public static class RoutePaths
     public const string SeoJaSendLargeFilesFree = "/ja/send-large-files-free";
     public const string SeoEsSendLargeFilesFree = "/es/enviar-archivos-grandes-gratis";
     public const string SeoArSendLargeFilesFree = "/ar/send-large-files-free";
+    public const string WorkspaceByokApi = "/api/workspace/byok";
+    public const string WorkspaceByokRotateApi = "/api/workspace/byok/rotate";
+    public const string WorkspaceByokRevokeApi = "/api/workspace/byok/revoke";
+    public const string CloudImportApi = "/api/uploads/cloud-import";
+    public const string DeliveryOfflineBundleApi = "/api/downloads/{ShareCode}/offline-bundle";
+    public const string OfflineUploadQueueApi = "/api/uploads/offline-queue";
 }

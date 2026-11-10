@@ -205,6 +205,21 @@
                         </div>
                     </div>
 
+                    @* Cloud import from Google Drive / Dropbox / OneDrive (issue #109) *@
+                    <div id="upload-cloud-import" class="mt-2 flex flex-wrap justify-center gap-2">
+                        <button type="button" id="upload-cloud-gdrive-btn" class="upload-text-toggle" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadCloud.openPicker('google_drive')" data-ai-action="upload.cloud.googleDrive">@Loc["upload_cloud_gdrive"]</button>
+                        <button type="button" id="upload-cloud-dropbox-btn" class="upload-text-toggle" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadCloud.openPicker('dropbox')" data-ai-action="upload.cloud.dropbox">@Loc["upload_cloud_dropbox"]</button>
+                        <button type="button" id="upload-cloud-onedrive-btn" class="upload-text-toggle" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadCloud.openPicker('onedrive')" data-ai-action="upload.cloud.onedrive">@Loc["upload_cloud_onedrive"]</button>
+                    </div>
+                    <div id="upload-cloud-panel" class="hidden upload-text-mode">
+                        <Input Type="hidden" id="upload-cloud-provider" Value="google_drive" />
+                        <div class="upload-url-row">
+                            <Input Type="text" id="upload-cloud-filename" class="sender-email-input" placeholder="deck.pdf" />
+                            <Input Type="url" id="upload-cloud-url" class="sender-email-input" placeholder="https://www.googleapis.com/drive/v3/files/..." />
+                            <button type="button" id="upload-cloud-submit-btn" data-slot="button" data-variant="default" onclick="window.uploadCloud.submitImport()" data-ai-action="upload.cloud.submit">@Loc["upload_cloud_import_btn"]</button>
+                        </div>
+                    </div>
+
                     @* Load preset (#100) — shown only for Pro/Studio, fetches presets on demand. *@
                     <div class="sender-email-wrap" id="upload-preset-wrap">
                         <span class="otp-label">@Loc["presets_load_label"]</span>
@@ -492,6 +507,7 @@
                 <h1 class="status-h1" id="upload-filename"></h1>
                 <p class="status-p" id="upload-progress-label"></p>
                 <div id="upload-queue-banner" class="hidden mt-3 rounded-md border bg-muted/40 p-3 text-sm" role="status" data-notice="@Loc["upload_queue_notice"]"></div>
+                <div id="upload-offline-queue-banner" class="hidden mt-3 rounded-md border bg-muted/40 p-3 text-sm" role="status">@Loc["upload_offline_queue_notice"]</div>
                 <div id="upload-encrypt-badge" class="badge-encrypt">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
@@ -653,6 +669,50 @@
             link.focus();
             link.select();
             try { document.execCommand('copy'); } catch (_) { }
+        },
+        openPicker: function (provider) {
+            var panel = document.getElementById('upload-cloud-panel');
+            var provInput = document.getElementById('upload-cloud-provider');
+            if (provInput) provInput.value = provider;
+            if (panel) panel.classList.remove('hidden');
+        }
+    };
+
+    window.uploadCloud = {
+        openPicker: function (provider) {
+            var panel = document.getElementById('upload-cloud-panel');
+            var provInput = document.getElementById('upload-cloud-provider');
+            if (provInput) provInput.value = provider;
+            if (panel) panel.classList.remove('hidden');
+        },
+        submitImport: function () {
+            var provider = (document.getElementById('upload-cloud-provider') || {}).value || 'google_drive';
+            var fileName = ((document.getElementById('upload-cloud-filename') || {}).value || '').trim();
+            var downloadUrl = ((document.getElementById('upload-cloud-url') || {}).value || '').trim();
+            if (!fileName || !downloadUrl) return;
+            fetch('/api/uploads/cloud-import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider: provider, fileName: fileName, downloadUrl: downloadUrl })
+            }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+                if (data && data.shareLink) {
+                    var linkEl = document.getElementById('upload-url-link');
+                    var succEl = document.getElementById('upload-url-success');
+                    if (linkEl) linkEl.value = data.shareLink;
+                    if (succEl) succEl.classList.remove('hidden');
+                }
+            });
+        }
+    };
+    window.uploadOfflineQueue = {
+        enqueue: function (file) {
+            var banner = document.getElementById('upload-offline-queue-banner');
+            if (banner) banner.classList.remove('hidden');
+            if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+                navigator.serviceWorker.ready.then(function (reg) {
+                    if (reg.sync && reg.sync.register) reg.sync.register('qs-offline-upload-sync');
+                });
+            }
         }
     };
 </script>

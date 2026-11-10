@@ -249,4 +249,11 @@ public static class ErrorCodes
     public const string EncryptionDisabledByPolicy = "encryption_disabled_by_policy";
     public const string PenetrationTestInvalid = "penetration_test_invalid";
     public const string PenetrationTestNotFound = "penetration_test_not_found";
+    public const string ByokRequiresStudio = "byok_requires_studio";
+    public const string ByokConfigInvalid = "byok_config_invalid";
+    public const string ByokRegionMismatch = "byok_region_mismatch";
+    public const string ByokKeyRevoked = "byok_key_revoked";
+    public const string CloudImportProviderInvalid = "cloud_import_provider_invalid";
+    public const string CloudImportTokenInvalid = "cloud_import_token_invalid";
+    public const string OfflineCacheForbidden = "offline_cache_forbidden";
 }

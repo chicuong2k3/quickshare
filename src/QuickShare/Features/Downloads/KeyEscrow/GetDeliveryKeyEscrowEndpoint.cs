@@ -34,6 +34,20 @@ public sealed class GetDeliveryKeyEscrowEndpoint : EndpointWithoutRequest<Delive
             return;
         }
 
+        if (!string.IsNullOrEmpty(delivery.ByokKeyId) && delivery.WorkspaceId is { } byokWsId)
+        {
+            var byokStatus = await db.WorkspaceByokConfigs
+                .AsNoTracking()
+                .Where(x => x.WorkspaceId == byokWsId)
+                .Select(x => x.Status)
+                .FirstOrDefaultAsync(ct);
+            if (byokStatus == WorkspaceByokConfig.StatusRevoked)
+            {
+                ThrowError(ErrorCodes.ByokKeyRevoked, StatusCodes.Status410Gone);
+                return;
+            }
+        }
+
         await Send.OkAsync(new DeliveryKeyEscrowDto(
             delivery.ShareCode,
             string.IsNullOrEmpty(delivery.EncryptionMode) ? DeliveryEncryptionMode.FragmentKey : delivery.EncryptionMode,

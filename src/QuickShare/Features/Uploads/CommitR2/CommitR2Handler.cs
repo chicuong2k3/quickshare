@@ -313,6 +313,35 @@ public sealed class CommitR2Handler(
         var expiresAt = RetentionPolicy.Clamp(hasTransferPass ? (cmd.DeliverAt ?? DateTime.UtcNow).Add(cmd.ExpiryHours.HasValue ? TimeSpan.FromHours(cmd.ExpiryHours.Value) : maxExpiry) : ResolveExpiry(cmd, plan), user?.RetentionDays);
 
         var storageRegion = StorageRegions.FromKey(cmd.ObjectKey);
+        string? byokKeyId = null;
+        int? byokKeyVersion = null;
+        string? byokWrappedDek = null;
+
+        if (workspaceId is { } byokWsId)
+        {
+            var byokCfg = await db.WorkspaceByokConfigs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.WorkspaceId == byokWsId, cancellationToken);
+
+            if (byokCfg is not null && byokCfg.Status != WorkspaceByokConfig.StatusDisabled)
+            {
+                if (byokCfg.Status == WorkspaceByokConfig.StatusRevoked)
+                    return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ByokKeyRevoked));
+
+                if (!string.IsNullOrWhiteSpace(byokCfg.KeyRegion) &&
+                    !string.IsNullOrWhiteSpace(storageRegion) &&
+                    !string.Equals(byokCfg.KeyRegion, storageRegion, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ByokRegionMismatch));
+                }
+
+                byokKeyId = byokCfg.KeyId;
+                byokKeyVersion = byokCfg.KeyVersion;
+                byokWrappedDek = QuickShare.Features.Workspaces.Byok.GetWorkspaceByokEndpoint.WrapEnvelopeKey(
+                    byokCfg.KeyId, byokCfg.KeyVersion, cmd.DeliveryId);
+            }
+        }
+
         var dedupOutcome = new DeduplicationService.DedupOutcome(false, cmd.ObjectKey);
         if (bundle.Files.Count == 0 && requestId is null)
         {
@@ -398,6 +427,9 @@ public sealed class CommitR2Handler(
             EncryptionKdfSalt = string.IsNullOrWhiteSpace(cmd.EncryptionKdfSalt) ? null : cmd.EncryptionKdfSalt.Trim(),
             EncryptionKdfIterations = cmd.EncryptionKdfIterations,
             EncryptedKeyEscrow = string.IsNullOrWhiteSpace(cmd.EncryptedKeyEscrow) ? null : cmd.EncryptedKeyEscrow.Trim(),
+            ByokKeyId = byokKeyId,
+            ByokKeyVersion = byokKeyVersion,
+            ByokWrappedDek = byokWrappedDek,
         };
 
         session.Status = UploadSessionStatus.Committed;

@@ -164,6 +164,9 @@ public record Delivery : BaseAuditEntity
     public string? EncryptionKdfSalt { get; set; }
     public int? EncryptionKdfIterations { get; set; }
     public string? EncryptedKeyEscrow { get; set; }
+    public string? ByokKeyId { get; set; }
+    public int? ByokKeyVersion { get; set; }
+    public string? ByokWrappedDek { get; set; }
     public User? Sender { get; init; }
     /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
     public Guid? FileRequestId { get; set; }
