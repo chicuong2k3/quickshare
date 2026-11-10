@@ -45,7 +45,7 @@
     private int members;
     private int covered;
 
-    private RenderFragment Chunk => @<section id="workspace-sso-body">
+    private RenderFragment Chunk => @<section id="workspace-sso-body" data-unpoly-reload>
         @if (!isAdmin || workspace is null)
         {
             <Card class="account-card workspace-card">
@@ -129,12 +129,12 @@
                         <p class="text-muted-foreground workspace-hint">@Loc["sso_admin_group_hint"]</p>
 
                         <label class="workspace-checkbox">
-                            <input id="sso-enabled" type="checkbox" checked="@(config?.Enabled ?? true)" />
+                            <Checkbox id="sso-enabled" Checked="@(config?.Enabled ?? true)" />
                             <span>@Loc["sso_enabled"]</span>
                         </label>
 
                         <label class="workspace-checkbox">
-                            <input id="sso-require" type="checkbox" checked="@(config?.RequireSso ?? false)" />
+                            <Checkbox id="sso-require" Checked="@(config?.RequireSso ?? false)" />
                             <span>@Loc["sso_require"]</span>
                         </label>
                         <p class="text-muted-foreground workspace-hint">@Loc["sso_require_hint"]</p>
@@ -177,13 +177,13 @@
 
                     <div class="workspace-form">
                         <label class="workspace-checkbox">
-                            <input id="mfa-required" type="checkbox" checked="@workspace.MfaRequired" />
+                            <Checkbox id="mfa-required" Checked="@workspace.MfaRequired" />
                             <span>@Loc["mfa_require_label"]</span>
                         </label>
 
                         <label class="workspace-label" for="mfa-grace">@Loc["mfa_grace"]</label>
-                        <input id="mfa-grace" type="number"
-                               min="0" max="@Workspace.MaxMfaGraceDays" value="@workspace.MfaGraceDays" />
+                        <Input id="mfa-grace" Type="number"
+                               min="0" max="@Workspace.MaxMfaGraceDays" Value="@workspace.MfaGraceDays.ToString()" />
                         <p class="text-muted-foreground workspace-hint">@Loc["mfa_grace_hint"]</p>
 
                         <button type="button" data-slot="button" data-variant="default"

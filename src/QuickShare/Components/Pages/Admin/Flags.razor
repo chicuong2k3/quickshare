@@ -51,14 +51,14 @@
                             </TableCell>
                             <TableCell class="p-2">
                                 <label class="flex items-center gap-2">
-                                    <input type="checkbox" form="@formId" name="@UpdateFlagFormEndpoint.EnabledField" checked="@flag.EffectiveEnabled" data-ai-action="admin.flags.enabled.@flag.Key" />
+                                    <Checkbox form="@formId" name="@UpdateFlagFormEndpoint.EnabledField" Checked="@flag.EffectiveEnabled" data-ai-action="@($"admin.flags.enabled.{flag.Key}")" />
                                     <span>@Loc[flag.EffectiveEnabled ? "admin_flags_on" : "admin_flags_off"]</span>
                                 </label>
                             </TableCell>
                             <TableCell class="p-2">
                                 <label class="flex items-center gap-2">
                                     <span class="sr-only">@Loc["admin_flags_rollout_label"]</span>
-                                    <input type="number" form="@formId" name="@UpdateFlagFormEndpoint.RolloutField" min="0" max="100" step="1" value="@flag.EffectiveRolloutPercent" class="w-20 rounded-md border bg-background px-2 py-1" data-ai-action="admin.flags.rollout.@flag.Key" />
+                                    <Input Type="number" form="@formId" name="@UpdateFlagFormEndpoint.RolloutField" min="0" max="100" step="1" Value="@flag.EffectiveRolloutPercent.ToString()" class="w-20" data-ai-action="@($"admin.flags.rollout.{flag.Key}")" />
                                     <span aria-hidden="true">%</span>
                                 </label>
                             </TableCell>

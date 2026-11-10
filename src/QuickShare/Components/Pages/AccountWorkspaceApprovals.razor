@@ -58,13 +58,13 @@
 
                     <div class="workspace-form">
                         <label class="workspace-checkbox">
-                            <input id="approvals-require" type="checkbox" checked="@workspace.RequireDeliveryApproval" />
+                            <Checkbox id="approvals-require" Checked="@workspace.RequireDeliveryApproval" />
                             <span>@Loc["approvals_require_label"]</span>
                         </label>
 
                         <label class="workspace-checkbox">
-                            <input id="approvals-self" type="checkbox" checked="@workspace.AllowSelfApproval"
-                                   disabled="@(!isOwner)" />
+                            <Checkbox id="approvals-self" Checked="@workspace.AllowSelfApproval"
+                                      Disabled="@(!isOwner)" />
                             <span>@Loc["approvals_self_label"]</span>
                         </label>
                         <p class="text-muted-foreground workspace-hint">@Loc["approvals_self_hint"]</p>

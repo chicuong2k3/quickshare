@@ -86,13 +86,13 @@
                         </NativeSelect>
 
                         <label class="workspace-label" for="backup-retained">@Loc["backup_retained"]</label>
-                        <input id="backup-retained" type="number"
+                        <Input id="backup-retained" Type="number"
                                min="@WorkspaceBackupPolicy.MinRetainedCopies"
                                max="@WorkspaceBackupPolicy.MaxRetainedCopies"
-                               value="@(policy?.RetainedCopies ?? 4)" />
+                               Value="@((policy?.RetainedCopies ?? 4).ToString())" />
 
                         <label class="workspace-checkbox">
-                            <input id="backup-enabled" type="checkbox" checked="@(policy?.Enabled ?? true)" />
+                            <Checkbox id="backup-enabled" Checked="@(policy?.Enabled ?? true)" />
                             <span>@Loc["backup_enabled"]</span>
                         </label>
 

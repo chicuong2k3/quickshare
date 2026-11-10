@@ -153,13 +153,22 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
 
             var maxVersions = plan == PlanTierLimits.Studio ? int.MaxValue : DeliveryVersion.MaxVersionsPro;
 
-            // If at the limit, drop the oldest version and delete its object.
+            // If at the limit, drop the oldest version and delete its object (unless held #266).
             if (existingVersions.Count >= maxVersions)
             {
                 var oldest = existingVersions.First();
-                try { await storage.DeleteObjectsAsync(oldest.StoragePath, cancellationToken); }
-                catch (Exception ex) { logger.LogWarning(ex, "Failed to delete old version object for delivery {Id}", delivery.Id); }
-                db.DeliveryVersions.Remove(oldest);
+                if (delivery.LegalHoldAt is null)
+                {
+                    try
+                    {
+                        await storage.DeleteObjectsAsync(oldest.StoragePath, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to delete old version object for delivery {Id}", delivery.Id);
+                    }
+                    db.DeliveryVersions.Remove(oldest);
+                }
             }
 
             var nextNumber = existingVersions.Count > 0
@@ -178,11 +187,17 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
                 Sha256 = delivery.Sha256,
             });
         }
-        else if (!canVersion && hasOldObject)
+        else if (!canVersion && hasOldObject && delivery.LegalHoldAt is null)
         {
-            // Free plan: delete the old object as before.
-            try { await storage.DeleteObjectsAsync(oldStoragePath!, cancellationToken); }
-            catch (Exception ex) { logger.LogWarning(ex, "Failed to delete old object for replaced delivery {DeliveryId}", delivery.Id); }
+            // Free plan: delete the old object as before (unless held #266).
+            try
+            {
+                await storage.DeleteObjectsAsync(oldStoragePath!, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to delete old object for replaced delivery {DeliveryId}", delivery.Id);
+            }
         }
 
         // FileSize/ContentType/ChunkCount/TotalBytes are init-only on Delivery — update

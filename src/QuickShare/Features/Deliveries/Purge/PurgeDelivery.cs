@@ -1,4 +1,4 @@
-﻿using LightResults;
+using LightResults;
 using QuickShare.Infrastructure.Caching;
 using QuickShare.Infrastructure.Storage;
 
@@ -39,6 +39,23 @@ public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<Purge
                 logger.LogWarning(ex, "Failed to purge R2 objects for delivery {DeliveryId}", delivery.Id);
             }
         }
+
+        // Version history (#110): purge all version objects alongside the main delivery object.
+        var versions = await db.DeliveryVersions
+            .Where(v => v.DeliveryId == delivery.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var version in versions)
+        {
+            try
+            {
+                await storage.DeleteObjectsAsync(version.StoragePath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to purge version object for delivery {DeliveryId}", delivery.Id);
+            }
+        }
+        db.DeliveryVersions.RemoveRange(versions);
 
         db.Deliveries.Remove(delivery);
         await db.SaveChangesAsync(cancellationToken);

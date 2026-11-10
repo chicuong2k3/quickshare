@@ -9,8 +9,8 @@
         <button type="button" class="feedback-emoji" onclick="feedbackSubmit('neutral', '@Page')" aria-label="@(IsVi ? "Bình thường" : "Neutral")">😐</button>
         <button type="button" class="feedback-emoji" onclick="feedbackSubmit('down', '@Page')" aria-label="@(IsVi ? "Kém" : "Bad")">😞</button>
     </div>
-    <textarea id="feedback-message" class="w-full rounded-md border bg-transparent px-3 py-1 text-sm" rows="2" maxlength="1000"
-              placeholder="@(IsVi ? "Góp ý thêm (tùy chọn)…" : "Optional note…")"></textarea>
+    <Textarea id="feedback-message" class="w-full" rows="2" maxlength="1000"
+              placeholder="@(IsVi ? "Góp ý thêm (tùy chọn)…" : "Optional note…")" />
 </div>
 
 <script>

@@ -198,7 +198,7 @@
                                 <Input id="ws-defaults-expiry"  type="number" min="1" step="1" />
 
                                 <label class="workspace-checkbox">
-                                    <input id="ws-defaults-password" type="checkbox" />
+                                    <Checkbox id="ws-defaults-password" />
                                     <span>@Loc["ws_folders_default_password"]</span>
                                 </label>
 
@@ -206,12 +206,12 @@
                                 <Input id="ws-defaults-hint"  type="text" maxlength="@WorkspaceFolder.HintMaxLength" />
 
                                 <label class="workspace-checkbox">
-                                    <input id="ws-defaults-privacy" type="checkbox" />
+                                    <Checkbox id="ws-defaults-privacy" />
                                     <span>@Loc["ws_folders_default_privacy"]</span>
                                 </label>
 
                                 <label class="workspace-checkbox">
-                                    <input id="ws-defaults-locked" type="checkbox" @(isOwner ? string.Empty : "disabled") />
+                                    <Checkbox id="ws-defaults-locked" Disabled="@(!isOwner)" />
                                     <span>@Loc["ws_folders_default_locked"]</span>
                                 </label>
 

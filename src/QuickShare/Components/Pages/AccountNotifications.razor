@@ -22,14 +22,14 @@
         <form method="post" action="@UpdateNotificationPreferencesFormEndpoint.FormRoute" class="mt-4 space-y-4">
             <AntiforgeryToken />
             <label class="flex items-start gap-3">
-                <input type="checkbox" name="@UpdateNotificationPreferencesFormEndpoint.EmailOnDownloadField" checked="@emailOnDownload" />
+                <Checkbox name="@UpdateNotificationPreferencesFormEndpoint.EmailOnDownloadField" Checked="@emailOnDownload" />
                 <span>
                     <span class="block font-medium">@Loc["account_notifications_download_label"]</span>
                     <span class="block text-sm text-muted-foreground">@Loc["account_notifications_download_desc"]</span>
                 </span>
             </label>
             <label class="flex items-start gap-3">
-                <input type="checkbox" name="@UpdateNotificationPreferencesFormEndpoint.TrackMyDownloadsField" checked="@trackMyDownloads" />
+                <Checkbox name="@UpdateNotificationPreferencesFormEndpoint.TrackMyDownloadsField" Checked="@trackMyDownloads" />
                 <span>
                     <span class="block font-medium">@Loc["account_notifications_track_label"]</span>
                     <span class="block text-sm text-muted-foreground">@Loc["account_notifications_track_desc"]</span>

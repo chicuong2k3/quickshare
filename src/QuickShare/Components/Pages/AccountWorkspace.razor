@@ -58,8 +58,8 @@
                             <Input id="ws-name"  type="text" maxlength="@Workspace.NameMaxLength" />
 
                             <label class="workspace-label" for="ws-seats">@Loc["ws_seats_label"]</label>
-                            <input id="ws-seats" type="number"
-                                   min="@Workspace.MinSeats" max="@Workspace.MaxSeats" value="@Workspace.MinSeats" />
+                            <Input id="ws-seats" Type="number"
+                                   min="@Workspace.MinSeats" max="@Workspace.MaxSeats" Value="@Workspace.MinSeats.ToString()" />
 
                             <button type="button" data-slot="button" data-variant="default"
                                     onclick="window.quickShareWorkspace.create()"

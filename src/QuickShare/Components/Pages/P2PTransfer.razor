@@ -71,7 +71,7 @@
 
             <div class="p2p-share-card" data-slot="card">
                 <div class="flex gap-2">
-                    <input id="p2ps-share-link" type="text" readonly class="rounded-md border bg-transparent px-3 py-1 text-sm flex-1" aria-label="@Loc["p2p_send_share_link_aria"]" />
+                    <Input id="p2ps-share-link" Type="text" readonly class="flex-1" aria-label="@Loc["p2p_send_share_link_aria"]" />
                     <button data-slot="button" data-variant="default" class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="@Loc["p2p_send_copy_link_aria"]">
                         <span id="p2ps-copy-text">@Loc["p2p_send_copy_link"]</span>
                         <span id="p2ps-copy-done" class="hidden">@Loc["p2p_send_copied"]</span>

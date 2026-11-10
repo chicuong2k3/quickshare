@@ -33,8 +33,8 @@
             }
         </section>
 
-        <div class="account-card" data-slot="card">
-            <div class="px-(--card-spacing)">
+        <Card class="account-card">
+            <CardContent>
                 @if (Request.IsClosed)
                 {
                     <p>@Loc["request_closed"]</p>
@@ -52,7 +52,7 @@
                        a design decision and a broken promise. *@
                     <p class="text-muted-foreground request-note">@Loc["request_no_e2e"]</p>
 
-                    <input type="file" id="request-file" class="rounded-md border bg-transparent px-3 py-1 text-sm" multiple
+                    <Input Type="file" id="request-file" multiple
                            aria-label="@Loc["request_choose"]" />
                     <button type="button" data-slot="button" data-variant="default" style="margin-top:1rem"
                             onclick="requestUpload.send(this)"
@@ -64,16 +64,16 @@
 
                     <p id="request-status" role="status" aria-live="polite"></p>
                 }
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
         @* A room shows what everybody dropped; a plain request does not (issue #17).
            One submitter must not be shown another's files just because they both had the
            link — that is the difference between a shared room and a private request. *@
         @if (IsRoom && Files.Count > 0)
         {
-            <div class="account-card" data-slot="card">
-                <div class="px-(--card-spacing)">
+            <Card class="account-card">
+                <CardContent>
                     <h2 class="text-xl font-semibold">@Loc["request_room_files", Files.Count]</h2>
                     <ul class="dl-files__list">
                         @foreach (var file in Files)
@@ -84,8 +84,8 @@
                             </li>
                         }
                     </ul>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         }
     }
 

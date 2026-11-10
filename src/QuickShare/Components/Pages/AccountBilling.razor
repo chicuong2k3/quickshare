@@ -108,8 +108,8 @@
                                     }
                                 </NativeSelect>
                                 <label class="block text-sm font-medium" for="cancel-feedback">@Loc["billing_cancel_feedback"]</label>
-                                <textarea id="cancel-feedback" name="Feedback" class="rounded-md border bg-background px-3 py-2" rows="2"
-                                          maxlength="@Subscription.CancellationFeedbackMaxLength"></textarea>
+                                <Textarea id="cancel-feedback" name="Feedback" rows="2"
+                                          maxlength="@Subscription.CancellationFeedbackMaxLength" />
                                 <Button Type="submit" Variant="destructive">
                                     @Loc["billing_btn_cancel"]
                                 </Button>

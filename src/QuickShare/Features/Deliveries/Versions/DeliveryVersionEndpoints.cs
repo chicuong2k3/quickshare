@@ -1,4 +1,5 @@
 using QuickShare.Extensions;
+using QuickShare.Features.Downloads.Shared;
 using QuickShare.Infrastructure.Storage;
 
 namespace QuickShare.Features.Deliveries.Versions;
@@ -79,6 +80,7 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
     {
         var db = Resolve<AppDbContext>();
         var storage = Resolve<IStorageProvider>();
+        var access = Resolve<DeliveryAccessService>();
         var shareCode = Route<string>("shareCode") ?? string.Empty;
         var versionNumber = Route<int>("version");
 
@@ -87,7 +89,8 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
             .ByCode(shareCode)
             .FirstOrDefaultAsync(ct);
 
-        if (delivery is null || delivery.DeletedAt is not null)
+        // PendingApproval (#162) is indistinguishable from not-found on recipient-facing paths.
+        if (delivery is null || delivery.DeletedAt is not null || delivery.Status == DeliveryStatus.PendingApproval)
         {
             ThrowError(ErrorCodes.DeliveryNotFound, StatusCodes.Status404NotFound);
             return;
@@ -99,9 +102,22 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
             return;
         }
 
-        if (delivery.LegalHoldAt is not null)
+        if (delivery.Status == DeliveryStatus.Scheduled && delivery.DeliverAt > DateTime.UtcNow)
         {
-            ThrowError(ErrorCodes.LegalHoldActive, StatusCodes.Status409Conflict);
+            ThrowError(ErrorCodes.DeliveryNotActive, StatusCodes.Status423Locked);
+            return;
+        }
+
+        if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
+        {
+            ThrowError(ErrorCodes.DeliveryExpired, StatusCodes.Status410Gone);
+            return;
+        }
+
+        // Scope rules (#142/#166) must govern recipient version downloads too.
+        if (await access.CheckAsync(delivery, ct) != DeliveryAccessDecision.Allowed)
+        {
+            ThrowError(ErrorCodes.DeliveryRestricted, StatusCodes.Status403Forbidden);
             return;
         }
 

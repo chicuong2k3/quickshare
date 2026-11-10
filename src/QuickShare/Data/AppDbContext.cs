@@ -1003,5 +1003,19 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<DeliveryVersion>(entity =>
+        {
+            entity.ToTable("delivery_versions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileName).IsRequired();
+            entity.Property(e => e.ContentType).IsRequired();
+            entity.Property(e => e.StoragePath).IsRequired();
+            entity.HasIndex(e => new { e.DeliveryId, e.VersionNumber }).IsUnique();
+            entity.HasOne(e => e.Delivery)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
     }
 }

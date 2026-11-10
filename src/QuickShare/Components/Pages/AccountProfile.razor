@@ -53,11 +53,11 @@
                 <AntiforgeryToken />
                 <label class="block space-y-2">
                     <span class="block text-sm font-medium">@Loc["account_profile_name_label"]</span>
-                    <input id="name" name="name" type="text" required value="@name" class="w-full rounded-md border bg-background px-3 py-2" />
+                    <Input id="name" name="name" Type="text" required Value="@name" class="w-full" />
                 </label>
                 <label class="block space-y-2">
                     <span class="block text-sm font-medium">@Loc["account_profile_avatar_label"]</span>
-                    <input id="avatarFileInput" name="avatar" type="file" accept="image/*" class="block w-full text-sm" onchange="previewAvatar(event)" />
+                    <Input id="avatarFileInput" name="avatar" Type="file" accept="image/*" class="block w-full" onchange="previewAvatar(event)" />
                 </label>
                 <Button Type="submit" class="w-full" data-ai-action="profile.save.submit">@Loc["account_profile_save_btn"]</Button>
         </form>

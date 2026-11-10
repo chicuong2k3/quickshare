@@ -76,7 +76,7 @@
                                placeholder="@Loc["siem_filter_placeholder"]" />
 
                         <label class="workspace-checkbox">
-                            <input id="siem-enabled" type="checkbox" checked="@(sink?.Enabled ?? true)" />
+                            <Checkbox id="siem-enabled" Checked="@(sink?.Enabled ?? true)" />
                             <span>@Loc["siem_enabled"]</span>
                         </label>
 

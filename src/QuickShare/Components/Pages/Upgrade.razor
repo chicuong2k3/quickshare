@@ -109,7 +109,7 @@ else
                             <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
                             <label class="block space-y-2" for="upgrade-promo">
                                 <span class="block text-sm font-medium">@Loc["upgrade_promo_label"]</span>
-                                <input id="upgrade-promo" name="PromoCode" class="w-full rounded-md border bg-background px-3 py-2" type="text" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
+                                <Input id="upgrade-promo" name="PromoCode" class="w-full" Type="text" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
                             </label>
                             <Button Type="submit" class="w-full">@Loc["upgrade_pay_now_btn"]</Button>
                             @if (Checkout.CryptoAvailable)

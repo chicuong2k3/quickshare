@@ -62,6 +62,26 @@ public sealed class DeliveryExpiryJob(IServiceScopeFactory scopeFactory, IStorag
                         maxRetries, delivery.Id);
             }
 
+            // Version history (#110): delete past version objects at expiry unless legally held (#266).
+            if (delivery.LegalHoldAt is null)
+            {
+                var versions = await db.DeliveryVersions
+                    .Where(v => v.DeliveryId == delivery.Id)
+                    .ToListAsync(ct);
+                foreach (var version in versions)
+                {
+                    try
+                    {
+                        await storage.DeleteObjectsAsync(version.StoragePath, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to delete version object for expired delivery {DeliveryId}", delivery.Id);
+                    }
+                }
+                db.DeliveryVersions.RemoveRange(versions);
+            }
+
             delivery.Status = DeliveryStatus.Expired;
         }
 

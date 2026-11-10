@@ -55,7 +55,7 @@
 
                     <div class="workspace-form">
                         <label class="workspace-checkbox">
-                            <input id="brand-enabled" type="checkbox" checked="@(brand?.Enabled ?? false)" />
+                            <Checkbox id="brand-enabled" Checked="@(brand?.Enabled ?? false)" />
                             <span>@Loc["brand_enabled"]</span>
                         </label>
 
@@ -77,7 +77,7 @@
                                maxlength="@WorkspaceBrand.FooterMaxLength" value="@brand?.FooterText" />
 
                         <label class="workspace-checkbox">
-                            <input id="brand-hide-qs" type="checkbox" checked="@(brand?.HideQuickShareBranding ?? false)" />
+                            <Checkbox id="brand-hide-qs" Checked="@(brand?.HideQuickShareBranding ?? false)" />
                             <span>@Loc["brand_hide_qs"]</span>
                         </label>
 

@@ -2768,4 +2768,28 @@
   <data name="dev_key_usage_total" xml:space="preserve">
     <value>{0} call(s) in 30 days</value>
   </data>
+  <data name="dl_versions_title" xml:space="preserve">
+    <value>Previous versions ({0})</value>
+  </data>
+  <data name="dl_versions_select_aria" xml:space="preserve">
+    <value>Select file version</value>
+  </data>
+  <data name="dl_versions_latest" xml:space="preserve">
+    <value>Latest — {0}</value>
+  </data>
+  <data name="dl_versions_item" xml:space="preserve">
+    <value>v{0} — {1} ({2})</value>
+  </data>
+  <data name="dl_versions_download" xml:space="preserve">
+    <value>Download version</value>
+  </data>
+  <data name="deliveries_versions_title" xml:space="preserve">
+    <value>Versions</value>
+  </data>
+  <data name="deliveries_versions_empty" xml:space="preserve">
+    <value>No previous versions.</value>
+  </data>
+  <data name="deliveries_versions_download" xml:space="preserve">
+    <value>Download</value>
+  </data>
 </root>

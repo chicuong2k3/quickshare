@@ -44,7 +44,7 @@
                 <form method="post" @formname="mfa-challenge" @onsubmit="HandleSubmit" class="space-y-3">
                     <AntiforgeryToken />
                     <label class="block text-sm font-medium" for="mfa-code">@Loc["mfa_code_label"]</label>
-                    <input id="mfa-code" name="@CodeField" class="w-full rounded-md border bg-background px-3 py-2" type="text"
+                    <Input id="mfa-code" name="@CodeField" class="w-full" Type="text"
                            autocomplete="one-time-code" maxlength="@RecoveryCodeMaxLength" required autofocus />
                     <p class="text-sm text-muted-foreground">@Loc["mfa_code_hint"]</p>
                     @if (retryAfterSeconds > 0)

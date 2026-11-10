@@ -74,7 +74,7 @@
                     {
                         <input type="hidden" name="@TrashQueryKey" value="true" />
                     }
-                    <input type="search" name="@SearchQueryKey" value="@Search"
+                    <Input Type="search" name="@SearchQueryKey" Value="@Search"
                            class="account-deliveries-search"
                            placeholder="@Loc["deliveries_search_placeholder"]"
                            aria-label="@Loc["deliveries_search_placeholder"]" />
@@ -84,7 +84,7 @@
             @* Bulk manage (issue #144) — select rows, then extend or trash together. *@
             <div class="account-deliveries-bulkbar" id="bulk-bar" data-count-template="@Loc["deliveries_bulk_selected"]">
                 <label class="account-deliveries-selectall">
-                    <input type="checkbox" onchange="bulkToggleAll(this)" aria-label="@Loc["deliveries_select_all"]" />
+                    <Checkbox onchange="bulkToggleAll(this)" aria-label="@Loc["deliveries_select_all"]" />
                     <span>@Loc["deliveries_select_all"]</span>
                 </label>
                 <span id="bulk-count" class="text-muted-foreground"></span>
@@ -428,6 +428,34 @@
             })
             .catch(function () { body.textContent = body.getAttribute('data-empty'); });
     };
+    // Version history panel (issue #110). Fetched once per row, on first open.
+    window.loadVersions = function (details) {
+        if (!details.open || details.dataset.loaded) return;
+        details.dataset.loaded = '1';
+
+        var body = details.querySelector('.account-delivery__versions-body');
+        var shareCode = details.getAttribute('data-share-code');
+        fetch('/api/deliveries/' + details.getAttribute('data-id') + '/versions')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (versions) {
+                if (!versions || versions.length === 0) {
+                    body.textContent = body.getAttribute('data-empty');
+                    return;
+                }
+                var list = document.createElement('ul');
+                versions.forEach(function (v) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.href = '/api/downloads/' + shareCode + '/versions/' + v.versionNumber;
+                    a.textContent = 'v' + v.versionNumber + ' \u00b7 ' + v.fileName + ' (' + v.fileSize + ' B)';
+                    li.appendChild(a);
+                    list.appendChild(li);
+                });
+                body.textContent = '';
+                body.appendChild(list);
+            })
+            .catch(function () { body.textContent = body.getAttribute('data-empty'); });
+    };
     window.bulkSelectedIds = function () {
         return Array.prototype.slice.call(document.querySelectorAll('.account-delivery__select:checked'))
             .map(function (el) { return el.value; });
@@ -571,7 +599,7 @@
 
             <article id="delivery-@item.Id" class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
                 <div class="account-delivery__head">
-                    <input type="checkbox" class="account-delivery__select" value="@item.Id" onchange="bulkUpdateBar()" aria-label="@Loc["deliveries_select"]" />
+                    <Checkbox class="account-delivery__select" value="@item.Id" onchange="bulkUpdateBar()" aria-label="@Loc["deliveries_select"]" />
                     <button type="button" data-slot="button" data-variant="ghost" data-size="icon" class="account-delivery__star" onclick="toggleFavorite(this)"
                             aria-pressed="@(item.IsFavorite ? "true" : "false")"
                             aria-label="@Loc["deliveries_favorite"]" title="@Loc["deliveries_favorite"]"
@@ -637,6 +665,12 @@
                          data-sent="@Loc["deliveries_activity_sent"]"
                          data-downloads="@Loc["deliveries_activity_file_downloads"]"></div>
                 </details>
+                <details class="account-delivery__versions" data-id="@item.Id" data-share-code="@item.ShareCode"
+                         ontoggle="loadVersions(this)">
+                    <summary class="text-muted-foreground">@Loc["deliveries_versions_title"]</summary>
+                    <div class="account-delivery__versions-body"
+                         data-empty="@Loc["deliveries_versions_empty"]"></div>
+                </details>
                 <div class="account-delivery__gauge" role="img"
                      aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
                     <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>
@@ -689,9 +723,6 @@
                     }
                     @if (item.Status == DeliveryStatus.Active)
                     {
-                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
-                                data-error="@Loc["deliveries_replace_error"]"
-                                onclick="replaceDeliveryFile(this)" data-ai-action="delivery.replace">@Loc["deliveries_replace"]</button>
                         <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__clone"
                                 onclick="cloneDelivery(this)" data-ai-action="delivery.clone">@Loc["deliveries_clone"]</button>
                         <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__set-alias"

@@ -67,17 +67,17 @@
                         <p class="text-muted-foreground workspace-hint">@Loc["channel_url_hint"]</p>
 
                         <label class="workspace-checkbox">
-                            <input id="channel-on-delivery" type="checkbox" checked="@(hook?.NotifyOnDelivery ?? true)" />
+                            <Checkbox id="channel-on-delivery" Checked="@(hook?.NotifyOnDelivery ?? true)" />
                             <span>@Loc["channel_on_delivery"]</span>
                         </label>
 
                         <label class="workspace-checkbox">
-                            <input id="channel-on-comment" type="checkbox" checked="@(hook?.NotifyOnComment ?? true)" />
+                            <Checkbox id="channel-on-comment" Checked="@(hook?.NotifyOnComment ?? true)" />
                             <span>@Loc["channel_on_comment"]</span>
                         </label>
 
                         <label class="workspace-checkbox">
-                            <input id="channel-enabled" type="checkbox" checked="@(hook?.Enabled ?? true)" />
+                            <Checkbox id="channel-enabled" Checked="@(hook?.Enabled ?? true)" />
                             <span>@Loc["channel_enabled"]</span>
                         </label>
 
