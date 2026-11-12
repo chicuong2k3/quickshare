@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Bưu điện — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFAF6; --field:#FFFFFF; --ink:#0F1720; --muted:#5A6470;
+  --blue:#123E6B; --rule:#B7C0CA; --verm:#B3202A; --hair:#DCE1E6;
+  --form-rule:1px solid var(--rule);
+}
+html[data-theme="dark"]{
+  --paper:#0E151C; --field:#151D26; --ink:#ECE8DE; --muted:#9AA4B0;
+  --blue:#93BAD9; --rule:#38424D; --verm:#E26A62; --hair:#242D36;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Barlow Condensed",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+
+/* ---------- counter strip ---------- */
+.bar{
+  border-bottom:var(--form-rule);
+  background:var(--field);
+}
+.bar__in{display:flex;align-items:stretch;justify-content:space-between;gap:24px;height:54px}
+.bar__brand{display:flex;align-items:center;gap:12px;border-right:var(--form-rule);padding-right:20px}
+.mark{
+  width:26px;height:26px;border:1.5px solid var(--ink);display:grid;place-items:center;
+  font-family:"Barlow Condensed";font-weight:700;font-size:13px;letter-spacing:.02em;
+}
+.bar__name{font-family:"Barlow Condensed";font-weight:700;font-size:15px;letter-spacing:.16em;text-transform:uppercase}
+.bar__dept{font-family:"Barlow Condensed";font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-left:var(--form-rule);padding-left:12px;margin-left:2px}
+nav{display:flex;align-items:center;gap:26px;font-family:"Barlow Condensed";font-size:13px;letter-spacing:.13em;text-transform:uppercase}
+nav a{text-decoration:none;color:var(--muted);padding-bottom:2px;border-bottom:1.5px solid transparent}
+nav a[aria-current]{color:var(--ink);border-color:var(--verm)}
+.bar__cta{
+  align-self:center;border:1.5px solid var(--ink);background:var(--field);
+  font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.13em;
+  font-size:13px;font-weight:600;padding:7px 14px;text-decoration:none;
+}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;padding:52px 0 44px;align-items:start}
+.kicker{display:flex;align-items:center;gap:10px;font-family:"Barlow Condensed";font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.kicker b{display:inline-block;border:1.5px solid var(--verm);color:var(--verm);padding:1px 7px;font-weight:600}
+h1{
+  margin:0 0 18px;font-size:54px;line-height:1.02;letter-spacing:-.02em;font-weight:700;
+  max-width:12ch;
+}
+h1 em{font-style:normal;color:var(--verm)}
+.lede{margin:0 0 28px;max-width:46ch;color:var(--muted);font-size:16px}
+.lede b{color:var(--ink);font-weight:600}
+
+/* numbered field block — the world's core component */
+.slip{border:1.5px solid var(--ink);background:var(--field);position:relative}
+.slip__head{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  border-bottom:1.5px solid var(--ink);padding:9px 14px;
+}
+.slip__title{font-family:"Barlow Condensed";font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase}
+.slip__code{font-family:"Barlow Condensed";font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fields{padding:6px 14px 14px}
+.field{display:grid;grid-template-columns:26px 116px 1fr;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px dotted var(--rule)}
+.field:last-child{border-bottom:0}
+.field__n{
+  font-family:"Barlow Condensed";font-size:12px;font-weight:700;color:var(--muted);
+  border:1px solid var(--rule);width:22px;height:20px;display:grid;place-items:center;line-height:1;
+}
+.field__k{font-family:"Barlow Condensed";font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.field__v{font-size:15px}
+.field__v small{color:var(--muted);font-size:12px;letter-spacing:.02em}
+.barcode-row{display:flex;align-items:center;gap:12px;padding-top:12px;padding-right:124px}
+.bars{
+  height:26px;flex:1;
+  background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 7px,transparent 7px 9px,var(--ink) 9px 10px,transparent 10px 14px);
+}
+.stamp{
+  position:absolute;right:14px;bottom:14px;width:112px;height:112px;border-radius:50%;
+  border:2.5px solid var(--verm);color:var(--verm);display:grid;place-items:center;
+  transform:rotate(-9deg);opacity:.92;pointer-events:none;
+}
+.stamp::before{content:"";position:absolute;inset:5px;border:1px solid var(--verm);border-radius:50%}
+.stamp__t{font-family:"Barlow Condensed";font-weight:700;font-size:15px;letter-spacing:.16em;text-transform:uppercase;line-height:1.1;text-align:center}
+.stamp__d{font-family:"Barlow Condensed";font-size:10px;letter-spacing:.12em}
+
+/* quick-entry box */
+.entry{border:1.5px solid var(--ink);background:var(--field);padding:20px}
+.entry__t{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.18em;font-size:13px;font-weight:700;margin:0 0 4px}
+.entry__s{margin:0 0 16px;color:var(--muted);font-size:13px}
+.drop{
+  border:1.5px dashed var(--rule);padding:26px 18px;text-align:center;background:var(--paper);
+}
+.drop__i{width:34px;height:34px;border:1.5px solid var(--ink);margin:0 auto 12px;position:relative}
+.drop__i::after{content:"";position:absolute;left:50%;top:9px;width:1.5px;height:16px;background:var(--ink);transform:translateX(-50%)}
+.drop__i::before{content:"";position:absolute;left:50%;bottom:9px;width:10px;height:10px;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+.drop b{display:block;font-size:14px;margin-bottom:2px}
+.drop span{font-size:12px;color:var(--muted)}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;
+  background:var(--ink);color:var(--paper);border:0;padding:12px 16px;cursor:pointer;
+  font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.16em;font-size:14px;font-weight:600;
+}
+.btn:hover{background:var(--blue)}
+.entry__note{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-family:"Barlow Condensed";font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- footer ---------- */
+footer{border-top:var(--form-rule);margin-top:0;padding:16px 0 40px;display:flex;justify-content:space-between;gap:20px;font-family:"Barlow Condensed";font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- system sheet (outside the review crop) ---------- */
+.sys{max-width:1120px;margin:0 auto;padding:32px 40px 80px;border-top:1px solid var(--rule)}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:18px}
+.sys h2{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.2em;font-size:12px;color:var(--muted);margin:0 0 10px;font-weight:600}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:52px;height:34px;border:1px solid var(--rule);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Barlow Condensed";font-size:9px;letter-spacing:.06em;color:var(--muted);font-style:normal;background:var(--paper);padding:0 2px}
+.spec{font-size:13px;color:var(--muted);margin:0 0 6px}
+.spec b{color:var(--ink);font-weight:600}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:6px;height:1.5px;background:var(--verm)}
+.toggle{border:1.5px solid var(--ink);background:var(--field);color:var(--ink);padding:8px 14px;cursor:pointer;font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.14em;font-size:12px}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="wrap bar__in">
+    <div class="bar__brand">
+      <span class="mark">QS</span>
+      <span class="bar__name">QuickShareCloud</span>
+      <span class="bar__dept">Quầy 04</span>
+    </div>
+    <nav>
+      <a href="#" aria-current="page">Gửi tệp</a>
+      <a href="#">Bảng giá</a>
+      <a href="#">Tài khoản</a>
+      <a href="#">Trợ giúp</a>
+    </nav>
+    <a class="bar__cta" href="#">Mở quầy</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <div class="kicker"><b>Biên nhận</b> mỗi lần gửi là một niêm phong</div>
+      <h1>Gửi tệp.<br>Nhận <em>biên lai</em>.</h1>
+      <p class="lede">Tệp lớn tới vài GB, khoá nằm trong liên kết, người nhận không cần tài khoản. <b>Mỗi lần gửi trả về một mã theo dõi</b> — tra được trạng thái, không cần hỏi lại.</p>
+
+      <div class="slip">
+        <div class="slip__head">
+          <span class="slip__title">Giấy gửi phát — Mẫu 01/QS</span>
+          <span class="slip__code">Số 8F2K · 11/11</span>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <span class="field__n">1</span><span class="field__k">Người gửi</span>
+            <span class="field__v">nguyen@studio.vn <small>· Free</small></span>
+          </div>
+          <div class="field">
+            <span class="field__n">2</span><span class="field__k">Nội dung</span>
+            <span class="field__v">anh-goc-bat-dong-san.zip <small>· 2,4 GB · 5 phần</small></span>
+          </div>
+          <div class="field">
+            <span class="field__n">3</span><span class="field__k">Mã theo dõi</span>
+            <span class="field__v mono" style="font-size:17px;letter-spacing:.08em">quickshare.vn/d/8F2KQ7</span>
+          </div>
+          <div class="field">
+            <span class="field__n">4</span><span class="field__k">Hiệu lực</span>
+            <span class="field__v">7 ngày <small>· hết hạn 18/11, 14:20</small></span>
+          </div>
+          <div class="barcode-row">
+            <span class="bars" aria-hidden="true"></span>
+            <span class="mono" style="font-size:12px;letter-spacing:.14em;color:var(--muted)">8F2KQ7</span>
+          </div>
+        </div>
+        <div class="stamp" aria-label="Đã gửi">
+          <span>
+            <span class="stamp__t">Đã gửi<br>11/11</span>
+            <span class="stamp__d">QUẦY 04</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="entry">
+      <p class="entry__t">Điền nhanh</p>
+      <p class="entry__s">Kéo tệp vào ô dưới. Không cần đăng ký ở bước này.</p>
+      <div class="drop">
+        <div class="drop__i" aria-hidden="true"></div>
+        <b>Thả tệp vào đây</b>
+        <span>hoặc chọn từ máy · tối đa 100 MB khi ẩn danh</span>
+      </div>
+      <button class="btn">Lập biên nhận</button>
+      <div class="entry__note">
+        <span>AES-256-GCM</span>
+        <span>SHA-256 khi tải</span>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <span>QuickShareCloud · quầy trực tuyến</span>
+    <span>Điều khoản · Riêng tư · Trạng thái</span>
+  </footer>
+</div>
+
+<section class="sys">
+  <h2>System sheet — Bưu điện</h2>
+  <div class="sys__grid">
+    <div>
+      <h2>Màu</h2>
+      <div class="chips">
+        <span class="chip" style="background:#123E6B"><i>blue</i></span>
+        <span class="chip" style="background:#B3202A"><i>verm</i></span>
+        <span class="chip" style="background:#FBFAF6"><i>paper</i></span>
+        <span class="chip" style="background:#B7C0CA"><i>rule</i></span>
+        <span class="chip" style="background:#0F1720"><i>ink</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Đỏ dấu chỉ dùng cho <b>dấu &amp; mã theo dõi</b>. Không trang trí.</p>
+    </div>
+    <div>
+      <h2>Chữ</h2>
+      <p class="spec" style="font-family:'Barlow Condensed';font-size:26px;line-height:1.1;color:var(--ink)">Barlow Condensed 700 — nhãn, số</p>
+      <p class="spec" style="font-size:15px;color:var(--ink)">Be Vietnam Pro — câu, mô tả</p>
+      <p class="spec">Số có <b>tabular-nums</b>; nhãn in hoa, giãn 0.14em.</p>
+    </div>
+    <div>
+      <h2>Luật</h2>
+      <p class="rule">Mọi vùng là một ô biểu mẫu có số — không hộp trang trí.</p>
+      <p class="rule">Đường kẻ 1px là <i>trường</i>, không phải đường viền.</p>
+      <p class="rule">Đúng một dấu đỏ mỗi thẻ.</p>
+    </div>
+    <div>
+      <h2>Trạng thái</h2>
+      <p class="spec">Sáng: quầy ban ngày, giấy biểu mẫu.</p>
+      <p class="spec">Tối: quầy đêm — nền navy, dấu đỏ giữ nguyên.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Đổi sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

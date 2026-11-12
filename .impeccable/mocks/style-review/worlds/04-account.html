@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Tài khoản — bảng chuyến (surface)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#15181B; --panel:#1D2125; --flap:#2A2F35; --flap-2:#31373E;
+  --legend:#E9ECEE; --dim:#8B939B; --hair:#31373E; --slot:#0E1113;
+  --amber:#E0A03C; --green:#4FA36A; --red:#C85A4F;
+}
+html[data-theme="light"]{
+  --board:#D3D6D9; --panel:#E2E5E7; --flap:#CFD3D6; --flap-2:#C3C7CB;
+  --legend:#171A1D; --dim:#5C6468; --hair:#B3B8BC; --slot:#F1F3F4;
+  --amber:#A96C10; --green:#2F7A46; --red:#A83B31;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--board);color:var(--legend);font-family:"Barlow Condensed",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.top{background:var(--panel);border-bottom:1px solid var(--hair)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:52px}
+.brand{display:flex;align-items:center;gap:10px}
+.sq{width:22px;height:22px;background:var(--legend);color:var(--board);display:grid;place-items:center;font-size:10px;font-weight:700}
+.brand b{font-size:12px;letter-spacing:.24em;text-transform:uppercase}
+nav{display:flex;gap:20px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--legend);border-bottom:2px solid var(--amber);padding-bottom:2px}
+.who{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;color:var(--dim)}
+
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:28px 0 14px;border-bottom:2px solid var(--legend)}
+.head h1{margin:0;font-size:40px;line-height:.94;text-transform:uppercase;letter-spacing:-.005em;font-weight:700}
+.head h1 span{color:var(--amber)}
+.head__meta{text-align:right;font-family:"Martian Mono";font-size:9px;line-height:1.9;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.head__meta b{color:var(--legend);font-weight:600}
+
+.panel{background:var(--panel);border:1px solid var(--hair);margin-top:14px}
+.panel__bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 12px;border-bottom:1px solid var(--hair);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.panel__bar span{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em}
+.panel__bar a{color:var(--dim);border-bottom:1px solid var(--hair);font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em}
+.panel__bar a:hover{color:var(--legend)}
+
+/* usage: numbers, then one rule, then the sentence */
+.usage{padding:14px 12px 12px}
+.usage__top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.usage__big{font-family:"Martian Mono";font-size:26px;letter-spacing:-.01em}
+.usage__big em{font-style:normal;color:var(--dim);font-size:13px}
+.usage__k{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.usage__bar{height:6px;background:var(--slot);border-top:1px solid var(--flap-2);margin:10px 0 8px;position:relative}
+.usage__bar i{position:absolute;left:0;top:0;bottom:0;background:var(--green)}
+.usage__bar i::after{content:"";position:absolute;right:0;top:-2px;bottom:-2px;width:1px;background:var(--amber)}
+.usage__note{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--dim)}
+.usage__note b{color:var(--legend);font-weight:400}
+
+/* rows: label, value, chevron-free affordance (no icons in this world) */
+.r{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--hair-2)}
+.r:last-child{border-bottom:0}
+.r__k{font-size:13px;letter-spacing:.03em;min-width:0}
+.r__k small{display:block;font-family:"Martian Mono";font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-top:2px}
+.r__v{font-family:"Martian Mono";font-size:10.5px;color:var(--legend);text-align:right}
+.r__a{border:1px solid var(--hair);color:var(--dim);font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:5px 9px;white-space:nowrap}
+.r__a:hover{color:var(--legend);border-color:var(--dim)}
+
+/* deliveries board */
+.drow{display:grid;grid-template-columns:78px minmax(0,1fr) 84px 92px 88px 84px;gap:10px;align-items:center;background:var(--flap);border-top:1px solid var(--flap-2);box-shadow:inset 0 -1px 0 rgba(0,0,0,.45);padding:10px;margin:5px 10px}
+.drow--head{background:transparent;border:0;box-shadow:none;margin:0 10px;padding:3px 10px;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.drow__code{font-family:"Martian Mono";font-size:10px;color:var(--amber)}
+.drow__name{font-size:13.5px;letter-spacing:.02em;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow__size,.drow__dl,.drow__left{font-family:"Martian Mono";font-size:9.5px;color:var(--dim);text-align:right}
+.drow__st{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;text-align:right}
+.st-open{color:var(--green)}.st-soon{color:var(--amber)}.st-off{color:var(--red)}
+
+/* settings rows read as one column of board slots */
+.set{margin-top:14px}
+.setrow{display:grid;grid-template-columns:200px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--hair-2)}
+.setrow:last-child{border-bottom:0}
+.setrow dt{font-family:"Martian Mono";font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.setrow dd{margin:0;font-size:13.5px}
+.setrow dd small{color:var(--dim);font-size:11.5px;margin-left:6px}
+
+.console{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin-top:14px;padding:14px 12px;background:var(--panel);border:1px solid var(--hair)}
+.console__l{display:flex;flex-direction:column;gap:5px}
+.console__l span{font-family:"Martian Mono";font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.console__l b{font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+.actions{display:flex;gap:8px}
+.btn{background:var(--amber);color:#16181A;padding:11px 20px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;border:0;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--legend)}
+.btn--ghost{background:transparent;border:1px solid var(--hair);color:var(--dim);font-weight:600}
+.btn--ghost:hover{color:var(--legend);border-color:var(--dim);background:transparent}
+
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 20px;padding:12px 0 46px;font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+@media (max-width:900px){
+  .wrap{padding:0 16px}
+  nav{display:none}
+  .head{flex-direction:column;align-items:flex-start;gap:8px;padding:18px 0 10px}
+  .head h1{font-size:27px}
+  .head__meta{text-align:left;font-size:8px}
+  .drow--head{display:none}
+  .drow{grid-template-columns:minmax(0,.55fr) minmax(0,2fr) minmax(0,.9fr);grid-template-areas:"code name size" "st dl left";row-gap:5px;column-gap:8px}
+  .drow__code{grid-area:code}
+  .drow__name{grid-area:name}
+  .drow__size{grid-area:size;text-align:right}
+  .drow__st{grid-area:st;text-align:left}
+  .drow__dl{grid-area:dl;text-align:center}
+  .drow__left{grid-area:left;text-align:right}
+  .setrow{grid-template-columns:1fr;gap:4px}
+  .setrow dd{font-size:14px}
+  .console{grid-template-columns:1fr}
+  .actions{justify-content:stretch}
+  .btn{flex:1;text-align:center}
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="sq">QS</span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#">Gửi</a>
+      <a href="#">Nhận</a>
+      <a href="#">Bảng giá</a>
+      <a href="#" aria-current="page">Tài khoản</a>
+    </nav>
+    <span class="who">nguyen@studio.vn</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Quầy của bạn · <span>Pro</span></h1>
+    <div class="head__meta">
+      Kỳ 11.2026<br>
+      Gia hạn <b>01.12</b> · 50.000 đ<br>
+      3 ghế · dùng 1
+    </div>
+  </div>
+
+  <section class="panel" aria-label="Dung lượng kỳ này">
+    <div class="panel__bar"><b>Kỳ này</b><span>CÒN 19 NGÀY</span></div>
+    <div class="usage">
+      <div class="usage__top">
+        <div class="usage__big">47,3 <em>/ 200 GB</em></div>
+        <span class="usage__k">Đã gửi tháng này</span>
+      </div>
+      <div class="usage__bar" role="img" aria-label="Đã dùng 24 phần trăm"><i style="width:24%"></i></div>
+      <div class="usage__note">
+        <span>Còn lại <b>152,7 GB</b></span>
+        <span>Gói Pro cho 200 GB mỗi tháng</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Chuyến gần đây">
+    <div class="panel__bar"><b>Chuyến gần đây</b><a href="#">Xem tất cả</a></div>
+    <div class="drow drow--head">
+      <span>Mã</span><span>Tệp</span><span>Dung lượng</span><span>Lượt tải</span><span>Còn</span><span>Trạng thái</span>
+    </div>
+    <div class="drow">
+      <span class="drow__code">8F2K</span>
+      <span class="drow__name">anh-goc-bat-dong-san.zip</span>
+      <span class="drow__size">2,4 GB</span>
+      <span class="drow__dl">12 / 100</span>
+      <span class="drow__left">6 ngày</span>
+      <span class="drow__st st-open">Đang mở</span>
+    </div>
+    <div class="drow">
+      <span class="drow__code">Q7T3</span>
+      <span class="drow__name">ban-ve-hien-trang.pdf</span>
+      <span class="drow__size">48,2 MB</span>
+      <span class="drow__dl">3 / 100</span>
+      <span class="drow__left">2 ngày</span>
+      <span class="drow__st st-soon">Sắp hết</span>
+    </div>
+    <div class="drow">
+      <span class="drow__code">M1VB</span>
+      <span class="drow__name">hop-dong-thue.docx</span>
+      <span class="drow__size">1,8 MB</span>
+      <span class="drow__dl">8 / 100</span>
+      <span class="drow__left">đã hết</span>
+      <span class="drow__st st-off">Hết hạn</span>
+    </div>
+    <div class="drow">
+      <span class="drow__code">P9CL</span>
+      <span class="drow__name">giao-dich-dat.dng</span>
+      <span class="drow__size">184 MB</span>
+      <span class="drow__dl">0 / 100</span>
+      <span class="drow__left">30 ngày</span>
+      <span class="drow__st st-off">Đã thu hồi</span>
+    </div>
+  </section>
+
+  <section class="panel set" aria-label="Tài khoản">
+    <div class="panel__bar"><b>Tài khoản</b><a href="#">Tất cả cài đặt</a></div>
+    <dl style="margin:0">
+      <div class="setrow"><dt>Tên hiển thị</dt><dd>Nguyễn Studio <small>· nguyen@studio.vn</small></dd><a class="r__a" href="#">Sửa</a></div>
+      <div class="setrow"><dt>Mật khẩu</dt><dd>Đã đặt <small>· đổi lần cuối 12.09</small></dd><a class="r__a" href="#">Đổi</a></div>
+      <div class="setrow"><dt>Xác thực 2 lớp</dt><dd>Đang bật <small>· ứng dụng xác thực</small></dd><a class="r__a" href="#">Tắt</a></div>
+      <div class="setrow"><dt>Ngôn ngữ</dt><dd>Tiếng Việt</dd><a class="r__a" href="#">Đổi</a></div>
+      <div class="setrow"><dt>Hoá đơn</dt><dd>3 hoá đơn <small>· gần nhất 01.11</small></dd><a class="r__a" href="#">Xem</a></div>
+      <div class="setrow"><dt>Gói</dt><dd>Pro · 50.000 đ / tháng <small>· gia hạn 01.12</small></dd><a class="r__a" href="#">Đổi gói</a></div>
+    </dl>
+  </section>
+
+  <div class="console">
+    <div class="console__l">
+      <span>Quầy đang mở</span>
+      <b>Gửi tệp mới</b>
+    </div>
+    <div class="actions">
+      <button class="btn btn--ghost">Mời thành viên</button>
+      <button class="btn">Gửi tệp</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Link sống 30 ngày ở gói Pro</span>
+    <span>Còn 152,7 GB trong kỳ</span>
+    <span>Người nhận không cần tài khoản</span>
+  </div>
+</div>
+</body>
+</html>

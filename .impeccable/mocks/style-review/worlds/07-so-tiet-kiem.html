@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Sổ tiết kiệm — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --secpaper:#EFEDDF; --secpaper-2:#E6E3D2; --band:#E9E6D6;
+  --blue:#1B3F73; --blue-2:#2C5A98; --maroon:#7A2530;
+  --ink:#1C1F24; --dim:#6A6C67; --rule:#C9C4AE; --form:#FBF9EE;
+}
+html[data-theme="dark"]{
+  --secpaper:#15171A; --secpaper-2:#1B1E22; --band:#22262B;
+  --blue:#8FB2DE; --blue-2:#6C97CC; --maroon:#DA8378;
+  --ink:#E9E5D6; --dim:#979A93; --rule:#33383D; --form:#1A1D21;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--secpaper);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* top */
+.top{border-bottom:1px solid var(--rule);background:var(--form)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:56px}
+.brand{display:flex;align-items:center;gap:11px}
+.mark{width:26px;height:26px;border:1.5px solid var(--blue);color:var(--blue);display:grid;place-items:center;font-family:"Martian Mono";font-size:9px;font-weight:600}
+.brand b{font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+nav{display:flex;gap:22px;font-family:"Martian Mono";font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--blue);border-bottom:1px solid var(--blue);padding-bottom:2px}
+.acct{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;color:var(--maroon)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:.82fr 1.18fr;gap:44px;padding:42px 0 34px;align-items:start}
+.kick{font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--maroon);margin:0 0 14px}
+h1{margin:0 0 14px;font-size:42px;line-height:1.06;letter-spacing:-.02em;font-weight:600;max-width:13ch}
+h1 em{font-style:normal;color:var(--blue);border-bottom:3px double var(--blue);padding-bottom:2px}
+p.lede{margin:0 0 22px;max-width:38ch;color:var(--dim);font-size:14.5px;line-height:1.62}
+.actions{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.btn{background:var(--blue);color:#FBF9EE;padding:11px 20px;font-family:"Martian Mono";font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.btn:hover{background:var(--blue-2)}
+.ghost{font-family:"Martian Mono";font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border-bottom:1px dotted var(--rule);padding-bottom:2px}
+
+/* passbook */
+.book{
+  position:relative;background:var(--form);border:1.5px solid var(--blue);
+  box-shadow:inset 0 0 0 3px var(--form), inset 0 0 0 4px color-mix(in srgb, var(--blue) 40%, transparent);
+  padding:0 30px;
+}
+.tractor{
+  position:absolute;top:0;bottom:0;width:18px;
+  background:
+    radial-gradient(circle at 50% 10px, var(--secpaper) 0 4px, transparent 4.5px) 0 0/18px 20px repeat-y;
+  border-right:1px dashed var(--rule);
+}
+.tractor--l{left:4px}
+.tractor--r{right:4px;border-right:0;border-left:1px dashed var(--rule)}
+.book__head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:16px 0 10px;border-bottom:2px solid var(--blue)}
+.book__head h2{margin:0;font-size:16px;letter-spacing:.18em;text-transform:uppercase;color:var(--blue);font-weight:600}
+.book__no{font-family:"Martian Mono";font-size:9px;color:var(--dim);letter-spacing:.1em;text-align:right;line-height:1.6}
+.book__no b{color:var(--ink);font-weight:400}
+
+.colhead,.entry{display:grid;grid-template-columns:64px 1fr 92px 92px;gap:8px;align-items:baseline}
+.colhead{padding:7px 0;border-bottom:1px solid var(--rule);font-family:"Martian Mono";font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.colhead span:nth-child(3),.colhead span:nth-child(4){text-align:right}
+.entries{padding:2px 0}
+.entry{padding:8px 0;border-bottom:1px dotted var(--rule)}
+.entry time{font-family:"Martian Mono";font-size:9px;color:var(--dim);letter-spacing:.02em}
+.entry b{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry b small{color:var(--dim);font-size:10px;font-weight:400;margin-left:4px}
+.entry span{font-family:"Martian Mono";font-size:9.5px;text-align:right;color:var(--ink)}
+.entry span.credit{color:var(--blue)}
+.entry span.debit{color:var(--maroon)}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0 4px;border-top:2px solid var(--blue);margin-top:2px}
+.total span{font-family:"Martian Mono";font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.total b{font-family:"Martian Mono";font-size:15px;color:var(--blue);font-weight:600}
+.book__foot{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;padding:8px 0 14px}
+.print{font-family:"Martian Mono";font-size:8px;letter-spacing:.06em;color:var(--dim);line-height:1.7;max-width:34ch}
+.bankstamp{
+  border:1.5px solid var(--maroon);color:var(--maroon);padding:5px 9px;
+  font-family:"Martian Mono";font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;
+  transform:rotate(-3deg);text-align:center;line-height:1.4;
+}
+.bankstamp b{display:block;font-size:9px;letter-spacing:.14em}
+
+/* right rail */
+.rail{margin-top:22px;border-top:1px solid var(--rule);display:grid;grid-template-columns:repeat(3,1fr)}
+.rail div{padding:10px 12px 10px 0;border-right:1px solid var(--rule)}
+.rail div:last-child{border-right:0;padding-left:12px}
+.rail b{display:block;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--maroon);margin-bottom:3px}
+.rail p{margin:0;font-size:11.5px;color:var(--dim);line-height:1.5}
+
+/* system */
+.sys{max-width:1120px;margin:26px auto 0;padding:26px 40px 80px;border-top:1px solid var(--rule)}
+.sys .h{font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--maroon);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--rule);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#1C1F24;background:rgba(255,255,255,.72);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--ink)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--maroon)}
+.toggle{border:1px solid var(--blue);background:transparent;color:var(--blue);padding:8px 14px;cursor:pointer;font-family:"Martian Mono";font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="mark">QS</span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Sổ</a>
+      <a href="#">Gửi</a>
+      <a href="#">Hoá đơn</a>
+      <a href="#">Hạn mức</a>
+    </nav>
+    <span class="acct">STK 8F2K-Q7 · PRO</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Sổ ghi dung lượng</p>
+      <h1>Mỗi tệp là một dòng <em>đã in</em>.</h1>
+      <p class="lede">Dung lượng dùng, phần còn lại, hoá đơn tháng này — in ra thành dòng, không thành bảng điều khiển. Bạn đối chiếu được bằng mắt, và mọi con số đều có ngày.</p>
+      <div class="actions">
+        <a class="btn" href="#">Gửi tệp</a>
+        <a class="ghost" href="#">Xuất sao kê</a>
+      </div>
+
+      <div class="rail">
+        <div><b>Chu kỳ</b><p>01.11 → 30.11</p></div>
+        <div><b>Hạn mức</b><p>250 GB</p></div>
+        <div><b>Còn lại</b><p>197,7 GB</p></div>
+      </div>
+    </div>
+
+    <div class="book">
+      <span class="tractor tractor--l" aria-hidden="true"></span>
+      <span class="tractor tractor--r" aria-hidden="true"></span>
+      <div class="book__head">
+        <h2>Sổ dung lượng</h2>
+        <div class="book__no">KỲ 11/2026<br><b>QUICKSHARECLOUD</b></div>
+      </div>
+
+      <div class="colhead">
+        <span>Ngày</span><span>Nội dung</span><span>Phát sinh</span><span>Còn lại</span>
+      </div>
+
+      <div class="entries">
+        <div class="entry">
+          <time>11.11</time>
+          <b>anh-goc-bat-dong-san.zip <small>2,4 GB · 5 phần</small></b>
+          <span class="debit">-2,40</span>
+          <span>197,70</span>
+        </div>
+        <div class="entry">
+          <time>10.11</time>
+          <b>ban-ve-hien-trang.pdf <small>48,2 MB</small></b>
+          <span class="debit">-0,05</span>
+          <span>200,10</span>
+        </div>
+        <div class="entry">
+          <time>09.11</time>
+          <b>hop-dong-thue-2026.docx <small>1,8 MB</small></b>
+          <span class="debit">-0,00</span>
+          <span>200,15</span>
+        </div>
+        <div class="entry">
+          <time>05.11</time>
+          <b>Gói Pro · gia hạn tháng <small>hoá đơn #INV-2611</small></b>
+          <span class="credit">+250,0</span>
+          <span>200,15</span>
+        </div>
+        <div class="entry">
+          <time>01.11</time>
+          <b>Kỳ mới <small>số dư đầu kỳ</small></b>
+          <span class="credit">+0,00</span>
+          <span>0,00</span>
+        </div>
+      </div>
+
+      <div class="total">
+        <span>Số dư dùng được</span>
+        <b>197,7 GB</b>
+      </div>
+
+      <div class="book__foot">
+        <p class="print">IN LÚC 11.11 14:20 · MÁY IN 04 · KHÔNG CẦN CHỮ KÝ · MỌI DÒNG ĐỀU CÓ MÃ GIAO DỊCH</p>
+        <div class="bankstamp"><b>QuickShare</b>đã đối soát</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Sổ tiết kiệm</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#1B3F73"><i>blue</i></span>
+        <span class="chip" style="background:#7A2530"><i>maroon</i></span>
+        <span class="chip" style="background:#EFEDDF"><i>paper</i></span>
+        <span class="chip" style="background:#C9C4AE"><i>rule</i></span>
+        <span class="chip" style="background:#1C1F24"><i>ink</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Xanh = <b>ghi có / thương hiệu</b>; mận = <b>ghi nợ / dấu</b>.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Martian Mono';font-size:12px;color:var(--ink)">Martian Mono — toàn bộ dữ liệu</p>
+      <p class="spec" style="font-size:14px;color:var(--ink)">Be Vietnam Pro — câu</p>
+      <p class="spec">Số luôn canh phải, tabular, có đơn vị.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Mọi bảng là <i>giấy in liên tục</i>: lỗ kéo giấy, dòng kẻ chấm, cột cố định.</p>
+      <p class="rule">Không biểu đồ. Muốn so sánh thì thêm dòng.</p>
+      <p class="rule">Đúng một dấu đỏ mỗi trang: xác nhận đối soát.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Sáng: giấy bảo an vàng ngà.</p>
+      <p class="spec">Tối: két ban đêm — mực sáng, giấy mực.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

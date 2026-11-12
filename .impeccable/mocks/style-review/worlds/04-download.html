@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Nhận tệp — bảng chuyến (surface)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#15181B; --panel:#1D2125; --flap:#2A2F35; --flap-2:#31373E;
+  --legend:#E9ECEE; --dim:#8B939B; --hair:#31373E; --slot:#0E1113;
+  --amber:#E0A03C; --green:#4FA36A; --red:#C85A4F;
+}
+html[data-theme="light"]{
+  --board:#D3D6D9; --panel:#E2E5E7; --flap:#CFD3D6; --flap-2:#C3C7CB;
+  --legend:#171A1D; --dim:#5C6468; --hair:#B3B8BC; --slot:#F1F3F4;
+  --amber:#A96C10; --green:#2F7A46; --red:#A83B31;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--board);color:var(--legend);font-family:"Barlow Condensed",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.top{background:var(--panel);border-bottom:1px solid var(--hair)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:52px}
+.brand{display:flex;align-items:center;gap:10px}
+.sq{width:22px;height:22px;background:var(--legend);color:var(--board);display:grid;place-items:center;font-size:10px;font-weight:700}
+.brand b{font-size:12px;letter-spacing:.24em;text-transform:uppercase}
+.top__right{display:flex;align-items:center;gap:16px;font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;color:var(--dim)}
+.lamp{display:flex;align-items:center;gap:6px;color:var(--green)}
+.lamp i{width:6px;height:6px;background:currentColor;display:block}
+
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:26px 0 14px;border-bottom:2px solid var(--legend)}
+.head h1{margin:0;font-size:38px;line-height:.95;text-transform:uppercase;letter-spacing:-.005em;font-weight:700}
+.head h1 span{color:var(--green)}
+.head__meta{text-align:right;font-family:"Martian Mono";font-size:9px;line-height:1.9;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.head__meta b{color:var(--legend);font-weight:600}
+
+.panel{background:var(--panel);border:1px solid var(--hair)}
+.panel__bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 12px;border-bottom:1px solid var(--hair);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.panel__bar span{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em}
+
+/* the manifest of what arrived */
+.facts{margin-top:14px}
+.fact{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:baseline;padding:9px 12px;border-bottom:1px solid var(--hair)}
+.fact:last-child{border-bottom:0}
+.fact dt{font-family:"Martian Mono";font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.fact dd{margin:0;font-size:14px;letter-spacing:.02em}
+.fact dd small{color:var(--dim);font-size:11.5px;margin-left:6px}
+
+/* arrivals board: parts land one at a time, each verified */
+.arrivals{margin-top:12px}
+.arow{display:grid;grid-template-columns:64px 1fr 88px 112px;gap:10px;align-items:center;background:var(--flap);border-top:1px solid var(--flap-2);box-shadow:inset 0 -1px 0 rgba(0,0,0,.45);padding:9px 10px;margin:5px 10px}
+.arow--head{background:transparent;border:0;box-shadow:none;margin:0 10px;padding:2px 10px;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.arow--head span:nth-child(3),.arow--head span:nth-child(4),.arow--head span:nth-child(5){text-align:right}
+.arow__n{font-family:"Martian Mono";font-size:9.5px;color:var(--dim)}
+.arow__label{font-size:13px;letter-spacing:.02em}
+.hint{margin:0;padding:0 12px 12px;font-size:11px;line-height:1.5;color:var(--dim)}
+.arow__size{font-family:"Martian Mono";font-size:9.5px;color:var(--dim);text-align:right}
+.arow__st{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;text-align:right}
+details.detail{margin-top:12px;border:1px solid var(--hair);background:var(--panel)}
+details.detail summary{list-style:none;cursor:pointer;padding:10px 12px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;gap:12px}
+details.detail summary::-webkit-details-marker{display:none}
+details.detail summary:hover{color:var(--legend)}
+details.detail summary span{font-family:"Martian Mono";font-size:9px;letter-spacing:.08em}
+details.detail[open] summary{border-bottom:1px solid var(--hair);color:var(--legend)}
+.detail__body{display:grid;grid-template-columns:repeat(2,1fr)}
+.detail__body div{padding:9px 12px;border-bottom:1px solid var(--hair);display:flex;justify-content:space-between;gap:10px;font-family:"Martian Mono";font-size:8.5px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.detail__body div b{color:var(--legend);font-weight:400;text-transform:none;letter-spacing:0}
+.ok{color:var(--green)}.live{color:var(--amber)}.wait{color:var(--dim)}
+.track{height:4px;background:var(--slot);position:relative;margin:0 10px 10px;border-top:1px solid var(--flap-2)}
+.track i{position:absolute;left:0;top:0;bottom:0;width:62%;background:var(--green)}
+.track em{position:absolute;left:62%;top:-2px;width:1px;height:8px;background:var(--amber)}
+
+/* action console: one primary, everything else is a row */
+.console{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;margin-top:14px;padding:14px 12px;background:var(--panel);border:1px solid var(--hair)}
+.console__l{display:flex;flex-direction:column;gap:6px;min-width:0}
+.console__l span{font-family:"Martian Mono";font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.console__l b{font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+.console__l b em{font-style:normal;color:var(--dim);font-family:"Martian Mono";font-size:12px}
+.btn{background:var(--amber);color:#16181A;padding:13px 26px;font-size:14px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;border:0;cursor:pointer}
+.btn:hover{background:var(--legend)}
+.secondary{display:flex;gap:8px;margin-top:10px}
+.secondary a{border:1px solid var(--hair);color:var(--dim);padding:8px 12px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+.secondary a:hover{color:var(--legend);border-color:var(--dim)}
+
+.expiry{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:9px 12px;border:1px dashed var(--hair);font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.expiry b{color:var(--amber);font-weight:400}
+
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 20px;padding:12px 0 46px;font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+@media (max-width:820px){
+  .wrap{padding:0 16px}
+  .top__right span:first-child{display:none}
+  .head{flex-direction:column;align-items:flex-start;gap:8px;padding:18px 0 10px}
+  .head h1{font-size:26px}
+  .head__meta{text-align:left;font-size:8px}
+  .fact{grid-template-columns:1fr;gap:3px}
+  .arow{grid-template-columns:52px 1fr auto;grid-template-areas:"n label st" "n size st";row-gap:2px;column-gap:10px}
+  .arow__n{grid-area:n}
+  .arow__label{grid-area:label}
+  .arow__size{grid-area:size;text-align:left;font-size:9px}
+  .arow__st{grid-area:st;text-align:right}
+  .detail__body{grid-template-columns:1fr}
+  .arow--head{display:none}
+  .console{grid-template-columns:1fr}
+  .btn{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="sq">QS</span><b>QuickShareCloud</b></a>
+    <div class="top__right">
+      <span>Phiên khách · không cần tài khoản</span>
+      <span class="lamp"><i></i>ĐƯỜNG TRUYỀN OK</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Tệp đã sẵn sàng</h1>
+    <div class="head__meta">
+      Gửi từ <b>nguyen@studio.vn</b><br>
+      <b>2,4 GB</b><br>
+      Hết hạn <b>18.11</b>
+    </div>
+  </div>
+
+  <section class="panel facts" aria-label="Thông tin tệp">
+    <div class="panel__bar"><b>Tệp</b><span>GỬI TỪ 11.11</span></div>
+    <dl style="margin:0">
+      <div class="fact"><dt>Tên tệp</dt><dd>anh-goc-bat-dong-san.zip</dd></div>
+      <div class="fact"><dt>Dung lượng</dt><dd>2,4 GB <small>· tải khoảng 2 phút</small></dd></div>
+      <div class="fact"><dt>Riêng tư</dt><dd>Chỉ người có liên kết mở được <small>· không cần tài khoản</small></dd></div>
+      <div class="fact"><dt>Chất lượng</dt><dd>Tải về đúng tệp gốc <small>· không nén lại</small></dd></div>
+    </dl>
+  </section>
+
+  <div class="console">
+    <div class="console__l">
+      <span>Đang dở · tiếp tục từ 62%</span>
+      <b>Tải tiếp</b>
+    </div>
+    <button class="btn">Tải tiếp</button>
+  </div>
+
+  <section class="panel arrivals" aria-label="Đang tải">
+    <div class="panel__bar"><b>Đang tải về máy</b><span>62%</span></div>
+
+    <div class="arow">
+      <span class="arow__n">Tệp</span>
+      <span class="arow__label">anh-goc-bat-dong-san.zip</span>
+      <span class="arow__size">2,4 GB</span>
+      <span class="arow__st live">Đang tải</span>
+    </div>
+
+    <div class="arow">
+      <span class="arow__n">Còn</span>
+      <span class="arow__label">khoảng 42 giây</span>
+      <span class="arow__size"></span>
+      <span class="arow__st wait">Tự nối lại</span>
+    </div>
+
+    <div class="arow">
+      <span class="arow__n">Hạn</span>
+      <span class="arow__label">18.11 · 14:20</span>
+      <span class="arow__size">còn 6 ngày</span>
+      <span class="arow__st ok">Đang mở</span>
+    </div>
+
+    <div class="track" role="img" aria-label="Đã tải 62 phần trăm"><i></i><em></em></div>
+  </section>
+
+  <div class="secondary">
+    <a href="#">Xem nội dung</a>
+    <a href="#">Báo cáo liên kết</a>
+  </div>
+
+  <div class="expiry">
+    <span>Liên kết hết hạn</span>
+    <b>18.11 · 14:20 · còn 6 ngày</b>
+  </div>
+
+  <div class="foot">
+    <span>Không cần tài khoản</span>
+    <span>Tải về đúng tệp gốc</span>
+    <span>Chỉ người có liên kết mở được</span>
+  </div>
+</div>
+</body>
+</html>

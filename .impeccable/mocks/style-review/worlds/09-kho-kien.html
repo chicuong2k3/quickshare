@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Kho kiện — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=Archivo:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --kraft:#C7A87C; --kraft-2:#BC9C6E; --label:#F3EEE1; --paper:#FBF7EC;
+  --ink:#191715; --dim:#5B5346; --hi:#D9A21B; --tape:#E8DEC8;
+  --stripe:#1F1C19;
+}
+html[data-theme="dark"]{
+  --kraft:#2A241D; --kraft-2:#231E18; --label:#211C16; --paper:#191612;
+  --ink:#EDE6D8; --dim:#A2988A; --hi:#E8B33C; --tape:#2C261E;
+  --stripe:#E8DEC8;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--kraft);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.stencil{font-family:"Allerta Stencil",sans-serif;letter-spacing:.02em}
+
+/* top — the waybill header */
+.top{border-bottom:2px solid var(--stripe);background:color-mix(in srgb, var(--kraft) 70%, var(--tape))}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:58px}
+.brand{display:flex;align-items:center;gap:11px}
+.blockmark{
+  width:26px;height:26px;background:var(--stripe);color:var(--kraft);
+  display:grid;place-items:center;font-family:"Allerta Stencil";font-size:11px;
+}
+.brand b{font-family:"Allerta Stencil";font-size:14px;letter-spacing:.12em;text-transform:uppercase}
+nav{display:flex;gap:22px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:500}
+nav a[aria-current]{color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}
+.shelf{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--stripe);padding:4px 8px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:44px;padding:44px 0 32px;align-items:start}
+.kick{display:flex;align-items:center;gap:8px;font-family:"Martian Mono";font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 16px}
+.kick i{width:10px;height:10px;background:var(--hi);display:block;border:1px solid var(--stripe)}
+h1{margin:0 0 14px;font-family:"Allerta Stencil";font-size:56px;line-height:.94;text-transform:uppercase;letter-spacing:-.005em;max-width:11ch;font-weight:400}
+h1 em{font-style:normal;background:var(--hi);padding:0 6px;box-decoration-break:clone}
+p.lede{margin:0 0 24px;max-width:42ch;color:var(--dim);font-size:14.5px;line-height:1.62}
+.actions{display:flex;gap:12px;align-items:center}
+.btn{
+  background:var(--stripe);color:var(--kraft);padding:12px 20px;
+  font-family:"Allerta Stencil";font-size:15px;letter-spacing:.1em;text-transform:uppercase;
+}
+.btn:hover{background:var(--hi);color:var(--ink)}
+.ghost{font-family:"Martian Mono";font-size:10px;letter-spacing:.12em;text-transform:uppercase;border-bottom:1.5px solid var(--stripe);padding-bottom:2px}
+
+/* crate */
+.crate{position:relative;background:var(--paper);border:2px solid var(--stripe);padding:18px}
+.crate::before{
+  content:"";position:absolute;left:-2px;right:-2px;top:-2px;height:6px;
+  background:repeating-linear-gradient(45deg, var(--stripe) 0 6px, var(--hi) 6px 12px);
+}
+.crate__row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.crate__code{font-family:"Allerta Stencil";font-size:34px;line-height:1;letter-spacing:.02em}
+.crate__meta{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:right;line-height:1.8}
+.crate__meta b{color:var(--ink);font-weight:400}
+
+/* waybill sleeve */
+.sleeve{margin-top:14px;border:1.5px dashed var(--stripe);padding:11px;position:relative;background:var(--label)}
+.sleeve__tag{position:absolute;top:-8px;left:12px;background:var(--paper);padding:0 6px;z-index:1;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.sleeve__grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.cell b{display:block;font-family:"Martian Mono";font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+.cell span{font-size:12.5px}
+.cell span.mono{font-size:10.5px}
+.cell--full{grid-column:1/-1;border-top:1px dotted var(--dim);padding-top:7px}
+
+/* barcode */
+.barcode-block{margin-top:14px;display:flex;align-items:flex-end;gap:12px}
+.barcode{
+  height:44px;flex:1;
+  background:
+    repeating-linear-gradient(90deg,
+      var(--stripe) 0 2px, transparent 2px 4px,
+      var(--stripe) 4px 5px, transparent 5px 9px,
+      var(--stripe) 9px 13px, transparent 13px 15px,
+      var(--stripe) 15px 16px, transparent 16px 21px);
+}
+.barcode-block span{font-family:"Martian Mono";font-size:9px;letter-spacing:.14em;color:var(--dim);writing-mode:vertical-rl}
+
+/* handle-with-care marks */
+.marks{display:flex;gap:0;margin-top:14px;border-top:2px solid var(--stripe);padding-top:12px;justify-content:space-between}
+.mark{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;border-right:1px dotted var(--dim)}
+.mark:last-child{border-right:0}
+.mark svg{display:block}
+.mark span{font-family:"Martian Mono";font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:center}
+
+/* shelves */
+.shelfrow{margin-top:24px;border-top:2px solid var(--stripe);padding-top:12px}
+.shelfrow__h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.shelfrow__h b{font-family:"Allerta Stencil";font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.shelfrow__h span{font-family:"Martian Mono";font-size:8px;letter-spacing:.1em;color:var(--dim)}
+.bins{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bin{border:1px solid var(--stripe);padding:8px 9px;background:var(--label);min-height:64px;position:relative}
+.bin b{display:block;font-family:"Allerta Stencil";font-size:11px;letter-spacing:.06em;margin-bottom:3px}
+.bin span{font-family:"Martian Mono";font-size:8px;color:var(--dim);display:block;line-height:1.6}
+.bin--hi{border-width:2px}
+.bin--hi::after{content:"";position:absolute;right:-1px;top:-1px;border:5px solid transparent;border-top-color:var(--hi);border-right-color:var(--hi)}
+
+/* system */
+.sys{max-width:1120px;margin:30px auto 0;padding:26px 40px 80px;border-top:2px solid var(--stripe)}
+.sys .h{font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--stripe);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#191715;background:rgba(255,255,255,.7);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--ink)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:7px;width:7px;height:2px;background:var(--hi)}
+.toggle{border:2px solid var(--stripe);background:transparent;color:var(--ink);padding:8px 14px;cursor:pointer;font-family:"Allerta Stencil";font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="blockmark">QS</span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Kho</a>
+      <a href="#">Gửi</a>
+      <a href="#">Thư mục</a>
+      <a href="#">Bảng giá</a>
+    </nav>
+    <span class="shelf">Kệ 04 · Ô B</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick"><i></i>Mỗi lần gửi là một kiện có mã</p>
+      <h1>Xếp lên kệ. <em>In mã</em>. Giao.</h1>
+      <p class="lede">Tệp vào thư mục, thư mục vào không gian làm việc. Mã kiện in được, dán được, đưa cho người nhận — họ không cần biết gì ngoài mã đó.</p>
+      <div class="actions">
+        <a class="btn" href="#">Tạo kiện</a>
+        <a class="ghost" href="#">Quét mã</a>
+      </div>
+
+      <div class="shelfrow">
+        <div class="shelfrow__h"><b>Kệ hôm nay</b><span>04 / 12 ô</span></div>
+        <div class="bins">
+          <div class="bin bin--hi"><b>8F2K</b><span>2,4 GB<br>7 ngày</span></div>
+          <div class="bin"><b>Q7T3</b><span>48,2 MB<br>3 ngày</span></div>
+          <div class="bin"><b>M1VB</b><span>1,8 MB<br>hôm nay</span></div>
+          <div class="bin"><b>—</b><span>trống</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="crate">
+      <div class="crate__row">
+        <div>
+          <div class="crate__code">8F2K-Q7</div>
+          <div class="crate__meta" style="text-align:left;margin-top:6px">KIỆN 01 / 01 · ĐÃ NIÊM<br>NGƯỜI GỬI: STUDIO 12</div>
+        </div>
+        <div class="crate__meta">
+          <b>2,4 GB</b> · 5 PHẦN<br>KỆ 04 / Ô B<br>11.11 · 14:20
+        </div>
+      </div>
+
+      <div class="sleeve">
+        <span class="sleeve__tag">Phiếu gửi</span>
+        <div class="sleeve__grid">
+          <div class="cell"><b>Nội dung</b><span>anh-goc-bat-dong-san.zip</span></div>
+          <div class="cell"><b>Người nhận</b><span>không cần tài khoản</span></div>
+          <div class="cell"><b>Dung lượng</b><span class="mono">2 481 332 224 B</span></div>
+          <div class="cell"><b>Khoá</b><span class="mono">trong liên kết (#)</span></div>
+          <div class="cell cell--full"><b>Liên kết</b><span class="mono">quickshare.vn/d/8F2KQ7</span></div>
+        </div>
+      </div>
+
+      <div class="barcode-block">
+        <span class="barcode" aria-hidden="true"></span>
+        <span>8F2KQ7 · QS</span>
+      </div>
+
+      <div class="marks">
+        <div class="mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 L10 17 M5 8 L10 3 L15 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <span>Hướng lên</span>
+        </div>
+        <div class="mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="4" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 10 q3 -4 6 0" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span>Dễ vỡ</span>
+        </div>
+        <div class="mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 14 L17 4 M3 10 L17 0 M3 18 L17 8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+          <span>Tránh ẩm</span>
+        </div>
+        <div class="mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6 L10 14 M7 8 L13 12 M13 8 L7 12" stroke="currentColor" stroke-width="1.2"/></svg>
+          <span>Giữ pháp lý</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Kho kiện</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#C7A87C"><i>kraft</i></span>
+        <span class="chip" style="background:#D9A21B"><i>hi-vis</i></span>
+        <span class="chip" style="background:#191715"><i>stripe</i></span>
+        <span class="chip" style="background:#F3EEE1"><i>label</i></span>
+        <span class="chip" style="background:#5B5346"><i>dim</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Vàng hi-vis chỉ cho <b>mã &amp; cảnh báo</b>; không làm nền cho chữ.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Allerta Stencil';font-size:20px;text-transform:uppercase;color:var(--ink);letter-spacing:.04em">Allerta Stencil — mã kiện</p>
+      <p class="spec" style="font-size:14px;color:var(--ink)">Archivo — câu, phiếu</p>
+      <p class="spec">Stencil chỉ dùng cho <b>thứ được sơn lên kiện</b>.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Mã vạch là <i>mã thật</i>, in được, quét được — không phải hoạ tiết.</p>
+      <p class="rule">Phiếu gửi nằm trong túi kính: viền đứt nét = túi.</p>
+      <p class="rule">Biểu tượng cảnh báo là SVG nét 1.6, không icon mượt.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Sáng: kho ban ngày, kraft sáng.</p>
+      <p class="spec">Tối: ca đêm — kraft sẫm, hi-vis giữ.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

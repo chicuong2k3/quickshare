@@ -58,8 +58,21 @@
 
 ## Design System
 
-`DESIGN.md` records the legacy DAUB surfaces. New or migrated surfaces use the vendored
-Unpoly.Blazor.Shadcn components and tokens; do not mix both systems inside one component.
+`DESIGN.md` owns the pinned world (**"Bảng chuyến"**, departure board). Migrated surfaces
+(`/pricing`, the `/account` usage block) use that world's scoped tokens; everything not yet migrated
+still runs the legacy DAUB/HyperCard shell. Do not mix both systems inside one component.
+
+Board-surface rules that future work must follow:
+
+- **Colour is status, never decoration** — amber = act/in-flight, green = done/verified, red =
+  held/expired, and exactly one amber control per view.
+- **Depth is a 1px seam.** No radius, blur, gradient or drop shadow on a board surface.
+- **No icon or unicode glyph for a state.** Render the word ("Đã xong", "Unlimited", "Sửa"); the
+  comparison table's `✓`/`—` were replaced for this reason.
+- **A toggle that changes which facts are shown is server state in the URL** (`/pricing?billing=yearly`),
+  not client state — the page must be correct with JavaScript off.
+- **Never hardcode a plan figure**; read `PlanTierLimits` / `PlanCatalog`, and render the unlimited
+  sentinel as a word, not as `int.MaxValue`.
 
 - **Legacy `db-*` tokens/classes stay intact while legacy surfaces remain.** Do not add new `db-*` use to migrated pages.
 - Shadcn markup uses library components, semantic utility classes, and the library's `--background`, `--foreground`, `--primary`, `--border`, `--radius`, and control tokens. Do not edit generated CSS; update `src/QuickShare/tailwind.css` and run `npm run css:build` through the project build.

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Bảng phim — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --room:#0B0B0C; --room-2:#141416; --frame:#1C1C1F;
+  --print:#F3F1EA; --edge:#B9B4A8; --safelight:#C0392B;
+  --text:#EDEAE2; --dim:#8D887E; --hair:#26262A;
+  --btn-bg:#F3F1EA; --btn-fg:#0B0B0C;
+}
+html[data-theme="light"]{
+  --room:#E9E6DC; --room-2:#F2F0E8; --frame:#DCD8CC;
+  --print:#FFFFFF; --edge:#6F6A5F; --safelight:#B03127;
+  --text:#171614; --dim:#6E6A60; --hair:#CFCABC;
+  --btn-bg:#171614; --btn-fg:#F3F1EA;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--room);color:var(--text);font-family:"Be Vietnam Pro",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.edge{font-family:"Courier Prime",ui-monospace,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.edge b{color:var(--text);font-weight:700}
+
+/* top edge */
+.top{border-bottom:1px solid var(--hair)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:56px}
+.brand{display:flex;align-items:center;gap:12px}
+.aper{
+  width:26px;height:26px;border:1px solid var(--text);position:relative;flex:0 0 auto;
+  clip-path:polygon(0 0,100% 0,100% 62%,72% 62%,72% 100%,0 100%);
+}
+.aper::after{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;border-radius:50%;border:1px solid var(--text);transform:translate(-50%,-50%)}
+.brand b{font-size:12px;letter-spacing:.28em;text-transform:uppercase;font-weight:600}
+nav{display:flex;gap:24px}
+nav a{font-family:"Courier Prime";font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding-bottom:2px;border-bottom:1px solid transparent}
+nav a[aria-current]{color:var(--text);border-color:var(--safelight)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:0.92fr 1.08fr;gap:52px;padding:44px 0 34px;align-items:start}
+.kick{margin:0 0 14px}
+h1{margin:0 0 16px;font-size:46px;line-height:1.04;letter-spacing:-.025em;font-weight:300}
+h1 b{font-weight:600}
+h1 mark{background:transparent;color:var(--safelight);font-weight:600}
+.lede{margin:0 0 24px;max-width:40ch;color:var(--dim);font-size:15px;line-height:1.65}
+.actions{display:flex;align-items:center;gap:18px}
+.btn{
+  display:inline-block;background:var(--btn-bg);color:var(--btn-fg);padding:11px 20px;
+  font-family:"Courier Prime";font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+}
+.btn:hover{background:var(--safelight);color:#fff}
+.ghost{font-family:"Courier Prime";font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--hair);padding-bottom:3px}
+
+/* film strip */
+.strip{border:1px solid var(--hair);background:var(--room-2);padding:0}
+.strip__head{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid var(--hair)}
+.strip__body{position:relative;padding:0 0 8px}
+.sprocket{
+  height:14px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 9px, var(--room) 9px 21px, transparent 21px 30px);
+  background-color:var(--text);
+  opacity:.9;
+}
+.frames{display:flex;gap:6px;padding:8px 8px 6px;background:#000}
+html[data-theme="light"] .frames{background:#232320}
+.frame{position:relative;flex:1;aspect-ratio:3/2;background:var(--frame);border:1px solid #000;overflow:hidden}
+.frame__img{position:absolute;inset:0;background:
+  radial-gradient(120% 90% at 30% 20%, #4A4A48 0%, transparent 60%),
+  radial-gradient(90% 80% at 75% 70%, #2E3A3E 0%, transparent 55%),
+  linear-gradient(160deg,#3A3F3C,#1B1D1B);}
+.frame:nth-child(2) .frame__img{background:radial-gradient(110% 90% at 60% 30%,#5A5450 0%,transparent 60%),radial-gradient(80% 70% at 25% 75%,#33302C 0%,transparent 55%),linear-gradient(200deg,#46403A,#191817)}
+.frame:nth-child(3) .frame__img{background:radial-gradient(120% 100% at 40% 60%,#3D4A46 0%,transparent 62%),linear-gradient(120deg,#2A302D,#111312)}
+.frame:nth-child(4) .frame__img{background:radial-gradient(100% 90% at 70% 30%,#4C4038 0%,transparent 58%),linear-gradient(140deg,#3B322C,#151312)}
+.frame:nth-child(5) .frame__img{background:radial-gradient(120% 90% at 45% 25%,#3A4148 0%,transparent 60%),linear-gradient(170deg,#272C31,#101214)}
+.frame__n{position:absolute;left:2px;top:1px;font-family:"Courier Prime";font-size:8px;letter-spacing:.08em;color:#D8D2C4;opacity:.85}
+.frame__n--b{top:auto;bottom:1px;left:auto;right:3px}
+.grease{position:absolute;inset:0;pointer-events:none}
+.grease svg{width:100%;height:100%}
+.strip__foot{display:flex;justify-content:space-between;gap:14px;padding:6px 10px;border-top:1px solid var(--hair)}
+.strip__foot .edge{font-size:9.5px}
+
+/* print card */
+.print{background:var(--print);color:#131312;margin:14px 0 0 auto;padding:9px 9px 0;width:58%}
+.print__img{
+  height:110px;
+  background:
+    radial-gradient(90% 80% at 35% 25%, #5A5E58 0%, transparent 62%),
+    radial-gradient(80% 70% at 75% 70%, #2B3336 0%, transparent 58%),
+    linear-gradient(165deg,#42443D,#1A1C19);
+  border:1px solid #C7C1AE;position:relative;overflow:hidden;
+}
+.print__img::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 70% 78%, rgba(255,240,214,.22), transparent 70%)}
+.print__cap{padding:9px 2px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.print__cap b{font-family:"Courier Prime";font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.print__cap span{font-family:"Courier Prime";font-size:10px;color:#6B6658}
+
+/* data rows */
+.datarow{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--hair);margin-top:22px}
+.datarow div{padding:12px 14px 12px 0;border-right:1px solid var(--hair)}
+.datarow div:last-child{border-right:0;padding-left:16px}
+.datarow b{display:block;font-family:"Courier Prime";font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--safelight);margin-bottom:4px}
+.datarow p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.5}
+
+/* system */
+.sys{max-width:1120px;margin:28px auto 0;padding:28px 40px 80px;border-top:1px solid var(--hair)}
+.sys .h{font-family:"Courier Prime";font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--safelight);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:8px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--hair);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Courier Prime";font-size:8px;font-style:normal;color:#EDEAE2;background:rgba(0,0,0,.45);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--text)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--safelight)}
+.toggle{border:1px solid var(--text);background:transparent;color:var(--text);padding:8px 14px;cursor:pointer;font-family:"Courier Prime";font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="aper" aria-hidden="true"></span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Gửi</a>
+      <a href="#">Nhận</a>
+      <a href="#">Bảng giá</a>
+      <a href="#">Tài khoản</a>
+    </nav>
+    <span class="edge">Roll 04 · ISO 400</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="edge kick">Bảng tiếp xúc · người nhận nhận bản gốc</p>
+      <h1>Ảnh gửi đi là <b>phim gốc</b>, không phải ảnh <mark>chụp lại</mark>.</h1>
+      <p class="lede">Không nén lại, không đổi kích thước, không gắn watermark. Người nhận tải về đúng số byte bạn gửi — kiểm bằng SHA-256 ngay trên trang.</p>
+      <div class="actions">
+        <a class="btn" href="#">Chọn phim</a>
+        <a class="ghost" href="#">Xem cách xác minh</a>
+      </div>
+
+      <div class="datarow">
+        <div><b>Đang gửi</b><p>anh-goc-bat-dong-san.zip · 2,4 GB · 5 phần</p></div>
+        <div><b>Đã nhận</b><p>3 / 5 phần · 1,4 GB · 00:42 còn lại</p></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="strip">
+        <div class="strip__head">
+          <span class="edge"><b>QS-8F2K</b> · bảng tiếp xúc</span>
+          <span class="edge">05 frames</span>
+        </div>
+        <div class="strip__body">
+          <div class="sprocket" aria-hidden="true"></div>
+          <div class="frames">
+            <div class="frame"><span class="frame__n">18</span><div class="frame__img"></div><span class="frame__n frame__n--b">18A</span></div>
+            <div class="frame"><span class="frame__n">19</span><div class="frame__img"></div><span class="frame__n frame__n--b">19A</span></div>
+            <div class="frame">
+              <span class="frame__n">20</span><div class="frame__img"></div><span class="frame__n frame__n--b">20</span>
+              <span class="grease" aria-hidden="true">
+                <svg viewBox="0 0 100 66" preserveAspectRatio="none">
+                  <ellipse cx="50" cy="33" rx="45" ry="28" fill="none" stroke="#C0392B" stroke-width="2.2" transform="rotate(-3 50 33)" opacity=".92"/>
+                  <path d="M6 60 l10 -9" stroke="#C0392B" stroke-width="2.2" opacity=".92"/>
+                </svg>
+              </span>
+            </div>
+            <div class="frame"><span class="frame__n">21</span><div class="frame__img"></div><span class="frame__n frame__n--b">21A</span></div>
+            <div class="frame"><span class="frame__n">22</span><div class="frame__img"></div><span class="frame__n frame__n--b">22</span></div>
+          </div>
+          <div class="sprocket" aria-hidden="true"></div>
+        </div>
+        <div class="strip__foot">
+          <span class="edge">KODAK · 24 EXP</span>
+          <span class="edge">khoá sau # · không đọc được</span>
+        </div>
+      </div>
+
+      <div class="print">
+        <div class="print__img" aria-hidden="true"></div>
+        <div class="print__cap">
+          <b>08/11 — phóng sự</b>
+          <span>24 · f/2.8</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Bảng phim</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#0B0B0C"><i>room</i></span>
+        <span class="chip" style="background:#F3F1EA"><i>print</i></span>
+        <span class="chip" style="background:#C0392B"><i>safelight</i></span>
+        <span class="chip" style="background:#B9B4A8"><i>edge</i></span>
+        <span class="chip" style="background:#26262A"><i>hair</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Đỏ <b>safelight</b> là mực bút chì mỡ — chú thích &amp; trạng thái, không bao giờ làm nền.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Courier Prime';font-size:14px;color:var(--text)">Courier Prime — mép phim, mã, ghi chú</p>
+      <p class="spec" style="font-size:14px;color:var(--text)">Be Vietnam Pro 300/600 — câu</p>
+      <p class="spec">Display rất nhẹ: phim là chủ thể, chữ đứng nép.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Nền tối là <i>phòng tối</i>, không phải theme: sáng = bàn đèn xem phim.</p>
+      <p class="rule">Mọi khung ảnh có lỗ tiếp phim và số khung.</p>
+      <p class="rule">Một vòng bút chì mỡ đánh dấu phần đang tải.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Tối: phòng tối, phim ướt.</p>
+      <p class="spec">Sáng: bàn đèn — giấy trắng, chữ mực.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Bản vẽ thi công — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Martian+Mono:wght@400;600&family=Be+Vietnam+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sheet:#F6F8F9; --grid:#DCE4E9; --ink:#1E262B; --dim:#5E6A72;
+  --draft:#1D5C8A; --mark:#B4372F; --line:#9FB0BA; --fill:#EAF0F4;
+}
+html[data-theme="dark"]{
+  --sheet:#0E1418; --grid:#1B252B; --ink:#E3EBEF; --dim:#8FA0A9;
+  --draft:#6FB6E4; --mark:#E37065; --line:#3C4C56; --fill:#162026;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 24px),
+    var(--sheet);
+  color:var(--ink);
+  font-family:"Be Vietnam Pro",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.caps{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.18em;font-weight:600}
+
+/* top */
+.top{border-bottom:1px solid var(--line);background:color-mix(in srgb, var(--sheet) 88%, transparent);backdrop-filter:blur(2px)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:54px}
+.brand{display:flex;align-items:center;gap:10px}
+.frame-mark{width:24px;height:24px;border:1px solid var(--ink);position:relative}
+.frame-mark::before{content:"";position:absolute;left:4px;right:4px;top:4px;height:1px;background:var(--ink)}
+.frame-mark::after{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:1px;background:var(--ink)}
+.brand b{font-family:"Barlow Condensed";font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+nav{display:flex;gap:22px;font-family:"Barlow Condensed";font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--draft);border-bottom:1px solid var(--draft);padding-bottom:2px}
+.rev{font-family:"Martian Mono";font-size:9px;color:var(--mark);border:1px dashed var(--mark);padding:3px 7px;letter-spacing:.08em}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:44px;padding:42px 0 30px;align-items:start}
+.kick{font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mark);margin:0 0 14px}
+h1{margin:0 0 14px;font-size:48px;line-height:1.02;letter-spacing:-.02em;font-weight:500;max-width:13ch}
+h1 em{font-style:normal;color:var(--draft);border-bottom:2px solid var(--draft)}
+p.lede{margin:0 0 22px;max-width:42ch;color:var(--dim);font-size:14.5px;line-height:1.62}
+.actions{display:flex;gap:10px;align-items:center}
+.btn{background:var(--ink);color:var(--sheet);padding:11px 20px;font-family:"Barlow Condensed";font-size:13px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.btn:hover{background:var(--draft)}
+.ghost{font-family:"Barlow Condensed";font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--draft);border:1px solid var(--line);padding:10px 14px}
+
+/* drawing */
+.drawing{position:relative;background:var(--sheet);border:1.5px solid var(--ink);padding:16px 16px 0;box-shadow:6px 6px 0 color-mix(in srgb, var(--ink) 8%, transparent)}
+.drawing__toolbar{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px}
+.drawing__toolbar b{font-family:"Barlow Condensed";font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+.drawing__toolbar span{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;color:var(--dim)}
+
+/* dimension line */
+.dim{position:relative;height:54px;margin:0 0 6px}
+.dim__line{position:absolute;left:0;right:0;top:30px;height:1px;background:var(--draft)}
+.dim__tick{position:absolute;top:25px;width:1px;height:11px;background:var(--draft)}
+.dim__tick--l{left:0}.dim__tick--r{right:0}
+.dim__end{position:absolute;top:30px;width:8px;height:8px;border-left:1px solid var(--draft);border-bottom:1px solid var(--draft);transform:translateY(-50%) rotate(45deg)}
+.dim__end--l{left:-2px}
+.dim__end--r{right:-2px;transform:translateY(-50%) rotate(-135deg)}
+.dim__label{
+  position:absolute;left:50%;top:8px;transform:translateX(-50%);
+  background:var(--sheet);padding:0 6px;font-family:"Martian Mono";font-size:10px;color:var(--draft);
+}
+.dim__sub{position:absolute;left:50%;top:36px;transform:translateX(-50%);font-family:"Martian Mono";font-size:8px;color:var(--dim);letter-spacing:.06em}
+
+/* parts strip */
+.parts{display:flex;gap:0;border:1px solid var(--line);margin-bottom:14px}
+.part{flex:1;border-right:1px solid var(--line);padding:8px 7px 7px;position:relative;min-height:64px}
+.part:last-child{border-right:0}
+.part__n{font-family:"Martian Mono";font-size:8px;color:var(--ink);letter-spacing:.06em}
+.part__bar{height:5px;margin-top:20px;background:repeating-linear-gradient(45deg, var(--line) 0 1px, transparent 1px 4px)}
+.part--done .part__bar{background:repeating-linear-gradient(45deg, var(--draft) 0 1px, transparent 1px 3px)}
+.part--live{background:color-mix(in srgb, var(--draft) 8%, transparent)}
+.part--live .part__bar{background:var(--draft)}
+.part__size{position:absolute;bottom:6px;left:7px;font-family:"Martian Mono";font-size:7.5px;color:var(--dim)}
+.part--held{background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--mark) 12%, transparent) 0 2px, transparent 2px 6px)}
+.part--held .part__n{color:var(--mark)}
+
+/* callouts */
+.callouts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.callout{border-left:2px solid var(--draft);padding:2px 0 2px 9px}
+.callout b{display:block;font-family:"Barlow Condensed";font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--draft);margin-bottom:2px}
+.callout span{font-family:"Martian Mono";font-size:9px;color:var(--ink)}
+.callout--mark{border-color:var(--mark)}
+.callout--mark b{color:var(--mark)}
+
+/* title block */
+.tblock{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;border-top:1.5px solid var(--ink);margin:0 -16px}
+.tblock div{border-right:1px solid var(--line);padding:6px 8px}
+.tblock div:last-child{border-right:0}
+.tblock b{display:block;font-family:"Barlow Condensed";font-size:7.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:1px}
+.tblock span{font-family:"Martian Mono";font-size:8.5px;color:var(--ink)}
+.tblock .tbig span{font-family:"Barlow Condensed";font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+
+/* note row */
+.notes{margin-top:20px;border-top:1px solid var(--line);padding-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.notes b{display:block;font-family:"Barlow Condensed";font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mark);margin-bottom:3px}
+.notes p{margin:0;font-size:11.5px;color:var(--dim);line-height:1.5}
+
+/* system */
+.sys{max-width:1120px;margin:30px auto 0;padding:24px 40px 80px;border-top:1px solid var(--line)}
+.sys .h{font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mark);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--line);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#1E262B;background:rgba(255,255,255,.75);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--ink)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--mark)}
+.toggle{border:1px solid var(--ink);background:transparent;color:var(--ink);padding:8px 14px;cursor:pointer;font-family:"Barlow Condensed";font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="frame-mark" aria-hidden="true"></span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Bản vẽ</a>
+      <a href="#">API</a>
+      <a href="#">Tài khoản</a>
+      <a href="#">Bảng giá</a>
+    </nav>
+    <span class="rev">REV C · 11.11</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Mọi thứ đều có kích thước ghi kèm</p>
+      <h1>Tệp 2,4 GB <em>không phải</em> một khối đen.</h1>
+      <p class="lede">Chia phần, gửi song song, chỉ hỏng phần đã hỏng. Mỗi phần có số hiệu, khoảng byte và trạng thái — kèm đường kích thước, vì con số nào cũng tra được.</p>
+      <div class="actions">
+        <a class="btn" href="#">Gửi tệp</a>
+        <a class="ghost" href="#">Đọc spec</a>
+      </div>
+
+      <div class="notes">
+        <div><b>Chia phần</b><p>5 phần, mỗi phần 512 MB; gửi song song 3 luồng.</p></div>
+        <div><b>Thử lại</b><p>Chỉ phần lỗi gửi lại, không gửi lại cả tệp.</p></div>
+        <div><b>Xác minh</b><p>SHA-256 trên toàn tệp, so trước khi mở.</p></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="drawing">
+        <div class="drawing__toolbar">
+          <b>Mặt bằng truyền — 8F2K</b>
+          <span>TỶ LỆ 1:1 · ĐƠN VỊ BYTE</span>
+        </div>
+
+        <div class="dim">
+          <div class="dim__line"></div>
+          <span class="dim__tick dim__tick--l"></span>
+          <span class="dim__tick dim__tick--r"></span>
+          <span class="dim__end dim__end--l"></span>
+          <span class="dim__end dim__end--r"></span>
+          <span class="dim__label">2 481 332 224 B</span>
+          <span class="dim__sub">5 × 496 266 444 B</span>
+        </div>
+
+        <div class="parts">
+          <div class="part part--done"><span class="part__n">01</span><span class="part__bar"></span><span class="part__size">496 MB</span></div>
+          <div class="part part--done"><span class="part__n">02</span><span class="part__bar"></span><span class="part__size">496 MB</span></div>
+          <div class="part part--done"><span class="part__n">03</span><span class="part__bar"></span><span class="part__size">496 MB</span></div>
+          <div class="part part--live"><span class="part__n">04</span><span class="part__bar"></span><span class="part__size">74%</span></div>
+          <div class="part part--held"><span class="part__n">05</span><span class="part__bar"></span><span class="part__size">giữ</span></div>
+        </div>
+
+        <div class="callouts">
+          <div class="callout"><b>Khoá</b><span>trong fragment (#)</span></div>
+          <div class="callout"><b>Mã hoá</b><span>AES-256-GCM / phần</span></div>
+          <div class="callout"><b>Vùng</b><span>ap-southeast-1</span></div>
+          <div class="callout callout--mark"><b>Giữ pháp lý</b><span>phần 05 khoá</span></div>
+        </div>
+
+        <div class="tblock">
+          <div class="tbig"><b>Dự án</b><span>QuickShareCloud — gửi tệp</span></div>
+          <div><b>Tỷ lệ</b><span>1:1</span></div>
+          <div><b>Số hiệu</b><span>QS-8F2K</span></div>
+          <div><b>Ngày</b><span>11.11.26</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Bản vẽ thi công</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#F6F8F9"><i>sheet</i></span>
+        <span class="chip" style="background:#1E262B"><i>ink</i></span>
+        <span class="chip" style="background:#1D5C8A"><i>draft</i></span>
+        <span class="chip" style="background:#B4372F"><i>mark</i></span>
+        <span class="chip" style="background:#9FB0BA"><i>line</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Đỏ = <b>sửa đổi / chặn</b>. Không tô nền trạng thái, chỉ gạch chéo.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Barlow Condensed';font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink)">Barlow Condensed — nhãn</p>
+      <p class="spec" style="font-family:'Martian Mono';font-size:11px;color:var(--ink)">Martian Mono — số đo</p>
+      <p class="spec">Chỉ chữ hoa cho nhãn; số luôn kèm đơn vị.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Mọi khối có <i>tiêu đề khung</i> + khối tên ở góc dưới phải.</p>
+      <p class="rule">Đường kích thước có mũi tên hai đầu; không dùng để trang trí.</p>
+      <p class="rule">Hatch chéo = vùng bị chặn; không dùng nền màu.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Sáng: bản vẽ trên bàn, đèn sáng.</p>
+      <p class="spec">Tối: bản vẽ in nền tối — đường xanh lam.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

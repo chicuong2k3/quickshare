@@ -31,16 +31,17 @@ QuickShareCloud gửi file kích thước bất kỳ (chunked, mã hóa đầu�
 
 - Unpoly enhancement is opt-in for real server-rendered partial updates. Static SSR remains canonical, and migrated surfaces use Unpoly.Blazor.Shadcn components and theme tokens; legacy DAUB surfaces remain during phased migration.
 - Thread: 2 theme — light + dark, bắt buộc cả hai; mọi token phải có cặp giá trị.
-- Token `--db-*` là **lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`). Giữ nguyên tên token để ~322 lượt dùng class `db-*` trong markup không phải sửa. Đổi giá trị, không đổi tên.
-- Hệ token grunge/kem cũ đã bị thay (2026-08-13). Chi tiết hệ hiện hành: `DESIGN.md`.
+- Token `--db-*` là **lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`) và chỉ còn giá trị cho các bề mặt **chưa migrate**. Giữ nguyên tên token để ~322 lượt dùng class `db-*` trong markup không phải sửa. Bề mặt mới dùng biến cục bộ của thế giới bảng chuyến, không thêm `db-*`.
+- Trạng thái migrate: `/pricing` + khối usage `/account` đã theo `DESIGN.md`; phần còn lại chưa. Chi tiết + khoảng trống: `DESIGN.md`.
 
 ## Brand Commitments
 
 - Tên: **QuickShareCloud**; tagline: "send files, not friction".
-- Font (2026-08-16, user quyết, **chỉ font open source SIL OFL** để tránh rủi ro pháp lý): **Bricolage Grotesque** (display, 700–800, chữ thường, tracking âm nhẹ) + **Archivo** (UI/body, dễ đọc cho người dùng phổ thông) + **Courier Prime** (nhãn spec, mã, hash, dung lượng, số đếm, giá).
-  Outfit + Azeret Mono **đã bỏ** cùng thế giới Miura (2026-08-16). Playfair Display đã bỏ từ 2026-08-13. Không đưa serif trở lại.
-- Luật màu (thế giới HyperCard-màu): vàng Apple là **fill, không bao giờ là màu chữ trên nền giấy** — chữ accent lấy `--db-color-accent-text`. Wash xanh dương = trạng thái đang hoạt động/được chọn. Dải cầu vồng 6 màu = tiến độ, và chỉ tiến độ. Viền mực 2px = mọi thứ được "vẽ".
-- Iconography: SVG inline **vẽ pixel** (lưới rect, `shape-rendering: crispEdges`) — không emoji, không glyph unicode thay icon.
+- Font (**chỉ font open source SIL OFL** để tránh rủi ro pháp lý, không serif): bề mặt bảng chuyến dùng **Barlow Condensed** (tên, nhãn — chữ hoa, giãn chữ) + **Martian Mono** (số, giá, dung lượng — `tabular-nums`); câu văn dùng **Archivo**. Bề mặt chưa migrate còn giữ **Bricolage Grotesque** + **Courier Prime** cho tới khi migrate xong.
+  Outfit + Azeret Mono đã bỏ cùng thế giới Miura (2026-08-16). Playfair Display đã bỏ từ 2026-08-13.
+- Luật màu (thế giới **bảng chuyến**, chốt 11.11.2026): **màu chỉ là trạng thái** — amber = hành động / đang chạy, xanh = xong / đã xác minh / không giới hạn, đỏ = bị giữ / thu hồi / hết hạn. Không tô màu để trang trí, không gradient, không bóng mờ. Đúng **một** nút amber mỗi màn.
+- Hình khối: mọi bề mặt **vuông 0px**, độ sâu là **đường may 1px** (viền + đường kẻ trong lòng hàng), không radius, không blur, không đổ bóng.
+- Iconography: **không icon, không emoji, không glyph unicode làm dấu trạng thái** — trạng thái là màu + chữ ("Đã xong", "Unlimited", "Sửa").
 
 ## Existing Evidence
 

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Lịch bloc — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&family=Martian+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4EFE3; --paper-2:#EDE6D5; --ink:#1D1A16; --dim:#6B6357;
+  --red:#C4242B; --rule:#D6CCB7; --hole:#C9BFA9;
+}
+html[data-theme="dark"]{
+  --paper:#191714; --paper-2:#211E1A; --ink:#EDE7DA; --dim:#A79E8E;
+  --red:#E0605C; --rule:#332E27; --hole:#0E0C0A;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* top */
+.top{border-bottom:1px solid var(--rule)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:56px}
+.brand{display:flex;align-items:center;gap:10px}
+.page-mark{width:22px;height:26px;border:1.5px solid var(--ink);border-top:3px solid var(--red);position:relative}
+.page-mark::after{content:"";position:absolute;left:3px;right:3px;top:6px;height:1px;background:var(--rule);box-shadow:0 4px 0 var(--rule),0 8px 0 var(--rule)}
+.brand b{font-size:13px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+nav{display:flex;gap:22px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--red);border-bottom:1.5px solid var(--red);padding-bottom:2px}
+.today{font-family:"Martian Mono";font-size:10px;color:var(--dim);letter-spacing:.08em}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;padding:44px 0 36px;align-items:start}
+.kick{display:flex;align-items:center;gap:8px;font-family:"Martian Mono";font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin:0 0 16px}
+.kick::before{content:"";width:16px;height:1px;background:var(--red)}
+h1{margin:0 0 16px;font-family:"Big Shoulders Display",system-ui,sans-serif;font-size:68px;line-height:.98;font-weight:800;text-transform:uppercase;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--red)}
+p.lede{margin:0 0 26px;max-width:40ch;color:var(--dim);font-size:15px;line-height:1.65}
+.actions{display:flex;align-items:center;gap:16px}
+.btn{display:inline-block;background:var(--red);color:#FBF6EA;padding:12px 22px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.ghost{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--rule);padding-bottom:3px}
+
+/* the bloc */
+.bloc{position:relative;padding-top:14px}
+.stack{
+  position:absolute;left:10px;right:10px;top:0;height:100%;
+  border:1px solid var(--rule);background:var(--paper-2);
+}
+.stack--2{left:5px;right:5px;top:7px}
+.page{
+  position:relative;border:1px solid var(--ink);background:var(--paper);
+  box-shadow:3px 3px 0 rgba(29,26,22,.14);
+}
+html[data-theme="dark"] .page{box-shadow:3px 3px 0 #000}
+.hanger{
+  height:26px;border-bottom:1px solid var(--rule);
+  background:
+    radial-gradient(circle at 12% 50%, var(--hole) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 50% 50%, var(--hole) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 88% 50%, var(--hole) 0 4px, transparent 4.5px);
+}
+.page__in{padding:18px 22px 20px}
+.page__top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.month{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.month b{display:block;color:var(--ink);font-size:14px;letter-spacing:.14em;margin-top:2px}
+.numeral{
+  font-family:"Big Shoulders Display";font-size:108px;line-height:.8;font-weight:800;
+  color:var(--red);letter-spacing:-.03em;margin:2px 0 0;text-align:right;
+}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:14px}
+.week span{
+  border:1px solid var(--rule);text-align:center;padding:4px 0 5px;
+  font-family:"Martian Mono";font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+}
+.week span.on{background:var(--red);border-color:var(--red);color:#FBF6EA}
+.week span b{display:block;font-family:"Big Shoulders Display";font-size:15px;color:var(--ink);letter-spacing:0}
+.week span.on b{color:#FBF6EA}
+.numeral small{font-family:"Be Vietnam Pro";font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:block;margin-top:6px}
+.lunar{
+  display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--rule);
+  padding:7px 0;margin-top:12px;font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+}
+.perf{height:1px;margin:12px -22px 0;background:repeating-linear-gradient(90deg,var(--rule) 0 5px,transparent 5px 10px)}
+.page__body{display:grid;grid-template-columns:1fr auto;gap:14px;padding-top:13px;align-items:end}
+.page__body b{display:block;font-size:15px;margin-bottom:3px}
+.page__body span{font-size:12px;color:var(--dim);line-height:1.5}
+.tear{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);border:1px dashed var(--red);padding:6px 8px;text-align:center}
+
+/* rows */
+.rows{margin-top:26px;border-top:1px solid var(--rule)}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--rule)}
+.row time{font-family:"Martian Mono";font-size:11px;color:var(--red);letter-spacing:.04em}
+.row b{font-size:14px;font-weight:500}
+.row span{font-family:"Martian Mono";font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+
+/* system */
+.sys{max-width:1120px;margin:28px auto 0;padding:28px 40px 80px;border-top:1px solid var(--rule)}
+.sys .h{font-family:"Martian Mono";font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--rule);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#1D1A16;background:rgba(255,255,255,.72);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--ink)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--red)}
+.toggle{border:1px solid var(--ink);background:transparent;color:var(--ink);padding:8px 14px;cursor:pointer;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="page-mark" aria-hidden="true"></span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Hôm nay</a>
+      <a href="#">Gửi</a>
+      <a href="#">Tài khoản</a>
+      <a href="#">Bảng giá</a>
+    </nav>
+    <span class="today">THỨ BA · 11.11</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Mỗi liên kết là một tờ lịch</p>
+      <h1>Gửi hôm nay,<br>nhận tới <em>ngày hết</em>.</h1>
+      <p class="lede">Liên kết có hạn — và hạn đó là một ngày cụ thể, không phải một con số trừu tượng. Xem còn bao nhiêu tờ, gia hạn khi cần, hoặc để nó tự rơi.</p>
+      <div class="actions">
+        <a class="btn" href="#">Gửi tệp</a>
+        <a class="ghost" href="#">Cách tính hạn</a>
+      </div>
+
+      <div class="rows">
+        <div class="row"><time>18.11</time><b>anh-goc-bat-dong-san.zip</b><span>2,4 GB · 7 ngày</span></div>
+        <div class="row"><time>14.11</time><b>hop-dong-thue-2026.pdf</b><span>1,8 MB · 3 ngày</span></div>
+        <div class="row"><time>11.11</time><b>ban-ve-hien-trang.dwg</b><span>48,2 MB · hôm nay</span></div>
+      </div>
+    </div>
+
+    <div class="bloc">
+      <div class="stack" aria-hidden="true"></div>
+      <div class="stack stack--2" aria-hidden="true"></div>
+      <div class="page">
+        <div class="hanger" aria-hidden="true"></div>
+        <div class="page__in">
+          <div class="page__top">
+            <div class="month">Tháng 11<b>2026</b></div>
+            <div>
+              <div class="numeral">07<small>ngày còn lại</small></div>
+            </div>
+          </div>
+          <div class="week" aria-hidden="true">
+            <span>T2<b>05</b></span>
+            <span>T3<b>06</b></span>
+            <span class="on">T4<b>07</b></span>
+            <span>T5<b>08</b></span>
+            <span>T6<b>09</b></span>
+            <span>T7<b>10</b></span>
+            <span>CN<b>11</b></span>
+          </div>
+          <div class="lunar">
+            <span>Âm lịch: 23/9</span>
+            <span>Thứ ba</span>
+          </div>
+          <div class="perf" aria-hidden="true"></div>
+          <div class="page__body">
+            <div>
+              <b>anh-goc-bat-dong-san.zip</b>
+              <span>2,4 GB · 5 phần · quickshare.vn/d/8F2KQ7</span>
+            </div>
+            <span class="tear">Hết hạn<br>18.11</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Lịch bloc</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#F4EFE3"><i>paper</i></span>
+        <span class="chip" style="background:#C4242B"><i>red</i></span>
+        <span class="chip" style="background:#1D1A16"><i>ink</i></span>
+        <span class="chip" style="background:#D6CCB7"><i>rule</i></span>
+        <span class="chip" style="background:#EDE6D5"><i>paper-2</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Hai màu in. Đỏ = <b>ngày &amp; hạn</b>, không bao giờ là nền.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Big Shoulders Display';font-size:26px;font-weight:800;text-transform:uppercase;color:var(--ink)">Big Shoulders 800 — ngày</p>
+      <p class="spec" style="font-size:14px;color:var(--ink)">Be Vietnam Pro — câu</p>
+      <p class="spec">Số ngày rất lớn, mọi thứ khác nhỏ đi để nhường chỗ.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Một tệp = một tờ; không tờ nào là trang trí.</p>
+      <p class="rule">Gáy lịch (lỗ, đường xé) là cấu trúc, không phải hoạ tiết.</p>
+      <p class="rule">Xé chỉ một lần: lúc hết hạn.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Sáng: tờ giấy trên tường, nắng ban mai.</p>
+      <p class="spec">Tối: tờ lịch buổi tối — mực sáng, đỏ giữ.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

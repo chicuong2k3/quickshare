@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Bàn trộn — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --studio:#1E2126; --strip:#282C32; --strip-2:#22262B; --edge:#101317;
+  --legend:#E7EAED; --dim:#8B939B; --rule:#343A41;
+  --sig:#4FB47A; --clip:#C24A42; --cue:#D9A93F; --fader:#5A626B;
+}
+html[data-theme="light"]{
+  --studio:#D6D9DD; --strip:#E3E6E9; --strip-2:#CDD1D5; --edge:#A9AEB3;
+  --legend:#1B1F23; --dim:#5C646B; --rule:#B7BCC1;
+  --sig:#2E8054; --clip:#A63A33; --cue:#A87A18; --fader:#7B838B;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--studio);color:var(--legend);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* top */
+.top{border-bottom:1px solid var(--rule);background:var(--strip-2)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:54px}
+.brand{display:flex;align-items:center;gap:11px}
+.led{width:22px;height:22px;border:1px solid var(--rule);display:grid;place-items:center;position:relative}
+.led::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--sig);box-shadow:0 0 0 2px color-mix(in srgb, var(--sig) 25%, transparent)}
+.brand b{font-size:12px;letter-spacing:.24em;text-transform:uppercase;font-weight:600}
+nav{display:flex;gap:22px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--legend);border-bottom:1px solid var(--sig);padding-bottom:3px}
+.temp{font-family:"Martian Mono";font-size:9px;letter-spacing:.1em;color:var(--dim)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:.84fr 1.16fr;gap:40px;padding:40px 0 30px;align-items:start}
+.kick{font-family:"Martian Mono";font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--sig);margin:0 0 14px}
+h1{margin:0 0 14px;font-size:42px;line-height:1.05;letter-spacing:-.02em;font-weight:500;max-width:12ch}
+h1 b{font-weight:700}
+p.lede{margin:0 0 22px;max-width:40ch;color:var(--dim);font-size:14.5px;line-height:1.62;font-family:"Archivo"}
+.actions{display:flex;gap:10px;align-items:center}
+.btn{background:var(--sig);color:#0F1418;padding:11px 20px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+.btn:hover{background:var(--legend);color:#0F1418}
+.ghost{border:1px solid var(--rule);color:var(--dim);padding:10px 14px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+.ghost:hover{color:var(--legend)}
+.readouts{display:flex;gap:18px;margin-top:24px;border-top:1px solid var(--rule);padding-top:12px}
+.readouts div{flex:1}
+.readouts b{display:block;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.readouts span{font-family:"Martian Mono";font-size:13px;color:var(--legend)}
+
+/* console */
+.console{background:var(--strip-2);border:1px solid var(--edge);padding:14px}
+.console__head{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.console__head b{font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+.console__head span{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;color:var(--dim)}
+.strips{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);margin-top:12px}
+.strip{background:var(--strip);padding:10px 10px 12px;position:relative}
+.strip__no{font-family:"Martian Mono";font-size:8.5px;color:var(--dim);letter-spacing:.08em}
+.strip__name{font-family:"Martian Mono";font-size:9px;color:var(--legend);margin-top:2px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strip__size{font-family:"Martian Mono";font-size:8px;color:var(--dim);margin-top:1px}
+
+/* VU */
+.vu{margin:10px 0 8px;position:relative}
+.vu svg{display:block;width:100%;height:auto}
+.strip__lamp{position:absolute;right:9px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--sig);box-shadow:0 0 0 2px color-mix(in srgb, var(--sig) 22%, transparent)}
+.strip--clip .strip__lamp{background:var(--clip);box-shadow:0 0 0 2px color-mix(in srgb, var(--clip) 22%, transparent)}
+.strip--cue .strip__lamp{background:var(--cue);box-shadow:0 0 0 2px color-mix(in srgb, var(--cue) 22%, transparent)}
+
+/* fader */
+.fader{display:flex;align-items:flex-end;gap:7px;margin-top:8px}
+.fader__track{position:relative;flex:1;height:86px;background:var(--edge);border:1px solid #0A0D0F;overflow:hidden}
+.fader__fill{position:absolute;left:0;right:0;bottom:0;background:color-mix(in srgb, var(--sig) 60%, transparent)}
+.fader__cap{
+  position:absolute;left:-3px;right:-3px;height:9px;background:linear-gradient(180deg,#B9C0C7,var(--fader));
+  border:1px solid var(--edge);box-shadow:0 1px 0 rgba(255,255,255,.22) inset;
+}
+.fader__scale{display:flex;flex-direction:column;justify-content:space-between;height:86px;font-family:"Martian Mono";font-size:6.5px;color:var(--dim)}
+.strip__btns{display:flex;gap:4px;margin-top:8px}
+.strip__btns i{
+  flex:1;height:15px;border:1px solid var(--edge);background:var(--strip-2);
+  font-family:"Martian Mono";font-size:6px;font-style:normal;letter-spacing:.08em;
+  display:grid;place-items:center;color:var(--dim);
+}
+.strip__btns i.on{background:color-mix(in srgb, var(--sig) 18%, transparent);color:var(--sig);border-color:var(--sig)}
+.strip__readout{
+  margin-top:7px;background:var(--edge);border:1px solid #0A0D0F;
+  font-family:"Martian Mono";font-size:8px;color:var(--legend);padding:4px 5px;
+  display:flex;justify-content:space-between;
+}
+
+/* master */
+.master{display:grid;grid-template-columns:1fr 132px;gap:1px;background:var(--rule);margin-top:12px}
+.master__main{background:var(--strip);padding:11px}
+.log{display:grid;grid-template-columns:52px 1fr auto;gap:8px;font-family:"Martian Mono";font-size:8px;color:var(--dim);padding:3px 0;border-bottom:1px dotted var(--rule)}
+.log:last-child{border-bottom:0}
+.log b{color:var(--legend);font-weight:400}
+.master__meter{background:var(--strip);padding:10px;display:flex;gap:6px;align-items:flex-end;justify-content:center}
+.meter{width:14px;height:96px;background:var(--edge);position:relative;display:flex;flex-direction:column-reverse;gap:1px;padding:1px}
+.meter i{flex:1;background:var(--rule);display:block}
+.meter i.lit{background:var(--sig)}
+.meter i.warm{background:var(--cue)}
+.meter i.hot{background:var(--clip)}
+.meter__lbl{font-family:"Martian Mono";font-size:6.5px;color:var(--dim);text-align:center;margin-top:4px}
+
+/* system */
+.sys{max-width:1120px;margin:26px auto 0;padding:26px 40px 80px;border-top:1px solid var(--rule)}
+.sys .h{font-family:"Martian Mono";font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--sig);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--rule);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#E7EAED;background:rgba(0,0,0,.55);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--legend)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--sig)}
+.toggle{border:1px solid var(--legend);background:transparent;color:var(--legend);padding:8px 14px;cursor:pointer;font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="led" aria-hidden="true"></span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">P2P</a>
+      <a href="#">Gửi</a>
+      <a href="#">Trạng thái</a>
+      <a href="#">Tài khoản</a>
+    </nav>
+    <span class="temp">PEERS 2 · 38 MB/S</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Truyền trực tiếp · có đồng hồ</p>
+      <h1>Không qua lưu trữ. <b>Chỉ một tín hiệu.</b></h1>
+      <p class="lede">P2P: dữ liệu đi thẳng từ máy bạn tới máy người nhận. Bạn thấy tín hiệu, số peer, tốc độ và lúc nó tụt — như một bàn trộn, không như một trang web.</p>
+      <div class="actions">
+        <a class="btn" href="#">Mở kênh</a>
+        <a class="ghost" href="#">Nhập mã</a>
+      </div>
+
+      <div class="readouts">
+        <div><b>Peer</b><span>2 / 3</span></div>
+        <div><b>Tốc độ</b><span>38,4 MB/s</span></div>
+        <div><b>Đã đi</b><span>1,4 / 2,4 GB</span></div>
+      </div>
+    </div>
+
+    <div class="console">
+      <div class="console__head">
+        <b>Kênh 8F2K</b>
+        <span>LIVE · 00:01:42</span>
+      </div>
+
+      <div class="strips">
+        <div class="strip">
+          <span class="strip__lamp"></span>
+          <div class="strip__no">CH 01</div>
+          <div class="strip__name">anh-goc.zip</div>
+          <div class="strip__size">2,4 GB · 3/5</div>
+          <div class="vu">
+            <svg viewBox="0 0 120 54" role="img" aria-label="Mức tín hiệu 72 phần trăm">
+              <path d="M8 46 A 52 52 0 0 1 112 46" fill="none" stroke="var(--rule)" stroke-width="7"/>
+              <path d="M8 46 A 52 52 0 0 1 112 46" fill="none" stroke="#4FB47A" stroke-width="7" stroke-dasharray="118 200"/>
+              <g stroke="#8B939B" stroke-width="1">
+                <line x1="12" y1="42" x2="17" y2="39"/><line x1="30" y1="24" x2="34" y2="28"/>
+                <line x1="60" y1="14" x2="60" y2="19"/><line x1="90" y1="24" x2="86" y2="28"/>
+                <line x1="108" y1="42" x2="103" y2="39"/>
+              </g>
+              <line x1="60" y1="46" x2="93" y2="23" stroke="#E7EAED" stroke-width="1.6"/>
+            </svg>
+          </div>
+          <div class="fader">
+            <div class="fader__track">
+              <div class="fader__fill" style="height:72%"></div>
+              <div class="fader__cap" style="bottom:calc(72% - 4px)"></div>
+            </div>
+            <div class="fader__scale"><span>0</span><span>-12</span><span>-24</span><span>-48</span></div>
+          </div>
+          <div class="strip__btns"><i class="on">ON</i><i>MUTE</i></div>
+          <div class="strip__readout"><span>38,4</span><span>MB/s</span></div>
+        </div>
+
+        <div class="strip strip--cue">
+          <span class="strip__lamp"></span>
+          <div class="strip__no">CH 02</div>
+          <div class="strip__name">ban-ve.pdf</div>
+          <div class="strip__size">48,2 MB · 1/1</div>
+          <div class="vu">
+            <svg viewBox="0 0 120 54" role="img" aria-label="Mức tín hiệu 34 phần trăm">
+              <path d="M8 46 A 52 52 0 0 1 112 46" fill="none" stroke="var(--rule)" stroke-width="7"/>
+              <path d="M8 46 A 52 52 0 0 1 112 46" fill="none" stroke="#D9A93F" stroke-width="7" stroke-dasharray="56 200"/>
+              <line x1="60" y1="46" x2="76" y2="31" stroke="#E7EAED" stroke-width="1.6"/>
+            </svg>
+          </div>
+          <div class="fader">
+            <div class="fader__track">
+              <div class="fader__fill" style="height:34%"></div>
+              <div class="fader__cap" style="bottom:calc(34% - 4px)"></div>
+            </div>
+            <div class="fader__scale"><span>0</span><span>-12</span><span>-24</span><span>-48</span></div>
+          </div>
+          <div class="strip__btns"><i class="on">ON</i><i>MUTE</i></div>
+          <div class="strip__readout"><span>chờ</span><span>peer</span></div>
+        </div>
+
+        <div class="strip strip--clip">
+          <span class="strip__lamp"></span>
+          <div class="strip__no">CH 03</div>
+          <div class="strip__name">giao-dich.dng</div>
+          <div class="strip__size">184 MB · lỗi</div>
+          <div class="vu">
+            <svg viewBox="0 0 120 54" role="img" aria-label="Mức tín hiệu 0 phần trăm">
+              <path d="M8 46 A 52 52 0 0 1 112 46" fill="none" stroke="var(--rule)" stroke-width="7"/>
+              <line x1="60" y1="46" x2="60" y2="20" stroke="#C24A42" stroke-width="1.6" transform="rotate(-38 60 46)"/>
+            </svg>
+          </div>
+          <div class="fader">
+            <div class="fader__track">
+              <div class="fader__fill" style="height:8%;background:color-mix(in srgb, var(--clip) 60%, transparent)"></div>
+              <div class="fader__cap" style="bottom:calc(8% - 4px)"></div>
+            </div>
+            <div class="fader__scale"><span>0</span><span>-12</span><span>-24</span><span>-48</span></div>
+          </div>
+          <div class="strip__btns"><i>ON</i><i class="on">RETRY</i></div>
+          <div class="strip__readout"><span>peer rớt</span><span>0</span></div>
+        </div>
+      </div>
+
+      <div class="master">
+        <div class="master__main">
+          <div class="log"><time>14:20:02</time><b>kênh mở</b><span>2 peer</span></div>
+          <div class="log"><time>14:20:14</time><b>CH01 · phần 3 xong</b><span>38,4</span></div>
+          <div class="log"><time>14:21:06</time><b>CH03 · peer rớt</b><span>retry</span></div>
+          <div class="log"><time>14:21:44</time><b>CH01 · phần 4 đang đi</b><span>61%</span></div>
+        </div>
+        <div class="master__meter">
+          <div>
+            <div class="meter">
+              <i class="lit"></i><i class="lit"></i><i class="lit"></i><i class="lit"></i>
+              <i class="warm"></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="meter__lbl">L</div>
+          </div>
+          <div>
+            <div class="meter">
+              <i class="lit"></i><i class="lit"></i><i class="lit"></i>
+              <i class="warm"></i><i class="warm"></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="meter__lbl">R</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Bàn trộn</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#1E2126"><i>studio</i></span>
+        <span class="chip" style="background:#282C32"><i>strip</i></span>
+        <span class="chip" style="background:#4FB47A"><i>signal</i></span>
+        <span class="chip" style="background:#D9A93F"><i>cue</i></span>
+        <span class="chip" style="background:#C24A42"><i>clip</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Đèn chỉ là <b>tín hiệu</b>: xanh chạy, vàng chờ, đỏ rớt.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-size:15px;font-weight:600;color:var(--legend)">Archivo 500/700 — câu</p>
+      <p class="spec" style="font-family:'Martian Mono';font-size:11px;color:var(--legend)">Martian Mono — số đo</p>
+      <p class="spec">Chữ nhỏ, đều, im lặng. Thiết bị mới là thứ to.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Kênh là <i>dọc</i>: mỗi dòng dữ liệu một dải, một fader, một đèn.</p>
+      <p class="rule">Kim VU có quán tính, không nhảy tức thì.</p>
+      <p class="rule">Không bóng mờ; độ sâu là rãnh khoét 1px.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Tối: phòng thu — trạng thái tự nhiên.</p>
+      <p class="spec">Sáng: phòng thu ban ngày, nhôm xước.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>
