@@ -308,6 +308,10 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
+- **Home is the first Persuade surface built in this world.** Hero states the offer in condensed
+  capitals with one amber action, the thesis object is a trip on a board, the Cloud-send / P2P
+  comparison is a timetable, features are three columns on one panel and the three steps are numbered
+  flap rows. Its old pixel-art icons and floating cards were removed, not restyled.
 - **The site chrome now carries this world**: `MainLayout` nav and footer are a flap strip and its
   seam, so every page shares one instrument. Page grounds were deliberately left alone — an
   unmigrated body keeps its own paper so its text keeps its contrast. `/pricing` (`Pricing.razor` + `.razor.css`), `/send`
@@ -317,6 +321,8 @@ Recorded so the next contributor does not mistake intention for implementation.
   are still HyperCard/DAUB. The `/account` hub shell is now board material too (`Account.razor.css`
   reaches `[data-slot="card"]` through `::deep`), but its cards were **not** individually art-directed:
   they inherit colour, type, seams and control shapes only.
+- **Home's proof numbers read `0 deliveries shared` in dev** because the in-memory database is empty;
+  the strip is real data, not a mock.
 - **`/account` was never viewed signed in.** Dev has no seeded session, so the hub's new shell is
   guarded only by tests (`Account*`, `PageRenderingTests` — 52 passing), not by a screenshot.
 - **`/d/{code}` was verified only in its not-found phase.** The dev run has no object store, so a real
