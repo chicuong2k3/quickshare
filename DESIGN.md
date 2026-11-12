@@ -308,11 +308,17 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
-- **Five surfaces carry this world in the app**: `/pricing` (`Pricing.razor` + `.razor.css`), `/send`
+- **The site chrome now carries this world**: `MainLayout` nav and footer are a flap strip and its
+  seam, so every page shares one instrument. Page grounds were deliberately left alone — an
+  unmigrated body keeps its own paper so its text keeps its contrast. `/pricing` (`Pricing.razor` + `.razor.css`), `/send`
   (`Upload.razor` + a board layer appended to `.razor.css`), `/d/{code}` (`Download.razor` + the same
   kind of appended layer), `/login` (`Login.razor` + the same kind of layer) and the `/account` usage
   block (`AccountUsage.razor` + `.razor.css`). Home, `/account`'s other cards and the rest of the shell
-  are still HyperCard/DAUB.
+  are still HyperCard/DAUB. The `/account` hub shell is now board material too (`Account.razor.css`
+  reaches `[data-slot="card"]` through `::deep`), but its cards were **not** individually art-directed:
+  they inherit colour, type, seams and control shapes only.
+- **`/account` was never viewed signed in.** Dev has no seeded session, so the hub's new shell is
+  guarded only by tests (`Account*`, `PageRenderingTests` — 52 passing), not by a screenshot.
 - **`/d/{code}` was verified only in its not-found phase.** The dev run has no object store, so a real
   delivery could not be rendered; `DownloadNoScriptTests` (which the no-JS contract depends on) passes,
   but the ready/downloading/verified phases were not eyeballed in-app.

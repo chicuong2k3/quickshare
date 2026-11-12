@@ -10,6 +10,8 @@
 
 <PageWrapper id="account-app" Variant="PageVariant.Account">
 
+<div class="account-hub">
+
     <AccountTabs Current="@RoutePaths.Account" />
 
     @* Onboarding checklist (issue #129), dismissible. *@
@@ -46,6 +48,8 @@
                     onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
         </div>
     </Card>
+
+</div>
 
 </PageWrapper>
 

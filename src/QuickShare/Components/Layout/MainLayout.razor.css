@@ -291,3 +291,199 @@
         gap: var(--db-space-3);
     }
 }
+
+/* ═══ Board chrome (DESIGN.md — "Bảng chuyến") ══════════════════════
+   One instrument for the whole site: the menu bar is a flap strip and the
+   footer is its seam. Page grounds stay where they are — an unmigrated
+   surface keeps its own paper, a migrated one paints its own board — so
+   this layer never changes a body's contrast. */
+
+.layout-navbar,
+.layout-footer {
+    --b-panel: #1d2125;
+    --b-flap: #2a2f35;
+    --b-slot: #0e1113;
+    --b-ink: #e9ecee;
+    --b-dim: #8b939b;
+    --b-hair: #31373e;
+    --b-amber: #e0a03c;
+}
+
+html[data-theme="light"] .layout-navbar,
+html[data-theme="light"] .layout-footer {
+    --b-panel: #e2e5e7;
+    --b-flap: #cfd3d6;
+    --b-slot: #f1f3f4;
+    --b-ink: #171a1d;
+    --b-dim: #5c6468;
+    --b-hair: #b3b8bc;
+    --b-amber: #a96c10;
+}
+
+/* ── menu bar ── */
+.layout-root .layout-navbar {
+    height: 52px;
+    background: var(--b-flap);
+    background-image: none;
+    border-bottom: 1px solid var(--b-hair);
+    color: var(--b-ink);
+    padding: 0 1rem;
+}
+
+.layout-root .layout-logo {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-ink);
+    display: grid;
+    place-items: center;
+    margin-right: 0.5rem;
+}
+.layout-root .layout-logo svg { width: 13px; height: 13px; }
+
+.layout-root .layout-brand-word {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+}
+.layout-root .layout-brand-cloud { color: var(--b-amber); }
+.layout-root .layout-brand-path {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.45rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.layout-root .layout-nav-menu__item {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.52rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid transparent;
+    text-decoration: none;
+}
+.layout-root .layout-nav-menu__item:hover { color: var(--b-ink); }
+.layout-root .layout-nav-menu__item--active {
+    color: var(--b-ink);
+    background: transparent;
+    box-shadow: none;
+    border-bottom-color: var(--b-amber);
+}
+
+/* actions: hairline squares, no pills */
+.layout-root .layout-navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.layout-root ::deep .layout-command-trigger,
+.layout-root ::deep .layout-voice-trigger,
+.layout-root ::deep .layout-theme-toggle,
+.layout-root ::deep .layout-bell,
+.layout-root ::deep .layout-avatar-btn {
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: transparent;
+    color: var(--b-dim);
+    box-shadow: none;
+    height: 30px;
+    min-width: 30px;
+}
+.layout-root ::deep .layout-command-trigger:hover,
+.layout-root ::deep .layout-voice-trigger:hover,
+.layout-root ::deep .layout-theme-toggle:hover,
+.layout-root ::deep .layout-bell:hover { color: var(--b-ink); border-color: var(--b-dim); }
+
+.layout-root .layout-command-kbd {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.45rem;
+    letter-spacing: 0.08em;
+    color: var(--b-dim);
+}
+
+.layout-root ::deep .layout-lang-select {
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-ink);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.4rem;
+    height: 30px;
+}
+
+/* sign-in is the bar's one action */
+.layout-root ::deep .layout-navbar .btn-primary,
+.layout-root ::deep .layout-signin {
+    background: var(--b-amber);
+    border: 1px solid var(--b-amber);
+    border-radius: 0;
+    color: #16181a;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.62rem;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+/* ── footer: the seam at the bottom of the board ── */
+.layout-root .layout-footer {
+    background: var(--b-panel);
+    border-top: 1px solid var(--b-hair);
+    color: var(--b-dim);
+    margin-top: auto;
+    padding: 1.5rem 1rem 1.25rem;
+}
+.layout-root .layout-footer__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.layout-root .layout-footer__mark {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+}
+.layout-root .layout-footer__rule,
+.layout-root .miura-rule {
+    border-top: 1px solid var(--b-hair);
+    background: none;
+    background-image: none;
+}
+.layout-root .layout-footer__rule .miura-spec,
+.layout-root .layout-footer .miura-spec {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.45rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+.layout-root .layout-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+}
+.layout-root .layout-footer__links a {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    text-decoration: none;
+}
+.layout-root .layout-footer__links a:hover { color: var(--b-ink); }

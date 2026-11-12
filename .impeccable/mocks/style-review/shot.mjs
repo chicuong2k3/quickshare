@@ -8,7 +8,7 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import os from "node:os";
 
-const [file, out, w = "1440", h = "900", scale = "1", theme] = process.argv.slice(2);
+const [file, out, w = "1440", h = "900", scale = "1", theme, hide] = process.argv.slice(2);
 if (!file || !out) {
   console.error("usage: node shot.mjs <file.html> <out.png> <width> <height> [scale] [theme]");
   process.exit(1);
@@ -75,6 +75,12 @@ try {
   const target = /^https?:\/\//.test(file) ? file : pathToFileURL(resolve(file)).href;
   await send("Page.navigate", { url: target });
   await sleep(2200);
+  if (hide) {
+    await send("Runtime.evaluate", {
+      expression: `document.querySelectorAll(${JSON.stringify(hide)}).forEach(function(n){ n.remove(); })`,
+    });
+    await sleep(400);
+  }
   if (theme) {
     await send("Runtime.evaluate", {
       expression: `document.documentElement.dataset.theme = ${JSON.stringify(theme)}`,
