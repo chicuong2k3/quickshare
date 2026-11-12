@@ -33,4 +33,10 @@
   <data name="seo_send_why_3" xml:space="preserve"><value>دعم الروابط السحابية والنقل المباشر P2P.</value></data>
   <data name="seo_send_free_title" xml:space="preserve"><value>مجاني للبدء</value></data>
   <data name="seo_send_free_body" xml:space="preserve"><value>أرسل الملفات مجاناً أو قم بالترقية إلى خطط Pro و Studio للأحجام الأكبر وإدارة الفرق.</value></data>
+  <data name="pricing_compare_yes" xml:space="preserve">
+    <value>نعم</value>
+  </data>
+  <data name="pricing_compare_no" xml:space="preserve">
+    <value>لا</value>
+  </data>
 </root>

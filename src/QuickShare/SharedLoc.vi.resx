@@ -3539,4 +3539,10 @@
   <data name="dl_hls_quality_label" xml:space="preserve">
     <value>Chất lượng phát</value>
   </data>
+  <data name="pricing_compare_yes" xml:space="preserve">
+    <value>có</value>
+  </data>
+  <data name="pricing_compare_no" xml:space="preserve">
+    <value>không</value>
+  </data>
 </root>

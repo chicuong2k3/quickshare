@@ -3539,4 +3539,10 @@
   <data name="dl_hls_quality_label" xml:space="preserve">
     <value>Stream Quality</value>
   </data>
+  <data name="pricing_compare_yes" xml:space="preserve">
+    <value>yes</value>
+  </data>
+  <data name="pricing_compare_no" xml:space="preserve">
+    <value>no</value>
+  </data>
 </root>

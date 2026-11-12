@@ -33,4 +33,10 @@
   <data name="seo_send_why_3" xml:space="preserve"><value>Envío en la nube o transferencia directa P2P.</value></data>
   <data name="seo_send_free_title" xml:space="preserve"><value>Gratis para empezar</value></data>
   <data name="seo_send_free_body" xml:space="preserve"><value>Envía archivos gratis al instante o actualiza a Pro y Studio para mayor capacidad y controles de equipo.</value></data>
+  <data name="pricing_compare_yes" xml:space="preserve">
+    <value>sí</value>
+  </data>
+  <data name="pricing_compare_no" xml:space="preserve">
+    <value>no</value>
+  </data>
 </root>

@@ -33,4 +33,10 @@
   <data name="seo_send_why_3" xml:space="preserve"><value>クラウド共有と P2P 直接転送の両方に対応。</value></data>
   <data name="seo_send_free_title" xml:space="preserve"><value>無料プランとアップグレード</value></data>
   <data name="seo_send_free_body" xml:space="preserve"><value>無料ですぐに利用可能。Pro や Studio プランでは大容量転送や監査ログが利用できます。</value></data>
+  <data name="pricing_compare_yes" xml:space="preserve">
+    <value>あり</value>
+  </data>
+  <data name="pricing_compare_no" xml:space="preserve">
+    <value>なし</value>
+  </data>
 </root>

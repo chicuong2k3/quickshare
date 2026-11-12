@@ -33,4 +33,10 @@
   <data name="seo_send_why_3" xml:space="preserve"><value>支持云端分享链接与 WebRTC 点对点直传两种模式。</value></data>
   <data name="seo_send_free_title" xml:space="preserve"><value>免费额度与专业版</value></data>
   <data name="seo_send_free_body" xml:space="preserve"><value>免费版即可直接发送文件；升级 Pro 或 Studio 可解锁超大文件、更长有效期及团队管理。</value></data>
+  <data name="pricing_compare_yes" xml:space="preserve">
+    <value>有</value>
+  </data>
+  <data name="pricing_compare_no" xml:space="preserve">
+    <value>无</value>
+  </data>
 </root>
