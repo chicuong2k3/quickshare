@@ -324,9 +324,10 @@ Recorded so the next contributor does not mistake intention for implementation.
   (`Upload.razor` + a board layer appended to `.razor.css`), `/d/{code}` (`Download.razor` + the same
   kind of appended layer), `/login` (`Login.razor` + the same kind of layer) and the `/account` usage
   block (`AccountUsage.razor` + `.razor.css`). Home, `/account`'s other cards and the rest of the shell
-  are still HyperCard/DAUB. The `/account` hub shell is now board material too (`Account.razor.css`
-  reaches `[data-slot="card"]` through `::deep`), but its cards were **not** individually art-directed:
-  they inherit colour, type, seams and control shapes only.
+  are still HyperCard/DAUB. The `/account` hub is now board material throughout (`Account.razor.css`
+  reaches `[data-slot="card"]` and the utilities its blocks lean on — `.rounded-full`, `.border-b`,
+  `.bg-muted`, `[role="switch"]`, `.text-destructive` — through `::deep`). The blocks were not
+  redesigned one by one: they inherit colour, type, seams, control shapes and the square rule.
 - **Home's proof numbers read `0 deliveries shared` in dev** because the in-memory database is empty;
   the strip is real data, not a mock.
 - **`/account` was never viewed signed in.** Dev has no seeded session, so the hub's new shell is
