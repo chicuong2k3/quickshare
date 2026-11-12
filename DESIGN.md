@@ -308,10 +308,11 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
-- **Four surfaces carry this world in the app**: `/pricing` (`Pricing.razor` + `.razor.css`), `/send`
+- **Five surfaces carry this world in the app**: `/pricing` (`Pricing.razor` + `.razor.css`), `/send`
   (`Upload.razor` + a board layer appended to `.razor.css`), `/d/{code}` (`Download.razor` + the same
-  kind of appended layer) and the `/account` usage block (`AccountUsage.razor` + `.razor.css`). Home,
-  `/account`'s other cards, login and the rest of the shell are still HyperCard/DAUB.
+  kind of appended layer), `/login` (`Login.razor` + the same kind of layer) and the `/account` usage
+  block (`AccountUsage.razor` + `.razor.css`). Home, `/account`'s other cards and the rest of the shell
+  are still HyperCard/DAUB.
 - **`/d/{code}` was verified only in its not-found phase.** The dev run has no object store, so a real
   delivery could not be rendered; `DownloadNoScriptTests` (which the no-JS contract depends on) passes,
   but the ready/downloading/verified phases were not eyeballed in-app.

@@ -129,3 +129,143 @@
         padding-inline: var(--db-space-5);
     }
 }
+
+/* ═══ Board layer (DESIGN.md — "Bảng chuyến") ═══════════════════════
+   Material only: the sign-in providers, their order and their hooks
+   stay exactly where they were. */
+
+.login-board {
+    --b-board: #15181b;
+    --b-panel: #1d2125;
+    --b-flap: #2a2f35;
+    --b-slot: #0e1113;
+    --b-ink: #e9ecee;
+    --b-dim: #8b939b;
+    --b-hair: #31373e;
+    --b-amber: #e0a03c;
+
+    background: var(--b-board);
+    color: var(--b-ink);
+    padding: clamp(1.5rem, 5vw, 3.5rem) 1rem;
+    font-family: "Archivo", system-ui, sans-serif;
+}
+
+html[data-theme="light"] .login-board {
+    --b-board: #d3d6d9;
+    --b-panel: #e2e5e7;
+    --b-flap: #cfd3d6;
+    --b-slot: #f1f3f4;
+    --b-ink: #171a1d;
+    --b-dim: #5c6468;
+    --b-hair: #b3b8bc;
+    --b-amber: #a96c10;
+}
+
+.login-board .login-shell { max-width: 26rem; margin-inline: auto; }
+.login-board ::deep .login-body { background: transparent; }
+
+.login-board ::deep .login-card {
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--b-ink);
+}
+
+.login-board ::deep .login-header { align-items: flex-start; }
+
+.login-board ::deep .login-mark {
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-ink);
+    width: 2.75rem;
+    height: 2.75rem;
+}
+
+.login-board #login-title,
+.login-board h1 {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--b-ink);
+}
+
+.login-board .login-subtitle {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.login-board ::deep .login-provider-list { display: grid; gap: 0.5rem; }
+
+/* one amber control: the front door. The rest are hairline seams. */
+.login-board ::deep .login-provider {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    border-radius: 0;
+    border: 1px solid var(--b-hair);
+    background: transparent;
+    color: var(--b-ink);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    padding: 0.65rem 0.8rem;
+    box-shadow: none;
+}
+.login-board ::deep .login-provider:hover { border-color: var(--b-dim); background: var(--b-flap); }
+.login-board ::deep .login-provider--google,
+.login-board ::deep .login-provider--google:hover {
+    background: var(--b-amber);
+    border-color: var(--b-amber);
+    color: #16181a;
+    font-weight: 700;
+}
+
+.login-board .login-provider__icon { display: inline-flex; width: 1.1rem; height: 1.1rem; }
+
+.login-board ::deep .login-alt { margin-top: 1rem; display: grid; gap: 0.5rem; }
+
+.login-board .workspace-label,
+.login-board label {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.login-board ::deep input {
+    border-radius: 0 !important;
+    border: 1px solid var(--b-hair) !important;
+    background: var(--b-slot) !important;
+    color: var(--b-ink) !important;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.7rem;
+}
+.login-board ::deep input:focus { border-color: var(--b-amber) !important; outline: none; }
+
+.login-board ::deep button[data-variant="ghost"],
+.login-board ::deep button[data-variant="outline"],
+.login-board ::deep button[data-variant="secondary"],
+.login-board ::deep button[data-slot="button"] {
+    border-radius: 0;
+    border: 1px solid var(--b-hair);
+    background: transparent;
+    color: var(--b-dim);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.7rem;
+    box-shadow: none;
+}
+.login-board ::deep button[data-slot="button"]:hover { color: var(--b-ink); border-color: var(--b-dim); }
+
+.login-board details summary { color: var(--b-dim); }
