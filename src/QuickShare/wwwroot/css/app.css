@@ -2941,3 +2941,167 @@ html, body {
 .rtl-ready {
     cursor: grab;
 }
+
+/* ═══ Doc pages · board material (DESIGN.md — "Bảng chuyến") ══════════
+   One layer for every reading surface that uses `.legal`: help, terms,
+   privacy, abuse, status, compare, dpa, security, soc2, changelog,
+   roadmap, why-private. Scoped `.legal` rules stay where they are; this
+   block wins the ties and sets the material, while prose keeps a
+   reading type size instead of the board's label size. */
+
+.page .legal {
+    --d-panel: #1d2125;
+    --d-flap: #2a2f35;
+    --d-slot: #0e1113;
+    --d-ink: #e9ecee;
+    --d-body: #ccd5d3;
+    --d-dim: #8b939b;
+    --d-hair: #31373e;
+    --d-amber: #e0a03c;
+    --d-green: #4fa36a;
+    --d-red: #c85a4f;
+
+    background: var(--d-panel);
+    border: 1px solid var(--d-hair);
+    border-radius: 0;
+    color: var(--d-body);
+    padding: clamp(1.1rem, 3vw, 2.25rem);
+    font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.72;
+}
+
+html[data-theme="light"] .page .legal {
+    --d-panel: #e2e5e7;
+    --d-flap: #cfd3d6;
+    --d-slot: #f1f3f4;
+    --d-ink: #171a1d;
+    --d-body: #2b3735;
+    --d-dim: #5c6468;
+    --d-hair: #b3b8bc;
+    --d-amber: #a96c10;
+    --d-green: #2f7a46;
+    --d-red: #a83b31;
+}
+
+.page .legal h1,
+.page .legal h2 {
+    font-family: "Barlow Condensed", "Archivo", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    color: var(--d-ink);
+    margin: 1.6rem 0 0.6rem;
+}
+
+.page .legal h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); margin-top: 0; }
+.page .legal h2 { font-size: clamp(1.15rem, 2.2vw, 1.45rem); padding-bottom: 0.35rem; border-bottom: 1px solid var(--d-hair); }
+.page .legal h3,
+.page .legal h4 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--d-ink);
+    margin: 1.2rem 0 0.35rem;
+}
+
+.page .legal p,
+.page .legal li,
+.page .legal dd,
+.page .legal td {
+    color: var(--d-body);
+}
+
+.page .legal p { margin: 0 0 0.85rem; }
+
+.page .legal a {
+    color: var(--d-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--d-hair);
+    text-underline-offset: 2px;
+}
+.page .legal a:hover { color: var(--d-amber); text-decoration-color: var(--d-amber); }
+
+.page .legal ul,
+.page .legal ol { padding-left: 1.15rem; }
+
+.page .legal li::marker { color: var(--d-dim); }
+
+.page .legal strong,
+.page .legal b { color: var(--d-ink); font-weight: 600; }
+
+.page .legal hr {
+    border: 0;
+    border-top: 1px solid var(--d-hair);
+    margin: 1.4rem 0;
+}
+
+.page .legal code,
+.page .legal pre,
+.page .legal kbd {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    background: var(--d-slot);
+    border: 1px solid var(--d-hair);
+    border-radius: 0;
+    color: var(--d-ink);
+    padding: 0.1rem 0.35rem;
+}
+.page .legal pre { padding: 0.8rem; overflow-x: auto; }
+
+.page .legal table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.9rem 0;
+    font-size: 0.8rem;
+}
+.page .legal th,
+.page .legal td {
+    border: 1px solid var(--d-hair);
+    padding: 0.5rem 0.6rem;
+    text-align: left;
+}
+.page .legal th {
+    background: var(--d-flap);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--d-dim);
+    font-weight: 400;
+}
+
+.page .legal blockquote {
+    margin: 1rem 0;
+    padding: 0.25rem 0 0.25rem 0.9rem;
+    border-left: 2px solid var(--d-amber);
+    color: var(--d-dim);
+}
+
+/* version stamps and small print keep the mono voice */
+.page .legal .legal__version,
+.page .legal small,
+.page .legal time {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.52rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--d-dim);
+}
+
+.page .legal .legal__list { padding-left: 1.1rem; }
+
+/* a status cell is the one place a doc page may carry colour */
+.page .legal td:has(.status-dot) { color: var(--d-green); }
+.page .legal .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 0.4rem;
+    background: var(--d-green);
+    border-radius: 0;
+    vertical-align: middle;
+}
+.page .legal td:has(.status-dot--down) { color: var(--d-red); }
+.page .legal .status-dot--down { background: var(--d-red); }

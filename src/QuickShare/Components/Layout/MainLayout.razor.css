@@ -465,6 +465,12 @@ html[data-theme="light"] .layout-footer {
     background: none;
     background-image: none;
 }
+/* the leader was a dotted gradient; the board draws one seam */
+.layout-root .miura-rule::before,
+.layout-root .layout-footer__rule::before {
+    background: none;
+    background-image: none;
+}
 .layout-root .layout-footer__rule .miura-spec,
 .layout-root .layout-footer .miura-spec {
     font-family: "Martian Mono", monospace;

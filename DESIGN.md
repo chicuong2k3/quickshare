@@ -308,6 +308,12 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
+- **All twelve reading pages share one layer.** Every page that uses `.legal` (help, terms, privacy,
+  abuse, status, compare, DPA, security, SOC 2, changelog, roadmap, why-private) is styled by a single
+  global block in `wwwroot/css/app.css`: a panel, condensed headings with a hairline under h2, body
+  kept at a reading size in soft ink, hairline tables, mono code, and status cells allowed to carry
+  green/red. It is deliberately global — the class spans twelve components, so a scoped stylesheet
+  could not reach them.
 - **Home is the first Persuade surface built in this world.** Hero states the offer in condensed
   capitals with one amber action, the thesis object is a trip on a board, the Cloud-send / P2P
   comparison is a timetable, features are three columns on one panel and the three steps are numbered
