@@ -1,11 +1,214 @@
-.account-usage-bar__fill--ok {
-    background: var(--primary);
+/* ─── Account · kỳ này ─────────────────────────────────────────
+   The usage block as a board readout: numbers in mono, one hairline
+   track with a single marker, a row per fact below. Colours are the
+   board's status colours, not the shell's accent. */
+
+.au {
+    --a-bg: #15181b;
+    --a-panel: #1d2125;
+    --a-flap: #2a2f35;
+    --a-ink: #e9ecee;
+    --a-dim: #8b939b;
+    --a-hair: #31373e;
+    --a-slot: #0e1113;
+    --a-amber: #e0a03c;
+    --a-green: #4fa36a;
+    --a-red: #c85a4f;
+
+    margin-block: 1rem;
+    background: var(--a-bg);
+    color: var(--a-ink);
+    border: 1px solid var(--a-hair);
+    padding: 0.9rem 1rem 0.5rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
 }
 
-.account-usage-bar__fill--warn {
-    background: var(--chart-4);
+html[data-theme="light"] .au {
+    --a-bg: #d3d6d9;
+    --a-panel: #e2e5e7;
+    --a-flap: #cfd3d6;
+    --a-ink: #171a1d;
+    --a-dim: #5c6468;
+    --a-hair: #b3b8bc;
+    --a-slot: #f1f3f4;
+    --a-amber: #a96c10;
+    --a-green: #2f7a46;
+    --a-red: #a83b31;
 }
 
-.account-usage-bar__fill--over {
-    background: var(--destructive);
+.au__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--a-hair);
+}
+
+.au__bar b {
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.au__bar span {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--a-dim);
+}
+
+.au__unlimited {
+    margin: 0.9rem 0;
+    color: var(--a-dim);
+    font-size: 0.9rem;
+}
+
+.au__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 0 0.5rem;
+}
+
+.au__numbers { display: flex; align-items: baseline; gap: 0.4rem; }
+
+.au__used {
+    font-family: "Martian Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
+    letter-spacing: -0.01em;
+}
+
+.au__quota {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--a-dim);
+}
+
+.au__pct {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: var(--a-dim);
+}
+
+.au__track {
+    height: 6px;
+    background: var(--a-slot);
+    border-top: 1px solid var(--a-flap);
+    position: relative;
+}
+
+.au__fill {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    background: var(--a-green);
+}
+
+/* the marker is the head of the fill, not a second colour scale */
+.au__fill::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--a-amber);
+}
+
+.account-usage-bar__fill--warn { background: var(--a-amber); }
+.account-usage-bar__fill--over { background: var(--a-red); }
+
+.au__note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.5rem 0 0.7rem;
+    font-size: 0.8rem;
+    color: var(--a-dim);
+}
+
+.au__saved {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    border-top: 1px solid var(--a-hair);
+    padding: 0.5rem 0;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--a-dim);
+}
+
+.au__sub { border-top: 1px solid var(--a-hair); padding-top: 0.5rem; }
+
+.au__sub h4 {
+    margin: 0 0 0.25rem;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--a-amber);
+    font-weight: 400;
+}
+
+.au__r {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.42rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--a-hair) 55%, transparent);
+}
+
+.au__r:last-child { border-bottom: 0; }
+
+.au__r-k {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.82rem;
+}
+
+.au__r-v {
+    font-family: "Martian Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.55rem;
+    color: var(--a-dim);
+    white-space: nowrap;
+}
+
+.au__cc { font-style: normal; font-family: "Martian Mono", monospace; font-size: 0.5rem; color: var(--a-dim); }
+
+.au :deep(.au__more) {
+    margin-top: 0.5rem;
+    border-radius: 0;
+    border: 1px solid var(--a-hair);
+    background: transparent;
+    color: var(--a-dim);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.6rem;
+}
+
+.au :deep(.au__upgrade) {
+    border-radius: 0;
+    background: var(--a-amber);
+    border: 1px solid var(--a-amber);
+    color: #16181a;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.6rem;
 }

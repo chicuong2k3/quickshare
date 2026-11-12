@@ -69,7 +69,9 @@
 
 <PageTitle>@Loc["upload_title"]</PageTitle>
 
-<PageWrapper Variant="PageVariant.Fill">
+<PageWrapper id="upload-app" Variant="PageVariant.Padded">
+
+<div class="upload-board">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
     <script id="upload-i18n" type="application/json">@RawJson(Strings())</script>
         <div class="container">
@@ -652,6 +654,8 @@
         <AdComponent />
     </div>
         </div>
+</div>
+
 </PageWrapper>
 
 <script src="/js/paste-anywhere.js"></script>

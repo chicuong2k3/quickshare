@@ -524,3 +524,287 @@
     border-color: var(--db-valley, #2563eb);
     color: var(--db-color-text, #111827);
 }
+
+/* ═══ Board layer (DESIGN.md — "Bảng chuyến") ═══════════════════════
+   Material overrides for the /send surface. Layout stays where the
+   legacy rules put it; everything a visitor sees as colour, weight,
+   radius, font or depth comes from the board world. Selectors are
+   prefixed with .upload-board so they out-rank the legacy classes. */
+
+.upload-board {
+    --b-board: #15181b;
+    --b-panel: #1d2125;
+    --b-flap: #2a2f35;
+    --b-flap-2: #31373e;
+    --b-slot: #0e1113;
+    --b-ink: #e9ecee;
+    --b-dim: #8b939b;
+    --b-hair: #31373e;
+    --b-amber: #e0a03c;
+    --b-green: #4fa36a;
+    --b-red: #c85a4f;
+
+    background: var(--b-board);
+    color: var(--b-ink);
+    padding: clamp(1.5rem, 4vw, 3rem) 1rem 4rem;
+    font-family: "Archivo", system-ui, sans-serif;
+}
+
+html[data-theme="light"] .upload-board {
+    --b-board: #d3d6d9;
+    --b-panel: #e2e5e7;
+    --b-flap: #cfd3d6;
+    --b-flap-2: #c3c7cb;
+    --b-slot: #f1f3f4;
+    --b-ink: #171a1d;
+    --b-dim: #5c6468;
+    --b-hair: #b3b8bc;
+    --b-amber: #a96c10;
+    --b-green: #2f7a46;
+    --b-red: #a83b31;
+}
+
+/* ── type ── */
+.upload-board .section { max-width: 880px; margin-inline: auto; }
+
+.upload-board .h1 {
+    font-family: "Barlow Condensed", "Archivo", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 0.95;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+    margin: 0 0 0.6rem;
+}
+
+/* the legacy world painted a yellow slab behind one word; the board sets it in amber instead */
+/* the legacy world painted a yellow slab behind one word; the board sets it in amber instead */
+.upload-board .h1 .gradient,
+.upload-board .gradient,
+.upload-board .h1 > span > .gradient {
+    background: none !important;
+    background-image: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    color: var(--b-amber) !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.upload-board .sub,
+.upload-board .status-p {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.upload-board .status-h1 {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    color: var(--b-ink);
+}
+
+.upload-board label,
+.upload-board .otp-label,
+.upload-board .share-label,
+.upload-board .pw-meter__label {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.upload-board a { color: var(--b-ink); text-decoration-color: var(--b-hair); }
+.upload-board a:hover { color: var(--b-amber); }
+
+/* ── drop target: a slot in the panel, not a dashed page ── */
+.upload-board .dropzone {
+    width: 100%;
+    max-width: 40rem;
+    margin-inline: auto;
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
+    padding: clamp(2rem, 6vw, 3.5rem) 1.5rem;
+    transition: border-color 160ms ease, background 160ms ease;
+}
+.upload-board .dropzone:hover,
+.upload-board .dropzone:focus-visible,
+.upload-board .dropzone.is-dragover {
+    border-color: var(--b-amber);
+    background: color-mix(in srgb, var(--b-amber) 6%, var(--b-slot));
+}
+.upload-board .dropzone-icon {
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-panel);
+    color: var(--b-ink);
+}
+.upload-board .dropzone-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--b-ink);
+}
+.upload-board .dropzone-sub {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+/* ── controls ── */
+.upload-board ::deep button,
+.upload-board .toggle-btn {
+    border-radius: 0;
+    border: 1px solid var(--b-hair);
+    background: transparent;
+    color: var(--b-dim);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.72rem;
+    box-shadow: none;
+}
+.upload-board button:hover { color: var(--b-ink); border-color: var(--b-dim); }
+
+/* one amber control: the thing that commits the send */
+.upload-board #upload-share-btn,
+.upload-board button[type="submit"],
+.upload-board .share-row button {
+    background: var(--b-amber);
+    border-color: var(--b-amber);
+    color: #16181a;
+    font-weight: 700;
+}
+.upload-board #upload-share-btn:hover,
+.upload-board button[type="submit"]:hover,
+.upload-board .share-row button:hover { background: var(--b-ink); border-color: var(--b-ink); color: #16181a; }
+
+.upload-board .toggle-btn--on {
+    color: var(--b-ink);
+    border-color: var(--b-hair);
+    box-shadow: inset 0 -2px 0 var(--b-amber);
+}
+.upload-board .toggle-btn--off { color: var(--b-dim); }
+
+.upload-board ::deep input,
+.upload-board ::deep select,
+.upload-board ::deep textarea {
+    border-radius: 0 !important;
+    border: 1px solid var(--b-hair) !important;
+    background: var(--b-slot) !important;
+    color: var(--b-ink) !important;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    box-shadow: none;
+}
+.upload-board ::deep input::placeholder,
+.upload-board ::deep textarea::placeholder { color: var(--b-dim); }
+.upload-board ::deep input:focus,
+.upload-board ::deep select:focus,
+.upload-board ::deep textarea:focus { border-color: var(--b-amber) !important; outline: none; }
+
+.upload-board .recent-recipient-chip {
+    border-radius: 0;
+    border: 1px solid var(--b-hair);
+    background: var(--b-panel);
+    color: var(--b-dim);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* ── progress: track, green fill, amber head ── */
+.upload-board .progress-track {
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    height: 6px;
+}
+.upload-board .progress-fill {
+    background: var(--b-green);
+    border-radius: 0;
+    position: relative;
+}
+.upload-board .progress-fill::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--b-amber);
+}
+.upload-board .progress-wrap { color: var(--b-dim); }
+
+/* ── panels: share, access rules, password strength, badges ── */
+.upload-board .share-box,
+.upload-board .upload-access,
+.upload-board .upload-access__combine,
+.upload-board .upload-access__locked {
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1rem;
+}
+.upload-board .share-input {
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    color: var(--b-ink);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.68rem;
+}
+.upload-board .badge-encrypt {
+    background: transparent;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    color: var(--b-dim);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.upload-board .upload-access__locked { border-color: var(--b-amber); }
+.upload-board .upload-access__upgrade { color: var(--b-amber); }
+
+.upload-board .pw-meter__bar { background: var(--b-slot); border: 1px solid var(--b-hair); border-radius: 0; height: 4px; }
+.upload-board .pw-meter__fill { border-radius: 0; }
+.upload-board .pw-breach { color: var(--b-red); }
+
+.upload-board .icon-success { color: var(--b-green); }
+.upload-board .icon-error { color: var(--b-red); }
+.upload-board .otp-hint { color: var(--b-dim); }
+
+/* ── the card's own chrome: a flap header, not a striped titlebar ── */
+.upload-board .qs-titlebar {
+    background: var(--b-flap);
+    border-bottom: 1px solid var(--b-hair);
+    border-radius: 0;
+    background-image: none;
+    padding: 0.45rem 0.6rem;
+}
+.upload-board .qs-titlebar__label {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+    background: transparent;
+}
+.upload-board .qs-titlebar__box {
+    background: var(--b-board);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+}

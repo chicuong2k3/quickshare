@@ -49,7 +49,9 @@
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
 <script id="download-i18n" type="application/json">@RawJson(Strings())</script>
 
-<PageWrapper id="download-app" Variant="PageVariant.Centered">
+<PageWrapper id="download-app" Variant="PageVariant.Padded">
+
+<div class="download-board">
     @if (Info is not null)
     {
         <script id="download-info-data" type="application/json">@RawJson(Info)</script>
@@ -938,6 +940,8 @@
     {
         <p class="dl-brand__footer">@brandFooter</p>
     }
+</div>
+
 </PageWrapper>
 
 <script src="/js/comments.js" defer></script>
