@@ -308,6 +308,10 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
+- **`/upgrade` is material-only and unverified by eye.** The checkout panel, condensed headings, mono amber
+  price, hairline rows for the plan's features, square fields and one amber pay button were applied
+  without a screenshot: the route is `[Authorize]`, and temporarily removing the attribute made the page
+  throw for a null user. Only `PageLoadTests` protects it.
 - **The three /tools pages share one shell** (`ToolsLanding.razor` + its `.razor.css`): board panel, condensed
   headline, the paste target as a full-width amber row with keycaps drawn as slots, body at reading size.
   Note the article centres itself in CSS — the `mx-auto` utility it carries is not in the generated
