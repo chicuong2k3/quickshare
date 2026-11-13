@@ -3105,3 +3105,152 @@ html[data-theme="light"] .page .legal {
 }
 .page .legal td:has(.status-dot--down) { color: var(--d-red); }
 .page .legal .status-dot--down { background: var(--d-red); }
+
+/* ═══ Admin · board material (DESIGN.md — "Bảng chuyến") ═════════════
+   The five admin pages share one shell class. Internal tool: the same
+   panel, seam and mono figures, with tables kept dense because they are
+   read as data, not as marketing. */
+
+.admin-board {
+    --a-panel: #1d2125;
+    --a-flap: #2a2f35;
+    --a-slot: #0e1113;
+    --a-ink: #e9ecee;
+    --a-body: #ccd5d3;
+    --a-dim: #8b939b;
+    --a-hair: #31373e;
+    --a-amber: #e0a03c;
+    --a-green: #4fa36a;
+    --a-red: #c85a4f;
+
+    background: #15181b;
+    color: var(--a-ink);
+    padding: clamp(1rem, 2.5vw, 2rem);
+    font-family: "Archivo", system-ui, sans-serif;
+}
+
+html[data-theme="light"] .admin-board {
+    background: #d3d6d9;
+    --a-panel: #e2e5e7;
+    --a-flap: #cfd3d6;
+    --a-slot: #f1f3f4;
+    --a-ink: #171a1d;
+    --a-body: #2b3735;
+    --a-dim: #5c6468;
+    --a-hair: #b3b8bc;
+    --a-amber: #a96c10;
+    --a-green: #2f7a46;
+    --a-red: #a83b31;
+}
+
+.admin-board h1,
+.admin-board h2 {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    color: var(--a-ink);
+}
+.admin-board h1 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); }
+.admin-board h2 { font-size: 1.2rem; }
+.admin-board h3 {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--a-ink);
+}
+
+.admin-board p,
+.admin-board li,
+.admin-board td { color: var(--a-body); }
+.admin-board .text-muted-foreground { color: var(--a-dim); }
+.admin-board .text-destructive { color: var(--a-red) !important; }
+
+.admin-board [data-slot="card"] {
+    background: var(--a-panel);
+    border: 1px solid var(--a-hair);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--a-ink);
+}
+
+/* dense data tables */
+.admin-board table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+}
+.admin-board th,
+.admin-board td {
+    border: 1px solid var(--a-hair);
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    vertical-align: top;
+}
+.admin-board thead th {
+    background: var(--a-flap);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.48rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--a-dim);
+    font-weight: 400;
+}
+.admin-board tbody tr:nth-child(even) { background: color-mix(in srgb, var(--a-flap) 35%, transparent); }
+.admin-board .font-mono,
+.admin-board .tabular-nums {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-board [data-slot="button"] {
+    border-radius: 0;
+    border: 1px solid var(--a-hair);
+    background: transparent;
+    color: var(--a-dim);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.66rem;
+    box-shadow: none;
+}
+.admin-board [data-slot="button"]:hover { color: var(--a-ink); border-color: var(--a-dim); }
+.admin-board [data-slot="button"][data-variant="default"] {
+    background: var(--a-amber);
+    border-color: var(--a-amber);
+    color: #16181a;
+    font-weight: 700;
+}
+
+.admin-board input,
+.admin-board select,
+.admin-board textarea {
+    border-radius: 0 !important;
+    border: 1px solid var(--a-hair) !important;
+    background: var(--a-slot) !important;
+    color: var(--a-ink) !important;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.68rem;
+    box-shadow: none;
+}
+.admin-board input:focus,
+.admin-board select:focus { border-color: var(--a-amber) !important; outline: none; }
+
+.admin-board [role="checkbox"],
+.admin-board [data-slot="checkbox"] {
+    border-radius: 0;
+    border: 1px solid var(--a-hair);
+    background: var(--a-slot);
+}
+.admin-board [data-slot="badge"],
+.admin-board .badge {
+    border-radius: 0;
+    border: 1px solid var(--a-hair);
+    background: transparent;
+    color: var(--a-dim);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.46rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}

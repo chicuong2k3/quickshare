@@ -308,6 +308,10 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
+- **The five admin pages share one layer too** (`analytics`, `flags`, `reports`, `feedback`,
+  `email-suppressions`): `.admin-board` in `app.css` gives them the panel, dense hairline tables with
+  mono headers, square controls, amber primary and red destructive. Unverified by eye — the routes
+  redirect anonymous callers to sign-in.
 - **`/upgrade` is material-only and unverified by eye.** The checkout panel, condensed headings, mono amber
   price, hairline rows for the plan's features, square fields and one amber pay button were applied
   without a screenshot: the route is `[Authorize]`, and temporarily removing the attribute made the page
