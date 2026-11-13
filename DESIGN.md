@@ -308,6 +308,10 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
+- **P2P is the instrument's live channel.** `/p2p/send` and `/p2p/d/{code}` carry the board material
+  (drop slot, pairing cards side by side, flap progress, one amber action per state, a rotating square
+  corner instead of a filled spinner). Only the idle and waiting states were rendered — a real peer
+  pair needs two browsers and a signalling round trip the dev run cannot provide.
 - **All twelve reading pages share one layer.** Every page that uses `.legal` (help, terms, privacy,
   abuse, status, compare, DPA, security, SOC 2, changelog, roadmap, why-private) is styled by a single
   global block in `wwwroot/css/app.css`: a panel, condensed headings with a hairline under h2, body
