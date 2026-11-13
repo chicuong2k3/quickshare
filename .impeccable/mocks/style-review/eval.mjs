@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import os from "node:os";
 
-const [url, expr] = process.argv.slice(2);
+const [url, expr, w = "1440", h = "900"] = process.argv.slice(2);
 const port = 9700 + Math.floor(Math.random() * 200);
 const chrome = `${os.homedir()}/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe`;
 
@@ -45,6 +45,7 @@ const send = (method, params = {}) => new Promise((resolve, reject) => {
 
 try {
   await send("Page.enable");
+  await send("Emulation.setDeviceMetricsOverride", { width: Number(w), height: Number(h), deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url });
   await sleep(3200);
   const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true });

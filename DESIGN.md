@@ -308,6 +308,10 @@ both.
 
 Recorded so the next contributor does not mistake intention for implementation.
 
+- **The three /tools pages share one shell** (`ToolsLanding.razor` + its `.razor.css`): board panel, condensed
+  headline, the paste target as a full-width amber row with keycaps drawn as slots, body at reading size.
+  Note the article centres itself in CSS — the `mx-auto` utility it carries is not in the generated
+  Tailwind sheet, so every page relying on it alone sits left.
 - **P2P is the instrument's live channel.** `/p2p/send` and `/p2p/d/{code}` carry the board material
   (drop slot, pairing cards side by side, flap progress, one amber action per state, a rotating square
   corner instead of a filled spinner). Only the idle and waiting states were rendered — a real peer
