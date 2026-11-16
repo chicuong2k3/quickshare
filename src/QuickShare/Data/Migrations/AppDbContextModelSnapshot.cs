@@ -304,6 +304,68 @@ namespace QuickShare.Migrations
                     b.ToTable("api_key_usages", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.AutomationConnection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Scopes")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TokenPrefixValue")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("WebhookEndpointId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("automation_connections", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.BillingProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -359,6 +421,93 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("billing_profiles", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.CustomSendingDomain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DkimHost")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<string>("DkimValue")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("DkimVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("DmarcRecord")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("DmarcVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<string>("FromLocalPart")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("LastCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SpfRecord")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("SpfVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VerificationToken")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Domain")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("custom_sending_domains", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.DailyAdTracking", b =>
@@ -432,6 +581,53 @@ namespace QuickShare.Migrations
                     b.ToTable("daily_p2p_usage", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.DeduplicatedBlob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("RefCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ScopeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("StorageRegion")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoragePath");
+
+                    b.HasIndex("ScopeKey", "Sha256", "FileSize", "StorageRegion")
+                        .IsUnique();
+
+                    b.ToTable("deduplicated_blobs", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Delivery", b =>
                 {
                     b.Property<Guid>("Id")
@@ -462,9 +658,21 @@ namespace QuickShare.Migrations
                     b.Property<Guid?>("ApprovedById")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("BlockedCountries")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ByokKeyId")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ByokKeyVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ByokWrappedDek")
+                        .HasColumnType("text");
 
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
@@ -516,6 +724,19 @@ namespace QuickShare.Migrations
                     b.Property<DateTime?>("EmailOtpUsedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EncryptedKeyEscrow")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("EncryptionKdfIterations")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EncryptionKdfSalt")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EncryptionMode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -544,6 +765,12 @@ namespace QuickShare.Migrations
                     b.Property<bool>("HideDownloadStats")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("HlsAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeduplicated")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("boolean");
 
@@ -566,6 +793,9 @@ namespace QuickShare.Migrations
                     b.Property<bool>("OcrRequested")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("OriginalVideoSizeBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("OtpHash")
                         .HasColumnType("text");
 
@@ -584,6 +814,9 @@ namespace QuickShare.Migrations
 
                     b.Property<bool>("RequireRecipientEmail")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("RestoredUntil")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SenderEmail")
                         .HasColumnType("text");
@@ -619,6 +852,10 @@ namespace QuickShare.Migrations
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)");
 
+                    b.Property<string>("StorageTier")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Tag")
                         .HasColumnType("text");
 
@@ -630,6 +867,19 @@ namespace QuickShare.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VideoCompressionQuality")
+                        .HasColumnType("text");
+
+                    b.Property<string>("VirusScanStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("VirusScannedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VirusSignature")
+                        .HasColumnType("text");
 
                     b.Property<bool>("WatermarkEnabled")
                         .HasColumnType("boolean");
@@ -1309,6 +1559,51 @@ namespace QuickShare.Migrations
                     b.ToTable("file_requests", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.GitHubReleaseRepo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DefaultExpiryHours")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RepoFullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("TargetFolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WebhookSecret")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId", "RepoFullName")
+                        .IsUnique();
+
+                    b.ToTable("github_release_repos", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1351,6 +1646,9 @@ namespace QuickShare.Migrations
 
                     b.Property<Guid?>("PaymentEventId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("PeriodEnd")
                         .HasColumnType("timestamp with time zone");
@@ -1733,6 +2031,10 @@ namespace QuickShare.Migrations
                     b.Property<long>("PayOSOrderCode")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1773,6 +2075,82 @@ namespace QuickShare.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("payment_intents", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.PenetrationTestRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AssessmentYear")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ConductedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CriticalCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HighCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LowCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MediumCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Methodology")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("NdaReportReference")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime>("NextScheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PublicSummary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("RemediatedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RetestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VendorName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessmentYear")
+                        .IsUnique();
+
+                    b.ToTable("penetration_test_records", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.PromoCode", b =>
@@ -2407,6 +2785,106 @@ namespace QuickShare.Migrations
                     b.ToTable("subscription_gifts", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.SupportChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("SenderRole")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid?>("SenderUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("support_chat_messages", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.SupportChatThread", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EscalatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EscalatedEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("QueueTier")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("support_chat_threads", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.TempUpload", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2580,6 +3058,9 @@ namespace QuickShare.Migrations
                     b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ShareCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -2587,11 +3068,20 @@ namespace QuickShare.Migrations
                     b.Property<string>("StoragePath")
                         .HasColumnType("text");
 
+                    b.Property<int>("TotalPartsCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("TransferPassToken")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("UploadedBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("UploadedPartsCount")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -2616,6 +3106,9 @@ namespace QuickShare.Migrations
 
                     b.Property<long>("BonusQuotaBytes")
                         .HasColumnType("bigint");
+
+                    b.Property<int?>("ColdStorageDays")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2822,6 +3315,40 @@ namespace QuickShare.Migrations
                     b.ToTable("user_passkeys", (string)null);
                 });
 
+            modelBuilder.Entity("QuickShare.Data.Entities.UserPasskeyRecovery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RecoveryCodeHashes")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<bool>("RequirePasskeyReAdd")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("user_passkey_recoveries", (string)null);
+                });
+
             modelBuilder.Entity("QuickShare.Data.Entities.UserSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2911,6 +3438,9 @@ namespace QuickShare.Migrations
 
                     b.Property<int>("AlertedThresholdPercent")
                         .HasColumnType("integer");
+
+                    b.Property<long>("ColdArchivedBytes")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("DailyBandwidthBonus")
                         .HasColumnType("bigint");
@@ -3067,6 +3597,10 @@ namespace QuickShare.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EncryptionPolicy")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("MfaGraceDays")
                         .HasColumnType("integer");
@@ -3262,6 +3796,61 @@ namespace QuickShare.Migrations
                         .IsUnique();
 
                     b.ToTable("workspace_brands", (string)null);
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceByokConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("KeyRegion")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<int>("KeyVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LastRotatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RoleArn")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId")
+                        .IsUnique();
+
+                    b.ToTable("workspace_byok_configs", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceChannelHook", b =>
@@ -3606,6 +4195,54 @@ namespace QuickShare.Migrations
                     b.HasIndex("WorkspaceId");
 
                     b.ToTable("WorkspaceScimTokens");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceSftpKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DefaultFolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PublicKey")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId");
+
+                    b.HasIndex("WorkspaceId", "Fingerprint");
+
+                    b.ToTable("workspace_sftp_keys", (string)null);
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.WorkspaceSsoConfig", b =>
@@ -4163,6 +4800,17 @@ namespace QuickShare.Migrations
                 });
 
             modelBuilder.Entity("QuickShare.Data.Entities.UserPasskey", b =>
+                {
+                    b.HasOne("QuickShare.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuickShare.Data.Entities.UserPasskeyRecovery", b =>
                 {
                     b.HasOne("QuickShare.Data.Entities.User", "User")
                         .WithMany()
