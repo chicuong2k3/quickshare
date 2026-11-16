@@ -1,28 +1,14 @@
-
+using Hangfire;
 
 namespace QuickShare.Infrastructure.Jobs;
 
-public sealed class ZombiePartSweeper(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<ZombiePartSweeper> logger) : BackgroundService
+public sealed class ZombiePartSweeper(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<ZombiePartSweeper> logger)
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(30);
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    [AutomaticRetry(Attempts = 0)]
+    public async Task SweepZombiePartsAsync()
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(Interval, stoppingToken);
-                await SweepZombiePartsAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { logger.LogError(ex, "ZombiePartSweeper cycle failed"); }
-        }
-    }
-
-    // internal: invoked directly by E2E tests (the timer loop is untestable).
-    internal async Task SweepZombiePartsAsync(CancellationToken ct)
-    {
+        var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;

@@ -1,0 +1,19 @@
+@inherits UiComponentBase
+
+@* The bar across the top of an application window: File, Edit, View. role="menubar" is what
+   makes a screen reader announce it as one and expect the keys that go with it — Left and Right
+   move between menus, Down opens one — which ui.js binds.
+
+   Distinct from a row of dropdowns in one respect that matters: once any menu is open, hovering
+   another opens that one instead of doing nothing. That behaviour is the reason menubars feel
+   like menubars, and it is the only part of this that is not free. *@
+
+<div data-slot="menubar" role="menubar" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex h-control items-center gap-1 rounded-md border bg-background p-1 shadow-xs";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,0 +1,188 @@
+@inherits UiComponentBase
+
+@* SubscriptionDetails — ui-layouts' "subscription details" pricing section (MIT), ported class for
+   class: a headline and a Monthly/Annual pill, four plan cards — the featured one a black slab
+   with an orange glow, a frosted "Most popular" tag and a photo turned upside down along its
+   foot — prices that roll digit by digit when the billing changes, and a question with its
+   answer underneath. Every piece sharpens in out of a blur, one after another, the first time
+   the section is scrolled into view.
+
+   Where this differs from the source, and why:
+   - The pill is two radio buttons rather than two buttons with state, and every price is
+     written twice; which one shows follows the checked radio through :has() in
+     ui.behavior.css, so the pill works with scripting off. ui.js plays NumberFlow's roll.
+   - Upstream works out the annual price as the monthly one less 15%, rounded. Here each plan
+     carries both, so a price is never a sum the reader cannot see; the defaults are upstream's
+     sums (10 → 9, 20 → 17, 40 → 34, 60 → 51).
+   - The photo is FeaturedImage, null unless given. Upstream hotlinks one from Unsplash; a
+     library that fetched a third party's image on every page that used it would be making a
+     request its caller never chose. The demo passes upstream's.
+   - The palette is upstream's, fixed and light, with the theme tokens its Button kept written
+     as their light values; the question is an h3 where upstream skips to an h4; the tag sits at
+     the end edge rather than the right; font-dmSans is upstream's site font. *@
+
+<section data-slot="subscription-details" data-billing-scope="@(Yearly ? "yearly" : "monthly")"
+         class="@Classes" @attributes="AdditionalAttributes">
+    <div class="container mx-auto">
+        @* flex-wrap and gap-4: upstream's header has neither, and on a phone the pill pushed past
+           the section's edge. *@
+        <div class="mb-16 flex flex-wrap items-center justify-between gap-4">
+            <h2 data-timeline="1" class="text-2xl font-bold md:text-4xl">@Title</h2>
+            <fieldset data-timeline="2" data-billing-control class="flex min-w-0 gap-1 rounded-full bg-neutral-100 p-1">
+                <legend class="sr-only">Billing period</legend>
+                <label class="@PillClasses">
+                    <input type="radio" name="@Group" value="monthly" checked="@(!Yearly)" class="sr-only" />Monthly
+                </label>
+                <label class="@PillClasses">
+                    <input type="radio" name="@Group" value="yearly" checked="@Yearly" class="sr-only" />Annual
+                    @if (YearlyBadge is not null)
+                    {
+                        <span class="text-neutral-900">@YearlyBadge</span>
+                    }
+                </label>
+            </fieldset>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            @for (var i = 0; i < Plans.Count; i++)
+            {
+                var plan = Plans[i];
+                <div data-timeline="@(i + 3)" data-featured="@(plan.Featured ? "true" : null)"
+                     class="@Cn("relative flex flex-col rounded-2xl border p-6 transition-all md:p-4 xl:p-8", plan.Featured ? "relative overflow-hidden border-none bg-black text-white shadow-2xl" : "border-2 border-dashed border-neutral-300 bg-neutral-100")">
+                    @if (plan.Featured)
+                    {
+                        @if (FeaturedImage is not null)
+                        {
+                            <img src="@FeaturedImage" alt="" class="absolute start-0 -bottom-40 h-full w-full rotate-180 object-fill" />
+                        }
+                        <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-500/20 via-pink-500/10 to-transparent opacity-60 blur-3xl"></div>
+                        <div class="absolute end-4 top-4 z-20 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold tracking-wider uppercase backdrop-blur-md">@PopularLabel</div>
+                    }
+                    <div class="relative z-10 flex-1 space-y-4 pb-10">
+                        <span class="block text-sm text-neutral-400">@plan.Name</span>
+                        <span class="block text-4xl font-bold">$<span data-billing-roll><span data-billing="monthly">@PriceText.Of(plan.MonthlyPrice)</span><span data-billing="yearly">@PriceText.Of(plan.YearlyPrice)</span></span></span>
+                        <p class="@Cn("text-xl font-medium", plan.Featured ? "text-white" : "text-neutral-800")">@plan.Description</p>
+                        <div class="space-y-4">
+                            @foreach (var feature in plan.Features)
+                            {
+                                <div class="flex items-center gap-3 text-sm">
+                                    <div class="@Cn("size-2 rounded-full", plan.Featured ? "bg-white/40" : "bg-neutral-200")"></div>
+                                    <span class="@(plan.Featured ? "text-neutral-200" : "text-neutral-700")">@feature</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @if (plan.Href is not null)
+                    {
+                        <a href="@plan.Href" class="@ButtonClasses(plan)">@Bag @ActionLabel</a>
+                    }
+                    else
+                    {
+                        <button type="button" class="@ButtonClasses(plan)">@Bag @ActionLabel</button>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (Question is not null)
+        {
+            <div class="mt-10">
+                <div class="grid gap-x-20 gap-y-12 md:grid-cols-2">
+                    <div class="space-y-2">
+                        <h3 data-timeline="7" class="font-semibold text-pretty text-neutral-900">@Question</h3>
+                    </div>
+                    <div class="relative">
+                        <div data-timeline="8">@(Answer ?? DefaultAnswer)</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    /// <summary>The headline.</summary>
+    [Parameter] public string Title { get; set; } = "Subscription";
+
+    /// <summary>The cards, in order. Upstream's four plans when none are given.</summary>
+    [Parameter] public IReadOnlyList<PricingTier> Plans { get; set; } = Defaults;
+
+    /// <summary><c>monthly</c> or <c>yearly</c> — which the pill shows when the page arrives.
+    /// Monthly, as upstream starts. Anything else is read as <c>monthly</c>.</summary>
+    [Parameter] public string Billing { get; set; } = "monthly";
+
+    /// <summary>Written after "Annual". Null leaves it out.</summary>
+    [Parameter] public string? YearlyBadge { get; set; } = "-15%";
+
+    /// <summary>The tag on the featured card.</summary>
+    [Parameter] public string PopularLabel { get; set; } = "Most popular";
+
+    /// <summary>The words on every card's button, after the bag.</summary>
+    [Parameter] public string ActionLabel { get; set; } = "Subscribe";
+
+    /// <summary>A decorative photo turned upside down along the featured card's foot. Null, the
+    /// default, leaves the glow alone.</summary>
+    [Parameter] public string? FeaturedImage { get; set; }
+
+    /// <summary>The question under the cards. Null leaves the whole row out.</summary>
+    [Parameter] public string? Question { get; set; } = "How many interiors can I generate with a basic plan?";
+
+    /// <summary>Its answer. Upstream's two paragraphs when none is given.</summary>
+    [Parameter] public RenderFragment? Answer { get; set; }
+
+    bool Yearly => string.Equals(Billing?.Trim(), "yearly", StringComparison.OrdinalIgnoreCase);
+
+    // One radio group per section. Radios outside a form group by name across the whole page, so
+    // with a shared name a second section on the page unchecked the first one's billing.
+    readonly string Group = "billing-" + Guid.NewGuid().ToString("N")[..8];
+
+    string Classes => Cn("min-h-screen bg-white px-10 py-24 text-black md:px-16", Class);
+
+    // Upstream's Button with its className, resolved as tailwind-merge resolves it: the pill's
+    // two halves become radio labels, lit by has-[:checked] where upstream swapped class lists.
+    const string PillClasses =
+        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none px-4 py-1.5 " +
+        "text-sm font-medium whitespace-nowrap text-neutral-500 transition-all outline-none hover:text-neutral-900 " +
+        "has-[:checked]:bg-white has-[:checked]:text-black has-[:checked]:shadow-sm " +
+        "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50";
+
+    // The outline Button: bg-background is written as the white it is in upstream's light theme.
+    static string ButtonClasses(PricingTier plan) => ClassMerge.Of(
+        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "border bg-white",
+        "px-4 py-2",
+        "relative z-10 mt-auto h-12 gap-2 border-neutral-200 transition-transform",
+        plan.Featured
+            ? "border-none bg-white text-black shadow-lg hover:bg-neutral-100 active:scale-95"
+            : "text-neutral-600 hover:bg-white active:scale-95");
+
+    static readonly RenderFragment Bag = __builder =>
+    {
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" stroke-width="2" aria-hidden="true"
+             class="size-5 fill-none stroke-black">
+            <path d="M3.32352 13.0113C3.6739 10.009 4.18586 7.75784 4.66063 6.15851C5.04994 4.84711 5.24459 4.19141 6.04283 3.5957C6.84107 3 7.65697 3 9.28876 3H14.7113C16.3431 3 17.159 3 17.9572 3.5957C18.7554 4.19141 18.9501 4.84711 19.3394 6.15851C19.8142 7.75784 20.3261 10.009 20.6765 13.0113C21.0895 16.5497 21.2959 18.3189 20.1027 19.6594C18.9095 21 16.9758 21 13.1084 21H10.8916C7.02422 21 5.09052 21 3.89731 19.6594C2.70411 18.3189 2.91058 16.5497 3.32352 13.0113Z" />
+            <path d="M9 7C9 8.65685 10.3431 10 12 10C13.6569 10 15 8.65685 15 7" />
+        </svg>
+    };
+
+    static readonly RenderFragment DefaultAnswer = __builder =>
+    {
+        <p class="mb-4 text-sm leading-relaxed text-pretty text-neutral-500">Replace the couch: Current leather couch feels too lightweight.</p>
+        <p class="text-sm leading-relaxed text-pretty text-neutral-500">Go for a deep brutalist frame in dark suede or stonewashed linen — think low, wide, grounded. See Mario Bellini Camaleonda, or a custom slab-style bench sofa in ecru mohair.</p>
+    };
+
+    static readonly IReadOnlyList<PricingTier> Defaults =
+    [
+        new("Starter", "Perfect for individuals and small projects", 10, 9,
+            ["5 projects per month", "Basic templates", "Community support", "1GB storage", "Mobile app access"]),
+        new("Professional", "Ideal for growing teams and businesses", 20, 17,
+            ["Unlimited projects", "Premium templates", "Priority support", "10GB storage", "Advanced analytics"])
+        {
+            Featured = true,
+        },
+        new("Business", "Complete solution for established businesses", 40, 34,
+            ["Everything in Professional", "Unlimited storage", "Dedicated account manager", "API access", "SLA guarantee", "Training sessions"]),
+        new("Enterprise", "Tailored solutions for large organizations", 60, 51,
+            ["Everything in Business", "Custom development", "24/7 phone support", "Compliance certifications", "Multi-region hosting", "Custom contracts"]),
+    ];
+}

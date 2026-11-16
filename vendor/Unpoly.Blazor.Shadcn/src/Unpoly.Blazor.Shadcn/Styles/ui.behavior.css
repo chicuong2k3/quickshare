@@ -1,0 +1,1413 @@
+/* Chromium/WebView: a non-auto scrollbar-width/color overrides ::-webkit-scrollbar,
+   bringing back the Windows arrow buttons. Use the pseudo-elements in Blink; retain
+   thin native scrollbars in Firefox. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:single-button { display: none; width: 0; height: 0; }
+@supports (-moz-appearance: none) {
+    * { scrollbar-width: thin; scrollbar-color: var(--scrollbar, #d0d0d0) transparent; }
+}
+::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar, #d0d0d0);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-hover, #b5b5b5); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* shadcn/ui for Unpoly.Blazor — what Radix does in JavaScript, done by the platform instead.
+   ------------------------------------------------------------------------------------------
+   Radix ships `data-state="open|closed"` and animates on it. Native <dialog>, <details> and
+   the popover API carry their own state, so the selectors differ; the animation names and
+   durations are shadcn's. Everything here is behaviour a class string cannot express —
+   variants and colour stay inline on the components, exactly as in shadcn.
+   ------------------------------------------------------------------------------------------ */
+
+@layer components {
+
+    /* ---- Dialog / Sheet / AlertDialog -----------------------------------------------
+       A modal <dialog> gets the focus trap, the inert background, Escape, and the top layer
+       from the user agent. Tailwind's preflight sets `margin: 0` on every element, which
+       flattens the user-agent `margin: auto` that centres a modal dialog — so it must be put
+       back, or the dialog opens hard against the top-left corner. The <dialog> itself is a
+       bare frame; the shadcn-styled panel is its single child, so the animation has a box
+       with a real size to scale. */
+    /* command-dialog belongs in this list too. It was missing, so the palette kept the
+       preflight's margin:0 and opened hard against the top-left corner — including the docs'
+       own Ctrl-K search, which is the first dialog most visitors meet. shadcn additionally
+       lifts a palette above centre: dead-centre reads fine for a confirmation, but a palette
+       is something you type into, and the eye expects it where launchers put it. */
+    /* width 100% + grid centring, because the CONTENT's `w-full max-w-lg` needs a definite
+       width to resolve against. With the frame at fit-content that reference was circular, the
+       browser fell back to shrink-to-fit, and a dialog was as wide as its longest line — 278px
+       where shadcn shows 512. The alert dialog only looked right because its sample text
+       happened to reach the cap. */
+    /* [open], and that is load-bearing: the UA hides a closed <dialog> with display:none, and
+       an unconditional author `display:grid` overrides the UA sheet — every CLOSED dialog then
+       became an invisible full-page surface that swallowed clicks. The page looked idle and
+       nothing on it worked. */
+    [data-slot="dialog"][open],
+    [data-slot="alert-dialog"][open] {
+        inline-size: 100%;
+        display: grid;
+        justify-items: center;
+    }
+
+    [data-slot="dialog"],
+    [data-slot="alert-dialog"],
+    [data-slot="command-dialog"] {
+        margin: auto;
+        padding: 0;
+        border: 0;
+        max-width: none;
+        max-height: none;
+        background: transparent;
+        color: inherit;
+        overflow: visible;
+    }
+    [data-slot="command-dialog"] {
+        margin-block-start: 12vh;
+        inline-size: min(32rem, calc(100vw - 2rem));
+    }
+    /* The box upstream's DialogContent supplies. On the frame's child rather than in the class
+       list, because parity compares the inner <Command> against the plain command recipe. */
+    [data-slot="command-dialog"] > [data-slot="command"] {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--elevation-4);
+    }
+
+    [data-slot="dialog"]::backdrop,
+    [data-slot="alert-dialog"]::backdrop,
+    [data-slot="command-dialog"]::backdrop,
+    [data-slot="sheet"]::backdrop {
+        background: rgb(0 0 0 / 0.5);
+        animation: sh-fade-in 150ms ease-out;
+    }
+    [data-slot="dialog"][open] > *,
+    [data-slot="alert-dialog"][open] > *,
+    [data-slot="command-dialog"][open] > * {
+        animation: sh-dialog-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* The panel is the containing block for its own corner button. Upstream's DialogContent is
+       `fixed`, which this port drops because the frame does the centring — and dropping it took
+       the positioning context with it, so `absolute top-4 end-4` resolved against the VIEWPORT
+       and the close X drew in the corner of the page, outside the dialog it belongs to.
+
+       Also the panel's own scrolling: a dialog taller than the screen has to keep its box and
+       let the middle scroll, not spill its footer down the page. The height cap is the same
+       one shadcn uses; grid-template-rows keeps the header and footer at their natural size and
+       gives everything between them what is left. */
+    [data-slot="dialog"] > [data-slot="dialog-content"],
+    [data-slot="alert-dialog"] > [data-slot="alert-dialog-content"] {
+        position: relative;
+        max-block-size: calc(100dvh - 4rem);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        overflow: hidden;
+    }
+    /* The corner button and the title share the top row, and in Arabic they share the same
+       SIDE of it — the X is at the reading end, and so is the end of a long title, so the two
+       collided. Space for it, only when there is one. */
+    [data-slot="dialog-content"]:has(> [data-slot="dialog-close"]) > [data-slot="dialog-header"],
+    [data-slot="alert-dialog-content"]:has(> [data-slot="dialog-close"]) > [data-slot="alert-dialog-header"] {
+        padding-inline-end: 1.5rem;
+    }
+
+    /* Scrolling surfaces do not draw a bar. That is shadcn's own choice nearly everywhere — a
+       menu, a listbox, a command palette, a code block and a dialog all scroll with no bar down
+       the inside of them, because on a small floating surface a bar reads as a second window
+       rather than as part of this one. What scrolls under the edge is the affordance.
+
+       This hides the bar, not the scrolling: the wheel, the drag, the keyboard and every
+       programmatic scroll are untouched.
+
+       The one deliberate exception is the scroll area, whose entire job is to SHOW a scrollbar —
+       it is this port's answer to the pair Radix draws in script, and hiding it would leave a
+       component that does nothing. */
+    [data-slot="select-content"],
+    [data-slot="command-list"],
+    [data-slot="combobox-list"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="context-menu-content"],
+    [data-slot="menubar-content"],
+    [data-slot$="sub-content"],
+    [data-slot="popover-content"],
+    [data-slot="navigation-menu-content"],
+    [data-slot="table-container"],
+    [data-slot="message-scroller-viewport"],
+    [data-slot="code-block-pre"],
+    [data-slot="sidebar-content"],
+    [data-slot="dialog-content"] *,
+    [data-slot="alert-dialog-content"] *,
+    [data-slot="drawer-content"] *,
+    [data-slot="sheet-content"] * {
+        scrollbar-width: none;
+    }
+    [data-slot="select-content"]::-webkit-scrollbar,
+    [data-slot="command-list"]::-webkit-scrollbar,
+    [data-slot="combobox-list"]::-webkit-scrollbar,
+    [data-slot="dropdown-menu-content"]::-webkit-scrollbar,
+    [data-slot="context-menu-content"]::-webkit-scrollbar,
+    [data-slot="menubar-content"]::-webkit-scrollbar,
+    [data-slot$="sub-content"]::-webkit-scrollbar,
+    [data-slot="popover-content"]::-webkit-scrollbar,
+    [data-slot="navigation-menu-content"]::-webkit-scrollbar,
+    [data-slot="table-container"]::-webkit-scrollbar,
+    [data-slot="message-scroller-viewport"]::-webkit-scrollbar,
+    [data-slot="code-block-pre"]::-webkit-scrollbar,
+    [data-slot="sidebar-content"]::-webkit-scrollbar,
+    [data-slot="dialog-content"] *::-webkit-scrollbar,
+    [data-slot="alert-dialog-content"] *::-webkit-scrollbar,
+    [data-slot="drawer-content"] *::-webkit-scrollbar,
+    [data-slot="sheet-content"] *::-webkit-scrollbar {
+        display: none;
+    }
+    /* Nothing floating is ever wider than the window it floats in. The part that hangs off is
+       unreachable, because a popover has nothing to scroll it back into view. */
+    [popover][data-slot] {
+        max-inline-size: calc(100vw - 1rem);
+    }
+
+    /* And a panel with no width class of its own sizes to its content. The user agent starts a
+       popover at fit-content, but this port POSITIONS the panel itself — upstream nests it in a
+       Radix positioner that is already fit-content — and a positioned box with `width: auto`
+       stretches to the space it is given instead. The date picker went full-window, and the
+       calendar's right-hand half sat off the edge of the screen.
+
+       :where() so this stays at zero specificity: any w-* class the caller writes still wins,
+       which is how the menus and lists that DO name a width keep it. */
+    [popover][data-slot]:where(:not([class*="w-"])) {
+        inline-size: fit-content;
+    }
+
+    /* Put it back where it is the point. */
+    [data-slot="scroll-area-viewport"]::-webkit-scrollbar {
+        display: initial;
+    }
+
+    /* A dialog with nothing between its header and footer must not be stretched to the cap by
+       the 1fr row: only a panel that actually has a middle gets one. */
+    [data-slot="dialog"] > [data-slot="dialog-content"]:not(:has(> [data-slot="dialog-header"])),
+    [data-slot="dialog"] > [data-slot="dialog-content"]:not(:has(> [data-slot="dialog-footer"])) {
+        grid-template-rows: none;
+    }
+
+    [data-slot="sheet"] {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        max-width: none;
+        max-height: none;
+        background: transparent;
+        color: inherit;
+        overflow: visible;
+    }
+    [data-slot="sheet"][data-side="right"]  { margin-left: auto; }
+    [data-slot="sheet"][data-side="left"]   { margin-right: auto; }
+    [data-slot="sheet"][data-side="top"]    { margin-bottom: auto; }
+    [data-slot="sheet"][data-side="bottom"] { margin-top: auto; }
+    [data-slot="sheet"][data-side="right"][open]  > * { animation: sh-slide-from-right 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+    [data-slot="sheet"][data-side="left"][open]   > * { animation: sh-slide-from-left 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+    [data-slot="sheet"][data-side="top"][open]    > * { animation: sh-slide-from-top 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+    [data-slot="sheet"][data-side="bottom"][open] > * { animation: sh-slide-from-bottom 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+
+    /* ---- MessageScroller --------------------------------------------------------------
+       overflow-anchor is the whole "stay pinned to the newest message" behaviour, in CSS: the
+       browser holds the scroll position against content inserted above the anchor, so a thread
+       that grows at the bottom does not jump while you are reading the middle of it. Chat
+       libraries reimplement this with a scroll observer; the browser has done it since 2018. */
+    [data-slot="message-scroller-viewport"] {
+        overflow-y: auto;
+        overflow-anchor: auto;
+        overscroll-behavior-y: contain;
+    }
+
+    /* ---- Drawer ---------------------------------------------------------------------
+       A sheet you can drag shut. The frame rules are the sheet's; what differs is that vaul
+       rounds the two corners facing into the screen and leaves the two against the edge square,
+       which is what makes it read as a sheet of paper being pulled rather than a floating card.
+
+       The <dialog> must be given a size of its own: its only child is position:fixed, so without
+       this the frame collapses to nothing, the panel still paints, and every measurement of it —
+       including "is it visible" — comes back wrong. */
+    [data-slot="drawer"] {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        inline-size: 100%;
+        block-size: 100%;
+        max-width: none;
+        max-height: none;
+        background: transparent;
+        color: inherit;
+        overflow: visible;
+    }
+    [data-slot="drawer"]::backdrop {
+        background: rgb(0 0 0 / 0.5);
+        animation: sh-fade-in 150ms ease-out;
+    }
+
+    /* A non-modal drawer is a full-screen frame that must not swallow the page it is not
+       covering. The frame is 100% x 100% because its only child is position:fixed and a
+       collapsed frame measures wrong — so the frame passes the pointer through and the panel
+       takes it back. A modal one keeps the whole area, because the whole area is its backdrop. */
+    [data-slot="drawer"][data-modal="false"] { pointer-events: none; }
+    [data-slot="drawer"][data-modal="false"] > [data-slot="drawer-content"] { pointer-events: auto; }
+
+    /* A drawer floats: it stands off the edges of the window by a small margin and is rounded
+       on every corner, which is what shadcn's current one does. Flush against the edge with two
+       rounded corners is the older vaul look, and it reads as part of the browser chrome rather
+       than as a panel over the page — the shadow has nothing to fall on and the rounding stops
+       halfway. The margin is the same 0.5rem on every side, so the panel keeps its shape
+       whichever edge it comes from. */
+    [data-slot="drawer"] > [data-slot="drawer-content"] {
+        border-radius: var(--radius-lg, 0.75rem);
+        box-shadow: var(--elevation-4);
+    }
+    [data-slot="drawer"][data-direction="bottom"] > [data-slot="drawer-content"] {
+        inset: auto 0.5rem 0.5rem 0.5rem;
+        max-block-size: 82vh;
+    }
+    [data-slot="drawer"][data-direction="top"] > [data-slot="drawer-content"] {
+        inset: 0.5rem 0.5rem auto 0.5rem;
+        max-block-size: 82vh;
+    }
+    [data-slot="drawer"][data-direction="right"] > [data-slot="drawer-content"] {
+        inset: 0.5rem 0.5rem 0.5rem auto;
+        inline-size: min(24rem, calc(100vw - 1rem));
+    }
+    [data-slot="drawer"][data-direction="left"] > [data-slot="drawer-content"] {
+        inset: 0.5rem auto 0.5rem 0.5rem;
+        inline-size: min(24rem, calc(100vw - 1rem));
+    }
+
+    [data-slot="drawer"][data-direction="bottom"][open] > * { animation: sh-slide-from-bottom 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+    [data-slot="drawer"][data-direction="top"][open]    > * { animation: sh-slide-from-top 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+    [data-slot="drawer"][data-direction="right"][open]  > * { animation: sh-slide-from-right 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+    [data-slot="drawer"][data-direction="left"][open]   > * { animation: sh-slide-from-left 320ms cubic-bezier(0.32, 0.72, 0, 1); }
+
+    /* Dragging is a pointer gesture on the panel, so text selection has to be out of the way or
+       every drag highlights the heading on the way past. */
+    [data-slot="drawer-content"] { touch-action: none; user-select: none; }
+    [data-slot="drawer-content"] :is(input, textarea, [contenteditable]) { user-select: text; }
+
+    /* ---- Accordion ------------------------------------------------------------------
+       <details>/<summary> is the whole state machine, so an accordion works with JavaScript
+       off and survives a fragment swap without a compiler. */
+    [data-slot="accordion-trigger"]::-webkit-details-marker,
+    [data-slot="collapsible-trigger"]::-webkit-details-marker { display: none; }
+    [data-slot="accordion-trigger"]::marker,
+    [data-slot="collapsible-trigger"]::marker { content: ""; }
+    [data-slot="collapsible-trigger"] { cursor: pointer; list-style: none; }
+
+    /* ScrollArea: the platform's own thin scrollbar, in the theme's colours. Radix draws its own
+       with a resize observer and a computed thumb; this is most of the look for none of the
+       script, and it still works with the wheel, a trackpad, the keyboard and a touch screen. */
+    [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
+        background-color: var(--border);
+    }
+    @supports (-moz-appearance: none) {
+        [data-slot="scroll-area-viewport"] {
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+    }
+    [data-slot="accordion-item"][open] [data-chevron] { rotate: 180deg; }
+    [data-slot="accordion-item"][open] [data-slot="accordion-content"] { animation: sh-accordion-down 200ms ease-out; }
+
+    /* ---- DropdownMenu / Popover / HoverCard ------------------------------------------
+       The popover API supplies the top layer, light-dismiss and Escape. `position-area` is
+       not everywhere yet, so ui.js positions the panel and only the visuals live here. */
+    [popover] {
+        margin: 0;
+        padding: 0;
+        /* border-WIDTH, not the `border` shorthand. The shorthand also resets the COLOUR to
+           currentColor, and this rule is in a layer above the base one that says
+           `border-color: var(--border)` — so every popover surface in the library drew its
+           1px border in the TEXT colour. A near-black hairline around a menu, a tooltip, a
+           popover and a hover card, on a page where every other border is a soft grey. It read
+           as "the popover has an extra border", which is exactly what it looked like. */
+        border-width: 0;
+        background: transparent;
+        overflow: visible;
+        position: fixed;
+    }
+    [popover]:is(:popover-open, .\:popover-open) { animation: sh-dialog-in 120ms ease-out; }
+
+    /* ---- Tooltip --------------------------------------------------------------------- */
+    /* Visible when it is OPEN, not when one particular attribute says so. The tooltip
+       compiler sets data-state="delayed-open" after showPopover(), and the generic handler
+       that mirrors popover state onto data-state then overwrote it with "open" — so the panel
+       was in the top layer, positioned, and painted at opacity 0. Hovering did nothing
+       visible, which reads as "the tooltip only works if you click it".
+
+       The delay still lives in the timer that calls showPopover(). This rule only decides
+       whether an open tooltip can be seen, and the answer is yes. */
+    /* Upstream animates with tailwindcss-animate -- animate-in, zoom-in-95 and a slide per
+side. That plugin is not installed here (it is listed by the check-compiled .NET command with the
+       reason), so those classes compile to nothing and the tip appeared with no motion at all.
+
+       The arrow hangs off the panel with no `relative` on it, and deliberately: a [popover] is
+       position:fixed, which is already a containing block for an absolutely positioned child.
+       Adding `relative` DEMOTED it — a top-layer element that is not fixed is treated as
+       absolute — so the tip started scrolling with the page and landed hundreds of pixels from
+       its trigger on any page far enough down to scroll.
+       The same animation, written as a keyframe, because a keyframe needs no plugin: fade and
+       zoom, sliding in from whichever side it ENDED UP on. */
+    [data-slot="tooltip-content"] { opacity: 0; transition: opacity 120ms ease-out; }
+    [data-slot="tooltip-content"][data-state="delayed-open"],
+    [data-slot="tooltip-content"]:is(:popover-open, .\:popover-open) {
+        opacity: 1;
+        animation: sh-tip-in 150ms var(--ease-ui, cubic-bezier(0.16, 1, 0.3, 1));
+    }
+    [data-slot="tooltip-content"][data-placed-side="top"] { --sh-tip-from: 0 0.5rem; }
+    [data-slot="tooltip-content"][data-placed-side="bottom"] { --sh-tip-from: 0 -0.5rem; }
+    [data-slot="tooltip-content"][data-placed-side="left"] { --sh-tip-from: 0.5rem 0; }
+    [data-slot="tooltip-content"][data-placed-side="right"] { --sh-tip-from: -0.5rem 0; }
+
+    @keyframes sh-tip-in {
+        from { opacity: 0; scale: 0.95; translate: var(--sh-tip-from, 0 0); }
+        to { opacity: 1; scale: 1; translate: 0 0; }
+    }
+
+    /* The hover card carries the same dead plugin classes, and the same keyframe answers them. */
+    [data-slot="hover-card-content"]:is(:popover-open, .\:popover-open) {
+        animation: sh-tip-in 150ms var(--ease-ui, cubic-bezier(0.16, 1, 0.3, 1));
+    }
+    [data-slot="hover-card-content"][data-placed-side="top"] { --sh-tip-from: 0 0.5rem; }
+    [data-slot="hover-card-content"][data-placed-side="bottom"] { --sh-tip-from: 0 -0.5rem; }
+    [data-slot="hover-card-content"][data-placed-side="left"] { --sh-tip-from: 0.5rem 0; }
+    [data-slot="hover-card-content"][data-placed-side="right"] { --sh-tip-from: -0.5rem 0; }
+
+    /* The arrow. Upstream renders a Radix Arrow element -- a rotated, rounded square in the
+       tooltip's own colour -- and this is that square, as a pseudo-element, because a tooltip
+       that needs a child element to look right is a tooltip every call site has to remember to
+       write. It points from whichever side the tip ENDED UP on, which is why place() records
+       the outcome separately from the requested side: a tip that flipped for want of room and
+       kept pointing the old way is worse than one with no arrow at all. */
+    [data-slot="tooltip-content"]::after {
+        content: "";
+        position: absolute;
+        inline-size: 0.625rem;                  /* size-2.5, as upstream */
+        block-size: 0.625rem;
+        background: var(--foreground);
+        border-radius: 2px;
+        rotate: 45deg;
+    }
+    /* PHYSICAL sides, not logical ones. data-placed-side is already physical — it is where the
+       tip ended up on the screen, decided by measurement — so `inset-inline-start` flipped the
+       arrow to the far edge under dir="rtl" and it drew outside the tip, pointing at nothing.
+       Only the top and bottom cases centre along the inline axis, and centring is the same in
+       both directions. */
+    [data-slot="tooltip-content"][data-placed-side="top"]::after {
+        bottom: 0; left: 50%;
+        translate: -50% calc(50% - 2px);
+    }
+    [data-slot="tooltip-content"][data-placed-side="bottom"]::after {
+        top: 0; left: 50%;
+        translate: -50% calc(-50% + 2px);
+    }
+    [data-slot="tooltip-content"][data-placed-side="left"]::after {
+        right: 0; top: 50%;
+        translate: calc(50% - 2px) -50%;
+    }
+    [data-slot="tooltip-content"][data-placed-side="right"]::after {
+        left: 0; top: 50%;
+        translate: calc(-50% + 2px) -50%;
+    }
+
+    /* ---- Button, while Unpoly has a request in flight ---------------------------------
+       Unpoly marks the element that started a request with `.up-active`. On a submit button
+       that is the honest place for the progress: the page stays legible, and [up-disable]
+       has already made the form's fields inert. shadcn has no equivalent — it belongs to
+       this port, which is why it is a rule here and not a class string on the component. */
+    [data-slot="button"].up-active { pointer-events: none; }
+    [data-slot="button"].up-active::after {
+        content: "";
+        margin-left: 0.5rem;
+        display: inline-block;
+        block-size: 0.875rem;
+        inline-size: 0.875rem;
+        flex-shrink: 0;
+        border-radius: 9999px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        vertical-align: -2px;
+        animation: sh-spin 0.6s linear infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* No spin, but still a mark that something is happening. */
+        [data-slot="button"].up-active::after {
+            animation: none;
+            border-right-color: currentColor;
+            opacity: 0.5;
+        }
+        [data-slot="dialog"][open] > *,
+        [data-slot="alert-dialog"][open] > *,
+        [data-slot="sheet"][open] > *,
+        [data-slot="accordion-item"][open] [data-slot="accordion-content"] { animation: none; }
+    }
+
+    /* ---- the card publishes its own padding ------------------------------------------
+       Everything in a card reads --card-spacing, so a child can pull out by exactly the amount
+       the card pushed in — that is the whole of the edge-to-edge pattern, one number used twice.
+
+       :where(), so both rules have ZERO specificity. The value has to be beatable by a single
+       utility class on the card, which is how a caller changes it; an inline style, which is
+       where this started, cannot be beaten by anything at all. */
+    :where([data-slot="card"]) { --card-spacing: calc(var(--spacing) * 6); }
+    :where([data-slot="card"][data-size="sm"]) { --card-spacing: calc(var(--spacing) * 4); }
+
+    /* ---- surfaces are separated by ground, not by a line -----------------------------
+       shadcn draws a border around every card, panel and menu. This library does not: the page
+       is grey, the surface is white, and elevation says which is on top. It reads quieter and
+       stops a dense screen turning into a grid of boxes.
+
+       Scoped to the surfaces, NOT done by setting --border: transparent — that would take the
+       table's row dividers, the separator and every control's edge with it. A field with no
+       edge is not a field, and a table with no rules is a wall of text.
+
+       An app that wants the lines back sets `data-theme="notebook"`, or writes one rule:
+           [data-slot="card"] { border-color: var(--border); } */
+    [data-slot="card"],
+    [data-slot="alert"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dropdown-menu-sub-content"],
+    [data-slot="select-content"],
+    [data-slot="dialog-content"],
+    [data-slot="alert-dialog-content"],
+    [data-slot="code-block"] { border-color: var(--surface-border); }
+
+    /* ---- Checkbox / RadioGroup / Switch ----------------------------------------------
+       Radix draws these as <button role="checkbox"> with a hidden input alongside. On static
+       SSR the real input is the only thing that posts, and it has to be the focusable one — so
+       it stays, and the indicator is a mask on its own ::after rather than a child element.
+       The mask scales with the box and inherits the fill, so one glyph serves every size. */
+    [data-slot="checkbox"],
+    [data-slot="radio-group-item"],
+    [data-slot="switch"] {
+        appearance: none;
+        -webkit-appearance: none;
+        display: grid;
+        place-items: center;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+    [data-slot="checkbox"]:disabled,
+    [data-slot="radio-group-item"]:disabled,
+    [data-slot="switch"]:disabled { cursor: not-allowed; }
+
+    [data-slot="checkbox"]::after {
+        content: "";
+        block-size: 100%;
+        inline-size: 100%;
+        scale: 0;
+        background: currentColor;
+        transition: scale 100ms;
+        -webkit-mask: var(--sh-check) center / 0.75rem 0.75rem no-repeat;
+        mask: var(--sh-check) center / 0.75rem 0.75rem no-repeat;
+    }
+    [data-slot="checkbox"]:checked::after { scale: 1; }
+    [data-slot="checkbox"]:indeterminate::after {
+        scale: 1;
+        -webkit-mask: var(--sh-minus) center / 0.75rem 0.75rem no-repeat;
+        mask: var(--sh-minus) center / 0.75rem 0.75rem no-repeat;
+    }
+
+    [data-slot="radio-group-item"]::after {
+        content: "";
+        block-size: 0.5rem;
+        inline-size: 0.5rem;
+        border-radius: 9999px;
+        scale: 0;
+        background: currentColor;
+        transition: scale 100ms;
+    }
+    [data-slot="radio-group-item"]:checked::after { scale: 1; }
+
+    /* The switch is the same input again, presented as a state that is on or off rather than
+       ticked. `place-items: start` so the thumb sits at one end and travels to the other. */
+    [data-slot="switch"] { place-items: center start; }
+    [data-slot="switch"]::after {
+        content: "";
+        block-size: 1rem;
+        inline-size: 1rem;
+        margin-inline: 1px;
+        border-radius: 9999px;
+        background: var(--background);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+        transition: translate 160ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    [data-slot="switch"]:checked::after { translate: calc(2rem - 1rem - 4px) 0; }
+    /* The travel is a physical translate, so it must flip: in RTL the thumb rests on the
+       right and slides LEFT when checked. Without this it slid further right, off the track. */
+    [data-slot="switch"]:checked:where([dir="rtl"] *)::after {
+        translate: calc(-1 * (2rem - 1rem - 4px)) 0;
+    }
+
+    /* The small switch, which had none of its own. The thumb was 1rem at every size, so in a
+       24x14 track it was TALLER than the track it rides in — and on the unchecked side the track
+       showed past it, which is the sliver of background that gets reported. Upstream sizes the
+       thumb per size (size-4 / size-3); so does this, and the travel follows from the two
+       numbers rather than being a second thing to keep in step. */
+    [data-slot="switch"][data-size="sm"]::after {
+        block-size: 0.75rem;
+        inline-size: 0.75rem;
+    }
+    [data-slot="switch"][data-size="sm"]:checked::after {
+        translate: calc(1.5rem - 0.75rem - 4px) 0;
+    }
+    [data-slot="switch"][data-size="sm"]:checked:where([dir="rtl"] *)::after {
+        translate: calc(-1 * (1.5rem - 0.75rem - 4px)) 0;
+    }
+
+    /* ---- CodeBlock -------------------------------------------------------------------
+       The confirmation lives on the button: a toast for something this small is a toast people
+       learn to ignore. The tick replaces the icon rather than sitting beside it, so the button
+       does not change width and the row does not jump. */
+    [data-slot="code-block-copy"][data-copied] svg { display: none; }
+    [data-slot="code-block-copy"][data-copied]::before {
+        content: "";
+        block-size: 1rem;
+        inline-size: 1rem;
+        background: currentColor;
+        -webkit-mask: var(--sh-check) center / contain no-repeat;
+        mask: var(--sh-check) center / contain no-repeat;
+    }
+
+
+    /* Kibo Snippet and multi-file CodeBlock: presentation for their data-slot anatomy.
+       These are not shadcn upstream class recipes. */
+    [data-slot="snippet"] { width: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 0.375rem; }
+    [data-slot="snippet"] > [data-slot="tabs"] { gap: 0; }
+    [data-slot="snippet-header"] { display: flex; align-items: center; justify-content: space-between; padding: 0.25rem; background: var(--secondary); border-bottom: 1px solid var(--border); }
+    [data-slot="snippet-header"] [data-slot="tabs-list"] { max-width: calc(100% - 2.5rem); min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    [data-slot="snippet-header"] [data-slot="tabs-list"]::-webkit-scrollbar { display: none; }
+    [data-slot="snippet"] [data-slot="tabs-trigger"] { flex: none; font-size: 0.75rem; gap: 0.375rem; }
+    [data-slot="snippet-copy"] { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: 0.375rem; cursor: pointer; }
+    [data-slot="snippet-copy"] svg { width: 0.875rem; height: 0.875rem; }
+    [data-slot="snippet-copy"][hidden] { display: none; }
+    [data-slot="snippet-copy"]:hover { background: var(--accent); }
+    [data-slot="snippet-copy"][data-copied] svg { display: none; }
+    [data-slot="snippet-copy"][data-copied]::before { content: "✓"; }
+    [data-slot="snippet"] [data-slot="tabs-content"] { min-width: 0; padding: 1rem; background: var(--background); font-size: 0.875rem; }
+    [data-slot="snippet-code"] { overflow-x: auto; font-family: var(--font-mono); font-size: 0.75rem; scrollbar-width: none; }
+    [data-slot="snippet-code"]::-webkit-scrollbar { display: none; }
+    [data-slot="code-block"]:has([data-slot="code-block-files"]) [data-slot="code-block-header"] { padding: 0.25rem; gap: 0.25rem; background: var(--secondary); }
+    [data-slot="code-block-files"] { display: flex; flex: 1; min-width: 0; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; }
+    [data-slot="code-block-files"]::-webkit-scrollbar { display: none; }
+    [data-slot="code-block-file"] { flex: none; padding: 0.375rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; line-height: 1.25rem; color: var(--muted-foreground); cursor: pointer; }
+    [data-slot="code-block-file"][aria-selected="true"] { background: var(--background); color: var(--foreground); }
+    [data-slot="code-block"]:has([data-slot="code-block-files"]) [data-slot="code-block-copy"] { flex: none; width: 2rem; height: 2rem; padding: 0; }
+    [data-slot="code-block"]:has([data-slot="code-block-files"]) [data-slot="code-block-copy"] svg { width: 0.875rem; height: 0.875rem; }
+    [data-slot="code-block"]:has([data-slot="code-block-files"]) [data-slot="code-block-pre"] { font-size: 0.75rem; line-height: 1.25rem; }
+    [data-slot="code-block-pre"][hidden], [data-slot="snippet"] [data-slot="tabs-content"][hidden] { display: none; }
+    [data-slot="code-block-code"].shiki-code { display: grid; }
+    [data-slot="code-block-code"].shiki-code .line { position: relative; min-height: 1lh; padding-inline: 1rem; margin-inline: -1rem; }
+    [data-slot="code-block-code"].shiki-line-numbers { counter-reset: shiki-line; }
+    [data-slot="code-block-code"].shiki-line-numbers .line { counter-increment: shiki-line; padding-inline-start: 3rem; }
+    [data-slot="code-block-code"].shiki-line-numbers .line::before { content: counter(shiki-line); position: absolute; inset-inline-start: 0.5rem; width: 1.5rem; text-align: end; color: var(--muted-foreground); user-select: none; }
+    [data-slot="code-block-code"] .line.highlighted, [data-slot="code-block-code"] .highlighted-word { background: color-mix(in srgb, #3b82f6 12%, transparent); }
+    [data-slot="code-block-code"] .line.diff.add { background: color-mix(in srgb, #10b981 14%, transparent); border-inline-start: 2px solid #10b981; }
+    [data-slot="code-block-code"] .line.diff.remove, [data-slot="code-block-code"] .line.error { background: color-mix(in srgb, #f43f5e 14%, transparent); border-inline-start: 2px solid #f43f5e; }
+    [data-slot="code-block-code"] .line.warning { background: color-mix(in srgb, #f59e0b 14%, transparent); border-inline-start: 2px solid #f59e0b; }
+    [data-slot="code-block-code"]:has(.line.focused) .line:not(.focused) { filter: blur(2px); opacity: .6; }
+    /* Shiki writes the light colour inline — style="color:#24292E;--shiki-dark:#E6EDF3" — and an
+       inline style beats every rule that is not !important. Without it dark mode kept the light
+       palette: near-black brackets and values on a near-black block. This is Shiki's own
+       documented switch. There is no light counterpart because the inline colour IS the light
+       one; the --shiki-light rule that stood here read a variable Shiki never writes. */
+    .dark [data-slot="code-block-code"] .line span { color: var(--shiki-dark) !important; }
+
+    /* ---- Command ---------------------------------------------------------------------
+       Nothing to draw here: the compiler sets data-selected="true" on the highlighted row, which
+       is the attribute cmdk sets and which upstream's own class string already styles. The
+       highlight follows the keyboard as well as the pointer, which is why it is an attribute and
+       not :hover — otherwise arrowing down leaves the mouse's row lit and two rows look chosen. */
+    [data-slot="command-input"]::-webkit-search-cancel-button { margin-inline-start: 0.25rem; }
+
+    /* ---- Menu items that are buttons --------------------------------------------------
+       Radix draws every menu item as a <div>, which fills its row. Here an item that navigates
+       is an <a> and an item that acts is a <button> — and a button sizes to fit-content even
+       with display:flex, because the UA gives form controls their own intrinsic width. So the
+       label was left-aligned in a box as wide as its text, the hover highlight stopped short of
+       the menu edge, and clicking the empty strip beside it did nothing.
+
+       One rule rather than a w-full in each recipe: the class lists are generated from shadcn
+       and this is not shadcn's problem to have. */
+    button[data-slot="dropdown-menu-item"],
+    button[data-slot="dropdown-menu-checkbox-item"],
+    button[data-slot="dropdown-menu-radio-item"],
+    button[data-slot="dropdown-menu-sub-trigger"],
+    button[data-slot="context-menu-item"],
+    button[data-slot="context-menu-checkbox-item"],
+    button[data-slot="context-menu-radio-item"],
+    button[data-slot="context-menu-sub-trigger"],
+    button[data-slot="menubar-item"],
+    button[data-slot="menubar-checkbox-item"],
+    button[data-slot="menubar-radio-item"],
+    button[data-slot="menubar-sub-trigger"],
+    button[data-slot="command-item"],
+    button[data-slot="combobox-item"],
+button[data-slot="sidebar-menu-button"],
+button[data-slot="sidebar-menu-sub-button"] { width: 100%; }
+
+@media (max-width: 767.98px) {
+  [data-slot="sidebar"] { display: block !important; width: 100%; }
+  [data-slot="sidebar-gap"] { display: none !important; }
+  [data-slot="sidebar-container"] {
+    position: relative;
+    display: flex !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+}
+
+    /* ---- Slider ----------------------------------------------------------------------
+       The three parts Radix builds out of divs are the three parts the input already has. The
+       colours are upstream's, moved here because a pseudo-element cannot be a component.
+
+       The filled range has no element in either engine, so it is a gradient stop on the track at
+       --slider-fill, which ui.js keeps in step with the value. Without JavaScript the track is
+       plain and the slider still works — you lose the fill, not the control. */
+    input[type="range"][data-slot="slider"] {
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+        /* Tall enough for the thumb, which overflows the track exactly as it does upstream: a
+           6px rule with a 16px handle riding on it. Left at the browser default the thumb is
+           clipped top and bottom. */
+        block-size: 1rem;
+        inline-size: 100%;
+    }
+    /* Logical properties turn with the writing mode, and that is the trap: once the box is
+       vertical, inline-size IS the height, so the 100% above stretched the slider to the height
+       of whatever contained it — 574px in a docs preview — and block-size became its width.
+       Vertical says what it wants in physical terms instead, and leaves the height to the class,
+       which is where upstream puts it. */
+    input[type="range"][data-slot="slider"][data-orientation="vertical"] {
+        block-size: auto;
+        inline-size: auto;
+    }
+    input[type="range"][data-slot="slider"]:disabled { cursor: not-allowed; }
+
+    /* One vendor pseudo-element per rule, never a list. An engine that does not know one
+       selector drops the WHOLE list, so combining these loses the track in every browser — which
+       is what happened here: the thumb drew, the track did not, and the slider read as a lone
+       circle floating in the row. */
+    input[type="range"][data-slot="slider"]::-webkit-slider-runnable-track {
+        height: 0.375rem;                       /* h-1.5, as upstream's track */
+        border-radius: 9999px;
+        background: linear-gradient(to right,
+            var(--primary) 0 var(--slider-fill, 0%),
+            var(--muted) var(--slider-fill, 0%) 100%);
+    }
+    input[type="range"][data-slot="slider"]::-moz-range-track {
+        height: 0.375rem;
+        border-radius: 9999px;
+        background: linear-gradient(to right,
+            var(--primary) 0 var(--slider-fill, 0%),
+            var(--muted) var(--slider-fill, 0%) 100%);
+    }
+
+    /* -moz- and -webkit- must be written as separate rules: one invalid selector in a list drops
+       the whole list, so combining them silently loses the thumb in every browser. */
+    input[type="range"][data-slot="slider"]::-webkit-slider-thumb,
+    input[type="range"][data-slot="slider-input"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 1rem; height: 1rem;              /* size-4 */
+        margin-top: -0.3125rem;                 /* centres the thumb on the track */
+        border-radius: 9999px;
+        border: 1px solid var(--primary);
+        background: #fff;
+        box-shadow: var(--elevation-1, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+        transition: box-shadow var(--duration-ui, 150ms) var(--ease-ui, ease);
+    }
+    input[type="range"][data-slot="slider"]::-moz-range-thumb,
+    input[type="range"][data-slot="slider-input"]::-moz-range-thumb {
+        width: 1rem; height: 1rem;
+        border-radius: 9999px;
+        border: 1px solid var(--primary);
+        background: #fff;
+        box-shadow: var(--elevation-1, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+    }
+    input[type="range"][data-slot="slider"]:hover::-webkit-slider-thumb,
+    input[type="range"][data-slot="slider-input"]:hover::-webkit-slider-thumb {
+        box-shadow: 0 0 0 4px var(--ring);      /* hover:ring-4 */
+    }
+    input[type="range"][data-slot="slider"]:focus-visible::-webkit-slider-thumb,
+    input[type="range"][data-slot="slider-input"]:focus-visible::-webkit-slider-thumb {
+        box-shadow: 0 0 0 4px var(--ring);      /* focus-visible:ring-4 */
+    }
+    input[type="range"][data-slot="slider"]:hover::-moz-range-thumb,
+    input[type="range"][data-slot="slider"]:focus-visible::-moz-range-thumb,
+    input[type="range"][data-slot="slider-input"]:focus-visible::-moz-range-thumb {
+        box-shadow: 0 0 0 4px var(--ring);
+    }
+    input[type="range"][data-slot="slider"]:focus-visible { outline: none; }
+    input[type="range"][data-slot="slider"][data-orientation="vertical"] {
+        writing-mode: vertical-lr;
+        direction: rtl;
+    }
+
+    /* The fill is painted from the start, and in RTL the start is the right — the native input
+       already runs its values right-to-left, so a left-anchored gradient coloured the EMPTY
+       side. One flipped gradient per vendor pseudo, for the list-dropping reason above. */
+    input[type="range"][data-slot="slider"]:where([dir="rtl"] *)::-webkit-slider-runnable-track {
+        background: linear-gradient(to left,
+            var(--primary) 0 var(--slider-fill, 0%),
+            var(--muted) var(--slider-fill, 0%) 100%);
+    }
+    input[type="range"][data-slot="slider"]:where([dir="rtl"] *)::-moz-range-track {
+        background: linear-gradient(to left,
+            var(--primary) 0 var(--slider-fill, 0%),
+            var(--muted) var(--slider-fill, 0%) 100%);
+    }
+
+    /* A vertical slider is the same input turned, and the track has to turn with it. The
+       horizontal rules give it `height: 6px` and a gradient running `to right` — across the six
+       pixels of WIDTH once the box is vertical, which painted the entire length in the filled
+       colour and left the empty part nowhere. So: the six pixels become the width, the length
+       comes from the element, and the gradient runs from the bottom, which is where a vertical
+       range starts. These come after the RTL overrides on purpose — a vertical slider on an
+       Arabic page is still filled from the bottom. */
+    input[type="range"][data-slot="slider"][data-orientation="vertical"]::-webkit-slider-runnable-track {
+        width: 0.375rem;
+        height: 100%;
+        background: linear-gradient(to top,
+            var(--primary) 0 var(--slider-fill, 0%),
+            var(--muted) var(--slider-fill, 0%) 100%);
+    }
+    input[type="range"][data-slot="slider"][data-orientation="vertical"]::-moz-range-track {
+        width: 0.375rem;
+        height: 100%;
+        background: linear-gradient(to top,
+            var(--primary) 0 var(--slider-fill, 0%),
+            var(--muted) var(--slider-fill, 0%) 100%);
+    }
+    /* The thumb is centred on the CROSS axis, and the cross axis is horizontal now — the
+       margin-top that centres it in a horizontal slider pushed it off the track here. */
+    input[type="range"][data-slot="slider"][data-orientation="vertical"]::-webkit-slider-thumb {
+        margin-top: 0;
+        margin-left: -0.3125rem;
+    }
+
+    /* ---- Slider, several thumbs ------------------------------------------------------
+       One native input per thumb, stacked in one frame. The frame paints the shared track and
+       the band between the outermost thumbs from --slider-from / --slider-to — inline from the
+       server so the first paint is right, kept current by ui.js while dragging. The inputs
+       take no pointer anywhere except their thumb, which is how two of them share one strip. */
+    [data-slot="slider"][data-range]::before,
+    [data-slot="slider"][data-range]::after {
+        content: "";
+        position: absolute;
+        inset-block-start: 50%;
+        translate: 0 -50%;
+        block-size: 0.375rem;
+        border-radius: 9999px;
+    }
+    [data-slot="slider"][data-range]::before { inset-inline: 0; background: var(--muted); }
+    [data-slot="slider"][data-range]::after {
+        inset-inline-start: var(--slider-from, 0%);
+        inline-size: calc(var(--slider-to, 0%) - var(--slider-from, 0%));
+        background: var(--primary);
+    }
+    input[type="range"][data-slot="slider-input"] {
+        appearance: none;
+        position: absolute;
+        inset: 0;
+        /* Above the band. A parent's ::after paints after its children, so the filled range was
+           drawn ON TOP of the thumbs -- the lower one vanished into it entirely, and the upper
+           one survived only because it sits on the band's own edge. */
+        z-index: 1;
+        inline-size: 100%;
+        block-size: 100%;
+        margin: 0;
+        background: transparent;
+        cursor: pointer;
+        pointer-events: none;               /* the thumb rules above turn the thumb back on */
+    }
+    input[type="range"][data-slot="slider-input"]:disabled { cursor: not-allowed; }
+    input[type="range"][data-slot="slider-input"]:focus-visible { outline: none; }
+    input[type="range"][data-slot="slider-input"]::-webkit-slider-runnable-track {
+        height: 0.375rem;
+        background: transparent;
+    }
+    input[type="range"][data-slot="slider-input"]::-moz-range-track {
+        height: 0.375rem;
+        background: transparent;
+    }
+
+    input[type="range"][data-slot="slider-input"]::-webkit-slider-thumb { pointer-events: auto; }
+    input[type="range"][data-slot="slider-input"]::-moz-range-thumb { pointer-events: auto; }
+
+    /* A date-picker button before anything is chosen. shadcn writes this as
+       data-[empty=true]:text-muted-foreground on the trigger; here the placeholder is the label
+       span itself, which is the thing that stops being a placeholder the moment a day is picked
+       — so the attribute lives on it and ui.js removes it as it writes the date. */
+    [data-date-label][data-empty] {
+        color: var(--muted-foreground);
+    }
+
+    /* ---- Time and date fields ---------------------------------------------------------
+       The browser draws its own little clock or calendar button inside these, and a group that
+       already carries an icon then has two — one of them ours, one of them not, and neither
+       aligned with the other. Upstream hides it with a pair of ::-webkit- rules on every time
+       field it styles; here it belongs to the input-group, which is the place that knows it has
+       supplied an icon of its own. The field still opens its picker from the keyboard.
+
+       Written as two rules, not a list: an engine that does not know one of these selectors
+       drops the whole list, and then nothing is hidden anywhere. */
+    [data-slot="input-group"] :is(input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"])::-webkit-calendar-picker-indicator {
+        display: none;
+    }
+    [data-slot="input-group"] :is(input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"]) {
+        appearance: none;
+    }
+
+    /* ---- Carousel --------------------------------------------------------------------
+       Scroll-snap is the carousel. Embla exists because Safari's implementation was unusable in
+       2019; it is fine now, and what remains in JavaScript is the two arrows. */
+    [data-slot="carousel-content"] {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;                  /* the arrows and the swipe are the affordance */
+        overscroll-behavior-x: contain;         /* stops a swipe becoming a back-navigation */
+    }
+    [data-slot="carousel-content"]::-webkit-scrollbar { display: none; }
+    [data-slot="carousel-item"] { scroll-snap-align: start; }
+
+    [data-orientation="vertical"] > [data-slot="carousel-content"] {
+        overflow-x: hidden;
+        overflow-y: auto;
+        scroll-snap-type: y mandatory;
+        max-height: 100%;
+    }
+
+    /* ---- Resizable -------------------------------------------------------------------
+       The handle is the only moving part: its compiler writes flex-grow on the two panels it
+       sits between. Everything else is ordinary flex. */
+    [data-slot="resizable-panel-group"][data-orientation="vertical"] { flex-direction: column; }
+    [data-slot="resizable-panel"] { overflow: hidden; }
+    [data-slot="resizable-handle"] { cursor: col-resize; touch-action: none; }
+    [data-slot="resizable-handle"][aria-orientation="horizontal"] { cursor: row-resize; }
+    [data-slot="resizable-handle"]:hover, [data-slot="resizable-handle"][data-dragging] {
+        background-color: var(--ring);
+    }
+
+    /* ---- Select ----------------------------------------------------------------------
+       The bare <select>, before ui.js reaches it and after it if scripting is off. The OS draws
+       its own arrow in its own colour, so that is suppressed and one is drawn to match. */
+    select[data-slot="select"] {
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: var(--sh-chevron-down);
+        background-position: right 0.7rem center;
+        background-repeat: no-repeat;
+        background-size: 1rem 1rem;
+    }
+
+    /* ---- Select, as built by ui.js --------------------------------------------------- */
+    [data-slot="select-chevron"] {
+        background: currentColor;
+        -webkit-mask: var(--sh-chevron-down) center / 1rem 1rem no-repeat;
+        mask: var(--sh-chevron-down) center / 1rem 1rem no-repeat;
+    }
+    [data-slot="select-item"][data-selected="true"]::after {
+        content: "";
+        position: absolute;
+        right: 0.5rem;
+        block-size: 0.875rem;
+        inline-size: 0.875rem;
+        background: currentColor;
+        -webkit-mask: var(--sh-check) center / contain no-repeat;
+        mask: var(--sh-check) center / contain no-repeat;
+    }
+
+    /* ---- native controls the design system still owns --------------------------------- */
+    /* Chrome draws the search field's clear button as a grey X from another design system.
+       The raw type=search inputs (list filters) are not wrapped in any component, so this
+       has to be a rule rather than a class. */
+    input[type="search"]::-webkit-search-cancel-button {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+        opacity: 0.5;
+        background: var(--sh-clear-icon) center / contain no-repeat;
+    }
+    input[type="search"]::-webkit-search-cancel-button:hover { opacity: 0.9; }
+
+    /* The option panel of a native <select> is drawn by the OS and cannot be themed; the most
+       that can be reached is its ground, so it is not OS white on a themed page. */
+    select option { background-color: var(--popover); color: var(--popover-foreground); }
+
+    /* A column of figures reads digit over digit, and the spinner — a different shape in every
+       engine, and money never needs it — is gone. */
+    input[type="number"][data-slot="input"],
+    [data-slot="date-picker"] { font-family: var(--font-numeric); }
+    input[type="number"][data-slot="input"] { -moz-appearance: textfield; appearance: textfield; }
+    input[type="number"][data-slot="input"]::-webkit-outer-spin-button,
+    input[type="number"][data-slot="input"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    /* ---- LogoCloud marquee ------------------------------------------------------------
+       The track holds the list twice and slides by half its own width, so the second copy
+       arrives exactly where the first began and the loop has no seam. Edges fade through a
+       mask rather than an overlay, so the fade works on any background. Pointer or focus inside
+       pauses it. --logo-cloud-duration sets the speed; under right-to-left it runs the other
+       way, or the second copy would be waiting off the wrong edge. */
+    [data-slot="logo-cloud-viewport"] {
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+        mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+    }
+    [data-slot="logo-cloud-track"] { animation: sh-marquee var(--logo-cloud-duration, 30s) linear infinite; }
+    [dir="rtl"] [data-slot="logo-cloud-track"] { --sh-marquee-to: 50%; }
+    [data-slot="logo-cloud-viewport"]:hover [data-slot="logo-cloud-track"],
+    [data-slot="logo-cloud-viewport"]:focus-within [data-slot="logo-cloud-track"] { animation-play-state: paused; }
+    @media (prefers-reduced-motion: reduce) {
+        /* Nothing moves on its own: the copy goes, and the one list wraps into a still cloud. */
+        [data-slot="logo-cloud-viewport"] { -webkit-mask-image: none; mask-image: none; }
+        [data-slot="logo-cloud-track"] { animation: none; width: auto; justify-content: center; }
+        [data-slot="logo-cloud-track"] > [aria-hidden="true"] { display: none; }
+        [data-slot="logo-cloud-track"] > [data-slot="logo-cloud-list"] { flex-shrink: 1; flex-wrap: wrap; justify-content: center; row-gap: 2rem; padding-inline-end: 0; }
+    }
+
+    /* ---- monthly / yearly: PricingTable, GrowthBusiness, SubscriptionDetails ----------------
+       A section that offers both billings writes every price twice, each marked data-billing,
+       and its yearly control — a switch or a radio, value="yearly" — decides which shows. That
+       is :has(), so the switch works with scripting off. Rules only ever hide: a rule that
+       showed would have to restore a display value, and any utility on the element would lose
+       to it. data-billing-scope names the billing the server checked, which is what an engine
+       without :has() goes on showing, rather than both. */
+    @supports not selector(:has(*)) {
+        [data-billing-scope="monthly"] [data-billing="yearly"],
+        [data-billing-scope="yearly"] [data-billing="monthly"] { display: none; }
+    }
+    [data-billing-scope]:has([data-billing-control] [value="yearly"]:checked) [data-billing="monthly"],
+    [data-billing-scope]:has([data-billing-control] [value="yearly"]:not(:checked)) [data-billing="yearly"] { display: none; }
+}
+
+@keyframes sh-spin { to { transform: rotate(360deg); } }
+@keyframes sh-marquee { to { transform: translateX(var(--sh-marquee-to, -50%)); } }
+@keyframes sh-fade-in { from { opacity: 0; } }
+@keyframes sh-dialog-in { from { opacity: 0; transform: scale(0.96); } }
+@keyframes sh-accordion-down { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes sh-slide-from-right { from { transform: translateX(100%); } }
+@keyframes sh-slide-from-left { from { transform: translateX(-100%); } }
+@keyframes sh-slide-from-top { from { transform: translateY(-100%); } }
+@keyframes sh-slide-from-bottom { from { transform: translateY(100%); } }
+
+/* ---- Air Datepicker, behind <DatePicker /> ------------------------------------------------
+   Outside @layer components on purpose: air-datepicker.css declares these same custom
+   properties on .air-datepicker unlayered, and unlayered declarations win over every layered
+   one regardless of order. Inside the layer the calendar kept its own orange. */
+.air-datepicker {
+    --adp-background-color: var(--popover);
+    --adp-text-color: var(--popover-foreground);
+    --adp-color: var(--popover-foreground);
+    --adp-color-secondary: var(--muted-foreground);
+    --adp-border-color: var(--border);
+    --adp-border-color-inner: var(--border);
+    --adp-cell-background-color-selected: var(--primary);
+    --adp-cell-background-color-selected-hover: var(--primary);
+    --adp-cell-background-color-hover: var(--accent);
+    --adp-day-name-color: var(--muted-foreground);
+    --adp-nav-color-secondary: var(--muted-foreground);
+    --adp-accent-color: var(--primary);
+    --adp-font-family: inherit;
+    /* Above up-modal (z-index 2000): the calendar renders on <body> to escape the overlay's
+       scrollport, so it has to clear the overlay it belongs to. */
+    --adp-z-index: 2100;
+}
+/* The header title is the year control: months -> years -> decades. Make it read as a button. */
+.air-datepicker-nav--title { font-weight: 500; }
+.air-datepicker.-active- { z-index: 2100; }
+
+/* A group joins the CONTROL, even when a wrapper stands in the way.
+   ------------------------------------------------------------------------------------------
+   ButtonGroup makes its joins with `[&>*]` utilities, which works upstream because React's
+   <DropdownMenu> and <Select> render no element at all. Two of this port's do: DropdownMenu is
+   a real positioning div, and ui.js wraps a <select> in [data-slot=select-root] so it can draw
+   the shadcn panel beside it. The group's radius then lands on a wrapper and the control inside
+   keeps all four corners — a rounded button sitting in a squared-off slot.
+
+   UNLAYERED, deliberately. The first attempt used :where(), which contributes no specificity
+   and lost to the plain `rounded-md` in the recipe. The second raised specificity with :is()
+   and still lost, because these rules live in @layer components and a utility is in @layer
+   utilities — and a layer beats specificity outright. Unlayered CSS beats every layer, which is
+   what an override of a utility has to be.
+
+   Logical properties, so the joins stay on the reading edges under dir="rtl". */
+[data-slot="button-group"] > :not(:first-child):is([data-slot="dropdown-menu"], [data-slot="select-root"], [data-slot="popover"]) > :is(button, select, input, [data-slot$="-trigger"]) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    border-inline-start-width: 0;
+}
+
+[data-slot="button-group"] > :not(:last-child):is([data-slot="dropdown-menu"], [data-slot="select-root"], [data-slot="popover"]) > :is(button, select, input, [data-slot$="-trigger"]) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+
+[data-slot="button-group"][data-orientation="vertical"] > :not(:first-child):is([data-slot="dropdown-menu"], [data-slot="select-root"], [data-slot="popover"]) > :is(button, select, input, [data-slot$="-trigger"]) {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    border-inline-start-width: 1px;
+    border-block-start-width: 0;
+}
+
+[data-slot="button-group"][data-orientation="vertical"] > :not(:last-child):is([data-slot="dropdown-menu"], [data-slot="select-root"], [data-slot="popover"]) > :is(button, select, input, [data-slot$="-trigger"]) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+}
+
+/* Base UI renders an ItemIndicator only while its row is selected; this one is always in the
+   markup, so the not-selected state hides it here. UNLAYERED on purpose: the icon carries
+   `flex` from the utilities layer, and a layered rule loses to that whatever its specificity. */
+[data-slot="combobox-item"]:not([data-selected]) [data-slot="combobox-item-indicator"] {
+    display: none;
+}
+
+/* A panel is POSITIONED by script and ANIMATED by CSS, and those must not be the same property.
+   shadcn's panels carry `duration-100`, which Tailwind pairs with `transition-property: all` --
+   so the left and top this file's place() writes were transitioned too. On the second open the
+   values are already there and nothing moves; on the FIRST one they go from the popover's
+   unpositioned corner to the anchor, and the panel visibly flies across the page. It read as a
+   deliberate animation, which is why it survived so long.
+
+   The fade and zoom shadcn actually asks for are opacity and transform, and they still run. */
+[popover][data-slot$="-content"] {
+    transition-property: opacity, transform, scale, translate, display, overlay;
+}
+
+/* ---- Sonner (Toastify-js underneath) -------------------------------------------------
+   UNLAYERED, and that is the whole reason it works. toastify.css is a plain stylesheet with no
+   @layer, and an unlayered declaration beats every layered one regardless of order or
+   specificity — so while these rules sat in @layer components the toast kept Toastify's own
+   2px radius, its own padding and its own transparent background, and every line here did
+   nothing at all. air-datepicker and button-group are out here for the same reason.
+
+   Sonner's shape: an icon, then the words, then the close button. shadcn passes the icons in
+   and leaves the surface alone for every type — the colour is on the glyph, not on the box. */
+.toastify[data-slot="sonner-toast"] {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-family: inherit;
+    background: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+}
+.toastify[data-slot="sonner-toast"] svg { flex: none; width: 1rem; height: 1rem; }
+.toastify[data-slot="sonner-toast"][data-type="success"] svg { color: var(--primary); }
+.toastify[data-slot="sonner-toast"][data-type="error"] svg { color: var(--destructive); }
+.toastify[data-slot="sonner-toast"][data-type="warning"] svg { color: var(--destructive); }
+.toastify[data-slot="sonner-toast"][data-type="info"] svg { color: var(--muted-foreground); }
+.toastify[data-slot="sonner-toast"][data-type="loading"] svg { animation: sh-spin 1s linear infinite; }
+/* Sonner's action button: small, solid, and at the end of the row before the close. It is a
+   real <button>, so it is reachable by keyboard — an undo only the mouse can take is half an
+   undo. */
+.toastify[data-slot="sonner-toast"] [data-slot="sonner-action"] {
+    margin-inline-start: auto;
+    flex: none;
+    height: 1.5rem;
+    padding-inline: 0.5rem;
+    border-radius: calc(var(--radius) - 2px);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 150ms;
+}
+.toastify[data-slot="sonner-toast"] [data-slot="sonner-action"]:hover { opacity: 0.9; }
+/* With an action in the row, the close button no longer needs to claim the free space. */
+.toastify[data-slot="sonner-toast"]:has([data-slot="sonner-action"]) .toast-close {
+    margin-inline-start: 0;
+}
+
+.toastify[data-slot="sonner-toast"] .toast-close {
+    margin-inline-start: auto;
+    padding-inline-start: 0.5rem;
+    opacity: 0.5;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    transition: opacity 150ms;
+}
+.toastify[data-slot="sonner-toast"] .toast-close:hover { opacity: 1; }
+
+@keyframes sh-spin { to { rotate: 360deg; } }
+
+/* ---- TagsInput (Tom Select underneath) ------------------------------------------------
+   UNLAYERED, for the same reason as Sonner above: tom-select.min.css is a plain stylesheet
+   with no @layer, so it beats every utility on <TagsInput> however specific they are.
+
+   What that produced was two controls, one inside the other. Tom Select copies the original
+   <select>'s classes onto the wrapper it builds — so the wrapper wore the shadcn input box,
+   1px at an 8px radius — and then drew its OWN control inside it, 1px of #d0d0d0 at a 3px
+   radius on white. A bordered box in a bordered box, which is what it looked like.
+
+   So the wrapper is flattened back to a plain block and the box is drawn once, on .ts-control,
+   from the same tokens <Input> uses. */
+.ts-wrapper {
+    border: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+.ts-wrapper .ts-control {
+    min-height: var(--height-control, 2.25rem);
+    border: 1px solid var(--input);
+    border-radius: var(--radius);
+    background: transparent;
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+    font-size: inherit;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: color 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+/* Tom Select puts .focus on the wrapper, not on the control, and the control is not the
+   element that takes focus — so shadcn's focus-visible ring has to be re-aimed here. */
+.ts-wrapper.focus .ts-control {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
+}
+.ts-wrapper.disabled .ts-control { opacity: 0.5; cursor: not-allowed; }
+.ts-control > input { font-size: inherit; color: inherit; }
+.ts-control > input::placeholder { color: var(--muted-foreground); }
+
+/* A chosen collection is a <Badge variant="secondary">, because that is what it is. */
+.ts-wrapper.multi .ts-control > .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: calc(infinity * 1px);
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1rem;
+}
+.ts-wrapper.multi .ts-control > .item.active {
+    background: var(--accent);
+    color: var(--accent-foreground);
+}
+/* The remove_button plugin ships a bordered ✕ on the left of the chip. shadcn puts it at the
+   reading end, as a glyph rather than a second control. */
+.ts-wrapper.plugin-remove_button .item .remove {
+    order: 1;
+    border: 0;
+    padding: 0 0 0 0.125rem;
+    color: inherit;
+    opacity: 0.6;
+}
+.ts-wrapper.plugin-remove_button .item .remove:hover { opacity: 1; background: transparent; }
+
+/* The list is a popover panel: same surface, same border, same radius as <SelectItem> sits on. */
+.ts-dropdown {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+    margin-top: 0.25rem;
+    padding: 0.25rem;
+    font-size: 0.875rem;
+}
+.ts-dropdown .option {
+    border-radius: calc(var(--radius) - 2px);
+    padding: 0.375rem 0.5rem;
+}
+.ts-dropdown .active { background: var(--accent); color: var(--accent-foreground); }
+.ts-dropdown .no-results { padding: 0.375rem 0.5rem; color: var(--muted-foreground); }
+
+/* ---- Unpoly overlays: up-layer="new modal | drawer | popup | cover" -----------------------
+   The skill tells every consumer to open server content with `up-layer="new modal"` rather
+   than a <Dialog>, and Unpoly draws that overlay in its own elements: <up-modal>, <up-drawer>,
+   <up-popup> and <up-cover>, each with -backdrop, -viewport, -box, -content and -dismiss
+   parts. unpoly.css frames them in white with a grey shadow and a grey "×", which sits beside
+   a shadcn page like a different product and stays white in dark mode. These rules put them
+   on the tokens of <Dialog>, <Sheet> and <PopoverContent>, so a route opened in a layer looks
+   like a dialog the page had all along — in every theme, because nothing here is a colour.
+
+   UNLAYERED, for the reason the Toastify section gives: unpoly.css has no @layer, and an
+   unlayered rule beats every layered one. It is also usually linked AFTER the app's CSS
+   (<UnpolyHead /> sits last in the demo's <head>), so an equal-specificity tie goes to Unpoly.
+   Every selector here is therefore one element or attribute more specific than the unpoly.css
+   rule it overrides — `up-modal-viewport > up-modal-box` against `up-modal-box`,
+   `up-modal[size] > up-modal-viewport > up-modal-box` against `up-modal[size] up-modal-box` —
+   and wins in either order with no !important.
+
+   Motion is left alone: Unpoly animates opacity and transform on these elements itself, and an
+   animation here would run against its own. */
+
+/* The scrim is shadcn's DialogOverlay, bg-black/50, which is the same in light and dark — and
+   the value [data-slot="dialog"]::backdrop uses, so a layer and a <Dialog> dim the page
+   identically. A dark page is already dark; the scrim needs no second value. */
+up-modal > up-modal-backdrop,
+up-drawer > up-drawer-backdrop {
+    background: rgb(0 0 0 / 0.5);
+}
+
+/* ---- modal: DialogContent ---------------------------------------------------------------
+   Unpoly's viewport padding is a pair of variables it multiplies by the nesting depth. They are
+   set on the overlay element rather than on :root, so they win by inheritance instead of by
+   load order: 1rem at the sides is DialogContent's max-w-[calc(100%-2rem)], 2rem top and
+   bottom the dialog's max-h-[calc(100dvh-4rem)]. */
+up-modal {
+    --up-modal-viewport-padding-x: 1rem;
+    --up-modal-viewport-padding-y: 2rem;
+}
+
+/* rounded-lg border p-6 shadow-lg, with the surface border the library puts on
+   [data-slot="dialog-content"], and the popover pair for colour since a layer floats over the
+   page. margin-block:auto centres it as a <dialog> is centred — and an auto margin being the
+   one centring that never pushes content out of reach, a box taller than the screen starts at
+   the top and scrolls instead of losing its head. */
+up-modal-viewport > up-modal-box {
+    margin-block: auto;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    background: var(--popover);
+    color: var(--popover-foreground);
+    padding: 1.5rem;
+    box-shadow: var(--elevation-4);
+}
+
+/* Unpoly's sizes are 350/650/1000px. These are max-w-sm / max-w-lg / max-w-3xl, medium being
+   DialogContent's own sm:max-w-lg and Unpoly's default size. unpoly.css's max-width:100%
+   still caps each at the viewport. */
+up-modal[size="small"] > up-modal-viewport > up-modal-box { width: 24rem; }
+up-modal[size="medium"] > up-modal-viewport > up-modal-box { width: 32rem; }
+up-modal[size="large"] > up-modal-viewport > up-modal-box { width: 48rem; }
+up-modal[size="grow"] > up-modal-viewport > up-modal-box { width: auto; }
+up-modal[size="full"] > up-modal-viewport > up-modal-box { width: 100%; }
+
+/* ---- drawer: SheetContent ---------------------------------------------------------------
+   A panel from the edge, drawn like <Sheet Side="left|right">: shadow-lg, and a border only on
+   the edge that faces into the page — border-e for a left sheet, border-s for a right one.
+   Unpoly's `position` is physical, so the borders are too. */
+up-drawer-viewport > up-drawer-box {
+    min-height: 100dvh;
+    background: var(--popover);
+    color: var(--popover-foreground);
+    padding: 1.5rem;
+    box-shadow: var(--elevation-4);
+}
+up-drawer[position="left"] > up-drawer-viewport > up-drawer-box { border-right: 1px solid var(--border); }
+up-drawer[position="right"] > up-drawer-viewport > up-drawer-box { border-left: 1px solid var(--border); }
+
+/* w-3/4 sm:max-w-sm is <Sheet>'s width, and medium is Unpoly's default drawer size. */
+up-drawer[size="small"] > up-drawer-viewport > up-drawer-box { width: min(18rem, 75%); }
+up-drawer[size="medium"] > up-drawer-viewport > up-drawer-box { width: min(24rem, 75%); }
+up-drawer[size="large"] > up-drawer-viewport > up-drawer-box { width: min(36rem, 100%); }
+
+/* ---- cover: a whole screen --------------------------------------------------------------
+   A cover replaces the page, so it takes the page's ground rather than a surface's — and it
+   must take something, or it is unpoly.css's white in dark mode. */
+up-cover-viewport > up-cover-box {
+    background: var(--background);
+    color: var(--foreground);
+}
+
+/* ---- popup: PopoverContent --------------------------------------------------------------
+   rounded-md border bg-popover p-4 text-popover-foreground shadow-md, w-72 at the default
+   size. `html` is there only to be one element more specific than unpoly.css. */
+html up-popup {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--popover);
+    color: var(--popover-foreground);
+    padding: 1rem;
+    box-shadow: var(--elevation-3);
+}
+html up-popup[size="small"] { width: 12rem; }
+html up-popup[size="medium"] { width: 18rem; }
+html up-popup[size="large"] { width: 34rem; }
+
+/* ---- the ×: the dialog's corner button --------------------------------------------------
+   Upstream's is absolute top-4 end-4 rounded-sm p-1 around a size-4 icon: a 1.5rem square,
+   quiet until pointed at, then the accent. Unpoly's is a text "×" at 1.7rem with line-height
+   .5, so it is squared up here and the glyph centred. right:auto then inset-inline-end puts it
+   at the reading end in RTL, where the dialog's own X goes. */
+up-modal up-modal-dismiss,
+up-drawer up-drawer-dismiss,
+up-cover up-cover-dismiss {
+    top: 1rem;
+    right: auto;
+    inset-inline-end: 1rem;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: calc(var(--radius) - 4px);
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--muted-foreground);
+    transition: color var(--duration-ui) var(--ease-ui), background-color var(--duration-ui) var(--ease-ui);
+}
+up-modal up-modal-dismiss:hover,
+up-drawer up-drawer-dismiss:hover,
+up-cover up-cover-dismiss:hover {
+    background: var(--accent);
+    color: var(--accent-foreground);
+}
+up-modal up-modal-dismiss:focus-visible,
+up-drawer up-drawer-dismiss:focus-visible,
+up-cover up-cover-dismiss:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+    up-modal up-modal-dismiss,
+    up-drawer up-drawer-dismiss,
+    up-cover up-cover-dismiss { transition: none; }
+}
+
+/* ---- below sm, a modal is a bottom sheet ------------------------------------------------
+   A centred card on a phone is a small target at the far end of the thumb. Below 640px — where
+   DialogContent stops being sm:max-w-lg — the box spans the width, sits on the bottom edge with
+   only its top corners rounded, and pads the home indicator's safe area. The viewport keeps a
+   3rem strip at the top so the page still shows behind it, and a tap there still dismisses.
+   `[nesting]` is Unpoly's own attribute, there for specificity: the rule it beats is
+   `up-modal[nesting="0"] up-modal-viewport`. */
+@media (max-width: 639.98px) {
+    html up-modal[nesting] > up-modal-viewport {
+        padding: 3rem 0 0;
+    }
+    up-modal-viewport > up-modal-box,
+    up-modal[size] > up-modal-viewport > up-modal-box {
+        width: 100%;
+        margin-block: auto 0;
+        border-bottom-width: 0;
+        border-radius: var(--radius) var(--radius) 0 0;
+        padding: 1.5rem max(1rem, env(safe-area-inset-right)) calc(1.5rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    }
+}
+
+/* ---- square controls keep their size inside a Field (unlayered) ------------------------
+   <Field> hands its children `w-full` below its container-query breakpoint and `w-auto` above
+   it, so a checkbox or a radio sitting in a horizontal Field loses the `size-4` on its class
+   list: `w-auto` is a utility, and a utility sits in a later layer than `@layer components`, so
+   it wins whatever the specificity of the sizing rule. An `appearance: none` input with no width
+   collapses to its two borders — 2px wide, 16px tall — which reads as a stray line rather than a
+   box to tick. A minimum keeps every size the component supports and only rules out the
+   collapse, so `size-5` and friends still work. */
+[data-slot="checkbox"],
+[data-slot="radio-group-item"] {
+    min-inline-size: 1rem;
+    min-block-size: 1rem;
+}

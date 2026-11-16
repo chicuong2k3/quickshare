@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* Shown by the compiler only when everything is filtered out. Hidden to start with, because on
+   first render nothing has been typed and nothing is filtered. *@
+
+<div data-slot="command-empty" hidden class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "py-6 text-center text-control";
+
+    string Classes => Cn(Base, Class);
+}

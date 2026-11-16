@@ -1,0 +1,15 @@
+@inherits UiComponentBase
+
+@* The answer that goes ahead. type="submit" by default, because the thing being confirmed is
+   almost always a form post — and a confirmation that cannot submit is a dead end. *@
+
+<button type="@Type" data-slot="alert-dialog-action" class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter] public string Type { get; set; } = "submit";
+    [Parameter] public string Variant { get; set; } = "default";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

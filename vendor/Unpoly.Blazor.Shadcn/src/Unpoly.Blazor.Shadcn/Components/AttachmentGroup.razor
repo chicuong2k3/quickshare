@@ -1,0 +1,16 @@
+@inherits UiComponentBase
+
+@* A real <ul> when there is more than one: "list, 3 items" is how someone hears how many files
+   are attached before deciding whether to go through them. *@
+
+<ul data-slot="attachment-group" class="@Classes"
+    @attributes="AdditionalAttributes">@ChildContent</ul>
+
+@code {
+    const string Base =
+        "flex min-w-0 scroll-fade-x snap-x snap-mandatory scroll-px-1 scrollbar-none gap-3 " +
+        "overflow-x-auto overscroll-x-contain py-1 *:data-[slot=attachment]:flex-none " +
+        "*:data-[slot=attachment]:snap-start";
+
+    string Classes => Cn(Base, Class);
+}

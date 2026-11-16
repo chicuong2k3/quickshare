@@ -1,0 +1,74 @@
+@inherits UiComponentBase
+
+@* GridPattern — a decorative lattice of lines, drawn as an SVG <pattern> and stretched to fill
+   whatever it is dropped into. It is decoration ONLY: it carries no information, so it is
+   aria-hidden and pointer-transparent, and it must never be the sole carrier of meaning. If the
+   lines are meant to be read as data — a schedule, a density, a scale — draw that in real markup
+   and let the grid stay behind it. For a single divider use Separator; for an actual data chart
+   use Chart; for a texture on a card, Card already has one. *@
+
+<div data-slot="grid-pattern"
+     class="@Classes"
+     aria-hidden="true"
+     focusable="false"
+     @attributes="AdditionalAttributes">
+    <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <defs>
+            <pattern id="@PatternId" width="@CellSizeText" height="@CellSizeText" patternUnits="userSpaceOnUse">
+                <path d="M @CellSizeText 0 L 0 0 0 @CellSizeText"
+                      fill="none"
+                      stroke="@Stroke"
+                      stroke-width="@StrokeWidthText" />
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="@FillReference" />
+    </svg>
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>How far apart the grid lines sit, in pixels. This is the loudness control: a small
+    /// value reads as texture you stop noticing, a large one reads as structure the content is
+    /// sitting inside.</summary>
+    [Parameter] public int CellSize { get; set; } = 24;
+
+    /// <summary>Any CSS colour for the lines. It defaults to <c>currentColor</c> so the lattice
+    /// follows the nearest foreground — and therefore the light/dark theme and the surrounding
+    /// text — instead of pinning a colour that goes wrong in one of them. Pass a theme token such
+    /// as <c>var(--border)</c> when the grid should be quieter than the text it sits behind.</summary>
+    [Parameter] public string? Stroke { get; set; } = "currentColor";
+
+    /// <summary>Line thickness in pixels. It is kept on the <c>path</c> and not scaled with the
+    /// pattern tile, so the grid stays hairline-thin however far the svg is stretched. Past a
+    /// couple of pixels the lines start competing with the content on top of them, which is the
+    /// moment the pattern has stopped being decoration.</summary>
+    [Parameter] public double StrokeWidth { get; set; } = 1;
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    /// <summary>Every number that reaches the DOM is written in invariant culture. A locale that
+    /// separates decimals with a comma turns <c>width="24,5"</c> into an invalid value, and the
+    /// browser drops the whole pattern with no error — the element renders, just empty.</summary>
+    static string N(double value) => value.ToString("0.##", Inv);
+
+    /// <summary>Each instance needs its own <c>&lt;pattern&gt;</c> id: the ids share one document,
+    /// and two grids given the same id resolve to the first definition, so the second one silently
+    /// draws the first one's tile size and colour.</summary>
+    static int _nextId;
+    readonly string _patternId = "grid-pattern-" + System.Threading.Interlocked.Increment(ref _nextId);
+
+    string PatternId => _patternId;
+
+    // A non-positive tile is not a grid, and SVG treats a zero width as a hard parse error that
+    // takes the rest of the pattern with it, so the floor is one device pixel.
+    string CellSizeText => N(Math.Max(1, CellSize));
+
+    string StrokeWidthText => N(Math.Max(0, StrokeWidth));
+
+    string FillReference => $"url(#{PatternId})";
+
+    // absolute inset-0 pins the svg to the padded edge of the nearest positioned ancestor, and
+    // pointer-events-none keeps the whole overlay out of hit-testing so the content above it stays
+    // clickable — a background that swallows clicks is a bug, not a style.
+    string Classes => Cn("pointer-events-none absolute inset-0", Class);
+}

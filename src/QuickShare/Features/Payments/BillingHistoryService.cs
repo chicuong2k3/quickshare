@@ -1,18 +1,19 @@
+using Microsoft.Extensions.Localization;
 using QuickShare.Infrastructure.Caching;
+using System.Globalization;
 
 namespace QuickShare.Features.Payments;
 
 /// <summary>
-/// Shared billing-history logic used by both the REST endpoint
-/// (GET /api/payments/history) and the SSR billing page.
+/// Shared billing-history logic used by the SSR billing page.
 /// </summary>
 public static class BillingHistoryService
 {
-    public static async Task<BillingHistoryResponse> GetForUserAsync(User user, AppDbContext db, CancellationToken ct)
+    public static async Task<BillingHistoryResponse> GetForUserAsync(User user, AppDbContext db, IStringLocalizer<SharedLoc> loc, CancellationToken ct)
     {
         var cache = StaticCache.Instance;
         return await cache.GetOrSetAsync(
-            $"billing:history:{user.Id}",
+            UserCacheInvalidator.BillingHistoryKey(user.Id, CultureInfo.CurrentCulture.Name),
             async ct2 =>
             {
                 var events = await db.PaymentEvents
@@ -34,7 +35,7 @@ public static class BillingHistoryService
 
                 var eventItems = events.Select(e => new PaymentEventItem(
                     e.EventType,
-                    GetEventLabel(e.EventType, e.PlanDisplay, e.Billing),
+                    GetEventLabel(loc, e.EventType, e.PlanDisplay, e.Billing),
                     e.PlanDisplay,
                     e.Billing,
                     e.Amount,
@@ -58,14 +59,14 @@ public static class BillingHistoryService
         );
     }
 
-    private static string GetEventLabel(string eventType, string planDisplay, string billing)
+    private static string GetEventLabel(IStringLocalizer<SharedLoc> loc, string eventType, string planDisplay, string billing)
     {
         return eventType switch
         {
-            PaymentEventTypes.SubscriptionCreated => $"Subscription created — {planDisplay} {billing}",
-            PaymentEventTypes.SubscriptionRenewed => $"Subscription renewed — {planDisplay} {billing}",
-            PaymentEventTypes.SubscriptionCancelled => "Subscription cancelled",
-            PaymentEventTypes.SubscriptionExpired => "Subscription expired",
+            PaymentEventTypes.SubscriptionCreated => loc["billing_evt_created", planDisplay, billing].Value,
+            PaymentEventTypes.SubscriptionRenewed => loc["billing_evt_renewed", planDisplay, billing].Value,
+            PaymentEventTypes.SubscriptionCancelled => loc["billing_evt_cancelled"].Value,
+            PaymentEventTypes.SubscriptionExpired => loc["billing_evt_expired"].Value,
             _ => eventType
         };
     }

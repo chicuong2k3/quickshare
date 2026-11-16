@@ -4,6 +4,7 @@ namespace QuickShare.Data.Entities;
 public record UploadSession : BaseAuditEntity
 {
     public Guid? SenderId { get; init; }
+    public string? SenderEmail { get; init; }
     public string FileName { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public long FileSize { get; init; }
@@ -11,9 +12,21 @@ public record UploadSession : BaseAuditEntity
     public DateTime ExpiresAt { get; init; }
     public string? R2UploadId { get; set; }
     public string? StoragePath { get; set; }
+    /// <summary>When set, this session replaces an existing delivery (issue #72) instead of creating a new one.</summary>
+    public Guid? ReplaceDeliveryId { get; init; }
+    /// <summary>When set, this upload is a submission to a file request (issue #16).</summary>
+    public Guid? FileRequestId { get; init; }
+    /// <summary>When set, this upload was authorized by a one-time pay-per-transfer credit pass (issue #85).</summary>
+    public string? TransferPassToken { get; init; }
+    /// <summary>Pre-allocated share code for instant P2P/live streaming before upload completes (issue #32).</summary>
+    public string? ShareCode { get; set; }
+    public int UploadedPartsCount { get; set; }
+    public int TotalPartsCount { get; set; }
+    public long UploadedBytes { get; set; }
 }
 
 public static class UploadSessionStatus
 {
     public const string InProgress = "InProgress";
+    public const string Committed = "Committed";
 }

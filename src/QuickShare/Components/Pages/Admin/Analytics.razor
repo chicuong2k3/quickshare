@@ -1,0 +1,197 @@
+@page "/admin/analytics"
+@layout MainLayout
+@attribute [Authorize]
+@using QuickShare.Features.Analytics.Dashboard
+@using Microsoft.Extensions.Options
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_analytics_page_title"]</PageTitle>
+
+<PageWrapper id="admin-analytics-shell" Variant="PageVariant.Padded">
+<div class="admin-board">
+    <div class="flex flex-wrap items-center justify-between gap-4 admin-analytics-heading">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">@Loc["admin_analytics_title"]</h1>
+            <p class="text-muted-foreground">@Loc["admin_analytics_subtitle"]</p>
+        </div>
+        @if (isAdmin)
+        {
+            <div class="flex items-center gap-2">
+                <a id="admin-analytics-export-csv" href="@RoutePaths.AdminAnalyticsCsvRoute" class="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium" data-ai-action="analytics.export.csv">@Loc["admin_analytics_export_csv"]</a>
+            </div>
+        }
+    </div>
+
+    <div id="admin-analytics-app" class="admin-analytics-card" data-slot="card">
+        <div class="px-(--card-spacing)">
+            @if (!isAdmin)
+            {
+                <div class="text-destructive" role="alert">@Loc["admin_analytics_forbidden"]</div>
+            }
+            else if (data is null)
+            {
+                <p class="text-muted-foreground">@Loc["admin_analytics_empty"]</p>
+            }
+            else
+            {
+                <div class="admin-analytics-dau">
+                    <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_dau_title"]</h2>
+                    <div class="admin-analytics-cards">
+                        @foreach (var dau in data.DailyActiveUsers)
+                        {
+                            <div class="admin-analytics-card" data-ai-action="analytics.dau.@dau.Day.ToString("yyyyMMdd")">
+                                <span class="admin-analytics-card__day">@dau.Day.ToString("MMM d")</span>
+                                <span class="admin-analytics-card__value">@dau.Count</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="admin-analytics-funnel">
+                    <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_funnel_title"]</h2>
+                    <Table class="admin-analytics-table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_visitor"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_signup"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_upload_started"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_upload_completed"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_download_completed"]</TableHead>
+                                <TableHead scope="col">@Loc["admin_analytics_funnel_trial"]</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell>@data.Funnel.Visitor</TableCell>
+                                <TableCell>@data.Funnel.Signup</TableCell>
+                                <TableCell>@data.Funnel.UploadStarted</TableCell>
+                                <TableCell>@data.Funnel.UploadCompleted</TableCell>
+                                <TableCell>@data.Funnel.DownloadCompleted</TableCell>
+                                <TableCell>@data.Funnel.TrialStarted</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+
+                @* Cohort retention over time (issue #303) *@
+                <div id="admin-analytics-cohorts" class="my-6">
+                    <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_cohorts_title"]</h2>
+                    @if (data.Cohorts is null || data.Cohorts.Count == 0)
+                    {
+                        <p class="text-muted-foreground">@Loc["admin_analytics_cohorts_empty"]</p>
+                    }
+                    else
+                    {
+                        <Table class="admin-analytics-table">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_week"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_size"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_w1"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_w4"]</TableHead>
+                                    <TableHead scope="col">@Loc["admin_analytics_cohort_w8"]</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                @foreach (var cohort in data.Cohorts)
+                                {
+                                    <TableRow>
+                                        <TableCell class="font-mono">@cohort.CohortWeekStart.ToString("yyyy-MM-dd")</TableCell>
+                                        <TableCell>@cohort.CohortSize</TableCell>
+                                        <TableCell>@cohort.RetainedWeek1 (@cohort.Week1Percent%)</TableCell>
+                                        <TableCell>@cohort.RetainedWeek4 (@cohort.Week4Percent%)</TableCell>
+                                        <TableCell>@cohort.RetainedWeek8 (@cohort.Week8Percent%)</TableCell>
+                                    </TableRow>
+                                }
+                            </TableBody>
+                        </Table>
+                    }
+                </div>
+
+                <div class="admin-analytics-grid">
+                    <div class="admin-analytics-top-files">
+                        <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_top_files_title"]</h2>
+                        @if (data.TopFiles.Count == 0)
+                        {
+                            <p class="text-muted-foreground">@Loc["admin_analytics_top_files_empty"]</p>
+                        }
+                        else
+                        {
+                            <Table class="admin-analytics-table">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead scope="col">@Loc["admin_analytics_file_col"]</TableHead>
+                                        <TableHead scope="col">@Loc["admin_analytics_downloads_col"]</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    @foreach (var file in data.TopFiles)
+                                    {
+                                        <TableRow>
+                                            <TableCell class="admin-analytics-file-name">@file.FileName</TableCell>
+                                            <TableCell>@file.DownloadCount</TableCell>
+                                        </TableRow>
+                                    }
+                                </TableBody>
+                            </Table>
+                        }
+                    </div>
+
+                    <div class="admin-analytics-geo">
+                        <h2 class="admin-analytics-section-title text-xl font-semibold">@Loc["admin_analytics_geo_title"]</h2>
+                        @if (data.GeographicSpread.Count == 0)
+                        {
+                            <p class="text-muted-foreground">@Loc["admin_analytics_geo_empty"]</p>
+                        }
+                        else
+                        {
+                            <Table class="admin-analytics-table">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead scope="col">@Loc["admin_analytics_country_col"]</TableHead>
+                                        <TableHead scope="col">@Loc["admin_analytics_events_col"]</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    @foreach (var country in data.GeographicSpread)
+                                    {
+                                        <TableRow>
+                                            <TableCell>@(country.CountryCode ?? "?")</TableCell>
+                                            <TableCell>@country.Count</TableCell>
+                                        </TableRow>
+                                    }
+                                </TableBody>
+                            </Table>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+</PageWrapper>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "plan")] public string? PlanFilter { get; set; }
+
+    private bool isAdmin;
+    private AnalyticsDashboardResponse? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+
+        if (!isAdmin)
+        {
+            return;
+        }
+
+        data = await Bus.Send<AnalyticsDashboardResponse>(new AnalyticsDashboardQuery(Plan: PlanFilter), CancellationToken.None);
+    }
+}

@@ -52,19 +52,27 @@ public sealed class PayOSWebhookSignatureTests : IClassFixture<TestWebAppFactory
     /// <summary>Builds the webhook body with a signature the endpoint will accept.</summary>
     private static object SignedWebhookBody(long orderCode, long amount, string checksumKey)
     {
-        // Mirror exactly what PayOSWebhookEndpoint reconstructs before VerifyAsync.
-        var data = new WebhookData
+        // Real PayOS payloads carry fields no typed model of ours lists
+        // (counterAccount*, virtualAccount*) and signs all of them — so sign the
+        // exact object that goes on the wire, like PayOS does.
+        var data = new
         {
-            OrderCode = orderCode,
-            Amount = amount,
-            Description = "QSC test payment",
-            AccountNumber = "0123456789",
-            Reference = "FT-TEST-REF",
-            TransactionDateTime = "2026-08-09 10:00:00",
-            Currency = "VND",
-            PaymentLinkId = "test-link-id",
-            Code = "00",
-            Description2 = "success",
+            orderCode,
+            amount,
+            description = "QSC test payment",
+            accountNumber = "0123456789",
+            reference = "FT-TEST-REF",
+            transactionDateTime = "2026-08-09 10:00:00",
+            currency = "VND",
+            paymentLinkId = "test-link-id",
+            code = "00",
+            desc = "success",
+            counterAccountBankId = "970422",
+            counterAccountBankName = "MB Bank",
+            counterAccountName = "NGUYEN VAN A",
+            counterAccountNumber = "9876543210",
+            virtualAccountName = "QUICKSHARE",
+            virtualAccountNumber = "V0123456789",
         };
 
         // Sign with the SDK's own CryptoProvider — the same code path the
@@ -75,21 +83,9 @@ public sealed class PayOSWebhookSignatureTests : IClassFixture<TestWebAppFactory
         return new
         {
             code = "00",
-            description = "success",
+            desc = "success",
             success = true,
-            data = new
-            {
-                orderCode,
-                amount,
-                description = data.Description,
-                accountNumber = data.AccountNumber,
-                reference = data.Reference,
-                transactionDateTime = data.TransactionDateTime,
-                currency = data.Currency,
-                paymentLinkId = data.PaymentLinkId,
-                code = data.Code,
-                description2 = data.Description2,
-            },
+            data,
             signature,
         };
     }

@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new feature. A Manual Test Checklist is REQUIRED — see AGENTS.md → Feature Issue Testing Rule.
+title: "[Feature] "
+labels: ["feature", "needs-test-checklist"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you start
+        Every feature issue MUST include a **Manual Test Checklist** below (AGENTS.md → Feature Issue Testing Rule). An issue without a checklist is incomplete and will not be implemented.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What problem does this solve? Who is it for?
+      placeholder: |
+        As a <user>, I want to <do X>, so that <benefit>.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior
+      description: What should happen after this feature ships? Describe screens, flows, and edge cases.
+      placeholder: |
+        - When <action>, the user sees <result>.
+        - Validation: <invalid input> → <error shown>.
+    validations:
+      required: true
+
+  - type: textarea
+    id: manual-test-checklist
+    attributes:
+      label: Manual Test Checklist (MANDATORY)
+      description: One checkbox per scenario. Each step states BOTH the action and the expected result. Cover happy path, validation errors, empty states, and permission boundaries (guest/free/paid).
+      placeholder: |
+        - [ ] Step 1: <action> → <expected result>
+        - [ ] Step 2: <action> → <expected result>
+        - [ ] Step 3: <action> → <expected result>
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Feature scope
+      description: Large/critical features must ALSO get a separate `[Manual Test]` issue (AGENTS.md → Option B).
+      options:
+        - label: Touches auth / billing / payments / P2P (requires separate [Manual Test] issue)
+        - label: Spans 3+ modules (requires separate [Manual Test] issue)
+        - label: UI change (Manual Test Evidence needs screenshots)
+        - label: Backend-only change

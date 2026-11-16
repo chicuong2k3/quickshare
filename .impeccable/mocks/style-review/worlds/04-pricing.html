@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Bảng giá — bảng chuyến (surface)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#15181B; --panel:#1D2125; --flap:#2A2F35; --flap-2:#31373E;
+  --legend:#E9ECEE; --dim:#8B939B; --hair:#31373E; --slot:#0E1113;
+  --amber:#E0A03C; --green:#4FA36A; --red:#C85A4F;
+}
+html[data-theme="light"]{
+  --board:#D3D6D9; --panel:#E2E5E7; --flap:#CFD3D6; --flap-2:#C3C7CB;
+  --legend:#171A1D; --dim:#5C6468; --hair:#B3B8BC; --slot:#F1F3F4;
+  --amber:#A96C10; --green:#2F7A46; --red:#A83B31;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--board);color:var(--legend);font-family:"Barlow Condensed",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.top{background:var(--panel);border-bottom:1px solid var(--hair)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:52px}
+.brand{display:flex;align-items:center;gap:10px}
+.sq{width:22px;height:22px;background:var(--legend);color:var(--board);display:grid;place-items:center;font-size:10px;font-weight:700}
+.brand b{font-size:12px;letter-spacing:.24em;text-transform:uppercase}
+nav{display:flex;gap:20px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--legend);border-bottom:2px solid var(--amber);padding-bottom:2px}
+.top__cta{border:1px solid var(--hair);color:var(--dim);padding:7px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+.top__cta:hover{color:var(--legend);border-color:var(--dim)}
+
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:34px 0 16px;border-bottom:2px solid var(--legend)}
+.head h1{margin:0;font-size:48px;line-height:.92;text-transform:uppercase;letter-spacing:-.01em;font-weight:700;max-width:16ch}
+.head h1 span{color:var(--amber)}
+.head__meta{text-align:right;font-family:"Martian Mono";font-size:9px;line-height:1.9;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.head__meta b{color:var(--legend);font-weight:600}
+
+.period{display:flex;align-items:center;gap:0;margin-top:14px;border:1px solid var(--hair);width:max-content}
+.period button{background:transparent;border:0;border-right:1px solid var(--hair);color:var(--dim);font-family:"Barlow Condensed";font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:9px 16px;cursor:pointer}
+.period button:last-child{border-right:0}
+.period button.on{background:var(--flap);color:var(--legend);box-shadow:inset 0 -2px 0 var(--amber)}
+.period em{font-style:normal;color:var(--green);font-family:"Martian Mono";font-size:8.5px;letter-spacing:.08em;margin-left:10px}
+
+/* the board: three columns, one row per fact */
+.board{margin-top:16px;border:1px solid var(--hair);background:var(--panel)}
+.board__head{display:grid;grid-template-columns:1.25fr repeat(3,1fr);border-bottom:1px solid var(--hair)}
+.board__head > div{padding:12px;border-right:1px solid var(--hair)}
+.board__head > div:last-child{border-right:0}
+.board__head span{display:block;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.board__head b{display:block;font-size:19px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.board__head .col--pro{background:var(--flap)}
+.board__head .tag{display:inline-block;font-family:"Martian Mono";font-size:7.5px;letter-spacing:.1em;padding:2px 5px;border:1px solid var(--green);color:var(--green);margin-top:6px}
+.row{display:grid;grid-template-columns:1.25fr repeat(3,1fr);border-bottom:1px solid var(--hair)}
+.row:last-child{border-bottom:0}
+.row > *{padding:10px 12px;border-right:1px solid var(--hair);font-size:13.5px;letter-spacing:.02em}
+.row > *:last-child{border-right:0}
+.row .k{font-family:"Martian Mono";font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.row .v{text-align:center;font-family:"Martian Mono";font-size:10.5px;color:var(--legend)}
+.row .v.no{color:var(--dim)}
+.row--pro > *{background:color-mix(in srgb, var(--flap) 55%, transparent)}
+.row--price > *:not(.k){font-size:16px;color:var(--amber);font-family:"Barlow Condensed";letter-spacing:.04em}
+.row__unit{display:block;font-family:"Martian Mono";font-size:8px;color:var(--dim);letter-spacing:.06em;margin-top:2px}
+
+/* actions under each column */
+.picks{display:grid;grid-template-columns:1.25fr repeat(3,1fr);border:1px solid var(--hair);border-top:0;background:var(--panel)}
+.picks > div{padding:14px 12px;border-right:1px solid var(--hair);display:flex;flex-direction:column;gap:8px}
+.picks > div:last-child{border-right:0}
+.picks .btn{display:block;text-align:center;padding:11px 10px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:var(--amber);color:#16181A}
+.picks .btn:hover{background:var(--legend)}
+.picks .btn--ghost{background:transparent;border:1px solid var(--hair);color:var(--dim);font-weight:600}
+.picks .btn--ghost:hover{color:var(--legend);border-color:var(--dim);background:transparent}
+.picks .note{font-family:"Martian Mono";font-size:7.5px;letter-spacing:.06em;color:var(--dim);line-height:1.6;text-transform:uppercase}
+.picks__label{font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);align-self:center}
+
+/* fine print as board rows, not paragraphs */
+.small{margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--hair);background:var(--panel)}
+.small div{padding:11px 12px;border-right:1px solid var(--hair)}
+.small div:last-child{border-right:0}
+.small b{display:block;font-family:"Martian Mono";font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:4px;font-weight:400}
+.small p{margin:0;font-size:11.5px;line-height:1.5;color:var(--dim)}
+
+.plans{display:none}
+.plan{background:var(--panel);border:1px solid var(--hair)}
+.plan--pro{border-color:color-mix(in srgb, var(--amber) 55%, var(--hair))}
+.plan__top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px;border-bottom:1px solid var(--hair)}
+.plan__top b{font-size:20px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.plan__top span{font-family:"Martian Mono";font-size:11px;color:var(--amber);text-align:right}
+.plan__top span em{display:block;font-style:normal;color:var(--dim);font-size:8px;letter-spacing:.08em;margin-top:2px}
+.plan__r{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-bottom:1px solid var(--hair-2);font-size:13px}
+.plan__r span{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.plan__r b{font-family:"Martian Mono";font-size:10px;font-weight:400;color:var(--legend)}
+.plan__cta{padding:12px}
+.plan__cta a{display:block;text-align:center;padding:11px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:var(--amber);color:#16181A}
+.plan__cta a.ghost{background:transparent;border:1px solid var(--hair);color:var(--dim)}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 20px;padding:12px 0 46px;font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+@media (max-width:900px){
+  .board,.picks{display:none}
+  .plans{display:grid;gap:12px;margin-top:14px}
+  .period{flex-wrap:wrap;padding-bottom:6px}
+  .period em{width:100%;margin:8px 0 0}
+  .period button{flex:1;padding:9px 8px;font-size:10px;letter-spacing:.1em}
+  .wrap{padding:0 16px}
+  nav{display:none}
+  .head{flex-direction:column;align-items:flex-start;gap:8px;padding:22px 0 12px}
+  .head h1{font-size:30px}
+  .head__meta{text-align:left;font-size:8px}
+  .board__head,.row,.picks{grid-template-columns:1fr}
+  .board__head > div,.row > *,.picks > div{border-right:0;border-bottom:1px solid var(--hair)}
+  .board__head > div{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .board__head span{margin:0}
+  .row{grid-template-columns:1fr auto;align-items:center}
+  .row .k{border-bottom:0}
+  .row .v{text-align:right}
+  .row--price .v{font-size:18px}
+  .picks__label{display:none}
+  .small{grid-template-columns:1fr}
+  .small div{border-right:0;border-bottom:1px solid var(--hair)}
+  .period{width:100%}
+  .period button{flex:1}
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="sq">QS</span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#">Gửi</a>
+      <a href="#">Nhận</a>
+      <a href="#" aria-current="page">Bảng giá</a>
+      <a href="#">Tài khoản</a>
+    </nav>
+    <a class="top__cta" href="#">Đăng nhập</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Chọn <span>chuyến</span> của bạn.</h1>
+    <div class="head__meta">
+      Trả theo tháng<br>
+      Đổi hoặc huỷ bất cứ lúc nào<br>
+      Không cần thẻ để bắt đầu
+    </div>
+  </div>
+
+  <div class="period">
+    <button class="on" data-period="month">Theo tháng</button>
+    <button data-period="year">Theo năm</button>
+    <em>Theo năm: tiết kiệm tới 4 tháng</em>
+  </div>
+
+  <section class="board" aria-label="Bảng giá">
+    <div class="board__head">
+      <div><span>Quầy</span><b>Chọn gói</b></div>
+      <div><span>Gói</span><b>Free</b></div>
+      <div class="col--pro"><span>Gói</span><b>Pro</b><span class="tag">phổ biến</span></div>
+      <div><span>Gói</span><b>Studio</b></div>
+    </div>
+
+    <div class="row row--price">
+      <span class="k">Giá</span>
+      <span class="v" style="color:var(--legend)">0 đ<span class="row__unit">mãi mãi</span></span>
+      <span class="v">50.000 đ<span class="row__unit">mỗi tháng</span></span>
+      <span class="v">200.000 đ<span class="row__unit">mỗi tháng</span></span>
+    </div>
+
+    <div class="row">
+      <span class="k">Tệp tối đa</span>
+      <span class="v">5 GB</span>
+      <span class="v">20 GB</span>
+      <span class="v">100 GB</span>
+    </div>
+
+    <div class="row">
+      <span class="k">Gửi mỗi tháng</span>
+      <span class="v">15 GB</span>
+      <span class="v">200 GB</span>
+      <span class="v">2 TB</span>
+    </div>
+
+    <div class="row">
+      <span class="k">Link sống</span>
+      <span class="v">7 ngày</span>
+      <span class="v">30 ngày</span>
+      <span class="v">90 ngày</span>
+    </div>
+
+    <div class="row">
+      <span class="k">Lượt tải mỗi link</span>
+      <span class="v">10</span>
+      <span class="v">100</span>
+      <span class="v">không giới hạn</span>
+    </div>
+
+    <div class="row">
+      <span class="k">Thành viên</span>
+      <span class="v">1</span>
+      <span class="v">3</span>
+      <span class="v">10</span>
+    </div>
+
+    <div class="row">
+      <span class="k">Thêm dung lượng</span>
+      <span class="v no">không</span>
+      <span class="v no">không</span>
+      <span class="v">5.000 đ / GB</span>
+    </div>
+
+    <div class="row">
+      <span class="k">Người nhận cần tài khoản</span>
+      <span class="v">không</span>
+      <span class="v">không</span>
+      <span class="v">không</span>
+    </div>
+  </section>
+
+  <div class="picks">
+    <div class="picks__label">Bắt đầu</div>
+    <div><a class="btn btn--ghost" href="#">Dùng Free</a><span class="note">Không cần thẻ</span></div>
+    <div><a class="btn" href="#">Chọn Pro</a><span class="note">Huỷ bất cứ lúc nào</span></div>
+    <div><a class="btn btn--ghost" href="#">Chọn Studio</a><span class="note">Có thêm dung lượng</span></div>
+  </div>
+
+  <div class="plans">
+    <article class="plan">
+      <div class="plan__top"><b>Free</b><span>0 đ<em>mãi mãi</em></span></div>
+      <div class="plan__r"><span>Tệp tối đa</span><b>5 GB</b></div>
+      <div class="plan__r"><span>Gửi mỗi tháng</span><b>15 GB</b></div>
+      <div class="plan__r"><span>Link sống</span><b>7 ngày</b></div>
+      <div class="plan__r"><span>Lượt tải mỗi link</span><b>10</b></div>
+      <div class="plan__r"><span>Thành viên</span><b>1</b></div>
+      <div class="plan__cta"><a class="ghost" href="#">Dùng Free</a></div>
+    </article>
+    <article class="plan plan--pro">
+      <div class="plan__top"><b>Pro</b><span data-plan-price data-m="50.000 đ" data-y="500.000 đ">50.000 đ<em data-plan-unit data-m="mỗi tháng · phổ biến" data-y="mỗi năm · phổ biến">mỗi tháng · phổ biến</em></span></div>
+      <div class="plan__r"><span>Tệp tối đa</span><b>20 GB</b></div>
+      <div class="plan__r"><span>Gửi mỗi tháng</span><b>200 GB</b></div>
+      <div class="plan__r"><span>Link sống</span><b>30 ngày</b></div>
+      <div class="plan__r"><span>Lượt tải mỗi link</span><b>100</b></div>
+      <div class="plan__r"><span>Thành viên</span><b>3</b></div>
+      <div class="plan__cta"><a href="#">Chọn Pro</a></div>
+    </article>
+    <article class="plan">
+      <div class="plan__top"><b>Studio</b><span data-plan-price data-m="200.000 đ" data-y="2.000.000 đ">200.000 đ<em data-plan-unit data-m="mỗi tháng" data-y="mỗi năm">mỗi tháng</em></span></div>
+      <div class="plan__r"><span>Tệp tối đa</span><b>100 GB</b></div>
+      <div class="plan__r"><span>Gửi mỗi tháng</span><b>2 TB</b></div>
+      <div class="plan__r"><span>Link sống</span><b>90 ngày</b></div>
+      <div class="plan__r"><span>Lượt tải mỗi link</span><b>không giới hạn</b></div>
+      <div class="plan__r"><span>Thành viên</span><b>10</b></div>
+      <div class="plan__r"><span>Thêm dung lượng</span><b>5.000 đ / GB</b></div>
+      <div class="plan__cta"><a class="ghost" href="#">Chọn Studio</a></div>
+    </article>
+  </div>
+
+  <div class="small">
+    <div><b>Không cần thẻ để thử</b><p>Gói Free dùng được ngay, không hỏi thông tin thanh toán.</p></div>
+    <div><b>Đổi gói giữa kỳ</b><p>Phần chưa dùng được trừ vào lần thanh toán tiếp theo.</p></div>
+    <div><b>Gửi ẩn danh</b><p>Không cần gói nào: tối đa 100 MB mỗi tệp.</p></div>
+  </div>
+
+  <div class="foot">
+    <span>Gói Free dùng không giới hạn thời gian</span>
+    <span>Đổi gói giữa kỳ được trừ tiền</span>
+    <span>Người nhận không trả phí</span>
+  </div>
+</div>
+
+<script>
+  // static pricing: client-side only, this is not server state (no Unpoly request for a toggle)
+  document.querySelectorAll('.period button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.period button').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      var yearly = b.dataset.period === 'year';
+      var prices = document.querySelectorAll('.row--price .v');
+      prices[1].firstChild.textContent = yearly ? '500.000 đ' : '50.000 đ';
+      prices[2].firstChild.textContent = yearly ? '2.000.000 đ' : '200.000 đ';
+      prices.forEach(function (v, i) {
+        if (i === 0) return;
+        v.querySelector('.row__unit').textContent = yearly ? 'mỗi năm' : 'mỗi tháng';
+      });
+      document.querySelectorAll('[data-plan-price]').forEach(function (el) {
+        el.firstChild.textContent = el.getAttribute(yearly ? 'data-y' : 'data-m');
+        var unit = el.querySelector('[data-plan-unit]');
+        if (unit) unit.textContent = unit.getAttribute(yearly ? 'data-y' : 'data-m');
+      });
+    });
+  });
+</script>
+</body>
+</html>

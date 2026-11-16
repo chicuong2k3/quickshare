@@ -1,0 +1,145 @@
+@layout MainLayout
+@page "/account/workspace/channel"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Channels
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["channel_title"]</PageTitle>
+
+@* Contains a webhook credential and its health — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["channel_title"]</h1>
+        <p class="text-muted-foreground">@Loc["channel_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceChannel" />
+
+    @Chunk
+
+</PageWrapper>
+
+<script src="/js/channel.js" defer></script>
+
+@code {
+    private bool isAdmin;
+    private WorkspaceChannelHook? hook;
+
+    private RenderFragment Chunk => @<section id="workspace-channel-body" data-unpoly-reload>
+        @if (!isAdmin)
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
+        }
+        else
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["channel_config_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["channel_config_hint"]</p>
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="channel-kind">@Loc["channel_kind"]</label>
+                        <NativeSelect id="channel-kind">
+                            <NativeSelectOption value="@ChannelKind.Slack" selected="@(Kind == ChannelKind.Slack)">@Loc["channel_kind_slack"]</NativeSelectOption>
+                            <NativeSelectOption value="@ChannelKind.Teams" selected="@(Kind == ChannelKind.Teams)">@Loc["channel_kind_teams"]</NativeSelectOption>
+                        </NativeSelect>
+
+                        <label class="workspace-label" for="channel-url">@Loc["channel_url"]</label>
+                        <Input id="channel-url"  type="url" autocomplete="off"
+                               maxlength="@WorkspaceChannelHook.UrlMaxLength"
+                               placeholder="@(hook is not null ? Loc["channel_url_set"].Value : "https://")" />
+                        <p class="text-muted-foreground workspace-hint">@Loc["channel_url_hint"]</p>
+
+                        <label class="workspace-checkbox">
+                            <Checkbox id="channel-on-delivery" Checked="@(hook?.NotifyOnDelivery ?? true)" />
+                            <span>@Loc["channel_on_delivery"]</span>
+                        </label>
+
+                        <label class="workspace-checkbox">
+                            <Checkbox id="channel-on-comment" Checked="@(hook?.NotifyOnComment ?? true)" />
+                            <span>@Loc["channel_on_comment"]</span>
+                        </label>
+
+                        <label class="workspace-checkbox">
+                            <Checkbox id="channel-enabled" Checked="@(hook?.Enabled ?? true)" />
+                            <span>@Loc["channel_enabled"]</span>
+                        </label>
+
+                        <button type="button" data-slot="button" data-variant="default"
+                                data-saved-label="@Loc["channel_saved"]"
+                                onclick="window.quickShareChannel.save(this)"
+                                data-ai-action="channel.save">@Loc["channel_save"]</button>
+
+                        @if (hook is not null)
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost"
+                                    data-confirm="@Loc["channel_remove_confirm"]"
+                                    onclick="window.quickShareChannel.remove(this)"
+                                    data-ai-action="channel.remove">@Loc["channel_remove"]</button>
+                        }
+                    </div>
+                </CardContent>
+            </Card>
+
+            @if (hook is not null)
+            {
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["channel_health_title"]</h2>
+
+                        @if (hook.IsParked)
+                        {
+                            <p class="workspace-notice">@Loc["channel_parked", WorkspaceChannelHook.MaxConsecutiveFailures]</p>
+                        }
+
+                        <dl class="workspace-stats">
+                            <div class="workspace-stat">
+                                <dt>@Loc["channel_last_posted"]</dt>
+                                <dd>@(hook.LastPostedAt is { } at ? at.ToLocalTime().ToString("g") : "—")</dd>
+                            </div>
+                            <div class="workspace-stat">
+                                <dt>@Loc["channel_failures"]</dt>
+                                <dd>@hook.ConsecutiveFailures</dd>
+                            </div>
+                        </dl>
+
+                        @if (!string.IsNullOrEmpty(hook.LastError))
+                        {
+                            <p class="text-muted-foreground workspace-hint">@Loc["channel_last_error", hook.LastError]</p>
+                        }
+                    </CardContent>
+                </Card>
+            }
+        }
+    </section>;
+
+    private string Kind => hook?.Kind ?? ChannelKind.Slack;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        hook = await Db.WorkspaceChannelHooks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h => h.WorkspaceId == seat.WorkspaceId, CancellationToken.None);
+    }
+}

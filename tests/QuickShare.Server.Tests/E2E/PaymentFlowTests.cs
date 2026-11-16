@@ -34,6 +34,7 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });
@@ -64,6 +65,7 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });
@@ -79,6 +81,54 @@ public sealed class PaymentFlowTests : IClassFixture<TestWebAppFactory>
             .FirstOrDefaultAsync(i => i.UserId == user.Id);
         Assert.NotNull(intent);
         Assert.Equal(PaymentIntentStatus.Pending, intent.Status);
+    }
+
+    [Fact]
+    public async Task PayOSReturn_ActivatesPlan_OnlyWhenPayOSConfirmsPaid()
+    {
+        var providerKey = Guid.CreateVersion7().ToString();
+        var user = await _factory.SeedUserAsync(providerKey);
+        var client = _factory.CreateAuthenticatedClient(providerKey);
+
+        var getHtml = await (await client.GetAsync("/upgrade?plan=pro")).Content.ReadAsStringAsync();
+        var formContent = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("__RequestVerificationToken", AntiforgeryHelper.ExtractToken(getHtml)),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
+            new KeyValuePair<string, string>("Plan", "pro"),
+            new KeyValuePair<string, string>("Billing", "monthly"),
+        });
+        await client.PostAsync("/upgrade?plan=pro", formContent);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var orderCode = (await db.PaymentIntents.AsNoTracking().FirstAsync(i => i.UserId == user.Id)).PayOSOrderCode;
+
+        // PayOS says "not paid" — a forged return URL must not upgrade anyone.
+        var unpaid = await client.GetAsync($"/payments/payos/return?orderCode={orderCode}");
+        Assert.Equal(HttpStatusCode.OK, unpaid.StatusCode);
+        Assert.Equal(PlanTierLimits.Free, (await db.Users.AsNoTracking().FirstAsync(u => u.Id == user.Id)).Plan);
+
+        // PayOS confirms payment — plan activates without any webhook.
+        lock (StubPayOSService.PaidOrderCodes)
+        {
+            StubPayOSService.PaidOrderCodes.Add(orderCode);
+        }
+        var paid = await client.GetAsync($"/payments/payos/return?orderCode={orderCode}");
+        Assert.Equal(HttpStatusCode.OK, paid.StatusCode);
+
+        Assert.Equal(PlanTierLimits.Pro, (await db.Users.AsNoTracking().FirstAsync(u => u.Id == user.Id)).Plan);
+        Assert.Equal(
+            PaymentIntentStatus.Completed,
+            (await db.PaymentIntents.AsNoTracking().FirstAsync(i => i.UserId == user.Id)).Status);
+
+        // The status response stops polling and offers the billing page.
+        var poll = new HttpRequestMessage(HttpMethod.Get, $"/upgrade?plan=pro&orderCode={orderCode}&poll=1");
+        var pollResponse = await client.SendAsync(poll);
+        var pollHtml = await pollResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, pollResponse.StatusCode);
+        Assert.Contains(RoutePaths.AccountBilling, pollHtml);
+        Assert.Contains("up-poll=\"false\"", pollHtml);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-// Browser fixtures share the app's fixed-name InMemory store ("QuickShareTests")
-// and the per-IP P2P quota, so parallel test classes trample each other's data.
-// One Kestrel+Chromium at a time is also far kinder to CI.
+// Each BrowserFixture now gets its own InMemory store (InMemoryDatabaseName is set to a
+// unique value), so test classes no longer share data or the per-IP P2P quota.
+// Parallelism stays off because one Kestrel+Chromium at a time is far kinder to CI.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]

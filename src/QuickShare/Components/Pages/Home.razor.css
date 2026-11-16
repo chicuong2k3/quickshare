@@ -1,220 +1,354 @@
+/* ─── Home · the departure board ──────────────────────────────────
+   The front page states the offer the way the board states a trip:
+   a sentence in condensed capitals, one amber action, the rest as
+   rows on a panel. No floating cards, no gradient, no radius. */
+
+.home-board {
+    --b-board: #15181b;
+    --b-panel: #1d2125;
+    --b-flap: #2a2f35;
+    --b-slot: #0e1113;
+    --b-ink: #e9ecee;
+    --b-dim: #8b939b;
+    --b-hair: #31373e;
+    --b-amber: #e0a03c;
+    --b-green: #4fa36a;
+
+    background: var(--b-board);
+    color: var(--b-ink);
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2.5rem) 3rem;
+    font-family: "Archivo", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.75rem, 4vw, 3rem);
+}
+
+html[data-theme="light"] .home-board {
+    --b-board: #d3d6d9;
+    --b-panel: #e2e5e7;
+    --b-flap: #cfd3d6;
+    --b-slot: #f1f3f4;
+    --b-ink: #171a1d;
+    --b-dim: #5c6468;
+    --b-hair: #b3b8bc;
+    --b-amber: #a96c10;
+    --b-green: #2f7a46;
+}
+
+/* ── hero ── */
 .home-hero {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding-block: var(--db-space-7) var(--db-space-6);
-    text-align: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+    padding-bottom: clamp(1.5rem, 3vw, 2rem);
+    border-bottom: 2px solid var(--b-ink);
 }
 
-.home-tag {
-    display: inline-block;
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    font-weight: var(--db-weight-medium);
-    letter-spacing: 0.08em;
+.home-eyebrow {
+    margin: 0 0 0.9rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--db-color-accent);
-    margin-bottom: var(--db-space-3);
+    color: var(--b-dim);
 }
 
-.home-accent {
-    color: var(--db-color-accent);
+.home-h1 {
+    margin: 0 0 1rem;
+    font-family: "Barlow Condensed", "Archivo", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.1rem, 5.4vw, 3.6rem);
+    line-height: 0.95;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    color: var(--b-ink);
 }
+
+.home-accent { color: var(--b-amber); }
 
 .home-hero__sub {
-    max-width: 34rem;
-    margin: var(--db-space-4) auto 0;
-    font-size: var(--db-text-base);
+    margin: 0 0 1.4rem;
+    max-width: 46ch;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--b-dim);
 }
 
-.home-hero__actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--db-space-3);
-    margin-top: var(--db-space-5);
-}
-
-.home-features {
-    max-width: 56rem;
-    margin: var(--db-space-6) auto 0;
-}
-
-.home-feature-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: var(--db-radius-2);
-    background: var(--db-color-accent-subtle);
-    color: var(--db-color-accent);
-    margin-bottom: var(--db-space-3);
-}
-
-.home-feature-icon svg {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-.home-why {
-    width: 100%;
-    max-width: 64rem;
-    min-width: 0;
-    margin: var(--db-space-7) auto 0;
-}
-
-.home-why__head {
-    text-align: center;
-}
-
-.home-why__sub {
-    max-width: 40rem;
-    margin: var(--db-space-3) auto 0;
-}
-
-.home-why__badges {
-    display: flex;
-    align-items: stretch;
-    justify-content: center;
-    gap: var(--db-space-3);
-    margin-top: var(--db-space-4);
-}
-
-.home-why__badge {
-    display: inline-flex;
-    flex-direction: column;
-    gap: var(--db-space-1);
-    padding: var(--db-space-3) var(--db-space-4);
-    border: 1px solid var(--db-color-border-subtle);
-    border-radius: var(--db-radius-2);
-    background: var(--db-color-surface);
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-secondary);
-    text-align: left;
-}
-
-.home-why__badge strong {
-    color: var(--db-color-text);
-}
-.home-why__card {
-    max-width: 100%;
-    min-width: 0;
-    margin-top: var(--db-space-5);
-}
-
-.home-why__table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
-
-.home-why__caption {
-    caption-side: top;
-    text-align: left;
-    margin-bottom: var(--db-space-3);
-    color: var(--db-color-text-muted);
-    font-size: var(--db-text-sm);
-}
-
-.home-why__table th,
-.home-why__table td {
-    padding: var(--db-space-3);
-    border-bottom: 1px solid var(--db-color-border-subtle);
-    vertical-align: top;
-}
-
-.home-why__table thead th {
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text-muted);
-    background: var(--db-color-surface);
-}
-
-.home-why__table tbody th {
-    width: 28%;
-    font-weight: var(--db-weight-semibold);
-}
-
+.home-hero__actions,
 .home-why__actions {
     display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: var(--db-space-3);
-    margin-top: var(--db-space-5);
+    flex-wrap: wrap;
+    gap: 0.6rem;
 }
+
+/* Button is a library component: its <a> carries no page scope, so ::deep. */
+.home-board ::deep .home-btn {
+    border-radius: 0;
+    border: 1px solid var(--b-hair);
+    background: transparent;
+    color: var(--b-dim);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.8rem;
+    padding: 0.65rem 1.2rem;
+    box-shadow: none;
+}
+.home-board ::deep .home-btn:hover { color: var(--b-ink); border-color: var(--b-dim); background: transparent; }
+.home-board ::deep .home-btn--primary,
+.home-board ::deep .home-btn--primary:hover {
+    background: var(--b-amber);
+    border-color: var(--b-amber);
+    color: #16181a;
+    font-weight: 700;
+}
+.home-board ::deep .home-btn--primary:hover { background: var(--b-ink); border-color: var(--b-ink); color: #16181a; }
+
+.home-hero__paste {
+    margin: 0.9rem 0 0;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+/* the thesis object: a trip on a board */
+.home-hero__board {
+    border: 1px solid var(--b-hair);
+    background: var(--b-panel);
+}
+.home-board__head,
+.home-board__foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.6rem;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+.home-board__head {
+    background: var(--b-flap);
+    border-bottom: 1px solid var(--b-hair);
+    color: var(--b-ink);
+}
+.home-board__foot { border-top: 1px solid var(--b-hair); }
+
+.home-trip {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr) auto 4.5rem;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.55rem 0.6rem;
+    border-bottom: 1px solid var(--b-hair);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.6rem;
+}
+.home-trip:last-of-type { border-bottom: 0; }
+.home-trip__code { color: var(--b-dim); }
+.home-trip__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-trip__size { color: var(--b-dim); }
+.home-trip__st {
+    text-align: right;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+.home-trip__st--flight { color: var(--b-amber); }
+.home-trip__st--done { color: var(--b-green); }
+
+/* ── proof strip ── */
+.home-proof {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    border-top: 1px solid var(--b-hair);
+    border-bottom: 1px solid var(--b-hair);
+    padding-block: 0.7rem;
+}
+.home-proof__label {
+    margin: 0;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    font-weight: 400;
+}
+.home-proof__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.6rem;
+    color: var(--b-ink);
+}
+
+/* ── why: the comparison is a timetable ── */
+.home-why__head h2,
+.home-how h2,
+.home-cta h2 {
+    margin: 0 0 0.4rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: var(--b-ink);
+}
+.home-why__sub,
+.home-cta p {
+    margin: 0 0 0.9rem;
+    font-size: 0.85rem;
+    color: var(--b-dim);
+    max-width: 60ch;
+}
+
+.home-why__modes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+.home-mode {
+    border: 1px solid var(--b-hair);
+    padding: 0.2rem 0.5rem;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.home-table { border: 1px solid var(--b-hair); background: var(--b-panel); }
+
+.home-why__table {
+    --tw-ring-color: transparent;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.8rem;
+}
+.home-why__table :is(th, td) {
+    border: 1px solid var(--b-hair);
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+    color: var(--b-ink);
+}
+.home-why__table thead th {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    background: var(--b-flap);
+    font-weight: 400;
+}
+.home-why__table tbody th {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    font-weight: 400;
+}
+
+.home-why__actions { margin-top: 0.9rem; }
+
+/* ── features: three columns on a panel ── */
+.home-features {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    border: 1px solid var(--b-hair);
+    background: var(--b-panel);
+}
+.home-feature {
+    padding: 1rem;
+    border-right: 1px solid var(--b-hair);
+}
+.home-feature:last-child { border-right: 0; }
+.home-feature__tab {
+    display: inline-block;
+    margin-bottom: 0.6rem;
+    border: 1px solid var(--b-hair);
+    padding: 0.15rem 0.4rem;
+    font-family: "Martian Mono", monospace;
+    font-size: 0.45rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+.home-feature h3 {
+    margin: 0 0 0.35rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: 1.05rem;
+    color: var(--b-ink);
+}
+.home-feature p { margin: 0; font-size: 0.8rem; line-height: 1.55; color: var(--b-dim); }
+
+/* ── how: numbered flap rows ── */
+.home-how__steps {
+    border: 1px solid var(--b-hair);
+    background: var(--b-panel);
+    margin-top: 0.75rem;
+}
+.home-step {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: start;
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--b-hair);
+}
+.home-step:last-child { border-bottom: 0; }
+.home-step__num {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    font-family: "Martian Mono", monospace;
+    font-size: 0.9rem;
+    color: var(--b-amber);
+}
+.home-step h3 {
+    margin: 0 0 0.2rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: 1rem;
+    color: var(--b-ink);
+}
+.home-step p { margin: 0; font-size: 0.8rem; color: var(--b-dim); line-height: 1.55; }
+
+/* ── closing action ── */
+.home-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--b-hair);
+    border-left: 2px solid var(--b-amber);
+    background: var(--b-panel);
+    padding: 1.1rem;
+}
+.home-cta h2 { margin-bottom: 0.25rem; }
+.home-cta p { margin: 0; }
 
 @media (max-width: 900px) {
-    .home-why__card {
-        overflow-x: auto;
-    }
-
-    .home-why__table {
-        min-width: 44rem;
-    }
-
-    .home-why__badges {
-        flex-direction: column;
-    }
-}
-.home-how {
-    max-width: 48rem;
-    margin: var(--db-space-7) auto 0;
-    text-align: center;
-}
-
-.home-how__title {
-    margin-bottom: var(--db-space-5);
-}
-
-.home-how__steps {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--db-space-4);
-}
-
-@media (max-width: 640px) {
-    .home-how__steps {
-        grid-template-columns: 1fr;
-    }
-
-    .home-hero__actions,
-    .home-why__actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-.home-step {
-    text-align: center;
-    padding: var(--db-space-4);
-}
-
-.home-step__num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    margin: 0 auto var(--db-space-3);
-    border-radius: var(--db-radius-full);
-    background: var(--db-color-surface);
-    color: var(--db-color-accent);
-    font-family: var(--db-font-mono);
-    font-size: var(--db-text-sm);
-    font-weight: var(--db-weight-bold);
-    border: 1px solid var(--db-color-border-subtle);
-}
-
-.home-cta {
-    max-width: 36rem;
-    margin: var(--db-space-7) auto 0;
-    text-align: center;
-}
-
-.home-cta__card {
-    padding: var(--db-space-6);
-}
-
-.home-cta__sub {
-    margin-top: var(--db-space-2);
-    margin-bottom: var(--db-space-4);
+    .home-hero { grid-template-columns: 1fr; }
+    .home-features { grid-template-columns: 1fr; }
+    .home-feature { border-right: 0; border-bottom: 1px solid var(--b-hair); }
+    .home-feature:last-child { border-bottom: 0; }
+    .home-table { overflow-x: auto; }
+    .home-why__table { min-width: 34rem; }
 }

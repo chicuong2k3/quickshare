@@ -8,100 +8,82 @@
 
 # QuickShareCloud — Agent Instructions
 
-## HTMX Lazy Loading (DEFAULT — every page)
+## Static SSR and Unpoly migration
 
-**Every page that has `OnInitializedAsync` MUST use this pattern.** The principle is simple:
-- **Static data** (layout, headings, static markup) → returns immediately, no DB calls
-- **Dynamic data** (DB queries, API calls) → fetched via HTMX after page load
-
-The goal is instant page shell render (0ms) with zero blocking, then data fills in asynchronously via HTMX. This is NOT optional — it is the default architecture for all pages.
-
-### Why this matters
-
-| Approach | First paint | User experience |
-|---|---|---|
-| **HTMX lazy-load** (this rule) | < 100ms — skeleton instantly | Shell appears immediately, data fills in |
-| `[StreamRendering]` | 200–500ms — still blocked by async init | Page "thinks" briefly, then streams |
-| Plain `OnInitializedAsync` | 1–3s — blocked by DB queries | Page feels frozen, user clicks away |
-
-`[StreamRendering]` still runs `OnInitializedAsync` in the initial render pass — it only helps stream the HTML AFTER async starts, but the first byte is still delayed. It is a fallback, not a solution.
-
-### Pattern
-
-1. **Shell render**: Check `HX-Request` header. If absent → return immediately. Render skeleton.
-2. **Data fetch**: Skeleton uses `hx-get` + `hx-trigger="load"` + `hx-swap="outerHTML"`. On second request `HX-Request` is set → load data.
-3. **All internal navigation**: Folder links, search, pagination, clear buttons — ALL use `hx-get` targeting the content area, NEVER plain `<a href>` (that causes full page reload).
-4. **CSS for HTMX partials**: Scoped CSS (`.razor.css`) does NOT apply to HTMX responses from a different component. Use global styles in `wwwroot/css/app.css` with namespaced prefix (`account-`, `files-`, etc.).
-
-```csharp
-protected override async Task OnInitializedAsync()
-{
-    var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
-    if (hxHeader != "true") return; // shell render — show skeleton, no DB calls
-
-    // ... data loading (DB queries, Bus.InvokeAsync, etc.) ...
-}
-```
-
-```html
-@* Shell skeleton — instant render *@
-<div id="page-content"
-     hx-get="/page-url"
-     hx-trigger="load"
-     hx-target="#page-content"
-     hx-select="#page-content"
-     hx-swap="outerHTML">
-    @* skeleton markup *@
-</div>
-```
-```html
-@* All navigation links use HTMX *@
-<a href="/page?filter=X"
-   hx-get="/page?filter=X"
-   hx-target="#page-content"
-   hx-select="#page-content"
-   hx-swap="outerHTML"
-   hx-push-url="true">Filter X</a>
-```
-
-### Exceptions
-
-- **Truly static pages** with zero async operations (pure markup, no DB/API calls) do not need lazy-load.
-- `[StreamRendering]` is acceptable only when splitting shell + partial is impractical (complex interdependencies). Even then, prefer lazy-load.
-
-### Layout Rule
-
-- **MainLayout MUST inherit `LayoutComponentBase`** (not `HtmxLayoutComponentBase`). If MainLayout inherits `HtmxLayoutComponentBase`, HTMXor will treat it as a valid HTMX layout and use it for partial requests, returning full nav + footer.
-- **HtmxorLayout inherits `HtmxLayoutComponentBase`** and renders only `@Body` — this is used automatically for HTMX partial responses via `[HtmxLayout(typeof(HtmxorLayout))]` in `_Imports.razor`.
-- `@layout MainLayout` on individual pages is fine — `[HtmxLayout]` will override it for HTMX requests.
-
-### HTMXor Direct Routing (.NET 10 compatibility)
-
-- **`AddHtmxorComponentEndpoints(app)` is NOT compatible with .NET 10** — it uses reflection to access internal Blazor APIs that changed between .NET 8 and .NET 10. Calling it throws `NullReferenceException` at startup. Do NOT add it to `Program.cs`.
-- **Without Direct Routing, ALL HTMX responses return full HTML pages** (including `<html>`, `<head>`, nav, footer from `App.razor`). The `[HtmxLayout]` attribute only affects the layout INSIDE the page pipeline; it does NOT strip the outer HTML document.
-- **Workaround: always use `hx-select`** on every element that uses `hx-get`/`hx-post` + `hx-target`. This tells HTMX to extract only the targeted element from the full HTML response before swapping.
-- Pattern:
-  ```html
-  <div id="my-content"
-       hx-get="/page"
-       hx-trigger="load"
-       hx-target="#my-content"
-       hx-select="#my-content"
-       hx-swap="outerHTML">
-  ```
-- **Without `hx-select`, the full HTML document is injected into the target element**, causing duplicate nav/footer and broken layout.
+- Direct GET is the canonical render path: each route renders usable, authorized page data on first response, with JavaScript disabled too. Do not gate data loading on partial-request headers or render permanent skeletons.
+- Use native URLs and forms as the no-JavaScript behavior. Add Unpoly attributes (`up-follow`, `up-submit`, `up-target`, `up-defer`, `up-poll`) only where partial updates improve a real interaction.
+- For Razor POST forms, use a unique `@formname` and `@onsubmit`; execute mutations in the submit handler after antiforgery validation, not during initialization.
+- Unpoly requests still receive a valid server-rendered document. Keep target IDs stable, scope authorization from the authenticated principal and route data, and keep personal responses `no-store`.
+- Keep Unpoly opt-in. Forms, polling, redirects, and cache variance need behavior-specific Unpoly or native HTTP implementations.
+- `MainLayout` remains a regular `LayoutComponentBase`; Unpoly chrome handling belongs to the Unpoly integration.
 
 ## Code Style
 
 - **One statement per line** — do not chain multiple statements on a single line. Each statement must be on its own line.
 - **`string.Empty`, never `""`** — always use `string.Empty` instead of `""` for empty strings. Exception: `""` is required where the language mandates a compile-time constant (`const` declarations, attribute arguments, default parameter values, `switch` `case` labels) — everywhere else use `string.Empty`.
 - **No magic strings / numbers** — never use hardcoded string/number literals directly. Always use `const` or `enum` (strongly typed). Protocol identifiers, HTTP headers, route paths, config keys, entity statuses, roles, and wire formats MUST be centralized in `static class` string constants (e.g. `AuthConstants`, `PlanTierLimits`, `P2PProtocol`, `RoutePaths`).
-- **Isolation CSS** — always use scoped CSS (`.razor.css`) per component. JS goes into `wwwroot/js/` (do not use `.razor.js`).
+- **Directory membership is proved by the provider's claim, never by an email domain** (issue
+  #181). `hd` / `tid` establish it; `AllowedEmailDomains` only ever narrows what the claim already
+  established. Reversing that order hands a workspace seat to anyone who buys a convincing domain.
+  A directory belongs to exactly one workspace, or the proof gets handed to the wrong tenant.
+- **Never cache an authorisation check that a revoke button is supposed to affect** (issue #105).
+  The moment the answer is cached, revocation becomes eventual — which is indistinguishable from
+  broken to the person who just lost their laptop.
+- **Any new sign-in path must start a session.** Calling `SignInAsync` directly without one issues
+  a cookie nothing can revoke.
+- **Sign a timestamp along with the body, never the body alone** (issue #172). A signature over
+  just the payload makes a captured request valid forever and gives the receiver no way to tell a
+  replay from the original.
+- **An outbound integration is queued, never sent on the request path** (issue #39). It has to
+  survive the receiver being down, which means a row and a retry schedule — unlike a best-effort
+  chat post (#180), which documents the opposite trade for a reason that does not transfer.
+- **An object key named by a client must be proved to belong to the resource claiming it**
+  (issue #79). `R2ObjectKey.BelongsTo` exists because a commit request is attacker-controlled;
+  without it a caller attaches somebody else's object to a share code they own.
+- **Additive means the old case is untouched.** When adding a shape to an existing entity, keep
+  the original columns meaning what they meant and test that the previous behaviour is identical —
+  otherwise every path written before the change starts quietly lying.
+- **Never hand-roll a signature check** (issue #139). XML digital signature in particular has a
+  history of implementations that validate *a* signature rather than the one over the element they
+  then read — a class of bug that is an authentication bypass and fails silently. Use the library,
+  and keep ours to the questions a library cannot answer: which tenant, which issuer, seen before?
+- **Prove a checker works by giving it something that should fail.** A validator that rejects
+  everything passes every negative test; the positive case is what keeps the negatives honest.
+- **A provisioning path must revoke as well as create** (issue #146). "What happens at
+  offboarding" is the question the feature is bought to answer; a deactivate that returns 200 and
+  leaves access live is the precise failure it exists to prevent.
+- **Isolation CSS** — use scoped CSS (`.razor.css`) per component. JS is authored as TypeScript in `src/QuickShare/ts/` (do not use `.razor.js`). **`wwwroot/js/**` is `tsc` output and is gitignored** — a script written straight into it is absent from a fresh clone, so the page ships with dead buttons. Ten page scripts were in exactly that state until the audit follow-up; the shared helper they now use is `ts/page-actions.ts`. Unpoly-swapped markup must be checked for scoped-style behavior; use global prefixed styles only when the swap crosses component scope.
+- **User-facing strings live in `SharedLoc.{en,vi}.resx`** — never hardcode display copy in a page. Strings that JavaScript needs are handed to it as a JSON block rendered by the page (see `download-i18n`), so no `.js` file carries English literals.
+- **Product analytics are anonymous** — new lifecycle events MUST be recorded via `AnalyticsService.RecordAsync()` (see `docs/analytics-architecture.md`). Never store email, user id, or raw IP in an analytics event; use the `qs_visitor` cookie id + `CF-IPCountry` code only. New event names go in `AnalyticsEvents` constants. Recording must never break the primary flow — wrap in try/catch or use the captured-context overload.
 
-## HTMX Usage
+## Design System
 
-- **Never use HTMX for static data toggles** — if the data doesn't change server-side between states (e.g., billing monthly/yearly pricing, theme toggle, show/hide content), handle it client-side with vanilla JS or CSS classes. Server round-trips for static data are pure latency waste.
-- **Prefer Blazor enhanced navigation over `hx-boost`** — Blazor SSR has built-in enhanced navigation since .NET 9. Do NOT add `hx-boost="true"` globally. Only use explicit `hx-get`/`hx-post`/`hx-trigger` on elements that genuinely need partial server updates (search, form submissions, real-time data).
+`DESIGN.md` owns the pinned world (**"Bảng chuyến"**, departure board). Migrated surfaces
+(`/pricing`, the `/account` usage block) use that world's scoped tokens; everything not yet migrated
+still runs the legacy DAUB/HyperCard shell. Do not mix both systems inside one component.
+
+Board-surface rules that future work must follow:
+
+- **Colour is status, never decoration** — amber = act/in-flight, green = done/verified, red =
+  held/expired, and exactly one amber control per view.
+- **Depth is a 1px seam.** No radius, blur, gradient or drop shadow on a board surface.
+- **No icon or unicode glyph for a state.** Render the word ("Đã xong", "Unlimited", "Sửa"); the
+  comparison table's `✓`/`—` were replaced for this reason.
+- **A toggle that changes which facts are shown is server state in the URL** (`/pricing?billing=yearly`),
+  not client state — the page must be correct with JavaScript off.
+- **Never hardcode a plan figure**; read `PlanTierLimits` / `PlanCatalog`, and render the unlimited
+  sentinel as a word, not as `int.MaxValue`.
+
+- **Legacy `db-*` tokens/classes stay intact while legacy surfaces remain.** Do not add new `db-*` use to migrated pages.
+- Shadcn markup uses library components, semantic utility classes, and the library's `--background`, `--foreground`, `--primary`, `--border`, `--radius`, and control tokens. Do not edit generated CSS; update `src/QuickShare/tailwind.css` and run `npm run css:build` through the project build.
+- Keep a migrated component on one visual system; do not layer DAUB button/card classes onto Shadcn components.
+- **The download page must work with no JavaScript**: the server renders a usable phase and JS only moves on from it. Never put `class="hidden"` back on the default phase — `DownloadNoScriptTests` will fail.
+- Browser-only logic (clipboard, sessionStorage, JS phase switching) is covered by `BrowserAppFixture` + Playwright (see `PasteBrowserTests`), which runs the app as a real process and drives the installed Chrome rather than downloading a browser bundle.
+
+## Unpoly Usage
+
+- **Never use Unpoly for static data toggles** — if data does not change server-side between states (e.g., billing monthly/yearly pricing, theme toggle, show/hide content), handle it client-side with vanilla JS or CSS classes.
+- Prefer native links and forms as fallback. Add Unpoly interception only to interactions with a real server-rendered partial update; preserve URL/history semantics, validation errors, focus, and direct navigation.
 
 ## Architecture Rules
 
@@ -138,7 +120,7 @@ protected override async Task OnInitializedAsync()
 ### FusionCache (Data-Layer Caching)
 
 - **All read-heavy data paths MUST use `CacheService` or `StaticCache.Instance`** — no direct DB queries without caching.
-- `CacheService` (via DI) for Wolverine handlers/endpoints. `StaticCache.Instance` for static classes and Razor inline blocks.
+- `CacheService` (via DI) for Mediator handlers/endpoints. `StaticCache.Instance` for static classes and Razor inline blocks.
 - **TTL guidelines:**
   - Download info: 30s (download count changes frequently)
   - File/folder lists: 15–30s (user-visible mutations)
@@ -148,12 +130,128 @@ protected override async Task OnInitializedAsync()
 - **Invalidation:** Every mutation handler MUST invalidate affected cache keys after `SaveChangesAsync`. Use `cache.RemoveAsync(key, ct)`.
 - **Kill switch:** Set `"FusionCache": { "Enabled": false }` in appsettings to bypass all caching (for testing/local dev).
 
+### Background Jobs (Hangfire)
+
+- **Recurring maintenance jobs use Hangfire, not hand-rolled `BackgroundService` loops.** Register them in `Infrastructure/Jobs/HangfireJobs.cs` with a stable job ID + cron. Each job class exposes one public entry method annotated `[DisableConcurrentExecution(timeoutInSeconds: 0)]` and `[AutomaticRetry(Attempts = 0)]`.
+- **The Hangfire dashboard (`/hangfire`) MUST stay behind `AdminDashboardAuthorizationFilter`** — it is not under the ASP.NET Core auth pipeline. Do not remove or weaken the filter.
+- **Mediator (martinothamar/Mediator) is the in-process request/response dispatcher** — source-generated `IRequestHandler` implementations, registered scoped (`AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)` in `Program.cs`). Endpoints dispatch via `Resolve<IMediator>().Send<T>(cmd, ct)`. No durable messaging — background/polling jobs stay on Hangfire; do not reintroduce an outbox.
+- **Gate all Hangfire wiring on `!useInMemoryDb`** so the in-memory/SQLite test factories never boot a Hangfire server or Postgres storage.
+
+### Compliance Invariants (legal hold #266, retention policy #161, scope rules #142/#166)
+
+See `docs/compliance-architecture.md` for the full subsystem. Three rules bind all future work:
+
+- **Any new code path that deletes delivery rows or R2 objects MUST filter `LegalHoldAt == null`.** A hold outranks retention, the trash grace, the expiry sweep, and right-to-erasure — deleting held bytes is evidence loss during litigation. Held rows are *skipped*, not failed: a bulk operation reports them in `skipped` and continues. Single-target endpoints refuse with `ErrorCodes.LegalHoldActive` → 409.
+- **Any new code path that computes a delivery expiry MUST pass it through `RetentionPolicy.Clamp`, after the plan cap.** The policy is a ceiling, never a floor — a sender's shorter choice always survives, and clamping is not a validation error.
+- **Delivery scope rules (`DeliveryAccessPolicy`) are fail-closed.** A rule that exists refuses anyone it does not explicitly satisfy, and a malformed rule means "does not match" — never "matches everything". Rule snapshots may be cached per share code; a per-caller verdict MUST NEVER enter a shared cache.
+
+### Workspace Invariants (team workspaces #106, transfer #252, audit #145, report #300, folders #151/#245/#234)
+
+See `docs/workspaces-architecture.md` for the full subsystem. Three rules bind all future work:
+
+- **Any new code path that writes `User.Plan` MUST re-push it to the owner's workspace seats** (`SubscriptionService.PushPlanToWorkspaceAsync` / `WorkspaceService.SyncMemberPlansAsync`). A seat borrows the owner's plan by copying it onto `User.Plan` so ~20 existing tier gates work unchanged; a plan write that skips the push leaves members on a plan nobody is paying for.
+- **Any new upload path MUST go through `QuotaService`.** It resolves the workspace owner as the usage bucket, so pooling applies to check and record alike. Reading or writing `UserUsage` directly gives every seat a private, uncapped allowance.
+- **Workspace data is admin-gated through one resolver** (`WorkspaceAuditReader.ResolveAdminSeatAsync`) and shared-history reads are read-only: every mutation path still matches on `SenderId`. Seeing a team-mate's share is not the same as being able to delete it.
+- **Any new upload path that can target a folder MUST resolve `FolderDefaults.ResolveAsync` and enforce the result when `Locked`.** Unlocked folder defaults are a prefill the sender may override; locked ones are policy (expiry replaced, privacy forced on, commit refused without a password). An upload path that ignores a locked folder is a compliance rule with a hole in it.
+- **Folder creation goes through `FolderWriter.CreateAsync`, and deleting a folder never deletes content.** That function owns the two-level depth cap, the per-workspace ceiling and sibling-name uniqueness; the delete guard refuses while any delivery (soft-deleted included) or child folder is still filed under it.
+
+### Billing Invariants (seats #278, overage #141, e-invoice #112, PO/net terms #192)
+
+See `docs/billing-ledger.md` for the full subsystem. Three rules bind all future work:
+
+- **Every charge goes through `InvoiceService.AddOrUpdateLineAsync`, never a direct `InvoiceLine` insert.** That method owns the draft-per-period lookup (which checks the change tracker before the database), the overage line-rewrite rule, and the retotal. A charge written around it lands on a second draft and disappears from the issued invoice.
+- **`IsExceeded` means blocked; `IsMetered` means allowed and billable.** Studio keeps uploading past its quota and pays per GB; Free and Pro still hard-block. Treating `IsMetered` as a block silently reinstates the hard stop for the tier that pays to avoid it.
+- **Never mutate an issued invoice's totals or buyer details — issue a new one.** Issuing freezes a copy of the buyer's company, tax code and PO reference on purpose: an invoice has to keep saying what it said when it was issued.
+
+### Trust Invariants (tenant isolation #190, SIEM streaming #191, DPA #184, SOC 2 #147/#323)
+
+See `docs/enterprise-trust.md` for the full subsystem. Three rules bind all future work:
+
+- **Tenant isolation is an explicit `Where` per query, never an EF global query filter, and every workspace-scoped route that takes an id MUST get a case in `TenantIsolationTests`.** A global filter is lost silently to `IgnoreQueryFilters`, raw SQL, or a projection built before it applies, and the failure mode is a cross-tenant read with nothing in the logs. That test suite is the actual control; probe with a real id from the other tenant, because a random GUID passes even with scoping removed.
+- **A cross-tenant miss and a nonexistent id MUST return the same response.** The reach is recorded server-side (`CrossTenantAccessBlocked`) but never revealed, or the error code becomes an existence oracle. A miss on an id that belongs to nobody is deliberately not recorded — the signal is a burst, and noise drowns it.
+- **Never edit published DPA terms or a `/soc2` control status in place to match what we wish were true.** Bump `DpaTerms.CurrentVersion` (existing signatures point at a version that must keep meaning what it meant); on the trust page, "partial" is the honest status for a control with no independent evidence behind it, and a page that drifts is worse than none because it is a claim somebody will check.
+
+### Storage & Backup Invariants (S3-compatible store #171, scheduled backup #271)
+
+See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind all future work:
+
+- **The object store is any S3-compatible endpoint, configured under `ObjectStore`; the legacy `R2` section MUST keep binding as a fallback.** `ObjectStoreResolver.Resolve` is the single place that decides which section wins — an options rename that silently breaks existing deployments on upgrade is not a feature.
+- **A backup manifest is metadata plus storage keys, never file bytes, and pruning happens only after a successful upload.** Deleting old copies on the strength of a run that produced nothing is how a retention policy deletes the last good backup. Adding workspace data a customer would need after a disaster means adding it to `BuildManifestAsync`, and changing the shape means bumping `ManifestVersion` — customers hold copies we cannot migrate.
+- **Run-now MUST go through the same method as the scheduled run.** A "test backup" on a separate code path proves nothing about the one that runs at 3am. It returns 200 with the failure in the body when the destination rejects it: the request was fine, the destination was not, and that distinction is the answer the admin asked for.
+
+### Branding Invariants (recipient-page brand #285, custom fonts #286)
+
+See `docs/workspace-branding.md` for the full subsystem. Three rules bind all future work:
+
+- **A brand overrides token *values* only — never token names, and never a type size.** `DESIGN.md` owns the typography scale; a brand swaps families. The CSS renderer emits no `font-size` at all, and the tests assert that, because it is the kind of constraint that erodes one convenient exception at a time.
+- **Everything interpolated into brand CSS MUST be validated at the write boundary** (hex colours by regex, font family names against a restricted character set). That is what makes rendering it as a `MarkupString` safe; validating at render time instead would leave every future call site to remember.
+- **Uploaded brand assets are sniffed by magic bytes, never by the declared content type, and SVG is refused.** SVG can carry script and a logo is not worth an XSS surface on a client's page. Replacing an asset MUST write a new key — the public route is immutably cached, so an in-place overwrite serves last month's logo.
+
+### Residency Invariants (data residency #119)
+
+See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind all future work:
+
+- **The storage region lives in the object key, and routing is derived from it.** `InitR2MultipartUploadAsync` is the only method that takes a region, because it is the only call that creates a key. New code that builds an upload key MUST go through `R2ObjectKey.For` and pass the region; a hand-rolled key silently lands in the default bucket.
+- **A key without a recognised region segment MUST keep resolving to the default bucket.** Every object written before residency existed has a user GUID in that slot; region codes are `^[a-z0-9]{2,12}$` precisely so a 32-char hex string can never match one. Changing the code pattern without checking that property breaks every existing object.
+- **Never move stored bytes across regions as a side effect.** Changing the account setting applies to future uploads only, and replacing a file keeps the delivery's original region. Relocation is a copy, a verification and a delete — it is a deliberate operation, not a consequence of a settings save.
+
+### Gating Invariants (approval workflow #162, recurring delivery #176)
+
+See `docs/delivery-gating.md` for the full subsystem. Three rules bind all future work:
+
+- **Any new path that publishes a delivery to recipients MUST check `PendingApproval` first.** The status column is not self-enforcing. At commit the recipient list is parked on `Delivery.PendingRecipients` and no mail goes out — not even the sender's own link mail — because a gate that mails the link and then asks permission is not a gate.
+- **`PendingApproval` MUST be indistinguishable from not-found on every recipient-facing path.** Never add a distinct status code for it: whether a sender's organisation reviews its shares is a fact about that organisation, not about the recipient, and a separate code turns the endpoint into an oracle for internal process.
+- **Any code that copies a delivery MUST carry `StorageRegion` and MUST NOT carry legal hold, approval state or `DeletedAt`.** A copy is a new share, not a clone of the original's compliance state. `CloneDeliveryHandler` was silently moving copies across jurisdictions until this batch; assume the next copy path will too unless it is written deliberately.
+
+### Conversation Invariants (delivery comments #289, chat channels #180)
+
+See `docs/comments-and-channels.md` for the full subsystem. Three rules bind all future work:
+
+- **Comments are gated by five independent switches, all of which only close**: the sender's `Delivery.CommentsEnabled`, the `Workspace.CommentPolicy` ceiling, privacy mode (#187), the delivery's lifecycle (expired/revoked/suspended/awaiting approval), and its scope rules via `DeliveryAccessService` (#142/#166). Any new comment surface MUST resolve them through `CommentGate.EvaluateAsync`. Comments are a recipient-facing content path: a caller refused the file must be refused the conversation about it — this was missed on first delivery and is now the reason the rule is written this way.
+- **A chat webhook URL is a credential.** Never return it from an endpoint, never put it in an audit payload (record the host), and post over HTTPS only. Channel posts are best-effort with a short timeout and MUST NOT be able to fail a share or a comment — a chat outage is not an upload error.
+- **Test stubs MUST produce the same shapes as production, and every feature needs at least one test that proves it is *reached*.** The storage stub returned a made-up object key, which made an entire residency feature untestable while everything looked green; separately, three services were written, documented and never called by anything. A unit test proves a function computes the right answer and says nothing about whether anything calls it. Assert the wiring through an observable side effect — see `AuditRegressionTests`.
+
+### White-label Invariants (custom domain #81, preview watermark #155)
+
+See `docs/white-label.md` for the full subsystem. Three rules bind all future work:
+
+- **Nothing is served under an unverified host.** Every read of a custom domain goes through `VerifiedAt`, never `Host` alone, and the host column is unique across all workspaces. A hostname is somebody's property: claiming one MUST change nothing until DNS agrees, or claiming would be a way to break another workspace's links.
+- **A verified host serves exactly one workspace, and a foreign share on it is a plain not-found.** Never redirect to the canonical address instead — that confirms the share code exists. Any new recipient-facing page MUST call `WorkspaceDomainReader.IsForeignHostAsync`, and a tenant host MUST NOT serve app surface at all (`CustomDomainMiddleware` redirects it): the batch-25 audit found the check on the download page and absent from the stats page one route away, and the whole signed-in app answering on an agency's domain.
+- **Build recipient links through `WorkspaceDomainReader.DeliveryUrlAsync`, never by formatting `EmailOptions.BaseUrl`.** Seven call sites were each doing their own formatting; a link branded in one mail and unbranded in the next is worse than no white-label. Related: a paid-only control that the plan cannot honour MUST be refused at commit (`watermark_requires_paid_plan`), not silently stored as `false` — degrading it quietly tells the sender something untrue about their own share.
+
+### Credential Invariants (API keys #115)
+
+- **A credential the product issues MUST be accepted somewhere, and the acceptance MUST be tested.** API keys were issued, scoped and revocable for six batches while every endpoint read the auth cookie: the scopes on screen described permissions nothing consulted. When adding a credential type, add the path that consumes it in the same batch.
+- **API keys authenticate `/api/` only, a cookie always wins, and scope is decided by method** (GET/HEAD/OPTIONS → `read`, DELETE → `manage`, everything else → `write`). Do not add a per-endpoint permission table: it drifts the first time a route is added without remembering it exists.
+- **An API-key principal is second-factor-verified by construction.** A key is independent, unphishable from a session and revocable in one click, and a machine cannot answer a TOTP prompt. Never make a machine credential subject to an interactive challenge — the failure mode is every integration on the account dying silently when somebody enrols an authenticator.
+
+### Mount Invariants (WebDAV #195, S3 gateway #265)
+
+See `docs/protocol-mounts.md` for the full subsystem. Three rules bind all future work:
+
+- **A moderation decision holds on every path.** A suspended delivery (#53) MUST be invisible to mounts, gateways, background indexers and anything else added later — "it is the owner's own file" is exactly the argument that fails, because suspension is applied *to* the owner. Enforce it in the shared query, never at the call site.
+- **A mount is the workspace and nothing else.** Personal deliveries and shares awaiting approval are never listed, there is no anonymous mount, and the credential is an existing API key (#115) over Basic — no second secret and no second place to revoke. Any new protocol surface MUST go through `MountCredentials` and `WorkspaceFileSystem` rather than reimplementing either: two protocols that disagree about which files exist are two products.
+- **A mount read is owner-side; a mount write obeys the same rules as the upload form.** Reads never count a download or run the recipient gates. Writes apply the plan size cap on the bytes that landed, the monthly quota, the storage region and locked folder defaults — those rules live in `WorkspaceFileSystem`, not in the form, and a protocol that skipped one would be a weaker door into the same files. DELETE requires the `manage` scope, not `write`.
+- **The S3 gateway's credential is the only secret stored reversibly, and it stays that way.** SigV4 requires recomputing the signature from the client's own bytes, so its secret is DataProtection-sealed rather than hashed — in its own table, capped per workspace, seat-rechecked on every request. Never extend that trade to API keys or any other credential to make a protocol easier.
+- **A signature covers a hash of the body, not the body.** Any signed upload path MUST verify the payload as it streams (declared digest, or the `aws-chunked` signature chain) and delete what it wrote when the check fails. Verifying only the Authorization header leaves every body unauthenticated while every request looks signed.
+- **Never advertise a capability that is not implemented, and never `Results.Forbid()` on a protocol route.** `DAV: 1` with no LOCK costs read-write mounting from Explorer and Finder, and that is the honest price; a LOCK that returns a token while locking nothing tells a client its exclusive access is real. `Results.Forbid()` runs the cookie scheme's forbid handler and redirects a filesystem client to a sign-in page it will never render — return the status code.
+
 @RTK.md
+
+## Keeping the GitNexus index fresh
+
+Reindex with:
+
+```bash
+npx gitnexus analyze --skip-agents-md
+```
+
+`--skip-agents-md` stops the generated block below from being rewritten. Symbol and edge counts are **not stable** — re-running against the same commit produced 2324, 2349 and 2372 — so they have been removed from these files: they churn git on every index without changing how anyone writes code. (`--no-stats` is documented in `--help` but has no effect.)
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **quickshare** (2112 symbols, 5008 relationships, 156 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **quickshare**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -251,3 +349,66 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Issue Completion � Docs Update Rule (MANDATORY)
+
+After EVERY issue implementation is complete (before closing the issue / before pushing), update ALL related documentation in this order:
+
+1. **docs/*.md architecture/feature docs** � if the issue touches a documented flow (e.g. send-architecture.md, payment-architecture.md, p2p-architecture.md, login-architecture.md), update the doc to reflect the new behavior. If no existing doc covers the changed area, create one.
+2. **docs/superpowers/specs/ and docs/superpowers/plans/** � the brainstorming spec + implementation plan produced by the workflow are the record of the change; make sure they are committed alongside the code.
+3. **_bmad-output/ artifacts** � if a BMad workflow (specs, architecture, brainstorming) produced artifacts relevant to the issue's area, update the affected artifact(s) or note the change in them.
+4. **DESIGN.md / design-system docs** � only if the issue changed visible UI (new fields, components, tokens). Record what changed and why.
+5. **AGENTS.md conventions** � if the issue introduced a new pattern/constraint future work must follow, add it here.
+6. **Onboarding / index docs** — the next human starts here; keep them in sync or onboarding breaks:
+   - `docs/backlog.md` — feature inventory + tier status. Update on issue create/close or tier change.
+   - `docs/DEVELOPER.md` — codebase map + conventions. Update on new `Features/<X>/` folder, project, or rule.
+   - `docs/TESTING.md` — test map + regression matrix. Update on test suite add/rename/remove.
+   - `docs/SETUP.md` — env vars + local setup. Update on new env var, service, or setup step.
+
+Trigger → doc (quick map):
+
+| Change | Update |
+|---|---|
+| New/closed GitHub issue | `docs/backlog.md` |
+| New `Features/<X>/`, project, or convention | `docs/DEVELOPER.md` (+ `AGENTS.md` if a rule) |
+| Test suite added/renamed/removed | `docs/TESTING.md` |
+| New env var / service / tool version | `docs/SETUP.md` |
+| New alert / service / failure mode | `docs/ONCALL.md` |
+
+The update happens in the SAME commit series as the implementation (docs commit may be separate, but must land before the issue is marked done). Skipping docs = the issue is NOT complete.
+
+## Feature Issue Testing Rule (MANDATORY)
+
+Every feature issue MUST carry a **Manual Test Checklist** — it is the definition of done for that feature. No checklist = the issue is incomplete and MUST NOT be marked done.
+
+### Option A — Checklist inside the feature issue (DEFAULT)
+
+Write a `## Manual Test Checklist` section in the feature issue body BEFORE implementation starts:
+
+```markdown
+## Manual Test Checklist
+- [ ] Step 1: <action> → <expected result>
+- [ ] Step 2: <action> → <expected result>
+```
+
+Rules:
+- One checkbox per scenario. Each step states BOTH the action and the expected result.
+- Cover: happy path, validation errors, empty states, permission boundaries (guest/free/paid), and the no-JavaScript or Unpoly request path where relevant (see `DownloadNoScriptTests`).
+- The checklist is written at issue creation time, not after implementation — it drives the work, it does not document it.
+
+### Option B — Separate manual-test issue (LARGE / CRITICAL features only)
+
+For features touching **auth, billing, payments, P2P**, or spanning **3+ modules**, create a linked manual-test issue in addition to the checklist:
+
+- Title: `[Manual Test] <Feature title>`
+- Body: the full step-by-step checklist (same format as Option A) plus environment notes (browser, account tier, seed data).
+- The feature issue links TO the manual-test issue; the manual-test issue is closed by the tester after the feature ships.
+
+### PR / Implementation obligations
+
+When implementing a feature issue, the agent MUST:
+
+1. Follow the checklist scenario by scenario while building — each step is a test the code must satisfy.
+2. In the closing PR description, add a `## Manual Test Evidence` section: check off each step from the issue checklist and record the result (screenshots for UI changes, API response for backend changes, or a written pass/fail note).
+3. Run the existing automated suite covering the touched area (unit/integration tests, `BrowserAppFixture` + Playwright) BEFORE closing — manual steps never replace automated coverage, they complement it.
+4. A feature issue is NOT complete until every checklist item is checked with evidence. Skipping the checklist = the issue is NOT done.

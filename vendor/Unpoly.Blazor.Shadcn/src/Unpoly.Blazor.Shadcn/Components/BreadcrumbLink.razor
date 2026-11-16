@@ -1,0 +1,9 @@
+@inherits UiComponentBase
+
+<a href="@Href" data-slot="breadcrumb-link" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</a>
+
+@code {
+    [Parameter] public string? Href { get; set; }
+
+    string Classes => Cn("transition-colors hover:text-foreground", Class);
+}

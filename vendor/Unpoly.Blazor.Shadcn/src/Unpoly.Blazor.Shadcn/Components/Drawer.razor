@@ -1,0 +1,63 @@
+@inherits UiComponentBase
+
+@* vaul's drawer: a panel that slides in from an edge and can be dragged away.
+
+   Structurally this is <Sheet> — a native <dialog> for the top layer, the focus trap, Escape and
+   ::backdrop — with one thing added that a sheet does not have: you can drag it shut. That is
+   the whole reason vaul exists, and on a phone it is the gesture people reach for before they
+   look for a close button, so the compiler implements it: drag past a third of the panel and it
+   closes, let go short of that and it springs back.
+
+   The grab handle is drawn for a bottom or top drawer only. On a side drawer it would be a
+   vertical bar nobody has been taught to pull. *@
+
+<dialog id="@Id" data-slot="drawer" data-direction="@Direction" data-dismissable="@Dismissable"
+        data-modal="@(Modal ? null : "false")" data-snap-points="@SnapPoints">
+    <div data-slot="drawer-content" data-vaul-drawer-direction="@Direction" class="@Classes"
+         @attributes="AdditionalAttributes">
+        @if (ShowHandle && Direction is "bottom" or "top")
+        {
+            @* Decorative: the drag is on the whole panel, so this is the affordance and not the
+               target. Announcing it would be announcing a texture. *@
+            <div data-slot="drawer-handle" aria-hidden="true"
+                 class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 cursor-pointer rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"></div>
+        }
+        @ChildContent
+    </div>
+</dialog>
+
+@code {
+    /// <summary>What a <see cref="DrawerTrigger"/> points its Target at. Required.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>bottom | top | left | right</summary>
+    [Parameter] public string Direction { get; set; } = "bottom";
+
+    [Parameter] public bool Dismissable { get; set; } = true;
+
+    /// <summary>
+    /// False opens it with <c>show()</c> rather than <c>showModal()</c>: no backdrop, no focus
+    /// trap, and the page behind stays usable — a drawer you can consult while working, which is
+    /// what upstream's modal={false} means. Escape still closes it, because the platform does.
+    /// </summary>
+    [Parameter] public bool Modal { get; set; } = true;
+
+    /// <summary>
+    /// Heights the drag rests at, biggest last, as CSS lengths or fractions of the viewport:
+    /// "31rem 1" is upstream's own pair. Empty means the old behaviour — a drag either closes it
+    /// or springs back. Only a drag below the smallest point closes a drawer that has these.
+    /// </summary>
+    [Parameter] public string? SnapPoints { get; set; }
+
+    [Parameter] public bool ShowHandle { get; set; } = true;
+
+    // The geometry lives in ui.behavior.css, not here: shadcn's current drawer floats — a
+    // small margin off every edge and rounded on all four corners — where these classes pin
+    // it flush to the edge with two corners rounded, which is the older vaul look. Utilities
+    // beat a layered rule, so leaving them in meant the stylesheet could not move the panel
+    // at all. What stays is everything that is not position: the box, the column, the colour.
+    const string Base =
+        "group/drawer-content fixed z-50 flex h-auto flex-col bg-background";
+
+    string Classes => Cn(Base, Class);
+}

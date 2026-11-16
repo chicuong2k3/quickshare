@@ -1,0 +1,56 @@
+@page "/account/automations"
+@layout MainLayout
+@attribute [Authorize]
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["automations_title"]</PageTitle>
+
+<Card id="automations-card" class="my-4 w-full max-w-2xl p-6">
+    <h1 class="text-xl font-semibold">@Loc["automations_title"]</h1>
+    <p class="mt-1 text-sm text-muted-foreground">@Loc["automations_sub"]</p>
+
+    <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="rounded-md border p-4">
+            <h2 class="font-semibold">Zapier</h2>
+            <p class="mt-1 text-xs text-muted-foreground">@Loc["automations_zapier_desc"]</p>
+        </div>
+        <div class="rounded-md border p-4">
+            <h2 class="font-semibold">Make.com</h2>
+            <p class="mt-1 text-xs text-muted-foreground">@Loc["automations_make_desc"]</p>
+        </div>
+    </div>
+
+    @if (connections.Count > 0)
+    {
+        <h2 class="mt-6 text-base font-semibold">@Loc["automations_connected_heading"]</h2>
+        <ul id="automations-list" class="mt-2 space-y-2">
+            @foreach (var c in connections)
+            {
+                <li class="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm">
+                    <div>
+                        <span class="rounded bg-muted px-2 py-0.5 font-mono text-xs uppercase">@c.Platform</span>
+                        <strong class="ml-2">@c.Name</strong>
+                        <span class="ml-2 font-mono text-xs text-muted-foreground">(@c.TokenPrefixValue… · @c.Scopes)</span>
+                    </div>
+                    <span class="text-xs text-muted-foreground">@(c.IsActive ? "Active" : "Revoked")</span>
+                </li>
+            }
+        </ul>
+    }
+</Card>
+
+@code {
+    private List<AutomationConnection> connections = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+        connections = await Db.AutomationConnections
+            .AsNoTracking()
+            .Where(a => a.UserId == user.Id)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+    }
+}

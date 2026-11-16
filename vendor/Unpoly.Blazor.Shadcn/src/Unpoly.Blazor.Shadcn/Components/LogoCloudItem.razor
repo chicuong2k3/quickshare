@@ -1,0 +1,28 @@
+@inherits UiComponentBase
+
+@* One logo in a LogoCloud. ChildContent is the logo itself — an <img> with its alt, an inline
+   <svg> with a title, or a wordmark — so the logo carries its own accessible name and this adds
+   none. A logo that links somewhere puts the <a> inside.
+
+   In a swap cloud the logos past Visible are rendered hidden: they are the queue ui.js draws
+   from, and with scripting off they simply are not shown. *@
+
+<li data-slot="logo-cloud-item" hidden="@Queued" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</li>
+
+@code {
+    [CascadingParameter] public LogoCloud? Cloud { get; set; }
+
+    int index;
+
+    protected override void OnInitialized() => index = Cloud?.Register() ?? 0;
+
+    bool Queued => Cloud is { Kind: "swap" } cloud && index >= cloud.Visible;
+
+    // [&[hidden]]:hidden because `flex` outranks the hidden attribute everywhere but Tailwind 4's
+    // preflight. A swap cell is a fixed size, so a wide logo replacing a narrow one moves
+    // nothing — and two of them fit side by side on a phone.
+    string Classes => Cn(
+        "flex shrink-0 items-center justify-center gap-2 text-muted-foreground [&[hidden]]:hidden",
+        Cloud?.Kind == "swap" ? "h-16 w-32 sm:w-40" : null,
+        Class);
+}

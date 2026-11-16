@@ -1,0 +1,51 @@
+@inherits UiComponentBase
+
+@* shadcn/ui <Input>. Everything but `type` arrives through @attributes, exactly as shadcn
+   spreads `...props` — so `name`, `value`, `placeholder`, `required`, `up-validate` and the
+   rest are written as plain HTML at the call site.
+
+   Two-way binding via `@bind-Value` is also supported. When the caller passes ValueChanged
+   (which `@bind-Value` generates), the input renders `value="@Value"` and an `@onchange` that
+   raises it. When the caller does NOT bind, `value` is still rendered from Value — and it has to
+   be: Blazor matches component parameters case-insensitively, so a static `value="..."` written
+   the way the docs write it lands in the Value PARAMETER, not in the @attributes splat. Gating
+   the attribute on ValueChanged silently rendered every unbound `<Input value="x">` empty — a
+   form that re-rendered after a 422 lost what the user typed. A null Value emits no attribute. *@
+
+@if (ValueChanged.HasDelegate)
+{
+    <input type="@Type" data-slot="input" class="@Classes" value="@Value"
+           @onchange="OnChange" @attributes="AdditionalAttributes" />
+}
+else
+{
+    <input type="@Type" data-slot="input" class="@Classes" value="@Value" @attributes="AdditionalAttributes" />
+}
+
+@code {
+    [Parameter] public string Type { get; set; } = "text";
+
+    /// <summary>The value — from <c>@bind-Value</c>, or from a plain <c>value="..."</c>, which Blazor
+    /// routes here because parameter names are matched case-insensitively.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Raises on change when <c>@bind-Value</c> is used. Its presence decides whether the
+    /// component renders the bound value/onchange or lets the <c>@attributes</c> splat do it.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+
+    const string Base =
+        "h-control w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 " +
+        "text-control shadow-xs transition-[color,box-shadow] outline-none " +
+        "selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 " +
+        "file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground " +
+        "placeholder:text-muted-foreground disabled:pointer-events-none " +
+        "disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 " +
+        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 " +
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 " +
+        "dark:aria-invalid:ring-destructive/40";
+
+    string Classes => Cn(Base, Class);
+}

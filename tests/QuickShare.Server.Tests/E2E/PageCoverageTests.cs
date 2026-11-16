@@ -15,11 +15,87 @@ public sealed class PageCoverageTests : IClassFixture<TestWebAppFactory>
     [Theory]
     [InlineData("/")]
     [InlineData("/send")]
+    [InlineData("/how-to/send-large-files-free")]
+    [InlineData("/wetransfer-alternatives")]
+    [InlineData("/p2p-file-transfer")]
+    [InlineData("/tools/gui-anh-khong-nen")]
+    [InlineData("/tools/share-text")]
+    [InlineData("/tools/online-clipboard")]
+    [InlineData("/vi/gui-file-lon-mien-phi")]
+    [InlineData("/security")]
+    [InlineData("/changelog")]
+    [InlineData("/roadmap")]
+    [InlineData("/compare")]
+    [InlineData("/why-private")]
+    [InlineData("/status")]
+    [InlineData("/help")]
     public async Task PublicPage_Returns200(string url)
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync(url);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SecurityTxt_ReturnsRfc9116Content()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/.well-known/security.txt");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Contact: mailto:security@quicksharecloud.com", body);
+        Assert.Contains("Expires:", body);
+        Assert.Contains("Policy:", body);
+    }
+
+    [Fact]
+    public async Task UploadPage_RendersStripMetadataToggle()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/send");
+        Assert.Contains("upload-strip-metadata", html);
+    }
+
+    [Fact]
+    public async Task Sitemap_ListsPublicPagesOnly_NeverDeliveries()
+    {
+        var client = _factory.CreateClient();
+        var body = await client.GetStringAsync("/sitemap.xml");
+
+        Assert.Contains("<urlset", body);
+        Assert.Contains("/pricing", body);
+        Assert.DoesNotContain("/d/", body);
+    }
+
+    [Fact]
+    public async Task Robots_DisallowsAccountAndApi()
+    {
+        var client = _factory.CreateClient();
+        var body = await client.GetStringAsync("/robots.txt");
+
+        Assert.Contains("Disallow: /account", body);
+        Assert.Contains("Disallow: /api", body);
+        Assert.Contains("Sitemap:", body);
+    }
+
+    [Fact]
+    public async Task LoginPage_RendersGithubButton()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/login");
+        Assert.Contains("login-provider--github", html);
+    }
+
+    [Fact]
+    public async Task ApiResponse_CarriesRateLimitHeaders()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/deliveries");
+
+        Assert.True(response.Headers.Contains("X-RateLimit-Limit"));
+        Assert.True(response.Headers.Contains("X-RateLimit-Remaining"));
+        Assert.True(response.Headers.Contains("X-RateLimit-Reset"));
     }
 
     [Fact]

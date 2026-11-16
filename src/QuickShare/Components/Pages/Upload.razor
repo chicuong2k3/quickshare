@@ -1,20 +1,91 @@
 @layout MainLayout
 @page "/send"
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using QuickShare.Infrastructure.Caching
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject AppDbContext Db
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
     var apiBase = string.Empty;
+
+    // The idle subtext is auth-aware: anonymous visitors see the sign-up nudge,
+    // signed-in users see their plan's per-file limit (mirrors the Pricing page).
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
+    var plan = PlanTierLimits.Free;
+    string idleSubtext;
+    var recentRecipients = new List<RecipientContact>();
+    if (isAuthenticated)
+    {
+        var userIdClaim = HttpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(userIdClaim, out var userId))
+        {
+            plan = StaticCache.Instance.GetOrSet(
+                $"user:plan:{userId}",
+                () => Db.Users
+                    .AsNoTracking()
+                    .Where(x => x.Id == userId)
+                    .Select(x => x.Plan)
+                    .FirstOrDefault() ?? PlanTierLimits.Free,
+                TimeSpan.FromMinutes(10)
+            );
+
+            // Recent recipients + address book (issue #316) — same cache key the
+            // Recipients endpoints invalidate on write, so a fresh send shows up.
+            recentRecipients = StaticCache.Instance.GetOrSet(
+                $"user:recipients:{userId}",
+                () => Db.RecipientContacts
+                    .AsNoTracking()
+                    .Where(x => x.UserId == userId)
+                    .OrderByDescending(x => x.LastUsedAt)
+                    .Take(20)
+                    .ToList(),
+                TimeSpan.FromSeconds(30)
+            ) ?? new List<RecipientContact>();
+        }
+
+        idleSubtext = plan switch
+        {
+            PlanTierLimits.Pro => Loc["pricing_pro_feat_size"],
+            PlanTierLimits.Studio => Loc["pricing_studio_feat_size"],
+            _ => Loc["pricing_free_feat_size"],
+        };
+    }
+    else
+    {
+        idleSubtext = Loc["upload_idle_sub_limit"];
+    }
+
+    var canSchedule = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+
+    // Download restrictions (issues #142 + #166) are Pro/Studio only — the
+    // commit endpoint refuses lower plans with requires_paid_plan.
+    var canRestrictAccess = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+    maxExpiryDays = (int)Math.Max(1, Math.Round(PlanTierLimits.GetMaxExpiry(plan ?? PlanTierLimits.Free).TotalDays));
 }
 
 <PageTitle>@Loc["upload_title"]</PageTitle>
 
-<PageWrapper Variant="PageVariant.Fill">
+<PageWrapper id="upload-app" Variant="PageVariant.Padded">
+
+<div class="upload-board">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+    <script id="upload-i18n" type="application/json">@RawJson(Strings())</script>
         <div class="container">
-            <input type="file" name="file" class="sr-only" aria-label="@Loc["upload_file_input_label"]" onchange="uploadPage.onFileInput(event)" />
+            @* multiple: file #1 drives the existing flow, the rest ride along as a bundle (#79). *@
+            <input type="file" name="file" multiple class="sr-only" aria-label="@Loc["upload_file_input_label"]" onchange="uploadPage.onFileInput(event)" />
+
+            @* Folder upload (#43): the same handler — webkitdirectory only changes what the
+               browser puts in .files, and the relative paths ride along in webkitRelativePath. *@
+            <input type="file" id="upload-folder-input" webkitdirectory multiple class="sr-only"
+                   aria-label="@Loc["upload_folder_input_label"]" onchange="uploadPage.onFileInput(event)" />
+
+            @* Camera capture (#211) — mobile capture="environment" fallback when getUserMedia is unavailable *@
+            <input type="file" id="upload-camera-input" accept="image/*" capture="environment" class="sr-only"
+                   aria-label="@Loc["upload_camera_toggle"]" onchange="uploadPage.onFileInput(event)" />
 
             @* IDLE / DRAGGING *@
             <section id="upload-idle" class="section">
@@ -23,7 +94,7 @@
                     <span id="upload-drag-text" class="hidden">@Loc["upload_drag_drop_file"]</span>
                 </h1>
                 <p class="sub" id="upload-idle-sub">
-                    <span id="upload-idle-subtext">@Loc["upload_idle_sub_limit"]</span>
+                    <span id="upload-idle-subtext">@idleSubtext</span>
                     <span id="upload-drag-subtext" class="hidden">@Loc["upload_drag_release"]</span>
                 </p>
 
@@ -36,10 +107,13 @@
                          class="dropzone"
                          onclick="uploadPage.triggerFileInput()">
                         <div class="dropzone-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
+                            @* Pixel arrow rising into the disk slot *@
+                            <svg viewBox="0 0 16 16" aria-hidden="true">
+                                <rect x="2" y="2" width="12" height="3" fill="currentColor"/>
+                                <rect x="6" y="3" width="4" height="1" fill="var(--db-sheet-raised)"/>
+                                <rect x="7" y="7" width="2" height="7" fill="currentColor"/>
+                                <rect x="5" y="9" width="2" height="2" fill="currentColor"/>
+                                <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
                             </svg>
                         </div>
                         <div>
@@ -54,43 +128,447 @@
                     </div>
                 </div>
 
-                @* OTP — optional 6-digit security code for downloaders *@
-                <div class="encrypt-toggle">
-                    <div class="otp-wrap">
-                        <span class="otp-label">@Loc["upload_otp_label"]</span>
-                        <div id="upload-otp" class="db-otp" style="gap: 0.5rem">
-                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                            <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        </div>
-                        <span class="otp-hint">@Loc["upload_otp_hint"]</span>
+                @* Text snippet sharing (issue #178) — paste text, share without a file *@
+                <button type="button" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                        onclick="uploadPage.toggleTextMode()" data-ai-action="upload.shareText.toggle">@Loc["upload_share_text_toggle"]</button>
+                <div id="upload-text-mode" class="hidden upload-text-mode">
+                    <Textarea id="upload-text-input" class="sender-email-input upload-text-input" rows="6"
+                              placeholder="@Loc["upload_share_text_placeholder"]" maxlength="100000" />
+                    <button type="button" data-slot="button" data-variant="default"
+                            onclick="uploadPage.shareText()" data-ai-action="upload.shareText.submit">@Loc["upload_share_text_btn"]</button>
+                </div>
+
+                @* Camera capture (#211), Voice note (#224), Image editor (#228), Video trim (#320), PDF tools (#317) *@
+                <div id="upload-media-capture" class="mt-2 flex flex-wrap justify-center gap-2">
+                    <button type="button" id="upload-camera-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="uploadPage.toggleCameraMode()" data-ai-action="upload.camera.toggle">@Loc["upload_camera_toggle"]</button>
+                    <button type="button" id="upload-voice-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="uploadPage.toggleVoiceMode()" data-ai-action="upload.voice.toggle">@Loc["upload_voice_toggle"]</button>
+                    <button type="button" id="upload-image-editor-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.uploadMediaTools.togglePanel('upload-image-editor')" data-ai-action="upload.imageEditor.toggle">@Loc["upload_image_editor_toggle"]</button>
+                    <button type="button" id="upload-video-trim-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.uploadMediaTools.togglePanel('upload-video-trim')" data-ai-action="upload.videoTrim.toggle">@Loc["upload_video_trim_toggle"]</button>
+                    <button type="button" id="upload-pdf-tools-toggle" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.uploadMediaTools.togglePanel('upload-pdf-tools')" data-ai-action="upload.pdfTools.toggle">@Loc["upload_pdf_tools_toggle"]</button>
+                </div>
+
+                @* Image editor before share (#228) — crop, annotate, blur/redact on canvas *@
+                <div id="upload-image-editor" class="hidden upload-text-mode">
+                    <canvas id="upload-image-editor-canvas" width="640" height="360" class="mx-auto max-h-60 w-full rounded border bg-black/40" aria-label="@Loc["upload_image_editor_toggle"]"></canvas>
+                    <div class="mt-2 flex flex-wrap justify-center gap-2">
+                        <button type="button" id="upload-img-crop-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadMediaTools.cropImage()" data-ai-action="upload.imageEditor.crop">@Loc["upload_image_editor_crop"]</button>
+                        <button type="button" id="upload-img-blur-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadMediaTools.blurRegion()" data-ai-action="upload.imageEditor.blur">@Loc["upload_image_editor_blur"]</button>
+                        <button type="button" id="upload-img-annotate-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadMediaTools.annotateImage()" data-ai-action="upload.imageEditor.annotate">@Loc["upload_image_editor_annotate"]</button>
+                        <button type="button" id="upload-img-apply-btn" data-slot="button" data-variant="default" data-size="sm" onclick="window.uploadMediaTools.applyEditedImage()" data-ai-action="upload.imageEditor.apply">@Loc["upload_image_editor_apply"]</button>
                     </div>
                 </div>
 
-                @* Expiry selector *@
-                <div class="expiry-row">
-                    <span class="expiry-label">@Loc["upload_expiry_label"]</span>
-                    <div class="expiry-group" role="radiogroup" aria-label="@Loc["upload_expiry_aria"]">
-                        <button type="button" role="radio" id="upload-expiry-24h"
-                                class="expiry-btn expiry-btn--on"
-                                onclick="uploadPage.selectExpiry('24h')">@Loc["upload_expiry_24h"]</button>
-                        <button type="button" role="radio" id="upload-expiry-7d"
-                                class="expiry-btn expiry-btn--off"
-                                onclick="uploadPage.selectExpiry('7d')">@Loc["upload_expiry_7d"]</button>
+                @* Video trim/cut before share (#320) *@
+                <div id="upload-video-trim" class="hidden upload-text-mode">
+                    <div class="flex flex-wrap items-center justify-center gap-2">
+                        <label for="upload-video-trim-start" class="text-xs text-muted-foreground">@Loc["upload_video_trim_start"]</label>
+                        <Input Type="number" id="upload-video-trim-start" Value="0" min="0" class="w-24" aria-label="@Loc["upload_video_trim_start"]" />
+                        <label for="upload-video-trim-end" class="text-xs text-muted-foreground">@Loc["upload_video_trim_end"]</label>
+                        <Input Type="number" id="upload-video-trim-end" Value="90" min="1" class="w-24" aria-label="@Loc["upload_video_trim_end"]" />
+                        <NativeSelect id="upload-video-trim-speed" aria-label="@Loc["upload_video_trim_speed"]">
+                            <NativeSelectOption value="1" Selected>1x</NativeSelectOption>
+                            <NativeSelectOption value="1.5">1.5x</NativeSelectOption>
+                            <NativeSelectOption value="2">2x</NativeSelectOption>
+                        </NativeSelect>
+                        <button type="button" id="upload-video-trim-apply-btn" data-slot="button" data-variant="default" data-size="sm" onclick="window.uploadMediaTools.applyVideoTrim()" data-ai-action="upload.videoTrim.apply">@Loc["upload_video_trim_apply"]</button>
                     </div>
                 </div>
+
+                @* PDF tools before share (#317) — merge, split, compress *@
+                <div id="upload-pdf-tools" class="hidden upload-text-mode">
+                    <div class="flex flex-wrap items-center justify-center gap-2">
+                        <NativeSelect id="upload-pdf-operation" aria-label="@Loc["upload_pdf_tools_toggle"]">
+                            <NativeSelectOption value="merge" Selected>@Loc["upload_pdf_merge"]</NativeSelectOption>
+                            <NativeSelectOption value="split">@Loc["upload_pdf_split"]</NativeSelectOption>
+                            <NativeSelectOption value="compress">@Loc["upload_pdf_compress"]</NativeSelectOption>
+                        </NativeSelect>
+                        <Input Type="number" id="upload-pdf-start-page" Value="1" min="1" class="w-20" placeholder="1" aria-label="Start page" />
+                        <Input Type="number" id="upload-pdf-end-page" Value="5" min="1" class="w-20" placeholder="5" aria-label="End page" />
+                        <button type="button" id="upload-pdf-run-btn" data-slot="button" data-variant="default" data-size="sm" onclick="window.uploadMediaTools.runPdfTool()" data-ai-action="upload.pdfTools.run">@Loc["upload_pdf_apply"]</button>
+                    </div>
+                </div>
+
+                <div id="upload-camera-mode" class="hidden upload-text-mode">
+                    <video id="upload-camera-video" autoplay playsinline muted class="mx-auto max-h-60 w-full rounded border bg-black"></video>
+                    <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" id="upload-camera-snap-btn" data-slot="button" data-variant="default" data-size="sm"
+                                onclick="uploadPage.snapCamera()" data-ai-action="upload.camera.snap">@Loc["upload_camera_snap"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                onclick="uploadPage.closeCamera()" data-ai-action="upload.camera.close">@Loc["upload_camera_close"]</button>
+                    </div>
+                </div>
+
+                <div id="upload-voice-mode" class="hidden upload-text-mode">
+                    <p id="upload-voice-status" class="text-sm text-muted-foreground" role="status" aria-live="polite"
+                       data-ready="@Loc["upload_voice_ready"]" data-recording="@Loc["upload_voice_recording"]">@Loc["upload_voice_ready"]</p>
+                    <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" id="upload-voice-start-btn" data-slot="button" data-variant="default" data-size="sm"
+                                onclick="uploadPage.startVoiceRecord()" data-ai-action="upload.voice.start">@Loc["upload_voice_start"]</button>
+                        <button type="button" id="upload-voice-stop-btn" data-slot="button" data-variant="outline" data-size="sm" class="hidden"
+                                onclick="uploadPage.stopVoiceRecord()" data-ai-action="upload.voice.stop">@Loc["upload_voice_stop"]</button>
+                    </div>
+                </div>
+
+                @* Upload by email (issue #104) — signed-in accounts get a private forwarding
+                   address. Fetched on demand rather than rendered with the page: the address is
+                   minted on first ask, and nobody should get a live ingest route by loading a
+                   page they did not act on. *@
+                @if (isAuthenticated)
+                {
+                    <button type="button" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="uploadEmail.show(this)"
+                            data-error="@Loc["upload_email_unavailable"]"
+                            data-ai-action="upload.byEmail.show">@Loc["upload_email_toggle"]</button>
+                    <div id="upload-email-mode" class="hidden upload-text-mode">
+                        <p class="text-muted-foreground">@Loc["upload_email_hint"]</p>
+                        <div class="upload-url-row">
+                            <Input id="upload-email-address" Type="text" readonly class="share-input"
+                                   aria-label="@Loc["upload_email_toggle"]" />
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                    onclick="uploadEmail.copy()" data-ai-action="upload.byEmail.copy">@Loc["upload_copy_link"]</button>
+                        </div>
+                    </div>
+                }
+
+                @* Upload from URL (issue #57) — Pro/Studio server-side remote fetch *@
+                @if (canSchedule)
+                {
+                    <button type="button" class="upload-text-toggle" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="uploadUrl.toggle()" data-ai-action="upload.fromUrl.toggle">@Loc["upload_url_toggle"]</button>
+                    <div id="upload-url-mode" class="hidden upload-text-mode">
+                        <div class="upload-url-row">
+                            <Input Type="url" id="upload-url-input" class="sender-email-input" placeholder="@Loc["upload_url_placeholder"]" autocomplete="off" aria-label="@Loc["upload_url_toggle"]" />
+                            <button type="button" data-slot="button" data-variant="default" id="upload-url-btn"
+                                    onclick="uploadUrl.fetch()" data-ai-action="upload.fromUrl.submit">@Loc["upload_url_fetch"]</button>
+                        </div>
+                        <div id="upload-url-status" class="upload-url-status hidden" role="status"
+                             data-fetching="@Loc["upload_url_fetching"]" data-failed="@Loc["upload_url_failed"]"></div>
+                        <div id="upload-url-success" class="upload-url-success hidden">
+                            <Input id="upload-url-link" Type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="uploadUrl.copy()">@Loc["upload_copy_link"]</button>
+                        </div>
+                    </div>
+
+                    @* Cloud import from Google Drive / Dropbox / OneDrive (issue #109) *@
+                    <div id="upload-cloud-import" class="mt-2 flex flex-wrap justify-center gap-2">
+                        <button type="button" id="upload-cloud-gdrive-btn" class="upload-text-toggle" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadCloud.openPicker('google_drive')" data-ai-action="upload.cloud.googleDrive">@Loc["upload_cloud_gdrive"]</button>
+                        <button type="button" id="upload-cloud-dropbox-btn" class="upload-text-toggle" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadCloud.openPicker('dropbox')" data-ai-action="upload.cloud.dropbox">@Loc["upload_cloud_dropbox"]</button>
+                        <button type="button" id="upload-cloud-onedrive-btn" class="upload-text-toggle" data-slot="button" data-variant="outline" data-size="sm" onclick="window.uploadCloud.openPicker('onedrive')" data-ai-action="upload.cloud.onedrive">@Loc["upload_cloud_onedrive"]</button>
+                    </div>
+                    <div id="upload-cloud-panel" class="hidden upload-text-mode">
+                        <Input Type="hidden" id="upload-cloud-provider" Value="google_drive" />
+                        <div class="upload-url-row">
+                            <Input Type="text" id="upload-cloud-filename" class="sender-email-input" placeholder="deck.pdf" />
+                            <Input Type="url" id="upload-cloud-url" class="sender-email-input" placeholder="https://www.googleapis.com/drive/v3/files/..." />
+                            <button type="button" id="upload-cloud-submit-btn" data-slot="button" data-variant="default" onclick="window.uploadCloud.submitImport()" data-ai-action="upload.cloud.submit">@Loc["upload_cloud_import_btn"]</button>
+                        </div>
+                    </div>
+
+                    @* Load preset (#100) — shown only for Pro/Studio, fetches presets on demand. *@
+                    <div class="sender-email-wrap" id="upload-preset-wrap">
+                        <span class="otp-label">@Loc["presets_load_label"]</span>
+                        <div class="upload-url-row">
+                            <NativeSelect id="upload-preset-select" class="sender-email-input"
+                                          aria-label="@Loc["presets_load_label"]"
+                                          onchange="window.quickSharePresets.loadPreset(this)">
+                                <NativeSelectOption value="">—</NativeSelectOption>
+                            </NativeSelect>
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm"
+                                    onclick="window.quickSharePresets.fetchPresets()"
+                                    data-ai-action="upload.preset.load">↻</button>
+                        </div>
+                    </div>
+                }
+
+                @* Protect your link (issues #44 + OTP gate) — optional password and/or 6-digit code *@
+                <div class="sender-email-wrap">
+                    <span class="otp-label">@Loc["upload_protect_label"]</span>
+
+                    <label for="upload-password" class="protect-sub">@Loc["upload_password_label"]</label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center">
+                        <Input Type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" oninput="uploadPage.passwordInput(event)" style="flex: 1" />
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="uploadPage.generatePassword()" data-ai-action="upload.password.generate">@Loc["upload_password_generate"]</button>
+                    </div>
+                    @* Live strength meter (issue #287) — client-side only, hidden until typing starts *@
+                    <div id="upload-password-meter" class="pw-meter hidden" aria-live="polite"
+                         data-weak="@Loc["upload_pw_weak"]" data-fair="@Loc["upload_pw_fair"]" data-strong="@Loc["upload_pw_strong"]">
+                        <span class="pw-meter__bar"><span class="pw-meter__fill"></span></span>
+                        <span class="pw-meter__label"></span>
+                    </div>
+                    @* Breach check (issue #280) — k-anonymity against HIBP, filled by upload.ts *@
+                    <div id="upload-password-breach" class="pw-breach hidden" role="alert" aria-live="polite"
+                         data-breached="@Loc["upload_password_breached"]" data-safe="@Loc["upload_password_safe"]"></div>
+                    <span class="otp-hint">@Loc["upload_password_hint"]</span>
+
+                    <span class="protect-sub">@Loc["upload_otp_label"]</span>
+                    <div id="upload-otp" class="flex" style="gap: 0.5rem; margin-top: 0.5rem">
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                    </div>
+                    <span class="otp-hint">@Loc["upload_otp_hint"]</span>
+                </div>
+
+                @* Download restrictions (issues #142 + #166) — CIDR allowlist plus country
+                   allow/deny rules. These AND with the password/OTP gate above. Pro/Studio
+                   only; the commit endpoint normalizes each value and silently drops
+                   entries it cannot parse, so nothing is validated client-side. *@
+                <div class="sender-email-wrap upload-access" id="upload-access-rules">
+                    <span class="otp-label">@Loc["upload_access_label"]</span>
+
+                    <label for="upload-allowed-ip-ranges" class="protect-sub">@Loc["upload_access_ip_label"]</label>
+                    <Input Type="text" id="upload-allowed-ip-ranges" class="sender-email-input"
+                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
+                           placeholder="@Loc["upload_access_ip_placeholder"]"
+                           aria-describedby="upload-access-ip-hint"
+                           disabled="@(!canRestrictAccess)" />
+                    <span class="otp-hint" id="upload-access-ip-hint">@Loc["upload_access_ip_hint"]</span>
+
+                    <label for="upload-allowed-countries" class="protect-sub">@Loc["upload_access_allowed_countries_label"]</label>
+                    <Input Type="text" id="upload-allowed-countries" class="sender-email-input"
+                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
+                           placeholder="@Loc["upload_access_countries_placeholder"]"
+                           aria-describedby="upload-access-allowed-countries-hint"
+                           disabled="@(!canRestrictAccess)" />
+                    <span class="otp-hint" id="upload-access-allowed-countries-hint">@Loc["upload_access_allowed_countries_hint"]</span>
+
+                    <label for="upload-blocked-countries" class="protect-sub">@Loc["upload_access_blocked_countries_label"]</label>
+                    <Input Type="text" id="upload-blocked-countries" class="sender-email-input"
+                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
+                           placeholder="@Loc["upload_access_countries_placeholder"]"
+                           aria-describedby="upload-access-blocked-countries-hint"
+                           disabled="@(!canRestrictAccess)" />
+                    <span class="otp-hint" id="upload-access-blocked-countries-hint">@Loc["upload_access_blocked_countries_hint"]</span>
+
+                    <span class="otp-hint upload-access__combine">@Loc["upload_access_combine_hint"]</span>
+
+                    @if (!canRestrictAccess)
+                    {
+                        <p class="otp-hint upload-access__locked" id="upload-access-locked">
+                            @Loc["upload_access_paid_hint"]
+                            <a href="@RoutePaths.Upgrade" class="upload-access__upgrade"
+                               data-ai-action="upload.accessRules.upgrade">@Loc["upload_access_upgrade"]</a>
+                        </p>
+                    }
+                </div>
+
+                @* Burn-after-download (issue #12) — single-use link *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-burn" />
+                        <span>@Loc["upload_burn_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_burn_hint"]</span>
+                </div>
+
+                @* Extension requests (issue #233) — recipients may ask for more time *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-allow-requests" />
+                        <span>@Loc["upload_allow_requests_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_allow_requests_hint"]</span>
+                </div>
+
+                @* Privacy mode (issue #187) — no tracking, no analytics, no visible counts *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-privacy" />
+                        <span>@Loc["upload_privacy_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_privacy_hint"]</span>
+                </div>
+
+                @* Comments (issue #289) — off by default; a share is one-way unless opened *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-comments" />
+                        <span>@Loc["upload_comments_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_comments_hint"]</span>
+                </div>
+
+                @* Preview watermark (issue #155) — Pro/Studio; marks the screenshot, not the file *@
+                @if (plan is PlanTierLimits.Pro or PlanTierLimits.Studio)
+                {
+                    <div class="sender-email-wrap">
+                        <label class="otp-label burn-toggle">
+                            <Checkbox id="upload-watermark" />
+                            <span>@Loc["upload_watermark_label"]</span>
+                        </label>
+                        <span class="otp-hint">@Loc["upload_watermark_hint"]</span>
+                    </div>
+                }
+
+                @* OCR search (issue #243) — opt-in per file; reading somebody's screenshot is a
+                   data touch, not a default. *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-ocr" />
+                        <span>@Loc["upload_ocr_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_ocr_hint"]</span>
+                </div>
+
+                @* Email OTP (issue #291) — recipient requests a single-use emailed code *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-email-otp" />
+                        <span>@Loc["upload_email_otp_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_email_otp_hint"]</span>
+                </div>
+
+                @* Recipient email gate (issue #324) — anonymous recipients surrender an email first *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-recipient-email" />
+                        <span>@Loc["upload_recipient_email_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_recipient_email_hint"]</span>
+                </div>
+
+                @* Public stats page (issue #294) — shareable aggregated download stats *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-public-stats" />
+                        <span>@Loc["upload_public_stats_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_public_stats_hint"]</span>
+                </div>
+
+                @* Metadata strip (issue #170) — privacy-first, on by default *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-strip-metadata" Checked />
+                        <span>@Loc["upload_strip_metadata_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_strip_metadata_hint"]</span>
+                </div>
+
+                @* Auto-compress images (issue #63) — saves bandwidth, on by default *@
+                <div class="sender-email-wrap">
+                    <label class="otp-label burn-toggle">
+                        <Checkbox id="upload-compress" Checked />
+                        <span>@Loc["upload_compress_label"]</span>
+                    </label>
+                    <span class="otp-hint">@Loc["upload_compress_hint"]</span>
+                    @if (canSchedule)
+                    {
+                        <div class="mt-2" id="upload-video-compress-wrap">
+                            <label for="upload-video-compress-preset" class="protect-sub">@Loc["upload_video_compress_label"]</label>
+                            <NativeSelect id="upload-video-compress-preset" class="sender-email-input" aria-label="@Loc["upload_video_compress_label"]">
+                                <NativeSelectOption value="@VideoCompressionPreset.None" Selected>@Loc["upload_video_compress_none"]</NativeSelectOption>
+                                <NativeSelectOption value="@VideoCompressionPreset.P1080">1080p Full HD (~55%)</NativeSelectOption>
+                                <NativeSelectOption value="@VideoCompressionPreset.P720">720p HD (~35%)</NativeSelectOption>
+                                <NativeSelectOption value="@VideoCompressionPreset.P480">480p SD (~20%)</NativeSelectOption>
+                            </NativeSelect>
+                        </div>
+                    }
+
+                <div class="sender-email-wrap" id="upload-encryption-wrap">
+                    <label for="upload-encryption-mode" class="otp-label">@Loc["upload_encryption_mode_label"]</label>
+                    <NativeSelect id="upload-encryption-mode" class="sender-email-input" aria-label="@Loc["upload_encryption_mode_label"]">
+                        <NativeSelectOption value="@DeliveryEncryptionMode.FragmentKey" Selected>@Loc["upload_encryption_mode_fragment"]</NativeSelectOption>
+                        <NativeSelectOption value="@DeliveryEncryptionMode.Passphrase">@Loc["upload_encryption_mode_passphrase"]</NativeSelectOption>
+                        <NativeSelectOption value="@DeliveryEncryptionMode.None">@Loc["upload_encryption_mode_none"]</NativeSelectOption>
+                    </NativeSelect>
+                    <div id="upload-passphrase-row" class="mt-2">
+                        <label for="upload-encryption-passphrase" class="protect-sub">@Loc["upload_encryption_passphrase_label"]</label>
+                        <Input Type="password" id="upload-encryption-passphrase" class="sender-email-input" autocomplete="new-password" placeholder="@Loc["upload_encryption_passphrase_placeholder"]" />
+                    </div>
+                    <p id="upload-encryption-honesty" class="otp-hint mt-1">@Loc["upload_encryption_honesty_notice"]</p>
+                </div>
+                </div>
+
+
+
+
+                @* Sender note (issue #137) — optional, plain text, rendered escaped on /d *@
+                <div class="sender-email-wrap">
+                    <label for="upload-message" class="otp-label">@Loc["upload_message_label"]</label>
+                    <Textarea id="upload-message" class="sender-email-input" rows="2" maxlength="@Delivery.MessageMaxLength" placeholder="@Loc["upload_message_placeholder"]" />
+                    <span class="otp-hint">@Loc["upload_message_hint"]</span>
+                </div>
+
+                @* Expiry options (issue #22) — options rendered per plan; server clamps to plan max *@
+                <div class="sender-email-wrap">
+                    <label for="upload-expiry" class="otp-label">@Loc["upload_expiry_label"]</label>
+                    @if (canSchedule)
+                    {
+                        <Input Type="number" id="upload-expiry-days" class="sender-email-input" min="1" max="@maxExpiryDays" Value="@maxExpiryDays.ToString()" inputmode="numeric" aria-label="@Loc["upload_expiry_label"]" />
+                        <span class="otp-hint">@Loc["upload_expiry_days_hint", maxExpiryDays]</span>
+                    }
+                    else
+                    {
+                        <NativeSelect id="upload-expiry" class="sender-email-input">
+                            <NativeSelectOption value="2">@Loc["upload_expiry_2h"]</NativeSelectOption>
+                            <NativeSelectOption value="24" Selected>@Loc["upload_expiry_24h"]</NativeSelectOption>
+                            <NativeSelectOption value="168">@Loc["upload_expiry_7d"]</NativeSelectOption>
+                        </NativeSelect>
+                        <span class="otp-hint">@Loc["upload_expiry_hint"]</span>
+                    }
+                </div>
+
+                @* Optional sender email — anonymous only: signed-in users already have email on their account. *@
+                @if (!isAuthenticated)
+                {
+                    <div class="sender-email-wrap">
+                        <label for="upload-sender-email" class="otp-label">@Loc["upload_sender_email_label"]</label>
+                        <Input Type="email" id="upload-sender-email" class="sender-email-input" inputmode="email" autocomplete="email" placeholder="@Loc["upload_sender_email_placeholder"]" />
+                        <span class="otp-hint">@Loc["upload_sender_email_hint"]</span>
+                    </div>
+                }
+
+                @* Multi-recipient share (issue #37) — email the link to N people at upload *@
+                <div class="sender-email-wrap">
+                    <label for="upload-recipients" class="otp-label">@Loc["upload_recipients_label"]</label>
+                    <Input Type="text" id="upload-recipients" class="sender-email-input" autocomplete="off" placeholder="@Loc["upload_recipients_placeholder"]" />
+                    <span class="otp-hint">@Loc["upload_recipients_hint"]</span>
+                </div>
+
+                @* Recent recipients + address book (issue #316) — signed-in users quick-pick *@
+                @if (isAuthenticated && recentRecipients.Count > 0)
+                {
+                    <div class="sender-email-wrap" id="upload-recent-recipients">
+                        <span class="otp-label">@Loc["upload_recent_recipients_label"]</span>
+                        <div class="recent-recipient-chips">
+                            @foreach (var r in recentRecipients)
+                            {
+                                <button type="button" class="recent-recipient-chip" data-email="@r.Email"
+                                        onclick="uploadPage.addRecipient(this)" data-ai-action="upload.recipients.recent">@r.Email</button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (canSchedule)
+                {
+                    <div class="sender-email-wrap">
+                        <label for="upload-deliver-at" class="otp-label">@Loc["upload_deliver_at_label"]</label>
+                        <Input Type="datetime-local" id="upload-deliver-at" class="sender-email-input" />
+                        <span class="otp-hint">@Loc["upload_deliver_at_hint"]</span>
+                    </div>
+                }
 
                 <div id="upload-paste-tip" class="hidden ">@Loc["upload_paste_no_image"]</div>
             </section>
 
             @* UPLOADING *@
             <section id="upload-uploading" class="section hidden">
-                <div class="db-spinner db-spinner--lg "></div>
+                <div class="size-8 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
                 <h1 class="status-h1" id="upload-filename"></h1>
                 <p class="status-p" id="upload-progress-label"></p>
+                <div id="upload-queue-banner" class="hidden mt-3 rounded-md border bg-muted/40 p-3 text-sm" role="status" data-notice="@Loc["upload_queue_notice"]"></div>
+                <div id="upload-offline-queue-banner" class="hidden mt-3 rounded-md border bg-muted/40 p-3 text-sm" role="status">@Loc["upload_offline_queue_notice"]</div>
                 <div id="upload-encrypt-badge" class="badge-encrypt">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
@@ -102,7 +580,7 @@
                         <div id="upload-progress-bar" class="progress-fill" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
-                <button id="upload-cancel-btn" class="db-btn db-btn--ghost" style="margin-top: 2.5rem" onclick="uploadPage.cancelUpload()">@Loc["upload_cancel"]</button>
+                <button id="upload-cancel-btn" data-slot="button" data-variant="ghost" style="margin-top: 2.5rem" onclick="uploadPage.cancelUpload()">@Loc["upload_cancel"]</button>
             </section>
 
             @* SUCCESS *@
@@ -116,13 +594,29 @@
                 <p class="status-p" id="upload-success-name"></p>
 
                 <div class="share-box">
-                    <label for="share-link" class="share-label">@Loc["upload_share_link_label"]</label>
+                    @* The new delivery's card: striped chrome, then its address. *@
+                    <div class="qs-titlebar">
+                        <span class="qs-titlebar__box" aria-hidden="true"></span>
+                        <label for="share-link" class="qs-titlebar__label">@Loc["upload_share_link_label"]</label>
+                        <span class="qs-titlebar__box" aria-hidden="true"></span>
+                    </div>
                     <div class="share-row">
-                        <input id="share-link" type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
-                        <button type="button" aria-label="@Loc["upload_copy_link_aria"]" class="db-btn db-btn--primary" id="upload-copy-btn" onclick="uploadPage.copyLink()">
+                        <Input id="share-link" Type="text" readonly class="share-input" aria-label="@Loc["upload_share_link_label"]" />
+                        <button type="button" id="upload-share-btn" aria-label="@Loc["upload_share_aria"]" data-slot="button" data-variant="default" onclick="uploadPage.shareLink()" data-ai-action="upload.share.sheet">@Loc["upload_share_btn"]</button>
+                        <button type="button" aria-label="@Loc["upload_copy_link_aria"]" data-slot="button" data-variant="default" id="upload-copy-btn" onclick="uploadPage.copyLink()">
                             <span id="upload-copy-text">@Loc["upload_copy_link"]</span>
                             <span id="upload-copied-text" class="hidden">@Loc["upload_copied"]</span>
                         </button>
+                    </div>
+                    @* Wider share sheet (issue #130) — X, LinkedIn, Threads, Telegram, Email + copy Markdown/HTML *@
+                    <div id="upload-share-targets" class="flex flex-wrap items-center gap-2" style="margin-top: 0.75rem">
+                        <button type="button" id="upload-copy-markdown-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="uploadPage.copyMarkdown()" data-ai-action="upload.share.markdown">@Loc["upload_share_markdown"]</button>
+                        <button type="button" id="upload-copy-html-btn" data-slot="button" data-variant="outline" data-size="sm" onclick="uploadPage.copyHtml()" data-ai-action="upload.share.html">@Loc["upload_share_html"]</button>
+                        <a id="upload-share-x" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_x"]" data-ai-action="upload.share.x">X</a>
+                        <a id="upload-share-linkedin" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_linkedin"]" data-ai-action="upload.share.linkedin">LinkedIn</a>
+                        <a id="upload-share-threads" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_threads"]" data-ai-action="upload.share.threads">Threads</a>
+                        <a id="upload-share-telegram" href="#" target="_blank" rel="noopener noreferrer" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_telegram"]" data-ai-action="upload.share.telegram">Telegram</a>
+                        <a id="upload-share-email" href="#" data-slot="button" data-variant="ghost" data-size="sm" aria-label="@Loc["upload_share_email"]" data-ai-action="upload.share.email">Email</a>
                     </div>
                     <p id="upload-expiry-label" style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--db-color-text-muted)"></p>
                 </div>
@@ -135,8 +629,9 @@
                     </svg>
                     @Loc["upload_encrypted_key_in_link"]
                 </div>
+                <FeedbackWidget Page="send" />
 
-                <button class="db-btn db-btn--ghost" style="margin-top: 2rem" onclick="uploadPage.reset()">@Loc["upload_send_another"]</button>
+                <button data-slot="button" data-variant="ghost" style="margin-top: 2rem" onclick="uploadPage.reset()">@Loc["upload_send_another"]</button>
             </section>
 
             @* ERROR *@
@@ -149,8 +644,8 @@
                 <h1 class="status-h1">@Loc["upload_error_title"]</h1>
                 <p class="status-p" id="upload-error-msg">@Loc["upload_error_unknown"]</p>
                 <div style="margin-top: 2.5rem; display: flex; gap: 0.75rem; justify-content: center">
-                    <button id="upload-resume-btn" class="db-btn db-btn--primary hidden" onclick="uploadPage.resumeUpload()">Resume upload</button>
-                    <button class="db-btn" onclick="uploadPage.reset()">@Loc["upload_try_again"]</button>
+                    <button id="upload-resume-btn" class="hidden" data-slot="button" data-variant="default" onclick="uploadPage.resumeUpload()">@Loc["upload_resume"]</button>
+                    <button data-slot="button" data-variant="default" onclick="uploadPage.reset()">@Loc["upload_try_again"]</button>
                 </div>
             </section>
 
@@ -159,7 +654,215 @@
         <AdComponent />
     </div>
         </div>
+</div>
+
 </PageWrapper>
 
+<script src="/js/paste-anywhere.js"></script>
+<script src="/js/password-breach.js"></script>
+<script src="/js/presets.js" defer></script>
 <script src="/js/upload.js"></script>
+
+<script>
+    // Upload by email (issue #104). The address is minted server-side on the first ask.
+    window.uploadEmail = {
+        show: function (btn) {
+            var panel = document.getElementById('upload-email-mode');
+            var field = document.getElementById('upload-email-address');
+            panel.classList.remove('hidden');
+            if (field.value) return;
+
+            fetch('/api/uploads/email-address')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data || !data.enabled) {
+                        // No inbound domain configured: say so rather than showing an address
+                        // no mail server would accept.
+                        field.value = btn.getAttribute('data-error');
+                        return;
+                    }
+                    field.value = data.address;
+                })
+                .catch(function () { field.value = btn.getAttribute('data-error'); });
+        },
+        copy: function () {
+            var field = document.getElementById('upload-email-address');
+            field.select();
+            navigator.clipboard.writeText(field.value);
+        },
+    };
+
+    window.uploadUrl = {
+        toggle: function () {
+            document.getElementById('upload-url-mode').classList.toggle('hidden');
+        },
+        fetch: function () {
+            var input = document.getElementById('upload-url-input');
+            var url = input.value.trim();
+            if (!url) return;
+            var btn = document.getElementById('upload-url-btn');
+            var status = document.getElementById('upload-url-status');
+            var success = document.getElementById('upload-url-success');
+            success.classList.add('hidden');
+            btn.disabled = true;
+            status.textContent = status.dataset.fetching;
+            status.classList.remove('hidden');
+            fetch('/api/upload-from-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            }).then(function (r) {
+                return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+            }).then(function (res) {
+                btn.disabled = false;
+                if (res.ok) {
+                    status.classList.add('hidden');
+                    document.getElementById('upload-url-link').value = res.data.shareLink;
+                    success.classList.remove('hidden');
+                } else {
+                    status.textContent = status.dataset.failed;
+                }
+            }).catch(function () {
+                btn.disabled = false;
+                status.textContent = status.dataset.failed;
+            });
+        },
+        copy: function () {
+            var link = document.getElementById('upload-url-link');
+            link.focus();
+            link.select();
+            try { document.execCommand('copy'); } catch (_) { }
+        },
+        openPicker: function (provider) {
+            var panel = document.getElementById('upload-cloud-panel');
+            var provInput = document.getElementById('upload-cloud-provider');
+            if (provInput) provInput.value = provider;
+            if (panel) panel.classList.remove('hidden');
+        }
+    };
+
+    window.uploadCloud = {
+        openPicker: function (provider) {
+            var panel = document.getElementById('upload-cloud-panel');
+            var provInput = document.getElementById('upload-cloud-provider');
+            if (provInput) provInput.value = provider;
+            if (panel) panel.classList.remove('hidden');
+        },
+        submitImport: function () {
+            var provider = (document.getElementById('upload-cloud-provider') || {}).value || 'google_drive';
+            var fileName = ((document.getElementById('upload-cloud-filename') || {}).value || '').trim();
+            var downloadUrl = ((document.getElementById('upload-cloud-url') || {}).value || '').trim();
+            if (!fileName || !downloadUrl) return;
+            fetch('/api/uploads/cloud-import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider: provider, fileName: fileName, downloadUrl: downloadUrl })
+            }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+                if (data && data.shareLink) {
+                    var linkEl = document.getElementById('upload-url-link');
+                    var succEl = document.getElementById('upload-url-success');
+                    if (linkEl) linkEl.value = data.shareLink;
+                    if (succEl) succEl.classList.remove('hidden');
+                }
+            });
+        }
+    };
+    window.uploadOfflineQueue = {
+        enqueue: function (file) {
+            var banner = document.getElementById('upload-offline-queue-banner');
+            if (banner) banner.classList.remove('hidden');
+            if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+                navigator.serviceWorker.ready.then(function (reg) {
+                    if (reg.sync && reg.sync.register) reg.sync.register('qs-offline-upload-sync');
+                });
+            }
+        }
+    };
+
+    window.uploadMediaTools = {
+        togglePanel: function (id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.toggle('hidden');
+        },
+        cropImage: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c) return;
+            var ctx = c.getContext('2d');
+            if (ctx) ctx.strokeRect(20, 20, c.width - 40, c.height - 40);
+        },
+        blurRegion: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c) return;
+            var ctx = c.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = 'rgba(15,23,42,0.85)';
+                ctx.fillRect(40, 40, 160, 60);
+            }
+        },
+        annotateImage: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c) return;
+            var ctx = c.getContext('2d');
+            if (ctx) {
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(30, 30, 120, 80);
+            }
+        },
+        applyEditedImage: function () {
+            var c = document.getElementById('upload-image-editor-canvas');
+            if (!c || !c.toBlob) return;
+            c.toBlob(function (blob) {
+                if (blob && window.uploadPage && window.uploadPage.onFileInput) {
+                    var file = new File([blob], 'edited-image.png', { type: 'image/png' });
+                    window.uploadPage.onFileInput({ target: { files: [file] } });
+                }
+            }, 'image/png');
+        },
+        applyVideoTrim: function () {
+            var panel = document.getElementById('upload-video-trim');
+            if (panel) panel.setAttribute('data-trimmed', 'true');
+        },
+        runPdfTool: function () {
+            var op = (document.getElementById('upload-pdf-operation') || {}).value || 'merge';
+            var startPage = parseInt((document.getElementById('upload-pdf-start-page') || {}).value || '1', 10);
+            var endPage = parseInt((document.getElementById('upload-pdf-end-page') || {}).value || '1', 10);
+            fetch('/api/tools/pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ operation: op, startPage: startPage, endPage: endPage, documentsBase64: [] })
+            });
+        }
+    };
+</script>
+
+@code {
+    private int maxExpiryDays = 30;
+
+    // upload.js reads its copy from here rather than carrying English literals.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["errorUnknown"] = Loc["upload_error_unknown"],
+        ["expiryLabel"] = Loc["upload_expiry_at"],
+        ["starting"] = Loc["upload_starting"],
+        ["failed"] = Loc["upload_failed"],
+        ["sizeExceeded"] = Loc["upload_size_exceeded"],
+        ["startFailed"] = Loc["upload_start_failed"],
+        ["urlRefreshFailed"] = Loc["upload_url_refresh_failed"],
+        ["partFailed"] = Loc["upload_part_failed"],
+        ["finalizeFailed"] = Loc["upload_finalize_failed"],
+        ["qrNotLoaded"] = Loc["upload_qr_not_loaded"],
+        ["qrAria"] = Loc["upload_qr_aria"],
+        ["qrUnavailable"] = Loc["upload_qr_unavailable"],
+        ["shareTitle"] = Loc["upload_share_title"],
+        ["shareText"] = Loc["upload_share_text"],
+    };
+
+    // MarkupString: a plain string gets HTML-encoded by Razor even inside <script>,
+    // which breaks JSON.parse in upload.js (quotes become &quot;). The default
+    // System.Text.Json encoder escapes <, > and & so raw emission stays safe.
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+}
 

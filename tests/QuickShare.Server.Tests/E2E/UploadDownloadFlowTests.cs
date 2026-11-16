@@ -135,6 +135,74 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task Commit_WithSenderEmail_CopiesEmailAndSetsConsent()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+            SenderEmail = "sender@example.com",
+        });
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var commitResponse = await client.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            ObjectKey = start.ObjectKey,
+            FileName = TestFileName,
+            ContentType = TestContentType,
+            FileSize = TestFileSize,
+            Parts = [new R2PartEtag(1, "etag-1")],
+        });
+        Assert.Equal(HttpStatusCode.Created, commitResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == start.DeliveryId);
+        Assert.Equal("sender@example.com", delivery.SenderEmail);
+        Assert.True(delivery.SenderEmailConsent);
+        Assert.False(delivery.SenderEmailConfirmed);
+    }
+
+    [Fact]
+    public async Task Commit_WithoutSenderEmail_LeavesEmailNull()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+        });
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        var commitResponse = await client.PostAsJsonAsync("/api/uploads/commit-r2", new CommitR2Request
+        {
+            DeliveryId = start.DeliveryId,
+            UploadId = start.UploadId,
+            ObjectKey = start.ObjectKey,
+            FileName = TestFileName,
+            ContentType = TestContentType,
+            FileSize = TestFileSize,
+            Parts = [new R2PartEtag(1, "etag-1")],
+        });
+        Assert.Equal(HttpStatusCode.Created, commitResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var delivery = await db.Deliveries.AsNoTracking().FirstAsync(d => d.Id == start.DeliveryId);
+        Assert.Null(delivery.SenderEmail);
+        Assert.False(delivery.SenderEmailConsent);
+    }
+
+    [Fact]
     public async Task AnonymousUpload_ExceedingAnonymousLimit_Returns400()
     {
         var client = CreateNoRedirectClient();
@@ -246,6 +314,43 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
             FileSize = TestFileSize,
             ContentType = TestContentType,
             PartNumbers = [1],
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartUpload_WithSenderEmail_StoresItOnSession()
+    {
+        var client = CreateNoRedirectClient();
+        var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+            SenderEmail = "sender@example.com",
+        });
+        Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
+        var start = await startResponse.Content.ReadFromJsonAsync<StartR2Response>();
+        Assert.NotNull(start);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var session = await db.UploadSessions.AsNoTracking().FirstAsync(s => s.Id == start.DeliveryId);
+        Assert.Equal("sender@example.com", session.SenderEmail);
+    }
+
+    [Fact]
+    public async Task StartUpload_InvalidSenderEmail_Returns400()
+    {
+        var client = CreateNoRedirectClient();
+        var response = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
+        {
+            FileName = TestFileName,
+            FileSize = TestFileSize,
+            ContentType = TestContentType,
+            PartNumbers = [1],
+            SenderEmail = "not-an-email",
         });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -547,5 +652,41 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
         db.Deliveries.Add(delivery);
         await db.SaveChangesAsync();
         return shareCode;
+    }
+
+    // ── Recipient download history (#220) ──
+
+    [Fact]
+    public async Task Download_RecordsHistory_WhenOptedIn()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var user = await db.Users.FirstAsync(u => u.Id == _factory.TestUserId);
+            user.TrackMyDownloads = true;
+            await db.SaveChangesAsync();
+        }
+
+        var client = CreateNoRedirectClient(authenticated: true);
+        var commit = await UploadFileAsync(client);
+
+        var download = await client.GetAsync($"/api/downloads/{commit.ShareCode}");
+        Assert.Equal(HttpStatusCode.Found, download.StatusCode);
+
+        // Recording happens on a background task — poll briefly.
+        var recorded = false;
+        for (var i = 0; i < 20 && !recorded; i++)
+        {
+            await Task.Delay(100);
+            using var s = _factory.Services.CreateScope();
+            var db = s.ServiceProvider.GetRequiredService<AppDbContext>();
+            var deliveryId = await db.Deliveries
+                .Where(d => d.ShareCode == commit.ShareCode)
+                .Select(d => d.Id)
+                .FirstAsync();
+            recorded = await db.DownloadTrackings.AnyAsync(t => t.DeliveryId == deliveryId && t.UserId == _factory.TestUserId);
+        }
+
+        Assert.True(recorded, "Expected a download tracking row stamped with the opted-in recipient's user id.");
     }
 }

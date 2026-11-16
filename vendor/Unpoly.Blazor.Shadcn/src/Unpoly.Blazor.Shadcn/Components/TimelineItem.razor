@@ -1,0 +1,78 @@
+@inherits UiComponentBase
+@implements IDisposable
+
+<div data-slot="timeline-item"
+     data-state="@(IsActive ? "active" : IsCompleted ? "completed" : "default")"
+     role="listitem"
+     class="@Classes"
+     @attributes="AdditionalAttributes">
+    <div data-slot="timeline-dot" class="@DotClasses">
+        @if (IconContent is not null)
+        {
+            @IconContent
+        }
+        else
+        {
+            <span class="size-2 rounded-full bg-current"></span>
+        }
+    </div>
+    @if (!IsLast)
+    {
+        <div data-slot="timeline-connector" class="@ConnectorClasses"></div>
+    }
+    <div class="flex flex-1 flex-col gap-1 pb-6">
+        @if (Title is not null)
+        {
+            <span data-slot="timeline-title" class="text-sm font-medium leading-none">@Title</span>
+        }
+        @if (Description is not null)
+        {
+            <span data-slot="timeline-description" class="text-sm text-muted-foreground">@Description</span>
+        }
+        @if (Time is not null)
+        {
+            <time class="text-xs text-muted-foreground">@Time</time>
+        }
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public Timeline? Parent { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Time { get; set; }
+    [Parameter] public RenderFragment? IconContent { get; set; }
+
+    int Index => Parent?.IndexOf(this) ?? 0;
+    bool IsActive => Parent is not null && Parent.ActiveIndex == Index;
+    bool IsCompleted => Parent is not null && Parent.ActiveIndex > Index;
+    bool IsLast => Parent is null || Index == Parent.Items.Count - 1;
+
+    protected override void OnInitialized() => Parent?.Register(this);
+    public void Dispose() => Parent?.Unregister(this);
+
+    const string BaseItem = "relative flex gap-3";
+
+    string DotClasses => Cn(
+        "grid size-7 shrink-0 place-items-center rounded-full border bg-background text-muted-foreground",
+        IsActive ? "border-primary bg-primary text-primary-foreground shadow-sm" : null,
+        IsActive && Parent?.Animated == true ? "animate-pulse" : null,
+        IsCompleted ? "border-primary bg-primary text-primary-foreground" : null
+    );
+
+    // The connector runs from this dot to the next one. Vertical: a line down the dot's centre
+    // (left-[13px] = (28px dot - 1px line) / 2). Horizontal: a line across, through the dot's
+    // vertical centre (top-3.5 = 28px / 2), from the dot's right edge to this item's right edge.
+    string ConnectorClasses => Cn(
+        "absolute bg-border",
+        Parent?.IsHorizontal == true
+            ? "left-7 top-3.5 h-px w-[calc(100%-1.75rem)]"
+            : "left-[13px] top-7 h-[calc(100%-8px)] w-px",
+        IsCompleted ? "bg-primary" : null,
+        Parent?.Animated == true && IsCompleted ? "transition-all duration-500" : null
+    );
+
+    string Classes => Cn(BaseItem, Class);
+}

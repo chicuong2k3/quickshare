@@ -1,0 +1,80 @@
+@inherits UiComponentBase
+
+@* All items in one group share a Name, which is what makes them a group in the DOM. Radio when
+   the group is single-select, checkbox when it is not — pass Multiple to say which. *@
+
+<label data-slot="toggle-group-item" data-variant="@Variant" data-size="@Size"
+       data-spacing="@Spacing" class="@Classes" @attributes="AdditionalAttributes">
+    @if (CheckedChanged.HasDelegate)
+    {
+        <input type="@(Multiple ? "checkbox" : "radio")" class="sr-only peer" name="@Name"
+               value="@Value" checked="@Checked" disabled="@Disabled"
+               aria-pressed="@(Checked ? "true" : "false")" @onchange="OnChange" />
+    }
+    else
+    {
+        <input type="@(Multiple ? "checkbox" : "radio")" class="sr-only peer" name="@Name"
+               value="@Value" checked="@Checked" disabled="@Disabled"
+               aria-pressed="@(Checked ? "true" : "false")" />
+    }
+    @ChildContent
+</label>
+
+@code {
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool Checked { get; set; }
+
+    /// <summary>Raises on change when bound. Its presence decides whether the input renders
+    /// checked/@onchange or the plain unbound form matching shadcn.</summary>
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await CheckedChanged.InvokeAsync(e.Value is not null && e.Value is not false
+            && !(e.Value is string s && s == "false"));
+
+    /// <summary>Checkboxes rather than radios, so more than one can be pressed at a time.</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    [Parameter] public string Variant { get; set; } = "default";
+    [Parameter] public string Size { get; set; } = "default";
+
+    /// <summary>Must match the group's. Upstream reads it from React context; Razor has none.</summary>
+    [Parameter] public int Spacing { get; set; }
+
+    const string Base =
+        "inline-flex items-center justify-center gap-2 rounded-md text-control font-medium " +
+        "whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-muted " +
+        "hover:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] " +
+        "focus-visible:ring-ring/50 aria-invalid:border-destructive " +
+        "aria-invalid:ring-destructive/20 has-[:checked]:bg-accent " +
+        "has-[:checked]:text-accent-foreground dark:aria-invalid:ring-destructive/40 " +
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 " +
+        "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 " +
+        "data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none " +
+        "data-[spacing=0]:first:rounded-s-md data-[spacing=0]:last:rounded-e-md " +
+        "data-[spacing=0]:data-[variant=outline]:border-s-0 " +
+        "data-[spacing=0]:data-[variant=outline]:first:border-s bg-transparent h-control " +
+        "min-w-9 px-2 has-[:disabled]:pointer-events-none has-[:disabled]:opacity-50";
+
+    // The same two tables Toggle was missing, and missing here for the same reason: the default
+    // variant's bg-transparent and the default size's h-9/min-w-9/px-2 were written into the
+    // base, so Variant and Size were parameters that changed nothing.
+    string VariantClass => Variant switch
+    {
+        "outline" => "border border-input bg-transparent shadow-xs hover:bg-accent " +
+                     "hover:text-accent-foreground",
+        _ => "bg-transparent",
+    };
+
+    string SizeClass => Size switch
+    {
+        "sm" => "h-8 min-w-8 px-1.5",
+        "lg" => "h-10 min-w-10 px-2.5",
+        _ => "h-control min-w-9 px-2",
+    };
+
+    string Classes => Cn(Base, VariantClass, SizeClass, Class);
+}

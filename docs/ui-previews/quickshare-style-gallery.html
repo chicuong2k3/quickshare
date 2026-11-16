@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickShareCloud — Gửi file</title>
+  <style>
+    :root { --paper: #e7edf2; --ink: #182733; --muted: #4f5f6b; --rule: #b8c5cf; --panel: #f8fafb; --signal: #075985; --signal-dark: #06466a; --focus: #c2410c; font-family: Outfit, "Segoe UI", sans-serif; color: var(--ink); background: var(--paper); }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; overflow-x: hidden; }
+    body { margin: 0; min-height: 100vh; overflow-x: hidden; background: var(--paper); }
+    a, button, input { font: inherit; }
+    a { color: inherit; }
+    button, label { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .page { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
+    .masthead { display: flex; align-items: baseline; justify-content: space-between; gap: 28px; padding: 24px 0 16px; border-bottom: 2px solid var(--ink); }
+    .wordmark { font-size: 1.05rem; font-weight: 800; letter-spacing: -.04em; text-decoration: none; }
+    .masthead nav { display: flex; gap: 22px; color: var(--muted); font-size: .78rem; }
+    .masthead nav a { text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    .route { color: var(--muted); font-family: "Azeret Mono", Consolas, monospace; font-size: .72rem; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr); gap: 0; margin-top: 64px; border-bottom: 1px solid var(--rule); }
+    .work-main { padding: 0 clamp(24px, 5vw, 72px) 72px 16px; border-right: 1px solid var(--rule); }
+    .work-aside { padding: 4px 0 72px clamp(24px, 5vw, 54px); }
+    .eyebrow { margin: 0 0 15px; color: var(--muted); font-family: "Azeret Mono", Consolas, monospace; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+    h1, h2, p { margin: 0; }
+    h1 { max-width: 700px; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 500; line-height: 1; letter-spacing: -.03em; }
+    .lead { max-width: 540px; margin-top: 22px; color: var(--muted); font-size: 1rem; line-height: 1.55; }
+    .action-line { display: flex; align-items: center; gap: 18px; margin-top: 34px; }
+    .action-line .primary { border: 0; padding: 13px 18px; background: var(--signal); color: #fff; font-weight: 800; }
+    .action-line .primary:hover { background: var(--signal-dark); }
+    .action-line .hint { color: var(--muted); font-size: .78rem; }
+    .file-table { margin-top: 52px; border-top: 2px solid var(--ink); }
+    .file-table-head, .file-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px 42px; gap: 16px; align-items: center; }
+    .file-table-head { padding: 9px 0; border-bottom: 1px solid var(--rule); color: var(--muted); font-family: "Azeret Mono", Consolas, monospace; font-size: .75rem; text-transform: uppercase; }
+    .file-row { min-height: 64px; border-bottom: 1px solid var(--rule); font-size: .86rem; }
+    .file-name { overflow-wrap: anywhere; font-weight: 700; }
+    .file-type, .file-size { color: var(--muted); font-family: "Azeret Mono", Consolas, monospace; font-size: .75rem; }
+    .remove-file { width: 30px; height: 30px; border: 1px solid var(--rule); border-radius: 50%; background: transparent; color: var(--muted); font-size: 1rem; line-height: 1; }
+    .remove-file:hover { border-color: var(--signal); color: var(--signal); }
+    .empty-row { padding: 22px 0; color: var(--muted); font-size: .83rem; }
+    .upload-label { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; color: var(--signal-dark); font-size: .82rem; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; }
+    .file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    .form-title { margin-bottom: 32px; font-size: 1.45rem; letter-spacing: -.04em; }
+    .step { display: grid; grid-template-columns: 30px 1fr; gap: 14px; padding: 0 0 28px; border-bottom: 1px solid var(--rule); }
+    .step + .step { padding-top: 28px; }
+    .step-no { color: var(--signal-dark); font-family: "Azeret Mono", Consolas, monospace; font-size: .8125rem; font-weight: 800; }
+    .step label, .step legend { display: block; padding: 0; font-size: .86rem; font-weight: 800; }
+    .step input[type="email"] { width: 100%; margin-top: 12px; border: 0; border-bottom: 1px solid var(--ink); border-radius: 0; padding: 9px 0; background: transparent; color: var(--ink); }
+    .step input[type="email"]::placeholder { color: #a19e95; }
+    .delivery-options { display: grid; gap: 9px; margin-top: 13px; border: 0; padding: 0; }
+    .delivery-options label { display: flex; align-items: start; gap: 9px; color: var(--muted); font-size: .8rem; font-weight: 400; line-height: 1.35; }
+    .delivery-options input { accent-color: var(--signal); margin-top: 2px; }
+    .status { min-height: 20px; margin-top: 12px; color: var(--signal-dark); font-size: .77rem; line-height: 1.4; }
+    .aside-note { margin-top: 46px; padding-top: 17px; border-top: 2px solid var(--ink); }
+    .aside-note h2 { font-size: .92rem; }
+    .aside-note p { margin-top: 10px; color: var(--muted); font-size: .82rem; line-height: 1.55; }
+    .principles { display: grid; gap: 14px; margin-top: 34px; padding: 0; list-style: none; }
+    .principles li { display: grid; grid-template-columns: 10px 1fr; gap: 10px; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+    .principles li::before { content: ""; width: 7px; height: 7px; margin-top: .35em; background: var(--signal); }
+    .footer { display: flex; justify-content: space-between; gap: 18px; padding: 18px 0 28px; color: var(--muted); font-family: "Azeret Mono", Consolas, monospace; font-size: .75rem; }
+    .prototype { color: var(--signal-dark); }
+    @media (max-width: 760px) { .page { width: min(100% - 28px, 600px); } .masthead nav { display: none; } .workspace { display: block; margin-top: 42px; } .work-main { padding: 0 0 46px; border-right: 0; } .work-aside { padding: 38px 0 48px; } h1 { font-size: clamp(2rem, 11vw, 3.5rem); } .file-table-head, .file-row { grid-template-columns: minmax(0, 1fr) 86px 34px; gap: 9px; } .action-line { align-items: stretch; flex-direction: column; gap: 9px; } .action-line .primary { width: 100%; } .footer { flex-direction: column; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="page masthead">
+    <a class="wordmark" href="#send-workspace">QuickShareCloud</a>
+    <nav aria-label="Điều hướng"><a href="#send-workspace">Gửi file</a><a href="#how-it-works">Cách hoạt động</a></nav>
+    <span class="route">/send</span>
+  </header>
+
+  <main class="page" id="send-workspace">
+    <div class="workspace">
+      <section class="work-main" aria-labelledby="send-heading">
+        <p class="eyebrow">Gửi file</p>
+        <h1 id="send-heading">Gửi một lần.<br>Nhận một đường link.</h1>
+        <p class="lead">Chọn những file cần gửi, nhập người nhận, rồi tạo link. Không cần giải thích dài dòng.</p>
+        <div class="action-line"><label class="primary" for="file-input">+ Thêm file</label><span class="hint" id="upload-status" aria-live="polite">Chưa có file nào được chọn</span><input class="file-input" id="file-input" type="file" multiple></div>
+
+        <section class="file-table" aria-labelledby="file-list-heading">
+          <div class="file-table-head"><span id="file-list-heading">File đã chọn</span><span>Dung lượng</span><span aria-hidden="true"></span></div>
+          <div id="file-list"><p class="empty-row">Danh sách file sẽ xuất hiện ở đây.</p></div>
+        </section>
+      </section>
+
+      <aside class="work-aside" id="how-it-works" aria-labelledby="form-heading">
+        <h2 class="form-title" id="form-heading">Thông tin gửi</h2>
+        <form id="transfer-form">
+          <div class="step"><span class="step-no">01</span><div><label for="recipient">Người nhận</label><input id="recipient" name="recipient" type="email" autocomplete="email" placeholder="email@nguoinhan.vn" required></div></div>
+          <div class="step"><span class="step-no">02</span><fieldset class="delivery-options"><legend>Người nhận sẽ nhận được</legend><label><input type="radio" name="delivery" value="link" checked> Một đường link để tải file</label><label><input type="radio" name="delivery" value="message"> Link kèm lời nhắn</label></fieldset></div>
+          <div class="step"><span class="step-no">03</span><div><label for="message">Lời nhắn <span style="font-weight:400;color:var(--muted)">(không bắt buộc)</span></label><input id="message" name="message" type="text" placeholder="Ví dụ: Tài liệu cuộc họp hôm nay"></div></div>
+          <button class="primary" type="submit">Tạo link gửi file</button>
+          <p class="status" id="send-status" aria-live="polite"></p>
+        </form>
+        <div class="aside-note"><h2>Cách hoạt động</h2><p>File sẽ được đưa vào một gói gửi riêng. Người nhận chỉ cần mở link để tải xuống.</p></div>
+        <ul class="principles"><li>Không cần tạo tài khoản để nhận file.</li><li>Trạng thái gửi luôn hiển thị bằng chữ.</li><li>Đây là bản xem thử, chưa gửi dữ liệu thật.</li></ul>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="page footer"><span>QuickShareCloud · /send</span><span class="prototype">HTML preview — no upload performed</span></footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const input = document.querySelector('#file-input');
+      const fileList = document.querySelector('#file-list');
+      const uploadStatus = document.querySelector('#upload-status');
+      const sendStatus = document.querySelector('#send-status');
+      const form = document.querySelector('#transfer-form');
+
+      const formatSize = (bytes) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      };
+
+      const renderFiles = () => {
+        const files = Array.from(input.files);
+        fileList.replaceChildren();
+        if (files.length === 0) {
+          const empty = document.createElement('p');
+          empty.className = 'empty-row';
+          empty.textContent = 'Danh sách file sẽ xuất hiện ở đây.';
+          fileList.append(empty);
+          uploadStatus.textContent = 'Chưa có file nào được chọn';
+          return;
+        }
+        uploadStatus.textContent = `${files.length} file đã chọn`;
+        files.forEach((file) => {
+          const row = document.createElement('div');
+          row.className = 'file-row';
+          row.innerHTML = `<span class="file-name"></span><span class="file-size"></span><button class="remove-file" type="button" aria-label="Xóa file"></button>`;
+          row.querySelector('.file-name').textContent = file.name;
+          row.querySelector('.file-size').textContent = formatSize(file.size);
+          row.querySelector('.remove-file').textContent = '×';
+          row.querySelector('.remove-file').addEventListener('click', () => row.remove());
+          fileList.append(row);
+        });
+      };
+
+      input.addEventListener('change', renderFiles);
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        sendStatus.textContent = 'Preview only — chưa có file nào được gửi.';
+      });
+    });
+  </script>
+</body>
+</html>

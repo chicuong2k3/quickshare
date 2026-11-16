@@ -1,0 +1,857 @@
+@layout MainLayout
+@page "/account/deliveries"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Deliveries.List
+@using Microsoft.Extensions.Localization
+@using QuickShare.Features.Workspaces.Shared
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["deliveries_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-semibold">@Loc["deliveries_h1"]</h1>
+        <p class="text-base text-muted-foreground">@Loc["deliveries_lead"] <a class="text-primary underline" href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a>
+            <text>·</text> <a class="text-primary underline" href="/api/deliveries/legal-hold/export" data-ai-action="deliveries.holdExport">@Loc["deliveries_hold_export"]</a>
+            @if (DeletedOnly)
+            {
+                <text>·</text> <a class="text-primary underline" href="/account/deliveries">@Loc["deliveries_back"]</a>
+            }
+            else
+            {
+                <text>·</text> <a class="text-primary underline" href="/account/deliveries?trash=1">@Loc["deliveries_trash"]</a>
+            }
+        </p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountDeliveries" />
+
+    <section id="deliveries-body">
+            @* Link health at a glance (issue #202) — the DB is the source of truth, no probes needed. *@
+            @if (health is not null && health.Active > 0)
+            {
+                <p class="account-deliveries-health text-muted-foreground">
+                    <span>@string.Format(Loc["deliveries_health_active"], health.Active)</span>
+                    @if (health.ExpiringSoon > 0)
+                    {
+                        <span class="account-deliveries-health__warn">@string.Format(Loc["deliveries_health_expiring"], health.ExpiringSoon)</span>
+                    }
+                    @if (health.Exhausted > 0)
+                    {
+                        <span class="account-deliveries-health__warn">@string.Format(Loc["deliveries_health_exhausted"], health.Exhausted)</span>
+                    }
+                </p>
+            }
+
+            @* Filter and search controls update the server-rendered body with Unpoly. *@
+            <div class="account-deliveries-controls">
+                <nav class="account-deliveries-filters">
+                    @FilterLink(null, Loc["deliveries_filter_all"])
+                    @FilterLink(DeliveryStatus.Active, Loc["deliveries_filter_active"])
+                    @FilterLink(DeliveryStatus.Scheduled, Loc["deliveries_filter_scheduled"])
+                    @FilterLink(DeliveryStatus.Expired, Loc["deliveries_filter_expired"])
+                    @FilterLink(DeliveryStatus.Revoked, Loc["deliveries_filter_revoked"])
+                    @FavoritesLink
+                    <a class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent" href="@RoutePaths.AccountDeliveryLabels">@Loc["deliveries_print_labels"]</a>
+                </nav>
+                <form method="get" action="@RoutePaths.AccountDeliveries" up-autosubmit
+                      up-watch-delay="400" up-target="#deliveries-body" up-history="true">
+                    @if (!string.IsNullOrEmpty(Status))
+                    {
+                        <input type="hidden" name="@StatusQueryKey" value="@Status" />
+                    }
+                    @if (Favorite)
+                    {
+                        <input type="hidden" name="@FavoriteQueryKey" value="true" />
+                    }
+                    @if (DeletedOnly)
+                    {
+                        <input type="hidden" name="@TrashQueryKey" value="true" />
+                    }
+                    <Input Type="search" name="@SearchQueryKey" Value="@Search"
+                           class="account-deliveries-search"
+                           placeholder="@Loc["deliveries_search_placeholder"]"
+                           aria-label="@Loc["deliveries_search_placeholder"]" />
+                </form>
+            </div>
+
+            @* Bulk manage (issue #144) — select rows, then extend or trash together. *@
+            <div class="account-deliveries-bulkbar" id="bulk-bar" data-count-template="@Loc["deliveries_bulk_selected"]">
+                <label class="account-deliveries-selectall">
+                    <Checkbox onchange="bulkToggleAll(this)" aria-label="@Loc["deliveries_select_all"]" />
+                    <span>@Loc["deliveries_select_all"]</span>
+                </label>
+                <span id="bulk-count" class="text-muted-foreground"></span>
+                <button type="button" data-slot="button" data-variant="default" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
+                        data-error="@Loc["deliveries_bulk_error"]"
+                        onclick="bulkExtend(this)" data-ai-action="deliveries.bulkExtend" disabled>@Loc["deliveries_bulk_extend"]</button>
+                <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                        data-confirm="@Loc["deliveries_bulk_trash_confirm"]"
+                        onclick="bulkTrash(this)" data-ai-action="deliveries.bulkTrash" disabled>@Loc["deliveries_bulk_trash"]</button>
+                @* Move many at once (issues #244, #284). Shown only when there is somewhere to
+                   move things to — a destination picker with no destinations is furniture. *@
+                @if (folders.Count > 0)
+                {
+                    <NativeSelect id="bulk-folder" aria-label="@Loc["deliveries_bulk_move_label"]">
+                        <NativeSelectOption value="">@Loc["deliveries_bulk_move_loose"]</NativeSelectOption>
+                        @foreach (var folder in folders)
+                        {
+                            <NativeSelectOption value="@folder.Id.ToString()">@folder.Name</NativeSelectOption>
+                        }
+                    </NativeSelect>
+                    <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                            data-error="@Loc["deliveries_bulk_error"]"
+                            onclick="bulkMove(this)" data-ai-action="deliveries.bulkMove" disabled>@Loc["deliveries_bulk_move"]</button>
+                }
+            </div>
+
+            @if (items.Count == 0)
+            {
+                @if (hasFilter)
+                {
+                    <div class="account-deliveries-empty">
+                        <p class="text-base">@Loc["deliveries_no_results"]</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="account-deliveries-empty">
+                        <p class="text-base">@Loc["deliveries_empty"]</p>
+                        <p class="text-muted-foreground">@Loc["deliveries_empty_free"]</p>
+                        <a href="@RoutePaths.Send" class="mt-5 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">@Loc["deliveries_empty_cta"]</a>
+                    </div>
+                }
+            }
+            else
+            {
+                @Chunk
+            }
+    </section>
+
+</PageWrapper>
+
+<script>
+    window.cancelDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var msg = btn.getAttribute('data-confirm');
+        if (msg && !window.confirm(msg)) return;
+        fetch('/api/deliveries/' + id, { method: 'DELETE' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+        });
+    };
+    window.extendDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/extend', { method: 'POST' }).then(function (r) {
+            if (r.ok) return r.json();
+            return r.json().then(function (b) { throw b; });
+        }).then(function (data) {
+            var label = btn.closest('article').querySelector('.account-delivery__expiry');
+            if (label && data.expiresAt) label.textContent = data.expiresAt;
+        }).catch(function () { /* leave the stale label; user can retry */ })
+          .finally(function () { btn.disabled = false; });
+    };
+    window.revokeDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var msg = btn.getAttribute('data-confirm');
+        if (msg && !window.confirm(msg)) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/revoke', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                var article = btn.closest('article');
+                article.classList.add('account-delivery--spent');
+                article.querySelectorAll('button').forEach(function (b) { b.remove(); });
+                var expiry = article.querySelector('.account-delivery__expiry');
+                if (expiry) expiry.textContent = btn.getAttribute('data-revoked-label');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.renameDelivery = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('delivery-', '');
+        var nameEl = article.querySelector('.account-delivery__name');
+        var current = nameEl ? nameEl.textContent : '';
+        var next = window.prompt(btn.getAttribute('data-prompt'), current);
+        if (!next || next.trim() === '' || next.trim() === current) return;
+        fetch('/api/deliveries/' + id + '/filename', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: next.trim() })
+        }).then(function (r) {
+            if (r.ok && nameEl) {
+                nameEl.textContent = next.trim();
+                nameEl.setAttribute('title', next.trim());
+            }
+        });
+    };
+    window.editTag = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('delivery-', '');
+        var tagEl = article.querySelector('.account-delivery__tag');
+        var current = tagEl ? tagEl.textContent : '';
+        var next = window.prompt(btn.getAttribute('data-prompt'), current);
+        if (next === null) return;
+        var value = next.trim();
+        fetch('/api/deliveries/' + id + '/tag', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag: value })
+        }).then(function () {
+            article.querySelectorAll('.account-delivery__tag').forEach(function (el) { el.remove(); });
+            if (value) {
+                var span = document.createElement('span');
+                span.className = 'account-delivery__tag';
+                span.textContent = value;
+                btn.parentNode.insertBefore(span, btn);
+            }
+        }).catch(function () { /* leave as-is */ });
+    };
+    window.toggleFavorite = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        fetch('/api/deliveries/' + id + '/favorite', { method: 'PATCH' }).then(function (r) {
+            if (r.ok) return r.json();
+            throw r;
+        }).then(function (data) {
+            btn.textContent = data.isFavorite ? '★' : '☆';
+            btn.setAttribute('aria-pressed', data.isFavorite ? 'true' : 'false');
+        }).catch(function () { /* leave the star as-is */ });
+    };
+    window.setDeliveryAlias = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('delivery-', '');
+        var next = window.prompt(btn.getAttribute('data-prompt'), btn.getAttribute('data-current') || '');
+        if (next === null) return;
+        fetch('/api/deliveries/' + id + '/alias', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ alias: next.trim() || null })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        });
+    };
+    window.setDailyLimit = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var next = window.prompt(btn.getAttribute('data-prompt'), '');
+        if (next === null) return;
+        var value = next.trim() === '' ? null : parseInt(next, 10);
+        if (value !== null && (isNaN(value) || value < 1)) { window.alert(btn.getAttribute('data-error')); return; }
+        fetch('/api/deliveries/' + id + '/daily-limit', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ limit: value })
+        }).then(function (r) {
+            if (!r.ok) window.alert(btn.getAttribute('data-error'));
+        });
+    };
+    window.cloneDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/clone', { method: 'POST' }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else btn.disabled = false;
+        }).catch(function () { btn.disabled = false; });
+    };
+    // Replace file, keep link (issue #72): full multipart re-upload under the same delivery.
+    window.replaceDeliveryFile = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = function () {
+            var file = input.files && input.files[0];
+            if (file) doReplaceDelivery(id, file, btn);
+        };
+        input.click();
+    };
+    async function doReplaceDelivery(id, file, btn) {
+        btn.disabled = true;
+        var partSize = 5 * 1024 * 1024;
+        var partCount = Math.max(1, Math.ceil(file.size / partSize));
+        var partNumbers = [];
+        for (var i = 1; i <= partCount; i++) partNumbers.push(i);
+        var contentType = file.type || 'application/octet-stream';
+        try {
+            var startRes = await fetch('/api/deliveries/' + id + '/replace/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: file.name, fileSize: file.size, contentType: contentType, partNumbers: partNumbers })
+            });
+            if (!startRes.ok) throw new Error('replace start failed');
+            var start = await startRes.json();
+
+            var parts = [];
+            for (var j = 0; j < start.parts.length; j++) {
+                var p = start.parts[j];
+                var startByte = (p.partNumber - 1) * partSize;
+                var endByte = Math.min(startByte + partSize, file.size);
+                var res = await fetch(p.url, { method: 'PUT', body: file.slice(startByte, endByte), headers: { 'Content-Type': contentType } });
+                if (!res.ok) throw new Error('part upload failed');
+                var etag = res.headers.get('ETag') || res.headers.get('etag') || ('"' + p.partNumber + '"');
+                parts.push({ partNumber: p.partNumber, etag: etag.replace(/^"|"$/g, '') });
+            }
+
+            var commitRes = await fetch('/api/deliveries/' + id + '/replace/commit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: start.sessionId, uploadId: start.uploadId, objectKey: start.objectKey, parts: parts })
+            });
+            if (commitRes.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        } catch (e) {
+            window.alert(btn.getAttribute('data-error'));
+        } finally {
+            btn.disabled = false;
+        }
+    }
+    window.toggleDeliveryStats = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        fetch('/api/deliveries/' + id + '/download-stats', { method: 'PATCH' }).then(function (r) {
+            if (r.ok) return r.json();
+            return r.json().then(function (b) { throw b; });
+        }).then(function (data) {
+            btn.textContent = data.hidden ? btn.getAttribute('data-show-label') : btn.getAttribute('data-hide-label');
+        }).catch(function () { /* leave the label as-is */ });
+    };
+    window.deleteDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        fetch('/api/deliveries/' + id + '/delete', { method: 'POST' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+        });
+    };
+    window.restoreDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        fetch('/api/deliveries/' + id + '/restore', { method: 'POST' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+        });
+    };
+    window.purgeDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/purge', { method: 'DELETE' }).then(function (r) {
+            if (r.ok) btn.closest('article').remove();
+            else btn.disabled = false;
+        }).catch(function () { btn.disabled = false; });
+    };
+    // File lock / checkout (issue #308): locking reserves the delivery for one user's
+    // replace; the server rejects a foreign replace while the lock is active.
+    window.lockDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/lock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.unlockDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/unlock', { method: 'POST' }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else btn.disabled = false;
+        }).catch(function () { btn.disabled = false; });
+    };
+    // Legal hold (issue #266): freezes the delivery against every deletion path until the
+    // owner lifts it. Placing requires a case reference; lifting is double-confirmed
+    // because releasing evidence mid-probe is the destructive direction here.
+    window.holdDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        var reason = window.prompt(btn.getAttribute('data-prompt'));
+        if (!reason || !reason.trim()) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/legal-hold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason.trim() })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.liftHoldDelivery = function (btn) {
+        var id = btn.closest('article').id.replace('delivery-', '');
+        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        if (!window.confirm(btn.getAttribute('data-confirm-again'))) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + id + '/legal-hold/lift', { method: 'POST' }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
+        }).catch(function () { btn.disabled = false; });
+    };
+    // Activity panel (issues #37, #154). Fetched once per row, on first open.
+    window.loadActivity = function (details) {
+        if (!details.open || details.dataset.loaded) return;
+        details.dataset.loaded = '1';
+
+        var body = details.querySelector('.account-delivery__activity-body');
+        fetch('/api/deliveries/' + details.getAttribute('data-id') + '/activity')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data) { body.textContent = body.getAttribute('data-empty'); return; }
+                if (data.privacyMode) { body.textContent = body.getAttribute('data-private'); return; }
+
+                var lines = [];
+                data.recipients.forEach(function (r) {
+                    var state = r.downloadedAt
+                        ? body.getAttribute('data-downloaded')
+                        : (r.openedAt ? body.getAttribute('data-opened') : body.getAttribute('data-sent'));
+                    lines.push(r.email + ' \u00b7 ' + state);
+                });
+                data.files.forEach(function (f) {
+                    lines.push(f.fileName + ' \u00b7 ' + body.getAttribute('data-downloads').replace('{0}', f.downloadCount));
+                });
+
+                if (lines.length === 0) { body.textContent = body.getAttribute('data-empty'); return; }
+
+                var list = document.createElement('ul');
+                lines.forEach(function (line) {
+                    var li = document.createElement('li');
+                    // textContent, never innerHTML: an address is somebody else's text.
+                    li.textContent = line;
+                    list.appendChild(li);
+                });
+                body.textContent = '';
+                body.appendChild(list);
+            })
+            .catch(function () { body.textContent = body.getAttribute('data-empty'); });
+    };
+    // Version history panel (issue #110). Fetched once per row, on first open.
+    window.loadVersions = function (details) {
+        if (!details.open || details.dataset.loaded) return;
+        details.dataset.loaded = '1';
+
+        var body = details.querySelector('.account-delivery__versions-body');
+        var shareCode = details.getAttribute('data-share-code');
+        fetch('/api/deliveries/' + details.getAttribute('data-id') + '/versions')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (versions) {
+                if (!versions || versions.length === 0) {
+                    body.textContent = body.getAttribute('data-empty');
+                    return;
+                }
+                var list = document.createElement('ul');
+                versions.forEach(function (v) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.href = '/api/downloads/' + shareCode + '/versions/' + v.versionNumber;
+                    a.textContent = 'v' + v.versionNumber + ' \u00b7 ' + v.fileName + ' (' + v.fileSize + ' B)';
+                    li.appendChild(a);
+                    list.appendChild(li);
+                });
+                body.textContent = '';
+                body.appendChild(list);
+            })
+            .catch(function () { body.textContent = body.getAttribute('data-empty'); });
+    };
+    window.bulkSelectedIds = function () {
+        return Array.prototype.slice.call(document.querySelectorAll('.account-delivery__select:checked'))
+            .map(function (el) { return el.value; });
+    };
+    window.bulkUpdateBar = function () {
+        var bar = document.getElementById('bulk-bar');
+        if (!bar) return;
+        var ids = window.bulkSelectedIds();
+        var count = document.getElementById('bulk-count');
+        if (count) count.textContent = ids.length ? bar.getAttribute('data-count-template').replace('{0}', ids.length) : '';
+        bar.querySelectorAll('button').forEach(function (b) { b.disabled = ids.length === 0; });
+    };
+    window.bulkToggleAll = function (master) {
+        document.querySelectorAll('.account-delivery__select').forEach(function (cb) { cb.checked = master.checked; });
+        window.bulkUpdateBar();
+    };
+    window.bulkExtend = function (btn) {
+        var ids = window.bulkSelectedIds();
+        if (ids.length === 0) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, action: 'extend', days: 7 })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
+    // Move (issues #244, #284). An empty destination means "out of any folder", which is a
+    // real choice and not a missing one — so the value is sent as null rather than skipped.
+    window.bulkMove = function (btn) {
+        var ids = window.bulkSelectedIds();
+        if (ids.length === 0) return;
+        var picker = document.getElementById('bulk-folder');
+        var folderId = picker && picker.value ? picker.value : null;
+        btn.disabled = true;
+        fetch('/api/deliveries/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, action: 'move', folderId: folderId })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
+    window.bulkTrash = function (btn) {
+        var ids = window.bulkSelectedIds();
+        if (ids.length === 0) return;
+        var msg = btn.getAttribute('data-confirm').replace('{0}', ids.length);
+        if (!window.confirm(msg)) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, action: 'trash' })
+        }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
+</script>
+
+@code {
+    private const string CursorQueryKey = "cursor";
+    private const string StatusQueryKey = "status";
+    private const string SearchQueryKey = "q";
+    private const string FavoriteQueryKey = "favorite";
+    private const string TrashQueryKey = "trash";
+    private const string ChunkClass = "deliveries-chunk";
+    private const int GaugeFullPercent = 100;
+    private const int MinutesPerHour = 60;
+    private const int HoursPerDay = 24;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = CursorQueryKey)]
+    public string? Cursor { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = StatusQueryKey)]
+    public string? Status { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = SearchQueryKey)]
+    public string? Search { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = FavoriteQueryKey)]
+    public bool Favorite { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = TrashQueryKey)]
+    public bool DeletedOnly { get; set; }
+
+    private bool hasFilter => !string.IsNullOrEmpty(Status) || !string.IsNullOrWhiteSpace(Search) || Favorite;
+
+    /// <summary>URL for a full-body swap carrying the given filter plus the current search (or an explicit cursor).</summary>
+    private string BodyUrl(string? status, string? cursor, bool? favorite = null)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(status)) query.Add($"{StatusQueryKey}={Uri.EscapeDataString(status)}");
+        if (favorite ?? Favorite) query.Add($"{FavoriteQueryKey}=true");
+        if (!string.IsNullOrWhiteSpace(Search)) query.Add($"{SearchQueryKey}={Uri.EscapeDataString(Search)}");
+        if (!string.IsNullOrEmpty(cursor)) query.Add($"{CursorQueryKey}={cursor}");
+        if (DeletedOnly) query.Add($"{TrashQueryKey}=true");
+        return query.Count == 0 ? RoutePaths.AccountDeliveries : $"{RoutePaths.AccountDeliveries}?{string.Join('&', query)}";
+    }
+
+    private RenderFragment FavoritesLink =>
+        @<Button Href="@BodyUrl(null, null, favorite: true)"
+                 Variant="ghost" Size="sm"
+                 Class="@(Favorite ? "account-deliveries-filter--current" : string.Empty)"
+                 up-follow="true" up-target="#deliveries-body" up-history="true">@Loc["deliveries_filter_favorites"]</Button>;
+
+    private RenderFragment FilterLink(string? status, string label) =>
+        @<Button Href="@BodyUrl(status, null, favorite: false)"
+                 Variant="ghost" Size="sm"
+                 Class="@((Status == status || (status is null && string.IsNullOrEmpty(Status))) && !Favorite ? "account-deliveries-filter--current" : string.Empty)"
+                 up-follow="true" up-target="#deliveries-body" up-history="true">@label</Button>;
+
+    private const int ExpiringSoonHours = 48;
+
+    private sealed record HealthStats(int Active, int ExpiringSoon, int Exhausted);
+
+    private HealthStats? health;
+    private bool isChunkRequest;
+    private List<DeliveryItem> items = [];
+    private List<WorkspaceFolder> folders = [];
+    private string? nextCursor;
+
+    /// <summary>Rows plus the sentinel that pulls the next page into view — appended to itself.</summary>
+    private RenderFragment Chunk => @<div class="@ChunkClass account-deliveries">
+        @foreach (var item in items)
+        {
+            var used = Math.Min(item.DownloadCount, item.MaxDownloads);
+            var percent = item.MaxDownloads > 0 ? used * GaugeFullPercent / item.MaxDownloads : GaugeFullPercent;
+            var exhausted = item.MaxDownloads > 0 && item.DownloadCount >= item.MaxDownloads;
+
+            <article id="delivery-@item.Id" class="account-delivery @(exhausted ? "account-delivery--spent" : "")">
+                <div class="account-delivery__head">
+                    <Checkbox class="account-delivery__select" value="@item.Id" onchange="bulkUpdateBar()" aria-label="@Loc["deliveries_select"]" />
+                    <button type="button" data-slot="button" data-variant="ghost" data-size="icon" class="account-delivery__star" onclick="toggleFavorite(this)"
+                            aria-pressed="@(item.IsFavorite ? "true" : "false")"
+                            aria-label="@Loc["deliveries_favorite"]" title="@Loc["deliveries_favorite"]"
+                            data-ai-action="delivery.favorite">@(item.IsFavorite ? "★" : "☆")</button>
+                    <FileTypeIcon ContentType="@item.ContentType" />
+                    <span class="account-delivery__name" title="@item.FileName">@item.FileName</span>
+                    @if (!string.IsNullOrEmpty(item.Alias))
+                    {
+                        <span class="account-delivery__alias text-muted-foreground">/d/@item.Alias</span>
+                    }
+                    @if (!string.IsNullOrEmpty(item.Tag))
+                    {
+                        <span class="account-delivery__tag" style="background: @TagColor(item.Tag)">@item.Tag</span>
+                    }
+                    <button type="button" data-slot="button" data-variant="ghost" data-size="icon" class="account-delivery__tag-edit" onclick="editTag(this)" data-ai-action="delivery.tag" data-prompt="@Loc["deliveries_tag_prompt"]" aria-label="@Loc["deliveries_tag"]" title="@Loc["deliveries_tag"]">#</button>
+                    <span class="account-delivery__expiry text-muted-foreground">
+                        @if (item.Status == DeliveryStatus.Scheduled)
+                        {
+                            @Loc["deliveries_scheduled"] <text>·</text> @item.DeliverAt?.ToLocalTime().ToString("g")
+                        }
+                        else if (item.Status == DeliveryStatus.Revoked)
+                        {
+                            @Loc["deliveries_revoked"]
+                        }
+                        else
+                        {
+                            @ExpiryLabel(item.ExpiresAt)
+                        }
+                    </span>
+                    @if (item.Lock is not null)
+                    {
+                        <span class="account-delivery__lock @(item.Lock.LockedBySelf ? "account-delivery__lock--self" : "")"
+                              title="@(item.Lock.LockedBySelf ? Loc["deliveries_lock_self_tooltip"] : Loc["deliveries_lock_other_tooltip"])"
+                              data-ai-action="delivery.lockBadge">@Loc["deliveries_lock_badge"]</span>
+                    }
+                    @* Says *why* this row is in the results (issue #243) — without it an OCR hit
+                       looks like a name match that is not there, and the search looks broken. *@
+                    @if (item.MatchedInImage)
+                    {
+                        <span class="account-delivery__ocr"
+                              title="@Loc["deliveries_ocr_tooltip"]"
+                              data-ai-action="delivery.ocrBadge">@Loc["deliveries_ocr_badge"]</span>
+                    }
+                    @if (item.IsUnderLegalHold)
+                    {
+                        <span class="account-delivery__hold"
+                              title="@string.Format(Loc["deliveries_hold_tooltip"], item.LegalHoldReason)"
+                              data-ai-action="delivery.holdBadge">@Loc["deliveries_hold_badge"]</span>
+                    }
+                </div>
+
+                @* Who took it, and which parts (issues #37, #154). Loaded when opened, not with
+                   the page: most rows are never expanded, and a list that costs two queries per
+                   delivery would be paid for on every page of twenty. *@
+                <details class="account-delivery__activity" data-id="@item.Id"
+                         ontoggle="loadActivity(this)">
+                    <summary class="text-muted-foreground">@Loc["deliveries_activity_title"]</summary>
+                    <div class="account-delivery__activity-body"
+                         data-empty="@Loc["deliveries_activity_empty"]"
+                         data-private="@Loc["deliveries_activity_private"]"
+                         data-opened="@Loc["deliveries_activity_opened"]"
+                         data-downloaded="@Loc["deliveries_activity_downloaded"]"
+                         data-sent="@Loc["deliveries_activity_sent"]"
+                         data-downloads="@Loc["deliveries_activity_file_downloads"]"></div>
+                </details>
+                <details class="account-delivery__versions" data-id="@item.Id" data-share-code="@item.ShareCode"
+                         ontoggle="loadVersions(this)">
+                    <summary class="text-muted-foreground">@Loc["deliveries_versions_title"]</summary>
+                    <div class="account-delivery__versions-body"
+                         data-empty="@Loc["deliveries_versions_empty"]"></div>
+                </details>
+                <div class="account-delivery__gauge" role="img"
+                     aria-label="@string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)">
+                    <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>
+                </div>
+                <p class="account-delivery__meta text-muted-foreground">
+                    @if (exhausted)
+                    {
+                        <span class="account-delivery__spent-note">@Loc["deliveries_exhausted"]</span>
+                    }
+                    else
+                    {
+                        @string.Format(Loc["deliveries_downloads"], item.DownloadCount, item.MaxDownloads)
+                    }
+                    @if (DeletedOnly)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                                onclick="restoreDelivery(this)" data-ai-action="delivery.restore">@Loc["deliveries_restore"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__purge"
+                                data-confirm="@Loc["deliveries_purge_confirm"]"
+                                onclick="purgeDelivery(this)" data-ai-action="delivery.purge">@Loc["deliveries_purge"]</button>
+                    }
+                    else if (item.Status == DeliveryStatus.Active)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__delete"
+                                data-confirm="@Loc["deliveries_delete_confirm"]"
+                                onclick="deleteDelivery(this)" data-ai-action="delivery.delete">@Loc["deliveries_delete"]</button>
+                    }
+                    @if (item.Status == DeliveryStatus.Scheduled)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__cancel"
+                                data-confirm="@Loc["deliveries_cancel_confirm"]"
+                                onclick="cancelDelivery(this)">@Loc["deliveries_cancel"]</button>
+                    }
+                    @if (item.Status is not (DeliveryStatus.Scheduled or DeliveryStatus.Revoked) && !exhausted)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__extend"
+                                onclick="extendDelivery(this)" data-ai-action="delivery.extend">@Loc["deliveries_extend"]</button>
+                    }
+@if (item.Status == DeliveryStatus.Active && (item.Lock is null || item.Lock.LockedBySelf))
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
+                                data-error="@Loc["deliveries_replace_error"]"
+                                onclick="replaceDeliveryFile(this)" data-ai-action="delivery.replace">@Loc["deliveries_replace"]</button>
+                    }
+                    @if (item.Status != DeliveryStatus.Revoked)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__rename"
+                                data-prompt="@Loc["deliveries_rename_prompt"]"
+                                onclick="renameDelivery(this)" data-ai-action="delivery.rename">@Loc["deliveries_rename"]</button>
+                    }
+                    @if (item.Status == DeliveryStatus.Active)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__clone"
+                                onclick="cloneDelivery(this)" data-ai-action="delivery.clone">@Loc["deliveries_clone"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__set-alias"
+                                data-prompt="@Loc["deliveries_alias_prompt"]" data-current="@item.Alias"
+                                data-error="@Loc["deliveries_alias_error"]"
+                                onclick="setDeliveryAlias(this)" data-ai-action="delivery.alias">@Loc["deliveries_alias"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__daily-limit"
+                                data-prompt="@Loc["deliveries_daily_limit_prompt"]"
+                                data-error="@Loc["deliveries_daily_limit_error"]"
+                                onclick="setDailyLimit(this)" data-ai-action="delivery.dailyLimit">@Loc["deliveries_daily_limit"]</button>
+                        @if (item.Lock is null)
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
+                                    data-error="@Loc["deliveries_lock_error"]"
+                                    onclick="lockDelivery(this)" data-ai-action="delivery.lock">@Loc["deliveries_lock"]</button>
+                        }
+                        else if (item.Lock.LockedBySelf)
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__unlock-btn"
+                                    onclick="unlockDelivery(this)" data-ai-action="delivery.unlock">@Loc["deliveries_unlock"]</button>
+                        }
+                        else
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
+                                    data-error="@Loc["deliveries_lock_error"]"
+                                    onclick="lockDelivery(this)" data-ai-action="delivery.takeover">@Loc["deliveries_lock_takeover"]</button>
+                        }
+                        @if (item.IsUnderLegalHold)
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-lift"
+                                    data-confirm="@Loc["deliveries_hold_lift_confirm"]"
+                                    data-confirm-again="@Loc["deliveries_hold_lift_confirm_again"]"
+                                    data-error="@Loc["deliveries_hold_error"]"
+                                    onclick="liftHoldDelivery(this)" data-ai-action="delivery.holdLift">@Loc["deliveries_hold_lift"]</button>
+                        }
+                        else
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-btn"
+                                    data-prompt="@Loc["deliveries_hold_prompt"]"
+                                    data-error="@Loc["deliveries_hold_error"]"
+                                    onclick="holdDelivery(this)" data-ai-action="delivery.hold">@Loc["deliveries_hold"]</button>
+                        }
+                    }
+                    @if (item.Status == DeliveryStatus.Active && item.ExpiresAt.HasValue)
+                    {
+                        <a class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__calendar"
+                           href="@($"/api/downloads/{item.ShareCode}/calendar.ics")" download
+                           data-ai-action="delivery.calendar">@Loc["deliveries_calendar"]</a>
+                    }
+                    <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent"
+                            onclick="toggleDeliveryStats(this)" data-ai-action="delivery.toggleStats"
+                            data-hide-label="@Loc["deliveries_hide_stats"]" data-show-label="@Loc["deliveries_show_stats"]">
+                        @(item.HideDownloadStats ? Loc["deliveries_show_stats"] : Loc["deliveries_hide_stats"])
+                    </button>
+                </p>
+            </article>
+        }
+
+        @if (nextCursor is not null)
+        {
+            <Button Href="@BodyUrl(Status, nextCursor)"
+                    Variant="ghost" Size="sm"
+                    Class="account-deliveries-more"
+                    up-follow="true" up-target="#deliveries-body" up-history="true">@Loc["deliveries_next_page"]</Button>
+        }
+    </div>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+        isChunkRequest = !string.IsNullOrEmpty(Cursor);
+
+        if (!isChunkRequest)
+        {
+            var now = DateTime.UtcNow;
+            var soon = now.AddHours(ExpiringSoonHours);
+            health = await Db.Deliveries
+                .AsNoTracking()
+                .Where(d => d.SenderId == user.Id)
+                .GroupBy(_ => 1)
+                .Select(g => new HealthStats(
+                    g.Count(d => d.Status == DeliveryStatus.Active),
+                    g.Count(d => d.Status == DeliveryStatus.Active && d.ExpiresAt != null && d.ExpiresAt > now && d.ExpiresAt < soon),
+                    g.Count(d => d.Status == DeliveryStatus.Active && d.DownloadCount >= d.MaxDownloads)))
+                .FirstOrDefaultAsync();
+        }
+
+        // Destinations for the move control. Only the caller's own workspace: a folder list
+        // is the one part of this page that is not about their deliveries, and showing another
+        // team's would be a leak of the tree's shape.
+        var seat = await Workspaces.GetSeatAsync(user.Id, CancellationToken.None);
+        if (seat is { IsActive: true })
+        {
+            folders = await Db.WorkspaceFolders
+                .AsNoTracking()
+                .Where(f => f.WorkspaceId == seat.WorkspaceId)
+                .OrderBy(f => f.Name)
+                .ToListAsync(CancellationToken.None);
+        }
+
+        var result = await Bus.Send<LightResults.Result<CursorPage<DeliveryItem>>>(
+            new ListDeliveriesQuery(Cursor, Status: Status, Search: Search, FavoritesOnly: Favorite, DeletedOnly: DeletedOnly), CancellationToken.None);
+
+        if (result.IsSuccess(out var page))
+        {
+            items = page.Items;
+            nextCursor = page.NextCursor;
+        }
+    }
+
+    private string ExpiryLabel(DateTime? expiresAt)
+    {
+        if (expiresAt is null) return Loc["deliveries_no_expiry"];
+
+        var remaining = expiresAt.Value - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero) return Loc["deliveries_expired"];
+        if (remaining.TotalHours < 1) return string.Format(Loc["deliveries_expires_minutes"], (int)remaining.TotalMinutes + 1);
+        if (remaining.TotalHours < HoursPerDay) return string.Format(Loc["deliveries_expires_hours"], (int)remaining.TotalHours);
+        return string.Format(Loc["deliveries_expires_days"], (int)remaining.TotalDays);
+    }
+
+    private static string TagColor(string tag)
+    {
+        var hash = 0;
+        foreach (var c in tag)
+            hash = (hash * 31 + c) & 0x7fffffff;
+
+        var hue = hash % 360;
+        return $"hsla({hue}, 70%, 45%, 0.18)";
+    }
+}

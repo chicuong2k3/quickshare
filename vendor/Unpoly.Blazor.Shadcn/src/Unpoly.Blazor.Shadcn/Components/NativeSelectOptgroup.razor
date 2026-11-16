@@ -1,0 +1,8 @@
+@inherits UiComponentBase
+
+<optgroup data-slot="native-select-optgroup" label="@Label" class="@Cn("bg-[Canvas] text-[CanvasText]", Class)"
+          @attributes="AdditionalAttributes">@ChildContent</optgroup>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+}

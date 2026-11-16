@@ -1,0 +1,33 @@
+@inherits UiComponentBase
+
+@* The frame every other sidebar part lives in, and where the widths are declared.
+
+   shadcn keeps the open state in React and mirrors it into a `sidebar_state` cookie so the next
+   page renders the same way. Here the cookie is the whole mechanism: the server reads it and
+   passes Open, so the first paint is already right and there is no flash of a sidebar opening
+   itself. ui.js writes the cookie when the trigger is used.
+
+   That means the state survives a full navigation, a fragment swap and a refresh, and it does so
+   without any client state at all — which is the same reason this library uses form elements
+   everywhere else. *@
+
+<div data-slot="sidebar-wrapper" data-state="@(Open ? "expanded" : "collapsed")"
+     style="@($"--sidebar-width: {Width}; --sidebar-width-icon: {IconWidth};{Style}")"
+     class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Read from the <c>sidebar_state</c> cookie on the server, so the first paint is right.</summary>
+    [Parameter] public bool Open { get; set; } = true;
+
+    [Parameter] public string Width { get; set; } = "16rem";
+
+    /// <summary>How wide it is when collapsed to icons.</summary>
+    [Parameter] public string IconWidth { get; set; } = "3rem";
+
+    [Parameter] public string? Style { get; set; }
+
+    const string Base =
+        "group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar";
+
+    string Classes => Cn(Base, Class);
+}

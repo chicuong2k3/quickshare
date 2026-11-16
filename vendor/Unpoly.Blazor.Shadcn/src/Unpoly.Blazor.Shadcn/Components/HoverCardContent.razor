@@ -1,0 +1,39 @@
+@inherits UiComponentBase
+
+@* popover="auto", not "manual". Manual has no light dismiss: nothing closes it but the code
+   that opened it, so two cards could sit open at once — the second covering the first's trigger,
+   which then never sees a pointerleave — and any failure in the compiler left one on screen with
+   no way for the platform to take it away. Auto closes on an outside pointerdown, on Escape, and
+   when another popover opens, which is the behaviour Radix gives a hover card anyway. *@
+<div id="@Id" popover="auto" data-slot="hover-card-content" data-align="@Align" data-side="@Side"
+     class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+    [Parameter] public string Align { get; set; } = "center";
+    /// <summary>top | right | bottom | left | inline-start | inline-end.</summary>
+    [Parameter] public string Side { get; set; } = "bottom";
+
+    /// <summary>Pixels between the trigger and the card. Upstream's default is 4; ui.js read a
+    /// hardcoded 8 because there was no parameter to read instead.</summary>
+    [Parameter] public int SideOffset { get; set; } = 4;
+
+    // The Base deliberately carries no display utility, and the compound below re-hides a
+    // closed popover. The UA sheet hides [popover] with display:none, but any author display
+    // class on the panel — HoverCardBasic passes flex w-64 — wins over the UA rule and leaves
+    // the closed card fully rendered on screen (fixed, centered, opaque). It then covers
+    // neighbouring triggers, breaks hit-testing for every card under it, and reads as "the
+    // popup never closes". Same guard shadcn needs for any popover panel carrying a display
+    // class: closed means hidden, no matter what the utility says.
+    const string Base =
+        "z-50 w-64 origin-(--radix-hover-card-content-transform-origin) rounded-md border " +
+        "bg-popover p-4 text-popover-foreground shadow-md outline-hidden " +
+        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 " +
+        "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 " +
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 " +
+        "data-[state=closed]:zoom-out-95 data-[state=open]:animate-in " +
+        "data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 " +
+        "[&:not(:popover-open)]:hidden";
+
+    string Classes => Cn(Base, Class);
+}

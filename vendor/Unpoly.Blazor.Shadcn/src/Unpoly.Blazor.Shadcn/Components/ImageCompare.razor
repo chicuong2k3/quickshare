@@ -1,0 +1,52 @@
+@inherits UiComponentBase
+
+@* ImageCompare — before/after slider, Lumeo parity.
+   Uses `img-comparison-slider` Web Component (sneas, 3KB, WC). Static SSR renders
+   <img-comparison-slider> with two <img slot="first/second">; a up.compiler lazy-loads
+   the WC definition only when [data-slot="image-compare"] is on the page.
+   Orientation horizontal/vertical, InitialPosition 0-100, labels. *@
+
+<div data-slot="image-compare"
+     data-image-compare
+     data-orientation="@Orientation.ToLowerInvariant()"
+     data-position="@InitialPosition"
+     class="@Classes"
+     @attributes="AdditionalAttributes">
+    @* direction is the WC's own attribute (observed by img-comparison-slider): without it the
+       element defaults to horizontal no matter what data-orientation says. Both are set so the
+       wrapper's data-* and the WC's behaviour can never disagree. *@
+    <img-comparison-slider value="@InitialPosition"
+                           direction="@(Orientation.Equals("Vertical", StringComparison.OrdinalIgnoreCase) ? "vertical" : "horizontal")"
+                           class="h-full w-full">
+        <img slot="first" src="@BeforeSrc" alt="@(BeforeLabel ?? "Before")" class="h-full w-full object-cover" />
+        <img slot="second" src="@AfterSrc" alt="@(AfterLabel ?? "After")" class="h-full w-full object-cover" />
+        @if (ShowLabels && BeforeLabel is not null)
+        {
+            <span slot="first" class="absolute left-2 top-2 rounded bg-black/60 px-2 py-1 text-xs text-white">@BeforeLabel</span>
+        }
+        @if (ShowLabels && AfterLabel is not null)
+        {
+            <span slot="second" class="absolute right-2 top-2 rounded bg-black/60 px-2 py-1 text-xs text-white">@AfterLabel</span>
+        }
+    </img-comparison-slider>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string BeforeSrc { get; set; } = default!;
+    [Parameter, EditorRequired] public string AfterSrc { get; set; } = default!;
+    [Parameter] public string BeforeLabel { get; set; } = "Before";
+    [Parameter] public string AfterLabel { get; set; } = "After";
+    [Parameter] public string Orientation { get; set; } = "Horizontal"; // Horizontal | Vertical
+    [Parameter] public int InitialPosition { get; set; } = 50; // 0-100
+    [Parameter] public bool ShowLabels { get; set; } = true;
+
+    string Classes => Cn(
+        "relative block w-full overflow-hidden rounded-lg border",
+        // The WC's height comes from the after image's intrinsic aspect in horizontal mode. A
+        // vertical slider has no natural height (the two images stack the same way), so it gets
+        // an explicit one or it collapses to nothing.
+        Orientation.Equals("Vertical", StringComparison.OrdinalIgnoreCase)
+            ? "data-[orientation=vertical]:[&>img-comparison-slider]:h-[400px]"
+            : null,
+        Class);
+}

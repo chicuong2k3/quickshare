@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+<ul data-slot="sidebar-menu-sub" class="@Classes"
+    @attributes="AdditionalAttributes">@ChildContent</ul>
+
+@code {
+    const string Base =
+        "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-s border-sidebar-border " +
+        "px-2.5 py-0.5 group-data-[collapsible=icon]:hidden rtl:-translate-x-px";
+
+    string Classes => Cn(Base, Class);
+}

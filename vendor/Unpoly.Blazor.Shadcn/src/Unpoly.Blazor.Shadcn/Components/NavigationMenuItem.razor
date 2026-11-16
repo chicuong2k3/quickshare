@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+<li data-slot="navigation-menu-item" class="@Classes"
+    @attributes="AdditionalAttributes">@ChildContent</li>
+
+@code {
+    const string Base =
+        "relative";
+
+    string Classes => Cn(Base, Class);
+}

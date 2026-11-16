@@ -29,7 +29,7 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
 
     // ── R2 methods (not supported on local disk) ───────────────────────────
 
-    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 multipart upload.");
 
     public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)
@@ -44,9 +44,27 @@ public sealed class LocalDiskStorageProvider : IStorageProvider
     public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
         => Task.FromResult(-1L);
 
+    public Task UploadObjectAsync(string objectKey, Stream content, string contentType, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 object upload.");
+
     public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support presigned URLs.");
 
     public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
         => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 delete.");
+
+    public Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 delete.");
+
+    public Task CopyObjectAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 object copy.");
+
+    public Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support server-side object reads.");
+
+    public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 object listing.");
+
+    public Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => throw new NotSupportedException("LocalDiskStorageProvider does not support R2 multipart listing.");
 }

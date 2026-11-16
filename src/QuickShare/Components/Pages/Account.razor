@@ -1,4 +1,5 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@using Unpoly.Blazor.Shadcn
 
 @layout MainLayout
 @page "/account"
@@ -9,24 +10,71 @@
 
 <PageWrapper id="account-app" Variant="PageVariant.Account">
 
-    @* Profile Card — HTMX lazy loaded *@
-    <HtmxFragment>
-    <div id="profile-card" class="db-card account-card"
-         hx-get="/account/profile"
-         hx-trigger="load"
-         hx-select="#profile-card"
-         hx-swap="outerHTML">
-        <div class="db-card__body">
-            <div class="account-profile">
-                <div class="account-skeleton-avatar"></div>
-                <div class="account-skeleton-line account-skeleton-name" style="margin-top: 1.25rem"></div>
-                <div class="account-skeleton-line account-skeleton-email" style="margin-top: 0.5rem"></div>
-                <div class="account-skeleton-line account-skeleton-badge" style="margin-top: 0.75rem"></div>
-            </div>
+<div class="account-hub">
+
+    <AccountTabs Current="@RoutePaths.Account" />
+
+    @* Onboarding checklist (issue #129), dismissible. *@
+    <AccountOnboarding />
+    @* Profile card renders in the initial response. *@
+    <AccountProfile />
+
+    @* Monthly usage bar. *@
+    <AccountUsage />
+
+    @* Known devices (issue #149). *@
+    <AccountDevices />
+
+    @* Referral (issue #31). *@
+    <AccountReferral />
+
+    @* Notification preferences (issue #117). *@
+    <AccountNotifications />
+
+    @* Download history (issue #220). *@
+    <AccountDownloads />
+
+    @* Security activity (issue #126). *@
+    <AccountSecurityActivity />
+
+    @* Data & privacy (issue #59) — static, no DB calls. *@
+    <Card class="my-4 p-6">
+        <h3 class="text-lg font-semibold">@Loc["account_data_title"]</h3>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <Button Href="/api/me/export" Variant="ghost" Size="sm" data-ai-action="account.exportData">@Loc["account_data_export"]</Button>
+            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="text-destructive"
+                    data-prompt="@Loc["account_data_delete_prompt"]"
+                    data-error="@Loc["account_data_delete_error"]"
+                    onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
         </div>
-    </div>
-    </HtmxFragment>
+    </Card>
+
+</div>
+
 </PageWrapper>
+
+<script>
+    window.deleteAccount = function (btn) {
+        var email = window.prompt(btn.getAttribute('data-prompt'));
+        if (!email || email.trim() === '') return;
+        btn.disabled = true;
+        fetch('/api/me/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirmEmail: email.trim() })
+        }).then(function (r) {
+            if (r.ok) window.location.href = '/logout';
+            else window.alert(btn.getAttribute('data-error'));
+        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+          .finally(function () { btn.disabled = false; });
+    };
+    (function () {
+        if (localStorage.getItem('qs-onboarding-dismissed')) {
+            var card = document.getElementById('onboarding-card');
+            if (card) card.remove();
+        }
+    })();
+</script>
 
 <script src="/js/account.js"></script>
 

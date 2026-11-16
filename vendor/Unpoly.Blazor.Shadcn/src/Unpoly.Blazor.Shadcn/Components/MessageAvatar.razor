@@ -1,0 +1,15 @@
+@inherits UiComponentBase
+
+@* aria-hidden, because the author's name is in the header right beside it. Announcing "MR,
+   Marta Ruiz" on every message is announcing it twice. *@
+
+<div data-slot="message-avatar" aria-hidden="true" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex w-fit min-w-8 shrink-0 items-center justify-center self-end overflow-hidden " +
+        "rounded-full bg-muted group-has-data-[slot=message-footer]/message:-translate-y-8";
+
+    string Classes => Cn(Base, Class);
+}

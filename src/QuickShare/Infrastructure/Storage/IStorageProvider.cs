@@ -14,13 +14,22 @@ public sealed record R2PartEtag(int PartNumber, string ETag);
 /// <summary>Outcome of completing an R2 multipart upload.</summary>
 public sealed record CompletionResult(bool Success, string? ErrorMessage);
 
+/// <summary>An in-flight multipart upload, as listed from the bucket.</summary>
+public sealed record R2MultipartInfo(string UploadId, string ObjectKey, DateTime Initiated);
+
 // ── Storage provider contract ──────────────────────────────────────────────
 
 public interface IStorageProvider
 {
     // ── R2 multipart upload ────────────────────────────────────────────────
+    /// <summary>
+    /// Starts a multipart upload. <paramref name="region"/> pins the object to a configured
+    /// storage location (issue #119); null uses the default bucket. It is a parameter only
+    /// here, because this is the one call that *creates* the key — every later operation finds
+    /// the right bucket from the key itself.
+    /// </summary>
     Task<R2InitResult> InitR2MultipartUploadAsync(
-        Guid deliveryId, string fileName, CancellationToken ct = default);
+        Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default);
 
     Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(
         string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default);
@@ -30,6 +39,12 @@ public interface IStorageProvider
 
     Task AbortR2MultipartUploadAsync(
         string uploadId, string objectKey, CancellationToken ct = default);
+
+    // ── R2 small-object upload (avatars, etc.) ─────────────────────────────
+
+    /// <summary>Uploads a single object (stream) to the bucket — used for small files like avatars.</summary>
+    Task UploadObjectAsync(
+        string objectKey, Stream content, string contentType, CancellationToken ct = default);
 
     // ── R2 download + cleanup ──────────────────────────────────────────────
 
@@ -42,4 +57,29 @@ public interface IStorageProvider
 
     Task DeleteObjectsAsync(
         string prefix, CancellationToken ct = default);
+
+    /// <summary>Deletes exactly one object by its full key (no prefix expansion).</summary>
+    Task DeleteObjectAsync(
+        string objectKey, CancellationToken ct = default);
+
+    /// <summary>Server-side copy of a single object to a new key (issue #218 clone).</summary>
+    Task CopyObjectAsync(
+        string sourceKey, string destinationKey, CancellationToken ct = default);
+
+    /// <summary>
+    /// Opens a seekable read stream for an object, or null if it does not exist.
+    /// Used for server-side inspection like ZIP content listing (issue #215).
+    /// </summary>
+    Task<Stream?> OpenReadAsync(
+        string objectKey, CancellationToken ct = default);
+
+    // ── R2 orphan sweep (issue #107) ───────────────────────────────────────
+
+    /// <summary>Keys under <paramref name="prefix"/> last modified before <paramref name="olderThan"/>.</summary>
+    Task<IReadOnlyList<string>> ListObjectsAsync(
+        string prefix, DateTime olderThan, CancellationToken ct = default);
+
+    /// <summary>In-flight multipart uploads under <paramref name="prefix"/> initiated before <paramref name="olderThan"/>.</summary>
+    Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(
+        string prefix, DateTime olderThan, CancellationToken ct = default);
 }

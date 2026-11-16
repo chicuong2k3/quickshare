@@ -1,0 +1,18 @@
+@inherits UiComponentBase
+
+@* "Remove Summer", never "Remove". A row of buttons all announced the same way is a row nobody
+   can navigate by name. *@
+
+<button type="button" data-slot="combobox-chip-remove" aria-label="@Label" class="@Classes"
+        @attributes="AdditionalAttributes">
+    <Icon Name="x" Class="size-3" />
+</button>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Remove";
+
+    const string Base =
+        "-ms-1 opacity-50 hover:opacity-100";
+
+    string Classes => Cn(Base, Class);
+}

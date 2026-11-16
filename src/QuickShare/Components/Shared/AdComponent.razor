@@ -1,13 +1,15 @@
 @* AdComponent.razor — self-contained rewarded ad component.
    Resolves user plan and remaining ads internally via DB.
    Renders nothing for anonymous users, consent CTA for no-consent,
-   skeleton on first render, full ad prompt on HTMX response.
+   full ad prompt rendered directly by static SSR.
    Pro/Studio users: skeleton flashes briefly then clears. *@
 @using QuickShare.Infrastructure
 @using QuickShare.Extensions
 @using QuickShare.Infrastructure.Caching
 @using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.Extensions.Localization
+@using System.Text.Json
+@using System.Text.Json.Serialization
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @inject IHttpContextAccessor HttpContextAccessor
@@ -36,25 +38,7 @@
     return;
 }
 
-@* Shell render — skeleton, hx-get to dedicated /ads/reward-prompt page *@
-@if (!IsHxRequest)
-{
-    <div id="ad-reward-card"
-         class="ad-reward-card"
-         hx-get="@AdConstants.RewardPromptRoute"
-         hx-trigger="load"
-         hx-target="#ad-reward-card"
-         hx-select="#ad-reward-card"
-         hx-swap="outerHTML">
-        <div class="ad-reward-card__skeleton">
-            <div class="db-skeleton db-skeleton--text" style="width:55%"></div>
-            <div class="db-skeleton db-skeleton--button" style="width:35%; height:2.5rem; margin-top:0.75rem"></div>
-        </div>
-    </div>
-    return;
-}
-
-@* HTMX response — _userPlan resolved, Pro users get empty clear-out *@
+@* _userPlan resolved during SSR; paid users get empty clear-out. *@
 @if (_userPlan != PlanTierLimits.Free)
 {
     <div id="ad-reward-card"></div>
@@ -72,7 +56,7 @@
         <p id="ad-reward-error" class="ad-reward-card__description" style="color:var(--color-destructive);display:none"></p>
         @if (RemainingAds > 0)
         {
-            <button id="ad-reward-watch-btn"
+            <button id="ad-reward-watch-btn" data-slot="button" data-variant="default"
                     type="button"
                     class="ad-reward-btn"
                     data-ai-action="ad.reward.watch">
@@ -84,7 +68,7 @@
         }
         else
         {
-            <button id="ad-reward-watch-btn"
+            <button id="ad-reward-watch-btn" data-slot="button" data-variant="default"
                     type="button"
                     class="ad-reward-btn"
                     disabled
@@ -94,12 +78,12 @@
         }
         @if (RemainingAds > 0 && _allowDevSimulation)
         {
-            <button id="ad-reward-dev-btn"
+            <button id="ad-reward-dev-btn" data-slot="button" data-variant="ghost"
                     type="button"
                     class="ad-reward-btn"
                     data-ai-action="ad.reward.dev-simulate"
                     style="margin-top:0.375rem;background:transparent;color:var(--db-color-text-muted);border:1px dashed var(--db-color-border)">
-                Simulate rewarded ad (dev only, Ads:DevSimulation=true)
+                @Loc["ad_dev_simulate"]
             </button>
             <script>
                 (function () {
@@ -125,12 +109,38 @@
             adUnitId: 'ca-app-pub-3940256099942544/5224354917',
             callbackUrl: '@AdConstants.RewardCallbackRoute',
             antiForgeryToken: '@antiForgeryToken',
-            remainingAds: @RemainingAds
+            remainingAds: @RemainingAds,
+            i18n: @RawJson(Strings())
         });
     </script>
 </div>
 
 @code {
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+
+    // ad-component.js reads its copy from here rather than carrying English literals.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["consentRequired"] = Loc["ad_consent_required"],
+        ["loading"] = Loc["ad_loading"],
+        ["unavailable"] = Loc["ad_unavailable"],
+        ["verifying"] = Loc["ad_verifying"],
+        ["verifyFailed"] = Loc["ad_verification_failed"],
+        ["verifyError"] = Loc["ad_verify_error"],
+        ["p2pUnlocked"] = Loc["ad_p2p_unlocked"],
+        ["tryAgain"] = Loc["ad_try_again"],
+        ["limitReached"] = Loc["ad_reward_limit_reached"],
+        ["watchBtn"] = Loc["ad_reward_watch_btn"],
+        ["added"] = Loc["ad_reward_added"],
+        ["remainingPrefix"] = Loc["ad_remaining_prefix"],
+        ["remainingSingular"] = Loc["ad_remaining_ad_singular"],
+        ["remainingPlural"] = Loc["ad_remaining_ad_plural"],
+        ["remainingSuffix"] = Loc["ad_remaining_suffix"],
+        ["upgradeLink"] = Loc["ad_upgrade_link"],
+    };
 
     private bool HasAdConsent =>
         HttpContextAccessor.HttpContext?.Request.Cookies[AdConstants.ConsentCookieName] == AdConstants.ConsentCookieValueGranted;
@@ -139,7 +149,6 @@
     private string? _userPlan;
     private bool _allowDevSimulation;
     private int RemainingAds { get; set; } = AdConstants.MaxDailyAds;
-    private bool IsHxRequest { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,13 +160,10 @@
         _allowDevSimulation = string.Equals(
             Config["Ads:DevSimulation"], "true", StringComparison.OrdinalIgnoreCase);
 
-        var hxHeader = HttpContextAccessor.HttpContext?.Request.Headers["HX-Request"].FirstOrDefault();
-        IsHxRequest = hxHeader == "true";
-        if (!IsHxRequest) return; // Shell render — no DB calls
         if (!_isAuthenticated) return;
         if (!HasAdConsent) return;
 
-        // HTMX data fetch: resolve plan + remaining ads from DB
+        // Resolve plan + remaining ads from DB.
         try
         {
             var principal = HttpContextAccessor.HttpContext!.User;

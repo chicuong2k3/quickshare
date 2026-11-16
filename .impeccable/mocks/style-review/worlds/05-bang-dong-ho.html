@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Bảng đồng hồ — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Martian+Mono:wght@400;600&family=Be+Vietnam+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --plate:#CBCFD2; --plate-2:#BFC4C8; --bevel-hi:#F2F4F5; --bevel-lo:#8C9297;
+  --legend:#20252A; --dim:#5A6165; --window:#151A1D;
+  --green:#3B8B50; --amber:#C0821C; --red:#AE3B31; --ink:#20252A;
+}
+html[data-theme="dark"]{
+  --plate:#23282C; --plate-2:#1C2125; --bevel-hi:#3B4247; --bevel-lo:#0C0F11;
+  --legend:#E4E7E8; --dim:#98A0A5; --window:#0B0E10;
+  --green:#5FBE79; --amber:#E0A43C; --red:#E0675B; --ink:#E4E7E8;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--plate), var(--plate-2));
+  color:var(--legend);
+  font-family:"Barlow Condensed",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.plate-surface{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--plate) 82%, #fff), var(--plate-2));
+  border:1px solid var(--bevel-lo);
+  box-shadow:inset 0 1px 0 var(--bevel-hi), inset 0 -1px 0 rgba(0,0,0,.28);
+}
+.engraved{text-shadow:0 1px 0 var(--bevel-hi);}
+html[data-theme="dark"] .engraved{text-shadow:0 1px 0 #000}
+
+/* top */
+.top{border-bottom:1px solid var(--bevel-lo)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:56px}
+.brand{display:flex;align-items:center;gap:12px}
+.plate{width:28px;height:28px;border:1px solid var(--bevel-lo);display:grid;place-items:center;font-family:"Martian Mono";font-size:9px;color:var(--legend);
+  background:linear-gradient(180deg,var(--bevel-hi),var(--plate-2));box-shadow:inset 0 -1px 0 rgba(0,0,0,.25)}
+.brand b{font-size:13px;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
+nav{display:flex;gap:20px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--legend);padding-bottom:2px;border-bottom:2px solid var(--amber)}
+.readout{display:flex;align-items:center;gap:10px}
+.lamp{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 1px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5)}
+.readout span{font-family:"Martian Mono";font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:44px 0 34px;align-items:start}
+.kick{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);margin:0 0 14px}
+h1{margin:0 0 14px;font-size:52px;line-height:.98;letter-spacing:-.01em;font-weight:700;text-transform:uppercase;max-width:12ch}
+h1 span{color:var(--amber)}
+p.lede{margin:0 0 24px;max-width:42ch;font-family:"Be Vietnam Pro";font-size:14.5px;line-height:1.6;color:var(--dim)}
+.actions{display:flex;align-items:center;gap:12px}
+.btn{
+  display:inline-block;padding:11px 22px;background:linear-gradient(180deg,var(--bevel-hi),var(--plate));
+  border:1px solid var(--bevel-lo);color:var(--legend);
+  font-size:13px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+  box-shadow:inset 0 1px 0 var(--bevel-hi), 0 2px 0 rgba(0,0,0,.18);
+}
+.btn:hover{background:linear-gradient(180deg,var(--plate),var(--plate-2))}
+.btn--dark{background:linear-gradient(180deg,#33393E,#20252A);color:#EDEFF0;border-color:#0E1113}
+
+/* instrument card */
+.instrument{position:relative;padding:18px 18px 16px}
+.screw{position:absolute;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #E7EAEB, #8B9196 70%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);
+}
+.screw::after{content:"";position:absolute;left:2px;right:2px;top:50%;height:1px;background:rgba(0,0,0,.5);transform:translateY(-50%) rotate(-18deg)}
+.screw--tl{top:5px;left:5px}.screw--tr{top:5px;right:5px}
+.screw--bl{bottom:5px;left:5px}.screw--br{bottom:5px;right:5px}
+.instrument__head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--bevel-lo);padding:0 4px 8px;margin-bottom:14px}
+.instrument__head b{font-size:11.5px;letter-spacing:.22em;text-transform:uppercase}
+.instrument__head span{font-family:"Martian Mono";font-size:9px;letter-spacing:.14em;color:var(--dim)}
+
+/* gauge + odometer grid */
+.gaugewrap{display:grid;grid-template-columns:118px 1fr;gap:16px;align-items:center}
+.gauge{position:relative;width:118px;height:118px}
+.gauge svg{display:block}
+.counter{display:flex;flex-direction:column;gap:6px}
+.counter__k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.odo{display:inline-flex;align-self:flex-start;background:var(--window);border:1px solid #0A0D0F;padding:3px;box-shadow:inset 0 2px 3px rgba(0,0,0,.75)}
+.odo span{
+  width:20px;height:30px;display:grid;place-items:center;background:#1D2226;
+  color:#EDEFF0;font-family:"Martian Mono";font-size:15px;font-weight:600;
+  border-right:1px solid #0A0D0F;
+}
+.odo span:last-child{border-right:0}
+.odo span.sep{width:9px;background:#151A1D;color:#7C858B;font-size:10px}
+.odo span small{font-size:8px;color:#9AA3A9;display:block;margin-top:-2px}
+.units{display:flex;gap:14px;justify-content:flex-start;font-family:"Martian Mono";font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+/* lamps row */
+.lamps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.lampbox{
+  border:1px solid var(--bevel-lo);padding:8px 9px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--plate) 70%, #fff), var(--plate-2));
+  box-shadow:inset 0 1px 0 var(--bevel-hi);
+  display:flex;align-items:center;gap:8px;
+}
+.lampbox i{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:#8B9196;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.lampbox.on-g i{background:var(--green);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.lampbox.on-a i{background:var(--amber);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.lampbox.on-r i{background:var(--red);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.lampbox span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.lampbox b{font-family:"Martian Mono";font-size:9.5px;color:var(--legend);margin-left:auto;font-weight:400}
+
+/* spec table */
+.specs{margin-top:14px;border-top:1px solid var(--bevel-lo)}
+.specrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 4px;border-bottom:1px solid color-mix(in srgb, var(--bevel-lo) 45%, transparent)}
+.specrow span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.specrow b{font-family:"Martian Mono";font-size:10px;font-weight:400;color:var(--legend)}
+
+/* system */
+.sys{max-width:1120px;margin:20px auto 0;padding:26px 40px 80px}
+.sys .h{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--bevel-lo);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#fff;background:rgba(0,0,0,.45);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--legend)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--amber)}
+.toggle{border:1px solid var(--bevel-lo);background:linear-gradient(180deg,var(--bevel-hi),var(--plate));color:var(--legend);padding:8px 14px;cursor:pointer;font-family:"Barlow Condensed";font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="plate">QS</span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Bảng đo</a>
+      <a href="#">Gửi</a>
+      <a href="#">Dung lượng</a>
+      <a href="#">Bảng giá</a>
+    </nav>
+    <div class="readout"><i class="lamp"></i><span>Đường truyền ổn định</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Bảng điều khiển · mọi thứ đều đo được</p>
+      <h1>Không hứa. <span>Đo.</span></h1>
+      <p class="lede">Số byte đã gửi, số phần còn lại, tốc độ hiện tại, mã SHA-256 khi xong. Bạn nhìn thấy đúng thứ hệ thống đang biết — không có thanh tiến trình nói dối.</p>
+      <div class="actions">
+        <a class="btn btn--dark" href="#">Chọn tệp</a>
+        <a class="btn" href="#">Nhập mã chuyến</a>
+      </div>
+    </div>
+
+    <div class="instrument plate-surface">
+      <i class="screw screw--tl"></i><i class="screw screw--tr"></i>
+      <i class="screw screw--bl"></i><i class="screw screw--br"></i>
+      <div class="instrument__head">
+        <b>Chuyến 8F2K · đang gửi</b>
+        <span>2,4 GB</span>
+      </div>
+
+      <div class="gaugewrap">
+        <div class="gauge">
+          <svg viewBox="0 0 120 120" role="img" aria-label="Đồng hồ tiến độ 62 phần trăm">
+            <path d="M26.06 26.06 A48 48 0 1 1 26.06 93.94" fill="none" stroke="#20252A" stroke-width="6" opacity=".28"/>
+            <path d="M26.06 26.06 A48 48 0 0 1 100.53 85.72" fill="none" stroke="#3B8B50" stroke-width="6"/>
+            <g stroke="#20252A" stroke-width="1">
+              <line x1="26.06" y1="26.06" x2="31.72" y2="31.72"/>
+              <line x1="26.06" y1="93.94" x2="31.72" y2="88.28"/>
+              <line x1="78.36" y1="15.65" x2="75.31" y2="23.03"/>
+              <line x1="108" y1="60" x2="100" y2="60"/>
+              <line x1="78.36" y1="104.35" x2="75.31" y2="96.97"/>
+            </g>
+            <line x1="60" y1="60" x2="60" y2="26" stroke="#AE3B31" stroke-width="2" transform="rotate(122.4 60 60)"/>
+            <circle cx="60" cy="60" r="3.5" fill="#20252A"/>
+            <text x="60" y="79" text-anchor="middle" font-family="Martian Mono" font-size="10" fill="#20252A">62%</text>
+          </svg>
+        </div>
+        <div class="counter">
+          <span class="counter__k">Đã nhận</span>
+          <span class="odo" aria-label="1536 megabyte">
+            <span>1</span><span>5</span><span>3</span><span>6</span>
+          </span>
+          <div class="units"><span>MB</span><span>còn 0,9 GB</span></div>
+        </div>
+      </div>
+
+      <div class="lamps">
+        <div class="lampbox on-g"><i></i><span>Mã hoá</span><b>AES</b></div>
+        <div class="lampbox on-a"><i></i><span>Tốc độ</span><b>38 MB/s</b></div>
+        <div class="lampbox"><i></i><span>Xác minh</span><b>chờ</b></div>
+      </div>
+
+      <div class="specs">
+        <div class="specrow"><span>Số phần</span><b>3 / 5</b></div>
+        <div class="specrow"><span>Vùng lưu trữ</span><b>ap-southeast-1</b></div>
+        <div class="specrow"><span>Khoá</span><b>trong liên kết (#)</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Bảng đồng hồ</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#CBCFD2"><i>plate</i></span>
+        <span class="chip" style="background:#20252A"><i>legend</i></span>
+        <span class="chip" style="background:#3B8B50"><i>green</i></span>
+        <span class="chip" style="background:#C0821C"><i>amber</i></span>
+        <span class="chip" style="background:#AE3B31"><i>red</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Màu chỉ dành cho <b>đèn và kim</b>. Không tô nền.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Barlow Condensed';font-size:22px;text-transform:uppercase;color:var(--legend)">Barlow Condensed 700 — khắc</p>
+      <p class="spec" style="font-family:'Martian Mono';font-size:12px;color:var(--legend)">Martian Mono — con số</p>
+      <p class="spec">Nhãn in hoa giãn .16em; số trên nền tối có tabular.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Mọi bề mặt là <i>tấm kim loại</i>: viền 1px + đường vát trong 1px.</p>
+      <p class="rule">Có vít ở bốn góc. Không bóng mờ, chỉ vát.</p>
+      <p class="rule">Số dùng con lăn cơ khí, không dùng thanh phần trăm đơn thuần.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Sáng: tủ điều khiển ban ngày.</p>
+      <p class="spec">Tối: tủ chiếu sáng ban đêm — đèn dẫn, không phát sáng loang.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

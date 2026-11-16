@@ -1,0 +1,13 @@
+@inherits UiComponentBase
+
+@* shadcn/ui <Skeleton>. Worth knowing where it belongs here: Blazor static SSR runs
+   OnInitializedAsync to completion before a byte of the page exists, so a skeleton the server
+   renders is never seen. The one that is seen comes from Unpoly's [up-placeholder], which
+   fills the target the moment the request leaves — so these live in <template> in the layout,
+   not in the page they stand in for. *@
+
+<div data-slot="skeleton" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    string Classes => Cn("animate-pulse rounded-md bg-accent", Class);
+}

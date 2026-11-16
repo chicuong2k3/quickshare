@@ -1,0 +1,90 @@
+@inherits UiComponentBase
+
+@* DotPattern — a decorative lattice of dots, drawn as an SVG <pattern> of circles and stretched to
+   fill whatever it is dropped into. It is the same absolute overlay as GridPattern with lines
+   swapped for dots: quieter at the same density, and it survives a busy background photograph
+   where a lattice of lines would moiré against it. It is decoration ONLY — it carries no
+   information, so it is aria-hidden and pointer-transparent, and it must never be the sole carrier
+   of meaning. If the dots are meant to be read as data — a schedule, a density, a scale — draw
+   that in real markup and let the lattice stay behind it. For a single divider use Separator; for
+   an actual data chart use Chart; for a texture on a card, Card already has one. *@
+
+<div data-slot="dot-pattern"
+     class="@Classes"
+     aria-hidden="true"
+     focusable="false"
+     @attributes="AdditionalAttributes">
+    <svg width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <defs>
+            <pattern id="@PatternId" width="@SpacingText" height="@SpacingText" patternUnits="userSpaceOnUse">
+                <circle cx="@DotRadiusText" cy="@DotRadiusText" r="@DotRadiusText" fill="@DotFill" @OpacityAttribute />
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="@FillReference" />
+    </svg>
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>Radius of a single dot in pixels. It is the loudness control: one or two pixels
+    /// reads as texture you stop noticing, and past four the dots stop being a background and start
+    /// being the thing you look at.</summary>
+    [Parameter] public int DotRadius { get; set; } = 1;
+
+    /// <summary>How far apart the dots sit, in pixels — the tile edge of the pattern. A small
+    /// value reads as a fine screen, a large one as a sparse constellation the content sits inside.
+    /// The dot is drawn into the corner of its own tile, so the lattice is continuous across every
+    /// seam.</summary>
+    [Parameter] public int Spacing { get; set; } = 20;
+
+    /// <summary>Any CSS colour for the dots. It defaults to <c>currentColor</c> so the lattice
+    /// follows the nearest foreground — and therefore the light/dark theme and the surrounding
+    /// text — instead of pinning a colour that goes wrong in one of them. Pass a theme token such
+    /// as <c>var(--border)</c> when the dots should be quieter than the text they sit behind.</summary>
+    [Parameter] public string? Fill { get; set; } = "currentColor";
+
+    /// <summary>Alpha for the whole lattice, as any CSS value — <c>0.4</c>, or a
+    /// <c>color-mix</c> expression. Left null the attribute is not emitted at all, so the dots take
+    /// their opacity from <see cref="Fill"/> and nothing else. Fading the layer down is usually
+    /// kinder to the text above it than choosing a lighter colour in both themes.</summary>
+    [Parameter] public string? Opacity { get; set; }
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    /// <summary>Every number that reaches the DOM is written in invariant culture. A locale that
+    /// separates decimals with a comma turns <c>width="20,5"</c> into an invalid value, and the
+    /// browser drops the whole pattern with no error — the element renders, just empty.</summary>
+    static string N(double value) => value.ToString("0.##", Inv);
+
+    /// <summary>Each instance needs its own <c>&lt;pattern&gt;</c> id: the ids share one document,
+    /// and two lattices given the same id resolve to the first definition, so the second one
+    /// silently draws the first one's spacing, radius and colour.</summary>
+    static int _nextId;
+    readonly string _patternId = "dot-pattern-" + System.Threading.Interlocked.Increment(ref _nextId);
+
+    string PatternId => _patternId;
+
+    // A non-positive tile is not a lattice, and SVG treats a zero-width pattern as a hard parse
+    // error that takes the dots with it, so the floor is one device pixel.
+    string SpacingText => N(Math.Max(1, Spacing));
+
+    // A zero radius is legal SVG — it simply draws nothing — but a negative one is an error, so
+    // that is the value worth flooring.
+    string DotRadiusText => N(Math.Max(0, DotRadius));
+
+    // currentColor resolves against the element's own computed colour, which is what makes the
+    // default follow the theme; an empty or whitespace Fill would otherwise render the pattern
+    // with no paint at all and take the dots with it.
+    string DotFill => string.IsNullOrWhiteSpace(Fill) ? "currentColor" : Fill;
+
+    // A null attribute value is not emitted by Razor, so leaving Opacity unset keeps the lattice at
+    // full strength rather than writing opacity="".
+    string? OpacityAttribute => string.IsNullOrWhiteSpace(Opacity) ? null : Opacity;
+
+    string FillReference => $"url(#{PatternId})";
+
+    // absolute inset-0 pins the svg to the padded edge of the nearest positioned ancestor, and
+    // pointer-events-none keeps the whole overlay out of hit-testing so the content above it stays
+    // clickable — a background that swallows clicks is a bug, not a style.
+    string Classes => Cn("pointer-events-none absolute inset-0", Class);
+}

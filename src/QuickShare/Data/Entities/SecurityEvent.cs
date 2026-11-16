@@ -1,0 +1,135 @@
+namespace QuickShare.Data.Entities;
+
+/// <summary>
+/// Append-only security audit trail for an account (issue #126). One row per
+/// security-relevant action (sign-in, new device, session revoke, ...). The IP is
+/// captured server-side and hashed — the raw address is never stored (privacy #26).
+/// Rows are immutable; retention is 90 days via <see cref="SecurityEventCleanupJob"/>.
+/// </summary>
+public record SecurityEvent
+{
+    public Guid Id { get; init; }
+    public Guid UserId { get; init; }
+    /// <summary>
+    /// Set when the action happened inside a team workspace (issue #145). The same
+    /// append-only store serves both lenses: the member sees their own timeline,
+    /// the workspace admin sees every row carrying their workspace id.
+    /// </summary>
+    public Guid? WorkspaceId { get; init; }
+    public SecurityEventType EventType { get; init; }
+    public string IpHash { get; init; } = string.Empty;
+    public string UserAgentLabel { get; init; } = string.Empty;
+    public string? MetadataJson { get; init; }
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Security-relevant actions recorded on the account timeline (issue #126). Only
+/// the events wired into existing flows are written today (Login, DeviceAdded,
+/// SessionRevoked); the rest are reserved for the features that will record them.
+/// </summary>
+public enum SecurityEventType
+{
+    Login,
+    LoginFailed,
+    DeviceAdded,
+    SessionRevoked,
+    PasskeyAdded,
+    PasskeyRemoved,
+    RecoveryUsed,
+    ApiKeyCreated,
+    ApiKeyRevoked,
+    EmailChanged,
+    PasswordChanged,
+    FileLockAcquired,
+    FileLockReleased,
+    FileLockForceBroken,
+    FileLockExpired,
+    LegalHoldPlaced,
+    LegalHoldLifted,
+    RetentionPolicyChanged,
+    RetentionEnforced,
+    DeliveryAccessBlocked,
+    WorkspaceCreated,
+    WorkspaceRenamed,
+    WorkspaceSeatsChanged,
+    WorkspaceMemberInvited,
+    WorkspaceMemberJoined,
+    WorkspaceMemberRevoked,
+    WorkspaceMemberRoleChanged,
+    WorkspaceTransferInitiated,
+    WorkspaceTransferAccepted,
+    WorkspaceTransferCancelled,
+    WorkspaceReportGenerated,
+    WorkspaceFolderCreated,
+    WorkspaceFolderRenamed,
+    WorkspaceFolderDeleted,
+    WorkspaceFolderDefaultsChanged,
+    WorkspaceTemplateSaved,
+    WorkspaceTemplateApplied,
+    WorkspaceTemplateDeleted,
+    /// <summary>A caller reached for a resource belonging to another workspace (issue #190).</summary>
+    CrossTenantAccessBlocked,
+    DpaSigned,
+    SiemSinkChanged,
+    WorkspaceBackupRun,
+    WorkspaceBackupPolicyChanged,
+    WorkspaceBrandChanged,
+    DeliveryApprovalRequested,
+    DeliveryApproved,
+    DeliveryDenied,
+    RecurringDeliveryChanged,
+    RecurringDeliveryRan,
+    ChannelHookChanged,
+    DeliveryCommentPosted,
+    // Enterprise identity (#128 TOTP, #181 SSO, #146 SCIM, #219 MFA policy).
+    TotpEnrolled,
+    TotpRemoved,
+    SsoConfigChanged,
+    SsoMemberProvisioned,
+    /// <summary>A directory account qualified but the workspace had no free seat (issue #181).</summary>
+    SsoProvisionRefused,
+    MfaPolicyChanged,
+    /// <summary>A member out of grace was held out of a workspace operation (issue #219).</summary>
+    MfaBlocked,
+    ScimTokenIssued,
+    ScimTokenRevoked,
+    ScimUserProvisioned,
+    ScimUserDeprovisioned,
+    // White-label custom domain (#81).
+    WorkspaceDomainChanged,
+    WorkspaceDomainVerified,
+    // Protocol mounts (#195 WebDAV, #265 S3 gateway).
+    MountObjectWritten,
+    MountObjectDeleted,
+    MountFolderCreated,
+    S3CredentialIssued,
+    S3CredentialRevoked,
+    DiscountVerificationSubmitted,
+    DiscountVerificationDecided,
+    SubscriptionDunningStarted,
+    SubscriptionDunningRecovered,
+    SubscriptionGiftCreated,
+    SubscriptionGiftClaimed,
+    MigrationImportCompleted,
+    SendingDomainChanged,
+    SendingDomainVerified,
+    SupportChatStarted,
+    SupportChatEscalated,
+    AutomationConnected,
+    AutomationRevoked,
+    PasskeyRecoveryGenerated,
+    PasskeyRecoveryUsed,
+    WorkspaceEncryptionPolicyChanged,
+    PenetrationTestRecorded,
+    ByokConfigChanged,
+    ByokKeyRotated,
+    ByokKeyRevoked,
+    CloudImportCompleted,
+    SftpKeyIssued,
+    SftpKeyRevoked,
+    SftpFileIngested,
+    GitHubRepoLinked,
+    GitHubReleaseMirrored,
+    ChatBotDeliveryCreated,
+}

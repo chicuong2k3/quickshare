@@ -1,0 +1,57 @@
+@inherits UiComponentBase
+
+@* Opens the file. An <a href> when there is one, so it downloads, opens in a tab on middle-click
+   and shows its destination in the status bar — none of which a click handler gives you.
+
+   It is `absolute inset-0`: an invisible sheet over the whole card, not a wrapper around it.
+   Putting the media and the text inside it positions them absolutely too and they escape the
+   card, which is the mistake it invites. Its own content should be a name and nothing else —
+   `<span class="sr-only">Open acme-invoice.pdf</span>` — because a link with no text is a link a
+   screen reader announces as its own URL.
+
+   [up-follow=false] because the thing on the other end is a FILE. Unpoly follows every link by
+   default and swaps the response into the page; a PDF is not a fragment, so the click was
+   swallowed and nothing happened — which is exactly what "the trigger does not work" looks
+   like. A caller whose trigger really does open a page can splat up-follow="true" back on. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="attachment-trigger" up-follow="false" class="@Classes"
+       @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <button type="@(Dialog is null ? Type : "button")" data-slot="attachment-trigger"
+            data-target="@Dialog" aria-haspopup="@(Dialog is null ? null : "dialog")"
+            class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@code {
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>
+    /// The id of a &lt;Dialog&gt; this opens. shadcn documents the trigger as making the whole
+    /// card "open a link or dialog", and the dialog half needs somewhere to point: a preview of
+    /// the file is a dialog, not a page. Setting it forces type="button", because a trigger that
+    /// opens a dialog must not also submit the form it sits in.
+    ///
+    /// Named Dialog, not Target as on every other trigger here, because THIS one can be an
+    /// anchor: Blazor matches component parameters case-insensitively, so a caller writing
+    /// target="_blank" bound the HTML attribute to the parameter and the anchor lost its
+    /// target — silently, and only the tab that never opened said so.
+    /// </summary>
+    [Parameter] public string? Dialog { get; set; }
+
+    /// <summary>
+    /// submit | button, for the no-Href, no-Dialog branch. Submit is the default because a button that is
+    /// not in a form and has no handler does nothing at all — which is what this rendered
+    /// before, and it is indistinguishable from a broken component. Put it in a form and the
+    /// card posts; the server decides what opening that attachment means.
+    /// </summary>
+    [Parameter] public string Type { get; set; } = "submit";
+
+    const string Base =
+        "absolute inset-0 z-10 outline-none";
+
+    string Classes => Cn(Base, Class);
+}

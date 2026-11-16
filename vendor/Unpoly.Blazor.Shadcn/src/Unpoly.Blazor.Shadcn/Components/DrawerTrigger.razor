@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+<button type="button" data-slot="drawer-trigger" data-open="@Target" class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    /// <summary>The id of the <see cref="Drawer"/> to open.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    [Parameter] public string Variant { get; set; } = "outline";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

@@ -1,0 +1,6 @@
+@inherits UiComponentBase
+
+@* Radix positions the panel against this instead of against the trigger. ui.js reads the same
+   idea: if the popover names an anchor, that is what it is measured from. *@
+
+<div data-slot="popover-anchor" class="@Cn("", Class)" @attributes="AdditionalAttributes">@ChildContent</div>

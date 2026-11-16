@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Bảng chuyến — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#15181B; --panel:#1D2125; --flap:#2A2F35; --flap-2:#31373E;
+  --legend:#E9ECEE; --dim:#8B939B; --hair:#31373E;
+  --amber:#E0A03C; --green:#4FA36A; --red:#C85A4F;
+}
+html[data-theme="light"]{
+  --board:#D3D6D9; --panel:#E2E5E7; --flap:#CFD3D6; --flap-2:#C3C7CB;
+  --legend:#171A1D; --dim:#5C6468; --hair:#B3B8BC;
+  --amber:#A96C10; --green:#2F7A46; --red:#A83B31;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--board);color:var(--legend);font-family:"Barlow Condensed",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* top */
+.top{background:var(--panel);border-bottom:1px solid var(--hair)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:54px}
+.brand{display:flex;align-items:center;gap:10px}
+.sq{width:24px;height:24px;background:var(--legend);color:var(--board);display:grid;place-items:center;font-size:11px;font-weight:700;letter-spacing:.02em}
+.brand b{font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+nav{display:flex;gap:22px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+nav a[aria-current]{color:var(--legend);border-bottom:2px solid var(--amber);padding-bottom:2px}
+.clock{font-family:"Martian Mono";font-size:10px;letter-spacing:.1em;color:var(--dim)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:.9fr 1.1fr;gap:44px;padding:42px 0 30px;align-items:start}
+.kick{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+h1{margin:0 0 14px;font-size:54px;line-height:.96;letter-spacing:-.01em;font-weight:700;text-transform:uppercase;max-width:12ch}
+h1 span{color:var(--amber)}
+p.lede{margin:0 0 24px;max-width:40ch;color:var(--dim);font-size:15px;line-height:1.55;font-family:"Martian Mono";font-weight:400;letter-spacing:-.01em}
+.actions{display:flex;gap:10px;align-items:stretch}
+.btn{
+  display:inline-block;background:var(--amber);color:#16181A;padding:11px 22px;
+  font-size:13px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+}
+.btn:hover{background:var(--legend)}
+.ghost{display:inline-block;border:1px solid var(--hair);color:var(--dim);padding:11px 16px;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.ghost:hover{color:var(--legend);border-color:var(--dim)}
+
+/* board */
+.board{background:var(--panel);border:1px solid var(--hair)}
+.board__head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--hair)}
+.board__title{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.board__live{display:flex;align-items:center;gap:6px;font-family:"Martian Mono";font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--green)}
+.board__live i{width:6px;height:6px;background:var(--green);display:block}
+.cols{display:grid;grid-template-columns:74px 1fr 92px 104px;gap:0;padding:8px 14px;border-bottom:1px solid var(--hair)}
+.cols span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.rows{padding:8px 14px 14px}
+.row{
+  display:grid;grid-template-columns:74px 1fr 92px 104px;align-items:center;
+  background:var(--flap);margin-bottom:5px;border-top:1px solid var(--flap-2);
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.45);
+}
+.row > *{padding:10px 8px}
+.row:first-child > *{padding-top:12px}
+.code{font-family:"Martian Mono";font-size:12px;letter-spacing:.06em;color:var(--legend)}
+.name{font-size:15px;letter-spacing:.04em;color:var(--legend);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.size{font-family:"Martian Mono";font-size:10px;color:var(--dim);letter-spacing:0}
+.status{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;text-align:right}
+.s-done{color:var(--green)}
+.s-live{color:var(--amber)}
+.s-queued{color:var(--dim)}
+.s-held{color:var(--red)}
+.hairline{height:1px;background:var(--hair);margin:10px 0 8px}
+
+/* flap demo */
+.flap{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  background:var(--flap);padding:10px 12px;border-top:1px solid var(--flap-2);
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.5);
+}
+.flap__k{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.flap__v{font-family:"Martian Mono";font-size:12px;color:var(--legend)}
+.flap__module{
+  display:inline-flex;align-items:center;justify-content:center;min-width:76px;
+  background:#0E1113;color:var(--amber);border-top:1px solid #3A4046;
+  font-family:"Martian Mono";font-size:12px;padding:5px 8px;
+  animation:flip 900ms steps(1,end) 1 both;
+  transform-origin:50% 50%;
+}
+@keyframes flip{
+  0%{transform:rotateX(-82deg);color:var(--dim)}
+  45%{transform:rotateX(0deg);color:var(--amber)}
+  100%{transform:rotateX(0deg);color:var(--amber)}
+}
+@media (prefers-reduced-motion: reduce){.flap__module{animation:none}}
+
+/* progress as channel */
+.progress{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.progress__meta{display:flex;justify-content:space-between;font-family:"Martian Mono";font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.track{height:6px;background:#0E1113;display:flex;gap:2px;padding:1px}
+.track i{flex:1;background:var(--green)}
+.track i.off{background:#20262B}
+.track i.live{background:var(--amber)}
+
+/* system */
+.sys{max-width:1120px;margin:26px auto 0;padding:28px 40px 80px;border-top:1px solid var(--hair)}
+.sys .h{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);margin:0 0 10px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--hair);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:#E9ECEE;background:rgba(0,0,0,.5);padding:0 2px}
+.spec{font-size:13px;color:var(--dim);margin:0 0 6px;line-height:1.5}
+.spec b{color:var(--legend)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--dim)}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:7px;height:1px;background:var(--amber)}
+.toggle{border:1px solid var(--legend);background:transparent;color:var(--legend);padding:8px 14px;cursor:pointer;font-family:"Barlow Condensed";font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><span class="sq">QS</span><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Bảng chuyến</a>
+      <a href="#">Gửi</a>
+      <a href="#">Bảng giá</a>
+      <a href="#">Tài khoản</a>
+    </nav>
+    <span class="clock">14:20 ICT</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Bảng trạng thái · trực tiếp</p>
+      <h1>Mỗi tệp có <span>một chuyến</span>.</h1>
+      <p class="lede">Từ lúc chọn tệp tới lúc người nhận tải xong, mọi chặng đều hiện trên bảng: đang tải, đã chia sẻ, đã nhận, hết hạn.</p>
+      <div class="actions">
+        <a class="btn" href="#">Mở chuyến mới</a>
+        <a class="ghost" href="#">Tra mã</a>
+      </div>
+
+      <div class="progress">
+        <div class="progress__meta"><span>08F2K · anh-goc.zip</span><span>3 / 5 phần</span></div>
+        <div class="track" aria-label="Tiến độ 60 phần trăm">
+          <i></i><i></i><i></i><i class="live"></i><i class="off"></i>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="board">
+        <div class="board__head">
+          <span class="board__title">Bảng chuyến — 8F2K</span>
+          <span class="board__live"><i></i> Đang cập nhật</span>
+        </div>
+        <div class="cols">
+          <span>Chặng</span><span>Tệp</span><span>Dung lượng</span><span style="text-align:right">Trạng thái</span>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <span class="code">01</span>
+            <span class="name">anh-goc-bat-dong-san.zip</span>
+            <span class="size">2,4 GB</span>
+            <span class="status s-done">Đã tải lên</span>
+          </div>
+          <div class="row">
+            <span class="code">02</span>
+            <span class="name">ban-ve-hien-trang.pdf</span>
+            <span class="size">48,2 MB</span>
+            <span class="status s-done">Đã tải lên</span>
+          </div>
+          <div class="row">
+            <span class="code">03</span>
+            <span class="name">hop-dong-thue.docx</span>
+            <span class="size">1,8 MB</span>
+            <span class="status s-live">Đang gửi</span>
+          </div>
+          <div class="row">
+            <span class="code">04</span>
+            <span class="name">so-do-mat-bang.pdf</span>
+            <span class="size">12,4 MB</span>
+            <span class="status s-queued">Chờ</span>
+          </div>
+          <div class="row">
+            <span class="code">05</span>
+            <span class="name">giao-dich-dat.dng</span>
+            <span class="size">184,0 MB</span>
+            <span class="status s-held">Giữ pháp lý</span>
+          </div>
+        </div>
+        <div class="flap">
+          <span class="flap__k">Liên kết chia sẻ</span>
+          <span class="flap__v">quickshare.vn/d/8F2KQ7</span>
+          <span class="flap__module">ĐÃ SAO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="h">System sheet — Bảng chuyến</p>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#15181B"><i>board</i></span>
+        <span class="chip" style="background:#2A2F35"><i>flap</i></span>
+        <span class="chip" style="background:#E0A03C"><i>amber</i></span>
+        <span class="chip" style="background:#4FA36A"><i>green</i></span>
+        <span class="chip" style="background:#C85A4F"><i>red</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Màu <b>chỉ là trạng thái</b>. Không hình minh hoạ, không ảnh.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Barlow Condensed';font-size:22px;color:var(--legend);text-transform:uppercase;line-height:1">Barlow Condensed 700 — bảng</p>
+      <p class="spec" style="font-family:'Martian Mono';font-size:12px;color:var(--legend)">Martian Mono — mã, dung lượng</p>
+      <p class="spec">Cột phải canh phải; số luôn tabular.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Mọi trang là bảng: cột, hàng, trạng thái. Không thẻ nổi.</p>
+      <p class="rule">Một lần lật cho mỗi đổi trạng thái; tôn trọng giảm chuyển động.</p>
+      <p class="rule">Độ sâu là đường nối cơ khí, không phải bóng đổ mờ.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Tối: nhà ga ban đêm — nền tảng của thế giới này.</p>
+      <p class="spec">Sáng: nhà ga ban ngày — bảng xám, chữ mực.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

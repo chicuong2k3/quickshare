@@ -1,0 +1,302 @@
+@layout MainLayout
+@page "/account/requests"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.FileRequests.List
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["account_requests_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["account_requests_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["account_requests_lead"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountFileRequests" />
+
+    @* Creating one (issues #16, #17). The endpoints have existed since the file-request batch
+       and *nothing called them* — the same API-only defect the batch-11 audit found in four
+       other screens. A request nobody can create is a feature nobody has. *@
+    <Card class="account-card">
+        <CardContent>
+            <h2 class="text-xl font-semibold">@Loc["requests_create_title"]</h2>
+
+            <div class="workspace-form">
+                <label class="workspace-label" for="request-new-title">@Loc["requests_create_label"]</label>
+                <Input id="request-new-title" Type="text"
+                       maxlength="@FileRequest.TitleMaxLength" placeholder="@Loc["requests_create_placeholder"]" />
+
+                <label class="workspace-label" for="request-new-kind">@Loc["requests_create_kind"]</label>
+                <NativeSelect id="request-new-kind">
+                    <NativeSelectOption value="@FileRequestKind.Request.ToString()">@Loc["requests_kind_request"]</NativeSelectOption>
+                    <NativeSelectOption value="@FileRequestKind.Room.ToString()">@Loc["requests_kind_room"]</NativeSelectOption>
+                </NativeSelect>
+
+                <button type="button" data-slot="button" data-variant="default"
+                        data-error="@Loc["requests_create_failed"]"
+                        onclick="createRequest(this)"
+                        data-ai-action="request.create">@Loc["requests_create_btn"]</button>
+            </div>
+        </CardContent>
+    </Card>
+
+    <section id="requests-body" data-unpoly-reload>
+        <div id="requests-pages">
+            @if (items.Count == 0)
+            {
+                <div class="account-deliveries-empty">
+                    <p>@Loc["account_requests_empty"]</p>
+                    <a href="@RoutePaths.Send" data-slot="button" data-variant="default">@Loc["deliveries_empty_cta"]</a>
+                </div>
+            }
+            else
+            {
+                @Chunk
+            }
+        </div>
+        @NextPage
+    </section>
+
+</PageWrapper>
+
+<script>
+    // Create a request or a room (issues #16, #17).
+    window.createRequest = function (btn) {
+        var title = document.getElementById('request-new-title');
+        var kind = document.getElementById('request-new-kind');
+        if (!title.value.trim()) return;
+
+        btn.disabled = true;
+        fetch('/api/file-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title.value.trim(), kind: kind.value })
+        }).then(function (r) {
+            if (r.ok) { window.qsPage ? window.qsPage.reload('#requests-body') : window.location.reload(); return; }
+            btn.disabled = false;
+            window.alert(btn.getAttribute('data-error'));
+        }).catch(function () {
+            btn.disabled = false;
+            window.alert(btn.getAttribute('data-error'));
+        });
+    };
+
+    // The QR a room is meant to be handed out as (issue #17): printed, taped to a wall, pointed
+    // at with a phone. Rendered on demand, because most rows are never expanded.
+    window.showRequestQr = function (btn) {
+        var holder = document.getElementById(btn.getAttribute('data-target'));
+        if (!holder) return;
+        if (holder.innerHTML) { holder.innerHTML = ''; return; }
+        if (!window.qrcode) { holder.textContent = btn.getAttribute('data-unavailable'); return; }
+
+        var qr = window.qrcode(0, 'M');
+        qr.addData(btn.getAttribute('data-url'));
+        qr.make();
+
+        var count = qr.getModuleCount(), cell = 5, dim = count * cell;
+        var parts = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + dim + '" height="' + dim +
+            '" viewBox="0 0 ' + dim + ' ' + dim + '" role="img" aria-label="' + btn.getAttribute('data-aria') +
+            '" style="image-rendering:pixelated"><rect width="' + dim + '" height="' + dim + '" fill="#fff"/>'];
+        for (var r = 0; r < count; r++) {
+            for (var c = 0; c < count; c++) {
+                if (qr.isDark(r, c)) {
+                    parts.push('<rect x="' + (c * cell) + '" y="' + (r * cell) + '" width="' + cell +
+                        '" height="' + cell + '" fill="#0f172a"/>');
+                }
+            }
+        }
+        parts.push('</svg>');
+        holder.innerHTML = parts.join('');
+    };
+
+    window.closeRequest = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('request-', '');
+        var msg = btn.getAttribute('data-confirm');
+        if (msg && !window.confirm(msg)) return;
+        btn.disabled = true;
+        fetch('/api/file-requests/' + id + '/close', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                article.classList.add('account-delivery--spent');
+                article.querySelectorAll('button').forEach(function (b) { b.remove(); });
+                var expiry = article.querySelector('.account-delivery__expiry');
+                if (expiry) expiry.textContent = btn.getAttribute('data-closed-label');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.copyRequestLink = function (btn) {
+        var url = btn.getAttribute('data-url');
+        var done = function () {
+            var label = btn.textContent;
+            btn.textContent = btn.getAttribute('data-copied-label');
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(done, function () { copyRequestFallback(btn, url); });
+        } else {
+            copyRequestFallback(btn, url);
+        }
+    };
+    function copyRequestFallback(btn, value) {
+        var input = document.createElement('input');
+        input.value = value;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        try {
+            input.select();
+            document.execCommand('copy');
+            var label = btn.textContent;
+            btn.textContent = btn.getAttribute('data-copied-label');
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        } catch (_) { /* clipboard unavailable — leave the label as-is */ }
+        finally {
+            document.body.removeChild(input);
+        }
+    }
+</script>
+
+@code {
+    private const string CursorQueryKey = "cursor";
+    private const string ChunkClass = "requests-chunk";
+    private const int GaugeFullPercent = 100;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = CursorQueryKey)]
+    public string? Cursor { get; set; }
+
+    private List<FileRequestItem> items = [];
+    private string? nextCursor;
+    private string RequestBase => HttpContextAccessor.HttpContext is { } ctx
+        ? $"{ctx.Request.Scheme}://{ctx.Request.Host}"
+        : string.Empty;
+
+    /// <summary>One owner-scoped page of request rows.</summary>
+    private RenderFragment Chunk => @<div class="@ChunkClass account-deliveries">
+        @foreach (var item in items)
+        {
+            var closed = item.ClosedAt is not null;
+            var expired = !closed && item.ExpiresAt < DateTime.UtcNow;
+            var used = Math.Min(item.CurrentFileCount, item.MaxFiles);
+            var percent = item.MaxFiles > 0 ? used * GaugeFullPercent / item.MaxFiles : GaugeFullPercent;
+            var exhausted = item.MaxFiles > 0 && item.CurrentFileCount >= item.MaxFiles;
+            var spent = closed || expired || exhausted;
+            var link = RoutePaths.FileRequestPage + item.Code;
+
+            <article id="request-@item.Id" class="account-delivery @(spent ? "account-delivery--spent" : "")">
+                <div class="account-delivery__head">
+                    <span class="account-delivery__name" title="@item.Title">@item.Title</span>
+                    <a class="account-delivery__code text-primary underline-offset-4 hover:underline" href="@link" data-ai-action="request.open">/r/@item.Code</a>
+                    <span class="account-delivery__expiry text-muted-foreground">
+                        @if (closed)
+                        {
+                            @Loc["account_requests_closed"]
+                        }
+                        else if (expired)
+                        {
+                            @Loc["account_requests_expired"]
+                        }
+                        else
+                        {
+                            @Loc["account_requests_open"] <text>·</text> @ExpiryLabel(item.ExpiresAt)
+                        }
+                    </span>
+                </div>
+                <div class="account-delivery__gauge" role="img"
+                     aria-label="@string.Format(Loc["account_requests_files"], item.CurrentFileCount, item.MaxFiles)">
+                    <span class="account-delivery__gauge-fill" style="width:@(percent)%"></span>
+                </div>
+                <p class="account-delivery__meta text-muted-foreground">
+                    @string.Format(Loc["account_requests_files"], item.CurrentFileCount, item.MaxFiles)
+                    <text> · </text>@string.Format(Loc["account_requests_bytes"], FormatBytes(item.CurrentTotalBytes), FormatBytes(item.MaxTotalBytes))
+                    @if (!closed && !expired)
+                    {
+                        <button type="button" data-slot="button" data-variant="ghost"
+                                data-url="@link"
+                                data-copied-label="@Loc["account_requests_copied"]"
+                                onclick="copyRequestLink(this)" data-ai-action="request.copyLink">@Loc["upload_copy_link"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost"
+                                data-url="@($"<iframe src=\"{RequestBase}{RoutePaths.WidgetPage}{item.Code}\" width=\"100%\" height=\"260\" frameborder=\"0\" loading=\"lazy\"></iframe>")"
+                                data-copied-label="@Loc["account_requests_copied"]"
+                                onclick="copyRequestLink(this)" data-ai-action="request.copyEmbed">@Loc["requests_copy_embed"]</button>
+                        @* The QR a room is handed out as (issue #17): printed, taped to a wall,
+                           pointed at with a phone. *@
+                        <button type="button" data-slot="button" data-variant="ghost"
+                                data-url="@link"
+                                data-target="request-qr-@item.Id"
+                                data-aria="@Loc["requests_qr_aria"]"
+                                data-unavailable="@Loc["requests_qr_unavailable"]"
+                                onclick="showRequestQr(this)" data-ai-action="request.qr">@Loc["requests_qr"]</button>
+                        <button type="button" data-slot="button" data-variant="ghost"
+                                data-confirm="@Loc["account_requests_close_confirm"]"
+                                data-closed-label="@Loc["account_requests_closed"]"
+                                onclick="closeRequest(this)" data-ai-action="request.close">@Loc["account_requests_close"]</button>
+                    }
+                </p>
+                <div id="request-qr-@item.Id" class="request-qr"></div>
+            </article>
+        }
+
+    </div>;
+
+    private RenderFragment NextPage => @<div class="account-deliveries-more">
+        @if (nextCursor is not null)
+        {
+            <a id="requests-next-page" href="@BodyUrl(nextCursor)"
+               data-slot="button" data-variant="ghost"
+               up-defer="reveal" up-follow="false" up-history="false"
+               up-target="#requests-next-page, #requests-pages:after">@Loc["account_requests_load_more"]</a>
+        }
+        else
+        {
+            <span id="requests-next-page" hidden></span>
+        }
+    </div>;
+
+    private string BodyUrl(string? cursor)
+    {
+        return string.IsNullOrEmpty(cursor)
+            ? RoutePaths.AccountFileRequests
+            : $"{RoutePaths.AccountFileRequests}?{CursorQueryKey}={Uri.EscapeDataString(cursor)}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Bus.Send<LightResults.Result<CursorPage<FileRequestItem>>>(
+            new ListFileRequestsQuery(Cursor), CancellationToken.None);
+
+        if (result.IsSuccess(out var page))
+        {
+            items = page.Items;
+            nextCursor = page.NextCursor;
+        }
+    }
+
+    private string ExpiryLabel(DateTime expiresAt)
+    {
+        var remaining = expiresAt - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero) return Loc["deliveries_expired"];
+        if (remaining.TotalHours < 1) return string.Format(Loc["deliveries_expires_minutes"], (int)remaining.TotalMinutes + 1);
+        if (remaining.TotalHours < HoursPerDay) return string.Format(Loc["deliveries_expires_hours"], (int)remaining.TotalHours);
+        return string.Format(Loc["deliveries_expires_days"], (int)remaining.TotalDays);
+    }
+
+    private const int HoursPerDay = 24;
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        var magnitude = (int)Math.Floor(Math.Log(bytes, 1024));
+        if (magnitude >= units.Length) magnitude = units.Length - 1;
+        var size = bytes / Math.Pow(1024, magnitude);
+        return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
+    }
+}

@@ -1,0 +1,173 @@
+# Tester Onboarding — QuickShare
+
+Read this first if you are testing QuickShare. You do **not** need to read `AGENTS.md`
+(that file is instructions for AI agents). Everything you need is here + `docs/backlog.md`.
+
+## Your job in 3 questions
+
+| Question | Answer |
+|---|---|
+| Which features exist / matter? | `docs/backlog.md` — tiered feature inventory |
+| What can I test right now (implemented)? | `docs/TESTABLE.md` — implemented + testable snapshot |
+| **What order do I test everything in?** | **`docs/test-runbook.md` — ordered manual checklist (risk-first: money → core → security → ops)** |
+| What to test for one issue? | The issue's `## Manual Test Checklist` section |
+| What to re-test after a change? | Regression matrix below |
+
+## Environment
+
+```bash
+# run the app (local dev)
+dotnet run --project src/QuickShare
+
+# automated suites (prove the basics before manual work)
+dotnet test tests/QuickShare.Server.Tests    # ~320s, 747 tests
+dotnet test tests/QuickShare.Browser.Tests   # ~143s, 31 tests (install chromium once: playwright.ps1 install)
+```
+
+**There is no dev auto-signin.** Signing in locally goes through the real Google consent
+screen, so `Authentication:Google:ClientId` + `ClientSecret` must be configured (see
+[`SETUP.md`](SETUP.md)). Without them, every `/account/*` page renders **Page not found** —
+that is the auth gate, not a bug. Anonymous pages (`/`, `/send`, `/d/{code}`, `/pricing`)
+need no credentials.
+
+Browser tests drive the **installed Chrome** via a real process (`BrowserAppFixture`) — no
+browser download needed.
+
+## Issue → test workflow
+
+1. Open the issue. Find `## Manual Test Checklist` (this is mandatory per AGENTS.md →
+   Feature Issue Testing Rule).
+2. **No checklist → BLOCK the issue.** It is incomplete. Ask the developer to add it before
+   you spend time testing. Do not invent your own test scope.
+3. Execute every checkbox, one by one. Each step states *action → expected result*.
+4. Record pass/fail with evidence:
+   - UI change → screenshot
+   - API/backend → response body or log line
+   - otherwise → written pass/fail note
+5. Large/critical features (auth, billing, payments, P2P, or 3+ modules) get a separate
+   `[Manual Test] <Feature>` issue — test against that, and close it when done.
+
+## Feature → automated coverage map
+
+| Feature area | Automated tests |
+|---|---|
+| Upload / download / plan limits | `UploadDownloadFlowTests`, `UploadResumeTests`, `MonthlyQuotaTests`, `UploadResumeBrowserTests` |
+| Download page gates (OTP, ad, expiry) | `DownloadPageTests`, `DownloadNoScriptTests` |
+| Delivery extras (brand, abort, P2P share) | `DeliveryExtrasApiTests`, `DeliveryActivationJobTests` |
+| Delivery manage (revoke #322, rename #318, .ics #232, filter/search #214, clone #218, expired archive #222, 404 #206, alias #311, daily cap #227, favorites #242) | `DeliveryManageTests` |
+| Trust/retention extras (burn, SHA-256, extend, stats) | `DeliveryTrustExtrasTests` |
+| Auth | `AuthFlowTests` |
+| Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountUnpolyMigrationTests` (direct GET/card layout, invoice and recurring owner/plan isolation), `AccountDeliveriesTests`, `UpgradeFlowTests` |
+| File requests (#16) — create/list/close/owner-isolation/digest; direct SSR, Unpoly cursor and no-JS pagination | `FileRequestsApiTests`, `FileRequestDigestJobTests`, `FileRequestsUnpolyBrowserTests` |
+| Notification center (#246) — list/read/unread-count/sources/retention, Unpoly filters/pagination and no-JS GET | `NotificationCenterTests`, `NotificationJobTests`, `NotificationUnpolyBrowserTests` (browser read-all stubs JSON API: EF InMemory lacks `ExecuteUpdateAsync`; server suite checks API and form CSRF/redirect) |
+| Upload from URL (#57) — Pro-gate/full-flow + SSRF guard | `UploadFromUrlTests`, `IpAddressSafetyTests` |
+| Extension requests (#233) — request/dedup/approve/reject/toggle and no-JS direct GET | `ExtensionRequestTests` |
+| Unpoly migration (in progress) — asset/head, public Vary, targeted fragment and browser swaps | `UnpolyMigrationTests`, `AccountUnpolyMigrationTests`, `WorkspaceTests` (audit, approvals, report, workspace roles, seat/brand/domain/channel/SIEM/backup GET isolation and secret non-disclosure), `AdminFeedbackUnpolyTests`, `ExtensionRequestTests`, `NotificationUnpolyBrowserTests`, `FileRequestsUnpolyBrowserTests`, `WorkspaceAuditUnpolyBrowserTests`, `AccountReloadUnpolyBrowserTests` (invoices, recurring, approvals, workspace, domain, brand, channel, SIEM, backup) |
+| Office document preview (#94) — docx/xlsx/pptx extraction + gating | `OfficeTextExtractorTests`, `OfficePreviewTests` |
+| Multi-recipient share (#37) — recipient limit + normalization | `MultiRecipientTests` |
+| Web push (#103) — subscribe/upsert/unsubscribe/vapid-key | `PushSubscriptionTests` |
+| Privacy mode (#187) — no tracking/analytics, count hidden | `PrivacyModeTests` |
+| Email OTP gate (#291) — request/cooldown/verify/single-use | `EmailOtpTests` |
+| Password breach check (#280) — client-side HIBP k-anonymity | manual only (browser) |
+| Recipient email gate (#324) — require/store email + consent | `RecipientEmailGateTests` |
+| Public delivery stats (#294) — opt-in stats page/API, privacy-mode hidden | `PublicStatsTests` |
+| Recent recipients + address book (#316) — capture-on-commit, list/upsert/delete, privacy/anonymous skip, isolation, export | `RecipientContactTests` |
+| Account data export + deletion (#59) | `AccountDeletionTests` |
+| Legal hold (#266) — hold/lift/report + every deletion path refusing | `LegalHoldTests` |
+| Retention policy (#161) — window math + clamp sites, sweep, dry-run preview | `RetentionPolicyTests`, `RetentionPolicyApiTests` |
+| Delivery scope rules (#142 IP allowlist, #166 country allow/deny) | `DeliveryAccessPolicyTests`, `DeliveryAccessScopeTests` |
+| Team workspaces (#106 seats/pooled quota, #252 transfer, #145 audit, #300 report) | `WorkspaceTests` |
+| Shared folders (#151), per-folder upload defaults (#245), folder templates (#234) | `WorkspaceFolderTests` |
+| Billing ledger — seats (#278), overage (#141), invoices (#112), PO/net terms (#192) | `BillingLedgerTests` |
+| Tenant isolation (#190) — cross-tenant probes on every workspace-scoped surface | `TenantIsolationTests` |
+| SIEM streaming (#191) + self-serve DPA (#184) | `SiemAndDpaTests` |
+| S3-compatible object store (#171) + scheduled workspace backup (#271) | `StorageAndBackupTests` |
+| Data residency (#119) — key format, entitlement, backward compatibility | `StorageResidencyTests` |
+| Workspace branding (#285) + custom fonts (#286) | `WorkspaceBrandTests` |
+| Approval gating (#162) + recurring delivery (#176) | `ApprovalAndRecurringTests` |
+| Delivery comments (#289) + Slack/Teams posting (#180) | `CommentsAndChannelTests` |
+| Wiring regressions found by audit — gates actually applied, notifiers actually called, pages actually render | `AuditRegressionTests` |
+| B2B screens carry their data — approval queue, schedule list, channel config, comment thread | `B2BUiTests` |
+| Enterprise identity — authenticator, SSO directory proof, SCIM lifecycle, MFA policy | `EnterpriseIdentityTests` |
+| SAML sign-in — signature, issuer, replay, domain filter | `SamlSsoTests` |
+| Multi-file deliveries — the one-row invariant, key ownership, zip behaviour | `MultiFileDeliveryTests` |
+| Developer platform — key hashing, signature construction, retry, replay | `DeveloperPlatformTests` |
+| Subscription lifecycle — promo redemption, proration bounds, pause banking | `SubscriptionLifecycleTests` |
+| Sessions — revocation biting immediately, idle timeout, SCIM offboarding | `SessionManagementTests` |
+| Passwordless sign-in — challenge consumption, single-use links, no existence oracle | `PasskeyAndMagicLinkTests` |
+| Payment (PayOS) | `PaymentFlowTests`, `PayOSWebhookSignatureTests` |
+| P2P WebRTC | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests`, `P2PNetworkPreflightTests`, `P2PQuotaAndAdTests` |
+| Analytics | `AnalyticsTrackingTests` |
+| Sender email (confirm/unsubscribe/rate-limit) | `SenderEmailConfirmTests`, `SenderEmailUnsubscribeTests`, `SenderEmailRateLimiterTests`, `SenderEmailTokensTests` |
+| Security headers + robots | `SecurityHeadersTests` |
+| Trust static pages (security.txt, changelog, roadmap) | `PageCoverageTests` |
+| SEO + trust (sitemap, robots, compare, why-private) | `PageCoverageTests` |
+| Rate-limit headers + help center | `PageCoverageTests` |
+| Rate limiting escalating backoff (#52) | `RateLimitingMiddlewareTests` |
+| CSV export + feedback | `FeedbackExportTests` |
+| OTP brute-force lockout | `OtpLockoutTests` |
+| Share password (download gate) | `DeliveryPasswordTests` |
+| New-device login tracking | `DeviceTrackerTests` |
+| Security activity audit trail | `SecurityEventTests` |
+| Abuse/DMCA reports + admin | `AbuseReportTests` |
+| Localization vi/en | `LocalizationTests`, `LanguageSwitchTests` |
+| SSR / Unpoly cache / page render | `PageRenderingTests`, `ResponseCacheTests`, `PageLoadTests`, `PageCoverageTests` |
+| Quick Paste | `QuickPasteTests`, `PasteBrowserTests` |
+| R2 storage | `R2ObjectKeyTests`, `OrphanSweepJobTests`, `LocalDiskStorageProviderStubTests`, `R2StorageExceptionTests` |
+| Smoke / no-JS-error pages | `SmokeTests` |
+
+## Regression matrix
+
+When code changes in an area, re-run BOTH the automated suite for that area AND the manual
+checklist of the touched issue. Minimum regression set per change:
+
+| Changed area | Re-run automated | Re-check manually |
+|---|---|---|
+| Upload / R2 / chunking | `UploadDownloadFlowTests`, `UploadResumeTests`, `R2ObjectKeyTests`, `OrphanSweepJobTests` | large-file upload, resume after network drop |
+| Download / delivery gates | `DownloadPageTests`, `DownloadNoScriptTests`, `DeliveryExtrasApiTests` | OTP, expired, no-JS path |
+| Payment / billing | `PaymentFlowTests`, `PayOSWebhookSignatureTests`, `UpgradeFlowTests` | PayOS sandbox (real money) |
+| Auth / login | `AuthFlowTests` | Google OAuth (real screen) |
+| P2P | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests` | NAT/4G real devices |
+| Any code that deletes a delivery or an R2 object | `LegalHoldTests` | held row survives the new path |
+| Any code that computes an expiry (upload, extend, approve, sweep) | `RetentionPolicyTests`, `RetentionPolicyApiTests` | clamped date is the ceiling, not a shortening |
+| Any recipient-facing content path (page, byte stream, preview, ZIP) | `DeliveryAccessScopeTests`, `DeliveryAccessPolicyTests` | refused caller sees no file name |
+| Any code writing `User.Plan`, or any new upload/quota path | `WorkspaceTests` | seats still inherit the owner plan; a member's bytes still land on the owner's usage row |
+| Any code creating or deleting folders, or any upload path that can target one | `WorkspaceFolderTests` | locked defaults still bind; a non-empty folder still refuses deletion |
+| Any code that adds a charge, reads a quota result, or touches invoice state | `BillingLedgerTests` | the charge reaches the issued invoice; Studio still meters while Pro still blocks |
+| **Any new workspace-scoped route that takes an id** | `TenantIsolationTests` | another tenant holding a real id still gets nothing, and the response is indistinguishable from a plain 404 |
+| Any code that publishes a delivery to recipients, or copies one | `ApprovalAndRecurringTests` | a held share still 404s on both recipient paths; a copy keeps its region and drops the original's hold |
+| **Any new service, notifier or gate** | `AuditRegressionTests` | something actually calls it — assert an observable side effect, not just the function's return value |
+| **Any new endpoint a person is meant to use** | `B2BUiTests` | a page renders its data — assert the rendered HTML, because a passing endpoint test says nothing about whether a screen exists |
+| **Any code implementing a published standard** (TOTP, SCIM, OIDC) | `EnterpriseIdentityTests` | anchor to the spec's own reference vector or wire format — a broken implementation is still self-consistent |
+| **Any change that adds a shape to an existing entity** | `MultiFileDeliveryTests` | the *old* shape still behaves identically — additive means the previous case is untouched, and only a test says so |
+| **Any endpoint that takes an email address** | `PasskeyAndMagicLinkTests` | it answers identically for a known and an unknown address — including when a dependency fails, which is how the leak usually gets in |
+| **Anything touching money** | `SubscriptionLifecycleTests` | write the test as what must never happen — negative price, double redemption, a credit that pays out — not as the happy path |
+| **Any outbound integration** | `DeveloperPlatformTests` | it retries and survives the receiver being down — an integration that drops events on the first failure is worse than none |
+| **Any signature or token check** | `SamlSsoTests` | mint a real valid artefact, then change one attacker-controlled thing and require rejection — a checker that rejects everything passes every negative test |
+| **Any provisioning or offboarding path** | `EnterpriseIdentityTests` | it revokes as well as creates — half a lifecycle is exactly what procurement is asking about |
+| Analytics | `AnalyticsTrackingTests` | — |
+| Localization | `LocalizationTests`, `LanguageSwitchTests` | — |
+| SSR / Unpoly page render | `PageRenderingTests`, `ResponseCacheTests`, `PageLoadTests`, `SmokeTests` | — |
+| Any visible UI | `SmokeTests` | drag&drop, clipboard feel |
+
+## Manual-only (automation cannot cover — always a human)
+
+- P2P over real NAT / 4G networks
+- Real mobile Safari + Chrome (iOS/Android)
+- PayOS sandbox with real money movement
+- Google OAuth on the real consent screen
+- Drag-and-drop / clipboard feel (UX judgment)
+- Screenshot evidence for any UI change
+
+## Reporting
+
+- Pass/fail + evidence goes in the issue or PR `## Manual Test Evidence` section.
+- A feature is **not done** until every checklist item is checked with evidence.
+- Ambiguous or contradictory expected result → ask, do not guess.
+
+---
+
+## Keep fresh
+
+Update this file when a test suite is added/renamed/removed or a feature's coverage changes.
+See `AGENTS.md` → Issue Completion Docs Update Rule.

@@ -1,0 +1,220 @@
+@layout MainLayout
+@page "/account/invoices"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Payments
+@using QuickShare.Features.Payments.Billing
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["invoices_title"]</PageTitle>
+
+@* Financial documents — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["invoices_title"]</h1>
+        <p class="text-muted-foreground">@Loc["invoices_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountBilling" />
+
+    @Chunk
+
+</PageWrapper>
+
+<script src="/js/billing.js" defer></script>
+
+@code {
+    private const int TermsNone = 0;
+    private const int Terms30 = 30;
+
+    private List<Invoice> invoices = [];
+    private BillingProfile? profile;
+
+    private RenderFragment Chunk => @<section id="invoices-body" data-unpoly-reload>
+        @* Billing identity (issues #112 VAT fields, #192 PO + terms). *@
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["billing_profile_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["billing_profile_subtitle"]</p>
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="bill-company">@Loc["billing_company"]</label>
+                    <Input id="bill-company"  type="text"
+                           maxlength="@BillingProfile.CompanyNameMaxLength" value="@profile?.CompanyName" />
+
+                    <label class="workspace-label" for="bill-taxcode">@Loc["billing_taxcode"]</label>
+                    <Input id="bill-taxcode"  type="text"
+                           maxlength="@BillingProfile.TaxCodeMaxLength" value="@profile?.TaxCode" />
+
+                    <label class="workspace-label" for="bill-address">@Loc["billing_address"]</label>
+                    <Input id="bill-address"  type="text"
+                           maxlength="@BillingProfile.AddressMaxLength" value="@profile?.Address" />
+
+                    <label class="workspace-label" for="bill-email">@Loc["billing_email"]</label>
+                    <Input id="bill-email"  type="email" value="@profile?.BillingEmail" />
+
+                    <label class="workspace-label" for="bill-po">@Loc["billing_po"]</label>
+                    <Input id="bill-po"  type="text"
+                           maxlength="@BillingProfile.PoNumberMaxLength" value="@profile?.PoNumber" />
+
+                    <label class="workspace-label" for="bill-terms">@Loc["billing_terms"]</label>
+                    <NativeSelect id="bill-terms">
+                        <NativeSelectOption value="0" selected="@(RequestedTerms == TermsNone)">@Loc["billing_terms_none"]</NativeSelectOption>
+                        <NativeSelectOption value="30" selected="@(RequestedTerms == Terms30)">@Loc["billing_terms_30"]</NativeSelectOption>
+                        <NativeSelectOption value="60" selected="@(RequestedTerms > Terms30)">@Loc["billing_terms_60"]</NativeSelectOption>
+                    </NativeSelect>
+
+                    @if (RequestedTerms > TermsNone)
+                    {
+                        <p class="text-muted-foreground workspace-hint">
+                            @(profile?.NetTermsApprovedAt is null ? Loc["billing_terms_pending"] : Loc["billing_terms_approved"])
+                        </p>
+                    }
+
+                    <button type="button" data-slot="button" data-variant="default"
+                            data-saved-label="@Loc["billing_saved"]"
+                            onclick="window.quickShareBilling.saveProfile(this)"
+                            data-ai-action="billing.profile.save">@Loc["billing_save"]</button>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["invoices_title"]</h2>
+
+                @if (invoices.Count == 0)
+                {
+                    <p class="text-muted-foreground workspace-hint">@Loc["invoices_empty"]</p>
+                }
+                else
+                {
+                    <p class="workspace-filters">
+                        <a data-slot="button" data-variant="ghost" href="/api/billing/invoices/export"
+                           data-ai-action="invoices.export">@Loc["invoices_export"]</a>
+                    </p>
+
+                    <Table class="workspace-table">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead scope="col">@Loc["invoices_col_number"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_period"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_status"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_due"]</TableHead>
+                                    <TableHead scope="col">@Loc["invoices_col_total"]</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                @foreach (var invoice in invoices)
+                                {
+                                    <TableRow>
+                                        <TableCell>@(invoice.IsDraft ? Loc["invoices_draft"].Value : invoice.Number)</TableCell>
+                                        <TableCell>@invoice.PeriodStart.ToString("yyyy-MM")</TableCell>
+                                        <TableCell>@StatusLabel(invoice)</TableCell>
+                                        <TableCell>@(invoice.DueAt is { } due ? due.ToLocalTime().ToString("d") : string.Empty)</TableCell>
+                                        <TableCell>@PlanCatalog.FormatPrice((int)invoice.Total, invoice.Currency)</TableCell>
+                                    </TableRow>
+                                }
+                            </TableBody>
+                        </Table>
+                }
+            </CardContent>
+        </Card>
+
+        @* Printable document for the newest issued invoice — the browser makes the PDF. *@
+        @if (Printable is { } printable)
+        {
+            <Card class="account-card workspace-card invoice-print">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@printable.Number</h2>
+                    <p class="text-muted-foreground workspace-hint">
+                        @printable.CompanyName
+                        @if (!string.IsNullOrEmpty(printable.TaxCode))
+                        {
+                            <text> · MST @printable.TaxCode</text>
+                        }
+                        @if (!string.IsNullOrEmpty(printable.PoNumber))
+                        {
+                            <text> · PO @printable.PoNumber</text>
+                        }
+                    </p>
+
+                    <Table class="workspace-table">
+                            <TableBody>
+                                @foreach (var line in printable.Lines.OrderBy(l => l.CreatedAt))
+                                {
+                                    <TableRow>
+                                        <TableCell>@LineLabel(line.Kind)</TableCell>
+                                        <TableCell>@line.Description</TableCell>
+                                        <TableCell>@PlanCatalog.FormatPrice((int)line.Amount, printable.Currency)</TableCell>
+                                    </TableRow>
+                                }
+                                <TableRow>
+                                    <TableCell colspan="2">@Loc["invoices_subtotal"]</TableCell>
+                                    <TableCell>@PlanCatalog.FormatPrice((int)printable.Subtotal, printable.Currency)</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell colspan="2">@Loc["invoices_tax"]</TableCell>
+                                    <TableCell>@PlanCatalog.FormatPrice((int)printable.TaxAmount, printable.Currency)</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell colspan="2"><strong>@Loc["invoices_total"]</strong></TableCell>
+                                    <TableCell><strong>@PlanCatalog.FormatPrice((int)printable.Total, printable.Currency)</strong></TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+
+                    <p class="text-muted-foreground workspace-hint">@Loc["invoices_not_certified"]</p>
+
+                    <button type="button" class="invoice-print__hide" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="window.print()" data-ai-action="invoice.print">@Loc["invoices_print"]</button>
+                </CardContent>
+            </Card>
+        }
+    </section>;
+
+    private int RequestedTerms => profile?.NetTermsDays ?? TermsNone;
+
+    private Invoice? Printable => invoices.FirstOrDefault(i => !i.IsDraft);
+
+    private string StatusLabel(Invoice invoice) => invoice.Status switch
+    {
+        InvoiceStatus.Paid => Loc["invoices_status_paid"],
+        InvoiceStatus.Overdue => Loc["invoices_status_overdue"],
+        InvoiceStatus.Issued => Loc["invoices_status_issued"],
+        _ => Loc["invoices_status_draft"],
+    };
+
+    private string LineLabel(string kind) => kind switch
+    {
+        InvoiceLineKind.Seat => Loc["invoices_line_seat"],
+        InvoiceLineKind.Overage => Loc["invoices_line_overage"],
+        _ => Loc["invoices_line_plan"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
+
+        profile = await Db.BillingProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == user.Id, CancellationToken.None);
+
+        invoices = await Db.Invoices
+            .AsNoTracking()
+            .Include(i => i.Lines)
+            .Where(i => i.UserId == user.Id && i.Status != InvoiceStatus.Void)
+            .OrderByDescending(i => i.PeriodStart)
+            .ThenByDescending(i => i.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+    }
+}

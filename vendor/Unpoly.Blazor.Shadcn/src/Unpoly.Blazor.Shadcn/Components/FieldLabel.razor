@@ -1,0 +1,27 @@
+@inherits UiComponentBase
+
+@* A real <label>, which this was not. It rendered a <div>, so `For` reached nothing: clicking a
+   field's label never focused or toggled its control, anywhere in the library. The extractor had
+   keyed data-slot="field-label" to the LAST upstream function that renders it — FieldTitle, a
+   div — and parity then compared our div against their div and passed.
+
+   With the right function read, the rest arrives too: wrap a <Field> in one of these and it
+   becomes a card, and the card lights up when the control inside is checked. That is the whole
+   "press anywhere on the card" treatment, and it was simply missing. *@
+
+<label for="@For" data-slot="field-label" class="@Cn(Base, Class)"
+       @attributes="AdditionalAttributes">@ChildContent</label>
+
+@code {
+    /// <summary>The id of the control this labels.</summary>
+    [Parameter] public string? For { get; set; }
+
+    /// <summary>Shared with <see cref="FieldTitle"/>, which is this as a div rather than a label.</summary>
+    internal const string Base =
+        "group/field-label peer/field-label flex w-fit gap-2 leading-snug " +
+        "group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:w-full " +
+        "has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md " +
+        "has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4 " +
+        "has-[:checked]:border-primary has-[:checked]:bg-primary/5 " +
+        "dark:has-[:checked]:bg-primary/10";
+}

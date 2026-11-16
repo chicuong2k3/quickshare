@@ -1,0 +1,28 @@
+@inherits UiComponentBase
+
+@* A row of toggles. `Multiple` decides whether the items are checkboxes or radios, which is the
+   DOM's own version of Radix's type="single" | "multiple" — and it means the group posts either
+   a list of values or one value with no JavaScript involved. *@
+
+<div data-slot="toggle-group" role="group" data-variant="@Variant" data-size="@Size"
+     data-spacing="@Spacing" style="@($"--gap: {Spacing}")" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "default";
+    [Parameter] public string Size { get; set; } = "default";
+
+    /// <summary>
+    /// Gap between items, in Tailwind spacing units. 0 — the default, and shadcn's — joins them
+    /// into one segmented control with shared borders; anything else spaces them out. It is both
+    /// an attribute and the --gap custom property, because the recipe reads one and the gap
+    /// utility reads the other.
+    /// </summary>
+    [Parameter] public int Spacing { get; set; }
+
+    const string Base =
+        "group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md " +
+        "data-[spacing=default]:data-[variant=outline]:shadow-xs";
+
+    string Classes => Cn(Base, Class);
+}

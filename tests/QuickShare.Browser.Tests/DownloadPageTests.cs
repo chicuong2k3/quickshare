@@ -15,11 +15,26 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
     private const string TestOtp = "123456";
     private const string WrongOtp = "000000";
 
+    private const string PatchBody = """
+        diff --git a/readme.txt b/readme.txt
+        index 1111111..2222222 100644
+        --- a/readme.txt
+        +++ b/readme.txt
+        @@ -1,3 +1,3 @@
+         hello
+        -world
+        +world!
+         same line
+        """;
+
     private readonly BrowserFixture _fx;
 
-    public DownloadPageTests(BrowserFixture fx) => _fx = fx;
+    public DownloadPageTests(BrowserFixture fx)
+    {
+        _fx = fx;
+    }
 
-    private async Task<string> SeedDeliveryAsync(string? senderPlan = null, string? otp = null, bool expired = false)
+    private async Task<string> SeedDeliveryAsync(string? senderPlan = null, string? otp = null, bool expired = false, string? fileName = null, string? contentType = null)
     {
         var shareCode = $"bt-{Guid.NewGuid():N}"[..12];
         using var scope = _fx.Services.CreateScope();
@@ -43,8 +58,8 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
         {
             Id = Guid.CreateVersion7(),
             SenderId = senderId,
-            FileName = "browser-test.pdf",
-            ContentType = "application/pdf",
+            FileName = fileName ?? "browser-test.pdf",
+            ContentType = contentType ?? "application/pdf",
             FileSize = 2048,
             TotalBytes = 2048,
             ChunkCount = 1,
@@ -133,6 +148,50 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
 
         await Assertions.Expect(page.Locator("h1")).ToContainTextAsync("This link",
             new LocatorAssertionsToContainTextOptions { Timeout = 10_000 });
+    }
+
+    [Fact]
+    public async Task PatchFile_RendersDiffPreview_WithModesAndRawFallback()
+    {
+        var code = await SeedDeliveryAsync(senderPlan: PlanTierLimits.Pro, fileName: "sample.patch", contentType: "application/octet-stream");
+        var context = await _fx.CreateContextAsync();
+        var page = await context.NewPageAsync();
+        // Preview fetches /api/downloads/{code}; intercept and serve the patch body.
+        await page.RouteAsync("**/api/downloads/**", route =>
+            route.FulfillAsync(new RouteFulfillOptions
+            {
+                Status = 200,
+                ContentType = "text/plain",
+                Body = PatchBody,
+            }));
+        await page.GotoAsync(_fx.BaseUrl + $"/d/{code}");
+
+        await Assertions.Expect(page.Locator("#download-phase-file")).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+        await Assertions.Expect(page.Locator("#dl-text-preview")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("#dl-diff-toolbar")).ToBeVisibleAsync();
+
+        // Unified mode: add/del rows with +/- markers and line numbers.
+        var addRow = page.Locator(".dl-diff__row--add");
+        var delRow = page.Locator(".dl-diff__row--del");
+        await Assertions.Expect(addRow).ToHaveCountAsync(1);
+        await Assertions.Expect(delRow).ToHaveCountAsync(1);
+        await Assertions.Expect(addRow).ToContainTextAsync("world!");
+        await Assertions.Expect(delRow).ToContainTextAsync("world");
+        await Assertions.Expect(page.Locator(".dl-diff__row--del .dl-diff__ln").First).ToHaveTextAsync("2");
+        await Assertions.Expect(page.Locator(".dl-diff__marker")).ToHaveCountAsync(4);
+
+        // Split mode: old | new side-by-side pairs.
+        await page.ClickAsync("#dl-diff-mode-btn");
+        await Assertions.Expect(page.Locator(".dl-diff__pair")).ToHaveCountAsync(3);
+        await Assertions.Expect(page.Locator(".dl-diff__side--del")).ToContainTextAsync("world");
+        await Assertions.Expect(page.Locator(".dl-diff__side--add")).ToContainTextAsync("world!");
+
+        // Raw fallback: plain text, toolbar stays, mode button hides.
+        await page.ClickAsync("#dl-diff-raw-btn");
+        await Assertions.Expect(page.Locator(".dl-diff__row--add")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("#dl-text-body")).ToContainTextAsync("world!");
+        await Assertions.Expect(page.Locator("#dl-diff-mode-btn")).ToBeHiddenAsync();
     }
 
     private static async Task FillOtpAsync(IPage page, string otp)

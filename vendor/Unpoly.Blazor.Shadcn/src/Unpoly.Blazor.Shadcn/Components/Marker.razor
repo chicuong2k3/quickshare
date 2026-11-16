@@ -1,0 +1,40 @@
+@inherits UiComponentBase
+
+@* A small labelled mark in a stream of text — a citation, a source, a step number. shadcn ships
+   it with its AI components, where it points at whatever a model is quoting. *@
+
+@* Upstream makes this polymorphic with `render`; here an Href renders the <a> — so a marker
+   that points somewhere is followable, openable in a tab and shows its target in the status bar,
+   which a span wrapped in a link cannot do without making two focus stops out of one thing. *@
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="marker" data-variant="@Variant" class="@Classes"
+       @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <span data-slot="marker" data-variant="@Variant" class="@Classes"
+          @attributes="AdditionalAttributes">@ChildContent</span>
+}
+
+@code {
+    /// <summary>Where it points. With one, the marker itself is the link.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>default | separator | border</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    const string Base =
+        "group/marker relative flex min-h-4 w-full items-center gap-2 text-start text-control " +
+        "text-muted-foreground [&_svg:not([class*='size-'])]:size-4 [a]:underline " +
+        "[a]:underline-offset-3 [a]:hover:text-foreground";
+
+    string VariantClass => Variant switch
+    {
+        "border" => "border-b border-border pb-2",
+        "separator" => "before:me-1 before:h-px before:min-w-0 before:flex-1 before:bg-border after:ms-1 after:h-px after:min-w-0 after:flex-1 after:bg-border",
+        _ => "",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

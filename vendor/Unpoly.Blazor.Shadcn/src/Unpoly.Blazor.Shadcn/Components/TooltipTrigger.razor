@@ -1,0 +1,32 @@
+@inherits UiComponentBase
+
+@* aria-describedby, not aria-label: the tooltip describes the control, it does not replace its
+   name. A trigger must be focusable for keyboard users to ever see it, which is why this is a
+   <button> and not a <span> — an icon with a tooltip nobody can tab to is decoration. *@
+
+<button type="button" data-slot="tooltip-trigger" data-target="@Target" data-delay="@Delay"
+        aria-describedby="@Target" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    /// <summary>The id of the <see cref="TooltipContent"/> it opens.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    /// <summary>Milliseconds of hover before it appears. Focus opens after the same delay.</summary>
+    /// <summary>
+    /// Milliseconds of hover before it opens. Zero, which is shadcn's own default: a tooltip is
+    /// a label, and a label that arrives a fifth of a second late reads as the page thinking.
+    /// A hover CARD delays, because it costs a request and covers what is underneath.
+    /// </summary>
+    [Parameter] public int Delay { get; set; }
+
+    /// <summary>
+    /// The button recipe, as on every other trigger here. Null — the default — renders no
+    /// recipe at all, which is what a trigger wrapping something already styled wants; naming
+    /// a variant gives the ordinary button.
+    /// </summary>
+    [Parameter] public string? Variant { get; set; }
+
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => Variant is null ? Class ?? "" : ButtonVariants.Of(Variant, Size, Class);
+}

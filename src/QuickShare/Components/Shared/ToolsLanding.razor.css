@@ -1,0 +1,123 @@
+/* ─── /tools · board material (DESIGN.md — "Bảng chuyến") ───────────
+   One shell, so one layer: the three static tool pages inherit from this
+   component. Reading surfaces keep a reading type size. */
+
+.tools-board {
+    --d-panel: #1d2125;
+    --d-flap: #2a2f35;
+    --d-slot: #0e1113;
+    --d-ink: #e9ecee;
+    --d-body: #ccd5d3;
+    --d-dim: #8b939b;
+    --d-hair: #31373e;
+    --d-amber: #e0a03c;
+
+    /* the article's `mx-auto` utility is not in the generated sheet, so the
+       board centres itself instead of relying on it */
+    margin-inline: auto;
+    max-width: 48rem;
+    background: var(--d-panel);
+    border: 1px solid var(--d-hair);
+    border-radius: 0;
+    color: var(--d-body);
+    padding: clamp(1.1rem, 3vw, 2.25rem);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.72;
+}
+
+html[data-theme="light"] .tools-board {
+    --d-panel: #e2e5e7;
+    --d-flap: #cfd3d6;
+    --d-slot: #f1f3f4;
+    --d-ink: #171a1d;
+    --d-body: #2b3735;
+    --d-dim: #5c6468;
+    --d-hair: #b3b8bc;
+    --d-amber: #a96c10;
+}
+
+.tools-board h1 {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--d-ink);
+    margin: 0 0 0.5rem;
+}
+
+.tools-board h2 {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-size: 1.2rem;
+    color: var(--d-ink);
+    border-bottom: 1px solid var(--d-hair);
+    padding-bottom: 0.3rem;
+}
+
+.tools-board p,
+.tools-board li { color: var(--d-body); }
+
+.tools-board .text-muted-foreground { color: var(--d-dim); }
+
+/* the paste target is the page's one action: a full-width board row */
+.tools-board ::deep [data-slot="card"] {
+    background: var(--d-slot);
+    border: 1px solid var(--d-hair);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.75rem;
+}
+
+.tools-board ::deep [data-slot="button"] {
+    border-radius: 0;
+    border: 1px solid var(--d-amber);
+    background: var(--d-amber);
+    color: #16181a;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: none;
+    gap: 0.5rem;
+}
+.tools-board ::deep [data-slot="button"]:hover { background: var(--d-ink); border-color: var(--d-ink); color: #16181a; }
+
+/* the keycaps stay keycaps, drawn as board slots */
+.tools-board ::deep kbd {
+    display: inline-block;
+    border: 1px solid var(--d-hair);
+    border-radius: 0;
+    background: var(--d-flap);
+    color: var(--d-ink);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.4rem;
+    box-shadow: none;
+}
+
+.tools-board a {
+    color: var(--d-ink);
+    text-decoration-color: var(--d-hair);
+    text-underline-offset: 2px;
+}
+.tools-board a:hover { color: var(--d-amber); }
+
+.tools-board code {
+    font-family: "Martian Mono", monospace;
+    font-size: 0.72rem;
+    background: var(--d-slot);
+    border: 1px solid var(--d-hair);
+    border-radius: 0;
+    color: var(--d-ink);
+    padding: 0.1rem 0.35rem;
+}
+
+.tools-board ul { padding-left: 1.15rem; }
+.tools-board li::marker { color: var(--d-dim); }

@@ -1,0 +1,136 @@
+@inherits UiComponentBase
+
+@* One file field, as a drop zone that becomes the file once there is one.
+
+   Not a shadcn component — shadcn has none, and a bare <input type="file"> is not one either:
+   it renders as a button whose label the page cannot write, it shows a filename and never a
+   picture, and it posts the BYTES, which means the form that carries it must be multipart and
+   must handle the upload itself.
+
+   This posts nothing. The file goes to Action by fetch as soon as it is chosen, and what the
+   form carries is a hidden input holding the URL that came back — so the surrounding form stays
+   an ordinary form, an image survives a validation failure that re-renders the page, and the
+   same field works inside a form that is already doing something else.
+
+   It is a <div>, not a <form>. These sit inside the form they belong to, and a nested <form> is
+   invalid HTML that the browser flattens — silently taking the outer form's fields with it. *@
+
+<div data-slot="file-upload" data-accept="@Accept" data-max-bytes="@MaxBytes"
+     data-action="@Action" data-preview-base="@PreviewBase" class="@Classes"
+     @attributes="AdditionalAttributes">
+
+    @* The value the form posts. Never typed, never shown — the picture is the interface. *@
+    <input type="hidden" data-slot="file-upload-value" name="@Name" value="@Value" />
+
+    <div data-slot="file-upload-zone" role="button" tabindex="0" aria-label="@Prompt"
+         class="@ZoneClasses">
+
+        @* ChildContent (from UiComponentBase) replaces the preview and the prompt entirely, for a
+           zone that is not showing a picture — a document, an avatar, a list of names. The behaviour
+           underneath is unchanged; only what is drawn inside the zone is yours. *@
+        @if (ChildContent is null)
+        {
+            <img data-slot="file-upload-preview" alt="" class="@PreviewClasses" />
+
+            <div data-slot="file-upload-empty"
+                 class="pointer-events-none flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+                <Icon Name="upload" Class="size-6 text-muted-foreground" />
+                <p class="text-sm font-medium">@Prompt</p>
+                @if (Hint is not null)
+                {
+                    <p class="text-xs text-muted-foreground">@Hint</p>
+                }
+            </div>
+        }
+        else
+        {
+            @ChildContent
+        }
+
+        @* No name, so the parent form never tries to post it. It only opens the picker. *@
+        <input type="file" data-slot="file-upload-input" accept="@Accept" class="sr-only"
+               aria-label="@Prompt" disabled="@Disabled" />
+
+        @* On the picture rather than under it: a word underneath is a permanent offer to delete
+           something that is usually not there, and it reads as prose rather than as a control. *@
+        <Button Variant="secondary" Size="icon-sm" data-slot="file-upload-clear" type="button"
+                hidden aria-label="@ClearLabel" title="@ClearLabel"
+                Class="absolute end-2 top-2 opacity-0 transition-opacity group-hover/file-upload:opacity-100 focus-visible:opacity-100">
+            <Icon Name="x" />
+        </Button>
+    </div>
+
+    @* Written by ui.js: what is happening, or what went wrong. Empty until something does. *@
+    <p data-slot="file-upload-status" class="mt-1.5 text-xs text-muted-foreground empty:hidden"
+       role="status" aria-live="polite"></p>
+</div>
+
+@code {
+    /// <summary>
+    /// The field the URL posts under. This is the only thing the surrounding form sees.
+    /// </summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = default!;
+
+    /// <summary>The URL already stored, if any. Empty renders the prompt instead of a picture.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>
+    /// Where the file is POSTed. The endpoint answers <c>{ "url": "…" }</c>, and that URL becomes
+    /// the field's value — anything else in the body is ignored, so an endpoint may say more.
+    /// </summary>
+    [Parameter, EditorRequired] public string Action { get; set; } = default!;
+
+    /// <summary>Passed to the picker AND checked before the upload, because a picker's accept
+    /// is advice: a file dragged onto the zone never went through it.</summary>
+    [Parameter] public string Accept { get; set; } = "image/*";
+
+    /// <summary>Refused before the request rather than after it. Zero turns the check off.</summary>
+    [Parameter] public int MaxBytes { get; set; } = 8 * 1024 * 1024;
+
+    /// <summary>
+    /// The preview's aspect ratio. The zone is as wide as its column, so this is what decides
+    /// its height — an unconstrained 4/5 box in a full-width cell is a thousand pixels tall.
+    /// </summary>
+    [Parameter] public string Ratio { get; set; } = "aspect-video";
+
+    /// <summary>What the empty zone says. Also the accessible name of the zone and the picker.</summary>
+    [Parameter] public string Prompt { get; set; } = "Drop a file here, or click to choose";
+
+    /// <summary>A second line: the size or shape a file should be.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>
+    /// Origin to show a stored PATH against, for values that are relative to somewhere else —
+    /// a storefront, a CDN, an older bucket. Only the picture is resolved; the value the form
+    /// posts is never rewritten, and an absolute URL passes through untouched.
+    /// </summary>
+    [Parameter] public string? PreviewBase { get; set; }
+
+    [Parameter] public string ClearLabel { get; set; } = "Remove";
+
+    [Parameter] public bool Disabled { get; set; }
+
+    const string Base = "group/file-upload w-full";
+
+    const string ZoneBase =
+        "relative flex w-full cursor-pointer items-center justify-center overflow-hidden " +
+        "rounded-md border border-dashed border-input bg-transparent text-foreground " +
+        "transition-colors outline-none hover:bg-accent/40 focus-visible:border-ring " +
+        "focus-visible:ring-[3px] focus-visible:ring-ring/50 " +
+        // Set by ui.js while a file is over the zone and while one is on its way up.
+        "data-[dragging=true]:border-ring data-[dragging=true]:bg-accent/60 " +
+        "data-[uploading=true]:pointer-events-none data-[uploading=true]:opacity-60 " +
+        // Once there is a picture the dashes are noise: the picture is the boundary.
+        "data-[filled=true]:border-solid data-[filled=true]:border-transparent " +
+        "has-[:disabled]:pointer-events-none has-[:disabled]:opacity-50";
+
+    // hidden, not a class: ui.js reveals it, and an element hidden by a class is one that shows
+    // itself for a frame on every render before the script has run.
+    const string PreviewClassBase = "block w-full object-cover";
+
+    string Classes => Cn(Base, Class);
+
+    string ZoneClasses => Cn(ZoneBase, Ratio);
+
+    string PreviewClasses => Cn(PreviewClassBase, Ratio);
+}

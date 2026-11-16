@@ -1,0 +1,57 @@
+# Self-Hosted QuickShareCloud Stack (Issue #46)
+# Run with: docker compose -f docker-compose.selfhost.yml up -d
+
+services:
+  quickshare-web:
+    image: ghcr.io/chicuong2k3/quickshare:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=quickshare;Username=quickshare;Password=${POSTGRES_PASSWORD:-changeme}"
+      ObjectStore__Endpoint: "http://minio:9000"
+      ObjectStore__AccessKey: "${MINIO_ROOT_USER:-minioadmin}"
+      ObjectStore__SecretKey: "${MINIO_ROOT_PASSWORD:-minioadmin123}"
+      ObjectStore__BucketName: "quickshare"
+      Auth__PublicBaseUrl: "${PUBLIC_BASE_URL:-http://localhost:8080}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quickshare
+      POSTGRES_USER: quickshare
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quickshare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin123}"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  miniodata:

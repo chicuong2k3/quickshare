@@ -1,0 +1,31 @@
+@inherits UiComponentBase
+
+@* Renders an <a> when given an Href, which is the usual case: a hover card previews the thing a
+   link points at, and the link has to work whether or not anyone hovers. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="hover-card-trigger" data-target="@Target" data-open-delay="@OpenDelay" data-close-delay="@CloseDelay"
+       class="@Class" @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <button type="button" data-slot="hover-card-trigger" data-target="@Target" data-open-delay="@OpenDelay" data-close-delay="@CloseDelay"
+            class="@Class" @attributes="AdditionalAttributes">@ChildContent</button>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>Milliseconds of hover before it opens. Focus opens it after the same delay.</summary>
+    [Parameter] public int OpenDelay { get; set; } = 600;
+
+    /// <summary>
+    /// Milliseconds before it closes once the pointer leaves. Not the same number as OpenDelay,
+    /// and deliberately: opening slowly stops a card appearing every time the pointer crosses a
+    /// link, and closing slowly is what lets you move onto the card without it vanishing under
+    /// you. shadcn names these openDelay and closeDelay for the same reason.
+    /// </summary>
+    [Parameter] public int CloseDelay { get; set; } = 300;
+}

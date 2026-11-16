@@ -1,0 +1,29 @@
+@* Shared shell for static /seo landing pages, with no async work or DB. *@
+
+<PageTitle>@Heading</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Description" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="mx-auto max-w-3xl">
+        <h1 class="text-3xl font-semibold tracking-tight">@Heading</h1>
+        <p class="mt-3 text-lg text-muted-foreground">@Lede</p>
+
+        <Card class="mt-8 p-6">
+            <Button Href="@RoutePaths.Send" data-ai-action="seo.cta.send">@CtaLabel</Button>
+        </Card>
+
+        <div class="mt-10 space-y-4 leading-7">
+            @Body
+        </div>
+    </article>
+</PageWrapper>
+
+@code {
+    [Parameter, EditorRequired] public string Heading { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Lede { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string CtaLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public RenderFragment? Body { get; set; }
+}

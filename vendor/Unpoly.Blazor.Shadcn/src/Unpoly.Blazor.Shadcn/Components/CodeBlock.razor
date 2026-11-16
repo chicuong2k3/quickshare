@@ -1,0 +1,124 @@
+@inherits UiComponentBase
+
+@* CodeBlock: single Code string (legacy) or Kibo-style named Files. Code stays text so
+   Razor never parses sample markup as components. Shiki loads on demand; the platform
+   compiler handles file tabs, clipboard and inline [!code] notations on both hosts.
+   Copy reads original source, before highlighting or annotation decoration. *@
+
+<div data-slot="code-block" class="@Classes" @attributes="AdditionalAttributes">
+    @if (Title is not null || ShowCopy || Files.Count > 0)
+    {
+        <div data-slot="code-block-header"
+             class="flex items-center justify-between gap-2 border-b px-4 py-2">
+            @if (Files.Count > 0)
+            {
+                <div data-slot="code-block-files" role="tablist" aria-label="Files">
+                    @for (var i = 0; i < Files.Count; i++)
+                    {
+                        var file = Files[i];
+                        <button type="button" role="tab" data-slot="code-block-file" data-index="@i"
+                                aria-selected="@(i == InitialFile ? "true" : "false")" tabindex="@(i == InitialFile ? "0" : "-1")">@file.Filename</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <span class="text-xs font-medium text-muted-foreground">@Title</span>
+            }
+            @if (ShowCopy)
+            {
+                <button type="button" data-slot="code-block-copy" hidden
+                        class="@ButtonVariants.Of("ghost", "sm")" aria-label="@CopyLabel">
+                    <Icon Name="copy" />
+                    <span class="sr-only">@CopyLabel</span>
+                </button>
+            }
+        </div>
+    }
+
+    @if (Files.Count > 0)
+    {
+        @for (var i = 0; i < Files.Count; i++)
+        {
+            var file = Files[i];
+            <pre data-slot="code-block-pre" data-index="@i" data-line-numbers="@(ShowFileLineNumbers ? "true" : null)"
+                 hidden="@(i != InitialFile)" class="@PreClasses" tabindex="@(i == InitialFile ? "0" : "-1")"><code data-slot="code-block-code"
+                     data-language="@file.Language" data-notations="@(HighlightNotations ? "true" : "false")" data-highlight="@(SyntaxHighlighting ? "true" : "false")"
+                     class="@LanguageClass(file.Language)">@file.Code</code></pre>
+        }
+    }
+    else
+    {
+        <pre data-slot="code-block-pre" data-line-numbers="@(ShowLineNumbers ? "true" : null)" class="@PreClasses" tabindex="0"><code data-slot="code-block-code"
+                            data-language="@Language" data-notations="@(HighlightNotations ? "true" : "false")" data-highlight="@(SyntaxHighlighting ? "true" : "false")"
+                            class="@CodeClasses">@Code</code></pre>
+    }
+</div>
+
+@code {
+    /// <summary>Single-file code. Omit when Files is supplied; never pass sample markup as ChildContent.</summary>
+    [Parameter] public string Code { get; set; } = "";
+
+    /// <summary>Shown in the header, usually a file name.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Shiki language: csharp, razor, javascript, typescript, css, html, json, bash, yaml, sql, diff, etc.</summary>
+    [Parameter] public string? Language { get; set; }
+
+    /// <summary>Optional named files; when supplied, the active file is highlighted and copied.</summary>
+    [Parameter] public IReadOnlyList<CodeBlockFile> Files { get; set; } = [];
+
+    /// <summary>Filename selected on first render; defaults to the first file.</summary>
+    [Parameter] public string? DefaultFile { get; set; }
+
+    /// <summary>Show a line-number gutter for multi-file blocks. Single blocks use ShowLineNumbers.</summary>
+    [Parameter] public bool ShowFileLineNumbers { get; set; } = true;
+
+    /// <summary>Interpret Shiki-style inline [!code] highlight, diff, focus and word markers.</summary>
+    [Parameter] public bool HighlightNotations { get; set; } = true;
+
+    /// <summary>Disable Shiki syntax highlighting and show escaped source text instead.</summary>
+    [Parameter] public bool SyntaxHighlighting { get; set; } = true;
+
+    int InitialFile => Math.Max(0, Files.ToList().FindIndex(f => f.Filename == DefaultFile));
+
+    [Parameter] public bool ShowCopy { get; set; } = true;
+
+    [Parameter] public string CopyLabel { get; set; } = "Copy";
+
+    /// <summary>Show line numbers alongside Shiki-highlighted lines.</summary>
+    [Parameter] public bool ShowLineNumbers { get; set; }
+
+    const string Base =
+        "bg-card text-card-foreground overflow-hidden rounded-lg border font-mono";
+
+    string Classes => Cn(Base, Class);
+
+    // Normalize common aliases for Shiki. Keep legacy DOM language classes for tests.
+    string? NormalizedLanguage => Language?.Trim().ToLowerInvariant() switch
+    {
+        "razor" => "cshtml",
+        "cs" => "csharp",
+        "js" => "javascript",
+        "ts" => "typescript",
+        "sh" or "shell" => "bash",
+        "yml" => "yaml",
+        null or "" => null,
+        var other => other
+    };
+
+    static string LanguageClass(string? language) => language?.Trim().ToLowerInvariant() switch
+    {
+        "razor" => "language-cshtml", "cs" => "language-csharp",
+        "js" => "language-javascript", "ts" => "language-typescript",
+        "sh" or "shell" => "language-bash", "yml" => "language-yaml",
+        null or "" => "", var other => $"language-{other}"
+    };
+
+    string CodeClasses => NormalizedLanguage is null ? "" : $"language-{NormalizedLanguage}";
+
+    string PreClasses => Cn(
+        "overflow-x-auto p-4 text-[12.5px] leading-relaxed",
+        NormalizedLanguage is not null ? $"language-{NormalizedLanguage}" : null,
+        ShowLineNumbers ? "line-numbers" : null);
+}

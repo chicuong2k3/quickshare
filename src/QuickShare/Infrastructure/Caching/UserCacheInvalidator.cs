@@ -16,12 +16,20 @@ public static class UserCacheInvalidator
     public const string UserLoginKeyPrefix = "user:login:";
     public const string BillingHistoryKeyPrefix = "billing:history:";
     public const string UserPlanKeyPrefix = "user:plan:";
+    public const string SubscriptionKeyPrefix = "billing:sub:";
 
     public static string UserLoginKey(string provider, string providerKey) =>
         $"{UserLoginKeyPrefix}{provider}:{providerKey}";
 
-    public static string BillingHistoryKey(Guid userId) =>
-        $"{BillingHistoryKeyPrefix}{userId}";
+    public static string BillingHistoryKey(Guid userId, string culture) =>
+        $"{BillingHistoryKeyPrefix}{userId}:{culture}";
+
+    /// <summary>
+    /// The billing-history snapshot is cached per culture (event labels are localized
+    /// at read time), so eviction must clear every variant. Mirrors the
+    /// supportedCultures list in Program.cs.
+    /// </summary>
+    private static readonly string[] SupportedCultureNames = { "en", "vi" };
 
     /// <summary>
     /// Removes every cache entry derived from a user (all their login provider
@@ -45,8 +53,18 @@ public static class UserCacheInvalidator
         }
 
         await cache.RemoveAsync(UserPlanKey(userId), ct);
-        await cache.RemoveAsync(BillingHistoryKey(userId), ct);
+
+        foreach (var culture in SupportedCultureNames)
+        {
+            await cache.RemoveAsync(BillingHistoryKey(userId, culture), ct);
+        }
+
+        await cache.RemoveAsync(SubscriptionKey(userId), ct);
     }
+
+    /// <summary>Key format used by SubscriptionService.GetCurrentAsync.</summary>
+    public static string SubscriptionKey(Guid userId) =>
+        $"{SubscriptionKeyPrefix}{userId}";
 
     public static string UserPlanKey(Guid userId) =>
         $"{UserPlanKeyPrefix}{userId}";

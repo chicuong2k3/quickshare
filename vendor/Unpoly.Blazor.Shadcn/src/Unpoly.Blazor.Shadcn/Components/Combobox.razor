@@ -1,0 +1,39 @@
+@inherits UiComponentBase
+
+@* A text box that filters a list, and posts the value that was chosen.
+
+   The important part is the last clause. A combobox that only holds its value in JavaScript is
+   useless to a form that posts, so underneath this is a real <input type="hidden"> carrying the
+   value and a real <input type="text"> carrying what was typed. Nothing is stored anywhere else,
+   which is also why a fragment swap cannot lose the selection.
+
+   With scripting off it degrades to that text box and a visible list of options — worse than the
+   filtered version, but it still submits. Where the list is a catalogue rather than a menu, put
+   `up-autosubmit` and `up-target` on the input and let the server filter instead; the markup is
+   otherwise the same.
+
+   Creatable turns a Multiple chips combobox into a free-form tag field: Enter or a comma makes a
+   chip of whatever was typed, unless it names a visible row, which is chosen instead. Scripting
+   is what makes the chip, so for a form that must still post with it off, give the chip input
+   the same name as the chips — `name="tags"` — and have the server split every posted value on
+   commas, trim, and drop blanks and duplicates. With scripting on the box is cleared as each chip
+   is made, so it posts nothing extra; with it off, the typed "a, b, c" arrives as one value. *@
+
+<div data-slot="combobox" data-target="@Target" data-multiple="@(Multiple ? "true" : null)"
+     data-creatable="@(Creatable ? "true" : null)"
+     class="@Cn("relative", Class)" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>The id of the <see cref="ComboboxContent"/> this opens.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    /// <summary>More than one value, shown as chips. The hidden inputs repeat the same name.</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    /// <summary>Let the reader add values the list does not have. With <see cref="Multiple"/> and
+    /// a <see cref="ComboboxChips"/> frame, Enter or a comma turns the typed text into a chip
+    /// posted under the chips' name; text that matches a visible row chooses that row, a
+    /// duplicate is ignored, and Backspace in an empty box removes the last chip. Without
+    /// Multiple it has no effect — a single value is chosen, not invented.</summary>
+    [Parameter] public bool Creatable { get; set; }
+}

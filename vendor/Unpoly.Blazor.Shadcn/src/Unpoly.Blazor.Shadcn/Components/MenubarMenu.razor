@@ -1,0 +1,8 @@
+@inherits UiComponentBase
+
+@* One menu in the bar: its trigger and its panel. Upstream renders nothing at all here — it is
+   a context provider — but the two elements still need something to hold them together for the
+   compiler to find, so this is a plain wrapper with no classes. *@
+
+<div data-slot="menubar-menu" class="@Cn("relative", Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>

@@ -1,0 +1,88 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/onboarding"
+@layout MainLayout
+@attribute [Authorize]
+@using QuickShare.Data
+@using Microsoft.EntityFrameworkCore
+@using QuickShare.Features.Users.Onboarding
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var context = HttpContextAccessor.HttpContext;
+    var dismissed = context?.Request.Cookies[OnboardingDismissal.CookieName] == OnboardingDismissal.CookieValue;
+    if (dismissed && context?.Request.Path != RoutePaths.AccountOnboarding)
+    {
+        return;
+    }
+}
+
+@if (dismissed)
+{
+    <Card class="my-4 w-full max-w-md p-6">
+        <p>@Loc["onboarding_dismissed"]</p>
+        <Button Href="@RoutePaths.Account" Variant="outline" class="mt-4">@Loc["nav_account"]</Button>
+    </Card>
+}
+else
+{
+<Card id="onboarding-card" class="my-4 w-full max-w-md p-6" data-ai-action="account.onboarding">
+        <div class="mb-2 flex items-center justify-between gap-2">
+            <h3 class="text-lg font-semibold">@Loc["onboarding_title"]</h3>
+            <form method="post" action="@RoutePaths.AccountOnboardingDismiss">
+                <AntiforgeryToken />
+                <Button Type="submit" Variant="ghost" Size="icon" aria-label="@Loc["onboarding_dismiss"]" data-ai-action="account.onboarding.dismiss">×</Button>
+            </form>
+        </div>
+        <p class="mb-2 text-sm text-muted-foreground">@string.Format(Loc["onboarding_progress"], completed, StepCount)</p>
+        <div class="mb-3 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow="@completed" aria-valuemin="0" aria-valuemax="@StepCount" aria-label="@Loc["onboarding_title"]">
+            <div class="h-full bg-primary transition-[width] motion-reduce:transition-none" style="width: @(completed * 100 / StepCount)%"></div>
+        </div>
+        <ul class="grid gap-2 sm:grid-cols-2">
+            <li class="@StepClass(hasUpload)">@Loc["onboarding_step_upload"]</li>
+            <li class="@StepClass(hasDownload)">@Loc["onboarding_step_share"]</li>
+            <li class="@StepClass(hasExpiry)">@Loc["onboarding_step_expiry"]</li>
+            <li class="@StepClass(hasPassword)">@Loc["onboarding_step_password"]</li>
+        </ul>
+</Card>
+}
+
+@code {
+    private const int StepCount = 4;
+
+    private bool hasUpload;
+    private bool hasDownload;
+    private bool hasExpiry;
+    private bool hasPassword;
+
+    private int completed =>
+        (hasUpload ? 1 : 0) + (hasDownload ? 1 : 0) + (hasExpiry ? 1 : 0) + (hasPassword ? 1 : 0);
+
+    private string StepClass(bool done) => done ? "account-onboarding-step account-onboarding-step--done" : "account-onboarding-step";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            var stats = await Db.Deliveries
+                .Where(d => d.SenderId == user.Id)
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Total = g.Count(),
+                    Downloads = g.Count(d => d.DownloadCount > 0),
+                    Expiry = g.Count(d => d.ExpiresAt != null),
+                    Password = g.Count(d => d.PasswordHash != null)
+                })
+                .FirstOrDefaultAsync();
+
+            hasUpload = stats is { Total: > 0 };
+            hasDownload = stats is { Downloads: > 0 };
+            hasExpiry = stats is { Expiry: > 0 };
+            hasPassword = stats is { Password: > 0 };
+        }
+        catch { }
+    }
+}

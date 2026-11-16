@@ -1,0 +1,17 @@
+@inherits UiComponentBase
+
+@* A menu opened by the right mouse button — and, because the platform fires the same event for
+   it, by the context-menu key and by a long press on a touch screen. All three come free; a
+   right-click handler bolted onto a div gets only the first.
+
+   The panel is a [popover], so it is in the top layer and dismisses on Escape and on a click
+   outside without a listener of ours. What ui.js adds is preventing the browser's own menu and
+   putting ours where the pointer was. *@
+
+<div data-slot="context-menu" data-target="@Target" class="@Cn("relative", Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>The id of the <see cref="ContextMenuContent"/> this opens.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+}

@@ -1,5 +1,9 @@
 namespace QuickShare.Data.Entities;
 
+/// <summary>
+/// A checkout in flight. Carries the promo code and proration credit that produced its amount
+/// (issues #98, #114).
+/// </summary>
 public sealed class PaymentIntent
 {
     public Guid Id { get; set; }
@@ -7,14 +11,45 @@ public sealed class PaymentIntent
     public User User { get; set; } = null!;
     public string Code { get; set; } = string.Empty;
     public long PayOSOrderCode { get; set; }
+
+    /// <summary>
+    /// Which rail this intent is being paid on (issue #225). Defaults to the card/bank provider
+    /// so every row written before crypto existed still says something true.
+    /// </summary>
+    public string Provider { get; set; } = PaymentProviders.PayOS;
+
+    /// <summary>Payment method channel selected at checkout: bank_qr, momo, zalopay, visa, stripe_card, paypal_wallet, crypto_wallet (#164, #177).</summary>
+    public string PaymentMethod { get; set; } = PaymentMethods.BankQr;
+
+    /// <summary>The provider's own id for a hosted charge; null for the PayOS order-code path.</summary>
+    public string? ProviderChargeId { get; set; }
     public string Plan { get; set; } = string.Empty;
     public string Billing { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "VND";
+
+    /// <summary>
+    /// Snapshot of the VND-to-charged-currency exchange rate at checkout (issue #120).
+    /// Prevents FX drift disputes when reconciling multi-currency payments (VND, USD, EUR).
+    /// </summary>
+    public decimal ExchangeRateSnapshot { get; set; } = 1m;
+
     public PaymentIntentStatus Status { get; set; } = PaymentIntentStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
+
+    /// <summary>
+    /// The promo code this amount reflects (issue #98), or null. Kept so completion knows which
+    /// code to consume — the quote happened at checkout, the redemption happens on payment.
+    /// </summary>
+    public string? PromoCode { get; set; }
+
+    /// <summary>
+    /// Proration credit applied (issue #114), in the smallest currency unit. Kept so a discounted
+    /// payment can still be reconciled against a list price rather than looking like underpayment.
+    /// </summary>
+    public int ProrationCredit { get; set; }
 }
 
 public enum PaymentIntentStatus

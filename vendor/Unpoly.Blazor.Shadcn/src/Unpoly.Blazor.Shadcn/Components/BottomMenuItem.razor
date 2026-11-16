@@ -1,0 +1,46 @@
+@inherits UiComponentBase
+
+@* One button in a BottomMenu and the panel it opens. IconContent is what the bar shows;
+   ChildContent is the panel. An item with no ChildContent is a plain button with nothing to
+   open — a theme toggle that acts at once, say — and carries no popovertarget. *@
+
+@if (IsPanel)
+{
+    if (ChildContent is not null)
+    {
+        <div id="@PanelId" popover data-slot="bottom-menu-panel"
+             class="animate-none overflow-hidden rounded-[18px] border bg-background/95 py-1 text-foreground backdrop-blur-xl">
+            <div data-slot="bottom-menu-view">@ChildContent</div>
+        </div>
+    }
+}
+else
+{
+    <button type="button" data-slot="bottom-menu-item" data-value="@Value" aria-label="@Label"
+            popovertarget="@(ChildContent is null ? null : PanelId)"
+            aria-expanded="@(ChildContent is null ? null : "false")"
+            class="@Classes" @attributes="AdditionalAttributes">@IconContent</button>
+}
+
+@code {
+    /// <summary>Identifies the item; the button and its panel find each other by it.</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = default!;
+
+    /// <summary>The button's accessible name — the button shows only its icon.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>What the bar shows for this item. Named IconContent rather than Icon so that
+    /// <c>&lt;Icon&gt;</c> inside it is still the Icon component.</summary>
+    [Parameter] public RenderFragment? IconContent { get; set; }
+
+    [CascadingParameter] public BottomMenu? Menu { get; set; }
+
+    [CascadingParameter(Name = "BottomMenuLayout")] public string? Layout { get; set; }
+
+    bool IsPanel => Layout == "panel";
+
+    string PanelId => $"{Menu?.IdPrefix ?? "bottom-menu"}-{Value}";
+
+    // Upstream's: bg-accent and the foreground colour while its panel is open, bg-muted on hover.
+    string Classes => Cn("rounded-[16px] p-3 text-muted-foreground transition-all outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:bg-accent aria-expanded:text-foreground [&_svg]:size-6", Class);
+}

@@ -7,6 +7,10 @@
         "SEQ_API_KEY": "4FDtwKRi4qKMaBzdYN4J"
       }
     },
+    "slnmap": {
+      "command": "C:/Users/nguye/.dotnet/tools/slnmap.exe",
+      "args": ["serve", "--db", "C:/Users/nguye/OneDrive/Ảnh/codes/quickshare/slnmap.db"]
+    },
     "vs-debug": {
       "type": "stdio",
       "command": "powershell",

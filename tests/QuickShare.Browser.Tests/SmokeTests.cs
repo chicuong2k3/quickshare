@@ -4,7 +4,7 @@ namespace QuickShare.Browser.Tests;
 
 /// <summary>
 /// Browser smoke tests: real Chromium against real Kestrel.
-/// Covers what the in-process tier cannot — JS execution, HTMX swaps, WebRTC signaling.
+/// Covers what the in-process tier cannot — JS execution, server-rendered swaps, WebRTC signaling.
 /// </summary>
 public sealed class SmokeTests : IClassFixture<BrowserFixture>
 {
@@ -46,22 +46,15 @@ public sealed class SmokeTests : IClassFixture<BrowserFixture>
     }
 
     [Fact]
-    public async Task UpgradePage_HtmxLazyLoad_FillsSkeletonWithContent()
+    public async Task UpgradePage_DirectGet_ShowsCheckoutForm()
     {
         await using var context = await _fx.CreateContextAsync(authenticated: true);
         var page = await context.NewPageAsync();
         var errors = TrackPageErrors(page);
 
-        // Mark the window; if HTMX swaps (no full reload) the marker survives.
         await page.GotoAsync(_fx.BaseUrl + "/upgrade?plan=pro");
-        await page.EvaluateAsync("window.__htmxSmokeMarker = true");
-
-        // The lazy-load skeleton fires an hx-get on load; wait for the swapped-in content.
-        await page.WaitForSelectorAsync("text=/QSC-|Pro|checkout|thanh toán/i",
-            new PageWaitForSelectorOptions { Timeout = 10_000 });
-
-        var markerSurvived = await page.EvaluateAsync<bool>("window.__htmxSmokeMarker === true");
-        Assert.True(markerSurvived, "Full page reload happened — HTMX swap expected");
+        await page.Locator("#upgrade-promo").WaitForAsync();
+        Assert.True(await page.Locator("#upgrade-body form").CountAsync() > 0);
         Assert.Empty(errors);
     }
 

@@ -1,0 +1,44 @@
+.account-deliveries { gap: 1rem; }
+.account-delivery {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    padding: 1.25rem;
+}
+.account-delivery__head { gap: 0.75rem; }
+.account-delivery__name { font-family: inherit; font-size: 1rem; font-weight: 600; }
+.account-delivery__expiry,
+.account-delivery__meta,
+.account-delivery__alias { font-family: inherit; font-size: 0.75rem; color: var(--muted-foreground); }
+.account-delivery__lock,
+.account-delivery__hold {
+    font-family: inherit;
+    font-size: 0.75rem;
+    border-color: var(--border);
+    color: var(--foreground);
+    background: var(--muted);
+    padding: 0 0.5rem;
+}
+.account-delivery__lock--self { border-color: var(--primary); color: var(--primary); }
+.account-delivery__gauge { border-color: var(--border); background: var(--muted); margin: 0.75rem 0; }
+.account-delivery__gauge-fill { background: var(--primary); transition: width 200ms ease; }
+.account-delivery--spent .account-delivery__gauge-fill { background: var(--muted-foreground); }
+.account-deliveries-empty { padding: 2rem 1rem; }
+.account-deliveries-health { gap: 1rem; font-family: inherit; font-size: 0.75rem; margin-bottom: 0.75rem; }
+.account-deliveries-health__warn { color: var(--destructive); }
+.account-deliveries-controls { gap: 0.75rem; margin-bottom: 1rem; }
+.account-deliveries-filters { gap: 0.5rem; }
+.account-delivery__star { color: var(--primary); padding-right: 0.25rem; }
+.account-delivery__purge { color: var(--destructive); border-color: var(--destructive); }
+.account-deliveries-filters ::deep .account-deliveries-filter--current { background: var(--accent); color: var(--accent-foreground); }
+.account-deliveries-bulkbar { gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 1rem; border-color: var(--border); border-radius: var(--radius); }
+.account-deliveries-selectall { gap: 0.5rem; font-size: 0.875rem; }
+.account-deliveries-selectall input,
+.account-delivery__select { accent-color: var(--primary); }
+.account-delivery__select { margin-right: 0.25rem; }
+#bulk-count { font-size: 0.875rem; }
+.account-deliveries-search { font-family: inherit; font-size: 0.875rem; padding: 0.5rem 0.75rem; border-color: var(--border); background: var(--background); color: var(--foreground); }
+.account-delivery__ocr { border-color: var(--border); padding: 0 0.5rem; }
+.account-delivery__activity { margin-top: 0.5rem; }
+.account-delivery__activity-body ul { margin: 0.5rem 0 0 1rem; }

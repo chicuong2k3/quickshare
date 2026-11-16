@@ -20,7 +20,7 @@ public sealed class LocalDiskStorageProviderStubTests
     public async Task InitR2MultipartUploadAsync_throws_NotSupportedException()
     {
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => Provider.InitR2MultipartUploadAsync(Guid.NewGuid(), "test.txt", TestContext.Current.CancellationToken));
+            () => Provider.InitR2MultipartUploadAsync(Guid.NewGuid(), "test.txt", ct: TestContext.Current.CancellationToken));
     }
 
     [Fact]

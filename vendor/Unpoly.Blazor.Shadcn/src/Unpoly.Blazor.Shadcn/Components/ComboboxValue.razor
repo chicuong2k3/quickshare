@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* What is currently chosen, as text. The compiler rewrites it when the selection changes; the
+   server renders it on first paint, so it is right before any JavaScript runs. *@
+
+<span data-slot="combobox-value" class="@Classes"
+      @attributes="AdditionalAttributes">@ChildContent</span>
+
+@code {
+    const string Base =
+        "";
+
+    string Classes => Cn(Base, Class);
+}

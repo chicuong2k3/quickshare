@@ -1,35 +1,83 @@
-using Microsoft.Extensions.Options;
-
+using Hangfire;
 
 namespace QuickShare.Infrastructure.Jobs;
 
-public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IStorageProvider storage, IOptions<QuickShareOptions> options, ILogger<DeliveryCleanupService> logger) : BackgroundService
+public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IStorageProvider storage, ILogger<DeliveryCleanupService> logger)
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
+    [AutomaticRetry(Attempts = 0)]
+    public async Task CleanupAsync()
     {
-        var interval = TimeSpan.FromMinutes(options.Value.CleanupIntervalMinutes);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(interval, stoppingToken);
-                await CleanupExpiredDeliveriesAsync(stoppingToken);
-                await CleanupAbandonedSessionsAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { logger.LogError(ex, "Cleanup cycle failed"); }
-        }
+        await CleanupExpiredDeliveriesAsync();
+        await CleanupTrashedDeliveriesAsync();
+        await CleanupAbandonedSessionsAsync();
     }
 
-    private async Task CleanupExpiredDeliveriesAsync(CancellationToken ct)
+    /// <summary>Soft-deleted rows (issue #99) are purged after this long.</summary>
+    public static readonly TimeSpan TrashRetention = TimeSpan.FromHours(24);
+
+    private async Task CleanupTrashedDeliveriesAsync()
     {
+        var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTime.UtcNow;
+        var purgeBefore = DateTime.UtcNow - TrashRetention;
 
+        // Legal hold (issue #266): a held row never leaves the trash queue and its bytes
+        // are never deleted. The hold outlives the 24h grace by design.
+        var trashed = await db.Deliveries
+            .Where(d => d.DeletedAt != null && d.DeletedAt < purgeBefore && d.LegalHoldAt == null)
+            .ToListAsync(ct);
+
+        if (trashed.Count == 0) return;
+
+        foreach (var delivery in trashed)
+        {
+            if (!string.IsNullOrEmpty(delivery.StoragePath))
+            {
+                try
+                {
+                    await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to delete R2 objects for trashed delivery {DeliveryId}", delivery.Id);
+                }
+            }
+
+            // Version history (#110): delete all version objects for this delivery.
+            var versions = await db.DeliveryVersions.Where(v => v.DeliveryId == delivery.Id).ToListAsync(ct);
+            foreach (var version in versions)
+            {
+                try { await storage.DeleteObjectsAsync(version.StoragePath, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Failed to delete version object for delivery {Id}", delivery.Id); }
+            }
+            db.DeliveryVersions.RemoveRange(versions);
+        }
+
+        db.Deliveries.RemoveRange(trashed);
+        await db.SaveChangesAsync(ct);
+
+        logger.LogInformation("Purged {Count} trashed deliveries", trashed.Count);
+    }
+
+    /// <summary>
+    /// Sender-side expired archive (issue #222): expired rows stay visible for this long
+    /// after expiry before the row is purged. Bytes are already deleted at expiry by
+    /// DeliveryExpiryJob, so the lingering rows cost only DB space.
+    /// </summary>
+    public static readonly TimeSpan ExpiredRowRetention = TimeSpan.FromDays(30);
+
+    private async Task CleanupExpiredDeliveriesAsync()
+    {
+        var ct = CancellationToken.None;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var purgeBefore = DateTime.UtcNow - ExpiredRowRetention;
+
+        // Legal hold (issue #266): held rows stay, bytes and all, however long ago they expired.
         var expired = await db.Deliveries
-            .Where(d => d.ExpiresAt != null && d.ExpiresAt < now)
+            .Where(d => d.ExpiresAt != null && d.ExpiresAt < purgeBefore && d.LegalHoldAt == null)
             .ToListAsync(ct);
 
         if (expired.Count == 0) return;
@@ -40,13 +88,22 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             {
                 try
                 {
-                    await storage.DeleteObjectsAsync(delivery.StoragePath, ct);
+                    await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, ct);
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to delete R2 objects for delivery {DeliveryId}", delivery.Id);
                 }
             }
+
+            // Version history (#110): delete version objects when the delivery expires.
+            var versions = await db.DeliveryVersions.Where(v => v.DeliveryId == delivery.Id).ToListAsync(ct);
+            foreach (var version in versions)
+            {
+                try { await storage.DeleteObjectsAsync(version.StoragePath, ct); }
+                catch (Exception ex) { logger.LogWarning(ex, "Failed to delete version object for delivery {Id}", delivery.Id); }
+            }
+            db.DeliveryVersions.RemoveRange(versions);
         }
 
         db.Deliveries.RemoveRange(expired);
@@ -56,8 +113,9 @@ public sealed class DeliveryCleanupService(IServiceScopeFactory scopeFactory, IS
             expired.Count, expired.Count(d => !string.IsNullOrEmpty(d.StoragePath)));
     }
 
-    private async Task CleanupAbandonedSessionsAsync(CancellationToken ct)
+    private async Task CleanupAbandonedSessionsAsync()
     {
+        var ct = CancellationToken.None;
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;

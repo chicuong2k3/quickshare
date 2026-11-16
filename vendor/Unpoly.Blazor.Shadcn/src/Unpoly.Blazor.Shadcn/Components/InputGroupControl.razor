@@ -1,0 +1,40 @@
+@inherits UiComponentBase
+
+@* The field inside an input group's frame. It is an <Input> or a <Textarea> with the group's own
+   border and ring removed, because the frame around it already draws both — two rings on one
+   control is the giveaway that a group was assembled rather than composed. *@
+
+@if (Multiline)
+{
+    @* resize-none and py-3 are upstream's own, and only on this branch: a box the reader can
+       drag bigger tears the frame it is sitting in. *@
+    <Textarea data-slot="input-group-control" Class="@Cn("resize-none py-3", Classes)" Value="@Value"
+              @attributes="AdditionalAttributes" />
+}
+else
+{
+    <Input data-slot="input-group-control" Type="@Type" Value="@Value" ValueChanged="@ValueChanged" Class="@Classes"
+           @attributes="AdditionalAttributes" />
+}
+
+@code {
+    /// <summary>Renders a <see cref="Textarea"/> instead of an <see cref="Input"/>.</summary>
+    [Parameter] public bool Multiline { get; set; }
+
+    [Parameter] public string Type { get; set; } = "text";
+
+    /// <summary>
+    /// The value, for either branch. It has to be a parameter AND be written back onto the
+    /// input: Blazor matches parameters case-insensitively, so a plain `value="10:30"` at the
+    /// call site binds to this property instead of reaching the DOM — and the control rendered
+    /// empty while the markup plainly said otherwise.
+    /// </summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    const string Base =
+        "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 " +
+        "dark:bg-transparent";
+
+    string Classes => Cn(Base, Class);
+}

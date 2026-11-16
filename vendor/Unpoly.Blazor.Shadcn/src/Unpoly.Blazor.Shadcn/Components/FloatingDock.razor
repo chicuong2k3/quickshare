@@ -1,0 +1,52 @@
+@inherits UiComponentBase
+
+@* FloatingDock — Aceternity UI's floating dock: a macOS-style row of round links whose tiles swell
+   as the pointer nears them, and on a phone a single button that unfolds the same links upward.
+
+   Both layouts are in the markup and CSS chooses one at md, exactly as upstream renders
+   <FloatingDockDesktop> and <FloatingDockMobile> side by side with `hidden md:flex` and
+   `block md:hidden`. ChildContent is rendered twice for that reason, and each FloatingDockItem
+   learns which copy it is from a named cascade rather than from a parameter the caller would
+   have to repeat.
+
+   Nothing here needs a script to work. Every tile is a real link, and the phone menu is a
+   <details>: it opens, closes and is reachable by keyboard with scripting off. ui.js only adds
+   the motion — the magnification and the staggered unfold — through Motion, framer-motion's own
+   engine, loaded the first time a dock is on the page. *@
+
+<div data-slot="floating-dock" class="@Classes" @attributes="AdditionalAttributes">
+    <nav data-slot="floating-dock-desktop" aria-label="@Label" class="@DesktopClasses">
+        <CascadingValue Name="FloatingDockLayout" Value="@("desktop")" IsFixed="true">@ChildContent</CascadingValue>
+    </nav>
+
+    <details data-slot="floating-dock-mobile" class="@MobileClasses">
+        <summary data-slot="floating-dock-trigger" aria-label="@ToggleLabel"
+                 class="flex size-10 cursor-pointer list-none items-center justify-center rounded-full bg-muted outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
+            <Icon Name="panel-bottom-open" Class="size-5 text-muted-foreground" />
+        </summary>
+        <nav data-slot="floating-dock-menu" aria-label="@Label"
+             class="absolute inset-x-0 bottom-full mb-2 flex flex-col gap-2">
+            <CascadingValue Name="FloatingDockLayout" Value="@("mobile")" IsFixed="true">@ChildContent</CascadingValue>
+        </nav>
+    </details>
+</div>
+
+@code {
+    /// <summary>Names both navigation landmarks, so a page with a second nav can tell them apart.</summary>
+    [Parameter] public string Label { get; set; } = "Dock";
+
+    /// <summary>The phone button's accessible name; the button itself is only an icon.</summary>
+    [Parameter] public string ToggleLabel { get; set; } = "Open navigation";
+
+    /// <summary>Upstream's <c>desktopClassName</c>: extra classes on the row of tiles.</summary>
+    [Parameter] public string? DesktopClass { get; set; }
+
+    /// <summary>Upstream's <c>mobileClassName</c>: extra classes on the phone button's wrapper.</summary>
+    [Parameter] public string? MobileClass { get; set; }
+
+    // bg-muted where upstream writes bg-gray-50 / dark:bg-neutral-900: the same light-grey shelf,
+    // from the theme rather than from a fixed palette, so it follows a theme switch.
+    string DesktopClasses => Cn("mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-muted px-4 pb-3 md:flex", DesktopClass);
+    string MobileClasses => Cn("relative block md:hidden", MobileClass);
+    string Classes => Cn(Class);
+}

@@ -1,0 +1,137 @@
+@inherits UiComponentBase
+
+@* GrowthBusiness — ui-layouts' "grow business" pricing section (MIT), ported class for class:
+   three plan cards on a slate canvas, a lime billing switch, prices that roll digit by digit when
+   the billing changes, and every piece sharpening in out of a blur, one after another, the first
+   time the section is scrolled into view.
+
+   Where this differs from the source, and why:
+   - The billing is real state. The switch is this library's Switch, a checkbox, and every price
+     is written twice; which one shows follows the checkbox through :has() in ui.behavior.css, so
+     the switch works with scripting off. ui.js plays NumberFlow's roll over the change.
+   - The palette is upstream's, fixed and light: upstream draws this section in slate, neutral and
+     lime with no dark variant, so does this. The two places upstream's Button reached for theme
+     tokens are written as the light colours they resolve to, or a dark page would turn the
+     buttons dark inside a light card.
+   - The switch is lime when on. Upstream asks for that with data-[state=checked], which its
+     Base UI switch no longer emits; the intent is kept.
+   - Plan names are h3, where upstream writes h4 straight under the h2: a skipped level reads to
+     a screen reader as a missing section. They look the same.
+   - font-dmSans is upstream's site font; the section takes the page's. *@
+
+<section data-slot="growth-business" data-billing-scope="@(Yearly ? "yearly" : "monthly")"
+         class="@Classes" @attributes="AdditionalAttributes">
+    <div class="mx-auto max-w-6xl px-6 text-center md:px-0">
+        <h2 data-timeline="1" class="mb-2 text-4xl font-semibold tracking-tight text-balance">@Title</h2>
+        <p data-timeline="2" class="mb-5 text-pretty text-neutral-500">@Description</p>
+        <div data-timeline="3" data-billing-control
+             class="mx-auto mb-16 flex w-fit items-center justify-center gap-4 rounded-full border border-lime-400 bg-lime-100 p-3 font-semibold">
+            <span class="text-sm text-black transition-colors group-has-[:checked]/growth-business:text-neutral-400">Monthly</span>
+            @* The thumb is painted with --background, set here to white: the section is light
+               on a dark page too, and a dark thumb on a lime track is not upstream's switch. *@
+            <Switch name="billing" value="yearly" Checked="@Yearly" aria-label="Yearly billing"
+                    Class="[--background:white] not-checked:bg-neutral-300 checked:bg-lime-500 dark:not-checked:bg-neutral-300" />
+            <div class="flex items-center">
+                <span class="text-sm text-neutral-400 transition-colors group-has-[:checked]/growth-business:text-black">Yearly</span>
+                @if (YearlyBadge is not null)
+                {
+                    <span class="rounded-full px-2 py-0.5 text-xs font-bold text-neutral-400 uppercase group-has-[:checked]/growth-business:text-lime-600">@YearlyBadge</span>
+                }
+            </div>
+        </div>
+        <div data-timeline="4">
+            <div class="grid gap-6 lg:grid-cols-3">
+                @for (var i = 0; i < Plans.Count; i++)
+                {
+                    var plan = Plans[i];
+                    <div data-timeline="@(5 + i)" data-featured="@(plan.Featured ? "true" : null)"
+                         class="@Cn("flex flex-col rounded-lg border p-4 transition-all", plan.Featured ? "z-10 border-transparent bg-neutral-950 text-white shadow-2xl" : "border border-neutral-200 bg-white")">
+                        <div class="mb-4 text-start">
+                            <h3 class="text-lg font-bold">@plan.Name</h3>
+                            <p class="text-sm text-neutral-400">@plan.Description</p>
+                        </div>
+                        <div class="mb-4 flex items-baseline gap-1 text-start">
+                            <span class="@Cn("text-2xl font-medium", plan.Featured ? "text-green-400" : "text-neutral-400")">$</span>
+                            <span data-billing-roll class="@Cn("text-5xl font-bold", plan.Featured ? "text-white" : "text-neutral-900")"><span data-billing="monthly">@PriceText.Of(plan.MonthlyPrice)</span><span data-billing="yearly">@PriceText.Of(plan.YearlyPrice)</span></span>
+                            <span class="text-sm text-neutral-400">/<span data-billing="monthly">monthly</span><span data-billing="yearly">yearly</span></span>
+                        </div>
+                        <div data-timeline="@(6 + i)">
+                            @if (plan.Href is not null)
+                            {
+                                <a href="@plan.Href" class="@ButtonClasses(plan)">@ActionLabel</a>
+                            }
+                            else
+                            {
+                                <button type="button" class="@ButtonClasses(plan)">@ActionLabel</button>
+                            }
+                        </div>
+                        <div class="@Cn("space-y-4 rounded-lg border p-4 text-start", plan.Featured ? "border-neutral-700 bg-neutral-800" : "border-neutral-200 bg-neutral-100")">
+                            @foreach (var feature in plan.Features)
+                            {
+                                <div class="@Cn("flex items-center gap-3 text-sm", plan.Featured ? "text-neutral-300" : "text-neutral-600")">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"
+                                         class="@Cn("h-5 w-5", plan.Featured ? "fill-white stroke-white" : "fill-black stroke-black")">
+                                        <path d="M18.9905 19H19M18.9905 19C18.3678 19.6175 17.2393 19.4637 16.4479 19.4637C15.4765 19.4637 15.0087 19.6537 14.3154 20.347C13.7251 20.9374 12.9337 22 12 22C11.0663 22 10.2749 20.9374 9.68457 20.347C8.99128 19.6537 8.52349 19.4637 7.55206 19.4637C6.76068 19.4637 5.63218 19.6175 5.00949 19C4.38181 18.3776 4.53628 17.2444 4.53628 16.4479C4.53628 15.4414 4.31616 14.9786 3.59938 14.2618C2.53314 13.1956 2.00002 12.6624 2 12C2.00001 11.3375 2.53312 10.8044 3.59935 9.73817C4.2392 9.09832 4.53628 8.46428 4.53628 7.55206C4.53628 6.76065 4.38249 5.63214 5 5.00944C5.62243 4.38178 6.7556 4.53626 7.55208 4.53626C8.46427 4.53626 9.09832 4.2392 9.73815 3.59937C10.8044 2.53312 11.3375 2 12 2C12.6625 2 13.1956 2.53312 14.2618 3.59937C14.9015 4.23907 15.5355 4.53626 16.4479 4.53626C17.2393 4.53626 18.3679 4.38247 18.9906 5C19.6182 5.62243 19.4637 6.75559 19.4637 7.55206C19.4637 8.55858 19.6839 9.02137 20.4006 9.73817C21.4669 10.8044 22 11.3375 22 12C22 12.6624 21.4669 13.1956 20.4006 14.2618C19.6838 14.9786 19.4637 15.4414 19.4637 16.4479C19.4637 17.2444 19.6182 18.3776 18.9905 19Z" />
+                                        <path d="M9 12.8929C9 12.8929 10.2 13.5447 10.8 14.5C10.8 14.5 12.6 10.75 15 9.5" stroke="@(plan.Featured ? "black" : "white")" />
+                                    </svg>
+                                    @feature
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    /// <summary>The headline.</summary>
+    [Parameter] public string Title { get; set; } = "Plans that grow your business.";
+
+    /// <summary>The line under the headline.</summary>
+    [Parameter] public string Description { get; set; } = "Unlock potential with plans designed to fuel growth.";
+
+    /// <summary>The cards, in order. Upstream's three plans when none are given.</summary>
+    [Parameter] public IReadOnlyList<PricingTier> Plans { get; set; } = Defaults;
+
+    /// <summary><c>monthly</c> or <c>yearly</c> — which the switch shows when the page arrives.
+    /// Yearly, as upstream starts. Anything else is read as <c>monthly</c>.</summary>
+    [Parameter] public string Billing { get; set; } = "yearly";
+
+    /// <summary>Written after "Yearly" and lit while yearly is on. Null leaves it out.</summary>
+    [Parameter] public string? YearlyBadge { get; set; } = "(Save 20%)";
+
+    /// <summary>The words on every card's button.</summary>
+    [Parameter] public string ActionLabel { get; set; } = "Select Plan";
+
+    bool Yearly => string.Equals(Billing?.Trim(), "yearly", StringComparison.OrdinalIgnoreCase);
+
+    // group/growth-business so the switch's labels can follow it without a script.
+    string Classes => Cn("group/growth-business min-h-screen bg-slate-100 py-24 text-black", Class);
+
+    // Upstream's Button recipe resolved against its own className, as tailwind-merge resolves it,
+    // with the two theme tokens it keeps (text-secondary-foreground, hover:bg-secondary/80 on the
+    // featured card) written as their light values.
+    static string ButtonClasses(PricingTier plan) => ClassMerge.Of(
+        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        plan.Featured ? "text-neutral-900 hover:bg-neutral-100/80" : "border",
+        "px-4 py-2",
+        "mb-5 h-14 w-full rounded-lg",
+        plan.Featured
+            ? "border border-neutral-700 bg-lime-500 py-4"
+            : "border-neutral-200 bg-white hover:bg-white hover:shadow-lg hover:shadow-neutral-200");
+
+    static readonly IReadOnlyList<PricingTier> Defaults =
+    [
+        new("Basic Plan", "Ideal for small businesses", 29, 23,
+            ["Unified dashboard", "Finance management module", "Inventory control", "Basic reporting and analytics", "10 user accounts"]),
+        new("Business Plan", "For growing businesses", 59, 47,
+            ["Everything in basic plan", "HR & payroll module", "Sales & CRM module", "Workflow automation", "Advanced analytics & reporting"])
+        {
+            Featured = true,
+        },
+        new("Premium Plan", "Ideal for enterprises seeking", 99, 79,
+            ["Everything in business plan", "Custom integrations", "AI-Driven recommendations", "Role based access control", "Unlimited user accounts"]),
+    ];
+}

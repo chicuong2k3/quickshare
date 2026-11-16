@@ -1,0 +1,156 @@
+@layout MainLayout
+@page "/account/workspace/audit"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Audit
+@using QuickShare.Features.Workspaces.Shared
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ws_audit_title"]</PageTitle>
+
+@* Member activity — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper id="workspace-audit-app" Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_audit_title"]</h1>
+        <p class="text-muted-foreground">@Loc["ws_audit_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceAudit" />
+
+    @* Filters drive the URL, so a filtered view is linkable and the back button works. *@
+    <form class="workspace-filters" method="get" action="@RoutePaths.AccountWorkspaceAudit"
+          up-submit="true" up-target="#workspace-audit-app" up-history="true">
+        <label class="workspace-label" for="ws-audit-action">@Loc["ws_audit_filter_action"]</label>
+        <NativeSelect id="ws-audit-action" name="action">
+            <NativeSelectOption value="">@Loc["ws_audit_all_actions"]</NativeSelectOption>
+            @foreach (var action in AuditActions)
+            {
+                <NativeSelectOption value="@action.ToString()" selected="@(string.Equals(Action, action.ToString(), StringComparison.OrdinalIgnoreCase))">@Humanize(action)</NativeSelectOption>
+            }
+        </NativeSelect>
+
+        <label class="workspace-label" for="ws-audit-from">@Loc["ws_audit_filter_from"]</label>
+        <Input id="ws-audit-from" name="from"  type="date" value="@From" />
+
+        <label class="workspace-label" for="ws-audit-to">@Loc["ws_audit_filter_to"]</label>
+        <Input id="ws-audit-to" name="to"  type="date" value="@To" />
+
+        <button type="submit" data-slot="button" data-variant="default" data-ai-action="workspace.audit.filter">@Loc["ws_audit_apply"]</button>
+        <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
+    </form>
+
+    @Chunk
+
+</PageWrapper>
+
+@code {
+    /// <summary>Only the workspace-scoped types can ever appear here — the rest are personal-timeline events.</summary>
+    private static readonly SecurityEventType[] AuditActions =
+    [
+        SecurityEventType.WorkspaceCreated,
+        SecurityEventType.WorkspaceRenamed,
+        SecurityEventType.WorkspaceSeatsChanged,
+        SecurityEventType.WorkspaceMemberInvited,
+        SecurityEventType.WorkspaceMemberJoined,
+        SecurityEventType.WorkspaceMemberRevoked,
+        SecurityEventType.WorkspaceMemberRoleChanged,
+        SecurityEventType.WorkspaceTransferInitiated,
+        SecurityEventType.WorkspaceTransferAccepted,
+        SecurityEventType.WorkspaceTransferCancelled,
+        SecurityEventType.WorkspaceReportGenerated,
+    ];
+
+    [SupplyParameterFromQuery(Name = "action")]
+    public string? Action { get; set; }
+
+    [SupplyParameterFromQuery(Name = "from")]
+    public string? From { get; set; }
+
+    [SupplyParameterFromQuery(Name = "to")]
+    public string? To { get; set; }
+
+    private bool isAdmin;
+    private WorkspaceAuditPage page = new([], 0);
+
+    private string Query =>
+        $"?action={Uri.EscapeDataString(Action ?? string.Empty)}" +
+        $"&from={Uri.EscapeDataString(From ?? string.Empty)}" +
+        $"&to={Uri.EscapeDataString(To ?? string.Empty)}";
+
+    private string ExportUrl => "/api/workspace/audit/export" + Query;
+
+    private RenderFragment Chunk => @<section id="workspace-audit-body">
+        @if (!isAdmin)
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p>@Loc["ws_admin_only"]</p>
+                </CardContent>
+            </Card>
+        }
+        else if (page.Rows.Count == 0)
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <p class="text-muted-foreground">@Loc["ws_audit_empty"]</p>
+                </CardContent>
+            </Card>
+        }
+        else
+        {
+            <Card class="account-card workspace-card">
+                <CardContent >
+                    <Table class="workspace-table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead scope="col">@Loc["ws_audit_col_when"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_audit_col_who"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_audit_col_action"]</TableHead>
+                                <TableHead scope="col">@Loc["ws_audit_col_detail"]</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            @foreach (var row in page.Rows)
+                            {
+                                <TableRow>
+                                    <TableCell><time datetime="@row.CreatedAt.ToString("o")">@row.CreatedAt.ToLocalTime().ToString("g")</time></TableCell>
+                                    <TableCell>@(string.IsNullOrEmpty(row.ActorName) ? row.ActorEmail : row.ActorName)</TableCell>
+                                    <TableCell>@row.Action</TableCell>
+                                    <TableCell class="workspace-table__detail">@row.MetadataJson</TableCell>
+                                </TableRow>
+                            }
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        }
+    </section>;
+
+    private static string Humanize(SecurityEventType type) => type.ToString();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
+        if (seat is null) return;
+
+        isAdmin = true;
+        page = await new WorkspaceAuditReader(Db).ReadAsync(
+            seat.WorkspaceId,
+            actorId: null,
+            WorkspaceAuditReader.ParseAction(Action),
+            WorkspaceAuditReader.ParseDate(From),
+            WorkspaceAuditReader.ParseDate(To),
+            take: 50,
+            CancellationToken.None);
+    }
+}

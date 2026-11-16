@@ -1,0 +1,20 @@
+@inherits UiComponentBase
+
+@* Hidden from the accessibility tree: a chevron read aloud between every crumb is noise, and
+   the <nav aria-label="breadcrumb"> has already said what this list is. *@
+
+<li data-slot="breadcrumb-separator" role="presentation" aria-hidden="true"
+    class="@Classes" @attributes="AdditionalAttributes">
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        <Icon Name="chevron-right" Class="rtl:rotate-180" />
+    }
+</li>
+
+@code {
+    string Classes => Cn("[&>svg]:size-3.5", Class);
+}

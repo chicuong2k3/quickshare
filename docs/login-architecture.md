@@ -109,8 +109,8 @@ Browser                  QuickShare (9000)           Google OAuth
    │  GET /files (cookie)    │                           │
    │────────────────────────▶│                           │
    │  [Authorize] passes     │                           │
-   │  Page calls IMessageBus │                           │
-   │  / AppDbContext in-proc │                           │
+│  Page calls IMediator    │                           │
+│  / AppDbContext in-proc │                           │
    │◀────────────────────────│                           │
 ```
 

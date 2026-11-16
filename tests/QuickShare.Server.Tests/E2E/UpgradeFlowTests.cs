@@ -52,6 +52,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });
@@ -71,6 +72,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "yearly"),
         });
@@ -89,6 +91,7 @@ public sealed class UpgradeFlowTests : IClassFixture<TestWebAppFactory>
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("__RequestVerificationToken", token),
+            new KeyValuePair<string, string>("_handler", "upgrade-checkout"),
             new KeyValuePair<string, string>("Plan", "pro"),
             new KeyValuePair<string, string>("Billing", "monthly"),
         });

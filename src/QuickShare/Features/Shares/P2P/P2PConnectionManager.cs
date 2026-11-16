@@ -27,7 +27,7 @@ public sealed class P2PRoom
     public DateTime LastActivity { get; set; }
     public bool SenderConnected => Sender?.State == WebSocketState.Open;
     public bool ReceiverConnected => Receivers.Values.Any(r => r.Socket.State == WebSocketState.Open);
-    public bool IsComplete => SenderConnected && Receivers.Count > 0;
+    public bool IsComplete => SenderConnected && !Receivers.IsEmpty;
 }
 
 public sealed class P2PConnectionManager : IDisposable
@@ -37,6 +37,7 @@ public sealed class P2PConnectionManager : IDisposable
     private readonly int _maxConnections;
     private readonly Timer _cleanupTimer;
     private readonly ILogger<P2PConnectionManager> _logger;
+    private static readonly JsonSerializerOptions CamelCaseJson = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private static readonly TimeSpan RoomTtl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan CleanupInterval = TimeSpan.FromSeconds(30);
 
@@ -139,7 +140,7 @@ public sealed class P2PConnectionManager : IDisposable
         if (ws.State != WebSocketState.Open)
             return Task.CompletedTask;
 
-        var json = JsonSerializer.Serialize(message, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var json = JsonSerializer.Serialize(message, CamelCaseJson);
         var bytes = Encoding.UTF8.GetBytes(json);
         return ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
     }

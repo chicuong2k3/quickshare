@@ -1,0 +1,5 @@
+# EF Core generated migrations — not hand-written, skip analyzers
+[*.cs]
+dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.CA1825.severity = none
+dotnet_diagnostic.CA1861.severity = none

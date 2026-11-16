@@ -1,0 +1,10 @@
+@inherits UiComponentBase
+
+@* min-w-0 is the addition, and it is load-bearing: a flex child's min-width is auto, so this
+   block refuses to shrink below its longest unbreakable word — an address like
+   shadcn@vercel.com — and the row wraps instead, putting the avatar on one line and the name on
+   the next. That is exactly what happened inside a narrow menu. *@
+
+<div data-slot="item-content"
+     class="@Cn("flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none min-w-0", Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>

@@ -4,11 +4,11 @@
 
 | Project | Role | Port | Framework |
 |---------|------|------|-----------|
-| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Wolverine, EF Core, Npgsql, Htmxor, DAUB |
+| `QuickShare` | Monolith: FastEndpoints API + Blazor Static SSR | `9000` (local dev) / `8080` (Docker) | .NET 10, FastEndpoints, Mediator, Hangfire, EF Core, Npgsql, Unpoly.Blazor, Unpoly.Blazor.Shadcn |
 | `QuickShare.Querying` | Dynamic sort/paging engine + source generators | — | .NET 10 |
 | `QuickShare.Server.Tests` | Unit tests | — | xUnit |
 
-> **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMessageBus` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
+> **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMediator` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
 >
 > In Docker the app listens on `8080` (`ASPNETCORE_URLS=http://+:8080`) and runs as non-root `appuser`. See [Deployment — Dev (self-hosted runner)](deployment-dev.md).
 
@@ -47,11 +47,11 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
   - Password gate (if `HasPassword`)
   - Ad interstitial (free plan)
   - Download limit enforcement
-  - Called in-process via `IMessageBus` from `Download.razor` (no API endpoint)
+  - Called in-process via `IMediator` from `Download.razor` (no API endpoint)
 - **Download** (`DownloadDeliveryEndpoint` + `Handler`) — Stream file from storage to client, supports AES-GCM client-side decryption. All uploads are now AES-256-GCM encrypted by default (no toggle).
 
 ### Files (`Features/Files/`)
-- **List** — `ListFilesHandler` called via `IMessageBus` from `Files.razor` (in-process, no API endpoint)
+- **List** — `ListFilesHandler` called via `IMediator` from `Files.razor` (in-process, no API endpoint)
 - **Move** — `PATCH /api/files/{id}/folder` — drag-drop between folders (called from files.js)
 - **Download** — Direct file download by ID
 - `Shared/Errors.cs` — File-specific error types
@@ -63,8 +63,8 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | Create | POST | `/api/folders` | files.js |
 | Update | PUT | `/api/folders/{id}` | files.js |
 | Delete | DELETE | `/api/folders/{id}` | files.js |
-| List | — | (in-process) | `Files.razor` via `IMessageBus` → `ListFoldersHandler` |
-| GetInfo | — | (in-process) | `Files.razor` via `IMessageBus` → `GetFolderInfoHandler` |
+| List | — | (in-process) | `Files.razor` via `IMediator` → `ListFoldersHandler` |
+| GetInfo | — | (in-process) | `Files.razor` via `IMediator` → `GetFolderInfoHandler` |
 
 ### Deliveries (`Features/Deliveries/`)
 - **List** — `GET /api/deliveries` — user's delivery history
@@ -72,6 +72,14 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 - **Password** — `POST /api/deliveries/{code}/verify` — verify password-protected delivery
 - **OTP** — `POST /api/deliveries/{code}/verify-otp` — verify 6-digit OTP code set by sender on upload
 - `DeliveryService.cs` — Shared delivery coordination logic
+- **Compliance controls** — legal hold (#266), account retention policy (#161), delivery IP allowlist + country rules (#142/#166). See [docs/compliance-architecture.md](compliance-architecture.md)
+- **Comments & chat channels** — threaded comments on a delivery with sender/workspace/privacy gating (#289), Slack and Teams posting for new shares and comments (#180). See [docs/comments-and-channels.md](comments-and-channels.md)
+- **Delivery gating** — workspace/folder approval before a link goes live (#162), recurring auto-send with a fresh link per cycle (#176). See [docs/delivery-gating.md](delivery-gating.md)
+- **Workspace branding** — logo, accent colours, header/footer copy and self-hosted woff2 typography on recipient-facing pages (#285/#286). See [docs/workspace-branding.md](workspace-branding.md)
+- **Object storage & backup** — any S3-compatible endpoint via `ObjectStore` config, R2/MinIO/Garage/Wasabi/AWS (#171); per-delivery storage region with key-derived bucket routing (#119); scheduled workspace manifest export to customer-controlled buckets (#271). See [docs/object-storage-and-backup.md](object-storage-and-backup.md)
+- **Enterprise trust** — tenant isolation + cross-tenant probe logging (#190), audit-log streaming to Splunk/Elastic/CEF (#191), self-serve DPA (#184), published SOC 2 control map (#147/#323). See [docs/enterprise-trust.md](enterprise-trust.md)
+- **Billing ledger** — per-seat billing (#278), Studio overage metering (#141), VAT invoices (#112), purchase orders + net terms (#192). See [docs/billing-ledger.md](billing-ledger.md)
+- **Team workspaces** — seats + pooled quota + shared history (#106), ownership transfer (#252), workspace audit log (#145), admin usage report (#300), shared folders + per-folder upload defaults + folder templates (#151/#245/#234). See [docs/workspaces-architecture.md](workspaces-architecture.md)
 
 ### Payments (`Features/Payments/`)
 - **PayOS Webhook** — `POST /api/payments/payos/webhook` — PayOS payment webhook. PayOS is a **payment gateway** supporting bank transfer (VietQR), card, and e-wallet. Subscription management (cancel, change, expiry) is handled in-app.
@@ -93,8 +101,15 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 ### Shares (`Features/Shares/`)
 - **P2P** — `POST /api/shares/p2p` — create P2P share code + WebRTC signaling metadata
 
+### Analytics (`Features/Analytics/`)
+- Anonymous product analytics (issue #24) — no PII, no user ids, no raw IPs
+- Events recorded at upload start/commit, download, P2P create/join, OTP pass/fail, ad interstitial, signup
+- Client beacon `POST /api/analytics/track` (allowlisted events, sets `qs_visitor` cookie)
+- Founder dashboard `/admin/analytics` + `GET /api/admin/analytics` — DAU, funnel, top files, geo spread
+- See [analytics-architecture.md](analytics-architecture.md)
+
 ### Users (`Features/Users/`)
-- **Profile** — `Account.razor` `<form method="post">` handler reads name/avatar, re-signs cookie. In-process via `IMessageBus` or `AppDbContext`.
+- **Profile** — `Account.razor` `<form method="post">` handler reads name/avatar, re-signs cookie. In-process via `IMediator` or `AppDbContext`.
 - **Registration** — `UserRegistrationService.RegisterAsync()` called in-process from Google OAuth `OnCreatingTicket` (DRY — same service used by all providers)
 - `Shared/UserRegistrationService.cs` — Registration logic shared between OAuth providers
 
@@ -107,18 +122,19 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | **PostgreSQL** | Users, logins, files metadata, folders, deliveries, usage tracking. EF Core + Npgsql |
 | **Cloudflare R2** (`R2StorageProvider.cs`) | S3-compatible file blob storage, presigned URLs, multipart upload |
 | **Local Disk** (`LocalDiskStorageProvider.cs`) | Fallback/development disk storage |
-| **Wolverine** | Message bus + transactional outbox for background job reliability |
+| **Mediator** | In-process request/response dispatch (martinothamar/Mediator source-generated handlers, scoped lifetime) — replaces the former Wolverine message bus |
 | **FastEndpoints** | REPR-pattern (Request-Endpoint-Response) minimal API framework |
 | **FastEndpoints Swagger** | OpenAPI/Swagger document generation at `/swagger` |
 | **QuotaEnforcer** | Per-plan limits: file size caps, monthly upload quota, transfer counts |
 | **DataProtection** | `PersistKeysToFileSystem` with `SetApplicationName("QuickShare")` — single app, no cross-process key sharing needed |
-| **Background Jobs** | 4 hosted services: `DeliveryCleanupService`, `ZombiePartSweeper`, `DeliveryExpiryJob`, `SubscriptionExpiryJob` |
+| **Hangfire** | Background jobs: 7 recurring maintenance jobs with dashboard at `/hangfire` (admin-gated via `AdminDashboardAuthorizationFilter`). Postgres storage. Replaces the hand-rolled `BackgroundService` loops. |
+| **Backup / Restore** | `ops/backup/*.sh` + `.github/workflows/backup.yml` (daily) + `restore-drill.yml` (quarterly). `pg_dump` → `age` encrypt → R2 versioned bucket, 30-day retention. See [backup-restore-runbook.md](backup-restore-runbook.md). |
 | **TrialService** | 14-day free trial tracking |
 | **GlobalExceptionHandler** | Centralized `ProblemDetails` error responses |
 | **RequestLoggingMiddleware** | Structured inbound request logging |
 | **P2P Signaling** | `P2PConnectionManager` (singleton) + `P2PSignalingMiddleware` — WebSocket-based WebRTC signaling relay |
 | **Rate Limiting** | `RateLimitingMiddleware` — configurable request throttling |
-| **HTTP Caching** | `HtmxCacheMiddleware` — `Cache-Control` headers for SSR/HTMX pages (2min private default, 5min public for home/pricing). Skips `/api/*`, `/send`, `/login`, `/logout`. |
+| **HTTP Caching** | `PageCacheMiddleware` sets five-minute public caching for anonymous home and pricing requests after consent is recorded, uses `no-store` for signed-in responses and pages displaying the antiforgery-protected consent form, defaults other GET responses to `no-store`, and varies public responses by cookie, language and Unpoly headers. Explicit cache policies remain in effect outside the public allowlist. |
 
 ---
 
@@ -131,12 +147,12 @@ Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
 | `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: OTP gate (if set) → password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation, abuse reporting, sender branding |
 | `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling, data channel file streaming with progress |
 | `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, WebRTC answer, data channel file receipt, progress tracking |
-| `/files` | `Files.razor` | Vanilla JS + htmx | File browser: stats dashboard (4 cards), folder strip with drag-drop move, CRUD modals, htmx-powered live search, download button |
-| `/account` | `Account.razor` | Vanilla JS + htmx | Profile edit (name, avatar upload), OAuth badge, delivery branding manager, htmx form + lazy-load |
+| `/files` | `Files.razor` | Vanilla JS + Unpoly | File browser: stats dashboard, folder controls, search and downloads |
+| `/account` | `Account.razor` | Native forms + Unpoly | Profile edit, notification preferences, security activity and account data |
 | `/account/billing` | `AccountBilling.razor` | `<form method="post">` | Billing history, subscription status, cancel via form handler |
 | `/upgrade` | `Upgrade.razor` | `<form method="post">` | Plan upgrade, PayOS payment — form creates PaymentIntent + calls PayOS API |
 | `/login` | `Login.razor` | Server-side | OAuth provider buttons: Google, GitHub |
-| `/pricing` | `Pricing.razor` | htmx | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
+| `/pricing` | `Pricing.razor` | Vanilla JS | 3-tier plan cards (Free/Pro/Studio), monthly/yearly toggle, FAQ accordion, CTA |
 
 ### SSR Data Access Pattern
 
@@ -144,34 +160,34 @@ SSR pages that previously called the API via HTTP (`IQuickShareApi`/Refit) now a
 
 | Page | Old (HTTP) | New (in-process) |
 |------|-----------|------------------|
-| `Files.razor` | `Api.GetFoldersAsync()`, `Api.GetFilesAsync()` | Inject `IMessageBus`, call `ListFoldersQuery`, `ListFilesQuery` directly |
-| `Account.razor` | `Api.GetMyProfileAsync()`, `Api.UpdateMyProfileAsync()` | `<form method="post">` handler updates profile via `AppDbContext`; data loaded via `IMessageBus` |
+| `Files.razor` | `Api.GetFoldersAsync()`, `Api.GetFilesAsync()` | Inject `IMediator`, call `ListFoldersQuery`, `ListFilesQuery` directly |
+| `Account.razor` | `Api.GetMyProfileAsync()`, `Api.UpdateMyProfileAsync()` | `<form method="post">` handler updates profile via `AppDbContext`; data loaded via `IMediator` |
 | `AccountBilling.razor` | `Api.GetBillingHistoryAsync()`, `Api.CancelSubscriptionAsync()` | Inject `BillingHistoryService`, `SubscriptionService` — call directly in `OnInitializedAsync` and form handler |
-| `Upgrade.razor` | `Api.InitiateUpgradeAsync()`, `Api.GetMyProfileAsync()` | `<form method="post">` handler creates `PaymentIntent` via `AppDbContext` directly; profile loaded via `IMessageBus` |
+| `Upgrade.razor` | `Api.InitiateUpgradeAsync()`, `Api.GetMyProfileAsync()` | `<form method="post">` handler creates `PaymentIntent` via `AppDbContext` directly; profile loaded via `IMediator` |
 
-**Rule:** If the endpoint's handler goes through `IMessageBus.InvokeAsync<Result<T>>(cmd)`, the page injects `IMessageBus` and calls the same command/query. If the endpoint uses `AppDbContext` inline, the page injects `AppDbContext` and queries directly with Mapperly mappers.
+**Rule:** If the endpoint's handler goes through `IMediator.Send<T>(cmd, ct)`, the page injects `IMediator` and calls the same command/query. If the endpoint uses `AppDbContext` inline, the page injects `AppDbContext` and queries directly with Mapperly mappers.
 
 JS-based pages (Upload, Download, P2PTransfer, P2PDownload) call `/api/*` via `fetch()`/`XMLHttpRequest` — these use **relative URLs** (empty `apiBaseUrl` in `window.ZAPDROP_CONFIG`), so they work same-origin with no CORS.
 
 ### Component Layout
-- **`MainLayout.razor`** — Flex-column layout: header (logo + nav) → `@Body` → footer. Inherits `HtmxLayoutComponentBase` for htmx partial rendering. Navbar: DAUB nav-menu + avatar dropdown (initials + email + Account/Sign out links).
-- **`HtmxorLayout.razor`** — Base htmx layout component
-- **`App.razor`** — Root HTML: DAUB anti-FOUC script, `daub.css` CDN, `hx-boost="true"` on body, `daub.js` CDN, theme init (grunge-dark default), QR lib
+- **`MainLayout.razor`** — Flex-column layout: header (logo + nav) → `@Body` → footer. Uses `LayoutComponentBase`.
+- **`EmptyLayout.razor`** — Minimal layout for the Outlook task pane.
+- **`App.razor`** — Root HTML, theme initialization, DAUB and Shadcn styles, and Unpoly assets.
 
 ### Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Framework** | .NET 10 Blazor Static SSR with Htmxor |
-| **UI** | DAUB (`daub.dev/daub.css` + `daub.js`) — grunge-dark theme, 84 components |
-| **Interactivity** | htmx (`hx-boost`, `hx-get`, `hx-post`, `hx-target`, `hx-swap`) + vanilla JS modules |
-| **Styling** | DAUB component classes + CSS isolation via `.razor.css` (Blazor auto-scope) |
+| **Framework** | .NET 10 Blazor Static SSR with Unpoly.Blazor |
+| **UI** | Unpoly.Blazor.Shadcn on migrated components; DAUB retained on legacy components |
+| **Interactivity** | Opt-in Unpoly and vanilla JS modules |
+| **Styling** | Tailwind v4 + Shadcn tokens on migrated components; DAUB classes and CSS isolation on legacy components |
 | **CSS Variables** | `--color-foreground`, `--color-background`, `--color-primary`, `--color-accent`, `--color-border`, `--color-muted`, `--color-destructive`, `--color-warning`, `--color-success`, `--color-ring` |
 | **P2P** | Custom `RTCPeerConnection` + data channels (`/wwwroot/js/p2p/`): `signaling.js`, `peerConnection.js`, `fileTransfer.js`, `fileReceiver.js` |
 | **QR** | `qrcode-generator` (npm vendor-copied to `wwwroot/lib/qrcode/qrcode.min.js`) |
-| **API** | JS pages call relative `/api/*` (same origin); SSR pages use in-process `IMessageBus` or `AppDbContext` |
+| **API** | JS pages call relative `/api/*` (same origin); SSR pages use in-process `IMediator` or `AppDbContext` |
 | **Auth** | `AuthorizeRouteView` + `[Authorize]` on protected pages; cookie auth with dual `/api` vs page redirect behavior |
-| **Anti-forgery** | `app.UseAntiforgery()` + `app.UseHtmxAntiforgery()` |
+| **Anti-forgery** | `app.UseAntiforgery()` and explicit validation for native form endpoints |
 
 ### Static Assets (`wwwroot/`)
 ```
@@ -219,6 +235,7 @@ Entities live in `src/QuickShare/Data/Entities/` (namespace `QuickShare.Data.Ent
 | `Manifest` | `manifests` | Upload manifest metadata |
 | `DownloadTracking` | `download_tracking` | Per-delivery download counters |
 | `PaymentEvent` | `payment_events` | PayOS payment webhook events |
+| `AnalyticsEvent` | `analytics_events` | Anonymous product events (visitor, upload, download, P2P, OTP, ad, signup) — no PII |
 
 ### Constants
 - `Infrastructure/PlanTierLimits.cs` — plan limits: max file size, max expiry days, max downloads, monthly bytes, concurrency
@@ -357,7 +374,7 @@ Subsequent requests:
 - **Single app** — `DataProtection` uses `PersistKeysToFileSystem` + `SetApplicationName("QuickShare")`
 - **Storage Mode** — R2 is default (`IStorageProvider` → `R2StorageProvider`); dev can switch to local disk
 - **Plan Tiers** — Free (100MB/file, 2GB/mo, 5 transfers/mo, 7d expiry), Pro (1GB/file, 500GB/mo, 100 transfers/mo, 30d expiry), Studio (20GB/file, unlimited, unlimited, custom branding + API)
-- **`hx-boost="true"`** — All internal links get SPA-like behavior via htmx
+- **Unpoly** — Explicit `up-follow`, `up-submit` and `up-poll` enhance selected server-rendered interactions.
 - **Theme** — DAUB grunge-dark (typewriter / ink-stained aesthetic), persisted in localStorage
 
 ---
@@ -366,11 +383,11 @@ Subsequent requests:
 
 ```
 src/QuickShare/
-├── Infrastructure/       # IStorageProvider, LocalDiskStorageProvider, Storage/ (R2), PlanTierLimits, AuthConstants, background jobs (DeliveryExpiryJob, ZombiePartSweeper, SubscriptionExpiryJob)
-├── Components/            # Layout/ (MainLayout, HtmxorLayout)
+├── Infrastructure/       # IStorageProvider, LocalDiskStorageProvider, Storage/ (R2), PlanTierLimits, AuthConstants, Jobs/ (Hangfire recurring jobs + dashboard auth)
+├── Components/            # Layout/ (MainLayout, EmptyLayout)
 ├── Data/                  # AppDbContext, AuditableEntityInterceptor, Entities/
 ├── Extensions/            # ClaimsPrincipalExtensions, ResultExtensions
-├── Features/              # FastEndpoints + Wolverine handlers
+├── Features/              # FastEndpoints + Mediator handlers
 │   ├── Deliveries/        # Brand, List, Password, Otp, DeliveryService
 │   ├── Downloads/         # Download
 │   ├── Files/             # Move + Shared mappers (List handler in-process)
@@ -381,8 +398,9 @@ src/QuickShare/
 │   ├── Uploads/           # StartR2, CommitR2, AbortR2 + Shared/ (ManifestEncryption, ManifestData)
 │   ├── Users/             # Avatar endpoint, Shared/ (UserRegistrationService, UserMapper)
 │   ├── Uploads/           # R2 multipart (StartR2, CommitR2, AbortR2)
+│   ├── Analytics/         # Anonymous analytics: AnalyticsService, track endpoint, dashboard query (issue #24)
 │   └── Users/             # UserRegistrationService, UserMapper
-├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, HtmxCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware
+├── Infrastructure/        # Storage, Quota, Options, ExceptionHandler, PageCacheMiddleware, RateLimitingMiddleware, P2PConnectionManager, P2PSignalingMiddleware
 ├── Middleware/            # (empty — middleware lives in Infrastructure/)
 ├── Migrations/            # EF Core migrations
 ├── Models/                # Entity models, DTOs (User, Delivery, Folder, etc.)

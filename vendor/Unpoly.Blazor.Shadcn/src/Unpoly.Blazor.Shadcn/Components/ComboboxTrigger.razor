@@ -1,0 +1,22 @@
+@inherits UiComponentBase
+
+@* The button that opens the list when the caller wants a select-like combobox rather than a
+   type-to-filter one. aria-haspopup="listbox", not "menu": what opens is a list of values to
+   choose from, and the two are announced differently. *@
+
+<button type="button" data-slot="combobox-trigger" data-target="@Target"
+        popovertarget="@Target" role="combobox" aria-haspopup="listbox" aria-expanded="false"
+        class="@Classes" @attributes="AdditionalAttributes">
+    @ChildContent
+    <ComboboxTriggerIcon />
+</button>
+
+@code {
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    const string Base =
+        "[&_svg:not([class*='size-'])]:size-4 w-full justify-between font-normal";
+
+    string Classes => Cn(ButtonVariants.Of("outline", "default"),
+                         "w-full justify-between font-normal", Base, Class);
+}

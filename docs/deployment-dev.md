@@ -113,6 +113,9 @@ docker compose logs -f quickshare
 
 ## Notes
 
+- **Backups:** daily PostgreSQL dump → `age`-encrypted → versioned R2 bucket,
+  plus a quarterly restore drill. See [backup-restore-runbook.md](backup-restore-runbook.md).
+  R2 object versioning must be enabled on both the delivery and backup buckets.
 - Missing `DB_CONNECTION_STRING` → app crashes at startup.
 - Wrong Google OAuth → login does not work (other OAuth providers are optional).
 - R2 not configured → app falls back to local disk; uploads via R2 will fail.

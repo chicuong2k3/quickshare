@@ -1,0 +1,27 @@
+@inherits UiComponentBase
+
+@* Toggles the sidebar and writes the cookie the server reads next time. It ships hidden and
+   ui.js reveals it: with no JavaScript there is nothing to toggle, and a button that does
+   nothing is worse than one that is absent — the sidebar simply stays open, and every link in
+   it is still there. *@
+
+<button type="button" data-slot="sidebar-trigger" data-sidebar-toggle hidden
+        aria-label="@AriaLabel" aria-controls="@Controls" class="@Classes"
+        @attributes="AdditionalAttributes">
+    @* The panel is on the reading-start edge, so the glyph has to turn with the direction —
+       it is a picture of a layout, and an unflipped one points at the wrong side. *@
+    <Icon Name="panel-left" Class="rtl:rotate-180" />
+    <span class="sr-only">@AriaLabel</span>
+</button>
+
+@code {
+    [Parameter] public string AriaLabel { get; set; } = "Toggle sidebar";
+
+    /// <summary>The id of the sidebar it controls, if the page has more than one.</summary>
+    [Parameter] public string? Controls { get; set; }
+
+    const string Base =
+        "size-7";
+
+    string Classes => Cn(ButtonVariants.Of("ghost", "icon-sm"), Base, Class);
+}

@@ -1,0 +1,73 @@
+@using Microsoft.AspNetCore.Components.Forms
+@inherits UiComponentBase
+
+<div data-slot="file-input" data-disabled="@(Disabled ? "" : null)" class="@Classes" @attributes="AdditionalAttributes">
+    <div data-slot="file-input-control" class="@ControlClasses">
+        @if (ShowFileIcon)
+        {
+            <div data-slot="file-input-icon" class="@IconClasses">
+                <Icon Name="@Icon" Class="size-4" />
+            </div>
+        }
+        <div data-slot="file-input-content" class="min-w-0 flex-1">
+            <p data-slot="file-input-title" class="truncate text-sm font-medium text-foreground">@DisplayText</p>
+            @if (!string.IsNullOrWhiteSpace(Hint))
+            {
+                <p data-slot="file-input-description" class="truncate text-xs text-muted-foreground">@Hint</p>
+            }
+        </div>
+        <Label For="@Id" data-slot="file-input-trigger" Class="@TriggerClasses">
+            @ChooseLabel
+        </Label>
+        <InputFile id="@Id" OnChange="HandleChangeAsync" accept="@Accept" multiple="@Multiple"
+                   disabled="@Disabled" class="sr-only" aria-label="@AriaLabel" aria-invalid="@AriaInvalid" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = $"file-{Guid.NewGuid():N}";
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+    [Parameter] public string? Accept { get; set; }
+    [Parameter] public bool Multiple { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Prompt { get; set; } = "Choose a file";
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? SelectedFileName { get; set; }
+    [Parameter] public string ChooseLabel { get; set; } = "Browse";
+    [Parameter] public string Icon { get; set; } = "upload";
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? AriaInvalid { get; set; }
+    [Parameter] public string? ControlClass { get; set; }
+    [Parameter] public string? TriggerClass { get; set; }
+
+    [Parameter] public bool ShowSelectedFileName { get; set; } = true;
+
+    /// <summary>Whether the leading icon chip is rendered. Turn off when the control sits next
+    /// to its own preview/thumbnail, so the area does not show two icons.</summary>
+    [Parameter] public bool ShowFileIcon { get; set; } = true;
+
+    private string? _chosenName;
+    private string DisplayText => SelectedFileName ?? (ShowSelectedFileName ? _chosenName : null) ?? Prompt;
+
+    private string Classes => Cn("w-full", Class);
+
+    private string ControlClasses => Cn(
+        "flex w-full items-center gap-3 rounded-lg border border-border bg-background p-2 text-foreground shadow-none " +
+        "transition-colors hover:bg-accent/30 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 " +
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        ControlClass);
+
+    private string IconClasses => Cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-muted-foreground shadow-none");
+
+    private string TriggerClasses => Cn(
+        "h-[1.625rem] cursor-pointer gap-1.5 rounded-md border border-primary/40 bg-card px-2.5 " +
+        "text-xs font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/5",
+        TriggerClass);
+
+    private async Task HandleChangeAsync(InputFileChangeEventArgs args)
+    {
+        _chosenName = args.FileCount == 0 ? null : args.FileCount == 1 ? args.File.Name : $"{args.FileCount} files selected";
+        await OnChange.InvokeAsync(args);
+    }
+}

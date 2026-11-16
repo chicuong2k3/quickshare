@@ -1,0 +1,68 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/devices"
+@layout MainLayout
+@attribute [Authorize]
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using QuickShare.Features.Users.Devices
+@using Unpoly.Blazor.Shadcn
+@using QuickShare.Features.Users.Shared
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+
+<Card id="devices-card" class="my-4 w-full max-w-md p-6">
+        <div>
+            <h2 class="text-xl font-semibold">@Loc["account_devices_title"]</h2>
+            <p class="mt-1 text-sm text-muted-foreground">@Loc["account_devices_subtitle"]</p>
+        </div>
+
+        @if (devices.Count == 0)
+        {
+            <p class="mt-4 text-muted-foreground">@Loc["account_devices_empty"]</p>
+        }
+        else
+        {
+            <ul class="mt-4">
+                @foreach (var device in devices)
+                {
+                    <li class="account-device-item flex items-center justify-between gap-3 border-b py-3 last:border-b-0">
+                        <div class="min-w-0">
+                            <span class="block truncate font-medium">@device.UserAgentLabel</span>
+                            <span class="block text-sm text-muted-foreground">@Loc["account_devices_first_seen", device.FirstSeenAt.ToLocalTime().ToString("g")]</span>
+                            <span class="block text-sm text-muted-foreground">@Loc["account_devices_last_seen", device.LastSeenAt.ToLocalTime().ToString("g")]</span>
+                        </div>
+                        <details>
+                            <summary class="@(ButtonVariants.Of("ghost", "sm")) cursor-pointer list-none">@Loc["account_devices_remove"]</summary>
+                            <p class="my-2 text-sm text-muted-foreground">@Loc["account_devices_remove_confirm"]</p>
+                            <form method="post" action="@RoutePaths.AccountDeviceRemove">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="@RemoveDeviceFormEndpoint.DeviceIdField" value="@device.Id" />
+                                <input type="hidden" name="@RemoveDeviceFormEndpoint.ReturnToField"
+                                       value="@(HttpContextAccessor.HttpContext?.Request.Path == RoutePaths.AccountDevices ? RoutePaths.AccountDevices : RoutePaths.Account)" />
+                                <Button Type="submit" Variant="destructive" Size="sm" data-ai-action="device.remove">@Loc["account_devices_remove"]</Button>
+                            </form>
+                        </details>
+                    </li>
+                }
+            </ul>
+        }
+</Card>
+
+@code {
+    private List<DeviceListItem> devices = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+
+        devices = await Db.UserDevices
+            .AsNoTracking()
+            .Where(d => d.UserId == user.Id)
+            .OrderByDescending(d => d.LastSeenAt)
+            .Select(d => new DeviceListItem(d.Id, d.UserAgentLabel, d.FirstSeenAt, d.LastSeenAt))
+            .ToListAsync(CancellationToken.None);
+    }
+
+    private sealed record DeviceListItem(Guid Id, string UserAgentLabel, DateTime FirstSeenAt, DateTime LastSeenAt);
+}

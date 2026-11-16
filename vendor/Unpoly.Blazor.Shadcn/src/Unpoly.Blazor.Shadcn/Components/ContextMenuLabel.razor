@@ -1,0 +1,8 @@
+@inherits UiComponentBase
+
+<div data-slot="context-menu-label" data-inset="@(Inset ? "true" : null)" class="@Cn("px-2 py-1.5 text-control font-medium text-foreground data-[inset]:ps-8", Class)" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Indents the label to line up with rows that have an icon.</summary>
+    [Parameter] public bool Inset { get; set; }
+}

@@ -37,18 +37,23 @@ public sealed class BrowserFixture : WebApplicationFactory<Program>, IAsyncLifet
     {
         builder.UseEnvironment("Development");
         builder.UseSetting("UseInMemoryDatabase", "true");
+        // Unique store per fixture: the default InMemory root is shared process-wide, so a
+        // fixed name would leak the per-IP anonymous P2P quota (3/day) across test classes.
+        builder.UseSetting("InMemoryDatabaseName", $"QuickShareTests-{Guid.NewGuid():N}");
         builder.UseSetting("Authentication:Google:ClientId", "test-client-id");
         builder.UseSetting("Authentication:Google:ClientSecret", "test-client-secret");
+        builder.UseSetting("Authentication:GitHub:ClientId", "test-client-id");
+        builder.UseSetting("Authentication:GitHub:ClientSecret", "test-client-secret");
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
         builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
         builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");
+        // Upload part PUTs go to http://stub.local/... (BrowserStorageStub), which a
+        // production CSP (connect-src 'self' https:) would block. CSP itself is covered
+        // by SecurityHeadersTests in the server suite — keep the browser suite CSP-free.
+        builder.UseSetting("SecurityHeaders:Enabled", "false");
 
         builder.ConfigureTestServices(services =>
         {
-            RemoveHostedService<DeliveryCleanupService>(services);
-            RemoveHostedService<ZombiePartSweeper>(services);
-            RemoveHostedService<DeliveryExpiryJob>(services);
-            RemoveHostedService<SubscriptionExpiryJob>(services);
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
 
             services.AddAuthentication(TestAuthHandler.SchemeName)
@@ -114,7 +119,7 @@ internal sealed class BrowserStorageStub : IStorageProvider
     public Task<long> GetObjectSizeAsync(string objectKey, CancellationToken ct = default)
         => Task.FromResult(-1L);
 
-    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
         => Task.FromResult(new R2InitResult("stub-upload-id", $"stub/{deliveryId}/{fileName}"));
 
     public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)
@@ -128,11 +133,29 @@ internal sealed class BrowserStorageStub : IStorageProvider
     public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default)
         => Task.CompletedTask;
 
+    public Task UploadObjectAsync(string objectKey, Stream content, string contentType, CancellationToken ct = default)
+        => Task.CompletedTask;
+
     public Task<Uri> GetPresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken ct = default)
         => Task.FromResult(new Uri("http://stub.local/download"));
 
     public Task DeleteObjectsAsync(string prefix, CancellationToken ct = default)
         => Task.CompletedTask;
+
+    public Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task CopyObjectAsync(string sourceKey, string destinationKey, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task<Stream?> OpenReadAsync(string objectKey, CancellationToken ct = default)
+        => Task.FromResult<Stream?>(null);
+
+    public Task<IReadOnlyList<string>> ListObjectsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<string>>([]);
+
+    public Task<IReadOnlyList<R2MultipartInfo>> ListMultipartUploadsAsync(string prefix, DateTime olderThan, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<R2MultipartInfo>>([]);
 }
 
 internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>

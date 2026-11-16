@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* FieldLabel's text, as a <div> rather than a <label>. That is the whole difference, and it
+   exists for one case: a whole card wrapped in a <FieldLabel>, where the title inside cannot be
+   a second <label> — nesting one label in another is invalid, and the browser then has to guess
+   which control the click belongs to.
+
+   It renders data-slot="field-label", exactly as upstream does, which is why the slot audit
+   never noticed this component was missing: the slot was already ported, by the other one. *@
+
+<div data-slot="field-label" class="@Cn(FieldLabel.Base, Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>

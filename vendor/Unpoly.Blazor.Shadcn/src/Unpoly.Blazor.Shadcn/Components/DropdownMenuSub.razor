@@ -1,0 +1,8 @@
+@inherits UiComponentBase
+
+@* A submenu. Radix opens it on hover with a safe triangle; the popover API has no nesting, so
+   ui.js opens the child popover from the parent row and positions it beside rather than below.
+   Keyboard: Right opens, Left closes, which is what the APG asks for. *@
+
+<div data-slot="dropdown-menu-sub" class="@Cn("relative", Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>

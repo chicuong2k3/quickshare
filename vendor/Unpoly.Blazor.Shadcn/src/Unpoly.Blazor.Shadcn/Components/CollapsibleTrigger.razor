@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+@* <summary> is already a button to the accessibility tree, already focusable, and already
+   toggles on Enter and Space. The disclosure marker is removed in ui.behavior.css. *@
+
+<summary data-slot="collapsible-trigger" class="@Cn("", Class)"
+         @attributes="AdditionalAttributes">@ChildContent</summary>

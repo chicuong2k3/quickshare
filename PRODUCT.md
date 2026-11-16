@@ -23,25 +23,29 @@ QuickShareCloud gửi file kích thước bất kỳ (chunked, mã hóa đầu�
 
 ## Operation Context
 
-- Upload/Download page: giao diện Blazor SSR + HTMX (shell render < 100ms, dữ liệu tải qua partial `hx-get`).
+- Upload/Download pages use Blazor static SSR. Direct GET renders usable authorized data; native URLs and forms work without JavaScript, with Unpoly enhancing server-rendered partial interactions.
 - Các route chính: home, `/send` upload, `/d/{code}` download, `/account`, `/account/profile`, `/account/billing`, `/pricing`, `/upgrade`, `/login`, `/p2p/send`, `/p2p/download` (webRTC), `/r/{code}` (FileRequest).
 - Mobile-first demand: receiver often opens on phone; desktop has priority NFR-5 with 3 breakpoints.
 
 ## Capabilities and Constraints
 
-- HTMX lazy-load là kiến trúc mặc định — shell render < 100 ms, data fill sau; layout `MainLayout` phải kế thừa `LayoutComponentBase`, HTMX partial dùng `hxmLayout`; **mỗi `hx-get` phải kèm `hx-select`** (không có Direct Routing trong .NET 10).
-- Thread: 2 theme — light + dark (âm theming hai hệ token), kế thừa Playfair Display (heading) + Outfit (body) — user đã xác nhận giữ.
-- Brand maintained: logo icon màu xanh navy `#1A1A2E`/`#4F6CF7` class cũ; daub/grunge tokens Legacy — thay thế bằng hệ token mới.
-- Font thay bằng Playfair/Outfit: giữ nguyên.
+- Unpoly enhancement is opt-in for real server-rendered partial updates. Static SSR remains canonical, and migrated surfaces use Unpoly.Blazor.Shadcn components and theme tokens; legacy DAUB surfaces remain during phased migration.
+- Thread: 2 theme — light + dark, bắt buộc cả hai; mọi token phải có cặp giá trị.
+- Token `--db-*` là **lớp đè lên vendor DAUB** (`https://daub.dev/daub.css`) và chỉ còn giá trị cho các bề mặt **chưa migrate**. Giữ nguyên tên token để ~322 lượt dùng class `db-*` trong markup không phải sửa. Bề mặt mới dùng biến cục bộ của thế giới bảng chuyến, không thêm `db-*`.
+- Trạng thái migrate: `/pricing` + khối usage `/account` đã theo `DESIGN.md`; phần còn lại chưa. Chi tiết + khoảng trống: `DESIGN.md`.
 
 ## Brand Commitments
 
 - Tên: **QuickShareCloud**; tagline: "send files, not friction".
-- Font: **Playfair Display** (display) + **Outfit** (UI) — user xác nhận giữ.
-- Iconography: hiện tại dùng SVG inline – giữ phong cách.
+- Font (**chỉ font open source SIL OFL** để tránh rủi ro pháp lý, không serif): bề mặt bảng chuyến dùng **Barlow Condensed** (tên, nhãn — chữ hoa, giãn chữ) + **Martian Mono** (số, giá, dung lượng — `tabular-nums`); câu văn dùng **Archivo**. Bề mặt chưa migrate còn giữ **Bricolage Grotesque** + **Courier Prime** cho tới khi migrate xong.
+  Outfit + Azeret Mono đã bỏ cùng thế giới Miura (2026-08-16). Playfair Display đã bỏ từ 2026-08-13.
+- Luật màu (thế giới **bảng chuyến**, chốt 11.11.2026): **màu chỉ là trạng thái** — amber = hành động / đang chạy, xanh = xong / đã xác minh / không giới hạn, đỏ = bị giữ / thu hồi / hết hạn. Không tô màu để trang trí, không gradient, không bóng mờ. Đúng **một** nút amber mỗi màn.
+- Hình khối: mọi bề mặt **vuông 0px**, độ sâu là **đường may 1px** (viền + đường kẻ trong lòng hàng), không radius, không blur, không đổ bóng.
+- Iconography: **không icon, không emoji, không glyph unicode làm dấu trạng thái** — trạng thái là màu + chữ ("Đã xong", "Unlimited", "Sửa").
 
 ## Existing Evidence
 
+- **`DESIGN.md`** — hệ thị giác hiện hành (thế giới "HyperCard Stack, colorized", seed `ad3dafb6`), viết từ code đã dựng. Đây là nguồn chuẩn cho mọi trang mới. Comp đã duyệt + biên bản: `.impeccable/mocks/hypercard-color/`.
 - UX/design token cũ: `_bmad-output/planning-artifacts/` (UEx + PRD + architecture spine) — là anti-reference cho redesign.
 - Mã hiện tại: `src/QuickShare/` — toàn bộ giao diện.
 

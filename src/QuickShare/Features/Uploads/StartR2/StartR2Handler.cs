@@ -1,78 +1,175 @@
 using LightResults;
+using Microsoft.Extensions.Options;
+using QuickShare.Features.Uploads.Shared;
 
 
 namespace QuickShare.Features.Uploads.StartR2;
 
-public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers);
+public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null, string? TransferPassToken = null)
+    : IRequest<Result<StartR2Response>>;
 
-public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts);
+public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, bool IsQueued = false, int QueuePosition = 0, int QueueEtaSeconds = 0, string? ShareCode = null, string? ShareLink = null);
 
-public sealed class StartR2Handler(IStorageProvider storage, IHttpContextAccessor httpContextAccessor)
+public sealed class StartR2Handler(
+    IStorageProvider storage,
+    IHttpContextAccessor httpContextAccessor,
+    AnalyticsService analytics,
+    ILogger<StartR2Handler> logger,
+    AppDbContext db,
+    StorageRegionResolver regions,
+    IOptions<QuickShareOptions> quickShareOptions)
+    : IRequestHandler<StartR2Command, Result<StartR2Response>>
 {
     // S3/R2 minimum part size (all parts except the last). Caps how many presigned
     // part URLs a client can request for a declared file size.
     internal const long MinPartBytes = 5 * 1024 * 1024;
 
-    internal static int MaxPartsFor(long fileSize)
-        => (int)Math.Min(10_000, (fileSize + MinPartBytes - 1) / MinPartBytes + 1);
+    internal const int MaxPartNumber = 10_000;
 
-    public async Task<Result<StartR2Response>> Handle(StartR2Command cmd, AppDbContext db, CancellationToken ct)
+    internal static int MaxPartsFor(long fileSize)
+        => (int)Math.Min(MaxPartNumber, (fileSize + MinPartBytes - 1) / MinPartBytes + 1);
+
+    public async ValueTask<Result<StartR2Response>> Handle(StartR2Command cmd, CancellationToken cancellationToken)
     {
-        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, ct);
+        var user = await httpContextAccessor.HttpContext!.User.GetUserOrDefaultAsync(db, cancellationToken);
         var plan = user?.Plan ?? PlanTierLimits.Anonymous;
 
-        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
-        if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
+        Guid? fileRequestId = null;
+        if (!string.IsNullOrWhiteSpace(cmd.RequestCode))
+        {
+            var (requestId, failure) = await ValidateRequestAsync(cmd.RequestCode, cmd.FileSize, cancellationToken);
+            if (failure is not null)
+                return Result.Failure<StartR2Response>(failure);
+            fileRequestId = requestId;
+        }
 
-        if (cmd.PartNumbers.Count > MaxPartsFor(cmd.FileSize))
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"Part count {cmd.PartNumbers.Count} exceeds what a {cmd.FileSize}-byte file can need"));
+        string? validatedPassToken = null;
+        if (!string.IsNullOrWhiteSpace(cmd.TransferPassToken))
+        {
+            var normToken = cmd.TransferPassToken.Trim().ToLowerInvariant();
+            var pass = await db.TransferCreditPasses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Token == normToken, cancellationToken);
+
+            if (pass is null || pass.Status != TransferCreditPass.StatusAvailable || pass.CreditsRemaining <= 0 || pass.ExpiresAt <= DateTime.UtcNow)
+                return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.TransferPassInvalid));
+
+            if (cmd.FileSize > pass.MaxFileSizeBytes)
+                return Result.Failure<StartR2Response>(new LightResults.Error(
+                    $"File size {cmd.FileSize} exceeds transfer pass limit of {pass.MaxFileSizeBytes} bytes"));
+
+            validatedPassToken = normToken;
+        }
+        // File-request submissions are capped by the request budget, never the submitter plan.
+        else if (fileRequestId is null)
+        {
+            var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
+            if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
+                return Result.Failure<StartR2Response>(new LightResults.Error(
+                    $"File size {cmd.FileSize} exceeds {plan} plan limit of {maxFileSize} bytes"));
+
+            // Monthly quota check (authenticated users only; anonymous keeps the per-file cap).
+            if (user is not null)
+            {
+                var quota = new QuotaService(db);
+                var check = await quota.CheckAsync(user.Id, plan, cmd.FileSize, cancellationToken);
+                if (check.IsExceeded)
+                    return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.MonthlyQuotaExceeded));
+            }
+        }
 
         var deliveryId = Guid.CreateVersion7();
+
+        // Data residency (issue #119). Resolved before the key exists, because the key is what
+        // carries the region for every later operation on this object.
+        var region = regions.Resolve(user, plan, cmd.StorageRegion);
 
         R2InitResult initResult;
         try
         {
-            initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, ct);
+            initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, region, cancellationToken);
         }
-        catch (Exception ex)
+        catch (R2StorageException ex)
         {
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"R2 init failed: {ex.Message}"));
+            logger.LogError(ex, "R2 init failed for delivery {DeliveryId}", deliveryId);
+            return Result.Failure<StartR2Response>(new LightResults.Error(UploadErrors.R2Upstream + "init failed"));
         }
 
-        IReadOnlyList<R2PartUrl> partUrls;
-        try
-        {
-            partUrls = await storage.GenerateUploadPartUrlsAsync(
-                initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, ct);
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure<StartR2Response>(new LightResults.Error(
-                $"R2 part URL generation failed: {ex.Message}"));
-        }
+        // Presigned URL generation is local (no network) — an exception here is a bug
+        // and must surface to the global exception handler, not be masked as an R2 failure.
+        var partUrls = await storage.GenerateUploadPartUrlsAsync(
+            initResult.UploadId, initResult.ObjectKey, cmd.PartNumbers, cancellationToken);
 
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
+        var shareCode = ShareCodes.Generate();
         var session = new UploadSession
         {
             Id = deliveryId,
             SenderId = user?.Id,
+            SenderEmail = string.IsNullOrWhiteSpace(cmd.SenderEmail) ? null : cmd.SenderEmail.Trim(),
             FileName = cmd.FileName,
             ContentType = cmd.ContentType,
             FileSize = cmd.FileSize,
             Status = UploadSessionStatus.InProgress,
             ExpiresAt = DateTime.UtcNow.Add(maxExpiry),
             R2UploadId = initResult.UploadId,
-            StoragePath = initResult.ObjectKey
+            StoragePath = initResult.ObjectKey,
+            FileRequestId = fileRequestId,
+            TransferPassToken = validatedPassToken,
+            ShareCode = shareCode,
+            TotalPartsCount = Math.Max(1, cmd.PartNumbers.Count),
+            UploadedPartsCount = 0,
+            UploadedBytes = 0,
         };
 
         db.UploadSessions.Add(session);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await analytics.RecordAsync(AnalyticsEvents.UploadStarted,
+            new AnalyticsEventData(cmd.FileName, cmd.FileSize, cmd.ContentType, plan), cancellationToken);
+
+        var queue = BoardingQueuePolicy.Evaluate(plan, cmd.FileSize, validatedPassToken is not null || fileRequestId is not null, quickShareOptions.Value);
+        var req = httpContextAccessor.HttpContext!.Request;
+        var shareLink = $"{req.Scheme}://{req.Host}{RoutePaths.DeliveryPage}{shareCode}";
 
         return Result.Success(new StartR2Response(
-            deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls));
+            deliveryId, initResult.UploadId, initResult.ObjectKey, partUrls,
+            queue.IsQueued, queue.Position, queue.EtaSeconds, shareCode, shareLink));
+    }
+
+    private async Task<(Guid? RequestId, LightResults.Error? Failure)> ValidateRequestAsync(
+        string code, long fileSize, CancellationToken cancellationToken)
+    {
+        var request = await db.FileRequests
+            .AsNoTracking()
+            .Where(r => r.Code == code)
+            .Select(r => new
+            {
+                r.Id,
+                r.ClosedAt,
+                r.ExpiresAt,
+                r.MaxTotalBytes,
+                r.MaxFiles,
+                CurrentTotalBytes = r.Deliveries
+                    .Where(d => d.Status == DeliveryStatus.Active)
+                    .Sum(d => (long?)d.TotalBytes) ?? 0,
+                CurrentFileCount = r.Deliveries.Count(d => d.Status == DeliveryStatus.Active),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (request is null)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestNotFound));
+
+        if (request.ClosedAt is not null)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestClosed));
+
+        if (request.ExpiresAt < DateTime.UtcNow)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestExpired));
+
+        if (request.CurrentTotalBytes + fileSize > request.MaxTotalBytes ||
+            request.CurrentFileCount >= request.MaxFiles)
+            return (null, new LightResults.Error(ErrorCodes.FileRequestLimitReached));
+
+        return (request.Id, null);
     }
 }

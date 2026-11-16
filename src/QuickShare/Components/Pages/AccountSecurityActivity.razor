@@ -1,0 +1,244 @@
+@page "/account/security/activity"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Antiforgery
+@using QuickShare.Features.Users.Retention
+@using QuickShare.Features.Users.Shared
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IAntiforgery Antiforgery
+
+<Card id="security-activity-card" class="my-4 px-6">
+    <section>
+        <h2 class="text-xl font-semibold">@Loc["account_retention_title"]</h2>
+        <p class="text-muted-foreground">@Loc["account_retention_subtitle"]</p>
+
+        @if (!retentionAllowed)
+        {
+            <p class="mt-3 text-muted-foreground">
+                @Loc["account_retention_upgrade_hint"]
+                <a class="text-primary underline" href="@RoutePaths.Upgrade" data-ai-action="retention.upgrade">@Loc["account_retention_upgrade_link"]</a>
+            </p>
+        }
+
+        @if (!string.IsNullOrEmpty(retentionError))
+        {
+            <div class="mt-3 text-destructive" role="alert">@retentionError</div>
+        }
+        else if (retentionSaved)
+        {
+            <div class="mt-3" role="status">@Loc["account_retention_saved"]</div>
+        }
+
+        <form method="post" action="@RoutePaths.AccountSecurityActivity" class="mt-4 space-y-4"
+              @formname="retention-policy" @onsubmit="HandleSubmit">
+            <AntiforgeryToken />
+            @if (!string.IsNullOrEmpty(Filter))
+            {
+                <input type="hidden" name="@FilterQueryKey" value="@Filter" />
+            }
+            <label class="block space-y-2">
+                <span class="block text-sm font-medium">@Loc["account_retention_window_label"]</span>
+                <NativeSelect name="@RetentionDaysField"
+                        disabled="@(!retentionAllowed)" data-ai-action="retention.window.select">
+                    <NativeSelectOption value="" Selected="@(retentionDays is null)">@Loc["account_retention_window_none"]</NativeSelectOption>
+                    @foreach (var preset in RetentionPolicy.Presets)
+                    {
+                        <NativeSelectOption value="@preset.ToString()" Selected="@(retentionDays == preset)">@string.Format(Loc["account_retention_window_days"], preset)</NativeSelectOption>
+                    }
+                </NativeSelect>
+            </label>
+            <Button Type="submit" Variant="outline" name="@ActionField" value="@PreviewAction" disabled="@(!retentionAllowed)">@Loc["account_retention_preview_btn"]</Button>
+
+        <div id="account-retention-preview" class="mt-4 text-sm" aria-live="polite">
+            @if (preview is null || preview.Days is null)
+            {
+                <span class="text-muted-foreground">@Loc["account_retention_preview_none"]</span>
+            }
+            else if (preview.Affected == 0)
+            {
+                <span class="text-muted-foreground">@Loc["account_retention_preview_clear"]</span>
+            }
+            else
+            {
+                <span>@string.Format(Loc["account_retention_preview_count"], preview.Affected)</span>
+                @if (preview.EarliestExpiry is { } earliest && preview.LatestExpiry is { } latest)
+                {
+                    <span class="text-muted-foreground">@string.Format(Loc["account_retention_preview_range"], earliest.ToLocalTime().ToString("d"), latest.ToLocalTime().ToString("d"))</span>
+                }
+                <ul class="mt-2 space-y-1">
+                    @foreach (var sample in preview.Samples)
+                    {
+                        <li>
+                            <span>@sample.FileName</span>
+                            <span class="text-muted-foreground">@sample.ShareCode · @(sample.ExpiresAt is { } at ? at.ToLocalTime().ToString("d") : Loc["account_retention_sample_no_expiry"])</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+            <label class="flex items-start gap-3">
+                <Checkbox name="@RetentionNoExtendField" Checked="@retentionNoExtend" Disabled="@(!retentionAllowed)" />
+                <span>
+                    <span class="block font-medium">@Loc["account_retention_no_extend_label"]</span>
+                    <span class="block text-sm text-muted-foreground">@Loc["account_retention_no_extend_desc"]</span>
+                </span>
+            </label>
+            <Button Type="submit" name="@ActionField" value="@SaveAction" disabled="@(!retentionAllowed)" data-ai-action="retention.save.submit">@Loc["account_retention_save_btn"]</Button>
+        </form>
+    </section>
+
+    <section class="mt-8 border-t pt-6">
+        <h2 class="text-xl font-semibold">@Loc["account_security_title"]</h2>
+        <p class="text-muted-foreground">@Loc["account_security_subtitle"]</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+            <Button Href="@RoutePaths.AccountSecurityActivity" Variant="@(Filter is null ? "default" : "outline")" Size="sm"
+                    up-follow up-target="#security-activity-card" up-history="true" data-ai-action="security.filter.all">@Loc["account_security_filter_all"]</Button>
+            @foreach (var filter in Filters)
+            {
+                <Button Href="@($"{RoutePaths.AccountSecurityActivity}?type={filter.Key}")" Variant="@(Filter == filter.Key ? "default" : "outline")" Size="sm"
+                        up-follow up-target="#security-activity-card" up-history="true" data-ai-action="@($"security.filter.{filter.Key}")">@Loc[filter.LabelKey]</Button>
+            }
+        </div>
+        @if (events.Count == 0)
+        {
+            <p class="mt-4 text-muted-foreground">@Loc["account_security_empty"]</p>
+        }
+        else
+        {
+            <ul class="mt-4 space-y-3">
+                @foreach (var evt in events)
+                {
+                    <li class="border-b pb-3">
+                        <span class="block font-medium">@Loc["account_security_event_" + evt.EventType]</span>
+                        <span class="block text-sm text-muted-foreground">@evt.UserAgentLabel</span>
+                        <span class="block text-sm text-muted-foreground">@evt.CreatedAt.ToLocalTime().ToString("g")</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</Card>
+
+@code {
+    private const string RetentionDaysField = "retentionDays";
+    private const string RetentionNoExtendField = "retentionNoExtend";
+    private const string ErrorKeyPrefix = "account_retention_error_";
+    private const string FilterQueryKey = "type";
+    private const string ActionField = "action";
+    private const string PreviewAction = "preview";
+    private const string SaveAction = "save";
+    private const int EventPageSize = 50;
+
+    private static readonly (string Key, SecurityEventType Type, string LabelKey)[] Filters =
+    [
+        ("login", SecurityEventType.Login, "account_security_filter_login"),
+        ("device", SecurityEventType.DeviceAdded, "account_security_filter_device"),
+        ("revoked", SecurityEventType.SessionRevoked, "account_security_filter_revoked"),
+    ];
+
+    private List<EventListItem> events = new();
+    private string? Filter;
+    private bool retentionAllowed;
+    private int? retentionDays;
+    private bool retentionNoExtend;
+    private bool retentionSaved;
+    private string? retentionError;
+    private RetentionPreviewResponse? preview;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = HttpContextAccessor.HttpContext!;
+        var request = context.Request;
+        var user = await context.User.GetUserAsync(Db, CancellationToken.None);
+        retentionAllowed = user.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+
+        var policy = await Db.Users.AsNoTracking()
+            .Where(u => u.Id == user.Id)
+            .Select(u => new { u.RetentionDays, u.RetentionNoExtend })
+            .FirstAsync(CancellationToken.None);
+        retentionDays = policy.RetentionDays;
+        retentionNoExtend = policy.RetentionNoExtend;
+        Filter = request.Query[FilterQueryKey].FirstOrDefault();
+
+        if (request.Query.TryGetValue(RetentionDaysField, out var proposed))
+        {
+            retentionDays = ParseWindow(proposed.FirstOrDefault());
+        }
+
+        await LoadPreviewAsync();
+        await LoadEventsAsync(user.Id);
+    }
+
+    private async Task HandleSubmit()
+    {
+        var context = HttpContextAccessor.HttpContext!;
+        try
+        {
+            await Antiforgery.ValidateRequestAsync(context);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        var form = await context.Request.ReadFormAsync();
+        var proposedDays = ParseWindow(form[RetentionDaysField].FirstOrDefault());
+        var proposedNoExtend = form.ContainsKey(RetentionNoExtendField);
+        Filter = form[FilterQueryKey].FirstOrDefault();
+        if (form[ActionField] == PreviewAction)
+        {
+            retentionDays = proposedDays;
+            retentionNoExtend = proposedNoExtend;
+        }
+        else if (form[ActionField] == SaveAction)
+        {
+            var result = await Bus.Send<LightResults.Result<UpdateRetentionPolicyResponse>>(
+                new UpdateRetentionPolicyCommand(proposedDays, proposedNoExtend), CancellationToken.None);
+            if (result.IsSuccess(out var response))
+            {
+                retentionDays = response.RetentionDays;
+                retentionNoExtend = response.NoExtend;
+                retentionSaved = true;
+            }
+            else if (result.IsFailure(out var error))
+            {
+                retentionError = Loc[ErrorKeyPrefix + error.Message];
+            }
+        }
+
+        await LoadPreviewAsync();
+        var user = await context.User.GetUserAsync(Db, CancellationToken.None);
+        await LoadEventsAsync(user.Id);
+    }
+
+    private async Task LoadPreviewAsync()
+    {
+        var previewResult = await Bus.Send<LightResults.Result<RetentionPreviewResponse>>(
+            new RetentionPreviewQuery(retentionDays), CancellationToken.None);
+        preview = previewResult.IsSuccess(out var value) ? value : null;
+    }
+
+    private async Task LoadEventsAsync(Guid userId)
+    {
+        var query = Db.SecurityEvents.AsNoTracking().Where(e => e.UserId == userId);
+        var filter = Filters.FirstOrDefault(f => f.Key == Filter);
+        if (filter.Key is not null)
+        {
+            query = query.Where(e => e.EventType == filter.Type);
+        }
+
+        events = await query.OrderByDescending(e => e.CreatedAt).Take(EventPageSize)
+            .Select(e => new EventListItem(e.EventType, e.UserAgentLabel, e.CreatedAt))
+            .ToListAsync(CancellationToken.None);
+    }
+
+    private static int? ParseWindow(string? raw) =>
+        int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var days) ? days : null;
+
+    private sealed record EventListItem(SecurityEventType EventType, string UserAgentLabel, DateTime CreatedAt);
+}

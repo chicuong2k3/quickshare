@@ -1,0 +1,16 @@
+@inherits UiComponentBase
+
+@* Give every item in one accordion the same Name and the browser closes the others for you —
+   that is shadcn's `type="single"`, for free. Leave Name unset for `type="multiple"`. *@
+
+<details data-slot="accordion-item" name="@Name" open="@Open"
+         class="@Classes" @attributes="AdditionalAttributes">@ChildContent</details>
+
+@code {
+    /// <summary>Shared across a group to make it single-open. Unset means several may be open.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    [Parameter] public bool Open { get; set; }
+
+    string Classes => Cn("border-b last:border-b-0", Class);
+}

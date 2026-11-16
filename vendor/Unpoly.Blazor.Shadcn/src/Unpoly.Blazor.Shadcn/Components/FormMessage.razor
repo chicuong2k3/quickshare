@@ -1,0 +1,18 @@
+@inherits UiComponentBase
+
+@* Renders nothing at all when there is no message, so the grid gap does not open a hole under
+   every valid field. role="alert" so the error is announced when it arrives after a submit. *@
+
+@if (Message is not null || ChildContent is not null)
+{
+    <p data-slot="form-message" role="alert" class="@Classes" @attributes="AdditionalAttributes">
+        @(ChildContent is null ? Message : null)@ChildContent
+    </p>
+}
+
+@code {
+    /// <summary>The text form. Use ChildContent when the message needs markup.</summary>
+    [Parameter] public string? Message { get; set; }
+
+    string Classes => Cn("text-control text-destructive", Class);
+}

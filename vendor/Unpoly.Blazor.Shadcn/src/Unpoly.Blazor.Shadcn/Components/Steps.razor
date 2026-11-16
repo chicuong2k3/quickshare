@@ -1,0 +1,60 @@
+@inherits UiComponentBase
+
+@* Steps — multi-step workflow tracker, Lumeo parity (Steps/StepsItem).
+   Static SSR renders a trail of StepsItem; interactivity (Clickable/CurrentStep)
+   is Blazor state + CSS. No JS library — pure Tailwind, like Stepper.
+   `data-slot="steps"` + `data-orientation` + `data-animated` drive the CSS. *@
+
+<div data-slot="steps"
+     data-orientation="@(Orientation.ToString().ToLowerInvariant())"
+     data-animated="@(Animated ? "true" : null)"
+     class="@Classes"
+     role="list"
+     @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+</div>
+
+@code {
+    /// <summary>Horizontal or Vertical trail. Defaults to Horizontal.</summary>
+    [Parameter] public string Orientation { get; set; } = "Horizontal";
+
+    /// <summary>Zero-based active index.</summary>
+    [Parameter] public int CurrentStep { get; set; }
+
+    /// <summary>Two-way binding for CurrentStep.</summary>
+    [Parameter] public EventCallback<int> CurrentStepChanged { get; set; }
+
+    /// <summary>When true, clicking a step navigates to it.</summary>
+    [Parameter] public bool Clickable { get; set; }
+
+    /// <summary>When true, active dot pulses and connectors draw/retract.</summary>
+    [Parameter] public bool Animated { get; set; }
+
+    internal int IndexOf(StepsItem item) => _items.IndexOf(item);
+    internal bool IsActive(StepsItem item) => IndexOf(item) == CurrentStep;
+    internal bool IsCompleted(StepsItem item) => IndexOf(item) < CurrentStep;
+    internal bool IsError(StepsItem item) => item.Status == StepsItemStatus.Error && IsActive(item);
+
+    internal async Task SelectAsync(StepsItem item)
+    {
+        if (!Clickable) return;
+        var idx = IndexOf(item);
+        if (idx < 0 || idx == CurrentStep) return;
+        CurrentStep = idx;
+        await CurrentStepChanged.InvokeAsync(idx);
+        StateHasChanged();
+    }
+
+    readonly List<StepsItem> _items = new();
+    internal void Register(StepsItem item) { if (!_items.Contains(item)) _items.Add(item); }
+    internal void Unregister(StepsItem item) => _items.Remove(item);
+
+    const string Base =
+        "flex w-full gap-2 " +
+        "data-[orientation=horizontal]:flex-row data-[orientation=horizontal]:items-start " +
+        "data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch";
+
+    string Classes => Cn(Base, Class);
+}

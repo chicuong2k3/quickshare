@@ -2,7 +2,7 @@
 
 ## Overview
 
-The profile system displays and updates user identity (name, avatar). Users are registered in DB at Google OAuth login time via `UserRegistrationService.RegisterAsync()` (called in-process from `OnCreatingTicket`). SSR pages access profile data in-process via `IMessageBus` or `AppDbContext`.
+The profile system displays and updates user identity (name, avatar). Users are registered in DB at Google OAuth login time via `UserRegistrationService.RegisterAsync()` (called in-process from `OnCreatingTicket`). SSR pages access profile data in-process via `IMediator` or `AppDbContext`.
 
 ---
 
@@ -162,7 +162,7 @@ After profile update (re-sign):
 
 ## 8. API Endpoints (branding + nav avatar — called from JS/HTMX)
 
-Profile data is loaded in-process via `AppDbContext` or `IMessageBus` in `Account.razor` / `AccountProfile.razor`. Profile mutations use `hx-post` form handlers. The account page also uses these JS/HTMX-called endpoints for delivery branding and the nav avatar:
+Profile data is loaded in-process via `AppDbContext` or `IMediator` in `Account.razor` / `AccountProfile.razor`. Profile mutations use `hx-post` form handlers. The account page also uses these JS/HTMX-called endpoints for delivery branding and the nav avatar:
 
 | Method | Path | Auth | Handler | Consumer |
 |--------|------|------|---------|----------|

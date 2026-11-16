@@ -1,0 +1,29 @@
+@inherits UiComponentBase
+
+@* One chosen value. The hidden input is what actually posts — repeat the same name on every
+   chip and the server reads a list, with no JavaScript involved in the submission at all. *@
+
+<span data-slot="combobox-chip" data-value="@Value" class="@Classes"
+      @attributes="AdditionalAttributes">
+    @ChildContent
+    <input type="hidden" name="@Name" value="@Value" />
+    <ComboboxChipRemove Label="@($"Remove {Label ?? Value}")" />
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Value { get; set; } = default!;
+
+    /// <summary>The field name to post under. The same on every chip: that is what makes a list.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Used in the remove button's label, so it says which one it removes.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    const string Base =
+        "flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm " +
+        "bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground " +
+        "has-disabled:pointer-events-none has-disabled:cursor-not-allowed " +
+        "has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pe-0";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,0 +1,28 @@
+@inherits UiComponentBase
+
+@* The leading slot: an icon in a tile, a thumbnail, an avatar, or a stack of them. Variant is
+   what makes the first two look right — an icon variant draws the bordered tile, an image
+   variant crops what it holds to a square. Without it every media slot was the bare default and
+   the icon and image examples hand-rolled those classes at the call site instead. *@
+
+<div data-slot="item-media" data-variant="@Variant" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>default | icon | image</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    const string Base =
+        "flex shrink-0 items-center justify-center gap-2 " +
+        "group-has-[[data-slot=item-description]]/item:translate-y-0.5 " +
+        "group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none";
+
+    string VariantClass => Variant switch
+    {
+        "icon" => "size-8 rounded-sm border bg-muted [&_svg:not([class*='size-'])]:size-4",
+        "image" => "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
+        _ => "bg-transparent",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

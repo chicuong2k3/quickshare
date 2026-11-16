@@ -1,0 +1,15 @@
+@inherits UiComponentBase
+
+@* tabindex=0, because a scrollable region has to be focusable or its content cannot be scrolled
+   without a pointer. The browser then supplies the arrow keys, Page Up and Page Down. *@
+
+<div data-slot="message-scroller-viewport" tabindex="0" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable " +
+        "overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none";
+
+    string Classes => Cn(Base, Class);
+}

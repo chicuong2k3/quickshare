@@ -1,181 +1,666 @@
 @layout MainLayout
 @page "/d/{ShareCode}"
-@attribute [StreamRendering]
-@inject IMessageBus Bus
+@inject IMediator Bus
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext Db
 @using System.Text.Json
 @using System.Text.Json.Serialization
 @using QuickShare.Infrastructure
 @using QuickShare.Features.Downloads.Info
+@using QuickShare.Features.Deliveries.ExtensionRequests
+@using QuickShare.Features.Workspaces.Branding
+@using QuickShare.Features.Workspaces.Domains
+@using QuickShare.Features.Downloads.Shared
+@using QuickShare.Features.Deliveries.Recipients
+@using QuickShare.Features.Uploads.Shared
+@using QuickShare.Features.Deliveries.Comments
+@using QuickShare.Features.Downloads.Subtitles
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject BrandReader Brands
+@inject WorkspaceDomainReader Domains
+@inject RecipientTracker Recipients
+@inject StorageRegionResolver Regions
+@inject CommentGate Gate
 
 @{
     // API and pages are same-origin now; browser JS uses relative URLs.
     var apiBase = string.Empty;
 }
 
-<PageTitle>Download â€” QuickShareCloud</PageTitle>
+<PageTitle>@Loc["dl_title"]</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+    @* OpenGraph rich card (issue #75) — server-rendered so Zalo/FB/Telegram
+       crawlers get filename + size + brand without any client JS. *@
+    <meta property="og:title" content="@OgTitle" />
+    <meta property="og:description" content="@OgDescription" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@OgUrl" />
+    <meta property="og:image" content="@OgImageUrl" />
+    @* Workspace brand (issues #285, #286) — token values only, never token names or type
+       sizes, and every value was validated on save. Rendered here so the client's first paint
+       is already the agency's, not a flash of ours. *@
+    @if (Brand is not null)
+    {
+        <style>@RawCss(BrandReader.ToCss(Brand))</style>
+    }
+</HeadContent>
 
 <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+<script id="download-i18n" type="application/json">@RawJson(Strings())</script>
 
-<PageWrapper id="download-app" Variant="PageVariant.Centered">
+<PageWrapper id="download-app" Variant="PageVariant.Padded">
+
+<div class="download-board">
     @if (Info is not null)
     {
         <script id="download-info-data" type="application/json">@RawJson(Info)</script>
     }
-    <div class="card db-card">
-        <div class="db-card__body">
+    @if (Brand is not null && (Brand.HasLogo || Brand.HeaderText is not null))
+    {
+        <div class="dl-brand">
+            @if (Brand.HasLogo)
+            {
+                <img class="dl-brand__logo"
+                     src="@BrandReader.AssetUrl(Brand.WorkspaceId, BrandAssetKind.Logo)"
+                     alt="@(Brand.HeaderText ?? string.Empty)" />
+            }
+            @if (Brand.HeaderText is { } header)
+            {
+                <p class="dl-brand__header">@header</p>
+            }
+        </div>
+    }
+    @if (RegionLabel is { } regionLabel)
+    {
+        @* Residency badge (issue #119) — a trust signal the recipient can see without asking. *@
+        <p class="dl-region">@Loc["dl_stored_in", regionLabel]</p>
+    }
+    <div class="card" data-slot="card">
+        @* The delivery's own card chrome; the label is the real share code. *@
+        <div class="qs-titlebar">
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+            <span class="qs-titlebar__label">@ShareCode</span>
+            <span class="qs-titlebar__box" aria-hidden="true"></span>
+        </div>
+        <div class="px-(--card-spacing)">
             @switch (RenderState)
             {
                 case DownloadRenderState.Loading:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
-                        <div class="db-spinner"></div>
-                        <p class="db-p" style="margin-top: 1.25rem; font-size: 0.875rem">Checking link&hellip;</p>
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <div class="size-6 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                        <p style="margin-top: 1.25rem; font-size: 0.875rem">@Loc["dl_checking"]</p>
                     </div>
                     break;
 
                 case DownloadRenderState.Ready:
-                    @* OTP Gate *@
-                    <div id="download-phase-otp" class="db-text-center hidden">
+
+                    @* Password Gate (issue #44) — unlocked before the OTP gate *@
+                    <div id="download-phase-password" class="text-center @PhaseClass(PhasePassword)">
                         <div class="icon-box --lock">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                             </svg>
                         </div>
-                        <h2 class="db-h2" style="font-size: 1.125rem">Enter security code</h2>
-                        <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">Ask the sender for the 6-digit code to unlock this file.</p>
+                        <h2 class="text-xl font-semibold">@Loc["dl_password_h2"]</h2>
+                        <p style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_password_sub"]</p>
                         <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
-                            <div id="dl-otp" class="db-otp" style="gap: 0.5rem">
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,1)" onkeydown="downloadApp.otpKeydown(event,1)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,2)" onkeydown="downloadApp.otpKeydown(event,2)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,3)" onkeydown="downloadApp.otpKeydown(event,3)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,4)" onkeydown="downloadApp.otpKeydown(event,4)" autocomplete="off" />
-                                <input type="text" class="db-otp__input" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" />
+                            <Input Type="password" id="dl-password" style="max-width: 20rem; width: 100%" autocomplete="off" onkeydown="downloadApp.passwordKeydown(event)" aria-label="@Loc["dl_password_h2"]" />
+                            @* role="alert" (issue #95): a wrong password that is only *shown* is a dead end for
+                               anybody not looking at that spot on the screen. *@
+                            <p id="dl-password-error" class="error hidden" role="alert"></p>
+                            <button id="dl-password-btn" type="button" data-slot="button" data-variant="default" class="btn" onclick="downloadApp.verifyPassword()" data-ai-action="download.password.unlock">
+                                <span id="dl-password-btn-text">@Loc["dl_password_unlock"]</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    @* OTP Gate *@
+                    <div id="download-phase-otp" class="text-center @PhaseClass(PhaseOtp)">
+                        <div class="icon-box --lock">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-semibold">@Loc["dl_otp_h2"]</h2>
+                        <p style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_otp_sub"]</p>
+                        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem">
+                            @* Six boxes, each with its own name (issue #95). Unlabelled, a screen
+                               reader announces six identical "edit text" fields and the code is
+                               unenterable without sight. *@
+                            <div id="dl-otp" class="flex gap-2" style="gap: 0.5rem" role="group" aria-label="@Loc["dl_otp_h2"]">
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,0)" onkeydown="downloadApp.otpKeydown(event,0)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 1, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,1)" onkeydown="downloadApp.otpKeydown(event,1)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 2, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,2)" onkeydown="downloadApp.otpKeydown(event,2)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 3, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,3)" onkeydown="downloadApp.otpKeydown(event,3)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 4, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,4)" onkeydown="downloadApp.otpKeydown(event,4)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 5, 6]" />
+                                <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="downloadApp.otpInput(event,5)" onkeydown="downloadApp.otpKeydown(event,5)" autocomplete="off" aria-label="@Loc["a11y_code_digit", 6, 6]" />
                             </div>
-                            <p id="dl-otp-error" class="error hidden"></p>
-                            <button id="dl-otp-btn" type="button" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
-                                <span id="dl-otp-btn-text">Unlock</span>
+                            <p id="dl-otp-error" class="error hidden" role="alert"></p>
+                            <div id="dl-captcha" class="dl-captcha hidden"></div>
+                            <button id="dl-otp-btn" type="button" data-slot="button" data-variant="default" class="btn" onclick="downloadApp.verifyOtp()" data-ai-action="download.otp.unlock">
+                                <span id="dl-otp-btn-text">@Loc["dl_otp_unlock"]</span>
                             </button>
                         </div>
                     </div>
 
                     @* Ad Interstitial *@
-                    <div id="download-phase-ad" class="db-text-center hidden" style="padding: 1.5rem 0">
+                    @* Never server-rendered: an ad nobody can dismiss without JS must not stand between a recipient and their file. JS raises it. *@
+                    <div id="download-phase-ad" class="text-center hidden" style="padding: 1.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M7 4v16 M17 4v16 M2 12h20 M2 8h20" />
                             </svg>
                         </div>
-                        <h3 class="db-h3" style="font-size: 1rem">Powered by QuickShareCloud</h3>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Send large files securely with end-to-end encryption. <a href="/pricing" class="link">Upgrade for more</a></p>
+                        <h3 class="text-xl font-semibold" style="font-size: 1rem">@Loc["dl_ad_title"]</h3>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_ad_sub"] <a href="/pricing" class="link">@Loc["dl_ad_upgrade"]</a></p>
                         <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.75rem; color: var(--db-color-text-muted)">
                             <svg class="badge--sovereign" style="width: 0.875rem; height: 0.875rem" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                            <span id="dl-ad-countdown">Continue in 5s</span>
+                            <span id="dl-ad-countdown"></span>
                         </div>
-                        <button type="button" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">Skip ad</button>
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="report-toggle" style="margin-top: 1rem" onclick="downloadApp.skipAd()" data-ai-action="download.ad.skip">@Loc["dl_ad_skip"]</button>
                     </div>
 
                     @* File Card *@
-                    <div id="download-phase-file" class="hidden">
+                    <div id="download-phase-file" class="@PhaseClass(PhaseFile)">
 
                         <div class="file-row">
                             <div class="file-icon">@FileIcon(Info?.ContentType)</div>
-                            <div style="min-width: 0; flex: 1">
-                                <h1 class="db-h1" style="font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" title="@Info?.FileName">@Info?.FileName</h1>
-                                <p class="db-p" style="margin-top: 0.375rem; font-size: 0.875rem">@FormatBytes(Info?.FileSize ?? 0) &middot; @ExpiryLabel</p>
+                            <div class="file-meta">
+                                @* Full name wraps: on touch there is no hover, so a title
+                                   attribute is the only copy of a truncated name. *@
+                                <h1 class="file-name" title="@Info?.FileName">@Info?.FileName</h1>
+                                <dl class="file-specs">
+                                    <div><dt class="miura-spec">@Loc["dl_spec_size"]</dt><dd>@FormatBytes(Info?.FileSize ?? 0)</dd></div>
+                                    <div><dt class="miura-spec">@Loc["dl_spec_downloads_left"]</dt><dd>@Math.Max(0, (Info?.MaxDownloads ?? 0) - (Info?.DownloadCount ?? 0))</dd></div>
+                                    <div><dt class="miura-spec">@Loc["dl_spec_expires"]</dt><dd id="dl-spec-expires">@ExpiryLabel</dd></div>
+                                </dl>
+                                @* Urgent-expiry nudge — hidden by default, shown by download.js
+                                   when the link is under one hour. *@
+                                <a id="dl-expiry-nudge" href="/api/downloads/@ShareCode" class="dl-expiry-nudge hidden" data-ai-action="download.file.download">@Loc["dl_expiry_download_now"]</a>
                             </div>
                         </div>
 
                         <div class="badges">
+                            @if (Info?.VirusScanStatus == DeliveryVirusScanStatus.Clean)
+                            {
+                                <div id="dl-badge-virus-clean" class="badge --sovereign" role="status">
+                                    <span>@Loc["dl_badge_virus_clean"]</span>
+                                </div>
+                            }
+                            else if (Info?.VirusScanStatus == DeliveryVirusScanStatus.Pending)
+                            {
+                                <div id="dl-badge-virus-pending" class="badge --sovereign" role="status">
+                                    <span>@Loc["dl_badge_virus_pending"]</span>
+                                </div>
+                            }
+                            @if (Info?.VerifiedSender == true)
+                            {
+                                <div id="dl-badge-verified" class="badge --sovereign" title="@Loc["dl_badge_verified_tooltip"]" role="status">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    <span>@Loc["dl_badge_verified"]@(string.IsNullOrEmpty(Info.SenderDisplayName) ? string.Empty : $" · {Info.SenderDisplayName}")</span>
+                                </div>
+                            }
                             <div id="dl-badge-encrypted" class="badge --encrypted hidden">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /><circle cx="12" cy="16" r="1" />
                                 </svg>
-                                End-to-end encrypted
+                                @Loc["dl_badge_encrypted"]
                             </div>
+                            @if (Info?.BurnAfterDownload == true)
+                            {
+                                <div class="badge --burn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-3 2-5 3-6 1 1 3 2 4 3 0-2-1-4-2-6z"/></svg>
+                                    @Loc["dl_badge_burn"]
+                                </div>
+                            }
                             <button type="button" id="dl-zk-btn" class="badge --sovereign" onclick="downloadApp.toggleZK()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                                 </svg>
-                                Verified
+                                @Loc["dl_badge_detail"]
                             </button>
                         </div>
 
                         <div id="dl-zk-panel" class="zk-panel hidden">
-                            <div class="zk-row">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">File integrity confirmed</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File integrity verified via cryptographic attestation.</p></div>
+                            @* Only shown when the link actually carries a key. *@
+                            <div class="zk-row hidden" id="dl-fact-key">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_key_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_key_body"]</p></div>
+                                <p id="dl-fact-encrypted-honesty" style="color: var(--db-color-text-muted); margin-top: 0.25rem">@Loc["dl_fact_honesty_body"]</p>
                             </div>
                             <div class="zk-row">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">No tampering detected</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">File has not been tampered with since upload.</p></div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_expiry_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_expiry_body"]</p></div>
                             </div>
                             <div class="zk-row">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <div><p style="font-weight: 500; color: var(--db-color-text)">Hash integrity check passed</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">SHA-256 hash matches the original upload manifest.</p></div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h10"/></svg>
+                                <div><p style="font-weight: 500; color: var(--db-color-text)">@Loc["dl_fact_limit_title"]</p><p style="color: var(--db-color-text-muted); margin-top: 0.125rem">@Loc["dl_fact_limit_body"]</p></div>
                             </div>
                             <div class="zk-stats">
-                                <span><span id="dl-download-count" style="font-weight: 500; color: var(--db-color-text)">0</span> downloads</span>
+                                <span><span id="dl-download-count" style="font-weight: 500; color: var(--db-color-text)">0</span> @Loc["dl_stats_downloads"]</span>
                                 <span>&middot;</span>
-                                <span><span id="dl-max-downloads" style="font-weight: 500; color: var(--db-color-text)">0</span> max</span>
+                                <span><span id="dl-max-downloads" style="font-weight: 500; color: var(--db-color-text)">0</span> @Loc["dl_stats_max"]</span>
                                 <span>&middot;</span>
                                 <span id="dl-expires-label"></span>
                             </div>
                         </div>
 
+                        @* Text snippets render inline — pastebin-lite. Filled by download.js;
+                           markdown/code (issue #240) render structured HTML, everything else
+                           is set via textContent only. All input is HTML-escaped first. *@
+                        <div id="dl-text-preview" class="text-preview hidden">
+                            <div class="text-preview__bar">
+                                <span id="dl-text-status" class="text-preview__status"></span>
+                                <button type="button" id="dl-text-copy" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copyText()">
+                                    <span id="dl-text-copy-label">@Loc["dl_preview_copy"]</span>
+                                </button>
+                            </div>
+                            @* Diff toolbar (issue #248) — shown by download.js only when a
+                               .patch/.diff file renders. Hidden by default for non-diff. *@
+                            <div id="dl-diff-toolbar" class="dl-diff-toolbar hidden">
+                                <button type="button" id="dl-diff-mode-btn" data-slot="button" data-variant="ghost" data-size="sm" class="hidden" onclick="downloadApp.toggleDiffMode()" aria-pressed="false">
+                                    <span id="dl-diff-mode-label">@Loc["dl_diff_split"]</span>
+                                </button>
+                                <button type="button" id="dl-diff-raw-btn" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.toggleDiffRaw()" aria-pressed="false">
+                                    <span id="dl-diff-raw-label">@Loc["dl_diff_raw"]</span>
+                                </button>
+                            </div>
+                            <div id="dl-text-body" class="text-preview__body"></div>
+                            <button type="button" id="dl-text-more" data-slot="button" data-variant="ghost" data-size="sm" class="hidden" onclick="downloadApp.showFullText()">@Loc["dl_preview_more"]</button>
+                        </div>
+
+                        @* Sender note (issue #137) — server-rendered escaped text. *@
+                        @if (!string.IsNullOrEmpty(Info?.Message))
+                        {
+                            <div class="dl-message" style="margin-top: 1.25rem; padding: 1rem 1.25rem; background: var(--db-color-surface, rgba(255,255,255,0.04))">
+                                <p class="text-sm font-medium" style="margin: 0 0 0.375rem">@Loc["dl_message_label"]</p>
+                                <p style="margin: 0; font-size: 0.875rem; white-space: pre-wrap; overflow-wrap: anywhere">@Info.Message</p>
+                            </div>
+                        }
+
+                        @* Inline media preview (issue #21) — filled by download.js. Only
+                           ungated, unencrypted media reaches this element. *@
+                        <div id="dl-media-preview"
+                             class="dl-media hidden @(Watermark is null ? string.Empty : "dl-media--watermark")"
+                             style="margin-top: 1.5rem@(Watermark is null ? string.Empty : $"; --dl-watermark: {Watermark}")"></div>
+
+                        @* ZIP archive contents (issue #215) — filled by download.js; a
+                           read-only entry listing so recipients see what's inside before
+                           committing to a large download. Only ungated, unencrypted
+                           .zip deliveries reach this element. *@
+                        <div id="dl-zip-preview" class="dl-zip hidden" style="margin-top: 1.5rem">
+                            <p class="text-sm font-medium" style="margin: 0 0 0.5rem">@Loc["dl_zip_title"]</p>
+                            <div id="dl-zip-list" class="dl-zip__list"></div>
+                        </div>
+
+                        @* Aggregate download stats (issue #64) — count only, no sender identity. *@
+                        @if (Info?.HideDownloadStats != true && (Info?.DownloadCount ?? 0) > 0)
+                        {
+                            <p class="text-muted-foreground" style="margin-top: 1rem; font-size: 0.8125rem">
+                                @Loc["dl_stats_downloaded", Info!.DownloadCount]
+                                @if (Info.FirstDownloadedAt is { } first)
+                                {
+                                    <text>·</text> @Loc["dl_stats_first", FirstDownloadLabel(first)]
+                                }
+                            </p>
+                        }
+
+                        @* Privacy mode (issue #187) — the sender left no trace; say so, don't count. *@
+                        @if (Info?.PrivacyMode == true)
+                        {
+                            <p class="text-muted-foreground" style="margin-top: 0.75rem; font-size: 0.8125rem" role="note">@Loc["dl_privacy_badge"]</p>
+                        }
+
+                        @* Burn-after-download warning (issue #12) — shown before the download button. *@
+                        @if (Info?.BurnAfterDownload == true)
+                        {
+                            <p class="dl-burn-warning" style="margin-top: 1rem; font-size: 0.875rem; color: var(--db-color-accent-text)">@Loc["dl_burn_warning"]</p>
+                        }
+
+                        @* SHA-256 checksum (issue #66) — copy button, no client JS required to render. *@
+                        @if (!string.IsNullOrEmpty(Info?.Sha256))
+                        {
+                            <div class="dl-sha" style="margin-top: 1rem; font-size: 0.8125rem">
+                                <span class="text-sm font-medium" style="display:block; margin-bottom: 0.25rem">SHA-256</span>
+                                <div style="display:flex; gap: 0.5rem; align-items: flex-start">
+                                    <code class="dl-sha__value" style="word-break: break-all; flex: 1">@Info.Sha256</code>
+                                    <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.copySha256()" data-ai-action="download.sha.copy">
+                                        <span id="dl-sha-copy-label">@Loc["dl_sha_copy"]</span>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+
+                        @* Recipient email gate (issue #324) — anonymous downloaders surrender an email first *@
+                        @if (Info?.RequireRecipientEmail == true)
+                        {
+                            <div id="dl-recipient-gate" style="margin-top: 2rem">
+                                <p>@Loc["dl_recipient_email_title"]</p>
+                                <Input Type="email" id="dl-recipient-email" placeholder="@Loc["dl_recipient_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_recipient_email_placeholder"]" />
+                                <label class="burn-toggle" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem">
+                                    <Checkbox id="dl-recipient-consent" />
+                                    <span>@Loc["dl_recipient_consent"]</span>
+                                </label>
+                                <button type="button" id="dl-recipient-download" data-slot="button" data-variant="default" class="btn" onclick="recipientGate.download()" data-ai-action="download.recipientGate.download">@Loc["dl_download"]</button>
+                            </div>
+                        }
+
+                        @* Email OTP gate (issue #291) — recipient requests a single-use emailed code *@
+                        @if (Info?.EmailOtpEnabled == true)
+                        {
+                            <div id="dl-email-otp" class="dl-email-otp" style="margin-top: 2rem">
+                                <p>@Loc["dl_email_otp_title"]</p>
+                                <Input Type="email" id="dl-email-otp-email" placeholder="@Loc["dl_email_otp_email_placeholder"]" autocomplete="email" style="max-width: 20rem; width: 100%; margin-bottom: 0.5rem" aria-label="@Loc["dl_email_otp_email_placeholder"]" />
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
+                                    <button type="button" id="dl-email-otp-send" data-slot="button" data-variant="default" class="btn" onclick="emailOtp.send()" data-ai-action="download.emailOtp.send">@Loc["dl_email_otp_send"]</button>
+                                    <p id="dl-email-otp-sent" class="hidden" style="margin: 0">@Loc["dl_email_otp_sent"]</p>
+                                </div>
+                                <Input Type="text" id="dl-email-otp-code" placeholder="@Loc["dl_email_otp_placeholder"]" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="max-width: 20rem; width: 100%; margin-top: 0.5rem" aria-label="@Loc["dl_email_otp_placeholder"]" />
+                                <button type="button" id="dl-email-otp-download" data-slot="button" data-variant="default" class="btn" onclick="emailOtp.download()" data-ai-action="download.emailOtp.download" style="margin-top: 0.75rem">@Loc["dl_email_otp_download"]</button>
+                            </div>
+                        }
+
+                        @if (Info?.IsQueued == true)
+                        {
+                            <div id="dl-queue-banner" class="mt-4 rounded-md border bg-muted/40 p-3 text-sm" role="status">
+                                <p>@Loc["dl_queue_notice", Info.QueuePosition, Info.QueueEtaSeconds]</p>
+                                <a href="/pricing" class="link text-xs">@Loc["dl_ad_upgrade"]</a>
+                            </div>
+                        }
+
+                        @if (Info?.StorageTier == DeliveryStorageTier.Cold || Info?.StorageTier == DeliveryStorageTier.Restoring)
+                        {
+                            <div id="dl-cold-storage-panel" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm" role="status">
+                                <p class="font-medium">@Loc["dl_cold_title"]</p>
+                                <p class="mt-1 text-muted-foreground">@Loc["dl_cold_sub"]</p>
+                                <button type="button" id="dl-cold-restore-btn" data-slot="button" data-variant="default" class="btn mt-3" onclick="restoreColdDelivery()" data-ai-action="download.cold.restore">@Loc["dl_cold_restore_btn"]</button>
+                                <p id="dl-cold-restore-done" class="mt-2 hidden text-xs text-muted-foreground">@Loc["dl_cold_restored"]</p>
+                            </div>
+                        }
+
+                        @if (Info?.EncryptionMode == DeliveryEncryptionMode.Passphrase)
+                        {
+                            <div id="dl-passphrase-vault" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm">
+                                <p class="font-medium">@Loc["dl_passphrase_title"]</p>
+                                <p class="mt-1 text-muted-foreground">@Loc["dl_passphrase_sub"]</p>
+                                <div class="mt-2 flex gap-2">
+                                    <Input Type="password" id="dl-passphrase-input" placeholder="@Loc["dl_passphrase_placeholder"]" autocomplete="off" />
+                                    <button type="button" id="dl-passphrase-unlock-btn" data-slot="button" data-variant="default" class="btn" onclick="downloadApp.unlockPassphraseVault()" data-ai-action="download.vault.unlock">@Loc["dl_passphrase_unlock"]</button>
+                                </div>
+                                <p id="dl-passphrase-unlocked" class="mt-2 hidden text-xs text-muted-foreground">@Loc["dl_passphrase_unlocked"]</p>
+                            </div>
+                        }
+
+                        @if (Info?.IsLiveStreaming == true)
+                        {
+                            <div id="dl-live-streaming-banner" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm" role="status" aria-live="polite">
+                                <p class="font-medium">@Loc["dl_live_streaming_title"]</p>
+                                <p class="mt-1 text-muted-foreground">@Loc["dl_live_streaming_sub", Info.LiveProgressPercent]</p>
+                            </div>
+                        }
+
+                        @if (Info?.HlsAvailable == true)
+                        {
+                            <div id="dl-hls-player" class="mt-4 rounded-md border bg-muted/30 p-3 text-sm" data-manifest="/api/downloads/@ShareCode/hls/master.m3u8">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="font-medium">@Loc["dl_hls_stream_title"]</span>
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <label for="dl-hls-quality" class="text-muted-foreground">@Loc["dl_hls_quality_label"]</label>
+                                        <NativeSelect id="dl-hls-quality" aria-label="@Loc["dl_hls_quality_label"]">
+                                            <NativeSelectOption value="480p" Selected>480p SD</NativeSelectOption>
+                                            @if (Info.SenderPlan is PlanTierLimits.Pro or PlanTierLimits.Studio)
+                                            {
+                                                <NativeSelectOption value="720p">720p HD</NativeSelectOption>
+                                                <NativeSelectOption value="1080p">1080p Full HD</NativeSelectOption>
+                                            }
+                                        </NativeSelect>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                         <div style="margin-top: 2rem">
-                            <button id="dl-download-btn" type="button" class="btn" onclick="downloadApp.handleDownload()" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
-                                <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                            @if (Info?.EmailOtpEnabled != true && Info?.RequireRecipientEmail != true)
+                            {
+                                <a id="dl-download-btn" href="/api/downloads/@ShareCode" class="btn" onclick="return downloadApp.handleDownload(event)" data-ai-action="download.file.download" style="gap: 0.75rem; padding: 1rem 1.5rem">
+                                    <svg id="dl-download-icon" style="width: 1.25rem; height: 1.25rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    <span id="dl-download-text">@Loc["dl_download"]</span>
+                                </a>
+                            }
+                            @* Native share sheet (issue #283) — shares the link only, never the password/OTP. *@
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" style="margin-top: 0.75rem"
+                                    onclick="downloadApp.sharePage()" data-ai-action="download.share">
+                                <svg style="width: 1rem; height: 1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                                 </svg>
-                                <span id="dl-download-text">Download</span>
+                                <span id="dl-share-label">@Loc["dl_share"]</span>
                             </button>
+                            @if (Info?.PrivacyMode != true)
+                            {
+                                <button type="button" id="dl-save-offline-btn" data-slot="button" data-variant="ghost" data-size="sm" style="margin-top: 0.5rem"
+                                        onclick="window.saveForOffline()" data-ai-action="download.offline.save">
+                                    <span id="dl-save-offline-label">@Loc["dl_save_offline_btn"]</span>
+                                </button>
+                                <p id="dl-offline-saved-status" class="mt-1 hidden text-xs text-muted-foreground" role="status">@Loc["dl_save_offline_done"]</p>
+                            }
                         </div>
 
                         @* AdComponent — rewarded ad for free-plan downloaders, self-contained *@
                         <QuickShare.Components.Shared.AdComponent />
+
+                        @* Report abuse / DMCA — anonymous, no account needed (issue #53) *@
+                        <div class="dl-report">
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dl-report__link" onclick="downloadApp.openReport()" data-ai-action="download.report.open">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 0.875rem; height: 0.875rem"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                @Loc["dl_report_link"]
+                            </button>
+                        </div>
+
+                        @* Viral CTA (issue #15, layer 0) — hidden until the download starts;
+                           never shown to paid senders whose branding is on the page. *@
+                        @if (ShowViralCta)
+                        {
+                            <div id="dl-viral-cta" class="dl-viral hidden" style="margin-top: 2rem; padding: 1.25rem; border: 1px solid var(--db-color-border, rgba(255,255,255,0.12)); text-align: center">
+                                <h3 class="text-xl font-semibold" style="font-size: 1rem">@Loc["dl_cta_title"]</h3>
+                                <p class="text-muted-foreground" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_cta_sub"]</p>
+                                <a href="/send?ref=dl" class="btn" style="display: inline-flex; margin-top: 1rem; width: auto; padding: 0.75rem 1.5rem" data-ai-action="download.viral.cta">@Loc["dl_cta_button"]</a>
+                            </div>
+                        }
+
+                        @* Anonymous feedback (issue #35) — one click, no account. *@
+                        <FeedbackWidget Page="download" />
+
+                    </div>
+
+                    @* Report dialog — raised by JS; server still renders the trigger. *@
+                    <div id="download-report-dialog" class="dl-report-dialog hidden">
+                        <div class="dl-report-dialog__inner">
+                            <h2 class="text-xl font-semibold">@Loc["dl_report_title"]</h2>
+                            <p class="text-muted-foreground" style="margin-top: 0.375rem; font-size: 0.875rem">@Loc["dl_report_sub"]</p>
+                            <form id="dl-report-form" onsubmit="return downloadApp.submitReport(event)">
+                                <label class="block" style="margin-top: 1rem">
+                                    <span class="text-sm font-medium">@Loc["dl_report_category"]</span>
+                                <NativeSelect id="dl-report-category" required>
+                                        <NativeSelectOption value="abuse">@Loc["dl_report_cat_abuse"]</NativeSelectOption>
+                                        <NativeSelectOption value="copyright">@Loc["dl_report_cat_copyright"]</NativeSelectOption>
+                                        <NativeSelectOption value="malware">@Loc["dl_report_cat_malware"]</NativeSelectOption>
+                                        <NativeSelectOption value="other">@Loc["dl_report_cat_other"]</NativeSelectOption>
+                                    </NativeSelect>
+                                </label>
+                                <label class="block" style="margin-top: 0.75rem">
+                                    <span class="text-sm font-medium">@Loc["dl_report_note"]</span>
+                                    <Textarea id="dl-report-note" rows="3" maxlength="2000" />
+                                </label>
+                                <p id="dl-report-error" class="error hidden" style="margin-top: 0.5rem"></p>
+                                <div style="margin-top: 1rem; display: flex; gap: 0.5rem">
+                                    <button type="submit" data-slot="button" data-variant="default" class="btn" data-ai-action="download.report.submit">@Loc["dl_report_submit"]</button>
+                                    <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center gap-1 rounded text-sm font-medium text-muted-foreground hover:text-foreground" onclick="downloadApp.closeReport()">@Loc["dl_report_cancel"]</button>
+                                </div>
+                            </form>
+                            <p id="dl-report-done" class="text-muted-foreground hidden" style="margin-top: 1rem; font-size: 0.875rem">@Loc["dl_report_done"]</p>
+                        </div>
+                    </div>
+
+                    @* Expired phase — hidden by default; download.js swaps to it when the
+                       countdown reaches zero. Server always renders a usable phase. *@
+                    <div id="download-phase-expired" class="hidden">
+                        <div class="text-center" style="padding: 2.5rem 0">
+                            <div class="icon-box --muted">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                                </svg>
+                            </div>
+                            <div class="text-3xl font-bold tracking-tight" role="heading" aria-level="1" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</div>
+                            <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                            <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                            @if (Info?.AllowExtensionRequests == true)
+                            {
+                                <div id="dl-ext-request" style="margin-top: 1.5rem">
+                                    <button type="button" data-slot="button" data-variant="default" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
+                                    <p id="dl-ext-request-done" class="hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
+                                </div>
+                            }
+                        </div>
                     </div>
                     break;
 
-                case DownloadRenderState.Expired:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
+                case DownloadRenderState.Scheduled:
+                    <div class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This shared file has expired</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">Shared files are removed automatically after expiry. Ask the sender to re-send.</p>
-                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_scheduled_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">
+                            @Loc["dl_scheduled_sub", ScheduledLabel]
+                            <span id="dl-scheduled-countdown" style="display:block;margin-top:0.25rem;font-weight:500"></span>
+                        </p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
-                case DownloadRenderState.NotFound:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
+                case DownloadRenderState.Expired:
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_expired_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_expired_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                        @if (allowExtensionRequests)
+                        {
+                            <div id="dl-ext-request" style="margin-top: 1.5rem">
+                                <button type="button" data-slot="button" data-variant="default" class="btn" id="dl-ext-request-btn" onclick="requestExtension()" data-ai-action="delivery.requestExtension">@Loc["dl_ext_request_btn"]</button>
+                                <p id="dl-ext-request-done" class="hidden" style="margin-top: 0.5rem">@Loc["dl_ext_request_sent"]</p>
+                            </div>
+                        }
+                    </div>
+                    break;
+
+                case DownloadRenderState.Infected:
+                    <div id="download-phase-infected" class="text-center" style="padding: 2.5rem 0">
                         <div class="icon-box --muted">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
                         </div>
-                        <h1 class="db-h1" style="margin-top: 1.5rem; font-size: 1.25rem">This link doesn&rsquo;t exist</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">The file may have been removed or the link is incorrect.</p>
-                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_infected_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_infected_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
+                case DownloadRenderState.Suspended:
+                    <div id="download-phase-suspended" class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_suspended_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_suspended_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
+                case DownloadRenderState.Revoked:
+                    <div id="download-phase-revoked" class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_revoked_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_revoked_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
+                case DownloadRenderState.Restricted:
+                    @* Access rules refused this caller (issues #142/#166). Deliberately says
+                       nothing about which rule, the sender's values, the file, or the counts —
+                       a refused visitor learns only that a restriction exists. *@
+                    <div id="download-phase-restricted" class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_restricted_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_restricted_sub"]</p>
+                        <p class="dl-restricted__notice">@Loc["dl_restricted_notice"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
+                case DownloadRenderState.NotFound:
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_notfound_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_notfound_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.LimitReached:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
-                        <h1 class="db-h1" style="font-size: 1.25rem">Download limit reached</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">This shared file has reached its download limit. Ask the sender to re-send.</p>
-                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">Send a file</a>
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <h1 class="text-3xl font-bold tracking-tight" style="font-size: 1.25rem">@Loc["dl_limit_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_limit_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
+                    </div>
+                    break;
+
+                case DownloadRenderState.DailyLimit:
+                    <div id="download-phase-daily-limit" class="text-center" style="padding: 2.5rem 0">
+                        <div class="icon-box --muted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <h1 class="text-3xl font-bold tracking-tight" style="margin-top: 1.5rem; font-size: 1.25rem">@Loc["dl_daily_limit_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_daily_limit_sub"]</p>
+                        <a href="/" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_send_a_file"]</a>
                     </div>
                     break;
 
                 case DownloadRenderState.Error:
-                    <div class="db-text-center" style="padding: 2.5rem 0">
-                        <h1 class="db-h1" style="font-size: 1.25rem">Something went wrong</h1>
-                        <p class="db-p" style="margin-top: 0.5rem; font-size: 0.875rem">We couldn&rsquo;t reach the download service. Please try again.</p>
+                    <div class="text-center" style="padding: 2.5rem 0">
+                        <h1 class="text-3xl font-bold tracking-tight" style="font-size: 1.25rem">@Loc["dl_error_h1"]</h1>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem">@Loc["dl_error_sub"]</p>
+                        <a href="" class="btn" style="display: inline-flex; margin-top: 2rem; width: auto; padding: 0.875rem 2rem">@Loc["dl_error_retry"]</a>
                     </div>
                     break;
             }
@@ -184,31 +669,577 @@
 
     <script src="/js/download.js"></script>
 
+<script>
+    window.recipientGate = {
+        download: function () {
+            var email = document.getElementById('dl-recipient-email').value.trim();
+            if (!email) return;
+            var consent = document.getElementById('dl-recipient-consent').checked;
+            window.location.href = '/api/downloads/' + '@ShareCode' + '?recipientEmail=' + encodeURIComponent(email) + '&marketingConsent=' + (consent ? 'true' : 'false');
+        }
+    };
+</script>
+
+<script>
+    window.emailOtp = {
+        send: function () {
+            var email = document.getElementById('dl-email-otp-email');
+            if (!email || !email.value.trim()) return;
+            var btn = document.getElementById('dl-email-otp-send');
+            btn.disabled = true;
+            fetch('/api/deliveries/' + '@ShareCode' + '/request-email-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.value.trim() }),
+            }).then(function (r) {
+                if (r.ok) {
+                    document.getElementById('dl-email-otp-sent').classList.remove('hidden');
+                }
+                btn.disabled = false;
+            }).catch(function () { btn.disabled = false; });
+        },
+        download: function () {
+            var email = document.getElementById('dl-email-otp-email').value.trim();
+            var code = document.getElementById('dl-email-otp-code').value.trim();
+            if (!email || !code) return;
+            window.location.href = '/api/downloads/' + '@ShareCode' + '?emailOtp=' + encodeURIComponent(code) + '&email=' + encodeURIComponent(email);
+        }
+    };
+</script>
+
+<script>
+    window.restoreColdDelivery = function () {
+        var btn = document.getElementById('dl-cold-restore-btn');
+        if (!btn) return;
+        btn.disabled = true;
+        fetch('/api/downloads/' + '@ShareCode' + '/restore', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                var done = document.getElementById('dl-cold-restore-done');
+                if (done) done.classList.remove('hidden');
+                window.location.reload();
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.requestExtension = function () {
+        var btn = document.getElementById('dl-ext-request-btn');
+        if (!btn) return;
+        btn.disabled = true;
+        fetch('/api/deliveries/' + '@ShareCode' + '/extension-request', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                btn.classList.add('hidden');
+                var done = document.getElementById('dl-ext-request-done');
+                if (done) done.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+    window.saveForOffline = function () {
+        var btn = document.getElementById('dl-save-offline-btn');
+        if (btn) btn.disabled = true;
+        fetch('/api/downloads/' + '@ShareCode' + '/offline-bundle').then(function (r) {
+            if (!r.ok) throw new Error('offline bundle refused');
+            return r.json();
+        }).then(function (bundle) {
+            if ('caches' in window && bundle && bundle.cacheName) {
+                return caches.open(bundle.cacheName).then(function (cache) {
+                    return cache.put('/d/' + '@ShareCode', new Response(JSON.stringify(bundle), { headers: { 'Content-Type': 'application/json' } }));
+                });
+            }
+        }).then(function () {
+            var done = document.getElementById('dl-offline-saved-status');
+            if (done) done.classList.remove('hidden');
+        }).catch(function () {
+            if (btn) btn.disabled = false;
+        });
+    };
+</script>
+
+    @if (Files.Count > 1)
+    {
+        @* Server-rendered, like the comment thread and for the same reason: the recipient page
+           has to work with scripting off (DownloadNoScriptTests), and a bundle whose contents
+           only appear after a fetch is an empty page to that reader. *@
+        <section id="dl-files" class="dl-files" data-share-code="@ShareCode">
+            <h2 class="dl-files__title text-xl font-semibold">@Loc["dl_files_title", Files.Count]</h2>
+
+            <ul class="dl-files__list">
+                @foreach (var file in Files)
+                {
+                    <li class="dl-file">
+                        <a class="dl-file__name" href="/api/downloads/@ShareCode/files/@file.Id">@file.FileName</a>
+                        <span class="dl-file__size">@FormatBytes(file.FileSize)</span>
+                    </li>
+                }
+            </ul>
+
+            <a class="dl-files__all inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href="/api/downloads/@ShareCode/zip"
+               data-ai-action="download.zip">@Loc["dl_files_download_all", FormatBytes(TotalFileBytes)]</a>
+        </section>
+    }
+
+    @if (SubtitleFiles.Count > 0 && InitialPhase == PhaseFile)
+    {
+        <section id="dl-subtitles" class="dl-files mt-4" data-share-code="@ShareCode">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="dl-files__title text-base font-semibold">@Loc["dl_subtitles_title"]</h2>
+                <div class="flex items-center gap-2 text-xs">
+                    <label for="dl-subtitle-track-select" class="text-muted-foreground">@Loc["dl_subtitles_track"]</label>
+                    <NativeSelect id="dl-subtitle-track-select" onchange="downloadApp.selectSubtitleTrack(this.value)" aria-label="@Loc["dl_subtitles_track"]">
+                        <NativeSelectOption value="off">@Loc["dl_subtitles_off"]</NativeSelectOption>
+                        @foreach (var sub in SubtitleFiles)
+                        {
+                            var subSrc = $"/api/downloads/{ShareCode}/subtitles/{sub.Id}";
+                            <NativeSelectOption value="@sub.Id.ToString()" data-src="@subSrc" data-srclang="@SubtitleLang(sub.FileName)" data-label="@SubtitleLabel(sub.FileName)">@SubtitleLabel(sub.FileName) (@sub.FileName)</NativeSelectOption>
+                        }
+                    </NativeSelect>
+                </div>
+            </div>
+        </section>
+    }
+
+    @if (ImageFiles.Count >= 2 && InitialPhase == PhaseFile)
+    {
+        <section id="dl-image-compare" class="dl-files mt-4" data-share-code="@ShareCode">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h2 class="dl-files__title text-base font-semibold">@Loc["dl_compare_title"]</h2>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="dl-compare-swap-btn" data-slot="button" data-variant="outline" data-size="sm" class="rounded border px-2.5 py-1 text-xs font-medium" onclick="downloadApp.swapCompareImages()" data-ai-action="download.compare.swap">@Loc["dl_compare_swap"]</button>
+                    <button type="button" id="dl-compare-reset-btn" data-slot="button" data-variant="ghost" data-size="sm" class="rounded px-2.5 py-1 text-xs font-medium text-muted-foreground" onclick="downloadApp.setCompareSplit(50)" data-ai-action="download.compare.reset">@Loc["dl_compare_reset"]</button>
+                </div>
+            </div>
+            <div id="dl-compare-stage" class="relative overflow-hidden rounded-md border bg-muted/30" style="min-height: 14rem"
+                 data-before-src="/api/downloads/@ShareCode/files/@ImageFiles[0].Id"
+                 data-after-src="/api/downloads/@ShareCode/files/@ImageFiles[1].Id"
+                 data-before-name="@ImageFiles[0].FileName"
+                 data-after-name="@ImageFiles[1].FileName">
+                <img id="dl-compare-after-img" src="/api/downloads/@ShareCode/files/@ImageFiles[1].Id" alt="@ImageFiles[1].FileName" class="block w-full select-none object-contain" style="max-height: 24rem" />
+                <div id="dl-compare-before-clip" class="absolute inset-0 overflow-hidden" style="clip-path: inset(0 50% 0 0)">
+                    <img id="dl-compare-before-img" src="/api/downloads/@ShareCode/files/@ImageFiles[0].Id" alt="@ImageFiles[0].FileName" class="block w-full select-none object-contain" style="max-height: 24rem" />
+                </div>
+                <div class="pointer-events-none absolute inset-x-3 top-2 flex justify-between text-xs font-medium">
+                    <span id="dl-compare-before-label" class="rounded bg-background/80 px-2 py-0.5">@Loc["dl_compare_before"]: @ImageFiles[0].FileName</span>
+                    <span id="dl-compare-after-label" class="rounded bg-background/80 px-2 py-0.5">@Loc["dl_compare_after"]: @ImageFiles[1].FileName</span>
+                </div>
+            </div>
+            <div class="mt-2 flex items-center gap-3">
+                <input type="range" id="dl-compare-slider" min="0" max="100" value="50" class="w-full accent-primary"
+                       aria-label="@Loc["dl_compare_slider_aria"]"
+                       oninput="downloadApp.setCompareSplit(this.value)" />
+                <span id="dl-compare-value" class="text-xs font-mono text-muted-foreground">50%</span>
+            </div>
+        </section>
+    }
+
+    @if (Info?.Versions is { Count: > 0 } versions && InitialPhase == PhaseFile)
+    {
+        @* Version history (issue #110) — server-rendered so recipients can download past versions even with JS off. *@
+        <section id="dl-versions" class="dl-files" data-share-code="@ShareCode">
+            <h2 class="dl-files__title text-xl font-semibold">@Loc["dl_versions_title", versions.Count]</h2>
+
+            <ul class="dl-files__list">
+                @foreach (var ver in versions)
+                {
+                    <li class="dl-file">
+                        <a class="dl-file__name" href="/api/downloads/@ShareCode/versions/@ver.VersionNumber"
+                           data-ai-action="download.version">@Loc["dl_versions_item", ver.VersionNumber, ver.FileName, FormatBytes(ver.FileSize)]</a>
+                        <time class="dl-file__size" datetime="@ver.ReplacedAt.ToString("o")">@ver.ReplacedAt.ToLocalTime().ToString("g")</time>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+
+    @if (CommentsOpen)
+    {
+        @* Posting needs JS; the thread does not. Hide only the controls, natively. *@
+        <noscript><style>.dl-comments__js { display: none; }</style></noscript>
+
+        <section id="dl-comments" class="dl-comments" data-share-code="@ShareCode">
+            <h2 class="dl-comments__title text-xl font-semibold">@Loc["dl_comments_title"]</h2>
+
+            @if (Comments.Count == 0)
+            {
+                <p class="text-muted-foreground" id="dl-comments-empty">@Loc["dl_comments_empty"]</p>
+            }
+
+            <ul class="dl-comments__list" id="dl-comments-list">
+                @foreach (var comment in Comments.Where(c => c.ParentId is null))
+                {
+                    <li class="dl-comment" id="dl-comment-@comment.Id">
+                        <p class="dl-comment__meta">
+                            <strong>@comment.AuthorName</strong>
+                            @if (comment.IsTeamMember)
+                            {
+                                @* Marked because an anonymous display name is a claim, not an identity. *@
+                                <span class="dl-comment__badge">@Loc["dl_comments_team"]</span>
+                            }
+                            <time datetime="@comment.CreatedAt.ToString("o")">@comment.CreatedAt.ToLocalTime().ToString("g")</time>
+                        </p>
+                        <p class="dl-comment__body">@(comment.IsDeleted ? Loc["dl_comments_removed"].Value : comment.Body)</p>
+
+                        @foreach (var reply in Comments.Where(c => c.ParentId == comment.Id))
+                        {
+                            <div class="dl-comment dl-comment--reply" id="dl-comment-@reply.Id">
+                                <p class="dl-comment__meta">
+                                    <strong>@reply.AuthorName</strong>
+                                    @if (reply.IsTeamMember)
+                                    {
+                                        <span class="dl-comment__badge">@Loc["dl_comments_team"]</span>
+                                    }
+                                    <time datetime="@reply.CreatedAt.ToString("o")">@reply.CreatedAt.ToLocalTime().ToString("g")</time>
+                                </p>
+                                <p class="dl-comment__body">@(reply.IsDeleted ? Loc["dl_comments_removed"].Value : reply.Body)</p>
+                            </div>
+                        }
+
+                        @if (CanPost)
+                        {
+                            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dl-comments__js"
+                                    data-parent-id="@comment.Id"
+                                    onclick="window.quickShareComments.reply(this)"
+                                    data-ai-action="comment.reply">@Loc["dl_comments_reply"]</button>
+                        }
+                    </li>
+                }
+            </ul>
+
+            @if (CanPost)
+            {
+                @* Posting needs JS. The thread above does not — a reader with scripts off still
+                   sees the conversation, which is the part that carries the information. *@
+                <div class="dl-comments__form dl-comments__js">
+                    @if (!IsSignedIn)
+                    {
+                        <label class="workspace-label" for="dl-comment-name">@Loc["dl_comments_name"]</label>
+                        <Input id="dl-comment-name" Type="text" maxlength="@DeliveryComment.AuthorNameMaxLength" />
+                    }
+
+                    <label class="workspace-label" for="dl-comment-body">@Loc["dl_comments_body"]</label>
+                    <Textarea id="dl-comment-body" rows="3" maxlength="@DeliveryComment.BodyMaxLength" />
+
+                    <p class="dl-comments__hint text-muted-foreground" id="dl-comment-replying" hidden>
+                        @Loc["dl_comments_replying"]
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="dl-comments__cancel"
+                                onclick="window.quickShareComments.cancelReply()"
+                                data-ai-action="comment.reply.cancel">@Loc["dl_comments_cancel_reply"]</button>
+                    </p>
+
+                    <button type="button" data-slot="button" data-variant="default" data-size="sm" class="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+                            data-error-label="@Loc["dl_comments_failed"]"
+                            onclick="window.quickShareComments.post(this)"
+                            data-ai-action="comment.post">@Loc["dl_comments_post"]</button>
+                </div>
+            }
+        </section>
+    }
+
+    @if (Brand?.FooterText is { } brandFooter)
+    {
+        <p class="dl-brand__footer">@brandFooter</p>
+    }
+</div>
+
 </PageWrapper>
 
+<script src="/js/comments.js" defer></script>
+
 @code {
+    private const string PhasePassword = "password";
+    private const string PhaseOtp = "otp";
+    private const string PhaseFile = "file";
     [Parameter] public string ShareCode { get; set; } = string.Empty;
+
+    // The server renders the phase that works without JS. The ad phase never
+    // qualifies, so JS raises that one after the page is already usable.
+    private string InitialPhase => Info?.HasPassword == true ? PhasePassword : Info?.HasOtp == true ? PhaseOtp : PhaseFile;
+    private string PhaseClass(string phase) => InitialPhase == phase ? string.Empty : "hidden";
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["otpIncomplete"] = Loc["dl_otp_incomplete"],
+        ["otpWrong"] = Loc["dl_otp_wrong"],
+        ["otpVerifying"] = Loc["dl_otp_verifying"],
+        ["otpUnlock"] = Loc["dl_otp_unlock"],
+        ["passwordIncomplete"] = Loc["dl_password_incomplete"],
+        ["passwordWrong"] = Loc["dl_password_wrong"],
+        ["passwordVerifying"] = Loc["dl_password_verifying"],
+        ["passwordUnlock"] = Loc["dl_password_unlock"],
+        ["adCountdown"] = Loc["dl_ad_countdown"],
+        ["previewLoading"] = Loc["dl_preview_loading"],
+        ["previewLines"] = Loc["dl_preview_lines"],
+        ["diffUnified"] = Loc["dl_diff_unified"],
+        ["diffSplit"] = Loc["dl_diff_split"],
+        ["diffRaw"] = Loc["dl_diff_raw"],
+        ["diffView"] = Loc["dl_diff_view"],
+        ["copy"] = Loc["dl_preview_copy"],
+        ["copied"] = Loc["dl_preview_copied"],
+        ["copySha"] = Loc["dl_sha_copy"],
+        ["shareLabel"] = Loc["dl_share"],
+        ["shareCopied"] = Loc["dl_share_copied"],
+        ["download"] = Loc["dl_download"],
+        ["decrypting"] = Loc["dl_decrypting"],
+        ["downloadFailed"] = Loc["dl_download_failed"],
+        ["expiryNone"] = Loc["dl_expiry_none"],
+        ["expiryExpired"] = Loc["dl_expiry_expired"],
+        ["expiryMin"] = Loc["dl_expiry_min"],
+        ["expiryHour"] = Loc["dl_expiry_hour"],
+        ["expiryDay"] = Loc["dl_expiry_day"],
+        ["expiryCountdown"] = Loc["dl_expiry_countdown"],
+        ["expiryDownloadNow"] = Loc["dl_expiry_download_now"],
+        ["scheduledCountdown"] = Loc["dl_scheduled_countdown"],
+        ["initialPhase"] = InitialPhase,
+        ["reportError"] = Loc["dl_report_error"],
+        ["previewImageAlt"] = Loc["dl_preview_alt"],
+        ["previewPdfTitle"] = Loc["dl_preview_pdf"],
+        ["zipBytes"] = Loc["dl_zip_bytes"],
+    };
     private DownloadRenderState RenderState { get; set; } = DownloadRenderState.Loading;
     private DownloadInfoDto? Info { get; set; }
     private string ExpiryLabel { get; set; } = string.Empty;
+    private bool allowExtensionRequests;
+    private bool IsScheduled => Info?.Status == DeliveryStatus.Scheduled && Info.DeliverAt > DateTime.UtcNow;
+    private string ScheduledLabel => Info?.DeliverAt is { } d ? d.ToLocalTime().ToString("f") : string.Empty;
+    private string RequestBase => $"{HttpContextAccessor.HttpContext!.Request.Scheme}://{HttpContextAccessor.HttpContext.Request.Host}";
+    private string OgTitle => !string.IsNullOrEmpty(Info?.FileName) ? Info!.FileName : Loc["dl_title"];
+    private string OgDescription => Info is null
+        ? string.Empty
+        : $"{FormatBytes(Info.FileSize)} · {(Info.ExpiresAt.HasValue ? ExpiryCountdown(Info.ExpiresAt.Value) : Loc["dl_expiry_none"])}";
+    private string OgUrl => $"{RequestBase}{HttpContextAccessor.HttpContext!.Request.Path}{HttpContextAccessor.HttpContext.Request.QueryString}";
+    private string OgImageUrl => $"{RequestBase}/api/downloads/{Uri.EscapeDataString(ShareCode)}/card.svg";
+    private bool ShowViralCta => Info is not null && Info.SenderPlan is not (PlanTierLimits.Pro or PlanTierLimits.Studio);
+
+    /// <summary>
+    /// The sending workspace's brand, or null for a personal share. Resolved from the delivery
+    /// rather than from the viewer: the recipient has no account, and the brand they should see
+    /// is the sender's.
+    /// </summary>
+    private BrandView? Brand { get; set; }
+
+    /// <summary>
+    /// The preview overlay as a CSS <c>url()</c> tile (issue #155), or null when this share
+    /// carries no watermark. Only the preview is marked — the download is untouched.
+    /// </summary>
+    private string? Watermark { get; set; }
+
+    /// <summary>
+    /// The addressed recipient's token from their own mail (issue #37), or null for anybody who
+    /// arrived by a forwarded or copied link.
+    /// </summary>
+    private string? RecipientToken { get; set; }
+
+    /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
+    private string? RegionLabel { get; set; }
+
+    /// <summary>The files in this delivery (issue #79). Always at least one.</summary>
+    private List<DeliveryFile> Files { get; set; } = [];
+
+    private long TotalFileBytes => Files.Sum(f => f.FileSize);
+
+    private List<DeliveryFile> SubtitleFiles => Files.Where(f => DownloadSubtitleEndpoint.IsSubtitleFileName(f.FileName)).ToList();
+
+    private List<DeliveryFile> ImageFiles => Files.Where(f =>
+        f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+        || f.FileName.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private static string SubtitleLabel(string fileName)
+    {
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        var lastDot = stem.LastIndexOf('.');
+        return lastDot > 0 && stem.Length - lastDot - 1 is >= 2 and <= 8
+            ? stem[(lastDot + 1)..].ToUpperInvariant()
+            : stem;
+    }
+
+    private static string SubtitleLang(string fileName)
+    {
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        var lastDot = stem.LastIndexOf('.');
+        return lastDot > 0 && stem.Length - lastDot - 1 is >= 2 and <= 5
+            ? stem[(lastDot + 1)..].ToLowerInvariant()
+            : "en";
+    }
+
+    /// <summary>Thread state (issue #289), resolved through the same gate the API uses.</summary>
+    private bool CommentsOpen { get; set; }
+    private bool CanPost { get; set; }
+    private bool IsSignedIn { get; set; }
+    private List<CommentDto> Comments { get; set; } = [];
+
+    /// <summary>
+    /// Emits the brand stylesheet unescaped. Safe because every interpolated value is validated
+    /// on save — hex colours and a restricted font-name character set — so nothing here can
+    /// close a declaration and open something else.
+    /// </summary>
+    private static MarkupString RawCss(string css) => new(css);
+
+    /// <summary>
+    /// Loads the file list (issue #79).
+    ///
+    /// Only for a share that is already showing its contents: a password- or OTP-gated delivery
+    /// keeps its file names to itself until the gate is passed, because names and sizes are part
+    /// of what the gate exists to withhold.
+    /// </summary>
+    private async Task LoadFilesAsync(Guid? deliveryId, bool gated, CancellationToken ct)
+    {
+        if (deliveryId is null || gated)
+            return;
+
+        Files = await Db.DeliveryFiles
+            .AsNoTracking()
+            .Where(f => f.DeliveryId == deliveryId.Value)
+            .OrderBy(f => f.SortOrder)
+            .ToListAsync(ct);
+    }
+
+    /// <summary>
+    /// Loads the thread through <see cref="CommentGate"/> — the same resolver the API uses, so
+    /// the page cannot show a conversation the endpoint would refuse. Server-rendered rather
+    /// than fetched, so a reader with scripts disabled still sees it.
+    /// </summary>
+    private async Task LoadCommentsAsync(CancellationToken ct)
+    {
+        var delivery = await Db.Deliveries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.ShareCode == ShareCode && d.DeletedAt == null, ct);
+
+        if (delivery is null)
+            return;
+
+        IsSignedIn = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+
+        var member = await CommentAuthor.IsWorkspaceMemberAsync(
+            Db, HttpContextAccessor.HttpContext!, delivery.WorkspaceId, ct);
+
+        var verdict = await Gate.EvaluateAsync(delivery, member, ct);
+        CommentsOpen = verdict.CanRead;
+        CanPost = verdict.CanPost;
+
+        if (!CommentsOpen)
+            return;
+
+        Comments = await Db.DeliveryComments
+            .AsNoTracking()
+            .Where(c => c.DeliveryId == delivery.Id)
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new CommentDto(
+                c.Id,
+                c.ParentId,
+                c.AuthorName,
+                c.AuthorUserId != null,
+                c.DeletedAt == null ? c.Body : string.Empty,
+                c.DeletedAt != null,
+                c.CreatedAt,
+                c.EditedAt))
+            .ToListAsync(ct);
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        // Referral attribution (issue #15): visiting a link tagged ?r= records
+        // the referrer in a 30-day cookie; signup later consumes it.
+        var httpContext = HttpContextAccessor.HttpContext!;
+        var refCode = httpContext.Request.Query[ReferralPolicy.QueryParam].FirstOrDefault();
+        if (!string.IsNullOrEmpty(refCode))
+        {
+            httpContext.Response.Cookies.Append(ReferralPolicy.CookieName, refCode, new CookieOptions
+            {
+                MaxAge = TimeSpan.FromDays(ReferralPolicy.CookieDays),
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax
+            });
+        }
 
+        // Brand of the sending workspace (issues #285, #286). Read straight from the delivery
+        // rather than widened into DownloadInfoResponse: that payload is serialized to the
+        // recipient, and the workspace id has no business being in it.
+        var stored = await Db.Deliveries
+            .AsNoTracking()
+            .Where(d => d.ShareCode == ShareCode)
+            // Id and the two gate hashes join the projection for the file list (issue #79):
+            // it needs to know which delivery, and whether the share is still behind a gate.
+            // Still deliberately narrow — none of this reaches the recipient payload.
+            .Select(d => new
+            {
+                d.Id,
+                d.WorkspaceId,
+                d.StorageRegion,
+                d.PasswordHash,
+                d.OtpHash,
+                d.WatermarkEnabled,
+                SenderName = d.Sender != null ? d.Sender.Name : null,
+            })
+            .FirstOrDefaultAsync(CancellationToken.None);
+
+        // White-label host check (issue #81). A verified custom domain belongs to one workspace,
+        // and a share from a different one must not be reachable through it: an agency's client
+        // seeing somebody else's file under the agency's own hostname is the worst failure this
+        // feature can have, and it is worth a 404 rather than a redirect that confirms the code.
+        if (await Domains.IsForeignHostAsync(
+                httpContext.Request.Host.Host, stored?.WorkspaceId, CancellationToken.None))
+        {
+            RenderState = DownloadRenderState.NotFound;
+            return;
+        }
+
+        // Per-recipient tracking (issue #37). Before anything can fail: a page that renders is
+        // an open, whatever the delivery's own state turns out to be.
+        RecipientToken = httpContext.Request.Query[DeliveryRecipient.TokenQueryKey].FirstOrDefault();
+        if (stored is not null && RecipientToken is not null)
+            await Recipients.MarkOpenedAsync(stored.Id, RecipientToken, CancellationToken.None);
+
+        Brand = await Brands.ForWorkspaceAsync(stored?.WorkspaceId, CancellationToken.None);
+
+        // The overlay marks the screenshot, never the file: nothing below touches the stored
+        // object or the download route (issue #155).
+        if (stored?.WatermarkEnabled == true
+            && PreviewWatermark.TextFor(Brand?.HeaderText, stored.SenderName) is { } watermarkText)
+        {
+            Watermark = PreviewWatermark.ToCssUrl(watermarkText);
+        }
+        var gated = !string.IsNullOrEmpty(stored?.PasswordHash) || !string.IsNullOrEmpty(stored?.OtpHash);
+        await LoadFilesAsync(stored?.Id, gated, CancellationToken.None);
+        await LoadCommentsAsync(CancellationToken.None);
+        // Null when the delivery has no region, or when the region it was written to is no
+        // longer configured — a label we cannot resolve is worse than no badge at all.
+        RegionLabel = Regions.LabelFor(stored?.StorageRegion);
 
         try
         {
-            var result = await Bus.InvokeAsync<LightResults.Result<DownloadInfoResponse>>(
+            var result = await Bus.Send<LightResults.Result<DownloadInfoResponse>>(
                 new DownloadInfoQuery(ShareCode), CancellationToken.None);
 
             if (!result.IsSuccess(out var value))
             {
                 result.IsFailure(out var error);
-                var msg = error.Message ?? string.Empty;
-                if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
+                var msg = error?.Message ?? string.Empty;
+                // Access rules refused this caller (issues #142/#166). Matched on the exact
+                // code and placed ahead of the substring sniffs below — "delivery_restricted"
+                // contains none of their needles today, but the ordering is the guarantee.
+                if (string.Equals(msg, ErrorCodes.DeliveryRestricted, StringComparison.Ordinal))
+                    RenderState = DownloadRenderState.Restricted;
+                else if (string.Equals(msg, ErrorCodes.DeliveryInfected, StringComparison.Ordinal))
+                    RenderState = DownloadRenderState.Infected;
+                else if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase))
+                {
                     RenderState = DownloadRenderState.Expired;
+                    var extStatus = await Bus.Send<LightResults.Result<ExtensionStatusResponse>>(
+                        new GetExtensionStatusQuery(ShareCode), CancellationToken.None);
+                    if (extStatus.IsSuccess(out var extValue))
+                        allowExtensionRequests = extValue.Allowed;
+                }
+                else if (msg.Contains("daily", StringComparison.OrdinalIgnoreCase))
+                    RenderState = DownloadRenderState.DailyLimit;
                 else if (msg.Contains("limit", StringComparison.OrdinalIgnoreCase))
                     RenderState = DownloadRenderState.LimitReached;
+                else if (msg.Contains("suspended", StringComparison.OrdinalIgnoreCase))
+                    RenderState = DownloadRenderState.Suspended;
+                else if (msg.Contains("revoked", StringComparison.OrdinalIgnoreCase))
+                    RenderState = DownloadRenderState.Revoked;
                 else
                     RenderState = DownloadRenderState.NotFound;
                 return;
@@ -220,13 +1251,43 @@
                 ContentType = value.ContentType,
                 FileSize = value.FileSize,
                 ExpiresAt = value.ExpiresAt,
+                DeliverAt = value.DeliverAt,
+                Status = value.Status,
                 DownloadCount = value.DownloadCount,
                 MaxDownloads = value.MaxDownloads,
                 HasOtp = value.HasOtp,
-                SenderPlan = value.SenderPlan
+                HasPassword = value.HasPassword,
+                SenderPlan = value.SenderPlan,
+                Message = value.Message,
+                Sha256 = value.Sha256,
+                FirstDownloadedAt = value.FirstDownloadedAt,
+                HideDownloadStats = value.HideDownloadStats,
+                BurnAfterDownload = value.BurnAfterDownload,
+                AllowExtensionRequests = value.AllowExtensionRequests,
+                PrivacyMode = value.PrivacyMode,
+                EmailOtpEnabled = value.EmailOtpEnabled,
+                RequireRecipientEmail = value.RequireRecipientEmail,
+                Versions = value.Versions,
+                VerifiedSender = value.VerifiedSender,
+                SenderDisplayName = value.SenderDisplayName,
+                VirusScanStatus = value.VirusScanStatus,
+                VirusSignature = value.VirusSignature,
+                StorageTier = value.StorageTier,
+                IsQueued = value.IsQueued,
+                QueuePosition = value.QueuePosition,
+                QueueEtaSeconds = value.QueueEtaSeconds,
+                SuppressAdInterstitial = value.SuppressAdInterstitial,
+                EncryptionMode = value.EncryptionMode,
+                EncryptionKdfSalt = value.EncryptionKdfSalt,
+                EncryptionKdfIterations = value.EncryptionKdfIterations,
+                HasKeyEscrow = value.HasKeyEscrow,
+                IsLiveStreaming = value.IsLiveStreaming,
+                LiveProgressPercent = value.LiveProgressPercent,
+                HlsAvailable = value.HlsAvailable,
+                VideoCompressionQuality = value.VideoCompressionQuality
             };
-            ExpiryLabel = Info.ExpiresAt.HasValue ? $"expires {ExpiryCountdown(Info.ExpiresAt.Value)}" : "no expiry";
-            RenderState = DownloadRenderState.Ready;
+            ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
+            RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
         }
         catch { RenderState = DownloadRenderState.Error; }
     }
@@ -242,13 +1303,22 @@
         var size = bytes / Math.Pow(1024, magnitude);
         return magnitude == 0 ? $"{bytes} B" : $"{size:F1} {units[magnitude]}";
     }
-    private static string ExpiryCountdown(DateTime expiresAt)
+    private string ExpiryCountdown(DateTime expiresAt)
     {
         var remaining = expiresAt - DateTime.UtcNow;
-        if (remaining <= TimeSpan.Zero) return "expired";
-        if (remaining.TotalHours < 1) return $"in {(int)remaining.TotalMinutes} min";
-        if (remaining.TotalHours < 24) return $"in {(int)remaining.TotalHours} h";
-        return $"in {(int)remaining.TotalDays} day{((int)remaining.TotalDays == 1 ? string.Empty : "s")}";
+        if (remaining <= TimeSpan.Zero) return Loc["dl_expiry_expired"];
+        if (remaining.TotalHours < 1) return Loc["dl_expiry_min", (int)remaining.TotalMinutes];
+        if (remaining.TotalHours < 24) return Loc["dl_expiry_hour", (int)remaining.TotalHours];
+        return Loc["dl_expiry_day", (int)remaining.TotalDays];
+    }
+    private string FirstDownloadLabel(DateTime firstDownloadedAt)
+    {
+        var elapsed = DateTime.UtcNow - firstDownloadedAt;
+        if (elapsed <= TimeSpan.Zero) return Loc["dl_stats_just_now"];
+        if (elapsed.TotalMinutes < 1) return Loc["dl_stats_seconds_ago", (int)elapsed.TotalSeconds];
+        if (elapsed.TotalHours < 1) return Loc["dl_stats_minutes_ago", (int)elapsed.TotalMinutes];
+        if (elapsed.TotalDays < 1) return Loc["dl_stats_hours_ago", (int)elapsed.TotalHours];
+        return Loc["dl_stats_days_ago", (int)elapsed.TotalDays];
     }
     private static MarkupString FileIcon(string? contentType)
     {
@@ -269,13 +1339,41 @@
     // System.Text.Json encoder escapes <, > and & so raw emission stays safe.
     private static MarkupString RawJson(DownloadInfoDto? info) => new(info is null ? "{}" : JsonSerializer.Serialize(info, JsonOptions));
 
-    private enum DownloadRenderState { Loading, Ready, Expired, NotFound, LimitReached, Error }
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+
+    private enum DownloadRenderState { Loading, Ready, Scheduled, Expired, Infected, Suspended, Revoked, Restricted, NotFound, LimitReached, DailyLimit, Error }
     private sealed class DownloadInfoDto
     {
         public string FileName { get; set; } = string.Empty; public string ContentType { get; set; } = string.Empty; public long FileSize { get; set; }
-        public DateTime? ExpiresAt { get; set; } public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
-        public bool HasOtp { get; set; } public string SenderPlan { get; set; } = string.Empty;
+        public DateTime? ExpiresAt { get; set; } public DateTime? DeliverAt { get; set; } public string Status { get; set; } = string.Empty;
+        public int DownloadCount { get; set; } public int MaxDownloads { get; set; }
+        public bool HasOtp { get; set; } public bool HasPassword { get; set; } public string SenderPlan { get; set; } = string.Empty;
+        public string? Message { get; set; }
+        public string? Sha256 { get; set; }
+        public DateTime? FirstDownloadedAt { get; set; }
+        public bool HideDownloadStats { get; set; }
+        public bool BurnAfterDownload { get; set; }
+        public bool AllowExtensionRequests { get; set; }
+        public bool PrivacyMode { get; set; }
+        public bool EmailOtpEnabled { get; set; }
+        public bool RequireRecipientEmail { get; set; }
+        public IReadOnlyList<VersionInfo>? Versions { get; set; }
+        public bool VerifiedSender { get; set; }
+        public string? SenderDisplayName { get; set; }
+        public string? VirusScanStatus { get; set; }
+        public string? VirusSignature { get; set; }
+        public string StorageTier { get; set; } = DeliveryStorageTier.Hot;
+        public bool IsQueued { get; set; }
+        public int QueuePosition { get; set; }
+        public int QueueEtaSeconds { get; set; }
+        public bool SuppressAdInterstitial { get; set; }
+        public string EncryptionMode { get; set; } = DeliveryEncryptionMode.FragmentKey;
+        public string? EncryptionKdfSalt { get; set; }
+        public int? EncryptionKdfIterations { get; set; }
+        public bool HasKeyEscrow { get; set; }
+        public bool IsLiveStreaming { get; set; }
+        public int LiveProgressPercent { get; set; }
+        public bool HlsAvailable { get; set; }
+        public string? VideoCompressionQuality { get; set; }
     }
 }
-
-

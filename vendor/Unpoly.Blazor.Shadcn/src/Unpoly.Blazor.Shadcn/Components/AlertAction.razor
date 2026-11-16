@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+@* The alert's one control, pinned to the trailing top corner rather than sitting under the text.
+   That is shadcn's geometry, not a preference: .cn-alert-action is `absolute top-2 right-2`, and
+   the alert reserves the room with `has-data-[slot=alert-action]:pr-18` so a long title wraps
+   before it reaches the button.
+
+   Logical properties here, `end-4` not `right-4`, so it swaps sides under dir="rtl" — the one
+   place this port deliberately differs from a class string that says `right`. *@
+
+<div data-slot="alert-action" class="@Cn("absolute top-3 end-4", Class)"
+     @attributes="AdditionalAttributes">@ChildContent</div>

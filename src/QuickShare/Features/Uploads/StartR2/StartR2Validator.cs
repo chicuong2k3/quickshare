@@ -18,6 +18,21 @@ public sealed class StartR2Validator : Validator<StartR2Request>
 
         RuleFor(x => x.PartNumbers)
             .NotEmpty()
-            .WithMessage("At least one part number is required.");
+            .WithMessage("At least one part number is required.")
+            .Must((req, parts) => parts.Count <= StartR2Handler.MaxPartsFor(req.FileSize))
+            .WithMessage(req =>
+                $"Part count {req.PartNumbers.Count} exceeds what a {req.FileSize}-byte file can need")
+            .Must(parts => parts.All(p => p is >= 1 and <= StartR2Handler.MaxPartNumber))
+            .WithMessage($"Part numbers must be between 1 and {StartR2Handler.MaxPartNumber}.");
+
+        RuleFor(x => x.SenderEmail)
+            .EmailAddress()
+            .WithMessage("A valid email address is required when provided.")
+            .MaximumLength(320)
+            .WithMessage("Email address must be 320 characters or fewer.");
+
+        RuleFor(x => x.RequestCode)
+            .MaximumLength(FileRequest.CodeMaxLength)
+            .WithMessage($"Request code must be at most {FileRequest.CodeMaxLength} characters.");
     }
 }

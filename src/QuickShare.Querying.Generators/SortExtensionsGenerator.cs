@@ -18,9 +18,9 @@ public sealed class SortExtensionsGenerator : IIncrementalGenerator
         var provider = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax,
-                transform: (ctx, _) =>
+                transform: (ctx, ct) =>
                 {
-                    if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node) is not INamedTypeSymbol typeSymbol)
+                    if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node, ct) is not INamedTypeSymbol typeSymbol)
                         return null;
                     var hasAttr = typeSymbol.GetAttributes().Any(a =>
                         a.AttributeClass?.ToDisplayString() == DynamicSortAttributeName);
@@ -60,7 +60,7 @@ public sealed class SortExtensionsGenerator : IIncrementalGenerator
                             && p.GetMethod is not null);
 
             // Insert base type properties at the front so declaration order is preserved
-            if (currentType == typeSymbol)
+            if (SymbolEqualityComparer.Default.Equals(currentType, typeSymbol))
                 properties.AddRange(inheritedMembers);
             else
                 properties.InsertRange(0, inheritedMembers);

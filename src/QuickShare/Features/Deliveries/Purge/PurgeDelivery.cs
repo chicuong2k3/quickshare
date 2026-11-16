@@ -1,0 +1,96 @@
+using LightResults;
+using QuickShare.Infrastructure.Caching;
+using QuickShare.Infrastructure.Storage;
+
+namespace QuickShare.Features.Deliveries.Purge;
+
+public record PurgeDeliveryCommand(Guid DeliveryId) : IRequest<Result>;
+
+/// <summary>
+/// "Delete forever" (issue #157): removes the R2 object and the row immediately,
+/// bypassing the 24h trash grace (#99). GDPR right-to-erasure path.
+/// </summary>
+public sealed class PurgeDeliveryHandler(IStorageProvider storage, ILogger<PurgeDeliveryHandler> logger, AppDbContext db, IHttpContextAccessor http, CacheService cache)
+    : IRequestHandler<PurgeDeliveryCommand, Result>
+{
+    public async ValueTask<Result> Handle(PurgeDeliveryCommand cmd, CancellationToken cancellationToken)
+    {
+        var user = await http.HttpContext!.User.GetUserAsync(db, cancellationToken);
+
+        var delivery = await db.Deliveries
+            .FirstOrDefaultAsync(d => d.Id == cmd.DeliveryId && d.SenderId == user.Id, cancellationToken);
+
+        if (delivery is null)
+            return Result.Failure(new LightResults.Error(ErrorCodes.NotFound));
+
+        // Legal hold (issue #266) outranks right-to-erasure: an active hold means a
+        // regulator or court is relying on these bytes existing. Lift the hold first.
+        if (delivery.LegalHoldAt is not null)
+            return Result.Failure(new LightResults.Error(ErrorCodes.LegalHoldActive));
+
+        if (!string.IsNullOrEmpty(delivery.StoragePath))
+        {
+            try
+            {
+                await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, delivery.StoragePath, delivery.IsDeduplicated, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to purge R2 objects for delivery {DeliveryId}", delivery.Id);
+            }
+        }
+
+        // Version history (#110): purge all version objects alongside the main delivery object.
+        var versions = await db.DeliveryVersions
+            .Where(v => v.DeliveryId == delivery.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var version in versions)
+        {
+            try
+            {
+                await storage.DeleteObjectsAsync(version.StoragePath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to purge version object for delivery {DeliveryId}", delivery.Id);
+            }
+        }
+        db.DeliveryVersions.RemoveRange(versions);
+
+        db.Deliveries.Remove(delivery);
+        await db.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync($"download:info:{delivery.ShareCode}", cancellationToken);
+
+        return Result.Success();
+    }
+}
+
+public sealed class PurgeDeliveryEndpoint : EndpointWithoutRequest
+{
+    public override void Configure()
+    {
+        Delete("/api/deliveries/{Id}/purge");
+        Description(b => b.WithTags(ApiTags.Deliveries));
+        Summary(s =>
+        {
+            s.Summary = "Permanently delete a delivery and its stored object";
+            s.Description = "Sender only (issue #157). Immediate, irreversible — bypasses the trash grace.";
+        });
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var id = Route<Guid>("Id");
+        var result = await Resolve<IMediator>().Send<LightResults.Result>(new PurgeDeliveryCommand(id), ct);
+
+        if (result.IsSuccess())
+            await Send.NoContentAsync(ct);
+        else if (result.IsFailure(out var error))
+            ThrowError(error.Message, error.Message switch
+            {
+                ErrorCodes.NotFound => StatusCodes.Status404NotFound,
+                ErrorCodes.LegalHoldActive => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            });
+    }
+}

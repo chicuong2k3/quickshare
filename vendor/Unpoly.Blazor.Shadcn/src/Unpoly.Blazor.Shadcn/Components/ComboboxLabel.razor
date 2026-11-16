@@ -1,0 +1,12 @@
+@inherits UiComponentBase
+
+<div data-slot="combobox-label" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 " +
+        "pointer-coarse:text-sm";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,0 +1,23 @@
+@inherits UiComponentBase
+
+@* Cropper.js is initialized by the platform compiler on both hosts. The crop is emitted
+   as a PNG data URL in the image-crop:apply CustomEvent (detail.dataUrl). *@
+<div data-slot="image-crop" data-aspect-ratio="@AspectRatio" data-circular="@(Circular ? "true" : "false")"
+     data-max-image-size="@MaxImageSize" class="@Class" @attributes="AdditionalAttributes">
+    <img src="@Src" alt="@Alt" style="display:block;max-width:100%" />
+    <div>
+        <button type="button" data-slot="image-crop-apply">Apply crop</button>
+        <button type="button" data-slot="image-crop-reset">Reset crop</button>
+    </div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string? Src { get; set; }
+    [Parameter] public string Alt { get; set; } = "Image to crop";
+    /// <summary>Width divided by height; null allows free-form cropping.</summary>
+    [Parameter] public double? AspectRatio { get; set; }
+    [Parameter] public bool Circular { get; set; }
+    /// <summary>Maximum exported PNG size in bytes (0 means unlimited).</summary>
+    [Parameter] public long MaxImageSize { get; set; }
+}

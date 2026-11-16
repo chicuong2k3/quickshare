@@ -1,0 +1,34 @@
+@inherits UiComponentBase
+
+@* A button inside an input's frame — the eye on a password field, the unit on a number field.
+
+   Upstream renders a <Button> with asChild-free composition, so this carries the button recipe
+   AND a size table of its own, because the sizes here are smaller than any standalone button
+   has: it has to fit inside a 36px control. It had neither, and rendered as unstyled browser
+   chrome inside a styled box. *@
+
+<button type="@Type" data-slot="input-group-button" data-size="@Size" class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter] public string Type { get; set; } = "button";
+
+    /// <summary>Any button variant. Ghost, because it sits on the input's own background.</summary>
+    [Parameter] public string Variant { get; set; } = "ghost";
+
+    /// <summary>xs | sm | icon-xs | icon-sm</summary>
+    [Parameter] public string Size { get; set; } = "xs";
+
+    const string Base =
+        "flex items-center gap-2 text-control shadow-none";
+
+    string VariantClass => Size switch
+    {
+        "icon-sm" => "size-8 p-0 has-[>svg]:p-0",
+        "icon-xs" => "size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0",
+        "sm" => "h-8 gap-1.5 rounded-md px-2.5 has-[>svg]:px-2.5",
+        _ => "h-6 gap-1 rounded-[calc(var(--radius)-5px)] px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
+    };
+
+    string Classes => Cn(ButtonVariants.Of(Variant, "default"), Base, VariantClass, Class);
+}

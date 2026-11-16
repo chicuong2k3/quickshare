@@ -1,0 +1,34 @@
+@inherits UiComponentBase
+
+@* BottomMenu — useLayouts' bottom menu: a bar of icon buttons, each of which opens its own panel
+   above the bar; moving from one button to the next morphs the panel from the old size to the
+   new one and blurs the new content in.
+
+   Each panel is a [popover], so the platform supplies what upstream wrote by hand: one open at a
+   time (an auto popover closes the others), dismissal on a click outside, and Escape. A button
+   names its panel with popovertarget, so the menu opens and closes with scripting off. ui.js
+   places the panel above the bar and adds the motion with Motion.
+
+   ChildContent is rendered twice, as FloatingDock's is: once for the panels and once for the
+   buttons in the bar. Each BottomMenuItem learns which copy it is from a named cascade, and both
+   copies agree on the panel's id through Value. *@
+
+<div data-slot="bottom-menu" class="@Classes" @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        <CascadingValue Name="BottomMenuLayout" Value="@("panel")" IsFixed="true">@ChildContent</CascadingValue>
+        <div data-slot="bottom-menu-bar" aria-label="@Label" role="group"
+             class="z-10 mt-3 flex items-center gap-1 rounded-[18px] border bg-background/95 p-1 backdrop-blur-xl">
+            <CascadingValue Name="BottomMenuLayout" Value="@("trigger")" IsFixed="true">@ChildContent</CascadingValue>
+        </div>
+    </CascadingValue>
+</div>
+
+@code {
+    /// <summary>Names the group of buttons for a screen reader.</summary>
+    [Parameter] public string Label { get; set; } = "Menu";
+
+    /// <summary>Prefix for the panel ids, unique per menu so two menus on a page never share one.</summary>
+    internal string IdPrefix { get; } = "bottom-menu-" + Guid.NewGuid().ToString("N")[..8];
+
+    string Classes => Cn("relative flex flex-col items-center", Class);
+}

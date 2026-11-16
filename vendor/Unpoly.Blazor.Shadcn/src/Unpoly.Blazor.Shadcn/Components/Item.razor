@@ -1,0 +1,51 @@
+@inherits UiComponentBase
+
+@* A row: media on the left, content in the middle, actions on the right. shadcn makes it
+   polymorphic with asChild; here Href renders the <a>, which is also what makes a whole row
+   followable by Unpoly. *@
+
+@if (Href is not null)
+{
+    <a href="@Href" data-slot="item" data-variant="@Variant" data-size="@Size" class="@Classes"
+       @attributes="AdditionalAttributes">@ChildContent</a>
+}
+else
+{
+    <div data-slot="item" data-variant="@Variant" data-size="@Size" class="@Classes"
+         @attributes="AdditionalAttributes">@ChildContent</div>
+}
+
+@code {
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>default | outline | muted</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    /// <summary>default | sm | xs</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    const string Base =
+        "group/item flex flex-wrap items-center rounded-md border border-transparent " +
+        "text-control transition-colors duration-100 outline-none focus-visible:border-ring " +
+        "focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors " +
+        "[a]:hover:bg-accent/50";
+
+    // Both groups were flattened into Base with their defaults baked in, so Variant and
+    // Size reached data-variant and data-size and nothing else — an outline row drew no
+    // border and a small row was not smaller. The two examples whose whole point is the
+    // difference showed three identical rows.
+    string VariantClass => Variant switch
+    {
+        "outline" => "border-border",
+        "muted" => "bg-muted/50",
+        _ => "bg-transparent",
+    };
+
+    string SizeClass => Size switch
+    {
+        "sm" => "gap-2.5 px-4 py-3",
+        _ => "gap-4 p-4",
+    };
+
+    string Classes => Cn(Base, VariantClass, SizeClass, Class);
+}

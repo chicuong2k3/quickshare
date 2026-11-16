@@ -1,0 +1,42 @@
+@layout MainLayout
+@page "/not-found"
+@* Catch-all (lowest route precedence): any URL no other page or endpoint claims
+   renders this branded 404 instead of an empty response (issue #206). *@
+@page "/{*UnmatchedPath:nonfile}"
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["notfound_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Centered">
+    <Card class="mx-auto mt-8 w-full max-w-md p-6">
+        <div class="flex items-center justify-between gap-3 border-b pb-4">
+            <span class="h-2 w-2 rounded-sm bg-primary" aria-hidden="true"></span>
+            <span class="font-semibold">404</span>
+            <span class="h-2 w-2 rounded-sm bg-primary" aria-hidden="true"></span>
+        </div>
+        <div class="pt-6 text-center">
+            <h1 class="mb-3 text-2xl font-semibold">@Loc["notfound_h1"]</h1>
+            <p class="text-muted-foreground">@Loc["notfound_sub"]</p>
+            <div class="mt-6 flex flex-wrap justify-center gap-4">
+                <Button Href="@RoutePaths.Home">@Loc["notfound_cta_home"]</Button>
+                <Button Href="@RoutePaths.AccountDeliveries" Variant="ghost">@Loc["notfound_cta_deliveries"]</Button>
+            </div>
+        </div>
+    </Card>
+</PageWrapper>
+
+@code {
+    [Parameter] public string? UnmatchedPath { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Direct hits on /not-found should also be a 404, not a 200 (issue #206).
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is not null && !ctx.Response.HasStarted)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        }
+    }
+}

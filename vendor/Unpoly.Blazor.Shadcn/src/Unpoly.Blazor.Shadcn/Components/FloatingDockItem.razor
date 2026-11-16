@@ -1,0 +1,49 @@
+@inherits UiComponentBase
+
+@* One link in a FloatingDock. ChildContent is the icon; Title is the link's name, shown above the
+   tile on hover and focus on a wide screen and read aloud everywhere.
+
+   The desktop tile is 40px at rest and the icon 20px — upstream's resting sizes — so a page
+   with no script draws the dock exactly as it looks before the pointer arrives. ui.js grows
+   them towards 80px and 40px with upstream's spring. The title is CSS rather than script:
+   upstream fades it in from 10px below on hover, and a transition says the same thing, also on
+   keyboard focus, and also with the script missing. *@
+
+@if (IsMobile)
+{
+    <a data-slot="floating-dock-item" data-layout="mobile" href="@Href" class="@MobileClasses" @attributes="AdditionalAttributes">
+        <span data-slot="floating-dock-icon" aria-hidden="true"
+              class="flex size-4 items-center justify-center [&_svg]:size-full">@ChildContent</span>
+        <span class="sr-only">@Title</span>
+    </a>
+}
+else
+{
+    <a data-slot="floating-dock-item" data-layout="desktop" href="@Href" class="@DesktopClasses" @attributes="AdditionalAttributes">
+        <span data-slot="floating-dock-tile"
+              class="relative flex aspect-square size-10 items-center justify-center rounded-full bg-foreground/10">
+            <span data-slot="floating-dock-title"
+                  class="pointer-events-none absolute -top-8 start-1/2 w-fit -translate-x-1/2 translate-y-2.5 rounded-md border bg-popover px-2 py-0.5 text-xs whitespace-pre text-popover-foreground opacity-0 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 rtl:translate-x-1/2">@Title</span>
+            <span data-slot="floating-dock-icon" aria-hidden="true"
+                  class="flex size-5 items-center justify-center [&_svg]:size-full">@ChildContent</span>
+        </span>
+    </a>
+}
+
+@code {
+    /// <summary>Where the link goes.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>The link's name: the tooltip on a wide screen, the accessible name on a phone.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Set by FloatingDock for the copy of its children that sits in the phone menu.</summary>
+    [CascadingParameter(Name = "FloatingDockLayout")] public string? Layout { get; set; }
+
+    bool IsMobile => Layout == "mobile";
+
+    // bg-foreground/10 where upstream writes bg-gray-200 / dark:bg-neutral-800: one shade darker
+    // than the shelf in either mode, which is what the pair of greys was for.
+    string DesktopClasses => Cn("group rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50", Class);
+    string MobileClasses => Cn("flex size-10 items-center justify-center rounded-full bg-muted outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50", Class);
+}

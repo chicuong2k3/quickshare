@@ -1,0 +1,64 @@
+@inherits UiComponentBase
+
+@* Spotlight — a soft pool of light behind a panel, drawn as one SVG radial gradient.
+
+   No JS, and none wanted: a gradient is declarative. There is nothing to bind, nothing to
+   observe and nothing to tear down, so there is deliberately no compiler for this component.
+
+   The parent has to be `relative` — the gradient is absolutely positioned against the nearest
+   positioned ancestor — and the panel's own content has to be `relative z-10`, because the
+   gradient sits at -z-10 on purpose. Neither half can be done from inside here, because the
+   component has no idea what it is sitting on.
+
+   `ChildContent` is inherited and deliberately not rendered, which is exactly upstream's
+   `children`: this draws a decoration and wraps nothing. The panel's markup goes BESIDE it.
+
+   Not for anything that carries meaning. It is aria-hidden and pointer-events-none, so it is
+   ornament by construction: a screen reader must never reach it, and a pointer that lands on the
+   glow must reach the panel underneath. For a section that has to read as a surface on its own,
+   use Card — a border says "panel", and a glow does not. *@
+
+<svg data-slot="spotlight"
+     class="@Classes"
+     fill="none"
+     aria-hidden="true"
+     focusable="false"
+     xmlns="http://www.w3.org/2000/svg"
+     @attributes="AdditionalAttributes">
+    <defs>
+        <radialGradient id="@_gradientId"
+                        cx="0"
+                        cy="0"
+                        r="1"
+                        gradientUnits="userSpaceOnUse"
+                        gradientTransform="translate(0 0) rotate(90.00000) scale(160)">
+            <stop offset="0%" stop-color="@Fill" />
+            <stop offset="100%" stop-color="@Fill" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+    <ellipse cx="80%" cy="80%" rx="80%" ry="80%" fill="@FillUrl" />
+</svg>
+
+@code {
+    /// <summary>The colour of the light, as any CSS colour. The default is
+    /// <c>currentColor</c>, which resolves to the text colour of whatever the spotlight is placed
+    /// in — so one component lights a dark panel white and a light panel black with no theme
+    /// swap. Upstream hard-codes white, which is invisible on a light surface. A token
+    /// (<c>var(--primary)</c>) is the other useful value.</summary>
+    [Parameter] public string Fill { get; set; } = "currentColor";
+
+    // A gradient id is document-global, so two spotlights on one page that both said "spotlight"
+    // would send both ellipses to the FIRST one's gradient and the second would silently take the
+    // first one's colour. Numbered per instance rather than randomised, so the markup is the same
+    // on every run and a snapshot test has something stable to compare.
+    static int _seq;
+
+    readonly string _gradientId =
+        "shadcn-spotlight-" + System.Threading.Interlocked.Increment(ref _seq);
+
+    // The id lives in exactly one place, and the reference is built from it rather than typed
+    // twice — a mismatch here is an uncoloured ellipse and nothing else.
+    string FillUrl => $"url(#{_gradientId})";
+
+    string Classes => Cn("pointer-events-none absolute -top-40 -z-10 h-[169%] w-full blur-[2px]", Class);
+}

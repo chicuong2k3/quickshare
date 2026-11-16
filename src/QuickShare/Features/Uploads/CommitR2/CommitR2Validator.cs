@@ -23,5 +23,39 @@ public sealed class CommitR2Validator : Validator<CommitR2Request>
         RuleFor(x => x.Parts)
             .NotEmpty()
             .WithMessage("At least one part is required.");
+
+        RuleFor(x => x.DeliverAt)
+            .Must(d => d is null || d.Value > DateTime.UtcNow)
+            .WithMessage("DeliverAt must be in the future.");
+
+        RuleFor(x => x.Message)
+            .Must(m => m is null || m.Trim().Length <= Delivery.MessageMaxLength)
+            .WithMessage($"Message must be at most {Delivery.MessageMaxLength} characters.");
+
+        RuleFor(x => x.Password)
+            .Must(p => p is null || p.Length <= Delivery.PasswordMaxLength)
+            .WithMessage($"Password must be at most {Delivery.PasswordMaxLength} characters.");
+
+        RuleFor(x => x.Sha256)
+            .Must(s => s is null || (s.Trim().Length == 64 && s.Trim().All(c => char.IsAsciiHexDigit(c))))
+            .WithMessage("Sha256 must be a 64-character hex digest.");
+
+        RuleFor(x => x.ExpiryHours)
+            .Must(h => h is null || h > 0)
+            .WithMessage("ExpiryHours must be positive.");
+
+        // Scope rules (issues #142/#166) are length-capped here; content is normalized
+        // server-side, where an unparseable entry is dropped rather than trusted.
+        RuleFor(x => x.AllowedIpRanges)
+            .Must(v => v is null || v.Length <= Delivery.AccessRuleMaxLength)
+            .WithMessage($"AllowedIpRanges must be at most {Delivery.AccessRuleMaxLength} characters.");
+
+        RuleFor(x => x.AllowedCountries)
+            .Must(v => v is null || v.Length <= Delivery.AccessRuleMaxLength)
+            .WithMessage($"AllowedCountries must be at most {Delivery.AccessRuleMaxLength} characters.");
+
+        RuleFor(x => x.BlockedCountries)
+            .Must(v => v is null || v.Length <= Delivery.AccessRuleMaxLength)
+            .WithMessage($"BlockedCountries must be at most {Delivery.AccessRuleMaxLength} characters.");
     }
 }

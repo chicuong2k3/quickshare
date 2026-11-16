@@ -1,0 +1,89 @@
+@inherits UiComponentBase
+
+@* LogoCloud — the "trusted by" strip of partner or customer logos, after Nexus UI's logo clouds
+   on 21st.dev and built from their description rather than their source. One component, one
+   list of LogoCloudItem, and a Variant for how the logos are shown:
+
+     default    a centred, wrapping cloud under the title
+     row        the title at the start, the logos in one line beside it
+     marquee    an endless scroll that pauses under the pointer or focus
+     spotlight  pointing at one logo dims the rest
+     blur       the logos sharpen out of a blur, one after another, when scrolled to
+     swap       Visible logos at a time; the rest take turns, one cell at a time
+
+   Every variant is a plain list in the markup, so the cloud reads as a list of names with
+   scripting off and under reduced motion. The marquee is CSS alone — a keyframe in
+   ui.behavior.css — and stops, wrapping into a still cloud, for a reader who asked for less
+   motion. Blur and swap are Motion, in ui.js, and are skipped entirely under reduced motion.
+
+   The marquee renders the list twice, the second copy inert and hidden from assistive
+   technology, because a loop that slides by half its width needs a second half to slide in.
+   It reads seamlessly only when one copy is at least as wide as the cloud. *@
+
+<div data-slot="logo-cloud" data-variant="@Kind" class="@Classes" @attributes="AdditionalAttributes">
+    <CascadingValue Value="this" IsFixed="true">
+        @if (Title is not null)
+        {
+            <p data-slot="logo-cloud-title" class="@TitleClasses">@Title</p>
+        }
+        @if (Kind == "marquee")
+        {
+            <div data-slot="logo-cloud-viewport" class="w-full overflow-hidden">
+                <div data-slot="logo-cloud-track" class="flex w-max">
+                    <ul data-slot="logo-cloud-list" class="flex shrink-0 items-center gap-x-12 pe-12">@ChildContent</ul>
+                    <ul data-slot="logo-cloud-list" aria-hidden="true" inert class="flex shrink-0 items-center gap-x-12 pe-12">@ChildContent</ul>
+                </div>
+            </div>
+        }
+        else
+        {
+            <ul data-slot="logo-cloud-list" class="@ListClasses">@ChildContent</ul>
+        }
+    </CascadingValue>
+</div>
+
+@code {
+    /// <summary><c>default</c>, <c>row</c>, <c>marquee</c>, <c>spotlight</c>, <c>blur</c> or
+    /// <c>swap</c>. Anything else is read as <c>default</c>.</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    /// <summary>The line that introduces the logos — "Trusted by teams at". Null leaves it out.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>For <c>swap</c>: how many logos show at once. The rest wait their turn, and are
+    /// what a reader with scripting off never sees — put the ones that matter most first.</summary>
+    [Parameter] public int Visible { get; set; } = 6;
+
+    internal string Kind => Variant?.Trim().ToLowerInvariant() switch
+    {
+        "row" => "row",
+        "marquee" => "marquee",
+        "spotlight" => "spotlight",
+        "blur" => "blur",
+        "swap" => "swap",
+        _ => "default",
+    };
+
+    // Items register in render order, which is document order, so the item knows whether it is
+    // one of the first Visible without the cloud having to count its children first.
+    int registered;
+    internal int Register() => registered++;
+
+    string Classes => Cn(Kind == "row"
+        ? "flex w-full flex-col items-center gap-6 md:flex-row md:gap-10"
+        : "flex w-full flex-col items-center gap-8", Class);
+
+    string TitleClasses => Kind == "row"
+        ? "shrink-0 text-center text-sm font-medium text-muted-foreground md:max-w-44 md:border-e md:pe-10 md:text-start"
+        : "text-center text-sm font-medium text-muted-foreground";
+
+    // Spotlight keys on :has(), so it dims the others only while a logo — not the gap between
+    // two — is under the pointer, and the same for keyboard focus inside a linked logo.
+    string ListClasses => Kind switch
+    {
+        "row" => "flex flex-1 flex-wrap items-center justify-center gap-x-8 gap-y-6 md:justify-between",
+        "spotlight" => "flex flex-wrap items-center justify-center gap-x-12 gap-y-8 [&>li]:transition-[opacity,filter] [&>li]:duration-300 [&:has(>li:hover)>li:not(:hover)]:opacity-40 [&:has(>li:hover)>li:not(:hover)]:blur-[1px] [&:has(>li:focus-within)>li:not(:focus-within)]:opacity-40",
+        "swap" => "flex flex-wrap items-center justify-center gap-4",
+        _ => "flex flex-wrap items-center justify-center gap-x-12 gap-y-8",
+    };
+}

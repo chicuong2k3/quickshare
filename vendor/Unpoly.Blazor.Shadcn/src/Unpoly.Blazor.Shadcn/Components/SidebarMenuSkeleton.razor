@@ -1,0 +1,28 @@
+@inherits UiComponentBase
+
+@* Worth knowing where this belongs, because on static SSR it is almost never in the page: the
+   server finishes rendering before a byte reaches the browser, so a skeleton the server draws is
+   a skeleton nobody sees. It is for [up-placeholder] — the fragment Unpoly shows while a swap is
+   in flight — which means it lives in a <template>, not in the sidebar it stands in for. *@
+
+<div data-slot="sidebar-menu-skeleton" aria-hidden="true" class="@Classes"
+     @attributes="AdditionalAttributes">
+    @if (ShowIcon)
+    {
+        <Skeleton Class="size-4 rounded-md" />
+    }
+    <Skeleton Class="h-4 max-w-(--skeleton-width) flex-1"
+              style="@($"--skeleton-width: {Width}")" />
+</div>
+
+@code {
+    [Parameter] public bool ShowIcon { get; set; }
+
+    /// <summary>Upstream randomises this so the rows do not look like a barcode.</summary>
+    [Parameter] public string Width { get; set; } = "70%";
+
+    const string Base =
+        "flex h-8 items-center gap-2 rounded-md px-2";
+
+    string Classes => Cn(Base, Class);
+}

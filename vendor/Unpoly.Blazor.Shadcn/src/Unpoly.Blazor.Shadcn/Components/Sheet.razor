@@ -1,0 +1,49 @@
+@inherits UiComponentBase
+
+@* A drawer from an edge. Structurally identical to <Dialog> — a native <dialog> frame with the
+   shadcn panel inside — and the only difference is which edge it is pinned to, which
+   ui.behavior.css does from [data-side].
+
+   showModal() gives the focus trap, the inert background, Escape and the top layer, so the
+   Portal and Overlay shadcn needs have no counterpart here. *@
+
+<dialog id="@Id" data-slot="sheet" data-side="@Side" data-dismissable="@Dismissable">
+    <div data-slot="sheet-content" class="@Classes" @attributes="AdditionalAttributes">
+        @ChildContent
+        @if (ShowCloseButton)
+        {
+            <button type="button" data-slot="sheet-close"
+                    class="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 end-4 rounded-sm p-1 opacity-70 transition-[opacity,color,background-color] hover:bg-accent hover:text-accent-foreground hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+                <Icon Name="x" Class="size-4" />
+                <span class="sr-only">@CloseLabel</span>
+            </button>
+        }
+    </div>
+</dialog>
+
+@code {
+    /// <summary>What a <see cref="SheetTrigger"/> points its Target at. Required.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>right | left | top | bottom</summary>
+    [Parameter] public string Side { get; set; } = "right";
+
+    [Parameter] public bool Dismissable { get; set; } = true;
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    const string Base =
+        "fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out " +
+        "data-[state=closed]:animate-out data-[state=closed]:duration-300 " +
+        "data-[state=open]:animate-in data-[state=open]:duration-500";
+
+    string VariantClass => Side switch
+    {
+        "bottom" => "inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        "left" => "inset-y-0 start-0 h-full w-3/4 border-e data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        "top" => "inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        _ => "inset-y-0 right-0 h-full w-3/4 border-s data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

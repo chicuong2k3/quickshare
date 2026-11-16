@@ -1,0 +1,242 @@
+@layout MainLayout
+@page "/account/workspace"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Workspaces.Manage
+@using Microsoft.Extensions.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["ws_title"]</PageTitle>
+
+@* Private team data — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_title"]</h1>
+        <p class="text-muted-foreground">@Loc["ws_subtitle"]</p>
+    </section>
+
+    <WorkspaceTabs Current="@RoutePaths.AccountWorkspace" />
+
+    @Chunk
+
+</PageWrapper>
+
+<script src="/js/workspace.js" defer></script>
+
+@code {
+    private const string RoleMember = "member";
+    private const string RoleViewer = "viewer";
+    private const string RoleAdmin = "admin";
+    private const string RoleOwner = "owner";
+
+    private WorkspaceDto? workspace;
+    private bool canCreate;
+
+    private RenderFragment Chunk => @<section id="workspace-body" data-unpoly-reload>
+        @if (workspace is null)
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["ws_create_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["ws_none"] @Loc["ws_create_hint"]</p>
+
+                    @if (!canCreate)
+                    {
+                        <p class="workspace-notice">@Loc["ws_requires_paid"]</p>
+                    }
+                    else
+                    {
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="ws-name">@Loc["ws_name_label"]</label>
+                            <Input id="ws-name"  type="text" maxlength="@Workspace.NameMaxLength" />
+
+                            <label class="workspace-label" for="ws-seats">@Loc["ws_seats_label"]</label>
+                            <Input id="ws-seats" Type="number"
+                                   min="@Workspace.MinSeats" max="@Workspace.MaxSeats" Value="@Workspace.MinSeats.ToString()" />
+
+                            <button type="button" data-slot="button" data-variant="default"
+                                    onclick="window.quickShareWorkspace.create()"
+                                    data-ai-action="workspace.create">@Loc["ws_create_btn"]</button>
+                        </div>
+                    }
+                </CardContent>
+            </Card>
+        }
+        else
+        {
+            var isAdmin = workspace.Role is RoleOwner or RoleAdmin;
+
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@workspace.Name</h2>
+                    <p class="text-muted-foreground workspace-hint">
+                        @Loc["ws_seats_used", workspace.SeatsUsed, workspace.Seats]
+                        ·
+                        @Loc["ws_pooled_quota", Bytes(workspace.PooledUsedBytes), Bytes(workspace.PooledQuotaBytes)]
+                    </p>
+
+                    <ul class="workspace-member-list">
+                        @foreach (var member in workspace.Members)
+                        {
+                            <li class="workspace-member" id="ws-member-@member.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">@(string.IsNullOrEmpty(member.Name) ? member.Email : member.Name)</span>
+                                    <span class="workspace-member__meta">@member.Email · @RoleLabel(member.Role)</span>
+                                    @if (member.Pending)
+                                    {
+                                        <span class="workspace-member__meta">@Loc["ws_pending"]</span>
+                                    }
+                                </div>
+                                @if (isAdmin && member.Role != RoleOwner)
+                                {
+                                    <div class="workspace-member__actions">
+                                        @if (workspace.IsOwner && !member.Pending)
+                                        {
+                                            <button type="button" data-slot="button" data-variant="ghost"
+                                                    data-member-id="@member.Id"
+                                                    data-confirm="@Loc["ws_transfer_confirm"]"
+                                                    onclick="window.quickShareWorkspace.transfer(this)"
+                                                    data-ai-action="workspace.transfer">@Loc["ws_transfer_btn"]</button>
+                                        }
+                                        <button type="button" data-slot="button" data-variant="ghost"
+                                                data-member-id="@member.Id"
+                                                data-confirm="@Loc["ws_revoke_confirm"]"
+                                                onclick="window.quickShareWorkspace.revoke(this)"
+                                                data-ai-action="workspace.revoke">@Loc["ws_revoke"]</button>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </CardContent>
+            </Card>
+
+            @if (isAdmin)
+            {
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_invite_title"]</h2>
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="ws-invite-email">@Loc["ws_invite_email"]</label>
+                            <Input id="ws-invite-email"  type="email"
+                                   maxlength="@WorkspaceMember.EmailMaxLength" />
+
+                            <label class="workspace-label" for="ws-invite-role">@Loc["ws_invite_role"]</label>
+                            <NativeSelect id="ws-invite-role">
+                                <NativeSelectOption value="@RoleMember">@Loc["ws_role_member"]</NativeSelectOption>
+                                <NativeSelectOption value="@RoleAdmin">@Loc["ws_role_admin"]</NativeSelectOption>
+                                <NativeSelectOption value="@RoleViewer">@Loc["ws_role_viewer"]</NativeSelectOption>
+                            </NativeSelect>
+
+                            <button type="button" data-slot="button" data-variant="default"
+                                    onclick="window.quickShareWorkspace.invite(this)"
+                                    data-sent-label="@Loc["ws_invite_sent"]"
+                                    data-ai-action="workspace.invite">@Loc["ws_invite_btn"]</button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_encryption_policy_title"]</h2>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_encryption_policy_hint"]</p>
+                        <div class="workspace-form">
+                            <label class="workspace-label" for="ws-encryption-policy">@Loc["ws_encryption_policy_label"]</label>
+                            <NativeSelect id="ws-encryption-policy">
+                                <NativeSelectOption value="@WorkspaceEncryptionPolicy.Default" Selected="@(workspace.EncryptionPolicy == WorkspaceEncryptionPolicy.Default)">@Loc["ws_encryption_default"]</NativeSelectOption>
+                                <NativeSelectOption value="@WorkspaceEncryptionPolicy.Required" Selected="@(workspace.EncryptionPolicy == WorkspaceEncryptionPolicy.Required)">@Loc["ws_encryption_required"]</NativeSelectOption>
+                                <NativeSelectOption value="@WorkspaceEncryptionPolicy.Disabled" Selected="@(workspace.EncryptionPolicy == WorkspaceEncryptionPolicy.Disabled)">@Loc["ws_encryption_disabled"]</NativeSelectOption>
+                            </NativeSelect>
+                            <button type="button" data-slot="button" data-variant="default"
+                                    onclick="window.quickShareWorkspace.saveEncryptionPolicy(this)"
+                                    data-saved-label="@Loc["security_confirm_saved"]"
+                                    data-ai-action="workspace.encryptionPolicy.save">@Loc["ws_encryption_policy_save"]</button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                @if (workspace.Plan == PlanTierLimits.Studio)
+                {
+                    <Card class="account-card workspace-card" id="workspace-byok-card">
+                        <CardContent>
+                            <h2 class="text-xl font-semibold">@Loc["ws_byok_title"]</h2>
+                            <p class="text-muted-foreground workspace-hint">@Loc["ws_byok_hint"]</p>
+                            <div class="workspace-form">
+                                <label class="workspace-label" for="ws-byok-provider">@Loc["ws_byok_provider_label"]</label>
+                                <NativeSelect id="ws-byok-provider">
+                                    <NativeSelectOption value="@WorkspaceByokConfig.ProviderAwsKms">AWS KMS</NativeSelectOption>
+                                    <NativeSelectOption value="@WorkspaceByokConfig.ProviderAzureKeyVault">Azure Key Vault</NativeSelectOption>
+                                    <NativeSelectOption value="@WorkspaceByokConfig.ProviderGcpKms">Google Cloud KMS</NativeSelectOption>
+                                </NativeSelect>
+                                <label class="workspace-label" for="ws-byok-key-id">@Loc["ws_byok_key_id_label"]</label>
+                                <Input id="ws-byok-key-id" Type="text" maxlength="@WorkspaceByokConfig.KeyIdMaxLength" placeholder="arn:aws:kms:eu-central-1:123456789012:key/..." />
+                                <label class="workspace-label" for="ws-byok-region">@Loc["ws_byok_region_label"]</label>
+                                <Input id="ws-byok-region" Type="text" maxlength="12" placeholder="eu / us" />
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <button type="button" data-slot="button" data-variant="default" onclick="window.quickShareWorkspace.saveByok(this)" data-saved-label="@Loc["security_confirm_saved"]" data-ai-action="workspace.byok.save">@Loc["ws_byok_save_btn"]</button>
+                                    <button type="button" data-slot="button" data-variant="outline" onclick="window.quickShareWorkspace.rotateByok(this)" data-ai-action="workspace.byok.rotate">@Loc["ws_byok_rotate_btn"]</button>
+                                    <button type="button" data-slot="button" data-variant="ghost" onclick="window.quickShareWorkspace.revokeByok(this)" data-ai-action="workspace.byok.revoke">@Loc["ws_byok_revoke_btn"]</button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                }
+            }
+
+            @if (workspace.IsOwner)
+            {
+                <Card class="account-card workspace-card">
+                    <CardContent>
+                        <h2 class="text-xl font-semibold">@Loc["ws_transfer_title"]</h2>
+                        <p class="text-muted-foreground workspace-hint">@Loc["ws_transfer_hint"]</p>
+                        <button type="button" data-slot="button" data-variant="ghost"
+                                onclick="window.quickShareWorkspace.cancelTransfer(this)"
+                                data-ai-action="workspace.transfer.cancel">@Loc["ws_transfer_cancel"]</button>
+                    </CardContent>
+                </Card>
+            }
+        }
+    </section>;
+
+    private static string Bytes(long value)
+    {
+        const long Gigabyte = 1024L * 1024 * 1024;
+        const long Megabyte = 1024L * 1024;
+        return value >= Gigabyte
+            ? $"{value / (double)Gigabyte:F1} GB"
+            : $"{value / (double)Megabyte:F1} MB";
+    }
+
+    private string RoleLabel(string role) => role switch
+    {
+        RoleOwner => Loc["ws_role_owner"],
+        RoleAdmin => Loc["ws_role_admin"],
+        RoleViewer => Loc["ws_role_viewer"],
+        _ => Loc["ws_role_member"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+        var result = await Bus.Send<LightResults.Result<WorkspaceDto>>(
+            new GetWorkspaceQuery(), CancellationToken.None);
+
+        if (result.IsSuccess(out var value))
+        {
+            workspace = value;
+            return;
+        }
+
+        // No workspace yet — the create card is only useful on a plan that can pay for one.
+        var db = HttpContextAccessor.HttpContext!.RequestServices.GetRequiredService<AppDbContext>();
+        var user = await ctx.User.GetUserAsync(db, CancellationToken.None);
+        canCreate = QuickShare.Features.Workspaces.Shared.WorkspaceService.CanOwnWorkspace(user.Plan);
+    }
+}

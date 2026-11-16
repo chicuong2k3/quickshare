@@ -1,0 +1,68 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@page "/account/notifications"
+@layout MainLayout
+@attribute [Authorize]
+@using QuickShare.Data
+@using QuickShare.Features.Users.Shared
+@using QuickShare.Features.Users.Notifications
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+
+<Card id="notifications-card" class="my-4">
+    <div class="px-6">
+        <h3 class="text-lg font-semibold">@Loc["account_notifications_title"]</h3>
+
+        @if (!string.IsNullOrEmpty(formError))
+        {
+            <div class="mt-3 text-destructive" role="alert">@formError</div>
+        }
+
+        <form method="post" action="@UpdateNotificationPreferencesFormEndpoint.FormRoute" class="mt-4 space-y-4">
+            <AntiforgeryToken />
+            <label class="flex items-start gap-3">
+                <Checkbox name="@UpdateNotificationPreferencesFormEndpoint.EmailOnDownloadField" Checked="@emailOnDownload" />
+                <span>
+                    <span class="block font-medium">@Loc["account_notifications_download_label"]</span>
+                    <span class="block text-sm text-muted-foreground">@Loc["account_notifications_download_desc"]</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3">
+                <Checkbox name="@UpdateNotificationPreferencesFormEndpoint.TrackMyDownloadsField" Checked="@trackMyDownloads" />
+                <span>
+                    <span class="block font-medium">@Loc["account_notifications_track_label"]</span>
+                    <span class="block text-sm text-muted-foreground">@Loc["account_notifications_track_desc"]</span>
+                </span>
+            </label>
+            <Button Type="submit">@Loc["account_profile_save_btn"]</Button>
+        </form>
+    </div>
+</Card>
+
+@code {
+
+    private bool emailOnDownload = true;
+    private bool trackMyDownloads;
+    private string? formError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+            // Read fresh from the DB — GetUserAsync is cache-backed and can hold a stale toggle.
+            var prefs = await Db.Users
+                .Where(u => u.Id == user.Id)
+                .Select(u => new { u.EmailOnDownload, u.TrackMyDownloads })
+                .FirstAsync(CancellationToken.None);
+            emailOnDownload = prefs.EmailOnDownload;
+            trackMyDownloads = prefs.TrackMyDownloads;
+        }
+        catch
+        {
+            formError = Loc["account_notifications_error"];
+        }
+    }
+
+}

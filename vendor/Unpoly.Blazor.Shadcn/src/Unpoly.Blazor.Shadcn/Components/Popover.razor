@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+@* The popover API supplies the top layer, light dismiss and Escape; ui.js measures the anchor
+   because `position-area` is not portable yet. Same machinery as <DropdownMenu>, without the
+   menu semantics — a popover holds arbitrary content, so it has no role and no roving focus. *@
+
+<div data-slot="popover" class="@Cn("relative inline-block", Class)" @attributes="AdditionalAttributes">@ChildContent</div>

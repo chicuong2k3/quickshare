@@ -1,0 +1,24 @@
+@inherits UiComponentBase
+
+@* popovertarget opens the panel with no script at all. The chevron turns on the open state,
+   which the compiler that mirrors popover state supplies. *@
+
+<button type="button" data-slot="navigation-menu-trigger" data-target="@Target"
+        popovertarget="@Target" aria-expanded="false" class="@Classes"
+        @attributes="AdditionalAttributes">
+    @ChildContent
+    <Icon Name="chevron-down"
+          Class="relative top-[1px] ms-1 size-3 transition duration-300 group-data-[state=open]:rotate-180"
+          aria-hidden="true" />
+</button>
+
+@code {
+    /// <summary>The id of the <see cref="NavigationMenuContent"/> this opens.</summary>
+    [Parameter, EditorRequired] public string Target { get; set; } = default!;
+
+    // The whole recipe, which the component had dropped: upstream renders
+    // cn(navigationMenuTriggerStyle(), "group", className) and this carried only the "group".
+    // A trigger with no height, no padding and no background is bare text with a chevron after
+    // it, which is what the menu bar looked like.
+    string Classes => NavigationMenuTriggerStyle.Of(Cn("group inline-flex h-control w-max items-center justify-center rounded-md bg-background px-4 py-2 text-control font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent", Class));
+}

@@ -1,0 +1,49 @@
+@page "/account/migrate"
+@layout MainLayout
+@attribute [Authorize]
+@using Unpoly.Blazor.Shadcn
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["migration_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <section class="mb-6">
+        <h1 class="text-2xl font-bold">@Loc["migration_title"]</h1>
+        <p class="mt-1 text-sm text-muted-foreground">@Loc["migration_subtitle"]</p>
+    </section>
+
+    <Card id="migration-wizard-card" class="p-6">
+        <CardContent class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block">
+                    <span class="text-sm font-medium">@Loc["migration_source_label"]</span>
+                    <NativeSelect id="migration-source-select">
+                        <NativeSelectOption value="wetransfer">WeTransfer</NativeSelectOption>
+                        <NativeSelectOption value="gdrive">Google Drive</NativeSelectOption>
+                        <NativeSelectOption value="s3">Amazon S3 / R2</NativeSelectOption>
+                        <NativeSelectOption value="urls">Direct URLs</NativeSelectOption>
+                    </NativeSelect>
+                </label>
+
+                <label class="block">
+                    <span class="text-sm font-medium">@Loc["migration_conflict_label"]</span>
+                    <NativeSelect id="migration-conflict-select">
+                        <NativeSelectOption value="rename">@Loc["migration_conflict_rename"]</NativeSelectOption>
+                        <NativeSelectOption value="skip">@Loc["migration_conflict_skip"]</NativeSelectOption>
+                        <NativeSelectOption value="replace">@Loc["migration_conflict_replace"]</NativeSelectOption>
+                    </NativeSelect>
+                </label>
+            </div>
+
+            <label class="block">
+                <span class="text-sm font-medium">@Loc["migration_urls_label"]</span>
+                <Textarea id="migration-urls-input" Rows="4" placeholder="https://example.com/design-pack.zip" />
+            </label>
+
+            <div class="flex flex-wrap gap-3">
+                <Button id="migration-dryrun-btn" Type="button" Variant="outline" data-ai-action="migration.dryRun">@Loc["migration_dryrun_btn"]</Button>
+                <Button id="migration-start-btn" Type="button" data-ai-action="migration.start">@Loc["migration_start_btn"]</Button>
+            </div>
+        </CardContent>
+    </Card>
+</PageWrapper>

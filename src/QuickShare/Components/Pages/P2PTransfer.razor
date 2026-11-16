@@ -2,6 +2,8 @@
 @page "/p2p/send"
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
+@using System.Text.Json
+@using System.Text.Json.Serialization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
@@ -9,27 +11,28 @@
     var apiBase = string.Empty;
 }
 
-<PageTitle>QuickShareCloud â€” P2P file transfer</PageTitle>
+<PageTitle>@Loc["p2p_send_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Fill">
     <script>window.ZAPDROP_CONFIG = { apiBaseUrl: "@apiBase" };</script>
+    <script id="p2p-send-i18n" type="application/json">@RawJson(Strings())</script>
 
     <div class="p2p-container">
         @* Daily P2P upload quota banner — filled by send.js from GET /api/p2p/quota *@
         <div id="p2ps-quota" class="p2p-quota-banner hidden" role="status" aria-live="polite"></div>
 
-        <input type="file" name="file" id="p2ps-file-input" style="display:none" aria-label="Choose a file" onchange="p2pSend.onFileSelect(event)" />
+        <input type="file" name="file" id="p2ps-file-input" style="display:none" aria-label="@Loc["p2p_send_choose_file_aria"]" onchange="p2pSend.onFileSelect(event)" />
 
         @* IDLE / DRAGGING *@
         <section id="p2ps-idle" class="p2p-section">
             <div class="p2p-hero">
                 <h1 class="p2p-headline">
-                    <span id="idle-h1">Send <span class="p2p-accent">direct</span></span>
-                    <span id="drag-h1" class="hidden">Drop your file</span>
+                    <span id="idle-h1">@Loc["p2p_send_headline_send"] <span class="p2p-accent">@Loc["p2p_send_headline_direct"]</span></span>
+                    <span id="drag-h1" class="hidden">@Loc["p2p_send_headline_drop"]</span>
                 </h1>
                 <p class="p2p-sub">
-                    <span id="idle-sub">Peer-to-peer &middot; direct device-to-device transfer</span>
-                    <span id="drag-sub" class="hidden">Release to start P2P transfer</span>
+                    <span id="idle-sub">@Loc["p2p_send_sub_p2p"]</span>
+                    <span id="drag-sub" class="hidden">@Loc["p2p_send_sub_release"]</span>
                 </p>
             </div>
 
@@ -48,57 +51,101 @@
                 </div>
                 <div class="p2p-dropzone-text">
                     <p class="p2p-dropzone-title">
-                        <span id="dropzone-idle">Drop a file to start</span>
-                        <span id="dropzone-drag" class="hidden">Drop it here</span>
+                        <span id="dropzone-idle">@Loc["p2p_send_dropzone_idle"]</span>
+                        <span id="dropzone-drag" class="hidden">@Loc["p2p_send_dropzone_drag"]</span>
                     </p>
-                    <p class="p2p-dropzone-sub">or click to browse &middot; no size limit</p>
+                    <p class="p2p-dropzone-sub">@Loc["p2p_send_dropzone_sub"]</p>
                 </div>
             </div>
         </section>
 
 
         @* CREATING LINK *@
+        <section id="p2ps-pair-tools" class="p2p-section mt-6 grid gap-4 md:grid-cols-2">
+            <Card id="p2ps-pair-card" class="p-4">
+                <h2 class="text-sm font-semibold">@Loc["p2p_pair_enter_title"]</h2>
+                <p class="mt-1 text-xs text-muted-foreground">@Loc["p2p_pair_enter_sub"]</p>
+                <div class="mt-3 flex gap-2">
+                    <Input id="p2ps-pair-input" Type="text" inputmode="numeric" maxlength="6" placeholder="000000" class="flex-1 font-mono tracking-widest" aria-label="@Loc["p2p_pair_enter_title"]" />
+                    <button type="button" id="p2ps-pair-connect-btn" data-slot="button" data-variant="default" class="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground" onclick="p2pSend.connectPairingCode()" data-ai-action="p2p.pair.connect">@Loc["p2p_pair_connect_btn"]</button>
+                </div>
+                <p id="p2ps-pair-error" class="mt-2 hidden text-xs text-destructive" role="alert"></p>
+            </Card>
+
+            <Card id="p2ps-qr-scan-card" class="p-4">
+                <h2 class="text-sm font-semibold">@Loc["qr_scan_title"]</h2>
+                <p class="mt-1 text-xs text-muted-foreground">@Loc["qr_scan_sub"]</p>
+                <input type="file" id="p2ps-qr-image-input" accept="image/*" class="hidden" onchange="p2pSend.decodeQrImage(event)" />
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button type="button" id="p2ps-qr-camera-btn" data-slot="button" data-variant="outline" data-size="sm" class="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium" onclick="p2pSend.startQrScanner()" data-ai-action="qr.scan.camera">@Loc["qr_scan_camera_btn"]</button>
+                    <button type="button" id="p2ps-qr-photo-btn" data-slot="button" data-variant="outline" data-size="sm" class="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium" onclick="p2pSend.openQrImagePicker()" data-ai-action="qr.scan.photo">@Loc["qr_scan_photo_btn"]</button>
+                </div>
+                <div id="p2ps-qr-camera-box" class="mt-3 hidden">
+                    <video id="p2ps-qr-video" autoplay playsinline muted class="w-full rounded border bg-black" style="max-height: 12rem"></video>
+                    <div class="mt-2 flex justify-end">
+                        <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="inline-flex items-center rounded px-2 py-1 text-xs text-muted-foreground" onclick="p2pSend.stopQrScanner()" data-ai-action="qr.scan.stop">@Loc["p2p_send_cancel"]</button>
+                    </div>
+                </div>
+                <div id="p2ps-qr-result-box" class="mt-3 hidden rounded border bg-muted/40 p-2.5 text-xs">
+                    <p id="p2ps-qr-result-url" class="font-mono break-all"></p>
+                    <p id="p2ps-qr-warning" class="mt-1 hidden text-destructive" role="alert">@Loc["qr_scan_external_warning"]</p>
+                    <div class="mt-2 flex gap-2">
+                        <a id="p2ps-qr-open-link" href="#" class="inline-flex items-center rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground" data-ai-action="qr.scan.open">@Loc["qr_scan_open_btn"]</a>
+                    </div>
+                </div>
+                <p id="p2ps-qr-error" class="mt-2 hidden text-xs text-destructive" role="alert"></p>
+            </Card>
+        </section>
+
         <section id="p2ps-creating" class="p2p-section hidden">
-            <h1 class="p2p-status-h1">Creating share link&hellip;</h1>
+            <h1 class="p2p-status-h1">@Loc["p2p_send_creating"]</h1>
         </section>
 
         @* WAITING FOR PEER / SHARING *@
         <section id="p2ps-waiting" class="p2p-section hidden">
-            <p class="p2p-status-p">Share this link with the recipient:</p>
+            <p class="p2p-status-p">@Loc["p2p_send_share_prompt"]</p>
 
-            <div class="db-card p2p-share-card">
-                <div class="db-input-group">
-                    <input id="p2ps-share-link" type="text" readonly class="db-input" aria-label="Share link" />
-                    <button class="db-btn db-btn--primary" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="Copy share link">
-                        <span id="p2ps-copy-text">Copy link</span>
-                        <span id="p2ps-copy-done" class="hidden">Copied!</span>
+            <div class="p2p-share-card" data-slot="card">
+                <div class="flex gap-2">
+                    <Input id="p2ps-share-link" Type="text" readonly class="flex-1" aria-label="@Loc["p2p_send_share_link_aria"]" />
+                    <button data-slot="button" data-variant="default" class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onclick="p2pSend.copyLink()" data-ai-action="p2p.share.copy-link" aria-label="@Loc["p2p_send_copy_link_aria"]">
+                        <span id="p2ps-copy-text">@Loc["p2p_send_copy_link"]</span>
+                        <span id="p2ps-copy-done" class="hidden">@Loc["p2p_send_copied"]</span>
                     </button>
                 </div>
+            </div>
+
+            <div id="p2ps-pairing-box" class="mt-3 flex items-center justify-between rounded border bg-muted/40 px-3 py-2">
+                <div>
+                    <span class="block text-xs text-muted-foreground">@Loc["p2p_pair_code_label"]</span>
+                    <strong id="p2ps-pairing-code" class="font-mono text-lg tracking-widest">------</strong>
+                </div>
+                <span class="text-xs text-muted-foreground">@Loc["p2p_pair_ttl_note"]</span>
             </div>
 
             <div id="p2ps-qrcode" class="p2p-qr-frame"></div>
 
             <div id="p2ps-receiver-list" class="p2p-receiver-list">
-                <p class="p2p-receiver-heading">Receivers</p>
+                <p class="p2p-receiver-heading">@Loc["p2p_send_receivers"]</p>
                 <div id="p2ps-receiver-items"></div>
             </div>
 
-            <p class="p2p-expiry-note">Link expires in 7 days &middot; keep this tab open while receiver downloads &middot; selecting a new file creates a new link</p>
-            <button class="db-btn db-btn--ghost p2p-cancel-btn" onclick="p2pSend.cancel()">Cancel</button>
+            <p class="p2p-expiry-note">@Loc["p2p_send_expiry_note"]</p>
+            <button data-slot="button" data-variant="ghost" class="p2p-cancel-btn" onclick="p2pSend.cancel()">@Loc["p2p_send_cancel"]</button>
         </section>
 
         @* FAILED *@
         <section id="p2ps-failed" class="p2p-section hidden">
-            <div class="db-alert db-alert--error p2p-error-alert" role="alert">
+            <div class="p2p-error-alert text-destructive rounded-md border border-destructive/50 p-3" role="alert">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <span id="p2ps-error-msg">The direct connection could not be established. Try again or <a href="/send" style="color:var(--db-color-accent);text-decoration:underline">use cloud upload</a> instead.</span>
+                <span id="p2ps-error-msg">@Loc["p2p_send_error_part1"]<a href="/send" style="color:var(--db-color-accent);text-decoration:underline">@Loc["p2p_send_error_cloud_link"]</a>@Loc["p2p_send_error_part2"]</span>
             </div>
-            <button id="p2ps-ad-unlock-btn" class="db-btn db-btn--primary p2p-retry-btn hidden" data-ai-action="p2p.ad.unlock" type="button">Watch ad to unlock +1 upload</button>
-            <button class="db-btn db-btn--primary p2p-retry-btn" onclick="p2pSend.reset()">Try again</button>
+            <button id="p2ps-ad-unlock-btn" data-slot="button" data-variant="default" class="p2p-retry-btn hidden inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" data-ai-action="p2p.ad.unlock" type="button">@Loc["p2p_send_watch_ad"]</button>
+            <button data-slot="button" data-variant="default" class="p2p-retry-btn inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" onclick="p2pSend.reset()">@Loc["p2p_send_try_again"]</button>
         </section>
     </div>
 
@@ -113,5 +160,37 @@
 <script src="/js/p2p/fileTransfer.js"></script>
 <script src="/js/p2p/encryption.js"></script>
 <script src="/js/p2p/send.js"></script>
+
+@code {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+    // send.js reads its copy from this JSON block — no English literals in JS.
+    private Dictionary<string, string> Strings() => new()
+    {
+        ["quotaLeft"] = Loc["p2p_send_quota_left"],
+        ["quotaFromAds"] = Loc["p2p_send_quota_from_ads"],
+        ["quotaLimitReached"] = Loc["p2p_send_quota_limit_reached"],
+        ["quotaUnlockAd"] = Loc["p2p_send_quota_unlock_ad"],
+        ["quotaUpgrade"] = Loc["p2p_send_quota_upgrade"],
+        ["statusConnecting"] = Loc["p2p_send_status_connecting"],
+        ["statusReceiving"] = Loc["p2p_send_status_receiving"],
+        ["statusDone"] = Loc["p2p_send_status_done"],
+        ["statusDifferentNetwork"] = Loc["p2p_send_status_different_network"],
+        ["statusLeftMid"] = Loc["p2p_send_status_left_mid"],
+        ["statusDisconnected"] = Loc["p2p_send_status_disconnected"],
+        ["transferFailed"] = Loc["p2p_send_transfer_failed"],
+        ["createFailed"] = Loc["p2p_send_create_failed"],
+        ["createLinkFailed"] = Loc["p2p_send_create_link_failed"],
+        ["moduleNotLoaded"] = Loc["p2p_send_module_not_loaded"],
+        ["senderModuleNotLoaded"] = Loc["p2p_send_sender_module_not_loaded"],
+        ["qrNotLoaded"] = Loc["p2p_send_qr_not_loaded"],
+        ["qrUnavailable"] = Loc["p2p_send_qr_unavailable"],
+        ["qrAria"] = Loc["p2p_send_qr_aria"],
+        ["pairInvalid"] = Loc["p2p_pair_invalid"],
+        ["qrScanFailed"] = Loc["qr_scan_failed"],
+    };
+
+    private static MarkupString RawJson(Dictionary<string, string> strings) => new(JsonSerializer.Serialize(strings, JsonOptions));
+}
 
 

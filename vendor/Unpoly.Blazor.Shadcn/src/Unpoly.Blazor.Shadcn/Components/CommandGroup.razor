@@ -1,0 +1,26 @@
+@inherits UiComponentBase
+
+@* Hidden by the compiler when every item in it is filtered out — a heading over nothing is worse
+   than no heading. *@
+
+<div data-slot="command-group" role="group" aria-label="@Heading" class="@Classes"
+     @attributes="AdditionalAttributes">
+    @if (Heading is not null)
+    {
+        <div data-slot="command-group-heading" class="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+            @Heading
+        </div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string? Heading { get; set; }
+
+    const string Base =
+        "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 " +
+        "[&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs " +
+        "[&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground";
+
+    string Classes => Cn(Base, Class);
+}

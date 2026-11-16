@@ -1,0 +1,22 @@
+{
+  "name": "QuickShare — send files, not friction",
+  "short_name": "QuickShare",
+  "description": "Send large files free with end-to-end encryption. No account needed.",
+  "start_url": "/send",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    { "src": "/og-cover.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [{ "name": "File" }],
+      "title": "Title"
+    }
+  }
+}

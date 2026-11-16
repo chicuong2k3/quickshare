@@ -1,0 +1,17 @@
+@inherits UiComponentBase
+
+<div data-slot="dialog-footer" class="@Cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", Class)" @attributes="AdditionalAttributes">
+    @ChildContent
+    @if (ShowCloseButton)
+    {
+        <DialogClose>@CloseLabel</DialogClose>
+    }
+</div>
+
+@code {
+    /// <summary>Appends an outline button that closes the dialog, after the footer's own content.</summary>
+    [Parameter] public bool ShowCloseButton { get; set; }
+
+    /// <summary>The label on that button. shadcn hardcodes "Close"; this is a parameter.</summary>
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+}

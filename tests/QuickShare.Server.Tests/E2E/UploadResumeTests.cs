@@ -81,7 +81,7 @@ public sealed class UploadResumeTests : IClassFixture<TestWebAppFactory>
             _factory.Services.GetRequiredService<IServiceScopeFactory>(),
             _factory.Services.GetRequiredService<IStorageProvider>(),
             NullLogger<ZombiePartSweeper>.Instance);
-        await sweeper.SweepZombiePartsAsync(CancellationToken.None);
+        await sweeper.SweepZombiePartsAsync();
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

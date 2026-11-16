@@ -1,15 +1,7 @@
-.lang-switch select {
-    background: transparent;
-    border: 1px solid var(--db-color-border, #e2e8f0);
-    border-radius: 6px;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8125rem;
-    color: var(--db-color-text, #1a202c);
-    cursor: pointer;
-    outline: none;
-}
-
+/* The control itself is styled globally in app.css so every select in
+   the app reads the same. Only the focus crease lives here. */
 .lang-switch select:focus-visible {
-    border-color: var(--db-color-accent, #4F6CF7);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--db-color-accent, #4F6CF7) 25%, transparent);
+    outline: 2px solid var(--db-valley-ink);
+    outline-offset: 2px;
+    border-color: var(--db-valley-ink);
 }

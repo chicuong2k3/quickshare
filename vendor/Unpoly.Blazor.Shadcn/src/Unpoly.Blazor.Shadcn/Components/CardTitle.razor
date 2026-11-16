@@ -1,0 +1,10 @@
+@inherits UiComponentBase
+
+<div data-slot="card-title" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "leading-none font-semibold";
+
+    string Classes => Cn(Base, Class);
+}

@@ -1,0 +1,21 @@
+@inherits UiComponentBase
+
+@* A rule across a form with an optional word sitting on it — "or", between two ways of signing
+   in. The rule is a <Separator> positioned across the middle; the word is a <FieldSeparatorContent>
+   that paints the background behind itself so the line appears to break for it.
+
+   Both were missing here: the component rendered its child and no line at all, so "or" floated
+   in a gap. data-content is what upstream keys the two layouts off. *@
+
+<div data-slot="field-separator" data-content="@(ChildContent is not null ? "true" : "false")"
+     class="@Classes" @attributes="AdditionalAttributes">
+    <Separator Class="absolute inset-0 top-1/2" />
+    @ChildContent
+</div>
+
+@code {
+    const string Base =
+        "relative -my-2 h-5 text-control group-data-[variant=outline]/field-group:-mb-2";
+
+    string Classes => Cn(Base, Class);
+}

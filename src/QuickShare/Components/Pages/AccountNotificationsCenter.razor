@@ -1,0 +1,171 @@
+@layout MainLayout
+@page "/account/notifications/inbox"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Notifications.Center
+@using Microsoft.Extensions.Localization
+@inject IMediator Bus
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["notifications_center_title"]</PageTitle>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["notifications_center_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["notifications_center_lead"]</p>
+        <button type="button" data-slot="button" data-variant="ghost" id="enable-push-btn"
+                data-enabled-label="@Loc["notifications_push_enabled"]"
+                onclick="window.enablePush && window.enablePush().then(function (ok) { if (ok) { var b = document.getElementById('enable-push-btn'); b.textContent = b.getAttribute('data-enabled-label'); b.disabled = true; } })"
+                data-ai-action="notifications.enablePush">@Loc["notifications_enable_push"]</button>
+    </section>
+
+    <section id="notifications-body">
+        <nav class="notif-filters" aria-label="Filter notifications">
+            <a href="@BodyUrl(NotificationFilter.All, null)"
+               class="notif-filters__item @(CurrentFilter == NotificationFilter.All ? "notif-filters__item--active" : "")"
+               up-follow="true" up-target="#notifications-body" up-history="true">@Loc["notifications_filter_all"]</a>
+            <a href="@BodyUrl(NotificationFilter.Unread, null)"
+               class="notif-filters__item @(CurrentFilter == NotificationFilter.Unread ? "notif-filters__item--active" : "")"
+               up-follow="true" up-target="#notifications-body" up-history="true">@Loc["notifications_filter_unread"]</a>
+            @if (items.Any(i => !i.IsRead))
+            {
+                <form method="post" action="@RoutePaths.AccountNotificationReadAll"
+                      data-notification-read-all
+                      class="notif-filters__markall">
+                    <AntiforgeryToken />
+                    <button type="submit" data-slot="button" data-variant="ghost"
+                            data-error="@Loc["notifications_mark_all_error"]">@Loc["notifications_mark_all_read"]</button>
+                </form>
+            }
+        </nav>
+        <div id="notifications-pages">
+            @if (items.Count == 0)
+            {
+                <div class="account-deliveries-empty">
+                    <p>@(CurrentFilter == NotificationFilter.Unread ? Loc["notifications_center_empty_unread"] : Loc["notifications_center_empty"])</p>
+                </div>
+            }
+            else
+            {
+                @Chunk
+            }
+        </div>
+        @NextPage
+    </section>
+
+</PageWrapper>
+
+<script src="/js/push.js"></script>
+<script src="/js/notification-center.js" defer></script>
+
+<script>
+    window.markNotificationRead = function (btn) {
+        var article = btn.closest('article');
+        var id = article.id.replace('notification-', '');
+        btn.disabled = true;
+        fetch('/api/notifications/' + id + '/read', { method: 'POST' }).then(function (r) {
+            if (r.ok) {
+                article.classList.add('notif--read');
+                btn.remove();
+            } else {
+                btn.disabled = false;
+            }
+        }).catch(function () { btn.disabled = false; });
+    };
+</script>
+
+@code {
+    private const string CursorQueryKey = "cursor";
+    private const string FilterQueryKey = "filter";
+    private const string ChunkClass = "notifications-chunk";
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = CursorQueryKey)]
+    public string? Cursor { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = FilterQueryKey)]
+    public string? Filter { get; set; }
+
+    private List<NotificationItem> items = [];
+    private string? nextCursor;
+
+    private string CurrentFilter =>
+        string.Equals(Filter, NotificationFilter.Unread, StringComparison.OrdinalIgnoreCase)
+            ? NotificationFilter.Unread
+            : NotificationFilter.All;
+
+    private RenderFragment Chunk => @<div class="@ChunkClass notif-list">
+        @foreach (var item in items)
+        {
+            <article id="notification-@item.Id" class="notif @(item.IsRead ? "notif--read" : "notif--unread")">
+                <div class="notif__body">
+                    @if (item.LinkUrl is not null)
+                    {
+                        <a class="notif__message" href="@item.LinkUrl">@MessageFor(item)</a>
+                    }
+                    else
+                    {
+                        <span class="notif__message">@MessageFor(item)</span>
+                    }
+                    <time class="text-muted-foreground notif__time" datetime="@item.CreatedAt.ToString("o")">@item.CreatedAt.ToLocalTime().ToString("g")</time>
+                </div>
+                @if (!item.IsRead)
+                {
+                    <button type="button" class="notif__read" data-slot="button" data-variant="ghost" data-size="sm"
+                            onclick="markNotificationRead(this)" data-ai-action="notification.markRead">@Loc["notifications_mark_read"]</button>
+                }
+            </article>
+        }
+
+    </div>;
+
+    private RenderFragment NextPage => @<div class="notifications-pagination">
+        @if (nextCursor is not null)
+        {
+            <a id="notifications-next-page" href="@BodyUrl(CurrentFilter, nextCursor)"
+               data-slot="button" data-variant="ghost"
+               up-defer="reveal"
+               up-follow="false"
+               up-history="false"
+               up-target="#notifications-next-page, #notifications-pages:after">@Loc["notifications_load_more"]</a>
+        }
+        else
+        {
+            <span id="notifications-next-page" hidden></span>
+        }
+    </div>;
+
+    private string BodyUrl(string filter, string? cursor)
+    {
+        var query = new List<string>();
+        if (filter == NotificationFilter.Unread) query.Add($"{FilterQueryKey}={NotificationFilter.Unread}");
+        if (!string.IsNullOrEmpty(cursor)) query.Add($"{CursorQueryKey}={Uri.EscapeDataString(cursor)}");
+
+        return query.Count == 0
+            ? RoutePaths.AccountNotificationCenter
+            : $"{RoutePaths.AccountNotificationCenter}?{string.Join('&', query)}";
+    }
+
+    private string MessageFor(NotificationItem item) => item.Type switch
+    {
+        NotificationType.DeliveryExpired => string.Format(Loc["notif_delivery_expired"], item.Title),
+        NotificationType.DeliveryDownloaded => string.Format(Loc["notif_delivery_downloaded"], item.Title),
+        NotificationType.ExtensionRequested => string.Format(Loc["notif_extension_requested"], item.Title),
+        NotificationType.FileLockBroken => string.Format(Loc["notif_file_lock_broken"], item.Title),
+        _ => item.Title,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Bus.Send<LightResults.Result<CursorPage<NotificationItem>>>(
+            new ListNotificationsQuery(CurrentFilter, Cursor), CancellationToken.None);
+
+        if (result.IsSuccess(out var page))
+        {
+            items = page.Items;
+            nextCursor = page.NextCursor;
+        }
+    }
+}

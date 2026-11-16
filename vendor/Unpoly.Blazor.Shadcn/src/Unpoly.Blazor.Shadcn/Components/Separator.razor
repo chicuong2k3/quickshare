@@ -1,0 +1,25 @@
+@inherits UiComponentBase
+
+@* Decorative by default, as in Radix: a rule that only draws a line is noise to a screen
+   reader, so it is hidden from the tree unless the caller says it separates something. *@
+
+<div data-slot="separator"
+     role="@(Decorative ? "none" : "separator")"
+     aria-orientation="@(Decorative ? null : Orientation)"
+     data-orientation="@Orientation"
+     class="@Classes"
+     @attributes="AdditionalAttributes"></div>
+
+@code {
+    /// <summary>horizontal | vertical</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    [Parameter] public bool Decorative { get; set; } = true;
+
+    const string Base =
+        "shrink-0 bg-border data-[orientation=horizontal]:h-px " +
+        "data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full " +
+        "data-[orientation=vertical]:w-px";
+
+    string Classes => Cn(Base, Class);
+}

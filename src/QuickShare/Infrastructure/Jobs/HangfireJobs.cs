@@ -1,0 +1,102 @@
+using Hangfire;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using QuickShare.Infrastructure.Email;
+
+namespace QuickShare.Infrastructure.Jobs;
+
+/// <summary>
+/// Maps the (formerly hand-rolled BackgroundService) maintenance loops to Hangfire
+/// recurring jobs so they get a dashboard, per-job history, and manual trigger/retry.
+/// Cron is 5-field (minute granularity), matching the poll cadence these jobs always
+/// had — none of them need second-level precision.
+/// </summary>
+public static class HangfireJobs
+{
+    public const string DeliveryActivation = "delivery-activation";
+    public const string DeliveryExpiry = "delivery-expiry";
+    public const string SubscriptionExpiry = "subscription-expiry";
+    public const string ZombiePartSweep = "zombie-part-sweep";
+    public const string DeliveryCleanup = "delivery-cleanup";
+    public const string DownloadNotification = "download-notification";
+    public const string DeliveryExpiryReminder = "delivery-expiry-reminder";
+    public const string OrphanSweep = "orphan-sweep";
+    public const string TrialReminder = "trial-reminder";
+    public const string TempUploadCleanup = "temp-upload-cleanup";
+    public const string WeeklyDigest = "weekly-digest";
+    public const string FileRequestDigest = "file-request-digest";
+    public const string NotificationCleanup = "notification-cleanup";
+    public const string SecurityEventCleanup = "security-event-cleanup";
+    public const string WebhookDelivery = "webhook-delivery";
+    public const string FileLockExpiry = "file-lock-expiry";
+    public const string WorkspaceReport = "workspace-report";
+    public const string InvoiceOverdue = "invoice-overdue";
+    public const string SiemShipping = "siem-shipping";
+    public const string WorkspaceBackup = "workspace-backup";
+    public const string RecurringDelivery = "recurring-delivery";
+    public const string ImageOcr = "image-ocr";
+    public const string ApiKeyUsageFlush = "api-key-usage-flush";
+    public const string VirusScan = "virus-scan";
+    public const string ColdStorageSweep = "cold-storage-sweep";
+
+    public static void Register(IServiceProvider services, bool hasR2)
+    {
+        // Hangfire's static API (RecurringJob/BackgroundJob) requires JobStorage.Current,
+        // which AddHangfire does not set — use the DI-registered service APIs instead.
+        var recurring = services.GetRequiredService<IRecurringJobManager>();
+        var background = services.GetRequiredService<IBackgroundJobClient>();
+
+        recurring.AddOrUpdate<DeliveryActivationJob>(DeliveryActivation, j => j.ActivateDeliveriesAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<DeliveryExpiryJob>(DeliveryExpiry, j => j.ExpireDeliveriesAsync(), Cron.MinuteInterval(5));
+        recurring.AddOrUpdate<SubscriptionExpiryJob>(SubscriptionExpiry, j => j.CheckAndExpireAsync(), Cron.MinuteInterval(15));
+        recurring.AddOrUpdate<ZombiePartSweeper>(ZombiePartSweep, j => j.SweepZombiePartsAsync(), Cron.MinuteInterval(30));
+        recurring.AddOrUpdate<TempUploadCleanupJob>(TempUploadCleanup, j => j.CleanupAsync(), Cron.MinuteInterval(15));
+        recurring.AddOrUpdate<NotificationCleanupJob>(NotificationCleanup, j => j.CleanupAsync(), Cron.Daily());
+        recurring.AddOrUpdate<SecurityEventCleanupJob>(SecurityEventCleanup, j => j.CleanupAsync(), Cron.Daily());
+        // Every minute: a webhook is an integration contract, and a five-minute floor on delivery
+        // latency would make every integration feel broken even when nothing is.
+        recurring.AddOrUpdate<WebhookDeliveryJob>(WebhookDelivery, j => j.RunAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<FileLockExpiryJob>(FileLockExpiry, j => j.ReleaseExpiredLocksAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<InvoiceOverdueJob>(InvoiceOverdue, j => j.SweepAsync(), Cron.Hourly());
+        recurring.AddOrUpdate<SiemShippingJob>(SiemShipping, j => j.ShipAsync(), Cron.MinuteInterval(5));
+        // Hourly tick, but each policy only runs once its own interval has elapsed.
+        recurring.AddOrUpdate<WorkspaceBackupJob>(WorkspaceBackup, j => j.RunAsync(), Cron.Hourly());
+        recurring.AddOrUpdate<RecurringDeliveryJob>(RecurringDelivery, j => j.RunAsync(), Cron.Hourly());
+        // Every minute: a file the sender asked to index should be findable while they are still
+        // in the app, and the job does nothing at all when OCR is unavailable or nothing is queued.
+        recurring.AddOrUpdate<QuickShare.Features.Deliveries.Ocr.OcrJob>(ImageOcr, j => j.RunAsync(), Cron.Minutely());
+        // Every minute, and a no-op when nothing was called (issue #273).
+        recurring.AddOrUpdate<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageFlushJob>(
+            ApiKeyUsageFlush, j => j.FlushAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>(VirusScan, j => j.RunAsync(), Cron.Minutely());
+        recurring.AddOrUpdate<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>(ColdStorageSweep, j => j.SweepAsync(), Cron.Hourly());
+
+        var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
+        recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),
+            Cron.MinuteInterval(Math.Max(1, quickShareOptions.CleanupIntervalMinutes)));
+
+        var emailSender = services.GetRequiredService<EmailSender>();
+        if (emailSender.IsConfigured)
+        {
+            var emailOptions = services.GetRequiredService<IOptions<EmailOptions>>().Value;
+            recurring.AddOrUpdate<DownloadNotificationJob>(DownloadNotification, j => j.NotifyAsync(),
+                Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
+            recurring.AddOrUpdate<TrialReminderJob>(TrialReminder, j => j.NotifyAsync(), Cron.Daily());
+            recurring.AddOrUpdate<DeliveryExpiryReminderJob>(DeliveryExpiryReminder, j => j.RemindAsync(), Cron.Hourly());
+            recurring.AddOrUpdate<WeeklyDigestJob>(WeeklyDigest, j => j.NotifyAsync(), Cron.Weekly());
+            recurring.AddOrUpdate<FileRequestDigestJob>(FileRequestDigest, j => j.NotifyAsync(),
+                Cron.MinuteInterval(Math.Max(1, emailOptions.DigestIntervalMinutes)));
+            recurring.AddOrUpdate<WorkspaceReportJob>(WorkspaceReport, j => j.NotifyAsync(), Cron.Weekly());
+        }
+
+        if (hasR2)
+        {
+            recurring.AddOrUpdate<OrphanSweepJob>(OrphanSweep, j => j.SweepAsync(),
+                Cron.HourInterval(Math.Max(1, quickShareOptions.OrphanSweepIntervalHours)));
+
+            // First sweep soon after boot — an hourly-only schedule would never run on
+            // hosts that redeploy daily (same reason the old loop used a 15-min initial delay).
+            background.Schedule<OrphanSweepJob>(j => j.SweepAsync(), TimeSpan.FromMinutes(15));
+        }
+    }
+}

@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+<span data-slot="breadcrumb-ellipsis" role="presentation" aria-hidden="true"
+      class="@Classes" @attributes="AdditionalAttributes">
+    <Icon Name="ellipsis" Class="size-4" />
+    <span class="sr-only">@SrLabel</span>
+</span>
+
+@code {
+    /// <summary>Read aloud in place of the dots.</summary>
+    [Parameter] public string SrLabel { get; set; } = "More";
+
+    string Classes => Cn("flex size-control items-center justify-center", Class);
+}

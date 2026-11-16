@@ -1,0 +1,54 @@
+@inherits UiComponentBase
+
+@* shadcn's <Dialog> is a provider, a portal, an overlay and a focus trap. Here it is a native
+   <dialog>: showModal() gives the focus trap, the inert background, Escape, and the top layer —
+   all of it, from the platform, surviving fragment swaps because there is no JavaScript state
+   to lose.
+
+   The DOM shape is one level deeper than shadcn's as a result. The <dialog> is a bare frame
+   (ui.behavior.css strips its user-agent box), and the shadcn-styled panel is its single child,
+   so the open animation has a real box to scale and a backdrop click can be told apart from a
+   click on the panel.
+
+   The <dialog> is a frame, so `data-slot`, `Class` and every splatted attribute land on the
+   panel inside it — the box shadcn calls DialogContent, and the box a caller means. The frame
+   itself takes only what identifies it to a trigger.
+
+   Worth knowing before reaching for this: an Unpoly overlay (`up-layer="new"`) renders a *real
+   route* into a modal, keeps it bookmarkable, and lets the server decide what goes in it. Use
+   this component for a dialog whose content the page already has; use up-layer when the content
+   has to come from the server. *@
+
+<dialog id="@Id" data-slot="dialog" data-dismissable="@(Dismissable ? "true" : "false")">
+    <div data-slot="dialog-content" class="@Classes" @attributes="AdditionalAttributes">
+        @ChildContent
+        @if (ShowCloseButton)
+        {
+            <button type="button" data-slot="dialog-close"
+                    class="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 end-4 rounded-sm p-1 opacity-70 transition-[opacity,color,background-color] hover:bg-accent hover:text-accent-foreground hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+                <Icon Name="x" Class="size-4" />
+                <span class="sr-only">@CloseLabel</span>
+            </button>
+        }
+    </div>
+</dialog>
+
+@code {
+    /// <summary>What a <see cref="DialogTrigger"/> points its Target at. Required.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>Clicking the backdrop — or pressing Escape — closes it. False for a dialog that
+    /// must be answered: then only its Close/Cancel buttons can dismiss it.</summary>
+    [Parameter] public bool Dismissable { get; set; } = false;
+
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+
+    /// <summary>The corner button's accessible name.</summary>
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    const string Base =
+        "grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border bg-background p-6 " +
+        "shadow-lg outline-none sm:max-w-lg";
+
+    string Classes => Cn(Base, Class);
+}

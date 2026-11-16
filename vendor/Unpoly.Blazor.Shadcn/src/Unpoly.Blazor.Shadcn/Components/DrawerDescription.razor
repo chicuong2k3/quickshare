@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+<p data-slot="drawer-description" class="@Classes"
+   @attributes="AdditionalAttributes">@ChildContent</p>
+
+@code {
+    const string Base =
+        "text-control text-muted-foreground";
+
+    string Classes => Cn(Base, Class);
+}

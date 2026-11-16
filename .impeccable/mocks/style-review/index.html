@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickShareCloud — 11 hướng giao diện mới</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gallery:#111315; --card:#191C1F; --edge:#2A2F34; --text:#E8EBED; --dim:#8C949B;
+  --accent:#E8EBED;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--gallery);color:var(--text);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.mono{font-family:"Martian Mono",ui-monospace,monospace}
+
+header{border-bottom:1px solid var(--edge)}
+.hd{max-width:1200px;margin:0 auto;padding:26px 32px 22px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end}
+.hd h1{margin:0 0 8px;font-size:26px;letter-spacing:-.015em;font-weight:600}
+.hd p{margin:0;color:var(--dim);font-size:13.5px;line-height:1.6;max-width:70ch}
+.hd .meta{text-align:right;font-size:11px;color:var(--dim);line-height:1.8;white-space:nowrap}
+.hd .meta b{color:var(--text);font-weight:500}
+.constraints{
+  max-width:1200px;margin:0 auto;padding:14px 32px 0;display:flex;gap:8px;flex-wrap:wrap;
+}
+.tag{
+  font-family:"Martian Mono";font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--edge);color:var(--dim);padding:4px 8px;
+}
+.note{
+  max-width:1200px;margin:0 auto;padding:14px 32px 0;
+  font-size:12.5px;color:var(--dim);line-height:1.6;max-width:96ch;
+}
+.note b{color:var(--text);font-weight:500}
+
+main{max-width:1200px;margin:0 auto;padding:26px 32px 40px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+.card{background:var(--card);border:1px solid var(--edge);display:flex;flex-direction:column;min-width:0}
+.card__preview{
+  height:372px;overflow:hidden;position:relative;border-bottom:1px solid var(--edge);
+  background:#0C0E10;
+}
+.card__preview iframe{
+  position:absolute;top:0;left:0;width:1180px;height:820px;border:0;display:block;
+  transform-origin:top left;transform:scale(.4627);
+}
+.card__preview::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:80px;
+  background:linear-gradient(180deg, transparent, #191C1F);
+  pointer-events:none;
+}
+.card__open{
+  position:absolute;right:10px;bottom:10px;z-index:2;
+  background:var(--text);color:#111315;font-family:"Martian Mono";font-size:9px;
+  letter-spacing:.1em;text-transform:uppercase;padding:7px 11px;
+}
+.card__open:hover{background:#fff}
+.card__body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card__top{display:flex;align-items:baseline;gap:10px}
+.card__n{font-family:"Martian Mono";font-size:10px;color:var(--dim)}
+.badge-new{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#0E1416;background:#8FD9C7;padding:3px 7px;border-radius:999px}
+.card__title{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em;flex:1}
+.card__title span{display:block;font-size:11.5px;color:var(--dim);font-weight:400;letter-spacing:.04em;margin-top:2px}
+.card__thesis{margin:0;font-size:13px;color:#C6CCD1;line-height:1.6}
+.card__grid{display:grid;grid-template-columns:76px 1fr;gap:6px 10px;font-size:11.5px;line-height:1.55;border-top:1px solid var(--edge);padding-top:10px}
+.card__grid dt{color:var(--dim);font-family:"Martian Mono";font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+.card__grid dd{margin:0;color:#B9C0C5}
+.card__grid dd b{color:var(--text);font-weight:500}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.chip{width:26px;height:16px;border:1px solid rgba(255,255,255,.22)}
+.card__foot{display:flex;justify-content:space-between;gap:10px;margin-top:auto;padding-top:8px;font-size:10.5px;color:var(--dim);font-family:"Martian Mono";letter-spacing:.04em}
+
+.choose{border-top:1px solid var(--edge);margin-top:8px}
+.choose__in{max-width:1200px;margin:0 auto;padding:30px 32px 64px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.choose h2{grid-column:1/-1;margin:0;font-size:16px;font-weight:600}
+.choose h3{margin:0 0 6px;font-family:"Martian Mono";font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.choose p{margin:0 0 6px;font-size:12.5px;color:#B9C0C5;line-height:1.6}
+.choose p b{color:var(--text);font-weight:500}
+.choose .foot{grid-column:1/-1;border-top:1px solid var(--edge);padding-top:14px;font-size:12px;color:var(--dim);line-height:1.65;max-width:96ch}
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr}
+  .card__preview{height:300px}
+  .card__preview iframe{transform:scale(.373)}
+  .hd{grid-template-columns:1fr}
+  .hd .meta{text-align:left}
+  .choose__in{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div>
+      <h1>11 hướng giao diện mới — QuickShareCloud</h1>
+      <p>Mỗi hướng là một <b>thế giới thị giác thay thế</b>, không phải skin cho HyperCard hiện tại. Mỗi trang dưới đây dựng cùng một nội dung (thanh điều hướng, câu dẫn, một thẻ chia sẻ + một trạng thái) bằng ngữ pháp riêng của thế giới đó, kèm nút sáng/tối ở cuối trang.</p>
+    </div>
+    <div class="meta">
+      <b>Đã chọn:</b> #04 Bảng chuyến<br>Bản duyệt 11.11.2026 · rev 3<br>
+      Mocks: <span class="mono">/worlds</span><br>
+      Tỉ lệ 1:1, không ảnh
+    </div>
+  </div>
+  <div class="constraints">
+    <span class="tag">2 theme bắt buộc</span>
+    <span class="tag">Font SIL OFL + dấu tiếng Việt</span>
+    <span class="tag">Không emoji / không icon pack</span>
+    <span class="tag">Không bóng mờ (#01–10)</span>
+    <span class="tag">Tối đa 1 chuyển động tự tác giả</span>
+    <span class="tag">Phải sống với Shadcn tokens</span>
+  </div>
+  <p class="note">Đây là <b>bản duyệt, không phải sản phẩm</b>: dữ liệu mẫu (tên tệp, dung lượng, mã) là hư cấu để thấy hệ thống, không phải tuyên bố về tính năng hay giá. Chọn hướng chưa phải là chốt — hướng được chọn sẽ vào quy trình dựng thế giới (pin vào <span class="mono">PRODUCT.md</span>, chạy roll, rồi viết lại <span class="mono">DESIGN.md</span> từ cái đã dựng).</p>
+</header>
+
+<main>
+  <div class="grid">
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/11-kinh-mo.html" title="Kính mờ" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/11-kinh-mo.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">11</span><h2 class="card__title">Kính mờ<span>Glass · kính trên trường sáng</span></h2><span class="badge-new" style="background:#3A4147;color:#E8EBED">Bản v2</span></div>
+        <p class="card__thesis">Dựng lại lần 2 sau khi bản đầu <em>nhìn như AI</em>. Kính bây giờ là <b>một vật trên bàn</b>, không phải lớp phủ: một tấm trên phiếu giấy, blur 2,5px, thành kính 5px dày hơn, vệt sáng có cạnh cứng. Chữ nằm trên <em>ô kính khắc mờ</em> nên vẫn đọc được.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Kính 2,5px blur với thành 5px dày hơn, vệt sáng cạnh cứng, bóng đổ lệch một phía, hạt 2,5%</dd>
+          <dt>Màu</dt><dd>Đá phiến + phiếu giấy + một ngọc bích cho “đang chạy”. Không blob sáng, không gradient phát sáng</dd>
+          <dt>Chữ</dt><dd>Be Vietnam Pro <b>400</b> · Archivo 500 nhãn 9px. Sang ở cỡ nhỏ + khoảng thở, không ở cỡ lớn mảnh</dd>
+          <dt>Khoảnh khắc</dt><dd>Đã niêm: kính <em>thôi khúc xạ</em> — thành vật đã xong, không còn là cửa sổ</dd>
+          <dt>Sáng/tối</dt><dd>Đá phiến có đèn trên-trái / bàn sáng, kính trong hơn</dd>
+          <dt>Rủi ro</dt><dd>So sánh được với v1 ngay trong thư mục (<span class="mono">11-kinh-mo-v1.html</span>). Vẫn nặng GPU trên Android yếu; cần <span class="mono">@supports</span> fallback</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#1E3638"></span><span class="chip" style="background:rgba(255,255,255,.16)"></span>
+          <span class="chip" style="background:#8FD9C7"></span><span class="chip" style="background:#E0B47A"></span>
+          <span class="chip" style="background:#EFF5F3"></span>
+        </div>
+        <div class="card__foot"><span>Persuade + Operate · chi phí TRUNG BÌNH</span><span>11 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/01-buu-dien.html" title="Bưu điện" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/01-buu-dien.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">01</span><h2 class="card__title">Bưu điện<span>Postal registry · giấy gửi phát</span></h2></div>
+        <p class="card__thesis">Gửi tệp <em>là</em> gửi bưu phẩm: mỗi lần gửi trả một mã theo dõi, một dấu đỏ, một biên nhận. Người nhận chỉ cần mã.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Biểu mẫu in offset, giấy form trắng, mực đóng dấu vermilion</dd>
+          <dt>Màu</dt><dd>Restrained — giấy trắng + xanh công văn + một đỏ dấu</dd>
+          <dt>Chữ</dt><dd>Barlow Condensed <b>nhãn/số</b> · Be Vietnam Pro</dd>
+          <dt>Khoảnh khắc</dt><dd>Con dấu đóng xuống thẻ khi gửi xong</dd>
+          <dt>Sáng/tối</dt><dd>Quầy ngày / quầy đêm navy</dd>
+          <dt>Rủi ro</dt><dd>Dễ phẳng nếu cặp font chung chung; cần kỷ luật bố cục biểu mẫu thật</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#123E6B"></span><span class="chip" style="background:#B3202A"></span>
+          <span class="chip" style="background:#FBFAF6"></span><span class="chip" style="background:#B7C0CA"></span>
+          <span class="chip" style="background:#0F1720"></span>
+        </div>
+        <div class="card__foot"><span>Persuade + Operate · chi phí THẤP</span><span>01 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/02-tem-niem-phong.html" title="Tem niêm phong" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/02-tem-niem-phong.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">02</span><h2 class="card__title">Tem niêm phong<span>Security intaglio · giấy bạc</span></h2></div>
+        <p class="card__thesis">Khối lượng dựng bằng <em>mật độ đường khắc</em>, không bằng nền màu. Mệnh giá = dung lượng; tem chỉ vỡ một lần, ở lần mở đầu tiên.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Guilloche, microtext, serial đỏ, tem niêm phong dán dọc</dd>
+          <dt>Màu</dt><dd>Ba màu in — intaglio xanh, xám kim loại, đỏ serial</dd>
+          <dt>Chữ</dt><dd>Archivo <b>600</b> · Martian Mono serial</dd>
+          <dt>Khoảnh khắc</dt><dd>Tem vỡ khi mở liên kết lần đầu</dd>
+          <dt>Sáng/tối</dt><dd>Bản in / bản in âm dưới đèn UV</dd>
+          <dt>Rủi ro</dt><dd>Cần sinh field guilloche bằng tiling (không ảnh bitmap); tốn SVG nhất trong 10 hướng</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#14493A"></span><span class="chip" style="background:#A6262F"></span>
+          <span class="chip" style="background:#E9E7DA"></span><span class="chip" style="background:#8E8A7B"></span>
+          <span class="chip" style="background:#151713"></span>
+        </div>
+        <div class="card__foot"><span>Persuade + Trust · chi phí CAO</span><span>02 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/03-bang-phim.html" title="Bảng phim" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/03-bang-phim.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">03</span><h2 class="card__title">Bảng phim<span>Contact sheet · phòng tối</span></h2></div>
+        <p class="card__thesis">Nền tối là <em>phòng tối</em>, không phải theme. Nội dung chính của sản phẩm là ảnh gốc — bảng tiếp xúc nói “bạn nhận bản phim, không phải ảnh chụp lại”.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Dải phim có lỗ tiếp phim, số khung, vòng bút chì mỡ</dd>
+          <dt>Màu</dt><dd>Đen phòng tối + giấy in + safelight đỏ</dd>
+          <dt>Chữ</dt><dd>Courier Prime <b>mép phim</b> · Be Vietnam Pro 300</dd>
+          <dt>Khoảnh khắc</dt><dd>Khung đang tải được khoanh bút chì</dd>
+          <dt>Sáng/tối</dt><dd>Bàn đèn xem phim / phòng tối (native)</dd>
+          <dt>Rủi ro</dt><dd>Cần thumbnail thật; tệp không phải ảnh phải có khung âm bản riêng</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#0B0B0C"></span><span class="chip" style="background:#F3F1EA"></span>
+          <span class="chip" style="background:#C0392B"></span><span class="chip" style="background:#B9B4A8"></span>
+          <span class="chip" style="background:#26262A"></span>
+        </div>
+        <div class="card__foot"><span>Persuade + Experience · chi phí TRUNG BÌNH</span><span>03 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/04-bang-chuyen.html" title="Bảng chuyến" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/04-bang-chuyen.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">04</span><h2 class="card__title">Bảng chuyến<span>Split-flap board · nhà ga</span></h2><span class="badge-new" style="background:#E0A03C">Đã chọn</span></div>
+        <p class="card__thesis">Máy trạng thái của tệp là sản phẩm. Bảng đọc đúng thứ đang xảy ra: đang gửi, đã sao, chờ, giữ pháp lý — mỗi đổi trạng thái là một lần lật.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Module lật cơ khí, cột trạng thái canh phải, không hình minh hoạ</dd>
+          <dt>Màu</dt><dd>Màu <b>chỉ</b> là trạng thái: xám / xanh / hổ phách / đỏ</dd>
+          <dt>Chữ</dt><dd>Barlow Condensed 700 · Martian Mono mã</dd>
+          <dt>Khoảnh khắc</dt><dd>Một lần lật cho mỗi đổi trạng thái</dd>
+          <dt>Sáng/tối</dt><dd>Nhà ga ban đêm (native) / ban ngày</dd>
+          <dt>Rủi ro</dt><dd>Khó nhất về thiết kế thông tin: trang cần bố cục giàu (tài khoản) phải có ngữ pháp thứ hai</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#15181B"></span><span class="chip" style="background:#2A2F35"></span>
+          <span class="chip" style="background:#E0A03C"></span><span class="chip" style="background:#4FA36A"></span>
+          <span class="chip" style="background:#C85A4F"></span>
+        </div>
+        <div class="card__foot"><span>Operate · chi phí THẤP–TRUNG BÌNH</span><span><a href="worlds/04-send.html" target="_blank" rel="noopener">Gửi ↗</a> · <a href="worlds/04-download.html" target="_blank" rel="noopener">Nhận ↗</a> · <a href="worlds/04-account.html" target="_blank" rel="noopener">Tài khoản ↗</a> · <a href="worlds/04-pricing.html" target="_blank" rel="noopener">Bảng giá ↗</a></span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/05-bang-dong-ho.html" title="Bảng đồng hồ" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/05-bang-dong-ho.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">05</span><h2 class="card__title">Bảng đồng hồ<span>Industrial panel · tủ điều khiển</span></h2></div>
+        <p class="card__thesis">Sự thật của sản phẩm là <em>đo được</em>: byte, số phần, tốc độ, SHA-256, hạn mức. Kim và con lăn số không nói dối.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Tấm sơn tĩnh điện, vít 4 góc, đường vát 1px, con lăn cơ khí</dd>
+          <dt>Màu</dt><dd>Kim loại trung tính; màu chỉ cho đèn &amp; kim</dd>
+          <dt>Chữ</dt><dd>Barlow Condensed khắc · Martian Mono số</dd>
+          <dt>Khoảnh khắc</dt><dd>Con lăn số nhích khi một phần xong</dd>
+          <dt>Sáng/tối</dt><dd>Tủ ban ngày / tủ chiếu sáng ban đêm</dd>
+          <dt>Rủi ro</dt><dd>Kém ở trang bán hàng (bảng giá) — cần bố cục “plate-only” riêng</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#CBCFD2"></span><span class="chip" style="background:#20252A"></span>
+          <span class="chip" style="background:#3B8B50"></span><span class="chip" style="background:#C0821C"></span>
+          <span class="chip" style="background:#AE3B31"></span>
+        </div>
+        <div class="card__foot"><span>Operate · chi phí THẤP–TRUNG BÌNH</span><span>05 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/06-lich-bloc.html" title="Lịch bloc" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/06-lich-bloc.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">06</span><h2 class="card__title">Lịch bloc<span>Tear-off calendar · giấy xé</span></h2></div>
+        <p class="card__thesis">Hạn dùng là <em>một ngày cụ thể</em>, không phải con số trừu tượng. Một tệp = một tờ lịch; hết hạn thì xé.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Gáy lịch có lỗ, đường xé đứt nét, chồng tờ offset, âm lịch</dd>
+          <dt>Màu</dt><dd>Duotone in — giấy ngà + đỏ + mực</dd>
+          <dt>Chữ</dt><dd>Big Shoulders Display 800 ngày · Be Vietnam Pro</dd>
+          <dt>Khoảnh khắc</dt><dd>Tờ rơi đúng lúc hết hạn</dd>
+          <dt>Sáng/tối</dt><dd>Tờ trên tường / tờ buổi tối</dd>
+          <dt>Rủi ro</dt><dd>Lịch dễ trôi thành trang trí — luật “một tờ = một tệp” phải giữ tuyệt đối</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#F4EFE3"></span><span class="chip" style="background:#C4242B"></span>
+          <span class="chip" style="background:#1D1A16"></span><span class="chip" style="background:#D6CCB7"></span>
+          <span class="chip" style="background:#EDE6D5"></span>
+        </div>
+        <div class="card__foot"><span>Persuade + Operate · chi phí THẤP</span><span>06 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/07-so-tiet-kiem.html" title="Sổ tiết kiệm" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/07-so-tiet-kiem.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">07</span><h2 class="card__title">Sổ tiết kiệm<span>Dot-matrix passbook · giấy in liên tục</span></h2></div>
+        <p class="card__thesis">Dung lượng dùng, hạn mức, hoá đơn — in thành <em>dòng</em>, không thành dashboard. Mọi con số có ngày và mã giao dịch.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Lỗ kéo giấy hai bên, dòng kẻ chấm, sổ gáy, dấu đối soát</dd>
+          <dt>Màu</dt><dd>Xanh ngân hàng = ghi có; mận = ghi nợ &amp; dấu</dd>
+          <dt>Chữ</dt><dd>Martian Mono <b>toàn bộ dữ liệu</b> · Be Vietnam Pro</dd>
+          <dt>Khoảnh khắc</dt><dd>Các dòng in xuống theo băng khi nạp sao kê</dd>
+          <dt>Sáng/tối</dt><dd>Giấy bảo an / két ban đêm</dd>
+          <dt>Rủi ro</dt><dd>Có thể nuốt trang gửi tệp — trang gửi phải giữ ngắn, không thành sổ</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#1B3F73"></span><span class="chip" style="background:#7A2530"></span>
+          <span class="chip" style="background:#EFEDDF"></span><span class="chip" style="background:#C9C4AE"></span>
+          <span class="chip" style="background:#1C1F24"></span>
+        </div>
+        <div class="card__foot"><span>Operate (billing) · chi phí THẤP</span><span>07 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/08-ban-ve-thi-cong.html" title="Bản vẽ thi công" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/08-ban-ve-thi-cong.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">08</span><h2 class="card__title">Bản vẽ thi công<span>Dimension drawing · bản vẽ kỹ thuật</span></h2></div>
+        <p class="card__thesis">Tệp 2,4 GB không phải khối đen: chia phần, khoảng byte, phần nào lỗi — mọi khối có <em>đường kích thước</em> và khối tên.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Lưới ô 24px, đường kích thước có mũi tên, hatch chéo, khối tên</dd>
+          <dt>Màu</dt><dd>Gần đơn sắc — mực, xanh bản vẽ, đỏ sửa đổi</dd>
+          <dt>Chữ</dt><dd>Barlow Condensed nhãn · Martian Mono số đo</dd>
+          <dt>Khoảnh khắc</dt><dd>Đường kích thước tự vẽ khi các phần xong</dd>
+          <dt>Sáng/tối</dt><dd>Bản vẽ trên bàn / in nền tối</dd>
+          <dt>Rủi ro</dt><dd>Lạnh với người bán hàng trên Zalo; mạnh nhất ở API/docs/P2P</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#F6F8F9"></span><span class="chip" style="background:#1E262B"></span>
+          <span class="chip" style="background:#1D5C8A"></span><span class="chip" style="background:#B4372F"></span>
+          <span class="chip" style="background:#9FB0BA"></span>
+        </div>
+        <div class="card__foot"><span>Operate + Read · chi phí TRUNG BÌNH</span><span>08 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/09-kho-kien.html" title="Kho kiện" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/09-kho-kien.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">09</span><h2 class="card__title">Kho kiện<span>Warehouse stencil · phiếu gửi kiện</span></h2></div>
+        <p class="card__thesis">Thư mục là kệ, tệp là kiện. Mã kiện <em>in được, dán được, quét được</em> — người nhận không cần biết gì ngoài mã đó.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Kraft, sơn stencil nứt, túi phiếu viền đứt, mã vạch thật</dd>
+          <dt>Màu</dt><dd>Kraft + hi-vis vàng + đen; vàng không làm nền chữ</dd>
+          <dt>Chữ</dt><dd>Allerta Stencil <b>mã kiện</b> · Archivo câu</dd>
+          <dt>Khoảnh khắc</dt><dd>Tia quét chạy qua mã vạch khi mở kiện</dd>
+          <dt>Sáng/tối</dt><dd>Kho ban ngày / ca đêm</dd>
+          <dt>Rủi ro</dt><dd>Dễ trôi về “logistics SaaS”; phải giữ nét sơn tay và phiếu giấy</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#C7A87C"></span><span class="chip" style="background:#D9A21B"></span>
+          <span class="chip" style="background:#191715"></span><span class="chip" style="background:#F3EEE1"></span>
+          <span class="chip" style="background:#5B5346"></span>
+        </div>
+        <div class="card__foot"><span>Persuade + Operate · chi phí TRUNG BÌNH</span><span>09 / 11</span></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card__preview">
+        <iframe src="worlds/10-ban-tron.html" title="Bàn trộn" loading="lazy" scrolling="no"></iframe>
+        <a class="card__open" href="worlds/10-ban-tron.html" target="_blank" rel="noopener">Mở →</a>
+      </div>
+      <div class="card__body">
+        <div class="card__top"><span class="card__n">10</span><h2 class="card__title">Bàn trộn<span>Mixing console · VU meters</span></h2></div>
+        <p class="card__thesis">P2P là <em>tín hiệu sống</em>: peer, thông lượng, tụt kết nối. Bàn trộn nói đúng “đang chạy, quan sát được, điều chỉnh được”.</p>
+        <dl class="card__grid">
+          <dt>Vật liệu</dt><dd>Dải kênh dọc, fader, kim VU có quán tính, đèn LED</dd>
+          <dt>Màu</dt><dd>Graphite + đèn tín hiệu (xanh/vàng/đỏ)</dd>
+          <dt>Chữ</dt><dd>Archivo 500/700 · Martian Mono số đo</dd>
+          <dt>Khoảnh khắc</dt><dd>Kim vọt lên rồi ổn định khi bắt đầu truyền</dd>
+          <dt>Sáng/tối</dt><dd>Phòng thu ban đêm (native) / ban ngày</dd>
+          <dt>Rủi ro</dt><dd>Hẹp nhất — chỉ đáng nếu P2P là mặt tiền, không phải tính năng phụ</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip" style="background:#1E2126"></span><span class="chip" style="background:#282C32"></span>
+          <span class="chip" style="background:#4FB47A"></span><span class="chip" style="background:#D9A93F"></span>
+          <span class="chip" style="background:#C24A42"></span>
+        </div>
+        <div class="card__foot"><span>Operate (P2P) · chi phí TRUNG BÌNH</span><span>10 / 11</span></div>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+<section class="choose">
+  <div class="choose__in">
+    <h2>Chọn bằng câu hỏi, không bằng cảm giác</h2>
+    <div>
+      <h3>1 · Sự thật nào phải nhìn thấy</h3>
+      <p>Khoá không rời máy → <b>#02</b>. Hạn dùng → <b>#06</b>. Ảnh gốc không nén lại → <b>#03</b>. P2P sống → <b>#10</b>. Dung lượng/hoá đơn → <b>#07</b>. Tốc độ/đo đạc → <b>#05</b>.</p>
+    </div>
+    <div>
+      <h3>2 · Ai là mặt tiền</h3>
+      <p>Người gửi mở trên Zalo/Facebook bằng điện thoại → <b>#01</b> hoặc <b>#09</b>. Người mua tin cậy kỹ thuật → <b>#02</b> hoặc <b>#08</b>.</p>
+    </div>
+    <div>
+      <h3>3 · Chi phí dựng</h3>
+      <p><b>#02</b> và <b>#08</b> cần sinh field đường nét. <b>#04</b> cần một lượt thiết kế thông tin cho mọi route. <b>#01</b>/<b>#06</b>/<b>#07</b> rẻ nhất.</p>
+    </div>
+    <p class="foot">Ghi chú trung thực: các hướng này do tôi tự rút từ sản phẩm — đúng loại danh sách mà quy trình dựng thế giới khuyên không nên chốt vội. Chọn xong vẫn phải: pin vào <span class="mono">PRODUCT.md</span> (đè cam kết HyperCard, luật icon pixel, và có thể cả bộ font — những cái đó do bạn quyết), chạy roll hướng, và viết lại <span class="mono">DESIGN.md</span> từ bản đã dựng. Preview dùng <span class="mono">iframe scale</span> ở tỉ lệ ~46%; trang gốc mở ở tab mới để xem đúng tỉ lệ, kể cả nút sáng/tối ở cuối mỗi trang.</p>
+  </div>
+</section>
+
+</body>
+</html>

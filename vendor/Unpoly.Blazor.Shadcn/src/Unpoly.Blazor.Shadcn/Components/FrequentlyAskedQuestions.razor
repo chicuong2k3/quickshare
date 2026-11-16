@@ -1,0 +1,108 @@
+@inherits UiComponentBase
+
+@* FrequentlyAskedQuestions — ScrollX UI's FAQ section: a headline that arrives word by word out
+   of a blur, a line of help with a support address, and the questions as an accordion whose
+   rows rise into place one after another, all the first time the section is scrolled into view.
+
+   The answers are this library's Accordion — one <details> per question sharing a name, which
+   is upstream's `type="single" collapsible` — so the section works, and reads, with scripting
+   off. Everything is in its final place in the markup; ui.js hides the pieces just before it
+   plays them in with Motion, and only for a reader who has not asked for reduced motion.
+
+   The headline is an h2, where upstream writes h1: a section dropped into a page under that
+   page's own title is a second-level heading, and two h1s tell a screen reader there are two
+   documents. HeadingLevel is there for a page that IS the FAQ. *@
+
+<section data-slot="frequently-asked-questions" class="@Classes" @attributes="AdditionalAttributes">
+    <div class="mx-auto max-w-3xl px-6">
+        @HeadingElement
+        @if (Description is not null || SupportEmail is not null)
+        {
+            <p data-slot="faq-description"
+               class="relative z-10 mx-auto mt-6 max-w-2xl text-center text-base text-muted-foreground md:text-lg">
+                @Description
+                @if (SupportEmail is not null)
+                {
+                    @(" ")<a href="@($"mailto:{SupportEmail}")"
+                             class="text-primary underline underline-offset-4 transition-opacity hover:opacity-80">@SupportEmail</a>
+                }
+            </p>
+        }
+        <div data-slot="faq-list" class="mt-14">
+            <Accordion Class="w-full">
+                @foreach (var item in Items)
+                {
+                    @* last:border-b: each row is the last child of its own wrapper, so the
+                       recipe's last:border-b-0 matched every one and the rows ran together.
+                       ScrollX's item draws a rule under every row, the last included. *@
+                    <div data-slot="faq-item">
+                        <AccordionItem Name="@Group" Class="last:border-b">
+                            <AccordionTrigger>@item.Question</AccordionTrigger>
+                            <AccordionContent>@item.Answer</AccordionContent>
+                        </AccordionItem>
+                    </div>
+                }
+            </Accordion>
+        </div>
+    </div>
+</section>
+
+@code {
+    /// <summary>The headline. Split on spaces, each word arrives on its own.</summary>
+    [Parameter] public string Title { get; set; } = "Frequently asked questions";
+
+    /// <summary>The line under the headline. The support address, when there is one, follows it.</summary>
+    [Parameter] public string? Description { get; set; } =
+        "We are here to help you with any questions you may have. If you don't find what you need, please contact us.";
+
+    /// <summary>Written after the description as a mailto link. Null leaves it out.</summary>
+    [Parameter] public string? SupportEmail { get; set; } = "support@example.com";
+
+    /// <summary>The questions, in order. Upstream's six sample questions when none are given.</summary>
+    [Parameter] public IReadOnlyList<FaqItem> Items { get; set; } = Defaults;
+
+    /// <summary>2 by default; 1 when the section is the whole page.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 2;
+
+    // One exclusive group per section, so opening a question here never closes one in another
+    // FAQ on the same page.
+    readonly string Group = "faq-" + Guid.NewGuid().ToString("N")[..8];
+
+    // me-2 where upstream writes a right margin: the gap trails the word in either reading
+    // direction.
+    RenderFragment HeadingElement => __builder =>
+    {
+        __builder.OpenElement(0, HeadingLevel == 1 ? "h1" : "h2");
+        __builder.AddAttribute(1, "data-slot", "faq-title");
+        __builder.AddAttribute(2, "class", "relative z-10 mx-auto max-w-4xl text-center text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl");
+        var seq = 3;
+        foreach (var word in Title.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            __builder.OpenElement(seq++, "span");
+            __builder.AddAttribute(seq++, "data-slot", "faq-word");
+            __builder.AddAttribute(seq++, "class", "me-2 inline-block");
+            __builder.AddContent(seq++, word);
+            __builder.CloseElement();
+        }
+        __builder.CloseElement();
+    };
+
+    // text-foreground / text-muted-foreground where upstream writes the zinc pairs.
+    string Classes => Cn("relative w-full overflow-hidden py-24", Class);
+
+    static readonly IReadOnlyList<FaqItem> Defaults =
+    [
+        new("What is the purpose of this website?",
+            "This website is a place to help you find the best products and services in the world. We curate top-quality offerings so you can make informed decisions without spending hours on research."),
+        new("How do I contact support?",
+            "You can reach our support team by emailing support@example.com or by using the live chat widget in the bottom-right corner of the page. We typically respond within 24 hours on business days."),
+        new("How do I find the best products?",
+            "Use the search bar at the top of the page to browse by category, keyword, or brand. You can also filter results by rating, price range, and availability to quickly narrow down the best options for your needs."),
+        new("Can I return a product?",
+            "Yes, we offer a hassle-free 30-day return policy on most items. Simply visit your order history, select the item you wish to return, and follow the instructions. Refunds are processed within 5–7 business days."),
+        new("Do you offer international shipping?",
+            "We ship to over 50 countries worldwide. International shipping rates and estimated delivery times are calculated at checkout based on your location and the items in your cart."),
+        new("How can I track my order?",
+            "Once your order has been dispatched, you will receive a confirmation email with a tracking number. You can use this number on our order tracking page or directly on the carrier's website to follow your package in real time."),
+    ];
+}

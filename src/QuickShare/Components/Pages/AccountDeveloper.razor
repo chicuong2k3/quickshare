@@ -1,0 +1,413 @@
+@layout MainLayout
+@page "/account/developer"
+@attribute [Authorize]
+@using QuickShare.Components.Shared
+@using QuickShare.Features.Developer.Webhooks
+@using QuickShare.Features.Workspaces.Shared
+@using QuickShare.Features.Protocols.S3
+@using QuickShare.Infrastructure.Email
+@using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Options
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext Db
+@inject WorkspaceService Workspaces
+@inject IOptions<EmailOptions> EmailOptions
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["dev_title"]</PageTitle>
+
+@* Key prefixes, endpoint URLs and payload excerpts — never index (issue #121). *@
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+
+    <section class="hero">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["dev_title"]</h1>
+        <p class="text-muted-foreground">@Loc["dev_subtitle"]</p>
+    </section>
+
+    <AccountTabs Current="@RoutePaths.AccountDeveloper" />
+
+    @Chunk
+
+</PageWrapper>
+
+<script src="/js/developer.js" defer></script>
+
+@code {
+    private List<ApiKey> keys = [];
+    private List<WebhookEndpoint> endpoints = [];
+    private List<WebhookDelivery> deliveries = [];
+    private bool hasSeat;
+    private bool isWorkspaceAdmin;
+    private string bucketName = string.Empty;
+    private List<WorkspaceS3Credential> s3Credentials = [];
+
+    private string S3Url => $"{EmailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.S3Gateway}";
+
+    private string MountUrl => $"{EmailOptions.Value.BaseUrl.TrimEnd('/')}{RoutePaths.WebDav}";
+
+    /// <summary>The one command a team has to run. The key is typed by the user, never printed here.</summary>
+    private string RcloneSetup =>
+        $"rclone config create quickshare webdav url={MountUrl} vendor=other user=quickshare pass=<API-KEY>";
+
+    private RenderFragment Chunk => @<section id="developer-body">
+
+        @* ── #115 API keys ── *@
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_keys_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_keys_hint"]</p>
+
+                @if (keys.Count == 0)
+                {
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_keys_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var key in keys)
+                        {
+                            <li class="workspace-member" id="api-key-@key.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">@key.Name</span>
+                                    @* The prefix identifies the key without being usable — which is
+                                       exactly what somebody staring at a leaked key needs. *@
+                                    <span class="workspace-member__meta"><code>@key.Prefix…</code> · @key.Scopes</span>
+                                    <span class="workspace-member__meta">
+                                        @(key.LastUsedAt is { } used
+                                            ? Loc["dev_key_last_used", used.ToLocalTime().ToString("g")].Value
+                                            : Loc["dev_key_never_used"].Value)
+                                        @if (key.ExpiresAt is { } expires)
+                                        {
+                                            <text> · @Loc["dev_key_expires", expires.ToLocalTime().ToString("d")]</text>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="workspace-member__actions">
+                                    @* Usage (issue #273): loaded when asked for, because most keys
+                                       are never looked at twice and a graph nobody opened is a
+                                       query nobody needed. *@
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@key.Id"
+                                            data-target="dev-key-usage-@key.Id"
+                                            data-empty="@Loc["dev_key_usage_empty"]"
+                                            data-total="@Loc["dev_key_usage_total"]"
+                                            onclick="window.quickShareDeveloper.usage(this)"
+                                            data-ai-action="dev.key.usage">@Loc["dev_key_usage"]</button>
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@key.Id"
+                                            data-confirm="@Loc["dev_key_revoke_confirm"]"
+                                            onclick="window.quickShareDeveloper.revokeKey(this)"
+                                            data-ai-action="dev.key.revoke">@Loc["dev_key_revoke"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="dev-key-name">@Loc["dev_key_name"]</label>
+                    <Input id="dev-key-name"  type="text" maxlength="@ApiKey.NameMaxLength" />
+
+                    <label class="workspace-label" for="dev-key-scopes">@Loc["dev_key_scopes"]</label>
+                    <NativeSelect id="dev-key-scopes">
+                        <NativeSelectOption value="@ApiScopes.Read">@Loc["dev_scope_read"]</NativeSelectOption>
+                        <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</NativeSelectOption>
+                        <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</NativeSelectOption>
+                    </NativeSelect>
+
+                    <button type="button" data-slot="button" data-variant="default"
+                            data-once-label="@Loc["dev_key_shown_once"]"
+                            onclick="window.quickShareDeveloper.createKey(this)"
+                            data-ai-action="dev.key.create">@Loc["dev_key_create"]</button>
+
+                    @* Filled in by script: the raw key exists in exactly one response. *@
+                    <p class="security-secret" id="dev-key-new" hidden><code id="dev-key-new-value"></code></p>
+                </div>
+            </CardContent>
+        </Card>
+
+        @* ── #195 WebDAV mount ── *@
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_mount_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_hint"]</p>
+
+                @if (!hasSeat)
+                {
+                    @* A mount is a team surface: without a seat there is nothing to mount, and
+                       an address that answers 401 forever helps nobody. *@
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_needs_workspace"]</p>
+                }
+                else
+                {
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["dev_mount_url"]</dt>
+                            <dd><code>@MountUrl</code></dd>
+                        </div>
+                    </dl>
+
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_setup"]</p>
+                    <pre class="security-secret"><code>@RcloneSetup</code></pre>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_mount_clients"]</p>
+                }
+            </CardContent>
+        </Card>
+
+        @* ── #265 S3 gateway ── *@
+        @if (isWorkspaceAdmin)
+        {
+            <Card class="account-card workspace-card">
+                <CardContent>
+                    <h2 class="text-xl font-semibold">@Loc["dev_s3_title"]</h2>
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_s3_hint"]</p>
+
+                    <dl class="workspace-stats">
+                        <div class="workspace-stat">
+                            <dt>@Loc["dev_s3_endpoint"]</dt>
+                            <dd><code>@S3Url</code></dd>
+                        </div>
+                        <div class="workspace-stat">
+                            <dt>@Loc["dev_s3_bucket"]</dt>
+                            <dd><code>@bucketName</code></dd>
+                        </div>
+                    </dl>
+
+                    @if (s3Credentials.Count == 0)
+                    {
+                        <p class="text-muted-foreground workspace-hint">@Loc["dev_s3_empty"]</p>
+                    }
+                    else
+                    {
+                        <ul class="workspace-list">
+                            @foreach (var credential in s3Credentials)
+                            {
+                                <li class="workspace-list__item">
+                                    <div>
+                                        <p><strong>@credential.Label</strong> · <code>@credential.AccessKeyId</code></p>
+                                        <p class="text-muted-foreground workspace-hint">
+                                            @credential.Scopes ·
+                                            @(credential.LastUsedAt is { } used
+                                                ? Loc["dev_key_last_used", used.ToLocalTime().ToString("g")].Value
+                                                : Loc["dev_key_never_used"].Value)
+                                        </p>
+                                    </div>
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@credential.Id"
+                                            data-confirm="@Loc["dev_s3_revoke_confirm"]"
+                                            onclick="window.quickShareDeveloper.revokeS3(this)"
+                                            data-ai-action="dev.s3.revoke">@Loc["dev_key_revoke"]</button>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <div class="workspace-form">
+                        <label class="workspace-label" for="dev-s3-label">@Loc["dev_key_name"]</label>
+                        <Input id="dev-s3-label"  type="text" maxlength="@WorkspaceS3Credential.LabelMaxLength" />
+
+                        <label class="workspace-label" for="dev-s3-scopes">@Loc["dev_key_scopes"]</label>
+                        <NativeSelect id="dev-s3-scopes">
+                            <NativeSelectOption value="@ApiScopes.Read">@Loc["dev_scope_read"]</NativeSelectOption>
+                            <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write}")" selected>@Loc["dev_scope_write"]</NativeSelectOption>
+                            <NativeSelectOption value="@($"{ApiScopes.Read},{ApiScopes.Write},{ApiScopes.Manage}")">@Loc["dev_scope_manage"]</NativeSelectOption>
+                        </NativeSelect>
+
+                        <button type="button" data-slot="button" data-variant="default"
+                                data-once-label="@Loc["dev_s3_shown_once"]"
+                                onclick="window.quickShareDeveloper.createS3(this)"
+                                data-ai-action="dev.s3.create">@Loc["dev_s3_create"]</button>
+
+                        <p class="security-secret" id="dev-s3-new" hidden><code id="dev-s3-new-value"></code></p>
+                    </div>
+                </CardContent>
+            </Card>
+        }
+
+        @* ── #39 webhook endpoints ── *@
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_hooks_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_hooks_hint"]</p>
+
+                @if (endpoints.Count == 0)
+                {
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_hooks_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var endpoint in endpoints)
+                        {
+                            <li class="workspace-member" id="webhook-@endpoint.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">
+                                        @endpoint.Url
+                                        @if (endpoint.IsParked)
+                                        {
+                                            <span class="workspace-badge">@Loc["dev_hook_parked"]</span>
+                                        }
+                                        else if (!endpoint.Enabled)
+                                        {
+                                            <span class="workspace-badge">@Loc["dev_hook_disabled"]</span>
+                                        }
+                                    </span>
+                                    <span class="workspace-member__meta">@endpoint.Events</span>
+                                    <span class="workspace-member__meta">
+                                        @(endpoint.LastDeliveredAt is { } at
+                                            ? Loc["dev_hook_last", at.ToLocalTime().ToString("g")].Value
+                                            : Loc["dev_hook_never"].Value)
+                                        @if (endpoint.ConsecutiveFailures > 0)
+                                        {
+                                            <text> · @Loc["dev_hook_failures", endpoint.ConsecutiveFailures]</text>
+                                        }
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(endpoint.LastError))
+                                    {
+                                        <span class="workspace-member__meta">@endpoint.LastError</span>
+                                    }
+                                </div>
+                                <div class="workspace-member__actions">
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@endpoint.Id"
+                                            onclick="window.quickShareDeveloper.testHook(this)"
+                                            data-ai-action="dev.hook.test">@Loc["dev_hook_test"]</button>
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@endpoint.Id"
+                                            data-enabled="@endpoint.Enabled.ToString().ToLowerInvariant()"
+                                            onclick="window.quickShareDeveloper.toggleHook(this)"
+                                            data-ai-action="dev.hook.toggle">
+                                        @(endpoint.Enabled ? Loc["dev_hook_pause"] : Loc["dev_hook_resume"])
+                                    </button>
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@endpoint.Id"
+                                            data-confirm="@Loc["dev_hook_delete_confirm"]"
+                                            onclick="window.quickShareDeveloper.deleteHook(this)"
+                                            data-ai-action="dev.hook.delete">@Loc["dev_hook_delete"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="workspace-form">
+                    <label class="workspace-label" for="dev-hook-url">@Loc["dev_hook_url"]</label>
+                    <Input id="dev-hook-url"  type="url"
+                           maxlength="@WebhookEndpoint.UrlMaxLength" placeholder="https://" />
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_hook_url_hint"]</p>
+
+                    <label class="workspace-label" for="dev-hook-events">@Loc["dev_hook_events"]</label>
+                    <NativeSelect id="dev-hook-events">
+                        <NativeSelectOption value="@string.Join(',', WebhookEvents.All)" selected>@Loc["dev_hook_events_all"]</NativeSelectOption>
+                        @foreach (var evt in WebhookEvents.All)
+                        {
+                            <NativeSelectOption value="@evt">@evt</NativeSelectOption>
+                        }
+                    </NativeSelect>
+
+                    <button type="button" data-slot="button" data-variant="default"
+                            data-once-label="@Loc["dev_hook_secret_once"]"
+                            onclick="window.quickShareDeveloper.createHook(this)"
+                            data-ai-action="dev.hook.create">@Loc["dev_hook_create"]</button>
+
+                    <p class="security-secret" id="dev-hook-new" hidden><code id="dev-hook-new-value"></code></p>
+                </div>
+            </CardContent>
+        </Card>
+
+        @* ── #223 event log, #288 replay ── *@
+        <Card class="account-card workspace-card">
+            <CardContent>
+                <h2 class="text-xl font-semibold">@Loc["dev_log_title"]</h2>
+                <p class="text-muted-foreground workspace-hint">@Loc["dev_log_hint"]</p>
+
+                @if (deliveries.Count == 0)
+                {
+                    <p class="text-muted-foreground workspace-hint">@Loc["dev_log_empty"]</p>
+                }
+                else
+                {
+                    <ul class="workspace-member-list">
+                        @foreach (var delivery in deliveries)
+                        {
+                            <li class="workspace-member" id="webhook-delivery-@delivery.Id">
+                                <div class="workspace-member__info">
+                                    <span class="workspace-member__name">
+                                        @delivery.EventType
+                                        <span class="workspace-badge">@delivery.Status</span>
+                                    </span>
+                                    <span class="workspace-member__meta">
+                                        <time datetime="@delivery.CreatedAt.ToString("o")">@delivery.CreatedAt.ToLocalTime().ToString("g")</time>
+                                        · @Loc["dev_log_attempts", delivery.AttemptCount]
+                                        @if (delivery.ResponseStatusCode is { } responseStatus)
+                                        {
+                                            <text> · HTTP @responseStatus</text>
+                                        }
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(delivery.ResponseBody))
+                                    {
+                                        <span class="workspace-member__meta">@delivery.ResponseBody</span>
+                                    }
+                                </div>
+                                <div class="workspace-member__actions">
+                                    <button type="button" data-slot="button" data-variant="ghost"
+                                            data-id="@delivery.Id"
+                                            onclick="window.quickShareDeveloper.replay(this)"
+                                            data-ai-action="dev.log.replay">@Loc["dev_log_replay"]</button>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </CardContent>
+        </Card>
+    </section>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+
+        var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
+        if (user is null) return;
+
+        // The mount is only offered to a live seat — see the card's own note.
+        var seat = await Workspaces.GetSeatAsync(user.Id, CancellationToken.None);
+        hasSeat = seat is { IsActive: true };
+
+        // Gateway credentials are workspace configuration, so only an admin is shown them — the
+        // endpoints refuse everybody else anyway, and a card that always 403s is a bug report.
+        isWorkspaceAdmin = seat is { CanAdminister: true };
+        if (isWorkspaceAdmin)
+        {
+            bucketName = S3Endpoints.BucketName(seat!.Workspace);
+            s3Credentials = await Db.WorkspaceS3Credentials
+                .AsNoTracking()
+                .Where(c => c.WorkspaceId == seat.WorkspaceId && c.RevokedAt == null)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync(CancellationToken.None);
+        }
+
+        keys = await Db.ApiKeys
+            .AsNoTracking()
+            .Where(k => k.UserId == user.Id && k.RevokedAt == null)
+            .OrderByDescending(k => k.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        endpoints = await Db.WebhookEndpoints
+            .AsNoTracking()
+            .Where(e => e.UserId == user.Id && e.RevokedAt == null)
+            .OrderByDescending(e => e.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        deliveries = await Db.WebhookDeliveries
+            .AsNoTracking()
+            .Where(d => d.UserId == user.Id)
+            .OrderByDescending(d => d.CreatedAt)
+            .Take(20)
+            .ToListAsync(CancellationToken.None);
+    }
+}

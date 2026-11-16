@@ -1,0 +1,7 @@
+@inherits UiComponentBase
+
+<div role="separator" data-slot="menubar-separator" class="@Classes" @attributes="AdditionalAttributes"></div>
+
+@code {
+    string Classes => Cn("-mx-1 my-1 h-px bg-border", Class);
+}

@@ -1,0 +1,41 @@
+@inherits UiComponentBase
+
+@* BentoGrid — the grid is what makes a bento, not the cards. A card that spans two columns needs
+   no variant of its own: it is a BentoCard with Class="lg:col-span-2", and everything about how
+   many columns exist and how tall a row is lives here, once.
+   Not for a uniform table of equals — for that, a plain grid of Cards is less machinery, and
+   fixed row heights buy nothing. *@
+
+<div data-slot="bento-grid" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>Columns at the widest breakpoint: 2 to 6, default 3. One column below <c>sm</c>
+    /// and two from <c>sm</c> up are fixed rather than derived, because a bento with one column is
+    /// a stack and below <c>sm</c> the spans have nowhere to land anyway. Anything outside the
+    /// range falls back to 3 rather than throwing — a column count is layout, not validation.</summary>
+    [Parameter] public int Columns { get; set; } = 3;
+
+    /// <summary>The Tailwind class that sets the height of every implicit row. A fixed height is
+    /// the point: a card's <c>row-span-2</c> is twice a row only if a row has a height, and a
+    /// content-sized row makes every span a different size. Defaults to the 180px the landing
+    /// page uses; pass "auto-rows-min" for rows that hug their content instead. This is a class,
+    /// not a number, because nothing generates one for you — see <see cref="Columns"/>.</summary>
+    [Parameter] public string RowClass { get; set; } = "auto-rows-[180px]";
+
+    // Tailwind emits only classes it can find as literal text, so an interpolated
+    // $"lg:grid-cols-{Columns}" compiles to a class that never reaches the stylesheet — the grid
+    // looks right in the markup and renders as one column. Every count is spelled out here, where
+    // the scanner can see it.
+    string ColumnsClass => Columns switch
+    {
+        2 => "lg:grid-cols-2",
+        4 => "lg:grid-cols-4",
+        5 => "lg:grid-cols-5",
+        6 => "lg:grid-cols-6",
+        _ => "lg:grid-cols-3",
+    };
+
+    // Class last, so a caller can replace any of it: Class="lg:grid-cols-4 auto-rows-[220px]"
+    // wins on both counts, and Class="grid-cols-3" drops the bento entirely without unwrapping.
+    string Classes => Cn("grid grid-cols-1 gap-4 sm:grid-cols-2 " + ColumnsClass + " " + RowClass, Class);
+}

@@ -1,0 +1,8 @@
+@inherits UiComponentBase
+
+<nav role="navigation" aria-label="pagination" data-slot="pagination"
+     class="@Classes" @attributes="AdditionalAttributes">@ChildContent</nav>
+
+@code {
+    string Classes => Cn("mx-auto flex w-full justify-center", Class);
+}

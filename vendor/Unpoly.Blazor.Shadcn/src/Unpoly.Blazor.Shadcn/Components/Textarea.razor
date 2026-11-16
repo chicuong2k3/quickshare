@@ -1,0 +1,38 @@
+@inherits UiComponentBase
+
+@* shadcn/ui <Textarea>. A textarea's value is its text content, not an attribute, so Value is
+   a parameter here where Input takes it through @attributes.
+
+   Two-way binding via `@bind-Value` is also supported. When the caller passes ValueChanged,
+   the textarea renders an `@onchange` that raises it. When the caller does NOT bind, the unbound
+   form is identical to shadcn, so the parity tests see the same DOM. *@
+@if (ValueChanged.HasDelegate)
+{
+    <textarea data-slot="textarea" class="@Classes" @onchange="OnChange"
+              @attributes="AdditionalAttributes">@Value</textarea>
+}
+else
+{
+    <textarea data-slot="textarea" class="@Classes" @attributes="AdditionalAttributes">@Value</textarea>
+}
+
+@code {
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Raises on change when <c>@bind-Value</c> is used. Its presence decides whether the
+    /// component renders the bound onchange or lets the <c>@attributes</c> splat do it.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+
+    const string Base =
+        "flex field-sizing-content min-h-16 w-full rounded-md border border-input " +
+        "bg-transparent px-3 py-2 text-control shadow-xs transition-[color,box-shadow] " +
+        "outline-none placeholder:text-muted-foreground focus-visible:border-ring " +
+        "focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed " +
+        "disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 " +
+        "dark:bg-input/30 dark:aria-invalid:ring-destructive/40";
+
+    string Classes => Cn(Base, Class);
+}

@@ -14,6 +14,16 @@ public static class TestAuthDefaults
 {
     public const string Scheme = "TestAuth";
     public const string UserIdHeader = "X-Test-UserId";
+    public const string EmailHeader = "X-Test-Email";
+    /// <summary>
+    /// Marks the test session as having answered the second-factor challenge (issue #128).
+    ///
+    /// In production that claim is added by re-issuing the auth cookie. This handler rebuilds the
+    /// principal from headers on every request and never round-trips a cookie, so the re-issue
+    /// itself is out of reach here — the header stands in for its result. What that means in
+    /// practice: these tests cover the gate's decisions, not the cookie mechanics.
+    /// </summary>
+    public const string MfaVerifiedHeader = "X-Test-Mfa";
 }
 
 public sealed class TestAuthSchemeOptions : AuthenticationSchemeOptions
@@ -44,15 +54,26 @@ public sealed class TestAuthHandler : AuthenticationHandler<TestAuthSchemeOption
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        var email = Request.Headers[TestAuthDefaults.EmailHeader].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            email = "test@localhost";
+        }
+
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
             new Claim(AuthConstants.ProviderClaimType, TestAuthProvider.Value),
             new Claim(ClaimTypes.Name, "Test User"),
-            new Claim(ClaimTypes.Email, "test@localhost")
+            new Claim(ClaimTypes.Email, email)
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
+
+        if (Request.Headers.ContainsKey(TestAuthDefaults.MfaVerifiedHeader))
+        {
+            identity.AddClaim(new Claim(QuickShare.Features.Auth.Totp.MfaSession.VerifiedClaimType, "1"));
+        }
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
 

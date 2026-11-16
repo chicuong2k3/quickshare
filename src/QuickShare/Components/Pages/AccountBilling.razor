@@ -1,44 +1,60 @@
 @layout MainLayout
 @page "/account/billing"
 @attribute [Authorize]
-@attribute [StreamRendering]
 @using QuickShare.Data
 @using QuickShare.Features.Payments
 @using QuickShare.Features.Payments.Subscriptions
 @using QuickShare.Infrastructure.Caching
 @using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.Extensions.Localization
 @inject AppDbContext Db
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IAntiforgery Antiforgery
 
 <PageTitle>@Loc["billing_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
     <section class="hero">
-        <span class="tag">@Loc["billing_h1"]</span>
-        <h1 class="db-h1">@Loc["billing_h1"]</h1>
+        <h1 class="text-3xl font-semibold">@Loc["billing_h1"]</h1>
     </section>
 
-    <section class="billing-body">
+    <AccountTabs Current="@RoutePaths.AccountBilling" />
+
+    <section class="billing-body" id="billing-body">
         @if (billing is null)
         {
-            <div class="loading">
-                <p class="db-text-muted">@Loc["billing_loading"]</p>
-            </div>
+            <p class="text-muted-foreground">@Loc["billing_loading"]</p>
         }
         else
         {
+            @if (subscription?.IsInDunningGrace == true && subscription.DunningGraceEndsAt is { } graceEnd)
+            {
+                <div id="billing-dunning-banner" class="mb-5 flex flex-wrap items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-5 py-4" role="alert">
+                    <strong>@Loc["dunning_banner_title"]</strong>
+                    <span class="text-sm text-muted-foreground">@string.Format(Loc["dunning_banner_sub"], graceEnd.ToString("yyyy-MM-dd"))</span>
+                    <Button Href="@RoutePaths.Upgrade" Size="sm" class="ml-auto" data-ai-action="billing.dunning.recover">@Loc["dunning_banner_cta"]</Button>
+                </div>
+            }
+            @if (trialDaysLeft is { } daysLeft)
+            {
+                <div class="mb-5 flex flex-wrap items-center gap-3 rounded-md border bg-card px-5 py-4" role="status">
+                    <strong>@Loc["trial_banner_title"]</strong>
+                    <span class="text-sm text-muted-foreground">@Loc["trial_banner_sub", daysLeft]</span>
+                    <Button Href="/pricing" Size="sm" class="ml-auto" data-ai-action="billing.trial.convert">@Loc["billing_btn_upgrade"]</Button>
+                </div>
+            }
             <div class="summary-card">
                 <div class="summary-card__head">
-                    <h2 class="db-h2">@billing.PlanDisplay Plan</h2>
-                    <p class="db-text-muted">@planDescription</p>
+                    <h2 class="text-2xl font-semibold">@billing.PlanDisplay @Loc["billing_plan_suffix"]</h2>
+                    <p class="text-muted-foreground">@planDescription</p>
                 </div>
                 <div class="summary-card__price">
                     <span class="price-amount">@planPrice</span>
-                    <span class="price-period db-text-muted">@billingPeriodLabel</span>
+                    <span class="price-period text-muted-foreground">@billingPeriodLabel</span>
                 </div>
                 <div class="summary-card__features">
                     @foreach (var feature in planFeatures)
@@ -50,28 +66,61 @@
                     }
                 </div>
 
-                @if (billing.Plan == PlanTierLimits.Free)
+                @if (billing.Plan == PlanTierLimits.Free && subscription?.IsPaused != true)
                 {
-                    <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1.5rem">@Loc["billing_btn_upgrade"]</a>
+                    <Button Href="/pricing" class="mt-6 w-full">@Loc["billing_btn_upgrade"]</Button>
                 }
                 else
                 {
                     @if (subscription?.Status == SubscriptionStatus.Cancelled)
                     {
-                        <p class="db-text-warning" style="margin-top:1rem">
+                        <p class="mt-4 text-muted-foreground">
                             @string.Format(Loc["billing_cancelled"], subscription.CurrentPeriodEnd.ToString("MMM dd, yyyy"))
                         </p>
-                        <a href="/pricing" class="db-btn db-btn--primary" style="width:100%;margin-top:1rem">@Loc["billing_btn_renew"]</a>
+                        <Button Href="/pricing" class="mt-4 w-full">@Loc["billing_btn_renew"]</Button>
+                    }
+                    else if (subscription?.IsPaused == true)
+                    {
+                        <p class="mt-4 text-muted-foreground">
+                            @Loc["billing_paused", subscription.PausedDaysBanked]
+                        </p>
+                        <div class="summary-card__actions">
+                            <form method="post" style="display:inline" @formname="billing-resume" @onsubmit="HandleSubmit">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="Action" value="@SubscriptionActionResume" />
+                                <Button Type="submit">@Loc["billing_btn_resume"]</Button>
+                            </form>
+                        </div>
                     }
                     else
                     {
                         <div class="summary-card__actions">
-                            <a href="/pricing" class="db-btn db-btn--secondary">@Loc["billing_btn_change"]</a>
-                            <form method="post" style="display:inline">
+                            <Button Href="/pricing" Variant="secondary">@Loc["billing_btn_change"]</Button>
+
+                            @* A hold is offered before the exit, not hidden behind it: somebody
+                               taking a break should not have to cancel to stop paying. *@
+                            <form method="post" style="display:inline" @formname="billing-pause" @onsubmit="HandleSubmit">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="Action" value="@SubscriptionActionPause" />
+                                <Button Type="submit" Variant="secondary">@Loc["billing_btn_pause"]</Button>
+                            </form>
+
+                            <form method="post" style="display:inline" @formname="billing-cancel" @onsubmit="HandleSubmit">
+                                <AntiforgeryToken />
                                 <input type="hidden" name="Action" value="@SubscriptionActionCancel" />
-                                <button type="submit" class="db-btn db-btn--ghost db-btn--danger">
+                                <label class="block text-sm font-medium" for="cancel-reason">@Loc["billing_cancel_reason"]</label>
+                                <NativeSelect id="cancel-reason" name="Reason">
+                                    @foreach (var reason in CancellationReasons.All)
+                                    {
+                                        <NativeSelectOption value="@reason">@Loc[$"billing_reason_{reason}"]</NativeSelectOption>
+                                    }
+                                </NativeSelect>
+                                <label class="block text-sm font-medium" for="cancel-feedback">@Loc["billing_cancel_feedback"]</label>
+                                <Textarea id="cancel-feedback" name="Feedback" rows="2"
+                                          maxlength="@Subscription.CancellationFeedbackMaxLength" />
+                                <Button Type="submit" Variant="destructive">
                                     @Loc["billing_btn_cancel"]
-                                </button>
+                                </Button>
                             </form>
                         </div>
                     }
@@ -79,11 +128,11 @@
             </div>
 
             <div class="history">
-                <h2 class="db-h2">@Loc["billing_history_title"]</h2>
+                <h2 class="text-2xl font-semibold">@Loc["billing_history_title"]</h2>
 
                 @if (billing.Events.Count == 0)
                 {
-                    <p class="db-text-muted">@Loc["billing_history_empty"]</p>
+                    <p class="text-muted-foreground">@Loc["billing_history_empty"]</p>
                 }
                 else
                 {
@@ -94,7 +143,7 @@
                                 <div class="timeline-item__dot @eventDotClass(evt.EventType)"></div>
                                 <div class="timeline-item__content">
                                     <div class="timeline-item__label">@evt.EventLabel</div>
-                                    <div class="timeline-item__meta db-text-muted">
+                                    <div class="timeline-item__meta text-muted-foreground">
                                         @evt.CreatedAt.ToString("MMM dd, yyyy")
                                         @if (evt.Amount > 0)
                                         {
@@ -103,7 +152,7 @@
                                     </div>
                                     @if (!string.IsNullOrEmpty(evt.InvoiceUrl))
                                     {
-                                        <a href="@evt.InvoiceUrl" target="_blank" class="db-link">@Loc["billing_view_receipt"]</a>
+                                        <a href="@evt.InvoiceUrl" target="_blank" rel="noopener noreferrer" class="text-primary underline">@Loc["billing_view_receipt"]</a>
                                     }
                                 </div>
                             </div>
@@ -118,9 +167,12 @@
 
 @code {
     private const string SubscriptionActionCancel = "cancel";
+    private const string SubscriptionActionPause = "pause";
+    private const string SubscriptionActionResume = "resume";
 
-    private BillingHistoryResponse? billing;
-    private Subscription? subscription;
+private BillingHistoryResponse? billing;
+private Subscription? subscription;
+private int? trialDaysLeft;
 
     private string planPrice => (billing?.Plan, billingPeriod) switch
     {
@@ -164,27 +216,100 @@
         _ => "dot--default"
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadBillingAsync();
+
+    private async Task LoadBillingAsync()
     {
+        var ctx = HttpContextAccessor.HttpContext!;
         var ct = CancellationToken.None;
-        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, ct);
+        var user = await ctx.User.GetUserAsync(Db, ct);
+        billing = await BillingHistoryService.GetForUserAsync(user, Db, Loc, ct);
+        subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
+        trialDaysLeft = await SubscriptionService.GetTrialDaysLeftAsync(user, Db, ct);
+    }
 
-        if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(HttpContextAccessor.HttpContext.Request.Method))
+    private async Task HandleSubmit()
+    {
+        var ctx = HttpContextAccessor.HttpContext!;
+
+        var ct = CancellationToken.None;
+        var user = await ctx.User.GetUserAsync(Db, ct);
+
+        try
         {
-            var form = await HttpContextAccessor.HttpContext.Request.ReadFormAsync();
-            if (form["Action"] == SubscriptionActionCancel)
-            {
-                await SubscriptionService.CancelAsync(user, Db, ct);
-                await Db.SaveChangesAsync(ct);
-
-                // Plan row changed (kept active until CurrentPeriodEnd) and the
-                // PaymentEvent history gained an entry — evict cached copies so
-                // the billing page below renders the fresh state instantly.
-                await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
-            }
+            await Antiforgery.ValidateRequestAsync(ctx);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
         }
 
-        billing = await BillingHistoryService.GetForUserAsync(user, Db, ct);
-        subscription = await SubscriptionService.GetCurrentAsync(user, Db, ct);
+        var form = await ctx.Request.ReadFormAsync(ct);
+        var action = form["Action"].ToString();
+
+        if (action == SubscriptionActionPause || action == SubscriptionActionResume)
+        {
+            await HandleHoldAsync(user, action == SubscriptionActionPause, ct);
+            await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+        }
+        else if (action == SubscriptionActionCancel)
+        {
+            var cancelled = await SubscriptionService.CancelAsync(user, Db, ct);
+
+            // Recorded with the exit (issue #174). A churn number without a reason tells you
+            // that people left, which you already knew.
+            if (cancelled is not null)
+            {
+                cancelled.CancellationReason = CancellationReasons.Normalize(form["Reason"].ToString());
+                var feedback = form["Feedback"].ToString().Trim();
+                cancelled.CancellationFeedback = feedback.Length == 0
+                    ? null
+                    : feedback[..Math.Min(feedback.Length, Subscription.CancellationFeedbackMaxLength)];
+            }
+
+            await Db.SaveChangesAsync(ct);
+
+            // Evict cached user and payment history after the subscription changes.
+            await UserCacheInvalidator.EvictAsync(Db, user.Id, ct);
+        }
+
+        await LoadBillingAsync();
     }
+
+    /// <summary>
+    /// Puts the subscription on hold or lifts it (issue #229).
+    ///
+    /// The plan follows the hold: paused means Free, because nothing is being charged for.
+    /// </summary>
+    private async Task HandleHoldAsync(User user, bool pause, CancellationToken ct)
+    {
+        var current = await Db.Subscriptions
+            .Where(s => s.UserId == user.Id)
+            .OrderByDescending(s => s.CurrentPeriodEnd)
+            .FirstOrDefaultAsync(ct);
+
+        if (current is null)
+            return;
+
+        var now = DateTime.UtcNow;
+        var changed = pause
+            ? SubscriptionLifecycle.Pause(current, now)
+            : SubscriptionLifecycle.Resume(current, now);
+
+        if (!changed)
+            return;
+
+        var plan = pause ? PlanTierLimits.Free : current.Plan;
+        await Db.Users
+            .Where(u => u.Id == user.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(u => u.Plan, plan)
+                .SetProperty(u => u.UpdatedAt, now), ct);
+
+        user.Plan = plan;
+        await Db.SaveChangesAsync(ct);
+        await SubscriptionService.PushPlanToWorkspaceAsync(user.Id, Db, ct);
+    }
+
 }

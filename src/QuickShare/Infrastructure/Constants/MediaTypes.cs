@@ -6,4 +6,5 @@ public static class MediaTypes
     public const string Json = "application/json";
     public const string ProblemJson = "application/problem+json";
     public const string OctetStream = "application/octet-stream";
+    public const string Calendar = "text/calendar";
 }

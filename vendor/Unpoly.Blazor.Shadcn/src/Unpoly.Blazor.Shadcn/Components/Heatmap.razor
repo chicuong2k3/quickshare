@@ -1,0 +1,274 @@
+@inherits UiComponentBase
+
+@* Heatmap — a calendar-shaped grid of intensity cells, one per value, oldest first. By default
+   the values fill row by row, Columns to a row; with Flow="columns" they fill top to bottom,
+   Columns to a column — GitHub's contribution layout, where Columns="7" makes each column a week
+   and a year reads left to right. Use it when the question is "how much, and
+   when": reviews a day, minutes practised, commits a day. A handful of values reads better as a
+   plain list, a table or a Chart — a grid spends a whole column of pixels to say what one number
+   says in a word.
+
+   Colour is never the only carrier. Every cell holds its own count as real text, the scale is
+   labelled, and the buckets are derived from the series itself rather than from fixed thresholds,
+   so the same component serves a quiet app and a busy one. The values are deliberately date-less:
+   the caller knows what a day means, the grid only knows the order — and when the caller wants
+   the cells to say which day, it passes Labels rather than the grid guessing at a calendar. *@
+
+<div data-slot="heatmap"
+     class="@Classes"
+     role="group"
+     aria-label="@EffectiveAriaLabel"
+     @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <p data-slot="heatmap-title" class="mb-1.5 text-sm font-medium">@Title</p>
+    }
+    <div data-slot="heatmap-grid"
+         role="list"
+         class="grid"
+         style="@GridStyle">
+        @for (var index = 0; index < Count; index++)
+        {
+            var value = ValueAt(index);
+            <div data-slot="heatmap-cell"
+                 role="listitem"
+                 class="@CellClass(LevelOf(value))"
+                 style="@CellStyle"
+                 title="@CellText(index, value)">
+                <span class="sr-only">@CellText(index, value)</span>
+            </div>
+        }
+    </div>
+    @if (ShowLegend)
+    {
+        <div data-slot="heatmap-legend" class="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>Less</span>
+            <span class="flex items-center gap-0.5" aria-hidden="true">
+                @for (var step = 0; step < Opacities.Length; step++)
+                {
+                    <span class="@CellClass(step) size-2"></span>
+                }
+            </span>
+            <span>More</span>
+            <span class="sr-only">Colour scale from low to high @ValueLabel.</span>
+        </div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>The series itself, oldest first. One cell per entry, so the length of the list is
+    /// the length of the calendar. Negatives are read as zero rather than dropped, because a
+    /// negative count is a data bug and a missing cell would hide it.</summary>
+    [Parameter] public IReadOnlyList<int> Values { get; set; } = Array.Empty<int>();
+
+    /// <summary>A visible heading above the grid. Omit it when something above already says what
+    /// the grid is; the <see cref="AriaLabel"/> covers the assistive technology either way.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>What the grid shows, for anything that cannot see it. The grid is a group of
+    /// lists, so without this a screen reader announces an unlabelled run of numbers.</summary>
+    [Parameter] public string? AriaLabel { get; set; } = "Activity";
+
+    /// <summary>How many cells make one line of the grid. With <see cref="Flow"/> <c>rows</c> it is
+    /// the number of columns, filled left to right; with <c>columns</c> it is how many rows tall
+    /// each column is, filled top to bottom. Seven is a week either way — and a study-streak
+    /// calendar reads far better as columns of weeks than as one long row.</summary>
+    [Parameter] public int Columns { get; set; } = 7;
+
+    /// <summary><c>rows</c> — the default — fills the grid row by row, <see cref="Columns"/> cells
+    /// to a row. <c>columns</c> fills it top to bottom, <see cref="Columns"/> cells to a column,
+    /// and adds columns to the right as the series grows: the GitHub contribution layout, where a
+    /// year of days with <c>Columns="7"</c> is 53 week-columns read left to right. Anything else is
+    /// read as <c>rows</c>.</summary>
+    [Parameter] public string Flow { get; set; } = "rows";
+
+    /// <summary>Space between cells in pixels. It is a number rather than a gap class so a caller
+    /// can place month labels over a column-flow grid at the exact pitch of one column —
+    /// <see cref="CellSize"/> plus this — without measuring the rendered grid.</summary>
+    [Parameter] public int Gap { get; set; } = 2;
+
+    /// <summary>Edge length of a cell in pixels. A dozen reads as texture; 8 is legible as a
+    /// grid even on a phone; past about 20 the calendar outgrows the panel it sits in.</summary>
+    [Parameter] public int CellSize { get; set; } = 12;
+
+    /// <summary>The Tailwind background utility the ramp scales, without an alpha step —
+    /// <c>bg-primary</c>, <c>bg-emerald-500</c>, <c>bg-muted</c>. The five intensity levels are
+    /// this token at <c>/10 /30 /50 /70 /90</c>, so the ramp follows the light/dark theme
+    /// instead of pinning hex values that go wrong in one of them.</summary>
+    [Parameter] public string? ColorRamp { get; set; }
+
+    /// <summary>Print the "Less — More" scale under the grid. It is text, not a tooltip, so the
+    /// ramp stays readable with no colour perception; turn it off only when another legend on the
+    /// page already explains this grid.</summary>
+    [Parameter] public bool ShowLegend { get; set; } = true;
+
+    /// <summary>The plural noun for one unit of the series — <c>reviews</c>, <c>minutes</c>. It
+    /// lands in every cell's text, so a cell reads as "Day 12: 8 reviews" rather than a bare 8
+    /// with an unknown unit. A trailing <c>s</c> is dropped for the count of one.</summary>
+    [Parameter] public string? ValueLabel { get; set; } = "items";
+
+    /// <summary>A name per cell, in the same order as <see cref="Values"/> — "Mon 3 Mar",
+    /// "Week 12". When a cell has one, its text reads "Mon 3 Mar: 8 reviews." instead of
+    /// "Day 12: 8 reviews.", which is what makes a date-shaped grid say which date. A shorter list
+    /// than the series is allowed: the cells past its end fall back to "Day N".</summary>
+    [Parameter] public IReadOnlyList<string>? Labels { get; set; }
+
+    /// <summary>The ceiling the five steps are cut from, in place of the busiest cell of this
+    /// series. Give two heatmaps the same value and they share one scale, so a quiet month next to
+    /// a busy one looks quiet rather than being stretched to the same darkest shade. Values above
+    /// it land on the darkest step. Null, zero or less means "derive it from the series".</summary>
+    [Parameter] public int? Max { get; set; }
+
+    /// <summary>The corner utility for every cell and legend swatch, as a LITERAL Tailwind class
+    /// — <c>rounded-sm</c>, <c>rounded-full</c>, <c>rounded-none</c>. It is not assembled from a
+    /// number on purpose: Tailwind only emits the classes it can read in a scanned file, so pass
+    /// the whole class as written text at the call site, never an interpolated one.</summary>
+    [Parameter] public string CellRadius { get; set; } = "rounded-[2px]";
+
+    static System.Globalization.CultureInfo Inv => System.Globalization.CultureInfo.InvariantCulture;
+
+    /// <summary>Every number that reaches the DOM is written in invariant culture. A locale that
+    /// separates decimals with a comma would make <c>repeat(7, 12,5px)</c> an invalid
+    /// grid-template and the browser drops the whole track list — the cells stack in one column
+    /// with no error anywhere.</summary>
+    static string N(int value) => value.ToString(Inv);
+
+    /// <summary>Five steps, the conventional ramp. The first is near-empty rather than truly
+    /// empty so a day with no activity still reads as a day that exists.</summary>
+    static readonly string[] Opacities = { "/10", "/30", "/50", "/70", "/90" };
+
+    // A column narrower than a cell is not a column, and a negative track count is an invalid
+    // grid-template the browser refuses outright, so both are floored.
+    int SafeColumns => Math.Max(1, Columns);
+
+    int SafeCellSize => Math.Max(1, CellSize);
+
+    int Count => Values?.Count ?? 0;
+
+    /// <summary>Reads one cell defensively. A caller can hand over a null list or trim the
+    /// series between renders, and a calendar that throws while it is being asked what it shows
+    /// is worse than one that shows a blank cell.</summary>
+    int ValueAt(int index)
+    {
+        var values = Values;
+        return values is not null && index < values.Count ? values[index] : 0;
+    }
+
+    /// <summary>The busiest cell in the series, negatives ignored. This is the ceiling the
+    /// buckets are cut from, so the ramp is relative to this calendar and not to a round number
+    /// the caller has to keep in step with the data.</summary>
+    int MaxValue
+    {
+        get
+        {
+            // A caller-supplied ceiling wins, which is how two calendars share one scale. A
+            // non-positive one is no ceiling at all, so it falls through to the series rather than
+            // flattening every cell to empty.
+            if (Max is > 0)
+            {
+                return Max.Value;
+            }
+
+            var values = Values;
+            if (values is null)
+            {
+                return 0;
+            }
+
+            var max = 0;
+            foreach (var value in values)
+            {
+                if (value > max)
+                {
+                    max = value;
+                }
+            }
+
+            return max;
+        }
+    }
+
+    /// <summary>Which of the five steps a value lands on: zero for a day with nothing, then four
+    /// equal bands of the range up to <see cref="MaxValue"/>. A maximum of zero or less has no
+    /// range to divide by, so the series stays flat and empty rather than scaling by nothing.</summary>
+    int LevelOf(int value)
+    {
+        var max = MaxValue;
+        if (max <= 0 || value <= 0)
+        {
+            return 0;
+        }
+
+        // long, because a large count times three would otherwise wrap negative and land the
+        // busiest day on the faintest step.
+        return (int)Math.Clamp(1L + (long)value * 3 / max, 1L, 4L);
+    }
+
+    string Ramp => string.IsNullOrWhiteSpace(ColorRamp) ? "bg-primary" : ColorRamp;
+
+    // A blank CellRadius would leave square cells with no say in it; falling back to the default
+    // keeps the look a caller who passed "" almost certainly did not mean to change.
+    string Radius => string.IsNullOrWhiteSpace(CellRadius) ? "rounded-[2px]" : CellRadius;
+
+    string CellClass(int level) => Cn(Ramp + Opacities[level], Radius);
+
+    // The track list and the cell edge are inline styles, not Tailwind classes, and that is the
+    // one place this component spends a style attribute: Tailwind only emits the classes it can
+    // see in a scanned file, so a class name assembled from a parameter at render time is never
+    // generated and the grid collapses to one column in the built app while looking perfect in
+    // dev. The numbers go through N so a comma-decimal locale cannot invalidate the track list.
+    string CellStyle => $"width: {CellSizeText}px; height: {CellSizeText}px";
+
+    // Column flow fixes the ROW count and lets columns be created implicitly, each exactly one
+    // cell wide — which is what keeps a 53-week year from being squeezed into the parent's width
+    // or stretched across it. Row flow is the original track list, unchanged.
+    string GridStyle => IsColumnFlow
+        ? $"grid-auto-flow: column; grid-template-rows: repeat({ColumnsText}, {CellSizeText}px); grid-auto-columns: {CellSizeText}px; gap: {GapText}px"
+        : $"grid-template-columns: repeat({ColumnsText}, {CellSizeText}px); gap: {GapText}px";
+
+    bool IsColumnFlow => string.Equals(Flow?.Trim(), "columns", StringComparison.OrdinalIgnoreCase);
+
+    // A negative gap is an invalid declaration the browser drops, which would quietly fall back to
+    // no gap at all; zero is a legitimate, deliberate choice and is kept.
+    string GapText => N(Math.Max(0, Gap));
+
+    string ColumnsText => N(SafeColumns);
+    string CellSizeText => N(SafeCellSize);
+
+    string EffectiveAriaLabel => string.IsNullOrWhiteSpace(AriaLabel) ? "Activity" : AriaLabel;
+
+    /// <summary>"reviews" minus the s, so the count of one is not "1 reviews". Only a trailing s is
+    /// removed, which covers the nouns this is asked for and leaves anything else alone.</summary>
+    string Singular
+    {
+        get
+        {
+            var noun = ValueLabel;
+            return noun is { Length: > 1 } && noun.EndsWith("s", StringComparison.Ordinal)
+                ? noun[..^1]
+                : noun ?? "items";
+        }
+    }
+
+    /// <summary>The cell's whole reading, count and unit and position together. It is the
+    /// <c>title</c> a pointer user sees on hover and the text a screen reader reads, which is
+    /// what keeps the grid from being a picture of numbers in five shades of one colour.</summary>
+    string CellText(int index, int value) =>
+        $"{CellName(index)}: {N(Math.Max(0, value))} {(value == 1 ? Singular : ValueLabel)}.";
+
+    /// <summary>The caller's name for the cell where there is one, "Day N" otherwise. A blank
+    /// label is treated as missing: ": 8 reviews." would be a cell announcing a count of
+    /// something that happened nowhere.</summary>
+    string CellName(int index)
+    {
+        var labels = Labels;
+        return labels is not null && index < labels.Count && !string.IsNullOrWhiteSpace(labels[index])
+            ? labels[index]
+            : $"Day {N(index + 1)}";
+    }
+
+    // w-fit keeps the fixed-width tracks from being stretched by a wide parent, and flex-col
+    // stacks the title, grid and legend in the order they are read.
+    string Classes => Cn("flex w-fit flex-col", Class);
+}

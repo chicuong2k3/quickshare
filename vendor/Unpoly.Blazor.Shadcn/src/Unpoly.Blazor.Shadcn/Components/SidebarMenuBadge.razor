@@ -1,0 +1,22 @@
+@inherits UiComponentBase
+
+@* A count on a row. aria-hidden by default: "Inbox 12" reads well, but the badge is usually
+   already in the row's own accessible name, and hearing the number twice is worse than not
+   styling it at all. Pass AriaHidden="false" when the number is the only place it appears. *@
+
+<div data-slot="sidebar-menu-badge" aria-hidden="@(AriaHidden ? "true" : null)" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    [Parameter] public bool AriaHidden { get; set; } = true;
+
+    const string Base =
+        "pointer-events-none absolute end-1 flex h-5 min-w-5 items-center justify-center " +
+        "rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none " +
+        "peer-hover/menu-button:text-sidebar-accent-foreground " +
+        "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground " +
+        "peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 " +
+        "peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden";
+
+    string Classes => Cn(Base, Class);
+}

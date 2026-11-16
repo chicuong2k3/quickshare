@@ -1,0 +1,99 @@
+@page "/account/support"
+@layout MainLayout
+@attribute [Authorize]
+@using QuickShare.Features.Support
+@inject AppDbContext Db
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+<PageTitle>@Loc["support_chat_title"]</PageTitle>
+
+<Card id="support-chat-card" class="my-4 w-full max-w-2xl p-6">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+            <h1 class="text-xl font-semibold">@Loc["support_chat_title"]</h1>
+            <p class="mt-1 text-sm text-muted-foreground">@(isPaid ? Loc["support_chat_sub_priority"] : Loc["support_chat_sub_free"])</p>
+        </div>
+        @if (thread is not null)
+        {
+            <span id="support-ticket-badge" class="rounded border bg-muted px-2.5 py-1 font-mono text-xs">@thread.TicketNumber · @thread.Status</span>
+        }
+    </div>
+
+    <div id="support-chat-messages" class="mt-4 max-h-96 space-y-3 overflow-y-auto rounded-md border bg-muted/20 p-4">
+        @if (messages.Count == 0)
+        {
+            <p class="text-sm text-muted-foreground">@Loc["support_chat_empty"]</p>
+        }
+        else
+        {
+            @foreach (var m in messages)
+            {
+                <div class="rounded-md border bg-background p-3 text-sm">
+                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                        <strong>@m.SenderName</strong>
+                        <time datetime="@m.CreatedAt.ToString("o")">@m.CreatedAt.ToLocalTime().ToString("g")</time>
+                    </div>
+                    <p class="mt-1 whitespace-pre-wrap">@m.Body</p>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="mt-4 space-y-3">
+        <label class="block space-y-1 text-sm" for="support-chat-input">
+            <span class="font-medium">@Loc["support_chat_message_label"]</span>
+            <Textarea id="support-chat-input" rows="3" maxlength="@SupportChatThread.MessageMaxLength" />
+        </label>
+        <div class="flex flex-wrap gap-2">
+            <button id="support-chat-send-btn" type="button" data-slot="button" data-variant="default" class="btn" onclick="window.qsSupportChat.send()" data-ai-action="support.chat.send">@Loc["support_chat_send_btn"]</button>
+            <button id="support-chat-escalate-btn" type="button" data-slot="button" data-variant="outline" class="btn" onclick="window.qsSupportChat.escalate()" data-ai-action="support.chat.escalate">@Loc["support_chat_escalate_btn"]</button>
+        </div>
+    </div>
+</Card>
+
+<script>
+    window.qsSupportChat = {
+        send: function () {
+            var input = document.getElementById('support-chat-input');
+            if (!input || !input.value.trim()) return;
+            fetch('/api/support/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: input.value.trim() })
+            }).then(function (r) { if (r.ok) window.location.reload(); });
+        },
+        escalate: function () {
+            fetch('/api/support/chat/escalate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            }).then(function (r) { if (r.ok) window.location.reload(); });
+        }
+    };
+</script>
+
+@code {
+    private bool isPaid;
+    private SupportChatThread? thread;
+    private List<SupportChatMessage> messages = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
+        isPaid = user.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
+        thread = await Db.SupportChatThreads
+            .AsNoTracking()
+            .Where(t => t.UserId == user.Id)
+            .OrderByDescending(t => t.LastMessageAt)
+            .FirstOrDefaultAsync();
+        if (thread is not null)
+        {
+            messages = await Db.SupportChatMessages
+                .AsNoTracking()
+                .Where(m => m.ThreadId == thread.Id)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
+        }
+    }
+}

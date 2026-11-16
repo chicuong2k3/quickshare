@@ -1,0 +1,10 @@
+@inherits UiComponentBase
+
+<Separator data-slot="button-group-separator" Orientation="@Orientation"
+           Class="@Cn("relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto", Class)"
+           @attributes="AdditionalAttributes" />
+
+@code {
+    /// <summary>vertical by default: a button group is a row, so its divider is upright.</summary>
+    [Parameter] public string Orientation { get; set; } = "vertical";
+}

@@ -28,184 +28,386 @@
             );
         }
     }
-    var currentPlanRank = GetPlanRank(currentUserPlan);
+    var currentPlanRank = GetPlanRank(currentUserPlan ?? PlanTierLimits.Free);
 
-    var currency = Config[PricingKeys.Currency] ?? "$";
-    var proMonthly = FormatPrice(Config.GetValue<int>(PricingKeys.ProMonthly, 9), currency);
-    var proYearly = FormatPrice(Config.GetValue<int>(PricingKeys.ProYearly, 77), currency);
-    var studioMonthly = FormatPrice(Config.GetValue<int>(PricingKeys.StudioMonthly, 29), currency);
-    var studioYearly = FormatPrice(Config.GetValue<int>(PricingKeys.StudioYearly, 239), currency);
+    var requestedCurrency = HttpContextAccessor.HttpContext?.Request.Query["currency"].FirstOrDefault();
+    var countryHeader = HttpContextAccessor.HttpContext?.Request.Headers["CF-IPCountry"].FirstOrDefault();
+    var cultureName = System.Globalization.CultureInfo.CurrentUICulture.Name;
+    var activeCurrency = QuickShare.Features.Payments.PlanCatalog.DetectCurrency(
+        requestedCurrency,
+        countryHeader,
+        cultureName,
+        Config[PricingKeys.Currency] ?? PricingKeys.CurrencyUsd);
+
+    var proMonthly = QuickShare.Features.Payments.PlanCatalog.FormatPrice(
+        QuickShare.Features.Payments.PlanCatalog.DefaultAmount(PlanTierLimits.Pro, false, activeCurrency), activeCurrency);
+    var proYearly = QuickShare.Features.Payments.PlanCatalog.FormatPrice(
+        QuickShare.Features.Payments.PlanCatalog.DefaultAmount(PlanTierLimits.Pro, true, activeCurrency), activeCurrency);
+    var studioMonthly = QuickShare.Features.Payments.PlanCatalog.FormatPrice(
+        QuickShare.Features.Payments.PlanCatalog.DefaultAmount(PlanTierLimits.Studio, false, activeCurrency), activeCurrency);
+    var studioYearly = QuickShare.Features.Payments.PlanCatalog.FormatPrice(
+        QuickShare.Features.Payments.PlanCatalog.DefaultAmount(PlanTierLimits.Studio, true, activeCurrency), activeCurrency);
+    var nowUtc = DateTime.UtcNow;
+    var activeCampaign = Db.PromoCodes.AsNoTracking().Where(p => p.RevokedAt == null && p.CampaignName != null && p.AutoApplyOnCheckout && (p.StartsAt == null || p.StartsAt <= nowUtc) && (p.ExpiresAt == null || p.ExpiresAt > nowUtc)).OrderByDescending(p => p.Value).FirstOrDefault();
 }
 
 <PageTitle>@Loc["pricing_title"]</PageTitle>
 
 <PageWrapper Variant="PageVariant.Padded">
 
+<div class="bp">
+
     @* HERO *@
     <section class="hero">
-        <span class="tag">@Loc["pricing_tag"]</span>
-        <h1 class="db-h1">@Loc["pricing_h1"]</h1>
-        <p class="db-p db-text-muted">@Loc["pricing_sub"]</p>
+        @* No eyebrow above the heading. *@
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["pricing_h1"]</h1>
+        <p class="text-muted-foreground">@Loc["pricing_sub"]</p>
     </section>
+
+    @if (activeCampaign is not null)
+    {
+        var claimHref = $"{RoutePaths.UpgradePro}&promo={activeCampaign.Code}";
+        <section id="pricing-campaign-banner" class="my-6">
+            <Card class="border-primary/40 bg-primary/5">
+                <CardContent class="flex flex-wrap items-center justify-between gap-3 py-4">
+                    <div>
+                        <span class="rounded bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">@activeCampaign.CampaignName</span>
+                        <strong class="ml-2 text-sm">@(activeCampaign.Description ?? activeCampaign.CampaignName)</strong>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs">
+                        <span>@Loc["campaign_code_label"]: <code id="pricing-campaign-code" class="rounded border bg-background px-2 py-0.5 font-mono font-bold">@activeCampaign.Code</code> (-@activeCampaign.Value%)</span>
+                        <Button Href="@claimHref" Size="sm" data-ai-action="pricing.campaign.claim">@Loc["campaign_claim_btn"]</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </section>
+    }
 
     @* BILLING TOGGLE + TIER CARDS (client-side toggle, no server round-trip) *@
-    <section id="pricing-body"
-             x-data="{ billing: '@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)' }"
-             x-effect="const u = new URL(window.location); billing === 'yearly' ? u.searchParams.set('billing','yearly') : u.searchParams.delete('billing'); history.replaceState({}, '', u)">
+    <section id="pricing-body" class="@(IsYearly ? "is-yearly" : "is-monthly")">
         <div class="toggle-wrap">
             <div class="toggle-group">
-                <button type="button"
-                        x-on:click="billing = 'monthly'"
-                        x-bind:class="billing === 'monthly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
-                    @Loc["pricing_monthly"]
-                </button>
-                <button type="button"
-                        x-on:click="billing = 'yearly'"
-                        x-bind:class="billing === 'yearly' ? 'db-btn db-btn--primary' : 'db-btn db-btn--ghost'">
+                @* Native links: the billing period is server state, carried in the URL,
+                   so the toggle works with JavaScript disabled. *@
+                <a href="@BillingHref(BillingPeriods.Monthly)" data-variant="@(IsYearly ? "ghost" : "default")">@Loc["pricing_monthly"]</a>
+                <a href="@BillingHref(BillingPeriods.Yearly)" data-variant="@(IsYearly ? "default" : "ghost")">
                     @Loc["pricing_yearly"]
                     <span class="tag">@Loc["pricing_save"]</span>
-                </button>
+                </a>
+            </div>
+            <div id="pricing-currency-selector" class="mt-3 flex items-center justify-center gap-2 text-xs">
+                <span class="text-muted-foreground">@Loc["pricing_currency_label"]:</span>
+                @foreach (var curr in QuickShare.Features.Payments.PlanCatalog.SupportedCurrencies)
+                {
+                    var isActive = string.Equals(curr, activeCurrency, StringComparison.OrdinalIgnoreCase);
+                    <a href="@($"{RoutePaths.Pricing}?currency={curr}")"
+                       data-currency="@curr"
+                       class="@(isActive ? "rounded border border-primary bg-primary px-2 py-0.5 font-semibold text-primary-foreground" : "rounded border px-2 py-0.5 text-muted-foreground hover:text-foreground")">
+                        @curr
+                    </a>
+                }
             </div>
         </div>
 
-        <div class="cards">
+        @* The board: three plans as columns, one row per fact. Same limits the comparison
+           table below reads, but in the order a sender actually decides. *@
+        <div class="board" role="table" aria-label="@Loc["pricing_compare_title"]">
+            <div class="board__head" role="row">
+                <div role="columnheader"><span class="lbl">@Loc["pricing_compare_feature"]</span></div>
+                <div role="columnheader"><span class="lbl">@Loc["pricing_free_name"]</span><b>@Loc["pricing_free_name"]</b></div>
+                <div role="columnheader" class="col--pro"><span class="lbl">@Loc["pricing_pro_name"]</span><b>@Loc["pricing_pro_name"]</b><span class="tag">@Loc["pricing_card_badge"]</span></div>
+                <div role="columnheader"><span class="lbl">@Loc["pricing_studio_name"]</span><b>@Loc["pricing_studio_name"]</b></div>
+            </div>
 
-            @* Free Plan *@
-            <div class="card">
-                <div class="card__head">
-                    <h3 class="db-h3">@Loc["pricing_free_name"]</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_free_desc"]</p>
-                </div>
-                <div class="card__price">
-                    <div class="price-amount">$0</div>
-                    <div class="price-period db-text-muted">@Loc["pricing_free_price_period"]</div>
-                </div>
+            <div class="brow brow--price" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_monthly"] / @Loc["pricing_yearly"]</span>
+                <span class="v" role="cell"><span class="amount">0</span><span class="unit">@Loc["pricing_free_price_period"]</span></span>
+                <span class="v" role="cell">
+                    <span class="amount p-m">@proMonthly</span>
+                    <span class="amount p-y">@proYearly</span>
+                    <span class="unit p-m">@Loc["pricing_pro_billed_monthly"]</span>
+                    <span class="unit p-y">@Loc["pricing_pro_billed_yearly"]</span>
+                </span>
+                <span class="v" role="cell">
+                    <span class="amount p-m">@studioMonthly</span>
+                    <span class="amount p-y">@studioYearly</span>
+                    <span class="unit p-m">@Loc["pricing_studio_billed_monthly"]</span>
+                    <span class="unit p-y">@Loc["pricing_studio_billed_yearly"]</span>
+                </span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_max_file"]</span>
+                <span class="v" role="cell">@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Free))</span>
+                <span class="v" role="cell">@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Pro))</span>
+                <span class="v" role="cell">@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Studio))</span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_monthly"]</span>
+                <span class="v" role="cell">@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Free))</span>
+                <span class="v" role="cell">@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Pro))</span>
+                <span class="v" role="cell">@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Studio))</span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_expiry"]</span>
+                <span class="v" role="cell">@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Free))</span>
+                <span class="v" role="cell">@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Pro))</span>
+                <span class="v" role="cell">@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Studio))</span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_downloads"]</span>
+                <span class="v" role="cell">@DownloadsLabel(PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free))</span>
+                <span class="v" role="cell">@DownloadsLabel(PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro))</span>
+                <span class="v" role="cell">@DownloadsLabel(PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio))</span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_password"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_scheduled"]</span>
+                <span class="v v--off" role="cell">@Loc["pricing_compare_no"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+            </div>
+
+            <div class="brow" role="row">
+                <span class="k" role="rowheader">@Loc["pricing_compare_noads"]</span>
+                <span class="v v--off" role="cell">@Loc["pricing_compare_no"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+            </div>
+        </div>
+
+        @* Actions sit on one line under the board: one primary, and only for a plan you do not own. *@
+        <div class="picks">
+            <div class="picks__label">@Loc["pricing_cta_title"]</div>
+            <div>
                 @if (!isAuthenticated)
                 {
-                    <a href="/login" class="db-btn db-btn--secondary">@Loc["btn_get_started"]</a>
+                    <Button Href="/login" Variant="secondary" class="picks__btn">@Loc["btn_get_started"]</Button>
                 }
-                <div class="features">
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_free_feat_size"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_free_feat_monthly"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_free_feat_expiry"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_free_feat_lossless"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_free_feat_e2e"]</span>
-                    </div>
-                </div>
+                else if (currentPlanRank == FreePlanRank)
+                {
+                    <span class="picks__own">@Loc["pricing_free_name"]</span>
+                }
             </div>
-
-            @* Pro Plan *@
-            <div class="card">
-                <div class="card__head">
-                    <h3 class="db-h3">@Loc["pricing_pro_name"]</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_pro_desc"]</p>
-                </div>
-                <div class="card__price">
-                    <div x-show="billing === 'monthly'" class="pricing-monthly">
-                        <div class="price-amount">@proMonthly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_pro_billed_monthly"]</div>
-                    </div>
-                    <div x-show="billing === 'yearly'" class="pricing-yearly">
-                        <div class="price-amount">@proYearly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_pro_billed_yearly"]</div>
-                    </div>
-                </div>
+            <div>
                 @if (currentPlanRank < ProPlanRank)
                 {
-                    <a href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)"
-                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=pro&billing=yearly' : '/upgrade?plan=pro')"
-                       class="db-btn db-btn--primary">@Loc["btn_start_free_trial"]</a>
+                    <Button Href="@(isAuthenticated ? RoutePaths.UpgradePro + (IsYearly ? "&billing=yearly" : string.Empty) : RoutePaths.Login)"
+                            class="picks__btn picks__btn--primary">@Loc["btn_start_free_trial"]</Button>
                 }
-                <div class="features">
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_pro_feat_size"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_pro_feat_monthly"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_pro_feat_expiry"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_pro_feat_password"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_pro_feat_noads"]</span>
-                    </div>
-                </div>
+                else
+                {
+                    <span class="picks__own">@Loc["pricing_pro_name"]</span>
+                }
             </div>
-
-            @* Studio Plan (Most Popular) *@
-            <div class="card card--popular">
-                <span class="card__badge">@Loc["pricing_card_badge"]</span>
-                <div class="card__head">
-                    <h3 class="db-h3">@Loc["pricing_studio_name"]</h3>
-                    <p class="db-text-muted" style="margin-top: 0.5rem">@Loc["pricing_studio_desc"]</p>
-                </div>
-                <div class="card__price">
-                    <div x-show="billing === 'monthly'" class="pricing-monthly">
-                        <div class="price-amount">@studioMonthly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_studio_billed_monthly"]</div>
-                    </div>
-                    <div x-show="billing === 'yearly'" class="pricing-yearly">
-                        <div class="price-amount">@studioYearly</div>
-                        <div class="price-period db-text-muted">@Loc["pricing_studio_billed_yearly"]</div>
-                    </div>
-                </div>
+            <div>
                 @if (currentPlanRank < StudioPlanRank)
                 {
-                    <a href="@(isAuthenticated ? RoutePaths.UpgradeStudio : RoutePaths.Login)"
-                       x-bind:href="(billing === 'yearly' ? '/upgrade?plan=studio&billing=yearly' : '/upgrade?plan=studio')"
-                       class="db-btn db-btn--primary">@Loc["btn_start_free_trial"]</a>
+                    <Button Href="@(isAuthenticated ? RoutePaths.UpgradeStudio + (IsYearly ? "&billing=yearly" : string.Empty) : RoutePaths.Login)"
+                            class="picks__btn">@Loc["btn_start_free_trial"]</Button>
                 }
-                <div class="features">
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_studio_feat_size"]</span>
+                else
+                {
+                    <span class="picks__own">@Loc["pricing_studio_name"]</span>
+                }
+            </div>
+        </div>
+
+        @* Phones: a table without columns tells nobody anything — one stacked block per plan. *@
+        <div class="stack">
+            @foreach (var (planName, planRank, monthly, yearly, isPro) in new (string Name, int Rank, string Monthly, string Yearly, bool IsPro)[]
+            {
+                (Loc["pricing_free_name"].Value, FreePlanRank, "0", "0", false),
+                (Loc["pricing_pro_name"].Value, ProPlanRank, proMonthly, proYearly, true),
+                (Loc["pricing_studio_name"].Value, StudioPlanRank, studioMonthly, studioYearly, false)
+            })
+            {
+                var plan = planRank == FreePlanRank ? PlanTierLimits.Free : planRank == ProPlanRank ? PlanTierLimits.Pro : PlanTierLimits.Studio;
+                var ctaClass = isPro ? "picks__btn picks__btn--primary" : "picks__btn";
+                <div class="plan @(isPro ? "plan--pro" : string.Empty)">
+                    <div class="plan__top">
+                        <b>@planName</b>
+                        <span>
+                            @if (planRank == FreePlanRank)
+                            {
+                                <span class="amount">0</span><span class="unit">@Loc["pricing_free_price_period"]</span>
+                            }
+                            else
+                            {
+                                <span class="amount p-m">@monthly</span>
+                                <span class="amount p-y">@yearly</span>
+                                <span class="unit p-m">@Loc["pricing_monthly"]</span>
+                                <span class="unit p-y">@Loc["pricing_yearly"]</span>
+                            }
+                        </span>
                     </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_studio_feat_monthly"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_studio_feat_expiry"]</span>
-                    </div>
-                    <div class="feature">
-                        <svg class="feature__icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span>@Loc["pricing_studio_feat_api"]</span>
+                    <div class="plan__r"><span>@Loc["pricing_compare_max_file"]</span><b>@SizeLabel(PlanTierLimits.GetMaxFileSize(plan))</b></div>
+                    <div class="plan__r"><span>@Loc["pricing_compare_monthly"]</span><b>@SizeLabel(PlanTierLimits.GetMonthlyQuota(plan))</b></div>
+                    <div class="plan__r"><span>@Loc["pricing_compare_expiry"]</span><b>@DaysLabel(PlanTierLimits.GetMaxExpiry(plan))</b></div>
+                    <div class="plan__r"><span>@Loc["pricing_compare_downloads"]</span><b>@DownloadsLabel(PlanTierLimits.GetMaxDownloads(plan))</b></div>
+                    <div class="plan__cta">
+                        @if (planRank == FreePlanRank)
+                        {
+                            <Button Href="/login" Variant="secondary" class="picks__btn">@Loc["btn_get_started"]</Button>
+                        }
+                        else if (currentPlanRank < planRank)
+                        {
+                            <Button Href="@(isAuthenticated ? (planRank == ProPlanRank ? RoutePaths.UpgradePro : RoutePaths.UpgradeStudio) : RoutePaths.Login)" class="@ctaClass">@Loc["btn_start_free_trial"]</Button>
+                        }
+                        else
+                        {
+                            <span class="picks__own">@planName</span>
+                        }
                     </div>
                 </div>
-            </div>
-
+            }
         </div>
     </section>
 
+    @* Pricing calculator (issue #169) — client-side estimation from real PlanTierLimits *@
+    <section id="pricing-calculator" class="my-8" aria-labelledby="pricing-calc-title">
+        <Card>
+            <CardContent class="space-y-4 py-6">
+                <div>
+                    <h2 id="pricing-calc-title" class="text-2xl font-bold">@Loc["pricing_calc_title"]</h2>
+                    <p class="text-muted-foreground" style="margin-top: 0.25rem">@Loc["pricing_calc_sub"]</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                        <label for="calc-files" class="block text-sm font-medium">@Loc["pricing_calc_files_label"]</label>
+                        <Input id="calc-files" Type="number" min="1" max="10000" Value="20" oninput="window.quickSharePricingCalc && window.quickSharePricingCalc.update()" data-ai-action="pricing.calc.files" />
+                    </div>
+                    <div>
+                        <label for="calc-size-mb" class="block text-sm font-medium">@Loc["pricing_calc_size_label"]</label>
+                        <Input id="calc-size-mb" Type="number" min="1" max="102400" Value="250" oninput="window.quickSharePricingCalc && window.quickSharePricingCalc.update()" data-ai-action="pricing.calc.size" />
+                    </div>
+                    <div>
+                        <label for="calc-retention-days" class="block text-sm font-medium">@Loc["pricing_calc_retention_label"]</label>
+                        <Input id="calc-retention-days" Type="number" min="1" max="365" Value="7" oninput="window.quickSharePricingCalc && window.quickSharePricingCalc.update()" data-ai-action="pricing.calc.retention" />
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+                    <div>
+                        <span class="text-sm text-muted-foreground">@Loc["pricing_calc_volume_label"]: </span>
+                        <strong id="calc-volume-out">5.0 GB</strong>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-muted-foreground">@Loc["pricing_calc_recommend_label"]:</span>
+                        <strong id="calc-plan-out" data-free="@Loc["pricing_free_name"]" data-pro="@Loc["pricing_pro_name"]" data-studio="@Loc["pricing_studio_name"]">@Loc["pricing_free_name"]</strong>
+                        <Button id="calc-cta-btn" Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)" Size="sm">@Loc["btn_start_free_trial"]</Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    </section>
+    <script>
+        window.quickSharePricingCalc = {
+            update: function () {
+                var filesEl = document.getElementById('calc-files');
+                var sizeEl = document.getElementById('calc-size-mb');
+                var daysEl = document.getElementById('calc-retention-days');
+                var volOut = document.getElementById('calc-volume-out');
+                var planOut = document.getElementById('calc-plan-out');
+                var ctaBtn = document.getElementById('calc-cta-btn');
+                if (!filesEl || !sizeEl || !daysEl || !volOut || !planOut) return;
+                var files = Math.max(1, parseInt(filesEl.value || '1', 10));
+                var sizeMb = Math.max(1, parseFloat(sizeEl.value || '1'));
+                var days = Math.max(1, parseInt(daysEl.value || '1', 10));
+                var totalGb = (files * sizeMb) / 1024;
+                volOut.textContent = totalGb.toFixed(1) + ' GB';
+                var planKey = 'free';
+                if (totalGb > 200 || sizeMb > 10240 || days > 30) {
+                    planKey = 'studio';
+                } else if (totalGb > 15 || sizeMb > 2048 || days > 7) {
+                    planKey = 'pro';
+                }
+                planOut.textContent = planOut.getAttribute('data-' + planKey) || planKey;
+                if (ctaBtn) {
+                    ctaBtn.setAttribute('href', planKey === 'studio' ? '/upgrade?plan=studio' : '/upgrade?plan=pro');
+                }
+            }
+        };
+    </script>
+
+    @* Side-by-side comparison (issue #299) — real limits from PlanTierLimits, no fabricated features. *@
+    <section class="compare">
+        <h2 class="text-2xl font-bold compare__title">@Loc["pricing_compare_title"]</h2>
+        <div class="compare__scroll">
+            <Table class="compare__table">
+                <caption class="visually-hidden">@Loc["pricing_compare_title"]</caption>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead scope="col">@Loc["pricing_compare_feature"]</TableHead>
+                        <TableHead scope="col">@Loc["pricing_free_name"]</TableHead>
+                        <TableHead scope="col">@Loc["pricing_pro_name"]</TableHead>
+                        <TableHead scope="col">@Loc["pricing_studio_name"]</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_max_file"]</TableHead>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMaxFileSize(PlanTierLimits.Studio))</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_monthly"]</TableHead>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@SizeLabel(PlanTierLimits.GetMonthlyQuota(PlanTierLimits.Studio))</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_expiry"]</TableHead>
+                        <TableCell>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@DaysLabel(PlanTierLimits.GetMaxExpiry(PlanTierLimits.Studio))</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_downloads"]</TableHead>
+                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free)</TableCell>
+                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro)</TableCell>
+                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio)</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_password"]</TableHead>
+                        <TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_scheduled"]</TableHead>
+                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_alias"]</TableHead>
+                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_daily_cap"]</TableHead>
+                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHead scope="row">@Loc["pricing_compare_noads"]</TableHead>
+                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>
+    </section>
 
     @* FAQ *@
     <section class="faq">
         <div class="faq__head">
-            <h2 class="db-h2">@Loc["pricing_faq_title"]</h2>
-            <p class="db-text-muted" style="margin-top: 0.75rem">@Loc["pricing_faq_sub"]</p>
+            <h2 class="text-2xl font-bold">@Loc["pricing_faq_title"]</h2>
+            <p class="text-muted-foreground" style="margin-top: 0.75rem">@Loc["pricing_faq_sub"]</p>
         </div>
         @foreach (var (q, a) in faqs)
         {
@@ -216,27 +418,62 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                     </svg>
                 </summary>
-                <div class="faq-answer db-text-muted">@a</div>
+                <div class="faq-answer text-muted-foreground">@a</div>
             </details>
         }
+    </section>
+
+    <section id="pricing-education-discount" class="my-8" aria-labelledby="pricing-edu-title">
+        <Card>
+            <CardContent class="flex flex-wrap items-center justify-between gap-4 py-6">
+                <div class="space-y-1">
+                    <h2 id="pricing-edu-title" class="text-xl font-bold">@Loc["discount_edu_title"]</h2>
+                    <p class="text-sm text-muted-foreground">@Loc["discount_edu_sub"]</p>
+                </div>
+                <Button Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)" Variant="outline" data-ai-action="pricing.edu.apply">@Loc["discount_edu_cta"]</Button>
+            </CardContent>
+        </Card>
     </section>
 
     @* CTA *@
     <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
         <h3 class="cta__title">@Loc["pricing_cta_title"]</h3>
-        <p class="db-text-muted">@Loc["pricing_cta_sub"]</p>
-        <a href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
-           x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')"
-           class="db-btn db-btn--primary">@Loc["btn_get_started"]</a>
+        <p class="text-muted-foreground">@Loc["pricing_cta_sub"]</p>
+        <Button Href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
+           x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')">@Loc["btn_get_started"]</Button>
     </section>
+
+</div>
 
 </PageWrapper>
 
 @code {
+    private const long BytesPerGb = 1_073_741_824L;
+
     [SupplyParameterFromQuery]
     public string? Billing { get; set; }
 
+    /// <summary>Comparison-table cell for a byte limit; null = unlimited (issue #299).</summary>
+    private string SizeLabel(long? bytes)
+    {
+        if (bytes is not { } b) return Loc["pricing_compare_unlimited"];
+        const long bytesPerTb = BytesPerGb * 1024L;
+        return b >= bytesPerTb ? $"{b / bytesPerTb} TB" : $"{b / BytesPerGb} GB";
+    }
+
+    private string DownloadsLabel(int maxDownloads) =>
+        maxDownloads == int.MaxValue ? Loc["pricing_compare_unlimited"] : maxDownloads.ToString();
+
+    private string DaysLabel(TimeSpan expiry) =>
+        string.Format(Loc["pricing_compare_days"], (int)expiry.TotalDays);
+
     private bool IsYearly => string.Equals(Billing, BillingPeriods.Yearly, StringComparison.OrdinalIgnoreCase);
+
+    private string BillingHref(string period)
+    {
+        var query = period == BillingPeriods.Yearly ? $"?billing={BillingPeriods.Yearly}" : string.Empty;
+        return RoutePaths.Pricing + query;
+    }
     private const int FreePlanRank = 0;
     private const int ProPlanRank = 1;
     private const int StudioPlanRank = 2;

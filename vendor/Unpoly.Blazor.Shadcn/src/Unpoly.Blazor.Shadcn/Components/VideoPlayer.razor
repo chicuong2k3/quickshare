@@ -1,0 +1,30 @@
+@inherits UiComponentBase
+
+@* media-chrome Web Components provide playback UI on both static SSR and MAUI.
+   The video stays native media; controls are media-chrome's accessible custom elements. *@
+<media-controller data-slot="video-player" class="@Class"
+                  style="--media-primary-color:var(--primary);--media-secondary-color:var(--background);--media-text-color:var(--foreground);--media-background-color:var(--background);--media-control-hover-background:var(--accent);--media-font-family:var(--font-sans);--media-range-track-background:var(--border)"
+                  @attributes="AdditionalAttributes">
+    <video slot="media" src="@Src" poster="@Poster" autoplay="@Autoplay"
+           loop="@Loop" muted="@Muted" playsinline preload="@Preload">
+        @ChildContent
+    </video>
+    <media-control-bar>
+        <media-play-button></media-play-button>
+        <media-seek-backward-button></media-seek-backward-button>
+        <media-seek-forward-button></media-seek-forward-button>
+        <media-time-range></media-time-range>
+        <media-time-display show-duration></media-time-display>
+        <media-mute-button></media-mute-button>
+        <media-volume-range></media-volume-range>
+    </media-control-bar>
+</media-controller>
+
+@code {
+    [Parameter] public string? Src { get; set; }
+    [Parameter] public string? Poster { get; set; }
+    [Parameter] public bool Autoplay { get; set; }
+    [Parameter] public bool Loop { get; set; }
+    [Parameter] public bool Muted { get; set; }
+    [Parameter] public string Preload { get; set; } = "metadata";
+}

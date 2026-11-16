@@ -1,57 +1,69 @@
-# Task 1: P2PConnectionManager — P2PReceiverConnection + Receivers dictionary
+### Task 1: Data model — `UploadSession.SenderEmail` + `Delivery` sender-email fields + migration
 
 **Files:**
-- Modify: `src/QuickShare.Server/Middleware/P2PConnectionManager.cs`
+- Modify: `src/QuickShare/Data/Entities/UploadSession.cs`
+- Modify: `src/QuickShare/Data/Entities/Delivery.cs`
+- Create: `src/QuickShare/Data/Migrations/20260815XXXXXX_SenderEmailCapture.cs` (+ `.Designer.cs`, `AppDbContextModelSnapshot.cs` changes — generated)
 
 **Interfaces:**
-- Consumes: `P2PRoom` (existing class)
-- Produces: `P2PReceiverConnection` record, updated `P2PRoom.Receivers`, updated `ReceiverConnected`/`IsComplete` properties
+- Consumes: nothing (entity-only task).
+- Produces: `UploadSession.SenderEmail` (string?, nullable), `Delivery.SenderEmail` (string?, nullable), `Delivery.SenderEmailConfirmed` (bool), `Delivery.SenderEmailConsent` (bool). Used by Tasks 2, 4, 5, 6.
 
-### Step 1: Add P2PReceiverConnection record before P2PRoom
+- [ ] **Step 1: Add `SenderEmail` to `UploadSession`**
 
 ```csharp
-public sealed record P2PReceiverConnection
+namespace QuickShare.Data.Entities;
+
+[DynamicSort]
+public record UploadSession : BaseAuditEntity
 {
-    public string Id { get; init; } = string.Empty;
-    public WebSocket Socket { get; init; } = null!;
-    public DateTime JoinedAt { get; init; } = DateTime.UtcNow;
+    public Guid? SenderId { get; init; }
+    public string? SenderEmail { get; init; }
+    public string FileName { get; init; } = string.Empty;
+    // ...rest unchanged
 }
 ```
 
-### Step 2: Replace `Receiver` property with `Receivers` dictionary
+- [ ] **Step 2: Add sender-email fields to `Delivery`**
 
 ```csharp
-// Before
-public WebSocket? Receiver { get; set; }
-
-// After
-public ConcurrentDictionary<string, P2PReceiverConnection> Receivers { get; init; } = new(StringComparer.Ordinal);
+[DynamicSort]
+public record Delivery : BaseAuditEntity
+{
+    public Guid? SenderId { get; init; }
+    public string? SenderEmail { get; set; }
+    public bool SenderEmailConfirmed { get; set; }
+    public bool SenderEmailConsent { get; set; }
+    // ...rest unchanged
+}
 ```
 
-### Step 3: Update `ReceiverConnected` and `IsComplete`
+(`set`, not `init`, because Tasks 5/6 mutate `SenderEmailConfirmed`/`SenderEmailConsent` after creation.)
 
-```csharp
-// Before
-public bool ReceiverConnected => Receiver?.State == WebSocketState.Open;
-public bool IsComplete => SenderConnected && ReceiverConnected;
+- [ ] **Step 3: Generate the migration**
 
-// After
-public bool ReceiverConnected => Receivers.Values.Any(r => r.Socket.State == WebSocketState.Open);
-public bool IsComplete => SenderConnected && Receivers.Count > 0;
+Run from repo root:
+
+```powershell
+rtk dotnet ef migrations add SenderEmailCapture --project src/QuickShare
 ```
 
-### Step 4: Add `using System.Linq;` to imports
+Expected: new files under `src/QuickShare/Data/Migrations/` with `AddColumn("SenderEmail", "text", nullable: true)` on `deliveries` and `upload_sessions`, and `AddColumn<bool>("SenderEmailConfirmed", ...)` + `AddColumn<bool>("SenderEmailConsent", ...)` on `deliveries`.
 
-Add at top of file.
+- [ ] **Step 4: Build to verify**
 
-### Step 5: Build check
+```powershell
+rtk dotnet build src/QuickShare/QuickShare.csproj --no-restore
+```
 
-Run: `dotnet build src/QuickShare.Server/QuickShare.Server.csproj --no-restore`
-Expected: 0 errors
+Expected: build succeeds, 0 errors.
 
-### Step 6: Commit
+- [ ] **Step 5: Commit**
 
 ```bash
-git add src/QuickShare.Server/Middleware/P2PConnectionManager.cs
-git commit -m "feat(p2p): change P2PRoom.Receiver to Receivers dictionary"
+git add src/QuickShare/Data/Entities/UploadSession.cs src/QuickShare/Data/Entities/Delivery.cs src/QuickShare/Data/Migrations/
+git commit -m "feat(data): sender email fields on UploadSession and Delivery (issue #76)"
 ```
+
+---
+

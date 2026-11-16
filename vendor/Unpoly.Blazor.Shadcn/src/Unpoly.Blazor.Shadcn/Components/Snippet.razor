@@ -1,0 +1,47 @@
+@inherits UiComponentBase
+
+<div data-slot="snippet" class="@Class" @attributes="AdditionalAttributes">
+    <Tabs Value="@(DefaultValue ?? Items.FirstOrDefault()?.Label)">
+        <div data-slot="snippet-header">
+            <TabsList>
+                @foreach (var item in Items)
+                {
+                    <TabsTrigger Value="@item.Label">
+                        @if (TabContent is null) { @item.Label }
+                        else { @TabContent(item) }
+                    </TabsTrigger>
+                }
+            </TabsList>
+            <button type="button" data-slot="snippet-copy" data-timeout="@CopyTimeout" aria-label="Copy command" title="Copy command" hidden>
+                <Icon Name="copy" />
+            </button>
+        </div>
+        @foreach (var item in Items)
+        {
+            <TabsContent Value="@item.Label" Hidden="@(item.Label != (DefaultValue ?? Items[0].Label))">
+                <pre data-slot="snippet-code"><code>
+                    @if (PanelContent is null) { @item.Code }
+                    else { @PanelContent(item) }
+                </code></pre>
+                <span data-slot="snippet-copy-value" hidden>@item.Code</span>
+            </TabsContent>
+        }
+    </Tabs>
+</div>
+
+@code {
+    /// <summary>At least one command. Labels must be unique within a snippet.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<SnippetItem> Items { get; set; } = [];
+
+    /// <summary>Label to select on initial render; defaults to the first item.</summary>
+    [Parameter] public string? DefaultValue { get; set; }
+
+    /// <summary>How long the successful copy indicator stays visible, in milliseconds.</summary>
+    [Parameter] public int CopyTimeout { get; set; } = 2000;
+
+    /// <summary>Optional custom label/icon for each tab. The label remains its accessible name.</summary>
+    [Parameter] public RenderFragment<SnippetItem>? TabContent { get; set; }
+
+    /// <summary>Optional custom displayed content; copying always uses the item Code.</summary>
+    [Parameter] public RenderFragment<SnippetItem>? PanelContent { get; set; }
+}

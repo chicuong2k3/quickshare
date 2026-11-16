@@ -1,0 +1,26 @@
+@inherits UiComponentBase
+
+<div data-slot="tabs-list" role="tablist" data-variant="@Variant" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>default | line</summary>
+    [Parameter] public string Variant { get; set; } = "default";
+
+    const string Base =
+        "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] " +
+        "text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 " +
+        "group-data-[orientation=vertical]/tabs:h-fit " +
+        "group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none " +
+        "bg-muted";
+
+    // bg-muted belongs to the default variant, not to every list. It was in the base, so the
+    // line variant — whose whole point is that there is no pill, only an underline — drew the
+    // pill's background behind it anyway.
+    string VariantClass => Variant switch
+    {
+        "line" => "gap-1 bg-transparent",
+        _ => "bg-muted",
+    };
+
+    string Classes => Cn(Base, VariantClass, Class);
+}

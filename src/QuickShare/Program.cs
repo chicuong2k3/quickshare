@@ -1,4 +1,6 @@
 using FastEndpoints.Swagger;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -6,21 +8,29 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Npgsql;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Prometheus;
 using QuickShare;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Shares.P2P;
 using QuickShare.Features.Users.Shared;
 using QuickShare.Infrastructure.Caching;
+using QuickShare.Infrastructure.FeatureFlags;
+using QuickShare.Infrastructure.HealthChecks;
 using QuickShare.Infrastructure.Jobs;
 using QuickShare.Infrastructure.Middleware;
+using QuickShare.Infrastructure.Telemetry;
 using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
-using System.Net.Sockets;
 using System.Security.Claims;
-using Wolverine.ErrorHandling;
+using Fido2NetLib;
+using QuickShare.Features.Auth.Saml;
+using QuickShare.Features.Auth.Sso;
 using ZiggyCreatures.Caching.Fusion;
+using Unpoly.Blazor;
 
 
 // ── Load .env file (if present) for local development ──
@@ -83,11 +93,19 @@ if (envFilePath is not null)
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+const string ReleaseShaEnvVar = "GIT_SHA";
+const string DefaultRelease = "dev";
+const string ReleaseProperty = "release";
+var releaseSha = Environment.GetEnvironmentVariable(ReleaseShaEnvVar) ?? DefaultRelease;
+
 builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
-        .Enrich.WithSpan();
+        .Enrich.WithSpan()
+        .Enrich.With<PiiRedactingEnricher>()
+        .Enrich.WithProperty(ReleaseProperty, releaseSha);
 });
 
 const string DefaultConnectionName = "DefaultConnection";
@@ -95,12 +113,6 @@ const string MissingConnectionStringError = "ConnectionStrings:DefaultConnection
 const int DatabaseKeepAliveSeconds = 30;
 const int DatabaseRetryAttemptCount = 5;
 var databaseMaxRetryDelay = TimeSpan.FromSeconds(10);
-var databaseRetrySchedule = new[]
-{
-    TimeSpan.FromSeconds(2),
-    TimeSpan.FromSeconds(5),
-    TimeSpan.FromSeconds(15)
-};
 
 var configuredConnectionString = builder.Configuration.GetConnectionString(DefaultConnectionName)
     ?? throw new InvalidOperationException(MissingConnectionStringError);
@@ -125,8 +137,12 @@ var useInMemoryDb = builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
 
 if (useInMemoryDb)
 {
+    // Test factories pass a unique name (InMemoryDatabaseName) so each fixture gets an
+    // isolated store. Without it the default InMemory root is shared process-wide, so the
+    // per-IP anonymous P2P quota (3/day) leaks across test classes and fails later tests.
+    var inMemoryDbName = builder.Configuration["InMemoryDatabaseName"] ?? "QuickShareTests";
     builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseInMemoryDatabase("QuickShareTests"));
+        opts.UseInMemoryDatabase(inMemoryDbName));
 }
 else
 {
@@ -139,26 +155,29 @@ else
 builder.Services.Configure<StorageOptions>(
     builder.Configuration.GetSection(StorageOptions.Section));
 
+// Object store (issue #171): any S3-compatible endpoint. The `ObjectStore` section is the
+// current shape; the legacy `R2` section still binds so an upgrade does not break deployments
+// that were configured before the provider was generalized.
 var r2Section = builder.Configuration.GetSection(R2Options.Section);
 builder.Services.Configure<R2Options>(r2Section);
 
-var r2Options = r2Section.Get<R2Options>() ?? new();
-var hasR2 = !string.IsNullOrEmpty(r2Options.AccountId) &&
-            !string.IsNullOrEmpty(r2Options.AccessKeyId) &&
-            !string.IsNullOrEmpty(r2Options.AccessKeySecret);
+var objectStoreOptions = ObjectStoreResolver.Resolve(builder.Configuration);
+builder.Services.AddSingleton(Microsoft.Extensions.Options.Options.Create(objectStoreOptions));
+
+var hasR2 = objectStoreOptions.IsConfigured;
 
 if (hasR2)
 {
-    builder.Services.AddSingleton<R2StorageProvider>();
-    // IStorageProvider resolves to R2 by default.
-    // Consumers that specifically need local-disk should inject LocalDiskStorageProvider directly.
+    builder.Services.AddSingleton<S3CompatibleStorageProvider>();
+    // IStorageProvider resolves to the object store by default. Consumers that specifically
+    // need local disk should inject LocalDiskStorageProvider directly.
     builder.Services.AddSingleton<IStorageProvider>(sp =>
-        sp.GetRequiredService<R2StorageProvider>());
+        sp.GetRequiredService<S3CompatibleStorageProvider>());
 }
 else
 {
-    // R2 not configured — fall back to local disk so the app can still start.
-    // Upload/download features that require R2 will throw NotSupportedException.
+    // No object store configured — fall back to local disk so the app can still start.
+    // Upload/download features that require it will throw NotSupportedException.
     builder.Services.AddSingleton<IStorageProvider, LocalDiskStorageProvider>();
 }
 
@@ -166,14 +185,36 @@ var quickShareConfig = builder.Configuration.GetSection(QuickShareOptions.Sectio
 builder.Services.Configure<QuickShareOptions>(quickShareConfig);
 var quickShareOptions = quickShareConfig.Get<QuickShareOptions>() ?? new QuickShareOptions();
 
-builder.Services.AddHostedService<DeliveryCleanupService>();
-builder.Services.AddHostedService<ZombiePartSweeper>();
-builder.Services.AddHostedService<DeliveryExpiryJob>();
-builder.Services.AddHostedService<SubscriptionExpiryJob>();
+// ── Email (Brevo SMTP by default; any SMTP relay works via config) ──
+builder.Services.Configure<QuickShare.Infrastructure.Email.EmailOptions>(
+    builder.Configuration.GetSection(QuickShare.Infrastructure.Email.EmailOptions.Section));
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.EmailSender>();
+builder.Services.AddSingleton<QuickShare.Features.Email.SendingDomains.ISendingDomainVerifier, QuickShare.Features.Email.SendingDomains.SendingDomainVerifier>();
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.UnsubscribeTokens>();
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailTokens>();
+builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailRateLimiter>();
+builder.Services.AddSingleton<QuickShare.Infrastructure.IRemoteUrlFetcher, QuickShare.Infrastructure.RemoteUrlFetcher>();
+builder.Services.Configure<QuickShare.Infrastructure.Push.PushOptions>(builder.Configuration.GetSection(QuickShare.Infrastructure.Push.PushOptions.Section));
+builder.Services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, QuickShare.Infrastructure.Push.PushService>();
+
+// Maintenance jobs now run as Hangfire recurring jobs (see HangfireJobs.Register) —
+// only the one-shot PayOS webhook registration stays as a hosted service.
 builder.Services.AddHostedService<PayOSWebhookRegistrationHostedService>();
 
 builder.Services.AddScoped<PayOSService>();
 builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
+
+// ── OTP brute-force lockout (issue #148) ──
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Otp.OtpLockoutService>();
+
+// ── Turnstile anti-bot on download/verify (issue #175) ──
+builder.Services.Configure<QuickShare.Features.Deliveries.Otp.TurnstileOptions>(
+    builder.Configuration.GetSection(QuickShare.Features.Deliveries.Otp.TurnstileOptions.Section));
+builder.Services.AddHttpClient<QuickShare.Features.Deliveries.Otp.TurnstileService>();
+
+// ── New-device login alert (issue #149) ──
+builder.Services.AddScoped<QuickShare.Features.Users.Shared.DeviceTrackerService>();
+builder.Services.AddScoped<QuickShare.Features.Users.Shared.NewDeviceAlertSender>();
 
 // ── FusionCache with kill-switch toggle ──
 var cacheSection = builder.Configuration.GetSection(CacheSettings.Section);
@@ -190,21 +231,136 @@ builder.Services.AddFusionCache()
 
 builder.Services.AddSingleton<CacheService>();
 
-builder.Host.UseWolverine(opts =>
-{
-    // In-memory DB (tests) runs Wolverine without durable Postgres persistence.
-    if (!useInMemoryDb)
-    {
-        opts.PersistMessagesWithPostgresql(connectionString, "quickshare");
+// ── Feature flags + admin gate ──
+builder.Services.Configure<FeatureFlagSettings>(builder.Configuration.GetSection(FeatureFlagSettings.Section));
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
+builder.Services.AddScoped<IFeatureFlagService, FeatureFlagService>();
 
-        // Single-instance app: Solo avoids Balanced-mode leader election and the
-        // wolverine_nodes agent registry, so no stale-node StopAgent timeouts on health checks.
-        opts.Durability.Mode = DurabilityMode.Solo;
-        opts.Policies.OnException<NpgsqlException>().ScheduleRetry(databaseRetrySchedule);
-        opts.Policies.OnException<IOException>().ScheduleRetry(databaseRetrySchedule);
-        opts.Policies.OnException<SocketException>().ScheduleRetry(databaseRetrySchedule);
+// ── Security headers (issue #82) — config-driven CSP/HSTS policy ──
+builder.Services.Configure<SecurityHeaderOptions>(builder.Configuration.GetSection(SecurityHeaderOptions.Section));
+
+// ── Analytics (issue #24) — anonymous product events + founder dashboard ──
+builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(AnalyticsOptions.Section));
+builder.Services.AddScoped<AnalyticsService>();
+
+// ── Delivery scope control (issues #142 IP allowlist, #166 country rules) ──
+builder.Services.AddScoped<QuickShare.Features.Downloads.Shared.DeliveryAccessService>();
+
+// ── Team workspaces (issue #106): seats, pooled quota, workspace audit (#145) ──
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceService>();
+
+// ── Billing ledger (issues #278 seats, #141 overage, #112 e-invoice, #192 PO/net terms) ──
+builder.Services.AddScoped<QuickShare.Features.Payments.Billing.InvoiceService>();
+
+// Tenant-isolation observation (issue #190) and SIEM shipping transport (issue #191).
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.TenantGuard>();
+
+// Scheduled workspace backup (issue #271). Registered unconditionally: the run-now endpoint
+// resolves it directly, and Hangfire only schedules the recurring tick when it is enabled.
+builder.Services.AddScoped<WorkspaceBackupJob>();
+
+// Recipient-facing workspace branding (issues #285, #286).
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>();
+
+// Protocol mounts (#195 WebDAV, #265 S3): one filesystem view of the workspace, one credential.
+builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
+builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
+builder.Services.AddScoped<QuickShare.Features.Protocols.S3.S3Credentials>();
+
+// Upload by email (issue #104): the inbound webhook and the account's ingest address.
+builder.Services.AddScoped<QuickShare.Features.Uploads.EmailIngest.EmailIngestService>();
+
+// Per-recipient tracking (issue #37): who opened, who downloaded.
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Recipients.RecipientTracker>();
+
+// OCR search (issue #243). Singleton: the availability probe is a deployment fact, and running
+// it per request would be a process launch per request.
+builder.Services.AddSingleton<QuickShare.Features.Deliveries.Ocr.IOcrEngine,
+    QuickShare.Features.Deliveries.Ocr.TesseractOcrEngine>();
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Ocr.OcrJob>();
+builder.Services.AddSingleton<QuickShare.Features.Deliveries.VirusScan.IVirusScanner,
+    QuickShare.Features.Deliveries.VirusScan.ClamAvVirusScanner>();
+builder.Services.AddScoped<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>();
+builder.Services.AddScoped<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>();
+
+// Crypto checkout (issue #225): a second payment rail behind the same intent.
+builder.Services.AddScoped<QuickShare.Features.Payments.Crypto.CryptoCheckoutService>();
+
+// White-label custom domain (issue #81): who owns an incoming host, and where a share's
+// public link lives. The verifier is not sealed so a test can answer DNS without a network.
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.WorkspaceDomainReader>();
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.DomainVerifier>();
+
+// Data residency (issue #119): which storage region an upload is pinned to.
+builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
+
+// Approval gate (issue #162) and recurring send (issue #176).
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Approval.ApprovalNotifier>();
+builder.Services.AddScoped<RecurringDeliveryJob>();
+
+// Delivery comments (issue #289) and Slack/Teams posting (issue #180).
+builder.Services.AddScoped<QuickShare.Features.Deliveries.Comments.CommentGate>();
+builder.Services.AddScoped<QuickShare.Features.Workspaces.Channels.ChannelNotifier>();
+// Enterprise identity (#128 authenticator, #181 SSO, #219 MFA policy).
+builder.Services.AddScoped<QuickShare.Features.Auth.Sso.SsoLoginService>();
+builder.Services.AddScoped<QuickShare.Features.Auth.Mfa.MfaPolicyService>();
+builder.Services.AddScoped<QuickShare.Features.Auth.Scim.ScimAuthenticator>();
+builder.Services.AddScoped<QuickShare.Features.Auth.Saml.SamlService>();
+// Developer platform (#115 API keys, #39 outbound webhooks).
+builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticator>();
+// Per-key usage (issue #273): a singleton buffer, drained by a job.
+builder.Services.AddSingleton<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageRecorder>();
+builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageFlushJob>();
+builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatcher>();
+// Subscription lifecycle (#98 promo codes).
+builder.Services.AddScoped<QuickShare.Features.Payments.Promos.PromoCodeService>();
+// Session store (#105 management, #173 idle timeout and global sign-out).
+builder.Services.AddScoped<QuickShare.Features.Users.Sessions.SessionService>();
+// Passkeys (#68) and magic-link sign-in (#132).
+builder.Services.AddScoped<QuickShare.Features.Auth.Passkeys.PasskeyService>();
+builder.Services.AddScoped<QuickShare.Features.Auth.MagicLink.MagicLinkService>();
+
+// The relying party is this deployment. ServerDomain must be the registered domain — not the
+// origin — or every ceremony fails with an origin mismatch that reads like a browser bug.
+var passkeyOrigin = builder.Configuration["Email:BaseUrl"] ?? "https://localhost:9001";
+builder.Services.AddFido2(options =>
+{
+    options.ServerDomain = new Uri(passkeyOrigin).Host;
+    options.ServerName = "QuickShareCloud";
+    options.Origins = new HashSet<string>(StringComparer.Ordinal) { passkeyOrigin.TrimEnd('/') };
+});
+
+// Data residency (issue #119): which storage region an upload is pinned to.
+builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
+builder.Services.AddHttpClient();
+
+// ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
+builder.Services.AddMediator(options =>
+{
+    options.Assemblies = [typeof(Program).Assembly];
+    options.ServiceLifetime = ServiceLifetime.Scoped;
+});
+
+// ── Hangfire background jobs — recurring maintenance + dashboard ──
+if (!useInMemoryDb)
+{
+    builder.Services.AddHangfire(config => config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+    builder.Services.AddHangfireServer();
+    builder.Services.AddSingleton<DeliveryActivationJob>();
+    builder.Services.AddSingleton<DeliveryExpiryJob>();
+    builder.Services.AddSingleton<SubscriptionExpiryJob>();
+    builder.Services.AddSingleton<ZombiePartSweeper>();
+    builder.Services.AddSingleton<DeliveryCleanupService>();
+    builder.Services.AddSingleton<DownloadNotificationJob>();
+    if (hasR2)
+    {
+        builder.Services.AddSingleton<OrphanSweepJob>();
     }
-}, ExtensionDiscovery.ManualOnly);
+}
 
 // ── API (FastEndpoints + Swagger) ──
 builder.Services.AddFastEndpoints();
@@ -218,7 +374,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<P2PConnectionManager>();
 
 
-// ── Web (Blazor Static SSR + htmx) ──
+// Web: Blazor Static SSR with opt-in Unpoly navigation.
 // In .NET 10 Static Server rendering is the default for AddRazorComponents().
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -228,15 +384,72 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-builder.Services.AddRazorComponents()
-    .AddHtmx();
+builder.Services.AddRazorComponents();
 builder.Services.AddLocalization();
 builder.Services.AddAntiforgery();
+// Only explicit up-follow/up-submit controls use Unpoly.
+builder.Services.AddUnpoly(options => options.HandleAllLinksAndForms = false);
+
+// Shared OAuth post-login hook (Google + GitHub): tag the identity with the
+// provider, register/find the user, and run new-device tracking (issue #149).
+static async Task FinalizeOAuthAsync(Microsoft.AspNetCore.Authentication.OAuth.OAuthCreatingTicketContext ctx, string provider, string? avatar)
+{
+    ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, provider));
+
+    var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
+    var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
+    var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(subject))
+        return;
+
+    var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+    var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
+    var referralCode = ctx.HttpContext.Request.Cookies[ReferralPolicy.CookieName];
+    var profile = await UserRegistrationService.RegisterAsync(
+        provider, subject, name ?? email, email, avatar, db, ctx.HttpContext.RequestAborted, analytics, referralCode);
+
+    // Enterprise SSO (issue #181): if the identity provider vouched for a directory this
+    // deployment has a workspace bound to, the account gets its seat here. Best-effort by
+    // design — a broken workspace binding must not be able to break sign-in for everyone.
+    var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
+    await sso.ApplyAsync(profile.Id, email, provider, ctx.Identity?.Claims ?? [], ctx.HttpContext.RequestAborted);
+
+    // Start a revocable session (issues #105, #173) and put its id in the cookie.
+    var sessionService = ctx.HttpContext.RequestServices
+        .GetRequiredService<QuickShare.Features.Users.Sessions.SessionService>();
+    var session = await sessionService.StartAsync(profile.Id, ctx.HttpContext, ctx.HttpContext.RequestAborted);
+    ctx.Identity?.AddClaim(new Claim(
+        QuickShare.Features.Users.Sessions.SessionService.SessionClaimType, session.SessionId));
+
+    var deviceTracker = ctx.HttpContext.RequestServices.GetRequiredService<DeviceTrackerService>();
+    var alertSender = ctx.HttpContext.RequestServices.GetRequiredService<NewDeviceAlertSender>();
+    var ip = ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+    var userAgent = ctx.HttpContext.Request.Headers.UserAgent.ToString();
+
+    var (device, isNew) = await deviceTracker.RecordLoginAsync(db, profile.Id, userAgent, ip, ctx.HttpContext.RequestAborted);
+
+    // Security audit trail (issue #126): every sign-in is recorded; a first-seen
+    // device additionally records a device_added event. The IP is hashed server-side.
+    await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.Login, userAgent, ip, ctx.HttpContext.RequestAborted);
+
+    if (isNew)
+    {
+        await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.DeviceAdded, userAgent, ip, ctx.HttpContext.RequestAborted);
+
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == profile.Id, ctx.HttpContext.RequestAborted);
+        if (user is not null)
+            await alertSender.SendAsync(user, device, DateTime.UtcNow, ctx.HttpContext.RequestAborted);
+    }
+}
 
 // ── Unified cookie auth + Google OAuth ──
 // A single AddAuthentication call serves both the API (401/403 on /api/*) and the
 // SSR pages (redirect to /login for browser navigations).
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+var githubClientId = builder.Configuration["Authentication:GitHub:ClientId"];
+var githubClientSecret = builder.Configuration["Authentication:GitHub:ClientSecret"];
+
+var authBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.Cookie.Name = AuthConstants.CookieName;
@@ -244,6 +457,27 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = RoutePaths.Logout;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
+        // Server-side session check (issues #105, #173). Without this the cookie is
+        // self-contained and a "revoke" button revokes nothing until it expires on its own.
+        //
+        // One indexed read per authenticated request is the cost. It is the price of a revoke
+        // that works, and it is not cached: caching the answer is exactly the thing that would
+        // make revocation take effect "eventually" instead of on the next request.
+        options.Events.OnValidatePrincipal = async ctx =>
+        {
+            if (ctx.Principal?.Identity?.IsAuthenticated != true)
+                return;
+
+            var sessions = ctx.HttpContext.RequestServices
+                .GetRequiredService<QuickShare.Features.Users.Sessions.SessionService>();
+
+            if (await sessions.ValidateAsync(ctx.Principal, ctx.HttpContext.RequestAborted))
+                return;
+
+            ctx.RejectPrincipal();
+            await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        };
+
         options.Events.OnRedirectToLogin = ctx =>
         {
             // API callers get a status code; browser page requests get the redirect.
@@ -270,42 +504,121 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-        options.Events.OnCreatingTicket = async ctx =>
+        options.Events.OnCreatingTicket = ctx =>
         {
-            ctx.Identity?.AddClaim(new Claim(AuthConstants.ProviderClaimType, AuthConstants.GoogleProvider));
-
-            var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value;
-            var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
-            var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var avatar = ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null;
-
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(subject))
+            // The hosted-domain claim is what separates a Google Workspace account from a
+            // consumer one (issue #181). The handler does not map it, so capture it here —
+            // without it there is no proof of directory membership, only an email address.
+            if (ctx.User.TryGetProperty(SsoLoginService.HostedDomainClaim, out var hd)
+                && hd.GetString() is { Length: > 0 } hostedDomain)
             {
-                // Register in-process (no HTTP roundtrip) via the shared registration service.
-                var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-                await UserRegistrationService.RegisterAsync(
-                    AuthConstants.GoogleProvider,
-                    subject,
-                    name ?? email,
-                    email,
-                    avatar,
-                    db,
-                    ctx.HttpContext.RequestAborted);
+                ctx.Identity?.AddClaim(new Claim(SsoLoginService.HostedDomainClaim, hostedDomain));
             }
+
+            return FinalizeOAuthAsync(ctx, AuthConstants.GoogleProvider,
+                ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null);
         };
     });
+
+// Microsoft Entra ID (issue #181) — OIDC, registered only when configured. A tenant-specific
+// authority is deliberate: the /common endpoint would let any Entra tenant on earth sign in and
+// leave the tenant check as the only thing standing between them and a workspace binding.
+var entraTenantId = builder.Configuration["Authentication:Entra:TenantId"];
+var entraClientId = builder.Configuration["Authentication:Entra:ClientId"];
+var entraClientSecret = builder.Configuration["Authentication:Entra:ClientSecret"];
+
+if (!string.IsNullOrEmpty(entraTenantId) && !string.IsNullOrEmpty(entraClientId) && !string.IsNullOrEmpty(entraClientSecret))
+{
+    authBuilder.AddOpenIdConnect(AuthConstants.EntraProvider, options =>
+    {
+        options.Authority = $"https://login.microsoftonline.com/{entraTenantId}/v2.0";
+        options.ClientId = entraClientId;
+        options.ClientSecret = entraClientSecret;
+        options.ResponseType = "code";
+        options.UsePkce = true;
+        options.SaveTokens = false;
+        options.CallbackPath = "/signin-entra";
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        options.GetClaimsFromUserInfoEndpoint = true;
+        options.TokenValidationParameters.NameClaimType = ClaimTypes.Name;
+
+        options.Events.OnTokenValidated = async ctx =>
+        {
+            ctx.Principal?.Identities.FirstOrDefault()?.AddClaim(
+                new Claim(AuthConstants.ProviderClaimType, AuthConstants.EntraProvider));
+
+            var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value
+                ?? ctx.Principal?.FindFirst("preferred_username")?.Value;
+            var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(subject))
+                return;
+
+            var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
+            var profile = await UserRegistrationService.RegisterAsync(
+                AuthConstants.EntraProvider, subject, name ?? email, email, null, db,
+                ctx.HttpContext.RequestAborted, analytics, null);
+
+            var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
+            await sso.ApplyAsync(profile.Id, email, AuthConstants.EntraProvider,
+                ctx.Principal?.Claims ?? [], ctx.HttpContext.RequestAborted);
+
+            await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.Login,
+                ctx.HttpContext.Request.Headers.UserAgent.ToString(),
+                ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                ctx.HttpContext.RequestAborted);
+        };
+    });
+}
+
+// GitHub OAuth (issue #97) — registered only when configured, so an unconfigured
+// deployment does not fail startup (aspnet-contrib validates ClientId eagerly).
+if (!string.IsNullOrEmpty(githubClientId) && !string.IsNullOrEmpty(githubClientSecret))
+{
+    authBuilder.AddGitHub(options =>
+    {
+        options.ClientId = githubClientId;
+        options.ClientSecret = githubClientSecret;
+        // user:email → the handler fetches /user/emails and maps the primary
+        // verified address to ClaimTypes.Email (GitHub emails are verified).
+        options.Scope.Add("user:email");
+        options.Events.OnCreatingTicket = ctx =>
+            FinalizeOAuthAsync(ctx, AuthConstants.GitHubProvider,
+                ctx.User.TryGetProperty("avatar_url", out var avatar) ? avatar.GetString() : null);
+    });
+}
 
 builder.Services.AddAuthorization();
 
 // ── Observability: health checks + Prometheus metrics ──
-var healthChecksBuilder = builder.Services.AddHealthChecks()
-    .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"]);
-
+// ponytail: R2 reachability is verified at startup via EnsureBucketExistsAsync;
+// the old AddUrlGroup check did an unauthenticated GET that R2 always rejects,
+// so /health was permanently 503. The live R2 check (issue #89) uses an
+// authenticated HeadBucket instead.
+var healthChecks = builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString, healthQuery: "SELECT 1;", name: "postgresql", tags: ["db"])
+    .AddCheck<EmailConfigHealthCheck>("email", tags: ["notification"]);
 if (hasR2)
 {
-    var r2HealthUri = new Uri($"https://{r2Options.AccountId}.r2.cloudflarestorage.com");
-    healthChecksBuilder.AddUrlGroup(r2HealthUri, name: "r2", tags: ["storage"]);
+    healthChecks.AddCheck<R2HealthCheck>("r2", tags: ["storage"]);
 }
+
+// ── Observability: OpenTelemetry tracing → Tempo (via Grafana Alloy) ──
+const string ObservabilityOtlpEndpointKey = "Observability:OtlpEndpoint";
+const string DefaultOtlpEndpoint = "http://localhost:4318";
+var otlpEndpoint = builder.Configuration[ObservabilityOtlpEndpointKey] ?? DefaultOtlpEndpoint;
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(ActivitySources.Name, serviceVersion: releaseSha))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(options => options.Endpoint = new Uri(otlpEndpoint)));
+
 var app = builder.Build();
 
 
@@ -324,14 +637,19 @@ using (var scope = app.Services.CreateScope())
 
     if (hasR2)
     {
-        var r2 = scope.ServiceProvider.GetRequiredService<R2StorageProvider>();
-        await r2.EnsureBucketExistsAsync();
+        var objectStore = scope.ServiceProvider.GetRequiredService<S3CompatibleStorageProvider>();
+        await objectStore.EnsureBucketExistsAsync();
     }
     else
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning("R2 not configured — using LocalDiskStorageProvider. Upload/download via R2 will throw.");
+        logger.LogWarning("No object store configured — using LocalDiskStorageProvider. Upload/download will throw.");
     }
+}
+
+if (!useInMemoryDb)
+{
+    HangfireJobs.Register(app.Services, hasR2);
 }
 
 // Wire static cache holder so static classes (PlanTierLimits) can use cache.
@@ -359,30 +677,68 @@ if (app.Environment.IsDevelopment())
 // Serve wwwroot/ (and optimized static assets if a manifest is present).
 app.UseStaticFiles();
 
-// ── Localization (cookie-based culture, falls back to Accept-Language header) ──
-var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("vi") };
+// ── Localization (cookie-based culture, falls back to Accept-Language header; issues #84, #152) ──
+var supportedCultures = new[]
+{
+    new CultureInfo("en"),
+    new CultureInfo("vi"),
+    new CultureInfo("zh"),
+    new CultureInfo("ja"),
+    new CultureInfo("es"),
+    new CultureInfo("ar"),
+    new CultureInfo("he"),
+};
 app.UseRequestLocalization(new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture("en"),
     SupportedCultures = supportedCultures,
     SupportedUICultures = supportedCultures,
-    RequestCultureProviders = { new CookieRequestCultureProvider() }
+    RequestCultureProviders =
+    {
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider(),
+    }
 });
 
 app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
+// Rewrite /api/v1/* and /api/v2/* before routing (issue #199).
+app.UseMiddleware<QuickShare.Infrastructure.Middleware.ApiVersioningMiddleware>();
+app.UseRouting();
 app.UseAuthentication();
+// API keys authenticate the JSON API (issue #115). Between authentication and authorization,
+// because it *is* authentication: authorization evaluates the endpoint's requirements right
+// after this line, and a principal built any later would arrive to a 401 already decided.
+app.UseMiddleware<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticationMiddleware>();
 app.UseAuthorization();
 
+if (!useInMemoryDb)
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = [new AdminDashboardAuthorizationFilter()]
+    });
+}
+
+// Second-factor gate (#128, #219). After UseAuthorization so the principal exists, before the
+// endpoints it protects. It lets the enrolment and challenge routes through by name.
+app.UseMiddleware<MfaEnforcementMiddleware>();
+
+// White-label host scope (issue #81): a tenant domain serves recipient surfaces only.
+// Before the security headers and the endpoints, because a redirect settles the request.
+app.UseMiddleware<QuickShare.Infrastructure.Middleware.CustomDomainMiddleware>();
+app.UseMiddleware<RobotsNoIndexMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
+app.UseUnpoly();
 app.UseAntiforgery();
-app.UseHtmxAntiforgery();
 
 app.UseMiddleware<P2PSignalingMiddleware>();
 
-// ── HTTP caching for HTMX/SSR pages ──
-app.UseMiddleware<HtmxCacheMiddleware>();
+// ── HTTP caching for SSR pages ──
+app.UseMiddleware<PageCacheMiddleware>();
 
 // ── API endpoints ──
 app.UseFastEndpoints()
@@ -391,6 +747,52 @@ app.UseFastEndpoints()
 // ── Web (Blazor SSR) ──
 app.MapStaticAssets();
 app.MapRazorComponents<App>();
+
+// Magic-link landing (issue #132). A GET, because it is a link in an email — which is also why
+// the token is single-use: mail gateways follow links, and one of those must not consume the
+// human's only chance to sign in without them noticing.
+app.MapGet(RoutePaths.MagicLink, async (
+    string? token, HttpContext context, AppDbContext db,
+    QuickShare.Features.Auth.MagicLink.MagicLinkService links, CancellationToken ct) =>
+{
+    var user = await links.ConsumeAsync(token, ct);
+    if (user is null)
+        return Results.Redirect($"{RoutePaths.Login}?error=link");
+
+    await QuickShare.Features.Auth.Passkeys.AuthSignIn.CompleteAsync(
+        context, db, user, AuthConstants.MagicLinkProvider, ct);
+
+    return Results.Redirect("/");
+});
+
+// Dev-only sign-in: gated on Development + the in-memory database, protected by a token that is
+// regenerated per boot, and printed here so a reviewer can open the account, checkout and admin
+// pages that are otherwise unreachable without an identity provider.
+if (QuickShare.Infrastructure.Dev.DevSignIn.ShouldEnable(builder.Configuration, app.Environment))
+{
+    var devSignInToken = QuickShare.Infrastructure.Dev.DevSignIn.NewToken();
+    app.Logger.LogWarning(
+        "Dev sign-in enabled — open {Route}?key={Token} to sign in as {Email} (Pro).",
+        QuickShare.Infrastructure.Dev.DevSignIn.Route,
+        devSignInToken,
+        QuickShare.Infrastructure.Dev.DevSignIn.DefaultEmail);
+    QuickShare.Infrastructure.Dev.DevSignIn.MapDevSignIn(app, devSignInToken);
+}
+
+// SAML 2.0 (issue #139): metadata, SP-initiated login and the assertion consumer.
+app.MapSamlEndpoints();
+
+// WebDAV mount (issue #195). Anonymous at the route level — the mount authenticates itself
+// with an API key over Basic, because no filesystem client carries our cookie.
+QuickShare.Features.Protocols.WebDav.WebDavEndpoints.MapWebDavEndpoints(app);
+
+// S3-compatible gateway (issue #265). Also anonymous at the route level: it authenticates with
+// SigV4, which no authentication handler here knows how to speak.
+QuickShare.Features.Protocols.S3.S3Endpoints.MapS3Endpoints(app);
+
+// Outlook add-in manifest (issue #194). Anonymous and public: an org admin has to be able to
+// fetch it before anybody has signed in to anything.
+QuickShare.Features.Developer.Addins.OutlookAddinEndpoints.MapOutlookAddinEndpoints(app);
 
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>

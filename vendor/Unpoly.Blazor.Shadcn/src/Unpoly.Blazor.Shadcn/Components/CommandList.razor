@@ -1,0 +1,14 @@
+@inherits UiComponentBase
+
+@* role=listbox with the input as its owner, which is what makes arrow keys and the announcement
+   work. ui.js keeps aria-activedescendant in step as the highlight moves. *@
+
+<div data-slot="command-list" role="listbox" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto";
+
+    string Classes => Cn(Base, Class);
+}

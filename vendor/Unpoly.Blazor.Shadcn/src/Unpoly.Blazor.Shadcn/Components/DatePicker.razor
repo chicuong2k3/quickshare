@@ -1,0 +1,52 @@
+@inherits UiComponentBase
+
+@* shadcn's DatePicker is a Popover wrapping react-day-picker. Here the calendar is Air
+   Datepicker (see ui.js for why not flatpickr), attached by a compiler so it is rebuilt after
+   every fragment swap and torn down with the field it replaced.
+
+   The value posted stays ISO (yyyy-MM-dd) to match DateOnly parsing while the field on screen
+   reads d/m/Y — ui.js moves `name` to a hidden twin to keep those two apart. So the value here
+   is ISO, always, whatever the field shows. *@
+
+@* Two-way binding via @bind / @bind-Value. When the caller passes ValueChanged, the input
+   renders value="@Value" with an @onchange that raises it. When it does not — a static
+   value="..." or the splat — the unbound form is identical to shadcn, so the parity tests
+   see the same DOM. *@
+@if (ValueChanged.HasDelegate)
+{
+    <input type="text" data-slot="date-picker" name="@Name" value="@Value"
+           autocomplete="off" class="@Classes" @onchange="OnChange"
+           @attributes="AdditionalAttributes" />
+}
+else
+{
+    <input type="text" data-slot="date-picker" name="@Name" value="@Value"
+           autocomplete="off" class="@Classes" @attributes="AdditionalAttributes" />
+}
+
+@code {
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>ISO yyyy-MM-dd. Anything else is ignored rather than guessed at.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Raises on change when <c>@bind-Value</c> is used. Its presence decides whether the
+    /// component renders the bound value/onchange or lets the <c>@attributes</c> splat do it.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    async Task OnChange(ChangeEventArgs e) =>
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+
+    // is not shadcn's — its Input answers focus and ignores the pointer. A
+    // control that does not change under the mouse reads as decoration, and the select beside it
+    // does change. Declared in deviations.json; the same rule is on Select, Textarea, DatePicker
+    // and Stepper.
+    const string Base =
+        "border-input placeholder:text-muted-foreground flex h-control w-full min-w-0 rounded-md " +
+        "border bg-transparent px-3 py-1 text-control shadow-xs transition-[color,box-shadow] " +
+        "outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 " +
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] " +
+        "aria-invalid:ring-destructive/20 aria-invalid:border-destructive";
+
+    string Classes => Cn(Base, Class);
+}

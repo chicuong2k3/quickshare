@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Tem niêm phong — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --note:#E9E7DA;      /* banknote paper */
+  --note-2:#F3F1E6;
+  --intaglio:#14493A;  /* engraved green */
+  --intaglio-2:#2C6A55;
+  --serial:#A6262F;
+  --metal:#8E8A7B;
+  --ink:#151713;
+  --line:rgba(20,73,58,.34);
+}
+html[data-theme="dark"]{
+  --note:#0C1512; --note-2:#101B17; --intaglio:#7FC7A9; --intaglio-2:#4E9A7C;
+  --serial:#E4746C; --metal:#6E7268; --ink:#E9E7DA; --line:rgba(127,199,169,.26);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--note); color:var(--ink);
+  font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+.mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* the engraved fields — this world's material */
+.guilloche{
+  background-image:
+    repeating-linear-gradient(38deg, var(--line) 0 .6px, transparent .6px 5px),
+    repeating-linear-gradient(-38deg, var(--line) 0 .6px, transparent .6px 7px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--intaglio) 14%, transparent) 0 .6px, transparent .6px 11px);
+}
+.microtext{
+  font-family:"Martian Mono";font-size:6px;letter-spacing:.16em;
+  color:color-mix(in srgb, var(--intaglio) 70%, transparent);
+  white-space:nowrap;overflow:hidden;text-transform:uppercase;
+}
+
+/* ---------- head ---------- */
+.top{border-bottom:1px solid var(--line);background:var(--note-2)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:58px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.sealmark{
+  width:28px;height:28px;border:1.5px solid var(--intaglio);border-radius:50%;
+  display:grid;place-items:center;position:relative;
+}
+.sealmark::before{content:"";position:absolute;inset:3px;border:.6px solid var(--line);border-radius:50%}
+.sealmark span{font-family:"Martian Mono";font-size:9px;font-weight:600;color:var(--intaglio);letter-spacing:.02em}
+.brand b{font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+nav{display:flex;gap:22px;font-family:"Martian Mono";font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--intaglio)}
+nav a{text-decoration:none;padding-bottom:3px;border-bottom:1px solid transparent}
+nav a[aria-current]{border-color:var(--serial);color:var(--intaglio)}
+.top__right{display:flex;align-items:center;gap:16px}
+.serial-sm{font-family:"Martian Mono";font-size:9px;letter-spacing:.14em;color:var(--serial)}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:48px;padding:46px 0 40px;align-items:center}
+.kick{font-family:"Martian Mono";font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--serial);margin-bottom:16px}
+h1{margin:0 0 16px;font-size:56px;line-height:.98;letter-spacing:-.03em;font-weight:700;max-width:11ch}
+h1 em{font-style:normal;color:var(--intaglio)}
+p.lede{margin:0 0 26px;max-width:44ch;color:color-mix(in srgb, var(--ink) 72%, transparent);font-size:15.5px;line-height:1.62}
+.actions{display:flex;align-items:center;gap:14px}
+.primary{
+  display:inline-flex;align-items:center;gap:10px;text-decoration:none;
+  background:var(--intaglio);color:var(--note-2);padding:12px 22px;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+  box-shadow:inset 0 0 0 1px var(--note-2), inset 0 0 0 3px var(--intaglio), inset 0 0 0 4px color-mix(in srgb, var(--intaglio) 60%, var(--note-2));
+}
+.primary:hover{background:var(--intaglio-2)}
+.secondary{font-family:"Martian Mono";font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--intaglio);text-decoration:none;border-bottom:1px dotted var(--intaglio);padding-bottom:2px}
+.microband{margin-top:26px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:14px}
+
+/* ---------- the note ---------- */
+.note{
+  position:relative;background:var(--note-2);border:1.5px solid var(--intaglio);
+  box-shadow:inset 0 0 0 5px var(--note-2), inset 0 0 0 6px color-mix(in srgb, var(--intaglio) 45%, transparent);
+  padding:26px 22px 22px;
+}
+.note__guil{position:absolute;inset:6px;pointer-events:none;opacity:.55;border:0}
+.note__inner{position:relative}
+.corner{position:absolute;font-family:"Martian Mono";font-size:11px;font-weight:600;color:var(--intaglio);letter-spacing:.04em}
+.corner--tl{top:0;left:0}.corner--tr{top:0;right:0}.corner--bl{bottom:0;left:0}.corner--br{bottom:0;right:0}
+.note__denom{text-align:center;padding:4px 0 14px}
+.note__denom .big{font-family:"Martian Mono";font-size:34px;font-weight:600;letter-spacing:-.02em;color:var(--intaglio);line-height:1}
+.note__denom .lbl{font-family:"Martian Mono";font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--serial);margin-top:6px}
+.rosette{
+  width:96px;height:96px;border-radius:50%;margin:0 auto 10px;
+  background:
+    repeating-radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--intaglio) 42%, transparent) 0 .6px, transparent .6px 4px),
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--intaglio) 26%, transparent) 0 2deg, transparent 2deg 6deg);
+  border:.6px solid var(--line);
+}
+.note__rows{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;margin:0 0 14px}
+.note__inner{padding:0 2px}
+.row{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:4px 0;align-items:baseline}
+.row dt{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--serial)}
+.row dd{margin:0;font-size:14px}
+.row dd small{color:color-mix(in srgb, var(--ink) 60%, transparent);font-size:11.5px}
+.linkbox{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:color-mix(in srgb, var(--intaglio) 7%, transparent);
+  border:1px dashed color-mix(in srgb, var(--intaglio) 50%, transparent);
+  padding:9px 11px;margin-bottom:12px;
+}
+.linkbox code{font-family:"Martian Mono";font-size:11px;letter-spacing:.01em;color:var(--intaglio)}
+.linkbox span{font-family:"Martian Mono";font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--serial)}
+.seal{display:flex;align-items:stretch;gap:0;height:34px}
+.seal__half{
+  flex:1;border:1px solid color-mix(in srgb, var(--intaglio) 45%, transparent);
+  background:repeating-linear-gradient(90deg, color-mix(in srgb, var(--intaglio) 10%, transparent) 0 2px, transparent 2px 5px);
+  display:grid;place-items:center;font-family:"Martian Mono";font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:var(--intaglio);white-space:nowrap;
+}
+.seal__gap{width:14px;border-left:1px dashed var(--intaglio);border-right:1px dashed var(--intaglio);background:var(--note-2)}
+.vert-seal{
+  position:absolute;left:-13px;top:50%;transform:translateY(-50%) rotate(180deg);
+  writing-mode:vertical-rl;font-family:"Martian Mono";font-size:8px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--serial);background:var(--note);padding:10px 3px;
+  border:1px dashed color-mix(in srgb, var(--serial) 45%, transparent);
+}
+
+/* ---------- strip below ---------- */
+.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.strip div{padding:14px 16px;border-right:1px solid var(--line)}
+.strip div:last-child{border-right:0}
+.strip b{display:block;font-family:"Martian Mono";font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--intaglio);margin-bottom:3px}
+.strip p{margin:0;font-size:12.5px;color:color-mix(in srgb, var(--ink) 70%, transparent);line-height:1.5}
+
+/* ---------- system ---------- */
+.sys{max-width:1120px;margin:0 auto;padding:32px 40px 80px}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:16px}
+.sys .h{font-family:"Martian Mono";font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--serial);margin:0 0 10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{width:54px;height:34px;border:1px solid var(--line);position:relative}
+.chip i{position:absolute;left:4px;bottom:3px;font-family:"Martian Mono";font-size:8px;font-style:normal;color:var(--ink);background:var(--note-2);padding:0 2px}
+.spec{font-size:13px;color:color-mix(in srgb, var(--ink) 72%, transparent);margin:0 0 6px}
+.spec b{color:var(--ink)}
+.rule{font-size:13px;margin:0 0 8px;padding-left:14px;position:relative}
+.rule::before{content:"";position:absolute;left:0;top:7px;width:7px;height:1px;background:var(--serial)}
+.toggle{border:1px solid var(--intaglio);background:transparent;color:var(--intaglio);padding:8px 14px;cursor:pointer;font-family:"Martian Mono";font-size:9px;letter-spacing:.16em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#">
+      <span class="sealmark"><span>QS</span></span>
+      <b>QuickShareCloud</b>
+    </a>
+    <nav>
+      <a href="#" aria-current="page">Gửi</a>
+      <a href="#">Nhận</a>
+      <a href="#">P2P</a>
+      <a href="#">Bảng giá</a>
+    </nav>
+    <div class="top__right">
+      <span class="serial-sm">SERIES 2026 · QS</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="kick">Niêm phong đầu–cuối</p>
+      <h1>Khoá không rời khỏi <em>máy bạn</em>.</h1>
+      <p class="lede">Mỗi tệp được mã hoá AES-256-GCM theo từng phần; khoá chỉ nằm trong phần sau dấu # của liên kết. Máy chủ giữ bản mã, không giữ nội dung — và không cửa nào để mở.</p>
+      <div class="actions">
+        <a class="primary" href="#">Gửi tệp</a>
+        <a class="secondary" href="#">Cách hoạt động</a>
+      </div>
+      <div class="microband">
+        <span class="microtext">AES-256-GCM · PER-CHUNK AEAD · SHA-256 · ZERO-KNOWLEDGE · QS-2026 · SERIES QS · AAD-BOUND MANIFEST · KHÔNG ĐỌC ĐƯỢC</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <div class="guilloche note__guil" aria-hidden="true"></div>
+      <span class="vert-seal">Niêm phong</span>
+      <div class="note__inner">
+        <span class="corner corner--tl">2,4 GB</span>
+        <span class="corner corner--tr">2,4 GB</span>
+
+        <div class="note__denom">
+          <div class="rosette" aria-hidden="true"></div>
+          <div class="big">2,4 GB</div>
+          <div class="lbl">05 phần · đã niêm phong</div>
+        </div>
+
+        <dl class="note__rows">
+          <div class="row"><dt>Nội dung</dt><dd>anh-goc-bat-dong-san.zip <small>· 2.481.332.224 B</small></dd></div>
+          <div class="row"><dt>Vị trí</dt><dd>Singapore <small>· ap-southeast-1</small></dd></div>
+          <div class="row"><dt>Hiệu lực</dt><dd>7 ngày <small>· 18/11 14:20</small></dd></div>
+          <div class="row"><dt>Xác minh</dt><dd>SHA-256 <small>· khi tải xong</small></dd></div>
+        </dl>
+
+        <div class="linkbox">
+          <code>quickshare.vn/d/8F2KQ7#k=…</code>
+          <span>Khoá ở sau #</span>
+        </div>
+
+        <div class="seal" aria-label="Tem niêm phong: còn nguyên">
+          <span class="seal__half">Còn nguyên</span>
+          <span class="seal__gap"></span>
+          <span class="seal__half">QS · 8F2K</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div><b>Không tài khoản</b><p>Người nhận mở liên kết là tải. Không đăng ký, không email.</p></div>
+    <div><b>Không nén lại</b><p>Ảnh gốc giữ nguyên byte. Hash trùng khớp từng phần.</p></div>
+    <div><b>Không quyền đọc</b><p>Máy chủ chỉ thấy bản mã. Khoá không đi qua server.</p></div>
+  </div>
+</div>
+
+<section class="sys">
+  <div class="h">System sheet — Tem niêm phong</div>
+  <div class="sys__grid">
+    <div>
+      <p class="h">Màu</p>
+      <div class="chips">
+        <span class="chip" style="background:#14493A"><i>intaglio</i></span>
+        <span class="chip" style="background:#A6262F"><i>serial</i></span>
+        <span class="chip" style="background:#E9E7DA"><i>note</i></span>
+        <span class="chip" style="background:#8E8A7B"><i>metal</i></span>
+        <span class="chip" style="background:#151713"><i>ink</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Ba màu in. Không gradient, không bóng mờ.</p>
+    </div>
+    <div>
+      <p class="h">Chữ</p>
+      <p class="spec" style="font-family:'Martian Mono';font-size:15px;color:var(--ink);letter-spacing:-.02em">Martian Mono — số, serial</p>
+      <p class="spec" style="font-family:'Archivo';font-size:15px;color:var(--ink);font-weight:600">Archivo 600 — câu</p>
+      <p class="spec">Serial đỏ chỉ cho <b>số hiệu &amp; khoá</b>.</p>
+    </div>
+    <div>
+      <p class="h">Luật</p>
+      <p class="rule">Khối lượng dựng bằng <i>mật độ đường</i>, không bằng nền màu.</p>
+      <p class="rule">Mệnh giá = dung lượng tệp, in ở bốn góc.</p>
+      <p class="rule">Tem chỉ vỡ một lần: lần mở đầu tiên.</p>
+    </div>
+    <div>
+      <p class="h">Trạng thái</p>
+      <p class="spec">Sáng: giấy in, mực xanh.</p>
+      <p class="spec">Tối: bản in âm — đường sáng trên nền mực.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11 · Kính (vật liệu) — QuickShareCloud style review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bench:#0E1112; --bench-2:#101617;
+  --sheet:#171C1E; --sheet-2:#1C2225;
+  --ink:#E8ECEB; --ink-2:#A7B3B0; --ink-3:#7E8C8A;
+  --hair:rgba(255,255,255,.115); --hair-2:rgba(255,255,255,.05);
+  --glass-body:rgba(216,240,234,.085);
+  --glass-tint:rgba(203,232,225,.04);
+  --edge:rgba(160,205,193,.42); --edge-hi:rgba(210,240,232,.62);
+  --jade:#8AC7B5;
+  --fill:#E8ECEB; --on-fill:#0E1112;
+}
+html[data-theme="light"]{
+  --bench:#E3E5E4; --bench-2:#DCDEDD;
+  --sheet:#F7F8F7; --sheet-2:#F2F4F3;
+  --ink:#141A1B; --ink-2:#46524F; --ink-3:#5D6B68;
+  --hair:rgba(14,30,28,.13); --hair-2:rgba(14,30,28,.06);
+  --glass-body:rgba(255,255,255,.30);
+  --glass-tint:rgba(226,240,236,.16);
+  --edge:rgba(46,106,92,.34); --edge-hi:rgba(255,255,255,.85);
+  --jade:#2A6B5B;
+  --fill:#141A1B; --on-fill:#F4F6F5;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  color:var(--ink);
+  font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-weight:400;
+  background:
+    radial-gradient(140% 90% at 12% -30%, color-mix(in srgb, var(--ink) 7%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--bench), var(--bench-2));
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+/* grain: 2.5%, top layer, no blend tricks */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:99;opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-theme="light"] body::after{opacity:.035;mix-blend-mode:multiply}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 44px}
+.tnum{font-family:"Archivo",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.lbl{font-family:"Archivo";font-weight:500;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- nav: hairline, small, no pills ---------- */
+.top{border-bottom:1px solid var(--hair-2)}
+.top__in{display:flex;align-items:center;justify-content:space-between;gap:30px;height:62px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-family:"Archivo";font-weight:500;font-size:10px;letter-spacing:.34em;text-transform:uppercase}
+nav{display:flex;gap:26px;font-family:"Archivo";font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+nav a:hover{color:var(--ink-2)}
+nav a[aria-current]{color:var(--ink);box-shadow:0 1px 0 0 var(--jade)}
+.top__cta{font-family:"Archivo";font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);border:1px solid var(--hair);padding:8px 13px;border-radius:2px}
+.top__cta:hover{color:var(--ink);border-color:var(--ink-3)}
+
+/* ---------- grid: asymmetric, not a hero ---------- */
+.grid{display:grid;grid-template-columns:.82fr 1.18fr;gap:74px;padding:62px 0 26px;align-items:stretch}
+.grid > div:first-child{display:flex;flex-direction:column}
+.eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 26px}
+.eyebrow i{width:16px;height:1px;background:var(--ink-3);display:block}
+h1{
+  margin:0 0 20px;font-weight:400;font-size:40px;line-height:1.12;letter-spacing:-.028em;
+  max-width:15ch;text-wrap:balance;
+}
+p.lede{margin:0 0 28px;max-width:36ch;font-size:13.5px;line-height:1.72;color:var(--ink-2);font-weight:300}
+p.lede b{font-weight:500;color:var(--ink)}
+.cta{display:flex;align-items:center;gap:18px;padding-bottom:26px;border-bottom:1px solid var(--hair-2)}
+.btn{
+  display:inline-block;background:var(--fill);color:var(--on-fill);border-radius:2px;
+  padding:10px 16px;font-family:"Archivo";font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;
+}
+.btn:hover{background:var(--jade);color:var(--on-fill)}
+.link{font-family:"Archivo";font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--hair)}
+.link:hover{color:var(--ink-2)}
+
+/* transfer fact — one 1px rule, tabular figures */
+.transfer{padding-top:20px;margin-top:auto;display:flex;flex-direction:column;gap:9px}
+.transfer__head{display:flex;justify-content:space-between;align-items:baseline}
+.transfer__head span{font-size:11.5px;color:var(--ink-2);font-weight:300}
+.transfer__head b{font-family:"Archivo";font-weight:400;font-size:11.5px;letter-spacing:.01em}
+.line{position:relative;height:1px;background:var(--hair)}
+.line i{position:absolute;left:0;top:0;height:1px;width:62%;background:var(--jade)}
+.line i::after{content:"";position:absolute;right:-1px;top:-1px;width:3px;height:3px;background:var(--jade)}
+.transfer__foot{display:flex;justify-content:space-between}
+.transfer__foot span{font-family:"Archivo";font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- bench: a sheet lying on slate, one pane of glass over it ---------- */
+.bench{position:relative;padding:0 0 76px}
+.manifest{
+  width:94%;background:var(--sheet);border:1px solid var(--hair-2);
+  box-shadow:0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent) inset;
+  padding:14px 16px 16px;
+}
+.manifest__head{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid var(--hair)}
+.manifest__head b{font-family:"Archivo";font-weight:500;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
+.manifest__head span{font-family:"Archivo";font-size:9px;letter-spacing:.14em;color:var(--ink-3)}
+.mrow{display:grid;grid-template-columns:86px 1fr;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--hair-2)}
+.sig{margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);height:132px;position:relative}
+.sig__bars{height:30px;width:210px;background:repeating-linear-gradient(90deg,var(--ink-2) 0 1.5px,transparent 1.5px 3px,var(--ink-2) 3px 4px,transparent 4px 7px,var(--ink-2) 7px 10px,transparent 10px 12px)}
+.sig__txt{margin-top:8px;font-family:"Archivo";font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+
+.mrow:last-child{border-bottom:0}
+.mrow dt{font-family:"Archivo";font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.mrow dd{margin:0;font-family:"Archivo";font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* the glass: thickness, hard specular, low blur, edge refraction */
+.pane{
+  position:absolute;right:-14px;top:auto;bottom:64px;width:min(64%,356px);
+  border-radius:4px;
+  padding:15px 15px 13px;
+  background:linear-gradient(176deg, var(--glass-body), var(--glass-tint) 62%, transparent);
+  border:1px solid var(--edge);
+  border-top-color:var(--edge-hi);
+  border-left-color:color-mix(in srgb, var(--edge-hi) 55%, var(--edge));
+  border-right-color:color-mix(in srgb, var(--edge) 70%, transparent);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--edge) 8%, transparent),
+    12px 20px 38px -26px rgba(0,0,0,.9),
+    1px 1px 0 rgba(0,0,0,.18);
+  backdrop-filter:blur(2.5px) saturate(112%);
+  -webkit-backdrop-filter:blur(2.5px) saturate(112%);
+  transition:backdrop-filter .4s ease, background .4s ease, border-color .4s ease;
+}
+/* the wall: a 5px edge that blurs harder than the pane body, like cut glass */
+.pane::after{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
+  padding:5px;
+  backdrop-filter:blur(7px) saturate(140%) brightness(1.05);
+  -webkit-backdrop-filter:blur(7px) saturate(140%) brightness(1.05);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+}
+/* hard-edged specular band — a window reflection, not a wash */
+.pane::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:
+    linear-gradient(116deg,
+      color-mix(in srgb, #fff 17%, transparent) 0 4.4%,
+      transparent 4.6% 27%,
+      color-mix(in srgb, #fff 8%, transparent) 27.2% 28.6%,
+      transparent 28.8% 100%);
+}
+.pane > *{position:relative;z-index:1}
+.pane__k{font-family:"Archivo";font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);display:inline-block;margin-bottom:9px;background:color-mix(in srgb, var(--sheet) 70%, transparent);padding:3px 6px;border-radius:2px}
+.pane__link{
+  display:block;font-family:"Archivo";font-size:12px;letter-spacing:-.005em;color:var(--ink);
+  padding:9px 10px;border:1px solid var(--hair);border-radius:2px;
+  background:color-mix(in srgb, var(--sheet) 78%, transparent);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.pane__link em{font-style:normal;color:var(--ink-3)}
+.pane__row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px}
+.pane__note{font-size:10.5px;line-height:1.5;color:var(--ink-2);max-width:19ch;font-weight:300;
+  background:color-mix(in srgb, var(--sheet) 72%, transparent);padding:4px 6px;border-radius:2px}
+.pane__btn{
+  border:1px solid var(--hair);background:transparent;color:var(--ink-2);border-radius:2px;
+  padding:7px 11px;cursor:pointer;font-family:"Archivo";font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;
+  white-space:nowrap;background:color-mix(in srgb, var(--sheet) 78%, transparent);
+}
+.pane__btn:hover{color:var(--ink);border-color:var(--ink-3)}
+/* sealed: the pane stops bending light — it is a finished sheet now */
+.pane.is-sealed{
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  background:var(--sheet-2);
+  border-color:var(--hair);
+  box-shadow:0 1px 0 var(--hair-2) inset, 8px 14px 30px -24px rgba(0,0,0,.85);
+}
+.pane.is-sealed::before{opacity:.45}
+.bench__cap{
+  position:absolute;left:0;bottom:34px;display:flex;align-items:center;gap:10px;
+  font-family:"Archivo";font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+}
+.bench__cap i{width:22px;height:1px;background:var(--hair);display:block}
+
+/* ---------- footnote: inline facts, not three cards ---------- */
+.foot{display:flex;gap:0;border-top:1px solid var(--hair-2);margin-top:10px}
+.foot div{padding:16px 26px 16px 0;margin-right:26px;border-right:1px solid var(--hair-2)}
+.foot div:last-child{border-right:0}
+.foot b{display:block;font-family:"Archivo";font-weight:500;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.foot p{margin:0;font-size:11.5px;line-height:1.6;color:var(--ink-2);font-weight:300;max-width:26ch}
+
+/* ---------- system ---------- */
+.sys{max-width:1080px;margin:44px auto 0;padding:30px 44px 80px;border-top:1px solid var(--hair-2)}
+.sys__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;margin-top:14px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chipc{width:50px;height:32px;border-radius:2px;border:1px solid var(--hair);position:relative}
+.chipc i{position:absolute;left:4px;bottom:3px;font-family:"Archivo";font-size:7px;font-style:normal;letter-spacing:.04em;color:var(--ink);opacity:.8}
+.spec{font-size:12.5px;color:var(--ink-2);margin:0 0 8px;line-height:1.6;font-weight:300}
+.spec b{color:var(--ink);font-weight:500}
+.rule{font-size:12.5px;margin:0 0 8px;padding-left:14px;position:relative;color:var(--ink-2);font-weight:300}
+.rule::before{content:"";position:absolute;left:0;top:8px;width:6px;height:1px;background:var(--jade)}
+.toggle{border:1px solid var(--hair);background:transparent;color:var(--ink-2);border-radius:2px;padding:8px 12px;cursor:pointer;font-family:"Archivo";font-size:9px;letter-spacing:.16em;text-transform:uppercase}
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr;gap:44px;padding-top:40px}
+  h1{font-size:32px}
+  .pane{position:relative;top:auto;right:auto;width:100%;margin-top:-56px}
+  .manifest{width:100%}
+  .mrow{width:100%}
+  .bench__cap{display:none}
+  .foot{flex-wrap:wrap}
+  .sys__grid{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion: reduce){.pane{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#"><b>QuickShareCloud</b></a>
+    <nav>
+      <a href="#" aria-current="page">Gửi</a>
+      <a href="#">Nhận</a>
+      <a href="#">Bảng giá</a>
+      <a href="#">Tài khoản</a>
+    </nav>
+    <a class="top__cta" href="#">Mở bảng điều khiển</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <div>
+      <p class="eyebrow lbl"><i aria-hidden="true"></i>Mã hoá đầu–cuối</p>
+      <h1>Gửi tệp, không gửi phiền.</h1>
+      <p class="lede">Tệp lớn tới vài GB. Khoá nằm trong liên kết, <b>người nhận mở là tải</b> — không tài khoản, không email xác nhận. Máy chủ chỉ giữ bản mã, và không cửa nào để mở.</p>
+      <div class="cta">
+        <a class="btn" href="#">Chọn tệp</a>
+        <a class="link" href="#">Cách hoạt động</a>
+      </div>
+      <div class="transfer">
+        <div class="transfer__head">
+          <span>Đang gửi lên · 5 phần</span>
+          <b class="tnum">1,5 / 2,4 GB</b>
+        </div>
+        <div class="line" role="img" aria-label="Đã gửi 62 phần trăm"><i></i></div>
+        <div class="transfer__foot">
+          <span>62%</span><span>38 MB/s</span><span>SHA-256 khi xong</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bench">
+      <div class="manifest">
+        <div class="manifest__head">
+          <b>Phiếu giao tệp</b>
+          <span class="tnum">8F2KQ7</span>
+        </div>
+        <dl style="margin:0">
+          <div class="mrow"><dt>Tệp</dt><dd>anh-goc-bat-dong-san.zip</dd></div>
+          <div class="mrow"><dt>Dung lượng</dt><dd>2 481 332 224 B</dd></div>
+          <div class="mrow"><dt>Chia phần</dt><dd>5 × 496 266 444 B</dd></div>
+          <div class="mrow"><dt>Mã hoá</dt><dd>AES-256-GCM</dd></div>
+          <div class="mrow"><dt>Xác minh</dt><dd>SHA-256 khi tải xong</dd></div>
+          <div class="mrow"><dt>Vùng</dt><dd>ap-southeast-1</dd></div>
+          <div class="mrow"><dt>Hiệu lực</dt><dd>7 ngày · 18.11 14:20</dd></div>
+        </dl>
+        <div class="sig">
+          <div class="sig__bars" aria-hidden="true"></div>
+          <div class="sig__txt">8F2KQ7 · phát hành 11.11 14:20 · không cần chữ ký</div>
+        </div>
+      </div>
+
+      <section class="pane" id="pane">
+        <span class="pane__k">Liên kết gửi</span>
+        <code class="pane__link">quickshare.vn/d/8F2KQ7<em>#k=…</em></code>
+        <div class="pane__row">
+          <p class="pane__note">Khoá chỉ có ở liên kết, không ở máy chủ.</p>
+          <button class="pane__btn" type="button" id="sealbtn">Xem lúc đã niêm</button>
+        </div>
+      </section>
+
+      <div class="bench__cap"><i aria-hidden="true"></i>Tấm kính trên phiếu giấy</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div><b>Không đọc được</b><p>Khoá nằm sau dấu #. Máy chủ chỉ giữ bản mã.</p></div>
+    <div><b>Không nén lại</b><p>Ảnh gốc giữ nguyên từng byte; so hash khi tải xong.</p></div>
+    <div><b>Không rào cản</b><p>Không đăng ký, không email xác nhận, không OAuth.</p></div>
+  </div>
+</div>
+
+<section class="sys">
+  <p class="lbl">System sheet — Kính (v2, vật liệu thật)</p>
+  <div class="sys__grid">
+    <div>
+      <p class="lbl">Màu</p>
+      <div class="chips">
+        <span class="chipc" style="background:#0E1112"><i>bench</i></span>
+        <span class="chipc" style="background:#171C1E"><i>sheet</i></span>
+        <span class="chipc" style="background:#8AC7B5"><i>jade</i></span>
+        <span class="chipc" style="background:rgba(216,240,234,.16)"><i>glass</i></span>
+        <span class="chipc" style="background:#E8ECEB"><i>ink</i></span>
+      </div>
+      <p class="spec" style="margin-top:12px">Nền đá phiến + một phiếu giấy. <b>Không</b> gradient phát sáng, không blob.</p>
+    </div>
+    <div>
+      <p class="lbl">Chữ</p>
+      <p class="spec" style="font-size:15px;font-weight:400;letter-spacing:-.02em;color:var(--ink)">Be Vietnam Pro 400 — câu</p>
+      <p class="spec" style="font-family:'Archivo';font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)">Archivo 500 — nhãn 9px</p>
+      <p class="spec">Sang ở <b>cỡ nhỏ + khoảng thở</b>, không ở cỡ lớn mảnh.</p>
+    </div>
+    <div>
+      <p class="lbl">Luật</p>
+      <p class="rule">Kính là <i>một vật</i> trên bàn, không phải lớp phủ toàn trang.</p>
+      <p class="rule">Thân kính mờ 2,5px; <i>thành kính</i> 5px mờ 7px hơn — chỗ dày thì khúc xạ mạnh hơn. Mờ đều 18px = nhựa.</p>
+      <p class="rule">Vệt sáng có cạnh cứng, một hướng; không loang.</p>
+      <p class="rule">Bóng đổ lệch một phía; không quầng sáng.</p>
+    </div>
+    <div>
+      <p class="lbl">Trạng thái</p>
+      <p class="spec">Tối: đá phiến, đèn trên-trái.</p>
+      <p class="spec">Sáng: bàn sáng, kính trong hơn.</p>
+      <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'">Sáng / tối</button>
+    </div>
+  </div>
+</section>
+
+<script>
+  var pane = document.getElementById('pane');
+  document.getElementById('sealbtn').addEventListener('click', function () {
+    var sealed = pane.classList.toggle('is-sealed');
+    this.textContent = sealed ? 'Xem lúc đang gửi' : 'Xem lúc đã niêm';
+  });
+</script>
+</body>
+</html>

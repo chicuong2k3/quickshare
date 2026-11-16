@@ -1,0 +1,32 @@
+@inherits UiComponentBase
+
+@* A destructive confirmation. Same shape as <Dialog> — a native <dialog> frame with the shadcn
+   box inside it — with one difference that is the whole point of the component: it carries no
+   [data-dismissable], so a click on the backdrop does nothing. An alert dialog asks a question
+   that has to be answered, not dismissed by a stray click.
+
+   Escape still closes it, which is Radix's behaviour too and the platform's default: a modal a
+   keyboard user cannot leave is a trap, and 2.1.2 says so.
+
+   For a confirmation attached to an existing control, [data-ask] in ui.js builds this same
+   markup on the fly and needs no <AlertDialog> in the page at all. *@
+
+<dialog id="@Id" data-slot="alert-dialog">
+    <div data-slot="alert-dialog-content" data-size="@Size" class="@Classes"
+         @attributes="AdditionalAttributes">@ChildContent</div>
+</dialog>
+
+@code {
+    /// <summary>What an <see cref="AlertDialogTrigger"/> points its Target at. Required.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>default | sm | lg</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    const string Base =
+        "group/alert-dialog-content grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg " +
+        "border bg-background p-6 shadow-lg data-[size=sm]:max-w-xs " +
+        "data-[size=default]:sm:max-w-lg";
+
+    string Classes => Cn(Base, Class);
+}

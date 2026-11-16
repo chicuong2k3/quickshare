@@ -74,7 +74,7 @@ Current pricing is not competitive. Free tier (100 MB/file, 2 GB/month, 7-day ex
 - No changes to P2P limits (P2P is same-WiFi only, not in competitive scope).
 - No changes to payment processing, subscription lifecycle, or PayOS integration.
 - No Team/Enterprise tiers at this time.
-- No per-user configurable expiry (sender picks from plan ceiling, not arbitrary).
+- No per-user configurable expiry — expiry is fully plan-fixed (Free/Anonymous 24 h, Pro 30 d, Studio 90 d); there is no sender-facing expiry selector.
 
 ## Success signal
 

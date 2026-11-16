@@ -1,0 +1,24 @@
+@inherits UiComponentBase
+
+@* Two panels and a divider you can drag.
+
+   The group is a flex row; each panel's width is its own custom property, and the handle's
+   compiler writes that property as you drag. Nothing else changes, so a resize costs one style
+   recalculation rather than a React render per pointer move.
+
+   With scripting off it is two panels at their starting sizes, which is the correct fallback:
+   the content is all there, it simply cannot be re-proportioned. *@
+
+<div data-slot="resizable-panel-group" data-orientation="@Orientation"
+     aria-orientation="@Orientation" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>"horizontal" — panels side by side — or "vertical".</summary>
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+
+    const string Base =
+        "flex h-full w-full aria-[orientation=vertical]:flex-col";
+
+    string Classes => Cn(Base, Class);
+}

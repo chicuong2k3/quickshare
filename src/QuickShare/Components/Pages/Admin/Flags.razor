@@ -1,0 +1,96 @@
+@page "/admin/flags"
+@layout MainLayout
+@attribute [Authorize]
+@using QuickShare.Features.Admin.Flags
+@using QuickShare.Infrastructure.FeatureFlags
+@using Microsoft.Extensions.Options
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IFeatureFlagService FlagService
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_flags_page_title"]</PageTitle>
+
+<PageWrapper id="admin-flags-app" Variant="PageVariant.Padded">
+<div class="admin-board">
+    <div class="mb-6">
+        <h1 class="text-3xl font-semibold">@Loc["admin_flags_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_flags_subtitle"]</p>
+    </div>
+
+    <Card id="admin-flags-table" class="overflow-x-auto px-6">
+        @if (!isAdmin)
+        {
+            <div class="text-destructive" role="alert">@Loc["admin_flags_forbidden"]</div>
+        }
+        else if (flags.Count == 0)
+        {
+            <p class="text-muted-foreground">@Loc["admin_flags_empty"]</p>
+        }
+        else
+        {
+            <Table class="text-sm">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead class="p-2">@Loc["admin_flags_col_key"]</TableHead>
+                        <TableHead class="p-2">@Loc["admin_flags_col_enabled"]</TableHead>
+                        <TableHead class="p-2">@Loc["admin_flags_col_rollout"]</TableHead>
+                        <TableHead class="p-2"><span class="sr-only">@Loc["admin_flags_col_actions"]</span></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    @foreach (var flag in flags)
+                    {
+                        var formId = $"flag-{flag.Key}";
+                        <TableRow>
+                            <TableCell class="p-2">
+                                <span class="font-medium">@flag.Key</span>
+                                @if (!string.IsNullOrEmpty(flag.Description))
+                                {
+                                    <span class="block text-muted-foreground">@flag.Description</span>
+                                }
+                            </TableCell>
+                            <TableCell class="p-2">
+                                <label class="flex items-center gap-2">
+                                    <Checkbox form="@formId" name="@UpdateFlagFormEndpoint.EnabledField" Checked="@flag.EffectiveEnabled" data-ai-action="@($"admin.flags.enabled.{flag.Key}")" />
+                                    <span>@Loc[flag.EffectiveEnabled ? "admin_flags_on" : "admin_flags_off"]</span>
+                                </label>
+                            </TableCell>
+                            <TableCell class="p-2">
+                                <label class="flex items-center gap-2">
+                                    <span class="sr-only">@Loc["admin_flags_rollout_label"]</span>
+                                    <Input Type="number" form="@formId" name="@UpdateFlagFormEndpoint.RolloutField" min="0" max="100" step="1" Value="@flag.EffectiveRolloutPercent.ToString()" class="w-20" data-ai-action="@($"admin.flags.rollout.{flag.Key}")" />
+                                    <span aria-hidden="true">%</span>
+                                </label>
+                            </TableCell>
+                            <TableCell class="p-2">
+                                <form id="@formId" method="post" action="@UpdateFlagFormEndpoint.FormRoute" data-ai-action="admin.flags.save.@flag.Key">
+                                    <AntiforgeryToken />
+                                    <input type="hidden" name="@UpdateFlagFormEndpoint.KeyField" value="@flag.Key" />
+                                    <Button Type="submit">@Loc["admin_flags_save_btn"]</Button>
+                                </form>
+                            </TableCell>
+                        </TableRow>
+                    }
+                </TableBody>
+            </Table>
+        }
+    </Card>
+</div>
+
+</PageWrapper>
+
+@code {
+    private bool isAdmin;
+    private IReadOnlyList<FeatureFlagStatus> flags = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+        if (isAdmin)
+        {
+            flags = await FlagService.ListAsync(CancellationToken.None);
+        }
+    }
+}

@@ -1,0 +1,29 @@
+@inherits UiComponentBase
+
+@* BottomNavBar — after Arunachalam's bottom navigation bar on 21st.dev, built from its
+   description rather than its source: a pill of icon tabs where only the active tab shows its
+   name. Picking a tab slides its name out beside the icon on a spring while the previous tab's
+   name folds away, so the bar changes width rather than jumping.
+
+   Which tab is active is in the markup — the server writes it — so the bar is right before any
+   script runs and with none at all. ui.js moves the active state on a click and adds the motion
+   with Motion; under reduced motion the names simply appear and disappear.
+
+   StickyBottom is upstream's stickyBottom: the bar pins itself above the bottom edge of the
+   window, centred. Without it the placement is the caller's, as FloatingNav's is. *@
+
+<nav data-slot="bottom-nav-bar" aria-label="@Label" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</nav>
+
+@code {
+    /// <summary>Names the navigation landmark.</summary>
+    [Parameter] public string Label { get; set; } = "Bottom navigation";
+
+    /// <summary>Pins the bar to the bottom of the window, centred, above the page.</summary>
+    [Parameter] public bool StickyBottom { get; set; }
+
+    // bg-card and the theme's border: the bar is a surface on whatever is behind it.
+    string Classes => Cn(
+        "flex h-[52px] w-fit max-w-[95vw] items-center gap-1 rounded-full border bg-card p-1.5 text-card-foreground shadow-xl",
+        StickyBottom ? "fixed inset-x-0 bottom-4 z-20 mx-auto" : null,
+        Class);
+}

@@ -1,0 +1,71 @@
+@layout MainLayout
+@page "/security"
+@using System.Globalization
+
+@* Static disclosure-policy page (issue #56). Linked from /.well-known/security.txt. *@
+
+<PageTitle>@(IsVi ? "Bảo mật — Báo cáo lỗ hổng" : "Security — Vulnerability Disclosure")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "Chính sách báo cáo lỗ hổng bảo mật của QuickShareCloud." : "QuickShareCloud vulnerability disclosure policy.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        @if (IsVi)
+        {
+            <h1 class="text-3xl font-bold tracking-tight">Báo cáo lỗ hổng bảo mật</h1>
+            <p class="text-muted-foreground legal__version">Cập nhật @DocDate</p>
+
+            <h2 class="text-2xl font-bold">1. Cách báo cáo</h2>
+            <p>Gửi báo cáo qua <a class="text-primary underline-offset-4 hover:underline" href="mailto:@SecurityConstants.ContactEmail">@SecurityConstants.ContactEmail</a> (kèm khoá PGP nếu cần). Không gửi lỗ hổng qua kênh công khai (issue tracker, mạng xã hội) cho đến khi chúng tôi đã khắc phục.</p>
+
+            <h2 class="text-2xl font-bold">2. Phạm vi</h2>
+            <p>Trong phạm vi: hạ tầng tải/tải xuống tệp, luồng truyền P2P (WebRTC), mã hoá AES-GCM phía client, xác thực OTP/mật khẩu trên liên kết chia sẻ, và bất kỳ lỗ hổng nào làm lộ dữ liệu người dùng.</p>
+
+            <h2 class="text-2xl font-bold">3. Cam kết xử lý</h2>
+            <p>Xác nhận trong 72 giờ. Khắc phục trong 90 ngày (trừ lỗ hổng nghiêm trọng — xử lý sớm hơn). Chúng tôi ghi công người báo cáo trong trang cảm ơn khi lỗ hổng được đóng, nếu bạn muốn.</p>
+
+            <h2 class="text-2xl font-bold">4. Quy tắc</h2>
+            <p>Không phá hoại dữ liệu, không xâm nhập tài khoản người khác, chỉ dùng mức truy cập tối thiểu để chứng minh lỗ hổng. Báo cáo có trách nhiệm sẽ không bị truy cứu khi tuân thủ các quy tắc trên.</p>
+        }
+        else
+        {
+            <h1 class="text-3xl font-bold tracking-tight">Vulnerability Disclosure</h1>
+            <p class="text-muted-foreground legal__version">Last updated @DocDate</p>
+
+            <h2 class="text-2xl font-bold">1. How to report</h2>
+            <p>Send reports to <a class="text-primary underline-offset-4 hover:underline" href="mailto:@SecurityConstants.ContactEmail">@SecurityConstants.ContactEmail</a> (PGP key on request). Do not disclose a vulnerability publicly (issue tracker, social media) until we have shipped a fix.</p>
+
+            <h2 class="text-2xl font-bold">2. Scope</h2>
+            <p>In scope: upload/download infrastructure, P2P transfer (WebRTC), client-side AES-GCM encryption, OTP/password gates on share links, and any issue that exposes user data.</p>
+
+            <h2 class="text-2xl font-bold">3. Commitments</h2>
+            <p>Acknowledge within 72 hours. Fix within 90 days (critical issues sooner). We credit reporters on the acknowledgments page once the issue is closed, if you opt in.</p>
+
+            <h2 class="text-2xl font-bold">4. Rules</h2>
+            <p>No data destruction, no accessing other users' accounts, use the least access needed to demonstrate the issue. Responsible reports that follow these rules won't be pursued.</p>
+        }
+        <section id="pentest-posture" class="mt-8 border-t border-border pt-6">
+            <h2 class="text-2xl font-bold">@(IsVi ? "5. Kiểm thử xâm nhập độc lập hàng năm (Penetration Test)" : "5. Annual External Penetration Testing & Posture")</h2>
+            <p class="mt-2 text-sm text-muted-foreground">
+                @(IsVi
+                    ? "QuickShareCloud thực hiện kiểm thử xâm nhập độc lập hàng năm theo chuẩn OWASP Top 10 & API Security Top 10. Mọi phát hiện mức Critical/High được khắc phục và kiểm thử lại (retest) trước khi công bố báo cáo tóm tắt."
+                    : "QuickShareCloud conducts annual third-party penetration testing against OWASP Top 10 and OWASP API Security Top 10. All findings are tracked to remediation and retest verification. Full NDA reports are available to enterprise buyers via /api/security/pentest.")
+            </p>
+        </section>
+
+        <section id="open-source-crypto-audit" class="mt-8 border-t border-border pt-6">
+            <h2 class="text-2xl font-bold">@(IsVi ? "6. Mã nguồn mở phía Client & Kiểm toán mật mã (#42)" : "6. Open-Source Client & Verifiable Cryptography Audit (#42)")</h2>
+            <p class="mt-2 text-sm text-muted-foreground">
+                @(IsVi
+                    ? "Toàn bộ mô-đun mã hoá AES-256-GCM (WebCrypto API), PBKDF2-SHA256 (600,000 vòng) và luồng truyền P2P WebRTC DTLS-SRTP được công bố công khai kèm mã băm SHA-256 có thể tái lập tại /api/security/open-source-audit."
+                    : "Our client-side AES-256-GCM WebCrypto implementation, PBKDF2-SHA256 (600,000 iterations) key derivation, and WebRTC P2P DTLS-SRTP transport are open-source under the MIT license with reproducible SHA-256 artifact hashes published at /api/security/open-source-audit.")
+            </p>
+        </section>
+    </article>
+</PageWrapper>
+
+@code {
+    private const string DocDate = "2026-08-16";
+    private static bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+}

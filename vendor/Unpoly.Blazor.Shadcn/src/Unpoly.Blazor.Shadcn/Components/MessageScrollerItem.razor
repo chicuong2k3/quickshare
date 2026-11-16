@@ -1,0 +1,28 @@
+@inherits UiComponentBase
+
+@* One turn in the thread.
+
+   ScrollAnchor is the feature that separates this component from a div with overflow: auto. An
+   anchored turn settles near the TOP of the viewport with a peek of the exchange above it,
+   instead of the thread snapping to its own bottom — so when a long answer arrives you are left
+   looking at the question that caused it rather than at the end of the answer.
+
+   MessageId names the turn so anything on the page can scroll to it: a jump menu, an outline, a
+   link. It is the markup half of upstream's scrollToMessage. *@
+
+<div data-slot="message-scroller-item" data-scroll-anchor="@(ScrollAnchor ? "true" : null)"
+     data-message-id="@MessageId" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    /// <summary>This turn settles at the top of the viewport rather than the thread's bottom.</summary>
+    [Parameter] public bool ScrollAnchor { get; set; }
+
+    /// <summary>A name for this turn, so anything can scroll to it.</summary>
+    [Parameter] public string? MessageId { get; set; }
+
+    const string Base =
+        "min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]";
+
+    string Classes => Cn(Base, Class);
+}

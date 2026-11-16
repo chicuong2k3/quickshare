@@ -1,0 +1,13 @@
+@inherits UiComponentBase
+
+@* Closes the nearest enclosing <dialog>. type="button" so it never submits a form it happens to
+   sit inside — a Cancel that posts is worse than no Cancel. *@
+
+<button type="button" data-slot="dialog-close" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "outline";
+    [Parameter] public string Size { get; set; } = "default";
+
+    string Classes => ButtonVariants.Of(Variant, Size, Class);
+}

@@ -1,0 +1,35 @@
+@inherits UiComponentBase
+
+@* The palette as a modal. A native <dialog> again, so Escape, the focus trap and the top layer
+   are the platform's — and ui.js focuses the input when it opens, because a palette that needs a
+   second click to type into is a palette nobody uses twice.
+
+   Same frame-and-content split as <Dialog>: the <dialog> is a bare frame stripped by
+   ui.behavior.css, and the box inside it is a <Command>, because that is exactly what it is.
+
+   Bind it to a key with Key; the default is the one everybody already tries. *@
+
+@* The box — the width, the border, the shadow — is the FRAME's, in ui.behavior.css with the
+   other dialog frame rules. Upstream gets it from DialogContent; here the class list on the
+   inner <Command> has to stay exactly the plain Command recipe, because parity compares this
+   component by that shared slot. Without the frame rules the palette was as wide as its
+   longest row: 215 pixels of full-screen modal. *@
+<dialog id="@Id" data-slot="command-dialog" data-command-key="@Key" data-dismissable>
+    <Command Class="@Cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", Class)"
+             @attributes="AdditionalAttributes">
+        @* Named for a screen reader; the placeholder is not a label. *@
+        <h2 class="sr-only">@Title</h2>
+        <p class="sr-only">@Description</p>
+        @ChildContent
+    </Command>
+</dialog>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+
+    /// <summary>The shortcut that opens it, as "mod+k" — mod is ⌘ on a Mac and Ctrl elsewhere.</summary>
+    [Parameter] public string Key { get; set; } = "mod+k";
+
+    [Parameter] public string Title { get; set; } = "Command palette";
+    [Parameter] public string Description { get; set; } = "Search for a command to run.";
+}

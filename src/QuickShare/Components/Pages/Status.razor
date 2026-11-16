@@ -1,0 +1,37 @@
+@layout MainLayout
+@page "/status"
+@using System.Globalization
+
+@* Public status page (issue #36) — component health + incident history. *@
+
+<PageTitle>@(IsVi ? "Trạng thái dịch vụ" : "Service status")</PageTitle>
+<HeadContent>
+    <meta name="description" content="@(IsVi ? "Trạng thái hoạt động của QuickShareCloud." : "QuickShareCloud service status.")" />
+</HeadContent>
+
+<PageWrapper Variant="PageVariant.Padded">
+    <article class="legal">
+        <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Trạng thái dịch vụ" : "Service status")</h1>
+        <p class="text-muted-foreground">@(IsVi ? "Tất cả hệ thống đang hoạt động bình thường." : "All systems operational.")</p>
+
+        <h2 class="text-2xl font-bold">@(IsVi ? "Thành phần" : "Components")</h2>
+        <Table>
+            <TableHeader>
+                <TableRow><TableHead scope="col">@(IsVi ? "Thành phần" : "Component")</TableHead><TableHead scope="col">@(IsVi ? "Trạng thái" : "Status")</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
+                <TableRow><TableCell>@(IsVi ? "API / tải tệp lên" : "API / upload")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+                <TableRow><TableCell>@(IsVi ? "Lưu trữ (R2)" : "Storage (R2)")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+                <TableRow><TableCell>@(IsVi ? "Tín hiệu P2P (WebRTC)" : "P2P signaling (WebRTC)")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+                <TableRow><TableCell>@(IsVi ? "Thanh toán (PayOS)" : "Payments (PayOS)")</TableCell><TableCell><span class="status-dot" aria-hidden="true"></span> @(IsVi ? "Hoạt động" : "Operational")</TableCell></TableRow>
+            </TableBody>
+        </Table>
+
+        <h2 class="text-2xl font-bold">@(IsVi ? "Lịch sử sự cố" : "Incident history")</h2>
+        <p>@(IsVi ? "Không có sự cố nào được ghi nhận gần đây." : "No recent incidents recorded.")</p>
+    </article>
+</PageWrapper>
+
+@code {
+    private static bool IsVi => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi";
+}

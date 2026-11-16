@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+@* Whatever you right-click. Upstream is a Slot with no element of its own; here it is a real
+   element, because something has to carry the event.
+
+   tabindex and the aria are not decoration: a region with a menu on it that a keyboard cannot
+   reach is a menu half the people using it cannot open. Shift+F10 and the context-menu key both
+   fire contextmenu on the focused element, so making it focusable is the whole fix. *@
+
+<div data-slot="context-menu-trigger" tabindex="0" aria-haspopup="menu" aria-expanded="false"
+     class="@Cn("", Class)" @attributes="AdditionalAttributes">@ChildContent</div>

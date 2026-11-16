@@ -8,6 +8,8 @@ public sealed class R2Options
     public string BucketName { get; init; } = string.Empty;
     public string AccessKeyId { get; init; } = string.Empty;
     public string AccessKeySecret { get; init; } = string.Empty;
+    /// <summary>Public base URL for bucket (R2 public access / custom domain). E.g. https://cdn.example.com</summary>
+    public string PublicBaseUrl { get; init; } = string.Empty;
     public int MultipartThreshold { get; init; } = 10 * 1024 * 1024; // 10 MB
 
     public PresignedUrlExpirySettings PresignedUrlExpiry { get; init; } = new();

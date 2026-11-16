@@ -1,0 +1,18 @@
+@inherits UiComponentBase
+
+@* The header is the named container card-header so children can write @md/card-header:flex
+   and the layout responds to the header's own width. Putting "@container/card-header" inline
+   in the class attribute would also work, but the inner string breaks Tailwind's content
+   scanner (the @ in front of a class name fools it), so the named container is declared via a
+   proper utility class below and the class is computed in C# where the attribute is plain. *@
+
+<div data-slot="card-header" class="@Classes" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 " +
+        "has-data-[slot=card-action]:grid-cols-[1fr_auto] px-(--card-spacing) " +
+        "[.border-b]:pb-(--card-spacing)";
+
+    string Classes => Cn(Base, Class);
+}

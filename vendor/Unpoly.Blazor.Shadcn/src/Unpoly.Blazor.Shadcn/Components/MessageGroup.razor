@@ -1,0 +1,11 @@
+@inherits UiComponentBase
+
+<div data-slot="message-group" class="@Classes"
+     @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    const string Base =
+        "flex min-w-0 flex-col gap-2";
+
+    string Classes => Cn(Base, Class);
+}

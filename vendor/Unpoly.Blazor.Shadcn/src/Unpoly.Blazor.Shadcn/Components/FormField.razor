@@ -1,0 +1,36 @@
+@inherits UiComponentBase
+
+@* shadcn's <FormField> is a react-hook-form Controller with a render prop: it owns the field's
+   name, its value and its error, and hands them to the control. None of that survives static
+   SSR — there is no client state and nothing re-renders — so what is left is the composition it
+   produced, with the label, description and error passed in rather than derived.
+
+   Everything it renders is the same four primitives, and they are exported separately, so a
+   field that needs a shape this does not cover composes <FormItem> / <FormLabel> /
+   <FormDescription> / <FormMessage> by hand exactly as in shadcn. *@
+
+<FormItem Class="@Class" @attributes="AdditionalAttributes">
+    @if (Label is not null)
+    {
+        <FormLabel For="@For" Error="@(Message is not null)">@Label</FormLabel>
+    }
+    @ChildContent
+    @if (Description is not null && Message is null)
+    {
+        <FormDescription>@Description</FormDescription>
+    }
+    <FormMessage Message="@Message" />
+</FormItem>
+
+@code {
+    /// <summary>The id of the control inside, so the label points at it.</summary>
+    [Parameter] public string? For { get; set; }
+
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Hidden while there is a Message — a hint and an error competing is noise.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>The validation error. Null means the field is fine and nothing is rendered.</summary>
+    [Parameter] public string? Message { get; set; }
+}

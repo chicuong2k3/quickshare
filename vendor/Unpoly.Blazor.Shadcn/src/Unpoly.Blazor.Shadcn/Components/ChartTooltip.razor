@@ -1,0 +1,35 @@
+@inherits UiComponentBase
+
+@* shadcn's ChartTooltipContent, minus Recharts — which draws its tooltip onto a canvas that
+   nothing else can read. This is a real element: one card, filled from the data attributes of
+   whatever the pointer is over, positioned by ui.js.
+
+   The chart itself stays a table, so the numbers are still in the DOM for a screen reader, a
+   print stylesheet and Find in Page. The tooltip is the sighted-pointer view of the same data,
+   not the only view of it — which is why it is aria-hidden.
+
+   A point declares itself with data-chart-point and three attributes:
+       <td data-chart-point data-chart-label="January" data-chart-series="desktop"
+           data-chart-value="186">
+   Several series on one point repeat data-chart-series/value as a comma-separated pair list. *@
+
+<div data-slot="chart-tooltip" role="tooltip" aria-hidden="true" hidden
+     data-indicator="@Indicator" class="@Classes" @attributes="AdditionalAttributes"></div>
+
+@code {
+    /// <summary>dot | line | dashed, as upstream's indicator prop.</summary>
+    [Parameter] public string Indicator { get; set; } = "dot";
+
+    /// <summary>Hides the label row, as upstream's hideLabel.</summary>
+    [Parameter] public bool HideLabel { get; set; }
+
+    /// <summary>Hides the colour swatch, as upstream's hideIndicator.</summary>
+    [Parameter] public bool HideIndicator { get; set; }
+
+    const string Base =
+        "pointer-events-none fixed z-50 grid min-w-[8rem] items-start gap-1.5 rounded-lg " +
+        "border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl";
+
+    string Classes => Cn(Base, HideLabel ? "[&_[data-chart-tooltip-label]]:hidden" : null,
+                         HideIndicator ? "[&_[data-chart-tooltip-indicator]]:hidden" : null, Class);
+}

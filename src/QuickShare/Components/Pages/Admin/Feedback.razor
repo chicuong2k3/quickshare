@@ -1,0 +1,75 @@
+@page "/admin/feedback"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.Extensions.Options
+@using QuickShare.Features.Feedback
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_feedback_page_title"]</PageTitle>
+
+<PageWrapper id="admin-feedback-shell" Variant="PageVariant.Padded">
+<div class="admin-board">
+    <div class="admin-reports-heading">
+        <h1 class="text-3xl font-bold tracking-tight">@Loc["admin_feedback_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_feedback_subtitle"]</p>
+    </div>
+
+    <Card id="admin-feedback-app" class="admin-reports-card">
+        <CardContent>
+            @if (!isAdmin)
+            {
+                <p class="text-destructive" role="alert">@Loc["admin_feedback_forbidden"]</p>
+            }
+            else if (feedback is null)
+            {
+                <p class="text-muted-foreground">@Loc["admin_feedback_error"]</p>
+            }
+            else if (feedback.Count == 0)
+            {
+                <p class="text-muted-foreground">@Loc["admin_feedback_empty"]</p>
+            }
+            else
+            {
+                <ul class="admin-reports-list">
+                    @foreach (var item in feedback)
+                    {
+                        <li class="admin-report-item">
+                            <div class="admin-report-item__head">
+                                <Badge>@item.Sentiment</Badge>
+                                <Badge>@item.Page</Badge>
+                                <span class="miura-spec">@item.CreatedAt.ToLocalTime().ToString("g")</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.Message))
+                            {
+                                <p style="margin-top: 0.5rem; font-size: 0.875rem">@item.Message</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </CardContent>
+    </Card>
+</div>
+
+</PageWrapper>
+
+@code {
+    private bool isAdmin;
+    private List<FeedbackListItem>? feedback;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+        if (!isAdmin)
+        {
+            return;
+        }
+
+        feedback = await Bus.Send<List<FeedbackListItem>>(new ListFeedbackQuery(), CancellationToken.None);
+    }
+}

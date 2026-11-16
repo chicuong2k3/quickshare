@@ -1,0 +1,30 @@
+@inherits UiComponentBase
+
+@* The kebab at the end of a row. Same rule as the group action, and more sharply: every row has
+   one, so "More" on its own is announced identically fifteen times. *@
+
+<button type="button" data-slot="sidebar-menu-action" aria-label="@AriaLabel"
+        data-show-on-hover="@(ShowOnHover ? "true" : null)" class="@Classes"
+        @attributes="AdditionalAttributes">@ChildContent</button>
+
+@code {
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = default!;
+
+    /// <summary>Hidden until the row is hovered or something in it has focus — never until it is
+    /// focused itself, or a keyboard could not reach it.</summary>
+    [Parameter] public bool ShowOnHover { get; set; }
+
+    const string Base =
+        "absolute top-1.5 end-1 flex aspect-square w-5 items-center justify-center rounded-md " +
+        "p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform " +
+        "peer-hover/menu-button:text-sidebar-accent-foreground hover:bg-sidebar-accent " +
+        "hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 " +
+        "[&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden " +
+        "peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 " +
+        "peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden " +
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 " +
+        "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground " +
+        "data-[state=open]:opacity-100 md:opacity-0";
+
+    string Classes => Cn(Base, Class);
+}

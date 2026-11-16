@@ -1,0 +1,84 @@
+@page "/admin/reports"
+@layout MainLayout
+@attribute [Authorize]
+@using Microsoft.Extensions.Options
+@using QuickShare.Features.Reports
+@using QuickShare.Infrastructure.FeatureFlags
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IMediator Bus
+@inject IOptions<AdminOptions> AdminOpt
+
+<PageTitle>@Loc["admin_reports_page_title"]</PageTitle>
+
+<PageWrapper id="admin-reports-shell" Variant="PageVariant.Padded">
+<div class="admin-board">
+    <div class="mb-6">
+        <h1 class="text-3xl font-semibold">@Loc["admin_reports_title"]</h1>
+        <p class="text-muted-foreground">@Loc["admin_reports_subtitle"]</p>
+    </div>
+
+    <Card id="admin-reports-app" class="px-6">
+        @if (!isAdmin)
+        {
+            <div class="text-destructive" role="alert">@Loc["admin_reports_forbidden"]</div>
+        }
+        else if (reports is null)
+        {
+            <p class="text-muted-foreground">@Loc["admin_reports_error"]</p>
+        }
+        else if (reports.Count == 0)
+        {
+            <p class="text-muted-foreground">@Loc["admin_reports_empty"]</p>
+        }
+        else
+        {
+            <ul class="space-y-4">
+                @foreach (var report in reports)
+                {
+                    <li class="border-b pb-4" data-report-id="@report.Id">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="rounded-md border px-2 py-1 text-sm">@report.Category</span>
+                            <span class="text-sm text-muted-foreground">@report.CreatedAt.ToLocalTime().ToString("g")</span>
+                        </div>
+                        <p class="mt-2 text-sm text-muted-foreground">
+                            @Loc["admin_reports_delivery"]: <span>@report.DeliveryId.ToString("N")</span>
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(report.Note))
+                        {
+                            <p class="mt-2 text-sm">@report.Note</p>
+                        }
+                        <form method="post" action="@ResolveReportFormEndpoint.FormRoute" class="mt-3 flex gap-2"
+                              onsubmit="return confirm(event.submitter.dataset.confirm)">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="@ResolveReportFormEndpoint.ReportIdField" value="@report.Id" />
+                            <Button Type="submit" Variant="outline" Size="sm" name="@ResolveReportFormEndpoint.ActionField"
+                                    value="@ReportAction.Resolve" data-confirm="@Loc["admin_reports_confirm_resolve"]"
+                                    data-ai-action="report.resolve">@Loc["admin_reports_resolve"]</Button>
+                            <Button Type="submit" Size="sm" name="@ResolveReportFormEndpoint.ActionField"
+                                    value="@ReportAction.Suspend" data-confirm="@Loc["admin_reports_confirm_suspend"]"
+                                    data-ai-action="report.suspend">@Loc["admin_reports_suspend"]</Button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+    </Card>
+</div>
+
+</PageWrapper>
+
+@code {
+    private bool isAdmin;
+    private List<ReportListItem>? reports;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
+        if (isAdmin)
+        {
+            reports = await Bus.Send<List<ReportListItem>>(new ListReportsQuery(), CancellationToken.None);
+        }
+    }
+}
