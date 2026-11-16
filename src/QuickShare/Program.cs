@@ -765,6 +765,20 @@ app.MapGet(RoutePaths.MagicLink, async (
     return Results.Redirect("/");
 });
 
+// Dev-only sign-in: gated on Development + the in-memory database, protected by a token that is
+// regenerated per boot, and printed here so a reviewer can open the account, checkout and admin
+// pages that are otherwise unreachable without an identity provider.
+if (QuickShare.Infrastructure.Dev.DevSignIn.ShouldEnable(builder.Configuration, app.Environment))
+{
+    var devSignInToken = QuickShare.Infrastructure.Dev.DevSignIn.NewToken();
+    app.Logger.LogWarning(
+        "Dev sign-in enabled — open {Route}?key={Token} to sign in as {Email} (Pro).",
+        QuickShare.Infrastructure.Dev.DevSignIn.Route,
+        devSignInToken,
+        QuickShare.Infrastructure.Dev.DevSignIn.DefaultEmail);
+    QuickShare.Infrastructure.Dev.DevSignIn.MapDevSignIn(app, devSignInToken);
+}
+
 // SAML 2.0 (issue #139): metadata, SP-initiated login and the assertion consumer.
 app.MapSamlEndpoints();
 
