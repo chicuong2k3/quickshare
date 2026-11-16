@@ -49,5 +49,5 @@ dotnet test tests/QuickShare.Browser.Tests   # 15 Playwright tests (~31s, needs 
 - `docs/architecture.md` — system spine
 - `docs/send-architecture.md`, `docs/payment-architecture.md`, `docs/p2p-architecture.md`,
   `docs/login-architecture.md`, `docs/analytics-architecture.md` — feature flows
-- `docs/observability-setup.md`, `docs/backup-restore-runbook.md`, `docs/deployment-dev.md` — ops
+- `docs/observability-setup.md`, `docs/backup-restore-runbook.md`, `docs/deployment.md` — ops
 - `AGENTS.md` — AI agent rules (conventions + workflow; not human onboarding)

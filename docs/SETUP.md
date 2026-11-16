@@ -90,38 +90,40 @@ dotnet format --verify-no-changes            # CI enforces formatting
 
 Build is strict: `TreatWarningsAsErrors=true` (see `Directory.Build.props`).
 
-## 6. Docker deploy (dev server, Windows)
+## 6. Docker deploy (Coolify)
 
-Stack lives on the server at `C:\deploy\quickshare` (`docker-compose.yml` + `.env`). Image
-`ghcr.io/chicuong2k3/quickshare:dev`, container binds `127.0.0.1:8080`, non-root `appuser`.
+Production is deployed by **Coolify** (`https://coolify.codemagic.io.vn`) on the Coolify host machine,
+which builds this repo's `Dockerfile` from `master`. The container listens on `8080` as non-root
+`appuser`; env vars live on the Coolify app, not in a file in this repo.
 
-```powershell
-# on the server:
-cd C:\deploy\quickshare
-# copy .env.example → .env, fill values (DB_CONNECTION_STRING REQUIRED)
-docker build -t ghcr.io/chicuong2k3/quickshare:dev <workspace>
-docker compose up -d --remove-orphans quickshare
-docker compose logs -f quickshare
+```bash
+API=https://coolify.codemagic.io.vn/api/v1
+APP=l4wrthznhxtp5ghfzazgvgcs
+curl -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" "$API/deploy?uuid=$APP"
+curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" "$API/applications/$APP/logs"
 ```
 
-- Public URL `https://quickshare.codemagic.io.vn` = Cloudflare tunnel (host, `cfnet` network)
-  → `http://quickshare:8080`.
-- DataProtection keys in named volume `quickshare_keys` (keeps auth cookies stable).
-- Pulling from ghcr needs a PAT (`read:packages`) — `GITHUB_TOKEN` cannot pull user packages.
+- Public URL `https://quickshare.codemagic.io.vn` = Cloudflare wildcard CNAME → `cloudflared`
+  tunnel → Traefik on the Coolify host → container `:8080`. No explicit DNS record needed.
+- The app must run on the **Coolify host machine**, otherwise that Traefik has no router for the
+  hostname and answers `404 page not found`.
+- DataProtection keys sit at `/app/keys` in the container filesystem (not a persistent volume), so a
+  rebuild logs everyone out.
 
-Full deploy + CI/CD diagram: [`deployment-dev.md`](deployment-dev.md).
+Full topology, resource IDs and rollback: [`deployment.md`](deployment.md).
 
 ## 7. CI/CD (GitHub Actions)
 
 | Job | Runner | Trigger | Does |
 |---|---|---|---|
 | `test` | ubuntu | push/PR `master`/`dev` | restore → build → format → server tests → Playwright chromium → browser tests |
-| `build` | self-hosted | push `dev` | build + push image to ghcr (`dev` + `:<sha>`) |
-| `deploy` | self-hosted | after `build` | build image on runner → `compose up` → `/health` smoke (60s) |
 | `release` | ubuntu | push `master` | semver tag + GitHub release |
+| `backup` | self-hosted | daily 02:00 UTC | `ops/backup` image → `age`-encrypted `pg_dump` → versioned R2 bucket |
+| `restore-drill` | self-hosted | quarterly | restores the latest backup into a scratch DB |
 
-Self-hosted runner: `C:\actions-runner`, repo `chicuong2k3/quickshare`, pool `Default`.
-Backups + restore: [`backup-restore-runbook.md`](backup-restore-runbook.md) (daily dump → `age`-encrypted → versioned R2 bucket + quarterly drill).
+Deployment itself is **not** a GitHub Actions job — the Coolify GitHub webhook deploys on push to
+`master`. Backups and restore drill: [`backup-restore-runbook.md`](backup-restore-runbook.md)
+(note: the runner's `BACKUP_DB_CONNECTION_STRING` still points at the pre-Coolify database host).
 
 ## 8. Troubleshooting
 

@@ -67,7 +67,7 @@ One operation = one folder under `Features/`. Open the folder, see the whole flo
   shared folders (#151), per-folder defaults (#245), folder templates (#234).
 - Ops: [`observability-setup.md`](observability-setup.md),
   [`feature-flags.md`](feature-flags.md),
-  [`deployment-dev.md`](deployment-dev.md),
+  [`deployment.md`](deployment.md),
   [`backup-restore-runbook.md`](backup-restore-runbook.md).
 
 ## 4. Run it

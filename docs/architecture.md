@@ -10,22 +10,23 @@
 
 > **July 2026:** `QuickShare.Server` (API backend, port 59155) and `QuickShare.Web` (Blazor frontend, port 9000) merged into a single `QuickShare` monolith. `QuickShare.Shared` models/constants also folded in. Removed Refit, `IQuickShareApi`, `CookieForwardingHandler` — SSR pages now call `IMediator` or `AppDbContext` in-process. JS API calls use relative URLs (same origin, no CORS).
 >
-> In Docker the app listens on `8080` (`ASPNETCORE_URLS=http://+:8080`) and runs as non-root `appuser`. See [Deployment — Dev (self-hosted runner)](deployment-dev.md).
+> In Docker the app listens on `8080` (`ASPNETCORE_URLS=http://+:8080`) and runs as non-root `appuser`. See [Deployment — Coolify](deployment.md).
 
 ---
 
-## Deployment (Dev)
+## Deployment
 
-CI/CD deploys the app to a Windows server via a self-hosted GitHub Actions runner. Both `build` and `deploy` jobs run on `self-hosted` (no GitHub-hosted runner):
+Production is deployed by **Coolify** (`https://coolify.codemagic.io.vn`) on the Coolify host machine,
+building this repo's `Dockerfile` from `master`. No image registry, no compose file, no self-hosted runner.
 
-- **Image**: `ghcr.io/chicuong2k3/quickshare:dev` (lowercase — ghcr requirement)
-- **Runner**: `C:\actions-runner`, repo `chicuong2k3/quickshare`, pool `Default`
-- **Deploy path**: `C:\deploy\quickshare` (`docker-compose.yml` + `.env`), service `quickshare`, binds `127.0.0.1:8080`
-- **Public URL**: `https://quickshare.codemagic.io.vn` (Cloudflare tunnel on host → `http://localhost:8080`)
-- **Env vars**: `.env` on server → compose `environment:` → container `IConfiguration` (keys like `ConnectionStrings__DefaultConnection`, `Authentication__Google__ClientId`, `R2__AccountId`, `PayOS__ClientId`)
-- **Key volume**: `quickshare_keys:/app/keys` — DataProtection keys, keeps auth cookies stable
+- **Application**: `quickshare` (`l4wrthznhxtp5ghfzazgvgcs`), build pack `dockerfile`, `/Dockerfile`, port `8080`
+- **Database**: `quickshare-db` (`prsxwkbesydshnizbzq1rzd3`) — Postgres 16, db `quickshare`, same Docker network
+- **Public URL**: `https://quickshare.codemagic.io.vn` — Cloudflare wildcard CNAME → `cloudflared` tunnel → Traefik on the Coolify host → container `:8080`
+- **Env vars**: set on the Coolify app (runtime + buildtime) — `ConnectionStrings__DefaultConnection`, `Authentication__Google__ClientId`, `R2__*`, `PayOS__*`
+- **Health**: `GET /health` = Postgres `SELECT 1;` + email config + R2 `HeadBucket`
+- **Backups**: Coolify dumps the DB daily 02:00 UTC into the R2 bucket via the `quickshare-r2` S3 storage
 
-Full diagrams + flow: [docs/deployment-dev.md](deployment-dev.md).
+Full diagrams, resource IDs, proxy fingerprints and rollback: [docs/deployment.md](deployment.md).
 
 ---
 

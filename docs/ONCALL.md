@@ -3,39 +3,43 @@
 Quick reference for when something breaks. For support + on-call.
 Pairs with: [`observability-setup.md`](observability-setup.md) (telemetry),
 [`backup-restore-runbook.md`](backup-restore-runbook.md) (data recovery),
-[`deployment-dev.md`](deployment-dev.md) (deploy flow), [`SETUP.md`](SETUP.md) (run).
+[`deployment.md`](deployment.md) (deploy flow), [`SETUP.md`](SETUP.md) (run).
 
 ## 0. Know these first
 
 | Thing | Value |
 |---|---|
 | Public URL | `https://quickshare.codemagic.io.vn` |
-| Health (on server) | `http://127.0.0.1:8080/health` |
-| App container | `quickshare`, `docker compose` at `C:\deploy\quickshare` |
-| Alerting | Grafana Alerting → Telegram (`.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) |
+| Health | `https://quickshare.codemagic.io.vn/health` |
+| App container | Coolify app `quickshare` (`l4wrthznhxtp5ghfzazgvgcs`) on the Coolify host |
+| Coolify panel | `https://coolify.codemagic.io.vn` (server `localhost`) |
+| Database | Coolify `quickshare-db` (`prsxwkbesydshnizbzq1rzd3`), db `quickshare` |
+| Alerting | Grafana Alerting → Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) |
 | Telemetry UI | Grafana :3000 (logs=Loki, traces=Tempo, metrics=Prometheus) |
 
 ## 1. Triage — is it actually down?
 
 Run in order, ~2 min:
 
-```powershell
-# 1. App process health (on the server)
-curl.exe -f http://127.0.0.1:8080/health
+```bash
+API=https://coolify.codemagic.io.vn/api/v1
+APP=l4wrthznhxtp5ghfzazgvgcs
 
-# 2. Container state
-docker ps --filter name=quickshare
-docker compose -f C:\deploy\quickshare\docker-compose.yml logs --tail 100 quickshare
+# 1. App health through the public URL (200 = up; 503 = a check failing)
+curl -s -o /dev/null -w '%{http_code}\n' https://quickshare.codemagic.io.vn/health
 
-# 3. Public URL through the tunnel
-#    browser → https://quickshare.codemagic.io.vn (timeout/502 = tunnel or app)
+# 2. Coolify status + logs
+curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" "$API/applications/$APP" | jq -r .status
+curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" "$API/applications/$APP/logs" | jq -r .logs | tail -100
 
-# 4. Last deploy status
-#    GitHub → Actions → latest run on dev
+# 3. Last deployments
+curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" "$API/deployments?uuid=$APP" | jq '.deployments[:3]'
 ```
 
-`/health` 200 + container `Up` + browser loads → not a full outage; go to §2 alerts.
-Otherwise → §3 playbooks.
+`/health` 200 + container `running` + browser loads → not a full outage; go to §2 alerts.
+Otherwise → §3 playbooks. Proxy fingerprints when the URL itself misbehaves:
+`404 page not found` = app not on the Coolify host · `503 no available server` = container down ·
+Cloudflare `502` = edge could not reach the tunnel.
 
 ## 2. Alerts and what they mean
 
@@ -52,16 +56,20 @@ rule/alert added (§6).
 
 ### 3.1 App down / crash-loop / not responding
 
-```powershell
-docker compose -f C:\deploy\quickshare\docker-compose.yml logs --tail 200 quickshare
-# startup crash: missing DB_CONNECTION_STRING, bad config, failed migration
-docker compose -f C:\deploy\quickshare\docker-compose.yml up -d --remove-orphans quickshare
+```bash
+# logs from Coolify (live, per container)
+curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" \
+  "https://coolify.codemagic.io.vn/api/v1/applications/l4wrthznhxtp5ghfzazgvgcs/logs" | jq -r .logs | tail -200
+# restart the container without rebuilding
+curl -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" \
+  "https://coolify.codemagic.io.vn/api/v1/applications/l4wrthznhxtp5ghfzazgvgcs/restart"
 ```
 
-- **Crash at startup** → almost always `DB_CONNECTION_STRING` missing/empty (or a bad
-  migration). Check `.env`, check logs for the exception.
+- **Crash at startup** → almost always `ConnectionStrings__DefaultConnection` wrong/empty or a bad
+  migration. Check the app's env vars in Coolify, and the DB container status.
 - **Crash-loop after deploy** → §4 rollback.
-- **Container stopped** → restart above; investigate why it stopped (`docker inspect quickshare`).
+- **Container `exited:unhealthy` right after a restart** → wait ~15s; Coolify reports the transient
+  state of the rolling update.
 
 ### 3.2 High 5xx / error spike / slow
 
@@ -99,38 +107,30 @@ aws s3api list-object-versions --bucket "$R2_BUCKET_NAME" --prefix "uploads/<...
 ### 3.5 Login broken
 
 Almost always Google OAuth config: `Authentication__Google__ClientId` /
-`ClientSecret` missing or wrong. Check `.env` on the server. Dev auto-signin (local only) is
+`ClientSecret` missing or wrong. Check the app's env vars in Coolify. Dev auto-signin (local only) is
 not present in the container — prod needs real OAuth.
 
 ### 3.6 P2P "Direct connection failed" — NOT an incident
 
 P2P is ICE-direct only (STUN, no TURN). Two devices on strict NAT (different 4G carriers)
 **always** fail by design. The R2 server path is the fallback. Do not page anyone; add a TURN
-server when it becomes a funded feature (see `deployment-dev.md` §Notes).
+server when it becomes a funded feature (see `deployment.md`).
 
 ### 3.7 Email not sending
 
 Email is optional (blank `EMAIL_*` = disabled). Brevo free tier caps ~300/day. Check
-`Email__Host/Port/User/Password/From` in `.env`; sender domain must be verified in Brevo.
+`Email__Host/Port/User/Password/From` in the Coolify app env; sender domain must be verified in Brevo.
 
 ## 4. Rollback a bad deploy
 
-`GITHUB_TOKEN` cannot pull ghcr user packages, so rollback = rebuild the last-good commit
-locally on the runner (same as the deploy job):
+Coolify keeps every deployment. Roll back without touching git:
 
-```powershell
-# on the server (runner workspace holds the checkout)
-cd <runner workspace>
-git checkout <last-good-sha>
-docker build -t ghcr.io/chicuong2k3/quickshare:dev .
-cd C:\deploy\quickshare
-docker compose up -d --remove-orphans quickshare
-# verify:
-curl.exe -f http://127.0.0.1:8080/health
-```
+1. Coolify UI → app `quickshare` → **Deployments** → the last green deployment → **Redeploy**.
+2. Or revert the bad commit on `master` and let the webhook deploy again.
+3. Verify: `curl -s -o /dev/null -w '%{http_code}' https://quickshare.codemagic.io.vn/health` → `200`.
 
-The image tag `:<sha>` on ghcr exists for every deploy, but use the local rebuild path
-(no PAT pull needed).
+The old image tag is not reused — Coolify rebuilds from the chosen commit, so a rollback costs one
+build (a few minutes).
 
 ## 5. Where everything lives (telemetry map)
 
