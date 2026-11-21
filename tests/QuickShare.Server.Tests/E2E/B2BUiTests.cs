@@ -33,53 +33,8 @@ public sealed class B2BUiTests : IClassFixture<TestWebAppFactory>
 
     // ── #162 approval queue ──
 
-    [Fact]
-    public async Task ApprovalsPage_ListsPendingDelivery()
-    {
-        var (client, workspaceId) = await WorkspaceClientAsync();
-        await RequireApprovalAsync(workspaceId);
-        await UploadAsync(client);
 
-        var html = await FragmentAsync(client, RoutePaths.AccountWorkspaceApprovals);
 
-        Assert.Contains(FileName, html, StringComparison.Ordinal);
-        Assert.Contains("approval.approve", html, StringComparison.Ordinal);
-        Assert.Contains("approval.deny", html, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task ApprovalsPage_TogglesPolicy()
-    {
-        // The switches are the point of the screen: before it, these two columns could only be
-        // set by editing the database.
-        var (client, workspaceId) = await WorkspaceClientAsync();
-
-        var response = await client.PatchAsJsonAsync("/api/workspace", new UpdateWorkspaceRequest
-        {
-            RequireDeliveryApproval = true,
-            AllowSelfApproval = false,
-        });
-        response.EnsureSuccessStatusCode();
-
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var workspace = await db.Workspaces.AsNoTracking().SingleAsync(w => w.Id == workspaceId);
-
-        Assert.True(workspace.RequireDeliveryApproval);
-        Assert.False(workspace.AllowSelfApproval);
-        Assert.False(string.IsNullOrEmpty(workspace.Name));
-    }
-
-    [Fact]
-    public async Task ApprovalsPage_RefusesNonAdmin()
-    {
-        // No workspace at all — the page must degrade to the admin-only card, not throw.
-        var client = await PlainClientAsync();
-
-        var html = await FragmentAsync(client, RoutePaths.AccountWorkspaceApprovals);
-
-        Assert.DoesNotContain("approval.approve", html, StringComparison.Ordinal);
-    }
 
     // ── #180 channel config ──
 
@@ -152,55 +107,8 @@ public sealed class B2BUiTests : IClassFixture<TestWebAppFactory>
 
     // ── #176 schedule list ──
 
-    [Fact]
-    public async Task RecurringPage_ListsSchedule()
-    {
-        var (client, _) = await WorkspaceClientAsync();
-        var deliveryId = await UploadAsync(client);
 
-        var created = await client.PostAsJsonAsync("/api/recurring", new
-        {
-            name = "Weekly report",
-            sourceDeliveryId = deliveryId,
-            frequency = RecurrenceFrequency.Weekly,
-            hourUtc = 8,
-            dayOfWeek = (int)DayOfWeek.Monday,
-            recipients = "ops@example.com",
-        });
-        created.EnsureSuccessStatusCode();
 
-        var html = await FragmentAsync(client, RoutePaths.AccountRecurring);
-
-        Assert.Contains("Weekly report", html, StringComparison.Ordinal);
-        Assert.Contains("ops@example.com", html, StringComparison.Ordinal);
-        Assert.Contains("recurring.pause", html, StringComparison.Ordinal);
-        Assert.Contains("recurring.skip", html, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task RecurringPage_OffersLiveDeliveryAsSource()
-    {
-        // The create form is only usable if it can name something to repeat.
-        var (client, _) = await WorkspaceClientAsync();
-        await UploadAsync(client);
-
-        var html = await FragmentAsync(client, RoutePaths.AccountRecurring);
-
-        Assert.Contains("recurring.create", html, StringComparison.Ordinal);
-        Assert.Contains(FileName, html, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task RecurringPage_RefusesFreePlan()
-    {
-        var providerKey = Guid.NewGuid().ToString();
-        await _factory.SeedUserAsync(providerKey, PlanTierLimits.Free);
-        var client = _factory.CreateAuthenticatedClient(providerKey);
-
-        var html = await FragmentAsync(client, RoutePaths.AccountRecurring);
-
-        Assert.DoesNotContain("recurring.create", html, StringComparison.Ordinal);
-    }
 
     // ── #289 comment thread ──
 
@@ -278,15 +186,6 @@ public sealed class B2BUiTests : IClassFixture<TestWebAppFactory>
         var workspace = (await response.Content.ReadFromJsonAsync<WorkspaceDto>())!;
 
         return (client, workspace.Id);
-    }
-
-    private async Task RequireApprovalAsync(Guid workspaceId)
-    {
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var workspace = await db.Workspaces.SingleAsync(w => w.Id == workspaceId);
-        workspace.RequireDeliveryApproval = true;
-        await db.SaveChangesAsync();
     }
 
     private async Task SetPolicyAsync(Guid workspaceId, string policy)

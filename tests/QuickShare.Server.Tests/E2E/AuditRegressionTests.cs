@@ -72,23 +72,6 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
         Assert.Empty(thread.Comments);
     }
 
-    [Fact]
-    public async Task Comments_AreClosedOnAShareHeldForApproval()
-    {
-        var (client, workspaceId) = await WorkspaceClientAsync();
-        var deliveryId = await UploadAsync(client, commentsEnabled: true);
-        var shareCode = await ShareCodeAsync(deliveryId);
-
-        await MutateAsync(deliveryId, d => d.Status = DeliveryStatus.PendingApproval);
-        Assert.NotEqual(Guid.Empty, workspaceId);
-
-        var anonymous = _factory.CreateClient();
-        var thread = await anonymous.GetFromJsonAsync<CommentThreadDto>($"/api/deliveries/{shareCode}/comments");
-
-        // #162 went to some trouble to make a held share invisible; its thread is part of that.
-        Assert.NotNull(thread);
-        Assert.False(thread.CanPost);
-    }
 
     [Fact]
     public async Task Comments_AreClosedToACallerTheScopeRulesRefuse()
@@ -146,29 +129,6 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
         Assert.False(string.IsNullOrEmpty(hook.LastError));
     }
 
-    [Fact]
-    public async Task ChannelHook_IsNotConsultedForAShareHeldForApproval()
-    {
-        var (client, workspaceId) = await WorkspaceClientAsync();
-
-        await client.PutAsJsonAsync("/api/workspace/channel",
-            new QuickShare.Features.Workspaces.Channels.ChannelHookRequest
-            {
-                Kind = ChannelKind.Slack,
-                WebhookUrl = "https://192.0.2.1/services/x",
-            });
-
-        await MutateWorkspaceAsync(workspaceId, w => w.RequireDeliveryApproval = true);
-        await UploadAsync(client);
-
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var hook = await db.WorkspaceChannelHooks.AsNoTracking().SingleAsync(h => h.WorkspaceId == workspaceId);
-
-        // A channel post is how somebody outside first learns a link exists, so it waits for
-        // the reviewer exactly as the recipient emails do.
-        Assert.Equal(0, hook.ConsecutiveFailures);
-    }
 
     // ── Render coverage for pages the suite never loaded ──
 

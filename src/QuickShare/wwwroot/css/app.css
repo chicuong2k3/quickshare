@@ -676,16 +676,57 @@ progress {
     color: var(--b-ink);
 }
 
+/* ─── Account: shell (vertical tab rail + content) ─── */
+.account-shell {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.account-shell__content {
+    min-width: 0;
+}
+
+@media (max-width: 960px) {
+    .account-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .account-tabs {
+        flex-direction: row;
+        position: static;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-bottom: 1.25rem;
+    }
+
+    .account-tabs__item {
+        border-right: 1px solid var(--b-hair);
+        border-bottom: 2px solid transparent;
+    }
+
+    .account-tabs__item:last-child {
+        border-right: 0;
+    }
+
+    .account-tabs__item--active {
+        border-right: 1px solid var(--b-hair);
+        border-bottom: 2px solid var(--b-amber);
+    }
+}
+
 /* ─── Account: section tabs (Departure Board flap strip) ─── */
 .account-tabs {
     display: flex;
-    flex-wrap: nowrap;
+    flex-direction: column;
     gap: 0;
     border: 1px solid var(--b-hair);
     background: var(--b-flap);
-    margin-bottom: 1.25rem;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: sticky;
+    top: 1rem;
 }
 
 .account-tabs__item {
@@ -700,12 +741,12 @@ progress {
     color: var(--b-dim);
     text-decoration: none;
     white-space: nowrap;
-    border-right: 1px solid var(--b-hair);
-    border-bottom: 2px solid transparent;
+    border-right: 0;
+    border-bottom: 1px solid var(--b-hair);
 }
 
 .account-tabs__item:last-child {
-    border-right: 0;
+    border-bottom: 0;
 }
 
 .account-tabs__item:hover {
@@ -716,7 +757,8 @@ progress {
 .account-tabs__item--active {
     color: var(--b-ink);
     background: var(--b-panel);
-    border-bottom-color: var(--b-amber);
+    border-right: 2px solid var(--b-amber);
+    border-bottom: 1px solid var(--b-hair);
 }
 
 /* ─── Account: deliveries (download gauge) ─── */
@@ -2462,14 +2504,11 @@ html, body {
     cursor: grab;
 }
 
-/* ─── RTL Layout & BiDi Filename Support (issue #152) ─── */
-[dir="rtl"] { direction: rtl; text-align: start; }
-[dir="rtl"] .account-delivery__activity-body ul { padding-left: 0; padding-right: var(--db-space-4); }
-[dir="rtl"] .account-delivery__ocr { margin-left: 0; margin-right: var(--db-space-2); }
+/* ─── BiDi filenames (issue #152) ───
+   The UI speaks English and Vietnamese only, so the direction attribute never turns RTL —
+   but a file somebody uploads still can be Hebrew or Arabic, and a mixed-direction filename
+   rendered as LTR reorders itself into a different name than the one on disk. */
 .file-name, .dl-file__name, [data-bidi="plaintext"] { unicode-bidi: plaintext; }
-.rtl-ready {
-    cursor: grab;
-}
 
 /* ═══ Doc pages · board material (DESIGN.md — "Bảng chuyến") ══════════
    One layer for every reading surface that uses `.legal`: help, terms,

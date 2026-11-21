@@ -32,7 +32,6 @@ public class AppDbContext : DbContext
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
     public DbSet<RecipientContact> RecipientContacts => Set<RecipientContact>();
-    public DbSet<FileLock> FileLocks => Set<FileLock>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<WorkspaceTransfer> WorkspaceTransfers => Set<WorkspaceTransfer>();
@@ -41,29 +40,16 @@ public class AppDbContext : DbContext
     public DbSet<BillingProfile> BillingProfiles => Set<BillingProfile>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
-    public DbSet<SiemSink> SiemSinks => Set<SiemSink>();
-    public DbSet<DpaSignature> DpaSignatures => Set<DpaSignature>();
-    public DbSet<WorkspaceBackupPolicy> WorkspaceBackupPolicies => Set<WorkspaceBackupPolicy>();
     public DbSet<WorkspaceBrand> WorkspaceBrands => Set<WorkspaceBrand>();
-    public DbSet<RecurringDelivery> RecurringDeliveries => Set<RecurringDelivery>();
     public DbSet<DeliveryComment> DeliveryComments => Set<DeliveryComment>();
     public DbSet<WorkspaceChannelHook> WorkspaceChannelHooks => Set<WorkspaceChannelHook>();
     public DbSet<WorkspaceDomain> WorkspaceDomains => Set<WorkspaceDomain>();
-    public DbSet<WorkspaceS3Credential> WorkspaceS3Credentials => Set<WorkspaceS3Credential>();
-    public DbSet<DeliveryOcrText> DeliveryOcrTexts => Set<DeliveryOcrText>();
     public DbSet<DeliveryRecipient> DeliveryRecipients => Set<DeliveryRecipient>();
     public DbSet<UserConsent> UserConsents => Set<UserConsent>();
     public DbSet<ApiKeyUsage> ApiKeyUsages => Set<ApiKeyUsage>();
-    public DbSet<UserTotp> UserTotps => Set<UserTotp>();
-    public DbSet<WorkspaceSsoConfig> WorkspaceSsoConfigs => Set<WorkspaceSsoConfig>();
-    public DbSet<WorkspaceScimToken> WorkspaceScimTokens => Set<WorkspaceScimToken>();
-    public DbSet<SamlAssertionSeen> SamlAssertionsSeen => Set<SamlAssertionSeen>();
     public DbSet<DeliveryFile> DeliveryFiles => Set<DeliveryFile>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
-    public DbSet<UserPasskey> UserPasskeys => Set<UserPasskey>();
-    public DbSet<PasskeyChallenge> PasskeyChallenges => Set<PasskeyChallenge>();
-    public DbSet<LoginToken> LoginTokens => Set<LoginToken>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<PromoRedemption> PromoRedemptions => Set<PromoRedemption>();
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
@@ -71,25 +57,7 @@ public class AppDbContext : DbContext
     public DbSet<UploadPreset> UploadPresets => Set<UploadPreset>();
     public DbSet<DeliveryVersion> DeliveryVersions => Set<DeliveryVersion>();
     public DbSet<EmailSuppression> EmailSuppressions => Set<EmailSuppression>();
-    public DbSet<DiscountApplication> DiscountApplications => Set<DiscountApplication>();
-    public DbSet<SubscriptionGift> SubscriptionGifts => Set<SubscriptionGift>();
-    public DbSet<Experiment> Experiments => Set<Experiment>();
-    public DbSet<TransferCreditPass> TransferCreditPasses => Set<TransferCreditPass>();
-    public DbSet<AffiliateProfile> AffiliateProfiles => Set<AffiliateProfile>();
-    public DbSet<AffiliateConversion> AffiliateConversions => Set<AffiliateConversion>();
-    public DbSet<SmsDeliveryLog> SmsDeliveryLogs => Set<SmsDeliveryLog>();
-    public DbSet<SmsOptOut> SmsOptOuts => Set<SmsOptOut>();
-    public DbSet<MigrationImportJob> MigrationImportJobs => Set<MigrationImportJob>();
     public DbSet<DeduplicatedBlob> DeduplicatedBlobs => Set<DeduplicatedBlob>();
-    public DbSet<CustomSendingDomain> CustomSendingDomains => Set<CustomSendingDomain>();
-    public DbSet<SupportChatThread> SupportChatThreads => Set<SupportChatThread>();
-    public DbSet<SupportChatMessage> SupportChatMessages => Set<SupportChatMessage>();
-    public DbSet<AutomationConnection> AutomationConnections => Set<AutomationConnection>();
-    public DbSet<UserPasskeyRecovery> UserPasskeyRecoveries => Set<UserPasskeyRecovery>();
-    public DbSet<PenetrationTestRecord> PenetrationTestRecords => Set<PenetrationTestRecord>();
-    public DbSet<WorkspaceByokConfig> WorkspaceByokConfigs => Set<WorkspaceByokConfig>();
-    public DbSet<WorkspaceSftpKey> WorkspaceSftpKeys => Set<WorkspaceSftpKey>();
-    public DbSet<GitHubReleaseRepo> GitHubReleaseRepos => Set<GitHubReleaseRepo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -144,18 +112,12 @@ public class AppDbContext : DbContext
             entity.Property(e => e.AllowedIpRanges).HasMaxLength(Delivery.AccessRuleMaxLength);
             entity.Property(e => e.AllowedCountries).HasMaxLength(Delivery.AccessRuleMaxLength);
             entity.Property(e => e.BlockedCountries).HasMaxLength(Delivery.AccessRuleMaxLength);
-            entity.Property(e => e.LegalHoldReason).HasMaxLength(Delivery.LegalHoldReasonMaxLength);
-            // The retention sweep and every purge path filter on the hold flag.
-            entity.HasIndex(e => e.LegalHoldAt);
             entity.HasIndex(e => e.ExpiresAt);
             entity.HasOne(e => e.Sender)
                 .WithMany()
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.WorkspaceId);
-            entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
-            entity.Property(e => e.DenyReason).HasMaxLength(Delivery.MessageMaxLength);
-            entity.Property(e => e.PendingRecipients).HasMaxLength(RecurringDelivery.RecipientsMaxLength);
             entity.HasIndex(e => e.CommentsEnabled);
             entity.HasIndex(e => e.FolderId);
             // Restrict, not cascade: deleting a folder must never take its deliveries with it.
@@ -318,9 +280,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PaymentIntent>(entity =>
         {
             entity.Property(e => e.Provider).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.ProviderChargeId).HasMaxLength(64);
-            // The webhook arrives knowing only the charge id, so that is the lookup.
-            entity.HasIndex(e => e.ProviderChargeId);
             entity.ToTable("payment_intents");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
@@ -474,22 +433,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<FileLock>(entity =>
-        {
-            entity.ToTable("file_locks");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Reason).HasMaxLength(FileLock.ReasonMaxLength);
-            entity.HasIndex(e => new { e.DeliveryId, e.ReleasedAt });
-            entity.HasOne<Delivery>()
-                .WithMany()
-                .HasForeignKey(e => e.DeliveryId)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne<User>()
-                .WithMany()
-                .HasForeignKey(e => e.LockedById)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
         modelBuilder.Entity<Workspace>(entity =>
         {
             entity.ToTable("workspaces");
@@ -552,28 +495,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<UserTotp>(entity =>
-        {
-            // One enrolment per account: a second authenticator would be a second thing to
-            // revoke on offboarding, and nobody asked for one.
-            entity.HasIndex(e => e.UserId).IsUnique();
-            entity.Property(e => e.Secret).IsRequired().HasMaxLength(UserTotp.SecretLength);
-            entity.Property(e => e.RecoveryCodeHashes).IsRequired().HasMaxLength(UserTotp.RecoveryCodesMaxLength);
-        });
-
-        modelBuilder.Entity<WorkspaceSsoConfig>(entity =>
-        {
-            entity.HasIndex(e => e.WorkspaceId).IsUnique();
-            // Sign-in looks the directory up by claim, so this is the hot path, not WorkspaceId.
-            entity.HasIndex(e => new { e.Provider, e.DirectoryId });
-            entity.Property(e => e.Provider).IsRequired().HasMaxLength(32);
-            entity.Property(e => e.DirectoryId).IsRequired().HasMaxLength(WorkspaceSsoConfig.DirectoryIdMaxLength);
-            entity.Property(e => e.AllowedEmailDomains).HasMaxLength(WorkspaceSsoConfig.DomainsMaxLength);
-            entity.Property(e => e.AdminGroupId).HasMaxLength(WorkspaceSsoConfig.GroupIdMaxLength);
-            entity.Property(e => e.SamlSsoUrl).HasMaxLength(WorkspaceSsoConfig.SamlUrlMaxLength);
-            entity.Property(e => e.SamlCertificate).HasMaxLength(WorkspaceSsoConfig.SamlCertificateMaxLength);
-        });
-
         modelBuilder.Entity<PromoCode>(entity =>
         {
             entity.ToTable("promo_codes");
@@ -596,38 +517,6 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.PromoCodeId, e.UserId }).IsUnique();
             entity.HasOne(e => e.PromoCode).WithMany().HasForeignKey(e => e.PromoCodeId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<UserPasskey>(entity =>
-        {
-            entity.ToTable("user_passkeys");
-            // Sign-in resolves an account from a credential id, so this is the hot path.
-            entity.HasIndex(e => e.CredentialId).IsUnique();
-            entity.HasIndex(e => e.UserId);
-            entity.Property(e => e.CredentialId).IsRequired().HasMaxLength(UserPasskey.CredentialIdMaxLength);
-            entity.Property(e => e.PublicKey).IsRequired().HasMaxLength(UserPasskey.PublicKeyMaxLength);
-            entity.Property(e => e.Name).HasMaxLength(UserPasskey.NameMaxLength);
-            entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<PasskeyChallenge>(entity =>
-        {
-            entity.ToTable("passkey_challenges");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Handle).IsUnique();
-            entity.HasIndex(e => e.ExpiresAt);
-            entity.Property(e => e.Handle).IsRequired().HasMaxLength(PasskeyChallenge.HandleLength);
-            entity.Property(e => e.OptionsJson).IsRequired().HasMaxLength(PasskeyChallenge.OptionsMaxLength);
-        });
-
-        modelBuilder.Entity<LoginToken>(entity =>
-        {
-            entity.ToTable("login_tokens");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.TokenHash).IsUnique();
-            entity.HasIndex(e => e.ExpiresAt);
-            entity.Property(e => e.Email).IsRequired().HasMaxLength(LoginToken.EmailMaxLength);
-            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(LoginToken.TokenHashLength);
         });
 
         modelBuilder.Entity<UserSession>(entity =>
@@ -699,22 +588,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<SamlAssertionSeen>(entity =>
-        {
-            // The unique index is the replay check itself, not an optimisation for it.
-            entity.HasIndex(e => e.AssertionId).IsUnique();
-            entity.HasIndex(e => e.ExpiresAt);
-            entity.Property(e => e.AssertionId).IsRequired().HasMaxLength(SamlAssertionSeen.AssertionIdMaxLength);
-        });
-
-        modelBuilder.Entity<WorkspaceScimToken>(entity =>
-        {
-            entity.HasIndex(e => e.TokenHash).IsUnique();
-            entity.HasIndex(e => e.WorkspaceId);
-            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(WorkspaceScimToken.TokenHashLength);
-            entity.Property(e => e.Label).IsRequired().HasMaxLength(WorkspaceScimToken.LabelMaxLength);
-        });
-
         modelBuilder.Entity<WorkspaceChannelHook>(entity =>
         {
             entity.ToTable("workspace_channel_hooks");
@@ -728,29 +601,6 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<RecurringDelivery>(entity =>
-        {
-            entity.ToTable("recurring_deliveries");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(RecurringDelivery.NameMaxLength);
-            entity.Property(e => e.Frequency).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.Recipients).HasMaxLength(RecurringDelivery.RecipientsMaxLength);
-            entity.Property(e => e.LastError).HasMaxLength(RecurringDelivery.ErrorMaxLength);
-            // The job scans by due time, so that is the index that matters.
-            entity.HasIndex(e => new { e.Enabled, e.NextRunAt });
-            entity.HasIndex(e => e.OwnerId);
-            entity.HasOne(e => e.Owner)
-                .WithMany()
-                .HasForeignKey(e => e.OwnerId)
-                .OnDelete(DeleteBehavior.Cascade);
-            // Restrict, not cascade: deleting the source delivery should surface as a stopped
-            // schedule the owner can see, not a schedule that silently disappears.
-            entity.HasOne<Delivery>()
-                .WithMany()
-                .HasForeignKey(e => e.SourceDeliveryId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ApiKeyUsage>(entity =>
@@ -796,40 +646,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<DeliveryOcrText>(entity =>
-        {
-            entity.ToTable("delivery_ocr_texts");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Text).HasMaxLength(DeliveryOcrText.TextMaxLength);
-            // One result per delivery, and the delivery is how it is always looked up.
-            entity.HasIndex(e => e.DeliveryId).IsUnique();
-            entity.HasOne(e => e.Delivery)
-                .WithMany()
-                .HasForeignKey(e => e.DeliveryId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<WorkspaceS3Credential>(entity =>
-        {
-            entity.ToTable("workspace_s3_credentials");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Label).IsRequired().HasMaxLength(WorkspaceS3Credential.LabelMaxLength);
-            entity.Property(e => e.AccessKeyId).IsRequired().HasMaxLength(WorkspaceS3Credential.AccessKeyIdLength);
-            entity.Property(e => e.SecretProtected).IsRequired().HasMaxLength(WorkspaceS3Credential.ProtectedMaxLength);
-            entity.Property(e => e.Scopes).IsRequired().HasMaxLength(64);
-            // The access key is what a signature arrives with, so it is the lookup and it is unique.
-            entity.HasIndex(e => e.AccessKeyId).IsUnique();
-            entity.HasIndex(e => e.WorkspaceId);
-            entity.HasOne(e => e.Workspace)
-                .WithMany()
-                .HasForeignKey(e => e.WorkspaceId)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
         modelBuilder.Entity<WorkspaceDomain>(entity =>
         {
             entity.ToTable("workspace_domains");
@@ -872,63 +688,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<WorkspaceBackupPolicy>(entity =>
-        {
-            entity.ToTable("workspace_backup_policies");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Frequency).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.LastStatus).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.Endpoint).HasMaxLength(WorkspaceBackupPolicy.EndpointMaxLength);
-            entity.Property(e => e.Region).HasMaxLength(64);
-            entity.Property(e => e.BucketName).HasMaxLength(WorkspaceBackupPolicy.BucketMaxLength);
-            entity.Property(e => e.KeyPrefix).HasMaxLength(WorkspaceBackupPolicy.PrefixMaxLength);
-            entity.Property(e => e.AccessKeyId).HasMaxLength(WorkspaceBackupPolicy.SecretMaxLength);
-            entity.Property(e => e.AccessKeySecret).HasMaxLength(WorkspaceBackupPolicy.SecretMaxLength);
-            entity.Property(e => e.LastError).HasMaxLength(WorkspaceBackupPolicy.ErrorMaxLength);
-            entity.Property(e => e.LastManifestKey).HasMaxLength(WorkspaceBackupPolicy.KeyMaxLength);
-            // One policy per workspace. Several destinations is a replication problem, and
-            // solving it here would mean owning partial-failure semantics across them.
-            entity.HasIndex(e => e.WorkspaceId).IsUnique();
-            entity.HasOne(e => e.Workspace)
-                .WithMany()
-                .HasForeignKey(e => e.WorkspaceId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<SiemSink>(entity =>
-        {
-            entity.ToTable("siem_sinks");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Endpoint).IsRequired().HasMaxLength(SiemSink.EndpointMaxLength);
-            entity.Property(e => e.Format).IsRequired().HasMaxLength(SiemSink.FormatMaxLength);
-            entity.Property(e => e.Secret).HasMaxLength(SiemSink.SecretMaxLength);
-            entity.Property(e => e.EventFilter).HasMaxLength(SiemSink.EventFilterMaxLength);
-            entity.Property(e => e.LastError).HasMaxLength(SiemSink.ErrorMaxLength);
-            // One sink per workspace. Fan-out to several SIEMs is a router's job, not ours.
-            entity.HasIndex(e => e.WorkspaceId).IsUnique();
-            entity.HasOne(e => e.Workspace)
-                .WithMany()
-                .HasForeignKey(e => e.WorkspaceId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<DpaSignature>(entity =>
-        {
-            entity.ToTable("dpa_signatures");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Version).IsRequired().HasMaxLength(DpaSignature.VersionMaxLength);
-            entity.Property(e => e.CompanyName).IsRequired().HasMaxLength(DpaSignature.CompanyNameMaxLength);
-            entity.Property(e => e.SignerName).IsRequired().HasMaxLength(DpaSignature.SignerMaxLength);
-            entity.Property(e => e.SignerEmail).IsRequired().HasMaxLength(DpaSignature.SignerMaxLength);
-            // One signature per account per version; re-signing the same terms is a no-op,
-            // and a new version is a new row rather than an edit to the old evidence.
-            entity.HasIndex(e => new { e.UserId, e.Version }).IsUnique();
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
         modelBuilder.Entity<BillingProfile>(entity =>
         {
             entity.ToTable("billing_profiles");
@@ -938,7 +697,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TaxCode).HasMaxLength(BillingProfile.TaxCodeMaxLength);
             entity.Property(e => e.Address).HasMaxLength(BillingProfile.AddressMaxLength);
             entity.Property(e => e.BillingEmail).HasMaxLength(BillingProfile.CompanyNameMaxLength);
-            entity.Property(e => e.PoNumber).HasMaxLength(BillingProfile.PoNumberMaxLength);
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
@@ -954,13 +712,11 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CompanyName).HasMaxLength(BillingProfile.CompanyNameMaxLength);
             entity.Property(e => e.TaxCode).HasMaxLength(BillingProfile.TaxCodeMaxLength);
             entity.Property(e => e.Address).HasMaxLength(BillingProfile.AddressMaxLength);
-            entity.Property(e => e.PoNumber).HasMaxLength(BillingProfile.PoNumberMaxLength);
             // An invoice number is a legal identifier — two rows sharing one is a filing error.
             entity.HasIndex(e => e.Number)
                 .IsUnique()
                 .HasFilter("\"Number\" <> ''");
             entity.HasIndex(e => new { e.UserId, e.Status });
-            entity.HasIndex(e => e.DueAt);
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
@@ -1038,42 +794,6 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.Email).IsUnique();
         });
 
-        modelBuilder.Entity<DiscountApplication>(entity =>
-        {
-            entity.ToTable("discount_applications");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Kind).IsRequired().HasMaxLength(DiscountApplication.KindMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(DiscountApplication.StatusMaxLength);
-            entity.Property(e => e.OrganizationName).IsRequired().HasMaxLength(DiscountApplication.OrganizationMaxLength);
-            entity.Property(e => e.VerificationEmail).IsRequired().HasMaxLength(DiscountApplication.VerificationEmailMaxLength);
-            entity.Property(e => e.ProofReference).HasMaxLength(DiscountApplication.ProofReferenceMaxLength);
-            entity.Property(e => e.IssuedPromoCode).HasMaxLength(PromoCode.CodeMaxLength);
-            entity.HasIndex(e => e.UserId).IsUnique();
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<SubscriptionGift>(entity =>
-        {
-            entity.ToTable("subscription_gifts");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.RecipientEmail).IsRequired().HasMaxLength(SubscriptionGift.EmailMaxLength);
-            entity.Property(e => e.Plan).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.Billing).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.Message).HasMaxLength(SubscriptionGift.MessageMaxLength);
-            entity.Property(e => e.Token).IsRequired().HasMaxLength(SubscriptionGift.TokenLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.HasIndex(e => e.Token).IsUnique();
-            entity.HasIndex(e => e.SenderUserId);
-            entity.HasIndex(e => e.PaymentIntentId);
-            entity.HasOne(e => e.Sender)
-                .WithMany()
-                .HasForeignKey(e => e.SenderUserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
         modelBuilder.Entity<DeliveryVersion>(entity =>
         {
             entity.ToTable("delivery_versions");
@@ -1088,92 +808,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Experiment>(entity =>
-        {
-            entity.ToTable("experiments");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Key).IsRequired().HasMaxLength(Experiment.KeyMaxLength);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(Experiment.NameMaxLength);
-            entity.Property(e => e.Surface).IsRequired().HasMaxLength(32);
-            entity.Property(e => e.VariantACopy).HasMaxLength(Experiment.CopyMaxLength);
-            entity.Property(e => e.VariantBCopy).HasMaxLength(Experiment.CopyMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.Property(e => e.WinnerVariant).HasMaxLength(8);
-            entity.HasIndex(e => e.Key).IsUnique();
-        });
-
-        modelBuilder.Entity<TransferCreditPass>(entity =>
-        {
-            entity.ToTable("transfer_credit_passes");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Token).IsRequired().HasMaxLength(TransferCreditPass.TokenLength);
-            entity.Property(e => e.BuyerEmail).HasMaxLength(TransferCreditPass.EmailMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.HasIndex(e => e.Token).IsUnique();
-            entity.HasIndex(e => e.PaymentIntentId);
-        });
-
-        modelBuilder.Entity<AffiliateProfile>(entity =>
-        {
-            entity.ToTable("affiliate_profiles");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Code).IsRequired().HasMaxLength(AffiliateProfile.CodeMaxLength);
-            entity.Property(e => e.PayoutMethod).IsRequired().HasMaxLength(32);
-            entity.Property(e => e.PayoutDetails).IsRequired().HasMaxLength(AffiliateProfile.PayoutInfoMaxLength);
-            entity.Property(e => e.TaxCode).HasMaxLength(AffiliateProfile.TaxIdMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.HasIndex(e => e.Code).IsUnique();
-            entity.HasIndex(e => e.UserId).IsUnique();
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<AffiliateConversion>(entity =>
-        {
-            entity.ToTable("affiliate_conversions");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Plan).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.HasIndex(e => new { e.AffiliateProfileId, e.ReferredUserId }).IsUnique();
-            entity.HasOne(e => e.AffiliateProfile)
-                .WithMany()
-                .HasForeignKey(e => e.AffiliateProfileId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<SmsDeliveryLog>(entity =>
-        {
-            entity.ToTable("sms_delivery_logs");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.RecipientPhone).IsRequired().HasMaxLength(SmsDeliveryLog.PhoneMaxLength);
-            entity.Property(e => e.MessageBody).IsRequired().HasMaxLength(SmsDeliveryLog.MessageMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.HasIndex(e => e.DeliveryId);
-            entity.HasIndex(e => e.SenderUserId);
-        });
-
-        modelBuilder.Entity<SmsOptOut>(entity =>
-        {
-            entity.ToTable("sms_opt_outs");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(SmsOptOut.PhoneMaxLength);
-            entity.Property(e => e.Reason).IsRequired().HasMaxLength(32);
-            entity.HasIndex(e => e.PhoneNumber).IsUnique();
-        });
-
-        modelBuilder.Entity<MigrationImportJob>(entity =>
-        {
-            entity.ToTable("migration_import_jobs");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.SourceProvider).IsRequired().HasMaxLength(MigrationImportJob.SourceMaxLength);
-            entity.Property(e => e.ConflictPolicy).IsRequired().HasMaxLength(MigrationImportJob.ConflictPolicyMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(32);
-            entity.Property(e => e.SummaryJson).IsRequired().HasMaxLength(MigrationImportJob.ItemsJsonMaxLength);
-            entity.HasIndex(e => e.UserId);
-        });
-
         modelBuilder.Entity<DeduplicatedBlob>(entity =>
         {
             entity.ToTable("deduplicated_blobs");
@@ -1181,115 +815,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ScopeKey).IsRequired().HasMaxLength(DeduplicatedBlob.ScopeKeyMaxLength);
             entity.Property(e => e.Sha256).IsRequired().HasMaxLength(DeduplicatedBlob.Sha256Length);
             entity.Property(e => e.StoragePath).IsRequired().HasMaxLength(DeduplicatedBlob.StoragePathMaxLength);
-            entity.Property(e => e.StorageRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
-            entity.HasIndex(e => new { e.ScopeKey, e.Sha256, e.FileSize, e.StorageRegion }).IsUnique();
+            entity.HasIndex(e => new { e.ScopeKey, e.Sha256, e.FileSize }).IsUnique();
             entity.HasIndex(e => e.StoragePath);
-        });
-
-        modelBuilder.Entity<CustomSendingDomain>(entity =>
-        {
-            entity.ToTable("custom_sending_domains");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Domain).IsRequired().HasMaxLength(CustomSendingDomain.DomainMaxLength);
-            entity.Property(e => e.FromLocalPart).IsRequired().HasMaxLength(CustomSendingDomain.FromLocalPartMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.Property(e => e.VerificationToken).IsRequired().HasMaxLength(CustomSendingDomain.TokenLength);
-            entity.Property(e => e.SpfRecord).IsRequired().HasMaxLength(CustomSendingDomain.RecordValueMaxLength);
-            entity.Property(e => e.DkimHost).IsRequired().HasMaxLength(CustomSendingDomain.DomainMaxLength);
-            entity.Property(e => e.DkimValue).IsRequired().HasMaxLength(CustomSendingDomain.RecordValueMaxLength);
-            entity.Property(e => e.DmarcRecord).IsRequired().HasMaxLength(CustomSendingDomain.RecordValueMaxLength);
-            entity.HasIndex(e => e.UserId).IsUnique();
-            entity.HasIndex(e => e.Domain).IsUnique();
-        });
-
-        modelBuilder.Entity<SupportChatThread>(entity =>
-        {
-            entity.ToTable("support_chat_threads");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.TicketNumber).IsRequired().HasMaxLength(SupportChatThread.TicketNumberMaxLength);
-            entity.Property(e => e.Subject).IsRequired().HasMaxLength(SupportChatThread.SubjectMaxLength);
-            entity.Property(e => e.Plan).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.QueueTier).IsRequired().HasMaxLength(24);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.Property(e => e.EscalatedEmail).HasMaxLength(SupportChatThread.EmailMaxLength);
-            entity.HasIndex(e => e.TicketNumber).IsUnique();
-            entity.HasIndex(e => e.UserId);
-        });
-
-        modelBuilder.Entity<SupportChatMessage>(entity =>
-        {
-            entity.ToTable("support_chat_messages");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.SenderRole).IsRequired().HasMaxLength(16);
-            entity.Property(e => e.SenderName).IsRequired().HasMaxLength(80);
-            entity.Property(e => e.Body).IsRequired().HasMaxLength(SupportChatThread.MessageMaxLength);
-            entity.HasIndex(e => e.ThreadId);
-        });
-
-        modelBuilder.Entity<AutomationConnection>(entity =>
-        {
-            entity.ToTable("automation_connections");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Platform).IsRequired().HasMaxLength(AutomationConnection.PlatformMaxLength);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(AutomationConnection.NameMaxLength);
-            entity.Property(e => e.Scopes).IsRequired().HasMaxLength(64);
-            entity.Property(e => e.TokenPrefixValue).IsRequired().HasMaxLength(AutomationConnection.PrefixLength + 4);
-            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(AutomationConnection.HashLength);
-            entity.HasIndex(e => e.TokenHash).IsUnique();
-            entity.HasIndex(e => e.UserId);
-        });
-
-        modelBuilder.Entity<UserPasskeyRecovery>(entity =>
-        {
-            entity.ToTable("user_passkey_recoveries");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.RecoveryCodeHashes).IsRequired().HasMaxLength(UserPasskeyRecovery.HashesMaxLength);
-            entity.HasIndex(e => e.UserId).IsUnique();
-        });
-
-        modelBuilder.Entity<PenetrationTestRecord>(entity =>
-        {
-            entity.ToTable("penetration_test_records");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.VendorName).IsRequired().HasMaxLength(PenetrationTestRecord.VendorMaxLength);
-            entity.Property(e => e.Scope).IsRequired().HasMaxLength(PenetrationTestRecord.ScopeMaxLength);
-            entity.Property(e => e.Methodology).IsRequired().HasMaxLength(PenetrationTestRecord.MethodologyMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(32);
-            entity.Property(e => e.PublicSummary).IsRequired().HasMaxLength(PenetrationTestRecord.SummaryMaxLength);
-            entity.Property(e => e.NdaReportReference).HasMaxLength(PenetrationTestRecord.ReportRefMaxLength);
-            entity.HasIndex(e => e.AssessmentYear).IsUnique();
-        });
-
-        modelBuilder.Entity<WorkspaceByokConfig>(entity =>
-        {
-            entity.ToTable("workspace_byok_configs");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Provider).IsRequired().HasMaxLength(WorkspaceByokConfig.ProviderMaxLength);
-            entity.Property(e => e.KeyId).IsRequired().HasMaxLength(WorkspaceByokConfig.KeyIdMaxLength);
-            entity.Property(e => e.RoleArn).HasMaxLength(WorkspaceByokConfig.RoleArnMaxLength);
-            entity.Property(e => e.KeyRegion).HasMaxLength(StorageRegionOption.CodeMaxLength);
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(24);
-            entity.HasIndex(e => e.WorkspaceId).IsUnique();
-        });
-
-        modelBuilder.Entity<WorkspaceSftpKey>(entity =>
-        {
-            entity.ToTable("workspace_sftp_keys");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Label).IsRequired().HasMaxLength(WorkspaceSftpKey.LabelMaxLength);
-            entity.Property(e => e.PublicKey).IsRequired().HasMaxLength(WorkspaceSftpKey.PublicKeyMaxLength);
-            entity.Property(e => e.Fingerprint).IsRequired().HasMaxLength(WorkspaceSftpKey.FingerprintMaxLength);
-            entity.HasIndex(e => e.WorkspaceId);
-            entity.HasIndex(e => new { e.WorkspaceId, e.Fingerprint });
-        });
-
-        modelBuilder.Entity<GitHubReleaseRepo>(entity =>
-        {
-            entity.ToTable("github_release_repos");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.RepoFullName).IsRequired().HasMaxLength(GitHubReleaseRepo.RepoFullNameMaxLength);
-            entity.Property(e => e.WebhookSecret).IsRequired().HasMaxLength(GitHubReleaseRepo.WebhookSecretMaxLength);
-            entity.HasIndex(e => new { e.WorkspaceId, e.RepoFullName }).IsUnique();
         });
 
     }

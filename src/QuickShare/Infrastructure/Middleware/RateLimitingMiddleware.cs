@@ -138,8 +138,7 @@ public sealed class RateLimitingMiddleware
             return true;
         }
 
-        return HttpMethods.IsPost(request.Method)
-            && request.Path.StartsWithSegments(RoutePaths.MfaChallenge, StringComparison.OrdinalIgnoreCase);
+        return false;
     }
 
     private TimeSpan BackoffFor(int violations)

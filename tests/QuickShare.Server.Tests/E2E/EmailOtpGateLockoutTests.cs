@@ -263,7 +263,7 @@ public sealed class EmailOtpGateLockoutTests : IClassFixture<TestWebAppFactory>
             return await _inner.GetPresignedDownloadUrlAsync(objectKey, expiry, ct);
         }
 
-        public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default) => _inner.InitR2MultipartUploadAsync(deliveryId, fileName, region, ct);
+        public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default) => _inner.InitR2MultipartUploadAsync(deliveryId, fileName, ct);
         public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default) => _inner.GenerateUploadPartUrlsAsync(uploadId, objectKey, partNumbers, ct);
         public Task<CompletionResult> CompleteR2MultipartUploadAsync(string uploadId, string objectKey, IReadOnlyList<R2PartEtag> parts, CancellationToken ct = default) => _inner.CompleteR2MultipartUploadAsync(uploadId, objectKey, parts, ct);
         public Task AbortR2MultipartUploadAsync(string uploadId, string objectKey, CancellationToken ct = default) => _inner.AbortR2MultipartUploadAsync(uploadId, objectKey, ct);

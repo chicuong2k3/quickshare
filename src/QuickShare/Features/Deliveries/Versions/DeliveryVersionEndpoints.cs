@@ -89,8 +89,7 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
             .ByCode(shareCode)
             .FirstOrDefaultAsync(ct);
 
-        // PendingApproval (#162) is indistinguishable from not-found on recipient-facing paths.
-        if (delivery is null || delivery.DeletedAt is not null || delivery.Status == DeliveryStatus.PendingApproval)
+        if (delivery is null || delivery.DeletedAt is not null)
         {
             ThrowError(ErrorCodes.DeliveryNotFound, StatusCodes.Status404NotFound);
             return;

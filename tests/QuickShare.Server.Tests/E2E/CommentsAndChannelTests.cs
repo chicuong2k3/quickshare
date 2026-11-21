@@ -35,37 +35,7 @@ public sealed class CommentsAndChannelTests : IClassFixture<TestWebAppFactory>
 
     // ── The #119 regression this batch found ──
 
-    [Fact]
-    public async Task Upload_RecordsTheStorageRegionItWasPinnedTo()
-    {
-        var (client, _) = await WorkspaceClientAsync();
 
-        var deliveryId = await UploadAsync(client, region: "eu");
-
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var delivery = await db.Deliveries.AsNoTracking().SingleAsync(d => d.Id == deliveryId);
-
-        // The key routes the bytes; this column is what the recipient badge and every copy path
-        // read. It was silently null when #119 shipped, because no test crossed the commit path.
-        Assert.Equal("eu", delivery.StorageRegion);
-        Assert.Equal("eu", StorageRegions.FromKey(delivery.StoragePath));
-    }
-
-    [Fact]
-    public async Task Upload_WithoutARegionRecordsNoneAndStaysInTheDefaultBucket()
-    {
-        var (client, _) = await WorkspaceClientAsync();
-
-        var deliveryId = await UploadAsync(client);
-
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var delivery = await db.Deliveries.AsNoTracking().SingleAsync(d => d.Id == deliveryId);
-
-        Assert.Null(delivery.StorageRegion);
-        Assert.Null(StorageRegions.FromKey(delivery.StoragePath));
-    }
 
     // ── Comments: the three gates (#289) ──
 
@@ -431,7 +401,6 @@ public sealed class CommentsAndChannelTests : IClassFixture<TestWebAppFactory>
             FileSize = FileSize,
             ContentType = ContentType,
             PartNumbers = [1],
-            StorageRegion = region,
         });
         startResponse.EnsureSuccessStatusCode();
         var start = (await startResponse.Content.ReadFromJsonAsync<StartR2Response>())!;

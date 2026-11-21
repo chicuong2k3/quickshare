@@ -29,6 +29,35 @@ public sealed class AccountFormsBrowserTests : IClassFixture<BrowserFixture>
     }
 
     [Fact]
+    public async Task ProfileForm_AutoSavesNameAndRejectsOversizedAvatarWithoutSaveButton()
+    {
+        await using var context = await _fixture.CreateContextAsync(authenticated: true);
+        var page = await context.NewPageAsync();
+        await page.GotoAsync(_fixture.BaseUrl + RoutePaths.AccountProfile);
+
+        await Assertions.Expect(page.Locator("#profile-card button[type=submit]")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("#profile-card label[for='avatarFileInput']")).ToBeVisibleAsync();
+
+        await page.Locator("#name").FillAsync("Auto Saved User");
+        await page.Locator("#name").BlurAsync();
+
+        await Assertions.Expect(page.Locator("#profile-save-status")).ToContainTextAsync("Saved");
+        await Assertions.Expect(page.Locator("#profile-display-name")).ToContainTextAsync("Auto Saved User");
+
+        await page.ReloadAsync();
+        await Assertions.Expect(page.Locator("#name")).ToHaveValueAsync("Auto Saved User");
+
+        await page.Locator("#avatarFileInput").SetInputFilesAsync(new FilePayload
+        {
+            Name = "large.png",
+            MimeType = "image/png",
+            Buffer = new byte[5 * 1024 * 1024 + 1],
+        });
+
+        await Assertions.Expect(page.Locator("#profile-card [role=alert]")).ToContainTextAsync("Image must be under 5 MB");
+    }
+
+    [Fact]
     public async Task CookieConsent_SavesWithoutJavascript()
     {
         await using var context = await ContextWithoutJavascriptAsync();

@@ -49,7 +49,7 @@ public sealed class GetOfflineDeliveryBundleEndpoint(
             .ByCode(shareCode)
             .FirstOrDefaultAsync(ct);
 
-        if (delivery is null || delivery.DeletedAt is not null || delivery.Status == DeliveryStatus.PendingApproval)
+        if (delivery is null || delivery.DeletedAt is not null)
         {
             ThrowError(ErrorCodes.DeliveryNotFound, StatusCodes.Status404NotFound);
             return;
@@ -87,98 +87,5 @@ public sealed class GetOfflineDeliveryBundleEndpoint(
             $"/api/downloads/{delivery.ShareCode}",
             maxCacheBytes,
             DateTime.UtcNow), ct);
-    }
-}
-
-public sealed class OfflineQueueCheckItem
-{
-    public string FileName { get; set; } = string.Empty;
-    public long FileSize { get; set; }
-    public string ContentType { get; set; } = "application/octet-stream";
-}
-
-public sealed class OfflineQueueCheckRequest
-{
-    public List<OfflineQueueCheckItem> Items { get; set; } = [];
-}
-
-public sealed record OfflineQueueItemVerdictDto(
-    string FileName,
-    long FileSize,
-    bool Allowed,
-    string? ErrorCode);
-
-public sealed record OfflineQueueCheckResponse(
-    string Plan,
-    long? MaxSingleFileSizeBytes,
-    int AllowedCount,
-    int RejectedCount,
-    IReadOnlyList<OfflineQueueItemVerdictDto> Items);
-
-/// <summary>
-/// POST /api/uploads/offline-queue — preflight and reconnect validation for PWA offline upload queue (#80).
-/// Checks PlanTierLimits and monthly quota before/during background sync.
-/// </summary>
-public sealed class OfflineUploadQueueCheckEndpoint(
-    AppDbContext db) : Endpoint<OfflineQueueCheckRequest, OfflineQueueCheckResponse>
-{
-    public override void Configure()
-    {
-        Post(RoutePaths.OfflineUploadQueueApi);
-        AllowAnonymous();
-        Description(b => b.WithTags(ApiTags.Uploads));
-    }
-
-    public override async Task HandleAsync(OfflineQueueCheckRequest req, CancellationToken ct)
-    {
-        var user = await HttpContext.User.GetUserOrDefaultAsync(db, ct);
-        var plan = user?.Plan ?? PlanTierLimits.Anonymous;
-        var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
-        var quota = user is null ? null : new QuotaService(db);
-
-        var items = req.Items ?? [];
-        var verdicts = new List<OfflineQueueItemVerdictDto>(items.Count);
-        var runningBytes = 0L;
-        var allowedCount = 0;
-        var rejectedCount = 0;
-
-        foreach (var item in items)
-        {
-            if (item.FileSize <= 0 || string.IsNullOrWhiteSpace(item.FileName))
-            {
-                rejectedCount++;
-                verdicts.Add(new OfflineQueueItemVerdictDto(item.FileName, item.FileSize, false, ErrorCodes.FileNameInvalid));
-                continue;
-            }
-
-            if (maxFileSize.HasValue && item.FileSize > maxFileSize.Value)
-            {
-                rejectedCount++;
-                verdicts.Add(new OfflineQueueItemVerdictDto(item.FileName, item.FileSize, false, ErrorCodes.FileTooLarge));
-                continue;
-            }
-
-            if (quota is not null && user is not null)
-            {
-                var qCheck = await quota.CheckAsync(user.Id, plan, runningBytes + item.FileSize, ct);
-                if (qCheck.IsExceeded)
-                {
-                    rejectedCount++;
-                    verdicts.Add(new OfflineQueueItemVerdictDto(item.FileName, item.FileSize, false, ErrorCodes.MonthlyQuotaExceeded));
-                    continue;
-                }
-            }
-
-            runningBytes += item.FileSize;
-            allowedCount++;
-            verdicts.Add(new OfflineQueueItemVerdictDto(item.FileName, item.FileSize, true, null));
-        }
-
-        await Send.OkAsync(new OfflineQueueCheckResponse(
-            plan,
-            maxFileSize,
-            allowedCount,
-            rejectedCount,
-            verdicts), ct);
     }
 }

@@ -90,16 +90,7 @@ else
                     </section>
                 }
 
-                @if (cryptoResult is { Success: true })
-                {
-                    <section class="space-y-3">
-                        <h3 class="font-semibold">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
-                        <p class="text-muted-foreground">@Loc["upgrade_crypto_hint"]</p>
-                        <Button Href="@cryptoResult.HostedUrl" target="_blank" rel="noopener noreferrer" data-ai-action="upgrade.crypto.open">@Loc["upgrade_crypto_open"]</Button>
-                        @PaymentStatus
-                    </section>
-                }
-                else if (payOSResult is { Success: true })
+                @if (payOSResult is { Success: true })
                 {
                     <section class="space-y-3">
                         <h3 class="font-semibold">@Loc["upgrade_payment_info_title"]<strong>@PlanCatalog.FormatPrice(paymentAmount, Config[PricingKeys.Currency])</strong></h3>
@@ -113,9 +104,9 @@ else
                 }
                 else
                 {
-                    @if (cryptoResult is not null || payOSResult is not null)
+                    @if (payOSResult is not null)
                     {
-                        <p class="text-destructive" role="alert">@string.Format(Loc["upgrade_payment_error"], cryptoResult?.ErrorMessage ?? payOSResult?.ErrorMessage)</p>
+                        <p class="text-destructive" role="alert">@string.Format(Loc["upgrade_payment_error"], payOSResult?.ErrorMessage)</p>
                     }
                     <section class="space-y-3">
                         <h3 class="font-semibold">@Loc["upgrade_payment_method_title"]</h3>
@@ -128,11 +119,6 @@ else
                                 <span class="block text-sm font-medium">@Loc["upgrade_payment_channel_label"]</span>
                                 <NativeSelect id="upgrade-payment-method" name="PaymentMethod">
                                     <NativeSelectOption value="@PaymentMethods.BankQr">@Loc["upgrade_method_bank_qr"]</NativeSelectOption>
-                                    <NativeSelectOption value="@PaymentMethods.MoMo">@Loc["upgrade_method_momo"]</NativeSelectOption>
-                                    <NativeSelectOption value="@PaymentMethods.ZaloPay">@Loc["upgrade_method_zalopay"]</NativeSelectOption>
-                                    <NativeSelectOption value="@PaymentMethods.VisaCard">@Loc["upgrade_method_visa"]</NativeSelectOption>
-                                    <NativeSelectOption value="@PaymentMethods.StripeCard">@Loc["upgrade_method_stripe"]</NativeSelectOption>
-                                    <NativeSelectOption value="@PaymentMethods.PayPalWallet">@Loc["upgrade_method_paypal"]</NativeSelectOption>
                                 </NativeSelect>
                             </label>
                             <label class="block space-y-2" for="upgrade-promo">
@@ -140,10 +126,6 @@ else
                                 <Input id="upgrade-promo" name="PromoCode" class="w-full" Type="text" Value="@prefilledPromo" maxlength="@PromoCode.CodeMaxLength" autocomplete="off" />
                             </label>
                             <Button Type="submit" class="w-full">@Loc["upgrade_pay_now_btn"]</Button>
-                            @if (Checkout.CryptoAvailable)
-                            {
-                                <Button Type="submit" Variant="outline" class="w-full" name="Provider" value="@PaymentProviders.Crypto" data-ai-action="upgrade.pay.crypto">@Loc["upgrade_pay_crypto_btn"]</Button>
-                            }
                         </form>
                     </section>
                 }
@@ -153,97 +135,6 @@ else
                 </p>
             </Card>
 
-            @* Buy as a Gift Subscription (issue #102) *@
-            <Card id="upgrade-gift-card" class="px-6 py-5">
-                <div class="space-y-3">
-                    <h2 class="text-lg font-semibold">@Loc["gift_card_title"]</h2>
-                    <p class="text-sm text-muted-foreground">@Loc["gift_card_sub"]</p>
-
-                    @if (!string.IsNullOrEmpty(giftError))
-                    {
-                        <p class="text-sm text-destructive" role="alert">@giftError</p>
-                    }
-                    @if (createdGift is not null)
-                    {
-                        <div id="upgrade-gift-created" class="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm" role="status">
-                            <p class="font-medium">@string.Format(Loc["gift_created_msg"], createdGift.RecipientEmail)</p>
-                            <p class="mt-1 font-mono text-xs">/gift/claim?token=@createdGift.Token</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <form method="post" class="space-y-3" @formname="upgrade-gift-buy" @onsubmit="HandleSubmit">
-                            <AntiforgeryToken />
-                            <input type="hidden" name="@ActionField" value="@GiftBuyAction" />
-                            <input type="hidden" name="Plan" value="@selectedPlan" />
-                            <input type="hidden" name="Billing" value="@(IsYearly ? BillingPeriods.Yearly : BillingPeriods.Monthly)" />
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <label class="block space-y-1 text-sm" for="gift-recipient-email">
-                                    <span class="font-medium">@Loc["gift_recipient_email_label"]</span>
-                                    <Input id="gift-recipient-email" name="RecipientEmail" Type="email" maxlength="@SubscriptionGift.EmailMaxLength" required />
-                                </label>
-                                <label class="block space-y-1 text-sm" for="gift-message">
-                                    <span class="font-medium">@Loc["gift_message_label"]</span>
-                                    <Input id="gift-message" name="GiftMessage" Type="text" maxlength="@SubscriptionGift.MessageMaxLength" />
-                                </label>
-                            </div>
-                            <Button Type="submit" Variant="outline" Size="sm" data-ai-action="upgrade.gift.submit">@Loc["gift_buy_btn"]</Button>
-                        </form>
-                    }
-                </div>
-            </Card>
-
-            @* Student + Nonprofit Verification (issue #203) *@
-            <Card id="upgrade-discount-card" class="px-6 py-5">
-                <div class="space-y-3">
-                    <h2 class="text-lg font-semibold">@Loc["discount_edu_title"]</h2>
-                    <p class="text-sm text-muted-foreground">@Loc["discount_edu_sub"]</p>
-
-                    @if (discountApp is { Status: DiscountApplication.StatusApproved, IssuedPromoCode: not null })
-                    {
-                        <div id="upgrade-discount-approved" class="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm" role="status">
-                            <p class="font-medium">@Loc["discount_edu_approved_msg"]: <code class="rounded border bg-background px-2 py-0.5 font-mono font-bold">@discountApp.IssuedPromoCode</code></p>
-                        </div>
-                    }
-                    else if (discountApp is { Status: DiscountApplication.StatusPending })
-                    {
-                        <div id="upgrade-discount-pending" class="rounded-md border p-3 text-sm text-muted-foreground" role="status">
-                            @Loc["discount_edu_pending_msg"] (@discountApp.OrganizationName)
-                        </div>
-                    }
-                    else
-                    {
-                        <form method="post" class="space-y-3" @formname="upgrade-discount-apply" @onsubmit="HandleSubmit">
-                            <AntiforgeryToken />
-                            <input type="hidden" name="@ActionField" value="@DiscountApplyAction" />
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <label class="block space-y-1 text-sm" for="discount-kind">
-                                    <span class="font-medium">@Loc["discount_edu_kind_label"]</span>
-                                    <NativeSelect id="discount-kind" name="Kind">
-                                        <NativeSelectOption value="@DiscountApplication.KindStudent">@Loc["discount_edu_kind_student"]</NativeSelectOption>
-                                        <NativeSelectOption value="@DiscountApplication.KindNonprofit">@Loc["discount_edu_kind_nonprofit"]</NativeSelectOption>
-                                    </NativeSelect>
-                                </label>
-                                <label class="block space-y-1 text-sm" for="discount-org">
-                                    <span class="font-medium">@Loc["discount_edu_org_label"]</span>
-                                    <Input id="discount-org" name="OrganizationName" Type="text" maxlength="@DiscountApplication.OrganizationMaxLength" required />
-                                </label>
-                            </div>
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <label class="block space-y-1 text-sm" for="discount-email">
-                                    <span class="font-medium">@Loc["discount_edu_email_label"]</span>
-                                    <Input id="discount-email" name="VerificationEmail" Type="email" placeholder="student@hust.edu.vn" maxlength="@DiscountApplication.VerificationEmailMaxLength" required />
-                                </label>
-                                <label class="block space-y-1 text-sm" for="discount-proof">
-                                    <span class="font-medium">@Loc["discount_edu_proof_label"]</span>
-                                    <Input id="discount-proof" name="ProofReference" Type="text" maxlength="@DiscountApplication.ProofReferenceMaxLength" />
-                                </label>
-                            </div>
-                            <Button Type="submit" Variant="outline" Size="sm" data-ai-action="upgrade.discount.submit">@Loc["discount_edu_submit_btn"]</Button>
-                        </form>
-                    }
-                </div>
-            </Card>
         </section>
 </div>
 
@@ -263,18 +154,12 @@ else
     private const string PaymentStatusId = "payment-status";
     private const string ActionField = "Action";
     private const string TrialAction = "trial";
-    private const string DiscountApplyAction = "discount-apply";
-    private const string GiftBuyAction = "gift-buy";
 
     private string selectedPlan = PlanTierLimits.Pro;
     private string currentPlan = PlanTierLimits.Free;
     private PaymentIntent? paymentIntent;
     private PayOSPaymentResult? payOSResult;
-    private QuickShare.Features.Payments.Crypto.CryptoChargeResult? cryptoResult;
     private ActiveCampaignDto? activeCampaign;
-    private DiscountApplication? discountApp;
-    private SubscriptionGift? createdGift;
-    private string? giftError;
     private string prefilledPromo = string.Empty;
     private bool isPollRequest;
     private bool paymentCompleted;
@@ -326,15 +211,10 @@ else
         }
 
         activeCampaign = await GetActiveCampaignEndpoint.ResolveActiveAsync(Db, Cache, ctx, ct);
-        discountApp = await Db.DiscountApplications.AsNoTracking().FirstOrDefaultAsync(a => a.UserId == user.Id, ct);
 
         if (!string.IsNullOrWhiteSpace(PromoQuery))
         {
             prefilledPromo = PromoCode.NormalizeCode(PromoQuery);
-        }
-        else if (discountApp is { Status: DiscountApplication.StatusApproved, IssuedPromoCode: not null })
-        {
-            prefilledPromo = discountApp.IssuedPromoCode;
         }
         else if (activeCampaign is not null)
         {
@@ -379,72 +259,11 @@ else
             return;
         }
 
-        if (form[ActionField] == DiscountApplyAction)
-        {
-            var kind = form["Kind"].FirstOrDefault() ?? DiscountApplication.KindStudent;
-            var org = form["OrganizationName"].FirstOrDefault()?.Trim() ?? string.Empty;
-            var email = form["VerificationEmail"].FirstOrDefault()?.Trim().ToLowerInvariant() ?? string.Empty;
-            var proof = form["ProofReference"].FirstOrDefault()?.Trim();
-            if (!string.IsNullOrEmpty(org) && email.Contains('@', StringComparison.Ordinal))
-            {
-                var app = await Db.DiscountApplications.FirstOrDefaultAsync(a => a.UserId == user.Id, ct);
-                if (app is null)
-                {
-                    app = new DiscountApplication { Id = Guid.CreateVersion7(), UserId = user.Id };
-                    Db.DiscountApplications.Add(app);
-                }
-                app.Kind = string.Equals(kind, DiscountApplication.KindNonprofit, StringComparison.OrdinalIgnoreCase)
-                    ? DiscountApplication.KindNonprofit
-                    : DiscountApplication.KindStudent;
-                app.OrganizationName = org;
-                app.VerificationEmail = email;
-                app.ProofReference = string.IsNullOrWhiteSpace(proof) ? null : proof;
-                if (app.Kind == DiscountApplication.KindStudent && DiscountApplication.IsAutoVerifiedAcademicEmail(email))
-                {
-                    await SubmitDiscountApplicationEndpoint.IssueDiscountCodeAsync(Db, app, DateTime.UtcNow, ct);
-                    prefilledPromo = app.IssuedPromoCode ?? prefilledPromo;
-                }
-                else
-                {
-                    app.Status = DiscountApplication.StatusPending;
-                }
-                await Db.SaveChangesAsync(ct);
-                discountApp = app;
-            }
-            return;
-        }
-
-        if (form[ActionField] == GiftBuyAction)
-        {
-            var recipient = form["RecipientEmail"].FirstOrDefault()?.Trim().ToLowerInvariant() ?? string.Empty;
-            var msg = form["GiftMessage"].FirstOrDefault();
-            if (string.Equals(recipient, user.Email, StringComparison.OrdinalIgnoreCase))
-            {
-                giftError = Loc["gift_claim_self_error"];
-                return;
-            }
-            if (!string.IsNullOrEmpty(recipient) && recipient.Contains('@', StringComparison.Ordinal))
-            {
-                (createdGift, paymentIntent, payOSResult) = await Checkout.CreateGiftCheckoutAsync(
-                    user, recipient, selectedPlan, IsYearly, msg, null, null, ct);
-                pollOrderCode = paymentIntent?.PayOSOrderCode ?? 0;
-            }
-            return;
-        }
-
         selectedPlan = PlanCatalog.Normalize(form["Plan"].FirstOrDefault());
         Billing = form["Billing"].FirstOrDefault();
         var promo = form["PromoCode"].FirstOrDefault();
-        var provider = form["Provider"].FirstOrDefault();
-        var paymentMethod = form["PaymentMethod"].FirstOrDefault();
-        if (string.Equals(provider, PaymentProviders.Crypto, StringComparison.Ordinal))
-        {
-            (paymentIntent, cryptoResult) = await Checkout.CreateCryptoCheckoutAsync(user, selectedPlan, IsYearly, ct, promo);
-        }
-        else
-        {
-            (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(user, selectedPlan, IsYearly, ct, promo, paymentMethod: paymentMethod);
-        }
+        (paymentIntent, payOSResult) = await Checkout.CreatePaymentLinkAsync(
+            user, selectedPlan, IsYearly, ct, promo);
         pollOrderCode = paymentIntent?.PayOSOrderCode ?? 0;
     }
 }

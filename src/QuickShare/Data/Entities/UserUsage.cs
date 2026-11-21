@@ -18,7 +18,6 @@ public record UserUsage
     /// </summary>
     public int AlertedThresholdPercent { get; set; }
     public long DailyBandwidthBonus { get; set; }
-    public long ColdArchivedBytes { get; set; }
     public int TransferCount { get; set; }
 
     public User User { get; init; } = null!;

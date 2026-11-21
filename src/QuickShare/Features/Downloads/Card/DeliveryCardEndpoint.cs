@@ -17,7 +17,7 @@ public sealed class DeliveryCardRequest
 
 /// <summary>
 /// Auto-generated OpenGraph share card SVG per delivery (issue #201).
-/// RespectsPendingApproval (404), scope rules via DeliveryAccessService (403),
+/// Scope rules via DeliveryAccessService (403),
 /// and gated/private shares (masks filename when PasswordHash/OtpHash/PrivacyMode is active).
 /// </summary>
 public sealed class DeliveryCardEndpoint(
@@ -53,7 +53,6 @@ public sealed class DeliveryCardEndpoint(
 
                 if (delivery is null
                     || delivery.DeletedAt is not null
-                    || delivery.Status == DeliveryStatus.PendingApproval
                     || delivery.Status == DeliveryStatus.Suspended
                     || delivery.Status == DeliveryStatus.Revoked
                     || (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow))

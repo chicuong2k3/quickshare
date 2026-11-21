@@ -199,7 +199,10 @@ dates in without expiring anything itself — the expiry pass that follows does 
 ### 3.7 UI
 
 The retention card lives inside `#security-activity-card` in
-`Components/Pages/AccountSecurityActivity.razor`. Direct GET renders the current policy and
+`Components/Pages/AccountSecurityActivity.razor`, which renders on the security tab
+(`/account/security`) and remains directly routable at `/account/security/activity`.
+It is no longer composed into the profile page (`/account`), which would duplicate the
+tab. Direct GET renders the current policy and
 preview. A CSRF-protected native form provides separate preview and save actions; preview
 does not mutate the policy. Security event filters use URL-backed Unpoly links.
 

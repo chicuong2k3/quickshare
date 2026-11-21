@@ -193,30 +193,6 @@ public sealed class TenantIsolationTests : IClassFixture<TestWebAppFactory>
         Assert.DoesNotContain(bobList, i => i.Id == invoiceId);
     }
 
-    [Fact]
-    public async Task Streaming_ConfigIsPerWorkspaceAndNeverLeaksTheSecret()
-    {
-        var (alice, _) = await TenantAsync("Alice SIEM Co");
-
-        var save = await alice.Client.PutAsJsonAsync("/api/workspace/streaming",
-            new QuickShare.Features.Workspaces.Streaming.SiemSinkRequest
-            {
-                Endpoint = "https://siem.alice.example/ingest",
-                Format = SiemFormat.Json,
-                Secret = "alice-super-secret",
-            });
-        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
-
-        // The secret is never echoed back, not even to the admin who set it.
-        var body = await save.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("alice-super-secret", body, StringComparison.Ordinal);
-
-        var (bob, _) = await TenantAsync("Bob SIEM Co");
-        var bobSink = await bob.Client.GetAsync("/api/workspace/streaming");
-        Assert.Equal(HttpStatusCode.OK, bobSink.StatusCode);
-        var bobBody = await bobSink.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("siem.alice.example", bobBody, StringComparison.Ordinal);
-    }
 
     // ── Helpers ──
 

@@ -1,7 +1,7 @@
 namespace QuickShare.Infrastructure.Constants;
 
 /// <summary>
-/// Which rail a payment is taken on (issues #225, #164, #177).
+/// Which rail a payment is taken on (issues #164, #177).
 ///
 /// The plan, the price and the invoice are identical whichever it is — only the checkout page
 /// and the confirmation differ. Anything that branches on more than that is a sign the second
@@ -10,11 +10,10 @@ namespace QuickShare.Infrastructure.Constants;
 public static class PaymentProviders
 {
     public const string PayOS = "payos";
-    public const string Crypto = "crypto";
     public const string Stripe = "stripe";
     public const string PayPal = "paypal";
 
-    public static readonly string[] All = [PayOS, Crypto, Stripe, PayPal];
+    public static readonly string[] All = [PayOS, Stripe, PayPal];
 }
 
 /// <summary>
@@ -28,9 +27,8 @@ public static class PaymentMethods
     public const string VisaCard = "visa";
     public const string StripeCard = "stripe_card";
     public const string PayPalWallet = "paypal_wallet";
-    public const string CryptoWallet = "crypto_wallet";
 
-    public static readonly string[] All = [BankQr, MoMo, ZaloPay, VisaCard, StripeCard, PayPalWallet, CryptoWallet];
+    public static readonly string[] All = [BankQr, MoMo, ZaloPay, VisaCard, StripeCard, PayPalWallet];
 
     public static string Normalize(string? raw)
     {
@@ -47,7 +45,6 @@ public static class PaymentMethods
     {
         StripeCard => PaymentProviders.Stripe,
         PayPalWallet => PaymentProviders.PayPal,
-        CryptoWallet => PaymentProviders.Crypto,
         _ => PaymentProviders.PayOS,
     };
 }

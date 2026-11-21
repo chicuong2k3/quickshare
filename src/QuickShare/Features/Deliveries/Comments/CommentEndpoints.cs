@@ -55,8 +55,7 @@ public sealed class CommentGate(AppDbContext db, DeliveryAccessService access)
         if (!delivery.CommentsEnabled || delivery.PrivacyMode)
             return new Verdict(false, false, CommentPolicy.Disabled);
 
-        if (delivery.Status is DeliveryStatus.PendingApproval
-            or DeliveryStatus.Suspended
+        if (delivery.Status is DeliveryStatus.Suspended
             or DeliveryStatus.Revoked)
         {
             return new Verdict(false, false, CommentPolicy.Disabled);

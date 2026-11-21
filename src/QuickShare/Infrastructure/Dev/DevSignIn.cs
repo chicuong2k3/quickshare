@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using QuickShare.Data;
 using QuickShare.Data.Entities;
-using QuickShare.Features.Auth.Passkeys;
+using QuickShare.Features.Users.Sessions;
 using QuickShare.Infrastructure.Constants;
 
 namespace QuickShare.Infrastructure.Dev;

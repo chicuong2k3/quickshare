@@ -26,9 +26,6 @@ using Serilog;
 using Serilog.Enrichers.Span;
 using System.Globalization;
 using System.Security.Claims;
-using Fido2NetLib;
-using QuickShare.Features.Auth.Saml;
-using QuickShare.Features.Auth.Sso;
 using ZiggyCreatures.Caching.Fusion;
 using Unpoly.Blazor;
 
@@ -203,7 +200,6 @@ var quickShareOptions = quickShareConfig.Get<QuickShareOptions>() ?? new QuickSh
 builder.Services.Configure<QuickShare.Infrastructure.Email.EmailOptions>(
     builder.Configuration.GetSection(QuickShare.Infrastructure.Email.EmailOptions.Section));
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.EmailSender>();
-builder.Services.AddSingleton<QuickShare.Features.Email.SendingDomains.ISendingDomainVerifier, QuickShare.Features.Email.SendingDomains.SendingDomainVerifier>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.UnsubscribeTokens>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailTokens>();
 builder.Services.AddSingleton<QuickShare.Infrastructure.Email.SenderEmailRateLimiter>();
@@ -263,23 +259,14 @@ builder.Services.AddScoped<QuickShare.Features.Downloads.Shared.DeliveryAccessSe
 // ── Team workspaces (issue #106): seats, pooled quota, workspace audit (#145) ──
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceService>();
 
-// ── Billing ledger (issues #278 seats, #141 overage, #112 e-invoice, #192 PO/net terms) ──
+// ── Billing ledger (issues #278 seats, #141 overage, #112 e-invoice) ──
 builder.Services.AddScoped<QuickShare.Features.Payments.Billing.InvoiceService>();
 
-// Tenant-isolation observation (issue #190) and SIEM shipping transport (issue #191).
+// Tenant-isolation observation (issue #190).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.TenantGuard>();
-
-// Scheduled workspace backup (issue #271). Registered unconditionally: the run-now endpoint
-// resolves it directly, and Hangfire only schedules the recurring tick when it is enabled.
-builder.Services.AddScoped<WorkspaceBackupJob>();
 
 // Recipient-facing workspace branding (issues #285, #286).
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Branding.BrandReader>();
-
-// Protocol mounts (#195 WebDAV, #265 S3): one filesystem view of the workspace, one credential.
-builder.Services.AddScoped<QuickShare.Features.Protocols.WorkspaceFileSystem>();
-builder.Services.AddScoped<QuickShare.Features.Protocols.MountCredentials>();
-builder.Services.AddScoped<QuickShare.Features.Protocols.S3.S3Credentials>();
 
 // Upload by email (issue #104): the inbound webhook and the account's ingest address.
 builder.Services.AddScoped<QuickShare.Features.Uploads.EmailIngest.EmailIngestService>();
@@ -287,39 +274,14 @@ builder.Services.AddScoped<QuickShare.Features.Uploads.EmailIngest.EmailIngestSe
 // Per-recipient tracking (issue #37): who opened, who downloaded.
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Recipients.RecipientTracker>();
 
-// OCR search (issue #243). Singleton: the availability probe is a deployment fact, and running
-// it per request would be a process launch per request.
-builder.Services.AddSingleton<QuickShare.Features.Deliveries.Ocr.IOcrEngine,
-    QuickShare.Features.Deliveries.Ocr.TesseractOcrEngine>();
-builder.Services.AddScoped<QuickShare.Features.Deliveries.Ocr.OcrJob>();
-builder.Services.AddSingleton<QuickShare.Features.Deliveries.VirusScan.IVirusScanner,
-    QuickShare.Features.Deliveries.VirusScan.ClamAvVirusScanner>();
-builder.Services.AddScoped<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>();
-builder.Services.AddScoped<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>();
-
-// Crypto checkout (issue #225): a second payment rail behind the same intent.
-builder.Services.AddScoped<QuickShare.Features.Payments.Crypto.CryptoCheckoutService>();
-
 // White-label custom domain (issue #81): who owns an incoming host, and where a share's
 // public link lives. The verifier is not sealed so a test can answer DNS without a network.
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.WorkspaceDomainReader>();
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Domains.DomainVerifier>();
 
-// Data residency (issue #119): which storage region an upload is pinned to.
-builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
-
-// Approval gate (issue #162) and recurring send (issue #176).
-builder.Services.AddScoped<QuickShare.Features.Deliveries.Approval.ApprovalNotifier>();
-builder.Services.AddScoped<RecurringDeliveryJob>();
-
 // Delivery comments (issue #289) and Slack/Teams posting (issue #180).
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Comments.CommentGate>();
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Channels.ChannelNotifier>();
-// Enterprise identity (#128 authenticator, #181 SSO, #219 MFA policy).
-builder.Services.AddScoped<QuickShare.Features.Auth.Sso.SsoLoginService>();
-builder.Services.AddScoped<QuickShare.Features.Auth.Mfa.MfaPolicyService>();
-builder.Services.AddScoped<QuickShare.Features.Auth.Scim.ScimAuthenticator>();
-builder.Services.AddScoped<QuickShare.Features.Auth.Saml.SamlService>();
 // Developer platform (#115 API keys, #39 outbound webhooks).
 builder.Services.AddScoped<QuickShare.Features.Developer.ApiKeys.ApiKeyAuthenticator>();
 // Per-key usage (issue #273): a singleton buffer, drained by a job.
@@ -330,22 +292,6 @@ builder.Services.AddScoped<QuickShare.Features.Developer.Webhooks.WebhookDispatc
 builder.Services.AddScoped<QuickShare.Features.Payments.Promos.PromoCodeService>();
 // Session store (#105 management, #173 idle timeout and global sign-out).
 builder.Services.AddScoped<QuickShare.Features.Users.Sessions.SessionService>();
-// Passkeys (#68) and magic-link sign-in (#132).
-builder.Services.AddScoped<QuickShare.Features.Auth.Passkeys.PasskeyService>();
-builder.Services.AddScoped<QuickShare.Features.Auth.MagicLink.MagicLinkService>();
-
-// The relying party is this deployment. ServerDomain must be the registered domain — not the
-// origin — or every ceremony fails with an origin mismatch that reads like a browser bug.
-var passkeyOrigin = builder.Configuration["Email:BaseUrl"] ?? "https://localhost:9001";
-builder.Services.AddFido2(options =>
-{
-    options.ServerDomain = new Uri(passkeyOrigin).Host;
-    options.ServerName = "QuickShareCloud";
-    options.Origins = new HashSet<string>(StringComparer.Ordinal) { passkeyOrigin.TrimEnd('/') };
-});
-
-// Data residency (issue #119): which storage region an upload is pinned to.
-builder.Services.AddScoped<QuickShare.Features.Uploads.Shared.StorageRegionResolver>();
 builder.Services.AddHttpClient();
 
 // ── Mediator (martinothamar/Mediator) — in-process request/response dispatch ──
@@ -422,12 +368,6 @@ static async Task FinalizeOAuthAsync(Microsoft.AspNetCore.Authentication.OAuth.O
     var referralCode = ctx.HttpContext.Request.Cookies[ReferralPolicy.CookieName];
     var profile = await UserRegistrationService.RegisterAsync(
         provider, subject, name ?? email, email, avatar, db, ctx.HttpContext.RequestAborted, analytics, referralCode);
-
-    // Enterprise SSO (issue #181): if the identity provider vouched for a directory this
-    // deployment has a workspace bound to, the account gets its seat here. Best-effort by
-    // design — a broken workspace binding must not be able to break sign-in for everyone.
-    var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
-    await sso.ApplyAsync(profile.Id, email, provider, ctx.Identity?.Claims ?? [], ctx.HttpContext.RequestAborted);
 
     // Start a revocable session (issues #105, #173) and put its id in the cookie.
     var sessionService = ctx.HttpContext.RequestServices
@@ -519,76 +459,9 @@ var authBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefault
         options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
         options.Events.OnCreatingTicket = ctx =>
-        {
-            // The hosted-domain claim is what separates a Google Workspace account from a
-            // consumer one (issue #181). The handler does not map it, so capture it here —
-            // without it there is no proof of directory membership, only an email address.
-            if (ctx.User.TryGetProperty(SsoLoginService.HostedDomainClaim, out var hd)
-                && hd.GetString() is { Length: > 0 } hostedDomain)
-            {
-                ctx.Identity?.AddClaim(new Claim(SsoLoginService.HostedDomainClaim, hostedDomain));
-            }
-
-            return FinalizeOAuthAsync(ctx, AuthConstants.GoogleProvider,
+            FinalizeOAuthAsync(ctx, AuthConstants.GoogleProvider,
                 ctx.User.TryGetProperty("picture", out var pic) ? pic.GetString() : null);
-        };
     });
-
-// Microsoft Entra ID (issue #181) — OIDC, registered only when configured. A tenant-specific
-// authority is deliberate: the /common endpoint would let any Entra tenant on earth sign in and
-// leave the tenant check as the only thing standing between them and a workspace binding.
-var entraTenantId = builder.Configuration["Authentication:Entra:TenantId"];
-var entraClientId = builder.Configuration["Authentication:Entra:ClientId"];
-var entraClientSecret = builder.Configuration["Authentication:Entra:ClientSecret"];
-
-if (!string.IsNullOrEmpty(entraTenantId) && !string.IsNullOrEmpty(entraClientId) && !string.IsNullOrEmpty(entraClientSecret))
-{
-    authBuilder.AddOpenIdConnect(AuthConstants.EntraProvider, options =>
-    {
-        options.Authority = $"https://login.microsoftonline.com/{entraTenantId}/v2.0";
-        options.ClientId = entraClientId;
-        options.ClientSecret = entraClientSecret;
-        options.ResponseType = "code";
-        options.UsePkce = true;
-        options.SaveTokens = false;
-        options.CallbackPath = "/signin-entra";
-        options.Scope.Clear();
-        options.Scope.Add("openid");
-        options.Scope.Add("profile");
-        options.Scope.Add("email");
-        options.GetClaimsFromUserInfoEndpoint = true;
-        options.TokenValidationParameters.NameClaimType = ClaimTypes.Name;
-
-        options.Events.OnTokenValidated = async ctx =>
-        {
-            ctx.Principal?.Identities.FirstOrDefault()?.AddClaim(
-                new Claim(AuthConstants.ProviderClaimType, AuthConstants.EntraProvider));
-
-            var email = ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value
-                ?? ctx.Principal?.FindFirst("preferred_username")?.Value;
-            var subject = ctx.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var name = ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value;
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(subject))
-                return;
-
-            var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var analytics = ctx.HttpContext.RequestServices.GetRequiredService<AnalyticsService>();
-            var profile = await UserRegistrationService.RegisterAsync(
-                AuthConstants.EntraProvider, subject, name ?? email, email, null, db,
-                ctx.HttpContext.RequestAborted, analytics, null);
-
-            var sso = ctx.HttpContext.RequestServices.GetRequiredService<SsoLoginService>();
-            await sso.ApplyAsync(profile.Id, email, AuthConstants.EntraProvider,
-                ctx.Principal?.Claims ?? [], ctx.HttpContext.RequestAborted);
-
-            await SecurityEventService.AppendAsync(db, profile.Id, SecurityEventType.Login,
-                ctx.HttpContext.Request.Headers.UserAgent.ToString(),
-                ctx.HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
-                ctx.HttpContext.RequestAborted);
-        };
-    });
-}
 
 // GitHub OAuth (issue #97) — registered only when configured, so an unconfigured
 // deployment does not fail startup (aspnet-contrib validates ClientId eagerly).
@@ -695,10 +568,6 @@ app.Use(async (ctx, next) =>
     var p = ctx.Request.Path.Value ?? string.Empty;
     var skipStatusPages =
         p.StartsWith("/api", StringComparison.OrdinalIgnoreCase)
-        || p.StartsWith("/dav", StringComparison.OrdinalIgnoreCase)
-        || p.StartsWith("/s3", StringComparison.OrdinalIgnoreCase)
-        || p.StartsWith("/saml", StringComparison.OrdinalIgnoreCase)
-        || p.StartsWith("/scim", StringComparison.OrdinalIgnoreCase)
         || p.StartsWith("/__dev", StringComparison.OrdinalIgnoreCase)
         || p.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
         || p.StartsWith("/metrics", StringComparison.OrdinalIgnoreCase)
@@ -715,7 +584,17 @@ app.Use(async (ctx, next) =>
     }
     await next();
 });
-app.UseStaticFiles();
+const string serviceWorkerCacheControl = "no-cache, no-store, must-revalidate";
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.Context.Request.Path.Equals(RoutePaths.ServiceWorker, StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = serviceWorkerCacheControl;
+        }
+    }
+});
 
 // ── Localization (cookie-based culture, falls back to Accept-Language header; issues #84, #152) ──
 var supportedCultures = new[]
@@ -762,10 +641,6 @@ if (!useInMemoryDb)
     });
 }
 
-// Second-factor gate (#128, #219). After UseAuthorization so the principal exists, before the
-// endpoints it protects. It lets the enrolment and challenge routes through by name.
-app.UseMiddleware<MfaEnforcementMiddleware>();
-
 // White-label host scope (issue #81): a tenant domain serves recipient surfaces only.
 // Before the security headers and the endpoints, because a redirect settles the request.
 app.UseMiddleware<QuickShare.Infrastructure.Middleware.CustomDomainMiddleware>();
@@ -788,23 +663,6 @@ app.UseFastEndpoints()
 app.MapStaticAssets();
 app.MapRazorComponents<App>();
 
-// Magic-link landing (issue #132). A GET, because it is a link in an email — which is also why
-// the token is single-use: mail gateways follow links, and one of those must not consume the
-// human's only chance to sign in without them noticing.
-app.MapGet(RoutePaths.MagicLink, async (
-    string? token, HttpContext context, AppDbContext db,
-    QuickShare.Features.Auth.MagicLink.MagicLinkService links, CancellationToken ct) =>
-{
-    var user = await links.ConsumeAsync(token, ct);
-    if (user is null)
-        return Results.Redirect($"{RoutePaths.Login}?error=link");
-
-    await QuickShare.Features.Auth.Passkeys.AuthSignIn.CompleteAsync(
-        context, db, user, AuthConstants.MagicLinkProvider, ct);
-
-    return Results.Redirect("/");
-});
-
 // Dev-only sign-in: gated on Development + the in-memory database, protected by a token that is
 // regenerated per boot, and printed here so a reviewer can open the account, checkout and admin
 // pages that are otherwise unreachable without an identity provider.
@@ -818,21 +676,6 @@ if (QuickShare.Infrastructure.Dev.DevSignIn.ShouldEnable(builder.Configuration, 
         QuickShare.Infrastructure.Dev.DevSignIn.DefaultEmail);
     QuickShare.Infrastructure.Dev.DevSignIn.MapDevSignIn(app, devSignInToken);
 }
-
-// SAML 2.0 (issue #139): metadata, SP-initiated login and the assertion consumer.
-app.MapSamlEndpoints();
-
-// WebDAV mount (issue #195). Anonymous at the route level — the mount authenticates itself
-// with an API key over Basic, because no filesystem client carries our cookie.
-QuickShare.Features.Protocols.WebDav.WebDavEndpoints.MapWebDavEndpoints(app);
-
-// S3-compatible gateway (issue #265). Also anonymous at the route level: it authenticates with
-// SigV4, which no authentication handler here knows how to speak.
-QuickShare.Features.Protocols.S3.S3Endpoints.MapS3Endpoints(app);
-
-// Outlook add-in manifest (issue #194). Anonymous and public: an org admin has to be able to
-// fetch it before anybody has signed in to anything.
-QuickShare.Features.Developer.Addins.OutlookAddinEndpoints.MapOutlookAddinEndpoints(app);
 
 // OAuth challenge endpoint.
 app.MapGet("/login/{provider}", async (string provider, string? returnUrl, HttpContext context, IAuthenticationSchemeProvider schemes) =>

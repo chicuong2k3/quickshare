@@ -29,7 +29,7 @@
         </p>
     </section>
 
-    <AccountTabs Current="@RoutePaths.AccountDeliveries" />
+    <AccountShell Current="@RoutePaths.AccountDeliveries">
 
     <section id="deliveries-body">
             @* Link health at a glance (issue #202) — the DB is the source of truth, no probes needed. *@
@@ -132,6 +132,8 @@
                 @Chunk
             }
     </section>
+
+</AccountShell>
 
 </PageWrapper>
 

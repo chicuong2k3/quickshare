@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using QuickShare.Data;
-using QuickShare.Features.Payments.Crypto;
 using QuickShare.Data.Entities;
 using QuickShare.Features.Payments.PayOS;
 using QuickShare.Features.Users.Shared;
@@ -53,10 +52,6 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("PayOS:ClientId", "test-payos-client");
         builder.UseSetting("PayOS:ApiKey", "test-payos-api-key");
         builder.UseSetting("PayOS:ChecksumKey", "test-payos-checksum-key");
-        // Crypto rail (issue #225): a key so the button is offered, and a shared secret the
-        // suite can sign a webhook with — the signature is the whole security of that path.
-        builder.UseSetting(CryptoCheckoutService.ApiKeyConfigKey, "test-crypto-key");
-        builder.UseSetting(CryptoCheckoutService.WebhookSecretConfigKey, CryptoWebhookSecret);
         // Upload by email (issue #104): a domain so an address is minted, and the shared secret
         // the inbound webhook has to present.
         builder.UseSetting("Email:InboundDomain", "inbound.quickshare.test");
@@ -102,12 +97,6 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             services.RemoveAll<QuickShare.Infrastructure.Push.IPushService>();
             services.AddSingleton<QuickShare.Infrastructure.Push.IPushService, StubPushService>();
             services.AddScoped<PayOSService, StubPayOSService>();
-            // OCR (issue #243): the recognition is stubbed — a suite that shelled out to
-            // tesseract would be testing tesseract, not what we do with what it returns.
-            services.RemoveAll<QuickShare.Features.Deliveries.Ocr.IOcrEngine>();
-            services.AddSingleton<QuickShare.Features.Deliveries.Ocr.IOcrEngine, StubOcrEngine>();
-            services.RemoveAll<CryptoCheckoutService>();
-            services.AddScoped<CryptoCheckoutService, StubCryptoCheckoutService>();
             // White-label domain verification (issue #81) asks DNS a question; a suite that
             // asked the real resolver would be testing the network.
             services.RemoveAll<QuickShare.Features.Workspaces.Domains.DomainVerifier>();
@@ -115,9 +104,6 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IAsyncLi
             RemoveHostedService<PayOSWebhookRegistrationHostedService>(services);
         });
     }
-
-    /// <summary>The shared secret the suite signs crypto webhooks with (issue #225).</summary>
-    public const string CryptoWebhookSecret = "test-crypto-webhook-secret";
 
     /// <summary>The secret the inbound-mail webhook must present (issue #104).</summary>
     public const string InboundSecret = "test-inbound-secret";
@@ -245,36 +231,7 @@ internal sealed class StubDomainVerifier(
     }
 }
 
-/// <summary>
-/// Replaces the hosted crypto charge with an instant fake, the way the PayOS stub does. The
-/// signature verification is deliberately *not* stubbed: it is the part worth testing.
-/// </summary>
-internal sealed class StubCryptoCheckoutService(
-    IHttpClientFactory httpClientFactory,
-    Microsoft.Extensions.Configuration.IConfiguration config,
-    Microsoft.Extensions.Logging.ILogger<CryptoCheckoutService> logger)
-    : CryptoCheckoutService(httpClientFactory, config, logger)
-{
-    public override Task<CryptoChargeResult> CreateChargeAsync(
-        string reference, decimal amount, string currency, string description, CancellationToken ct)
-    {
-        var chargeId = "stub-" + Guid.NewGuid().ToString("N")[..12];
 
-        return Task.FromResult(new CryptoChargeResult(true, $"https://commerce.stub.local/{chargeId}", chargeId, null));
-    }
-}
-
-/// <summary>Returns whatever the current test says the picture says (issue #243).</summary>
-internal sealed class StubOcrEngine : QuickShare.Features.Deliveries.Ocr.IOcrEngine
-{
-    /// <summary>Null means "read it and found nothing", which is its own result.</summary>
-    public static string? Text { get; set; } = "PO-4417 total 1,240,000 VND";
-
-    public bool IsAvailable => true;
-
-    public Task<string?> ReadAsync(Stream image, string languages, CancellationToken ct) =>
-        Task.FromResult(Text);
-}
 
 /// <summary>Replaces outbound PayOS API calls with an instant fake checkout link.</summary>
 internal sealed class StubPayOSService : PayOSService
@@ -355,12 +312,11 @@ internal sealed class LocalDiskStorageProviderStub : IStorageProvider
     }
 
     /// <summary>
-    /// Builds the *real* key shape rather than a stub-specific one. The old "stub/{id}/{name}"
-    /// key meant nothing downstream could read a region out of it, which is precisely why the
-    /// missing commit-time region stamp (issue #119) survived a green suite.
+    /// Builds the *real* key shape rather than a stub-specific one, so every caller that reads a
+    /// key back out of the store sees what production would have written.
     /// </summary>
-    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, string? region = null, CancellationToken ct = default)
-        => Task.FromResult(new R2InitResult("stub-upload-id", R2ObjectKey.For(Guid.Empty, deliveryId, fileName, region)));
+    public Task<R2InitResult> InitR2MultipartUploadAsync(Guid deliveryId, string fileName, CancellationToken ct = default)
+        => Task.FromResult(new R2InitResult("stub-upload-id", R2ObjectKey.For(Guid.Empty, deliveryId, fileName)));
 
     public Task<IReadOnlyList<R2PartUrl>> GenerateUploadPartUrlsAsync(string uploadId, string objectKey, IReadOnlyList<int> partNumbers, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<R2PartUrl>>(partNumbers

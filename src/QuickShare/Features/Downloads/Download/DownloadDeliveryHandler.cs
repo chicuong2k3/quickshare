@@ -44,27 +44,7 @@ public sealed class DownloadDeliveryHandler(
             return Unit.Value;
         }
 
-        // Held for review (issue #162): 404, matching the info endpoint, so the byte stream
-        // never becomes the oracle that tells a recipient the file exists but is awaiting
-        // somebody's sign-off.
-        if (delivery.Status == DeliveryStatus.PendingApproval)
-        {
-            response.StatusCode = StatusCodes.Status404NotFound;
-            return Unit.Value;
-        }
-
-        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked || delivery.VirusScanStatus == DeliveryVirusScanStatus.Infected)
-        {
-            response.StatusCode = StatusCodes.Status410Gone;
-            return Unit.Value;
-        }
-
-        if (delivery.StorageTier is DeliveryStorageTier.Cold or DeliveryStorageTier.Restoring)
-        {
-            response.StatusCode = StatusCodes.Status409Conflict;
-            return Unit.Value;
-        }
-        if (delivery.StorageTier is DeliveryStorageTier.Cold)
+        if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked)
         {
             response.StatusCode = StatusCodes.Status410Gone;
             return Unit.Value;

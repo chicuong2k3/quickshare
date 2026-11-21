@@ -174,17 +174,6 @@ public sealed class DeliveryVersionTests : IClassFixture<TestWebAppFactory>
         var v99Res = await noRedirectClient.GetAsync($"/api/downloads/{delivery.ShareCode}/versions/99");
         Assert.Equal(HttpStatusCode.NotFound, v99Res.StatusCode);
 
-        // PendingApproval (#162) returns 404 (indistinguishable from not-found).
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var row = await db.Deliveries.FirstAsync(d => d.Id == delivery.Id);
-            row.Status = DeliveryStatus.PendingApproval;
-            await db.SaveChangesAsync();
-        }
-        var pendingRes = await noRedirectClient.GetAsync($"/api/downloads/{delivery.ShareCode}/versions/1");
-        Assert.Equal(HttpStatusCode.NotFound, pendingRes.StatusCode);
-
         // Expired delivery returns 410 Gone.
         using (var scope = _factory.Services.CreateScope())
         {

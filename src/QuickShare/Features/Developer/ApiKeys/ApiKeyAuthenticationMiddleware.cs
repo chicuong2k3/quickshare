@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using QuickShare.Features.Auth.Totp;
 
 namespace QuickShare.Features.Developer.ApiKeys;
 
@@ -79,11 +78,6 @@ public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next)
 
     /// <summary>
     /// The same claims a cookie carries, plus the key's id.
-    ///
-    /// It is marked second-factor-verified on purpose: a key *is* an independent credential, it
-    /// cannot be phished out of a session, and it is revocable in one click — where a machine
-    /// caller has no way at all to answer a TOTP prompt. Without this an account that enrolled
-    /// an authenticator would find its integrations silently dead.
     /// </summary>
     private static ClaimsPrincipal Build(UserLogin login, ApiKey key)
     {
@@ -91,7 +85,6 @@ public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next)
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, login.ProviderKey));
         identity.AddClaim(new Claim(AuthConstants.ProviderClaimType, login.Provider));
         identity.AddClaim(new Claim(KeyIdClaimType, key.Id.ToString()));
-        identity.AddClaim(new Claim(MfaSession.VerifiedClaimType, bool.TrueString));
 
         return new ClaimsPrincipal(identity);
     }

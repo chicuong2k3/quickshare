@@ -141,33 +141,6 @@ public sealed class SessionManagementTests : IClassFixture<TestWebAppFactory>
         Assert.True(await ValidateAsync(session.SessionId));
     }
 
-    [Fact]
-    public async Task ScimDeprovision_CutsTheMembersSessions()
-    {
-        var (admin, workspaceId) = await WorkspaceClientAsync();
-        var email = $"leaver-{Guid.NewGuid():N}@acme.example";
-
-        var memberId = await SeedUserAsync(email);
-        var session = await StartSessionAsync(memberId);
-
-        var scim = await ScimClientAsync(admin);
-        var created = await scim.PostAsJsonAsync("/scim/v2/Users", new { userName = email, active = true });
-        created.EnsureSuccessStatusCode();
-        var scimId = System.Text.Json.JsonDocument.Parse(await created.Content.ReadAsStringAsync())
-            .RootElement.GetProperty("id").GetString()!;
-
-        var patched = await scim.PatchAsync($"/scim/v2/Users/{scimId}", JsonBody(new
-        {
-            Operations = new object[] { new { op = "replace", path = "active", value = false } },
-        }));
-        patched.EnsureSuccessStatusCode();
-
-        // This was a documented gap when SCIM shipped: the seat died at once but a signed-in
-        // browser kept working until its cookie expired, which is not what "IT deactivated them"
-        // is supposed to mean.
-        Assert.False(await ValidateAsync(session.SessionId));
-        _ = workspaceId;
-    }
 
     [Fact]
     public async Task SecurityPage_ListsSessionsAndOffersGlobalSignOut()
@@ -283,15 +256,4 @@ public sealed class SessionManagementTests : IClassFixture<TestWebAppFactory>
         return (client, workspace.Id);
     }
 
-    private async Task<HttpClient> ScimClientAsync(HttpClient admin)
-    {
-        var issued = await admin.PostAsJsonAsync("/api/workspace/scim-tokens", new { label = "Okta" });
-        issued.EnsureSuccessStatusCode();
-        var token = (await issued.Content.ReadFromJsonAsync<QuickShare.Features.Auth.Sso.ScimTokenDto>())!;
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.Token);
-        return client;
-    }
 }

@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Options;
 using QuickShare.Extensions;
 using QuickShare.Infrastructure.FeatureFlags;
 
@@ -10,9 +9,6 @@ public sealed record BillingProfileDto(
     string TaxCode,
     string Address,
     string BillingEmail,
-    string PoNumber,
-    int NetTermsDays,
-    bool NetTermsApproved,
     bool IsBusiness);
 
 public sealed class BillingProfileRequest
@@ -21,8 +17,6 @@ public sealed class BillingProfileRequest
     public string? TaxCode { get; set; }
     public string? Address { get; set; }
     public string? BillingEmail { get; set; }
-    public string? PoNumber { get; set; }
-    public int NetTermsDays { get; set; }
 }
 
 /// <summary>
@@ -38,7 +32,7 @@ internal static partial class TaxCodes
     public static bool IsValid(string value) => Pattern().IsMatch(value);
 }
 
-/// <summary>GET /api/billing/profile — the buyer's invoicing identity (issues #112, #192).</summary>
+/// <summary>GET /api/billing/profile — the buyer's invoicing identity (issue #112).</summary>
 public sealed class GetBillingProfileEndpoint : EndpointWithoutRequest<BillingProfileDto>
 {
     public override void Configure()
@@ -48,7 +42,7 @@ public sealed class GetBillingProfileEndpoint : EndpointWithoutRequest<BillingPr
         Summary(s =>
         {
             s.Summary = "Get the caller's billing profile";
-            s.Description = "Company name, tax code and address for VAT invoicing, plus the purchase-order reference and payment terms procurement requires.";
+            s.Description = "Company name, tax code and address for VAT invoicing.";
         });
     }
 
@@ -69,19 +63,11 @@ public sealed class GetBillingProfileEndpoint : EndpointWithoutRequest<BillingPr
         profile?.TaxCode ?? string.Empty,
         profile?.Address ?? string.Empty,
         profile?.BillingEmail ?? string.Empty,
-        profile?.PoNumber ?? string.Empty,
-        profile?.NetTermsDays ?? 0,
-        profile?.NetTermsApprovedAt is not null,
         profile?.IsBusiness ?? false);
 }
 
 /// <summary>
-/// PUT /api/billing/profile — set the invoicing identity (issues #112, #192).
-///
-/// Asking for net terms here does not grant them. Terms are a credit decision, so the request
-/// is stored and stays inert until a platform admin approves it; self-service credit is how a
-/// SaaS discovers bad debt. Changing the requested terms after approval clears the approval,
-/// because "approved for 30 days" is not approval for 60.
+/// PUT /api/billing/profile — set the invoicing identity (issue #112).
 /// </summary>
 public sealed class UpdateBillingProfileEndpoint : Endpoint<BillingProfileRequest, BillingProfileDto>
 {
@@ -92,7 +78,7 @@ public sealed class UpdateBillingProfileEndpoint : Endpoint<BillingProfileReques
         Summary(s =>
         {
             s.Summary = "Set the caller's billing profile";
-            s.Description = "A company name plus a valid tax code turns receipts into VAT invoices. Requested net terms are recorded but only take effect once approved.";
+            s.Description = "A company name plus a valid tax code turns receipts into VAT invoices.";
         });
     }
 
@@ -108,12 +94,6 @@ public sealed class UpdateBillingProfileEndpoint : Endpoint<BillingProfileReques
             return;
         }
 
-        if (!BillingProfile.AllowedNetTermsDays.Contains(req.NetTermsDays))
-        {
-            ThrowError(ErrorCodes.NetTermsInvalid, StatusCodes.Status400BadRequest);
-            return;
-        }
-
         var profile = await db.BillingProfiles.FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
         if (profile is null)
         {
@@ -126,19 +106,10 @@ public sealed class UpdateBillingProfileEndpoint : Endpoint<BillingProfileReques
             db.BillingProfiles.Add(profile);
         }
 
-        // Asking for different terms is a new credit question, so the old answer is dropped.
-        if (profile.NetTermsDays != req.NetTermsDays)
-        {
-            profile.NetTermsApprovedAt = null;
-            profile.NetTermsApprovedById = null;
-        }
-
         profile.CompanyName = Trim(req.CompanyName, BillingProfile.CompanyNameMaxLength);
         profile.TaxCode = taxCode;
         profile.Address = Trim(req.Address, BillingProfile.AddressMaxLength);
         profile.BillingEmail = Trim(req.BillingEmail, BillingProfile.CompanyNameMaxLength);
-        profile.PoNumber = Trim(req.PoNumber, BillingProfile.PoNumberMaxLength);
-        profile.NetTermsDays = req.NetTermsDays;
         profile.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);
@@ -150,57 +121,5 @@ public sealed class UpdateBillingProfileEndpoint : Endpoint<BillingProfileReques
     {
         var trimmed = (value ?? string.Empty).Trim();
         return trimmed.Length > max ? trimmed[..max] : trimmed;
-    }
-}
-
-public sealed class ApproveNetTermsRequest
-{
-    public Guid UserId { get; set; }
-    public bool Approved { get; set; }
-}
-
-/// <summary>
-/// POST /api/admin/billing/net-terms — grant or withdraw payment terms (issue #192).
-///
-/// Platform admins only, and deliberately manual: extending credit is a risk decision about a
-/// specific customer, not a setting they can toggle for themselves.
-/// </summary>
-public sealed class ApproveNetTermsEndpoint : Endpoint<ApproveNetTermsRequest, BillingProfileDto>
-{
-    public override void Configure()
-    {
-        Post("/api/admin/billing/net-terms");
-        Description(b => b.WithTags(ApiTags.Admin));
-        Summary(s =>
-        {
-            s.Summary = "Approve or withdraw a buyer's net payment terms";
-            s.Description = "Platform admins only. Until approved, a buyer's requested terms are recorded but every invoice is still due on issue.";
-        });
-    }
-
-    public override async Task HandleAsync(ApproveNetTermsRequest req, CancellationToken ct)
-    {
-        var db = Resolve<AppDbContext>();
-        var admin = await HttpContext.User.GetUserAsync(db, ct);
-
-        if (!User.IsAdmin(Resolve<IOptions<AdminOptions>>()))
-        {
-            ThrowError(ErrorCodes.WorkspaceForbidden, StatusCodes.Status403Forbidden);
-            return;
-        }
-
-        var profile = await db.BillingProfiles.FirstOrDefaultAsync(p => p.UserId == req.UserId, ct);
-        if (profile is null)
-        {
-            ThrowError(ErrorCodes.NotFound, StatusCodes.Status404NotFound);
-            return;
-        }
-
-        profile.NetTermsApprovedAt = req.Approved ? DateTime.UtcNow : null;
-        profile.NetTermsApprovedById = req.Approved ? admin.Id : null;
-        profile.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
-
-        await Send.OkAsync(GetBillingProfileEndpoint.Map(profile), ct);
     }
 }

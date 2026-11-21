@@ -169,7 +169,8 @@ Each area has automated coverage; manual pass confirms the UX. Config-dependent 
 - **Files/Folders page (#8)** — manual test left blank; issue note says "under review —
   who uses it?" Decision: watch hit logs for `/files` + `/api/folders` for one week after
   next deploy; if zero, open an issue to remove it. **Until then: test or skip?**
-- **PayPal/Stripe (#179)** — closed, PayOS-only is the decision. Nothing to test.
+- **PayPal/Stripe (#177), MoMo/ZaloPay deeplinks (#164)** — removed; the URLs were formatted from
+  our own order code and no provider was ever called. PayOS-only is the decision. Nothing to test.
 
 ## Checklist for closing this runbook
 

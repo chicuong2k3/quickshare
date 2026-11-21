@@ -241,8 +241,6 @@ public sealed class BillingLedgerTests : IClassFixture<TestWebAppFactory>
             CompanyName = CompanyName,
             TaxCode = ValidTaxCode,
             Address = "1 Nguyen Hue, HCMC",
-            PoNumber = "PO-4417",
-            NetTermsDays = 0,
         });
         Assert.Equal(HttpStatusCode.OK, save.StatusCode);
 
@@ -261,7 +259,6 @@ public sealed class BillingLedgerTests : IClassFixture<TestWebAppFactory>
         // Frozen copies: the invoice has to keep saying what it said even after the buyer moves.
         Assert.Equal(CompanyName, issued.CompanyName);
         Assert.Equal(ValidTaxCode, issued.TaxCode);
-        Assert.Equal("PO-4417", issued.PoNumber);
         // 50,000 + 10% VAT.
         Assert.Equal(55_000m, issued.Total);
     }
@@ -307,113 +304,8 @@ public sealed class BillingLedgerTests : IClassFixture<TestWebAppFactory>
 
     // ── PO and net terms (#192) ──
 
-    [Fact]
-    public async Task NetTerms_AreInertUntilAnAdminApprovesThem()
-    {
-        var (client, ownerId) = await ClientAsync(PlanTierLimits.Pro);
 
-        await client.PutAsJsonAsync("/api/billing/profile", new BillingProfileRequest
-        {
-            CompanyName = CompanyName,
-            TaxCode = ValidTaxCode,
-            NetTermsDays = 30,
-        });
 
-        var requested = await client.GetFromJsonAsync<BillingProfileDto>("/api/billing/profile");
-        Assert.NotNull(requested);
-        Assert.Equal(30, requested.NetTermsDays);
-        // Asking is not being granted: self-service credit is how a SaaS discovers bad debt.
-        Assert.False(requested.NetTermsApproved);
-
-        await IssueAsync(ownerId);
-        await using (var scope = _factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = await db.Invoices.AsNoTracking()
-                .Where(i => i.UserId == ownerId && i.Status != InvoiceStatus.Draft)
-                .SingleAsync();
-            Assert.Equal(0, invoice.NetTermsDays);
-            Assert.Equal(invoice.IssuedAt, invoice.DueAt);
-        }
-
-        // The default test client is the configured admin, so it can approve.
-        var approve = await _factory.CreateAuthenticatedClient().PostAsJsonAsync(
-            "/api/admin/billing/net-terms", new ApproveNetTermsRequest { UserId = ownerId, Approved = true });
-        Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
-
-        var approved = await client.GetFromJsonAsync<BillingProfileDto>("/api/billing/profile");
-        Assert.NotNull(approved);
-        Assert.True(approved.NetTermsApproved);
-    }
-
-    [Fact]
-    public async Task NetTerms_ChangingTheRequestClearsAPriorApproval()
-    {
-        var (client, ownerId) = await ClientAsync(PlanTierLimits.Pro);
-
-        await client.PutAsJsonAsync("/api/billing/profile",
-            new BillingProfileRequest { CompanyName = CompanyName, TaxCode = ValidTaxCode, NetTermsDays = 30 });
-        await _factory.CreateAuthenticatedClient().PostAsJsonAsync(
-            "/api/admin/billing/net-terms", new ApproveNetTermsRequest { UserId = ownerId, Approved = true });
-
-        await client.PutAsJsonAsync("/api/billing/profile",
-            new BillingProfileRequest { CompanyName = CompanyName, TaxCode = ValidTaxCode, NetTermsDays = 60 });
-
-        var profile = await client.GetFromJsonAsync<BillingProfileDto>("/api/billing/profile");
-        Assert.NotNull(profile);
-        Assert.Equal(60, profile.NetTermsDays);
-        // "Approved for 30 days" is not approval for 60.
-        Assert.False(profile.NetTermsApproved);
-    }
-
-    [Fact]
-    public async Task NetTerms_ApprovedInvoiceGetsADueDateAndGoesOverdue()
-    {
-        var (client, ownerId) = await ClientAsync(PlanTierLimits.Pro);
-
-        await client.PutAsJsonAsync("/api/billing/profile",
-            new BillingProfileRequest { CompanyName = CompanyName, TaxCode = ValidTaxCode, NetTermsDays = 30 });
-        await _factory.CreateAuthenticatedClient().PostAsJsonAsync(
-            "/api/admin/billing/net-terms", new ApproveNetTermsRequest { UserId = ownerId, Approved = true });
-
-        Guid invoiceId;
-        await using (var scope = _factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var service = new InvoiceService(db);
-            await service.AddOrUpdateLineAsync(ownerId, InvoiceLineKind.Plan, "Pro (monthly)", 1m, 50_000m, CancellationToken.None);
-            var invoice = (await service.IssueAsync(ownerId, null, alreadyPaid: false, CancellationToken.None))!;
-            invoiceId = invoice.Id;
-            Assert.Equal(InvoiceStatus.Issued, invoice.Status);
-            Assert.Equal(30, invoice.NetTermsDays);
-
-            // Backdate it past the due date and let the sweep find it.
-            invoice.DueAt = DateTime.UtcNow.AddDays(-1);
-            await db.SaveChangesAsync();
-        }
-
-        await RunOverdueSweepAsync();
-
-        await using (var scope = _factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = await db.Invoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId);
-            Assert.Equal(InvoiceStatus.Overdue, invoice.Status);
-
-            Assert.Contains(await db.Notifications.AsNoTracking().ToListAsync(),
-                n => n.UserId == ownerId && n.Type == NotificationType.InvoiceOverdue);
-        }
-
-        // A second pass is a no-op — otherwise the buyer gets the same dunning note hourly.
-        await RunOverdueSweepAsync();
-        await using (var scope = _factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var alerts = await db.Notifications.AsNoTracking()
-                .CountAsync(n => n.UserId == ownerId && n.Type == NotificationType.InvoiceOverdue);
-            Assert.Equal(1, alerts);
-        }
-    }
 
     [Fact]
     public async Task Profile_RefusesAMalformedTaxCode()
@@ -427,16 +319,6 @@ public sealed class BillingLedgerTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Profile_RefusesTermsOutsideTheAllowedSet()
-    {
-        var (client, _) = await ClientAsync(PlanTierLimits.Pro);
-
-        var response = await client.PutAsJsonAsync("/api/billing/profile",
-            new BillingProfileRequest { NetTermsDays = 45 });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
 
     [Fact]
     public async Task AdminEndpoints_AreRefusedToOrdinaryUsers()
@@ -444,12 +326,10 @@ public sealed class BillingLedgerTests : IClassFixture<TestWebAppFactory>
         var (_, ownerId) = await ClientAsync(PlanTierLimits.Pro);
         var outsider = await NonAdminClientAsync();
 
-        var terms = await outsider.PostAsJsonAsync("/api/admin/billing/net-terms",
-            new ApproveNetTermsRequest { UserId = ownerId, Approved = true });
+        var roster = await outsider.GetAsync("/api/admin/workspaces/roster");
 
-        // Extending credit is a risk decision about a specific customer, not a switch the
-        // customer gets to flip for themselves.
-        Assert.Equal(HttpStatusCode.Forbidden, terms.StatusCode);
+        // Admin surfaces are a risk boundary, not a switch the customer gets to flip for themselves.
+        Assert.Equal(HttpStatusCode.Forbidden, roster.StatusCode);
     }
 
     // ── Helpers ──
@@ -505,13 +385,4 @@ public sealed class BillingLedgerTests : IClassFixture<TestWebAppFactory>
         await db.SaveChangesAsync();
     }
 
-    private async Task RunOverdueSweepAsync()
-    {
-        var job = new InvoiceOverdueJob(
-            _factory.Services.GetRequiredService<IServiceScopeFactory>(),
-            _factory.Services.GetRequiredService<QuickShare.Infrastructure.Email.EmailSender>(),
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<InvoiceOverdueJob>.Instance);
-
-        await job.SweepAsync();
-    }
 }

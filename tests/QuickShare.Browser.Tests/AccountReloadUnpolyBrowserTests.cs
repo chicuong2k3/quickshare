@@ -14,14 +14,10 @@ public sealed class AccountReloadUnpolyBrowserTests : IClassFixture<BrowserFixtu
 
     [Theory]
     [InlineData(RoutePaths.AccountInvoices, "#invoices-body")]
-    [InlineData(RoutePaths.AccountRecurring, "#recurring-body")]
-    [InlineData(RoutePaths.AccountWorkspaceApprovals, "#workspace-approvals-body")]
     [InlineData(RoutePaths.AccountWorkspace, "#workspace-body")]
     [InlineData(RoutePaths.AccountWorkspaceDomain, "#workspace-domain-body")]
     [InlineData(RoutePaths.AccountWorkspaceBrand, "#workspace-brand-body")]
     [InlineData(RoutePaths.AccountWorkspaceChannel, "#workspace-channel-body")]
-    [InlineData(RoutePaths.AccountWorkspaceStreaming, "#workspace-streaming-body")]
-    [InlineData(RoutePaths.AccountWorkspaceBackup, "#workspace-backup-body")]
     public async Task ConvertedCard_ReloadsWithUnpolyWithoutPageNavigation(string route, string selector)
     {
         await using var context = await _fixture.CreateContextAsync(authenticated: true);

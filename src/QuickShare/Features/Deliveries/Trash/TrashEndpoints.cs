@@ -26,11 +26,6 @@ public sealed class TrashDeliveryHandler(AppDbContext db, IHttpContextAccessor h
         if (delivery.Status == DeliveryStatus.Scheduled && !cmd.Restore)
             return Result.Failure(new LightResults.Error(ErrorCodes.DeliveryNotActive));
 
-        // Legal hold (issue #266): a held delivery must not even enter the 24h purge
-        // queue. Restore stays open — releasing something from the trash is never destructive.
-        if (delivery.LegalHoldAt is not null && !cmd.Restore)
-            return Result.Failure(new LightResults.Error(ErrorCodes.LegalHoldActive));
-
         delivery.DeletedAt = cmd.Restore ? null : DateTime.UtcNow;
         if (cmd.Restore)
             delivery.Status = DeliveryStatus.Active;
@@ -71,7 +66,6 @@ public sealed class DeleteDeliveryEndpoint : EndpointWithoutRequest
             ThrowError(error.Message, error.Message switch
             {
                 ErrorCodes.NotFound => StatusCodes.Status404NotFound,
-                ErrorCodes.LegalHoldActive => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
             });
     }

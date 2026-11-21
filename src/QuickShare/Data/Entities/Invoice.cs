@@ -1,21 +1,15 @@
 namespace QuickShare.Data.Entities;
 
 /// <summary>
-/// The buyer's billing identity (issues #112, #192). One per account, and the account that
+/// The buyer's billing identity (issue #112). One per account, and the account that
 /// matters is the workspace owner — they are the bill payer, so their profile is what every
 /// invoice for that workspace is cut against.
-///
-/// Net terms are stored but inert until a platform admin approves them: "pay us in 60 days"
-/// is a credit decision, and self-service credit is how a SaaS discovers bad debt.
 /// </summary>
 public record BillingProfile : BaseAuditEntity
 {
     public const int CompanyNameMaxLength = 200;
     public const int TaxCodeMaxLength = 20;
     public const int AddressMaxLength = 400;
-    public const int PoNumberMaxLength = 60;
-    /// <summary>Terms a buyer may ask for. Anything else is rejected rather than rounded.</summary>
-    public static readonly int[] AllowedNetTermsDays = [0, 30, 60];
 
     public Guid UserId { get; set; }
     /// <summary>Registered company name; blank means an individual buyer and no VAT invoice.</summary>
@@ -24,17 +18,9 @@ public record BillingProfile : BaseAuditEntity
     public string TaxCode { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string BillingEmail { get; set; } = string.Empty;
-    /// <summary>Purchase-order reference the buyer's procurement requires on every invoice (#192).</summary>
-    public string PoNumber { get; set; } = string.Empty;
-    /// <summary>Requested payment terms. Only binding once <see cref="NetTermsApprovedAt"/> is set.</summary>
-    public int NetTermsDays { get; set; }
-    public DateTime? NetTermsApprovedAt { get; set; }
-    public Guid? NetTermsApprovedById { get; set; }
 
     public User User { get; init; } = null!;
 
-    /// <summary>Terms actually granted. An unapproved request bills on issue, like a card.</summary>
-    public int EffectiveNetTermsDays => NetTermsApprovedAt is null ? 0 : NetTermsDays;
     /// <summary>A VAT invoice needs a named company and a tax code; without both it is a receipt.</summary>
     public bool IsBusiness => !string.IsNullOrWhiteSpace(CompanyName) && !string.IsNullOrWhiteSpace(TaxCode);
 }
@@ -43,10 +29,9 @@ public static class InvoiceStatus
 {
     /// <summary>Open ledger for the current period — seat and overage lines accumulate here.</summary>
     public const string Draft = "draft";
-    /// <summary>Numbered and sent. Waiting on payment (net terms) or already settled by card.</summary>
+    /// <summary>Numbered and sent.</summary>
     public const string Issued = "issued";
     public const string Paid = "paid";
-    public const string Overdue = "overdue";
     public const string Void = "void";
 }
 
@@ -58,7 +43,7 @@ public static class InvoiceLineKind
 }
 
 /// <summary>
-/// One bill (issues #112 e-invoice, #192 PO/net terms, and the destination for #278 seat and
+/// One bill (issue #112 e-invoice, and the destination for #278 seat and
 /// #141 overage charges).
 ///
 /// A draft invoice is the period's open ledger: mid-cycle seat additions and metered overage
@@ -81,21 +66,18 @@ public record Invoice : BaseAuditEntity
     public DateTime PeriodStart { get; set; }
     public DateTime PeriodEnd { get; set; }
     public DateTime? IssuedAt { get; set; }
-    public DateTime? DueAt { get; set; }
     public DateTime? PaidAt { get; set; }
 
     // Frozen copies of the billing profile, taken at issue time.
     public string CompanyName { get; set; } = string.Empty;
     public string TaxCode { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
-    public string PoNumber { get; set; } = string.Empty;
-    public int NetTermsDays { get; set; }
 
     public decimal Subtotal { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal Total { get; set; }
 
-    /// <summary>The PayOS payment this invoice was issued against; null for a net-terms bill.</summary>
+    /// <summary>The PayOS payment this invoice was issued against.</summary>
     public Guid? PaymentEventId { get; set; }
 
     /// <summary>Payment method channel recorded when paid (#164, #177).</summary>

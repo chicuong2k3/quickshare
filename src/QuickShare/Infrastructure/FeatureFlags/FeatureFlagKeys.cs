@@ -15,7 +15,4 @@ public static class FeatureFlagKeys
 
     /// <summary>Password-protected downloads (share password in addition to OTP gate). Issue #44.</summary>
     public const string PasswordProtection = "password-protection";
-
-    /// <summary>Virus scanning for Pro/Studio uploads. Issue #48.</summary>
-    public const string VirusScan = "virus-scan";
 }

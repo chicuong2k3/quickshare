@@ -34,7 +34,7 @@ public sealed class CustomDomainMiddleware(RequestDelegate next, IOptions<EmailO
         "/favicon",
         "/robots.txt",
         "/manifest.webmanifest",
-        "/sw.js",
+        RoutePaths.ServiceWorker,
     ];
 
     public async Task InvokeAsync(HttpContext context, WorkspaceDomainReader domains)
@@ -58,7 +58,7 @@ public sealed class CustomDomainMiddleware(RequestDelegate next, IOptions<EmailO
     {
         var value = path.Value ?? string.Empty;
 
-        return string.Equals(value, RoutePaths.ScopedStyles, StringComparison.OrdinalIgnoreCase)
+        return RoutePaths.IsScopedStyles(value)
             || Array.Exists(AllowedPrefixes,
             prefix => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }

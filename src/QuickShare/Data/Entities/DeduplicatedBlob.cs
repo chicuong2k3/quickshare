@@ -16,7 +16,6 @@ public record DeduplicatedBlob : BaseAuditEntity
     public string ScopeKey { get; init; } = string.Empty;
     public string Sha256 { get; init; } = string.Empty;
     public string StoragePath { get; init; } = string.Empty;
-    public string? StorageRegion { get; init; }
     public long FileSize { get; init; }
     public int RefCount { get; set; } = 1;
 }

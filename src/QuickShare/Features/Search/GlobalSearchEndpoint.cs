@@ -91,7 +91,6 @@ public sealed class GlobalSearchEndpoint(AppDbContext db)
                 d.FileName.ToLower().Contains(term)
                 || (d.Tag != null && d.Tag.ToLower().Contains(term))
                 || (!d.PrivacyMode && d.Message != null && d.Message.ToLower().Contains(term))
-                || (!d.PrivacyMode && db.DeliveryOcrTexts.Any(o => o.DeliveryId == d.Id && o.Text != null && o.Text.ToLower().Contains(term)))
                 || (d.FolderId != null && db.WorkspaceFolders.Any(f => f.Id == d.FolderId && f.Name.ToLower().Contains(term))))
             .OrderByDescending(d => d.CreatedAt)
             .Take(MaxResultsPerGroup)
@@ -111,15 +110,7 @@ public sealed class GlobalSearchEndpoint(AppDbContext db)
             .ToListAsync(ct);
 #pragma warning restore CA1304, CA1311, CA1862
 
-        var deliveryIds = matchedDeliveries.Select(d => d.Id).ToArray();
         var folderIds = matchedDeliveries.Where(d => d.FolderId.HasValue).Select(d => d.FolderId!.Value).Distinct().ToArray();
-
-        var ocrMap = deliveryIds.Length == 0
-            ? new Dictionary<Guid, string>()
-            : await db.DeliveryOcrTexts
-                .AsNoTracking()
-                .Where(o => deliveryIds.Contains(o.DeliveryId) && o.Text != null)
-                .ToDictionaryAsync(o => o.DeliveryId, o => o.Text!, ct);
 
         var folderNameMap = folderIds.Length == 0
             ? new Dictionary<Guid, string>()
@@ -135,13 +126,7 @@ public sealed class GlobalSearchEndpoint(AppDbContext db)
             var source = "name";
             string? snippet = null;
 
-            if (!d.PrivacyMode && ocrMap.TryGetValue(d.Id, out var contentText)
-                && contentText.Contains(rawQuery, StringComparison.OrdinalIgnoreCase))
-            {
-                source = "content";
-                snippet = BuildSnippet(contentText, rawQuery);
-            }
-            else if (!d.PrivacyMode && !string.IsNullOrEmpty(d.Message)
+            if (!d.PrivacyMode && !string.IsNullOrEmpty(d.Message)
                 && d.Message.Contains(rawQuery, StringComparison.OrdinalIgnoreCase))
             {
                 source = "message";

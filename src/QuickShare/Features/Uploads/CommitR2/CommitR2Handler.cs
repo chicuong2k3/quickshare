@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, bool OcrEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null, string? EncryptionMode = null, string? EncryptionKdfSalt = null, int? EncryptionKdfIterations = null, string? EncryptedKeyEscrow = null, string? VideoCompressionQuality = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null, string? EncryptionMode = null, string? EncryptionKdfSalt = null, int? EncryptionKdfIterations = null, string? EncryptedKeyEscrow = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -98,8 +98,7 @@ public sealed class CommitR2Handler(
         // File-request submissions are capped by the request budget, never the submitter
         // plan or monthly quota — the owner pre-paid for these with their own limits.
         var requestId = session.FileRequestId;
-        var hasTransferPass = !string.IsNullOrWhiteSpace(session.TransferPassToken);
-        var quota = user is null || requestId is not null || hasTransferPass ? null : new QuotaService(db);
+        var quota = user is null || requestId is not null ? null : new QuotaService(db);
 
         CompletionResult completionResult;
         try
@@ -139,7 +138,7 @@ public sealed class CommitR2Handler(
         }
         else
         {
-            var maxFileSize = hasTransferPass ? TransferCreditPass.MaxSingleTransferBytes : PlanTierLimits.GetMaxFileSize(plan);
+            var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
             if (maxFileSize.HasValue)
             {
                 var stored = await storage.GetObjectSizeAsync(cmd.ObjectKey, cancellationToken);
@@ -246,18 +245,6 @@ public sealed class CommitR2Handler(
             folderId = requestedFolderId;
         }
 
-        // Approval gate (issue #162): the workspace switch, or any folder above this one, and
-        // it only ever tightens. Deliberately independent of DefaultsLocked — a review gate the
-        // sender can switch off is not a gate.
-        var requiresApproval = workspaceId is not null
-            && user is not null
-            && ((folderDefaults?.RequireApproval ?? false)
-                || await db.Workspaces
-                    .AsNoTracking()
-                    .Where(w => w.Id == workspaceId)
-                    .Select(w => w.RequireDeliveryApproval)
-                    .FirstOrDefaultAsync(cancellationToken));
-
         var encryptionMode = string.IsNullOrWhiteSpace(cmd.EncryptionMode)
             ? DeliveryEncryptionMode.FragmentKey
             : cmd.EncryptionMode.Trim().ToLowerInvariant();
@@ -279,7 +266,7 @@ public sealed class CommitR2Handler(
                 return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.EncryptionDisabledByPolicy));
         }
 
-        var maxExpiry = hasTransferPass ? TimeSpan.FromDays(TransferCreditPass.ExtendedExpiryDays) : PlanTierLimits.GetMaxExpiry(plan);
+        var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
 
         // Locked folder defaults are policy, not prefill (issue #245). Unlocked ones never
         // reach here: they are served to the upload form and the sender stays in control.
@@ -312,37 +299,7 @@ public sealed class CommitR2Handler(
         // Retention policy (issue #161): the sender's own choice is clamped to the
         // account-wide window. Clamping, not rejecting — the upload already landed in R2,
         // and a compliance window is a ceiling, not a validation error.
-        var expiresAt = RetentionPolicy.Clamp(hasTransferPass ? (cmd.DeliverAt ?? DateTime.UtcNow).Add(cmd.ExpiryHours.HasValue ? TimeSpan.FromHours(cmd.ExpiryHours.Value) : maxExpiry) : ResolveExpiry(cmd, plan), user?.RetentionDays);
-
-        var storageRegion = StorageRegions.FromKey(cmd.ObjectKey);
-        string? byokKeyId = null;
-        int? byokKeyVersion = null;
-        string? byokWrappedDek = null;
-
-        if (workspaceId is { } byokWsId)
-        {
-            var byokCfg = await db.WorkspaceByokConfigs
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.WorkspaceId == byokWsId, cancellationToken);
-
-            if (byokCfg is not null && byokCfg.Status != WorkspaceByokConfig.StatusDisabled)
-            {
-                if (byokCfg.Status == WorkspaceByokConfig.StatusRevoked)
-                    return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ByokKeyRevoked));
-
-                if (!string.IsNullOrWhiteSpace(byokCfg.KeyRegion) &&
-                    !string.IsNullOrWhiteSpace(storageRegion) &&
-                    !string.Equals(byokCfg.KeyRegion, storageRegion, StringComparison.OrdinalIgnoreCase))
-                {
-                    return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.ByokRegionMismatch));
-                }
-
-                byokKeyId = byokCfg.KeyId;
-                byokKeyVersion = byokCfg.KeyVersion;
-                byokWrappedDek = QuickShare.Features.Workspaces.Byok.GetWorkspaceByokEndpoint.WrapEnvelopeKey(
-                    byokCfg.KeyId, byokCfg.KeyVersion, cmd.DeliveryId);
-            }
-        }
+        var expiresAt = ResolveExpiry(cmd, plan);
 
         var dedupOutcome = new DeduplicationService.DedupOutcome(false, cmd.ObjectKey);
         if (bundle.Files.Count == 0 && requestId is null)
@@ -354,37 +311,9 @@ public sealed class CommitR2Handler(
                 scopeKey,
                 sha256,
                 actualSize,
-                storageRegion,
                 cmd.ObjectKey,
                 cancellationToken);
         }
-
-        var virusScanStatus = plan is PlanTierLimits.Pro or PlanTierLimits.Studio
-            ? DeliveryVirusScanStatus.Pending
-            : DeliveryVirusScanStatus.NotApplicable;
-
-        var isVideo = session.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
-            || session.FileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
-            || session.FileName.EndsWith(".mov", StringComparison.OrdinalIgnoreCase)
-            || session.FileName.EndsWith(".webm", StringComparison.OrdinalIgnoreCase);
-
-        string? videoCompressPreset = null;
-        long? originalVideoSizeBytes = null;
-        if (!string.IsNullOrWhiteSpace(cmd.VideoCompressionQuality) &&
-            !string.Equals(cmd.VideoCompressionQuality, VideoCompressionPreset.None, StringComparison.OrdinalIgnoreCase))
-        {
-            if (plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
-                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.VideoCompressionRequiresPro));
-
-            var normPreset = cmd.VideoCompressionQuality.Trim().ToLowerInvariant();
-            if (!VideoCompressionPreset.All.Contains(normPreset))
-                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.VideoCompressionPresetInvalid));
-
-            videoCompressPreset = normPreset;
-            originalVideoSizeBytes = session.FileSize;
-        }
-
-        var hlsAvailable = isVideo && encryptionMode == DeliveryEncryptionMode.None;
 
         var delivery = new Delivery
         {
@@ -394,17 +323,10 @@ public sealed class CommitR2Handler(
             // the shared history. A file-request submission has no sender and no workspace.
             WorkspaceId = requestId is null ? workspaceId : null,
             FolderId = folderId,
-            // Read back out of the key rather than carried through the request: the key is
-            // where the bytes actually went, so this cannot disagree with reality (issue #119).
-            StorageRegion = storageRegion,
             // Privacy mode wins: a share that keeps no download record should not grow a
             // thread instead (issues #289/#187).
             CommentsEnabled = cmd.CommentsEnabled && !cmd.PrivacyMode,
             WatermarkEnabled = cmd.WatermarkEnabled,
-            // Privacy mode wins again (issues #243/#187): a share that keeps no record must not
-            // grow a searchable transcript of itself instead. Gated here rather than in the job,
-            // so the flag on the row is already the truth.
-            OcrRequested = cmd.OcrEnabled && !cmd.PrivacyMode && DeliveryOcrText.IsIndexable(session.ContentType),
             SenderEmail = session.SenderEmail,
             SenderEmailConsent = !string.IsNullOrWhiteSpace(session.SenderEmail),
             // Metadata comes from the validated session, not the commit request.
@@ -421,19 +343,9 @@ public sealed class CommitR2Handler(
             MaxDownloads = cmd.BurnAfterDownload ? 1 : PlanTierLimits.GetMaxDownloads(plan),
             StoragePath = dedupOutcome.CanonicalStoragePath,
             IsDeduplicated = dedupOutcome.ReusedExisting,
-            VirusScanStatus = virusScanStatus,
-            StorageTier = DeliveryStorageTier.Hot,
             ExpiresAt = expiresAt,
             DeliverAt = cmd.DeliverAt,
-            Status = requiresApproval
-                ? DeliveryStatus.PendingApproval
-                : cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
-            ApprovalRequestedAt = requiresApproval ? DateTime.UtcNow : null,
-            // Held, not sent: the point of a gate is that nobody outside learns the link
-            // exists until a reviewer clears it (issue #162).
-            PendingRecipients = requiresApproval && recipients.Count > 0
-                ? string.Join(',', recipients)
-                : null,
+            Status = cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
             OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             PasswordHash = password is not null ? BCrypt.Net.BCrypt.HashPassword(password) : null,
             Message = message,
@@ -452,29 +364,10 @@ public sealed class CommitR2Handler(
             EncryptionKdfSalt = string.IsNullOrWhiteSpace(cmd.EncryptionKdfSalt) ? null : cmd.EncryptionKdfSalt.Trim(),
             EncryptionKdfIterations = cmd.EncryptionKdfIterations,
             EncryptedKeyEscrow = string.IsNullOrWhiteSpace(cmd.EncryptedKeyEscrow) ? null : cmd.EncryptedKeyEscrow.Trim(),
-            ByokKeyId = byokKeyId,
-            ByokKeyVersion = byokKeyVersion,
-            ByokWrappedDek = byokWrappedDek,
-            VideoCompressionQuality = videoCompressPreset,
-            OriginalVideoSizeBytes = originalVideoSizeBytes,
-            HlsAvailable = hlsAvailable,
         };
 
         session.Status = UploadSessionStatus.Committed;
         session.R2UploadId = null;
-
-        if (hasTransferPass)
-        {
-            var passRow = await db.TransferCreditPasses.FirstOrDefaultAsync(p => p.Token == session.TransferPassToken, cancellationToken);
-            if (passRow is null || passRow.Status != TransferCreditPass.StatusAvailable || passRow.CreditsRemaining <= 0)
-                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.TransferPassInvalid));
-
-            passRow.CreditsRemaining--;
-            passRow.RedeemedDeliveryId = delivery.Id;
-            passRow.RedeemedAt = DateTime.UtcNow;
-            if (passRow.CreditsRemaining <= 0)
-                passRow.Status = TransferCreditPass.StatusRedeemed;
-        }
 
         if (quota is not null)
             await quota.RecordAsync(user!.Id, plan, actualSize, cancellationToken);
@@ -507,14 +400,12 @@ public sealed class CommitR2Handler(
         await analytics.RecordAsync(AnalyticsEvents.UploadCompleted,
             new AnalyticsEventData(delivery.FileName, delivery.FileSize, delivery.ContentType, plan), cancellationToken);
 
-        // The sender's own copy of the link waits too (issue #162): a mail saying the file is
-        // ready to share, for a link that refuses everyone, is worse than no mail.
-        if (!requiresApproval && !string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
+        if (!string.IsNullOrWhiteSpace(delivery.SenderEmail) && emailSender.IsConfigured)
         {
             await SendLinkEmailAsync(delivery, shareCode, cancellationToken);
         }
 
-        if (!requiresApproval && recipients.Count > 0)
+        if (recipients.Count > 0)
         {
             // The rows first, and independently of whether mail can go out at all (issue #37):
             // the recipient list is a record of who this was addressed to, and a deployment
@@ -527,34 +418,25 @@ public sealed class CommitR2Handler(
                 await SendRecipientEmailsAsync(delivery, shareCode, recipients, tokens, cancellationToken);
         }
 
-        // Announce it in the workspace's chat channel (issue #180). Held shares are announced
-        // on approval instead, for the same reason their recipient mails are: a channel post is
-        // how somebody outside first learns the link exists.
-        if (!requiresApproval)
-        {
-            await channels.NotifyDeliveryAsync(
-                delivery.WorkspaceId,
-                delivery.FileName,
-                await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken),
-                delivery.ExpiresAt,
-                cancellationToken);
-        }
+        // Announce it in the workspace's chat channel (issue #180).
+        await channels.NotifyDeliveryAsync(
+            delivery.WorkspaceId,
+            delivery.FileName,
+            await domains.DeliveryUrlAsync(delivery.WorkspaceId, shareCode, cancellationToken),
+            delivery.ExpiresAt,
+            cancellationToken);
 
         // Outbound webhook (issue #39). Queued, not sent — an upload must not wait on somebody
         // else's HTTP endpoint, and a receiver that is down has to be retried rather than lost.
-        // Held shares are announced on approval instead, same rule as the chat post above.
-        if (!requiresApproval)
+        await webhooks.EnqueueAsync(delivery.SenderId, WebhookEvents.DeliveryCreated, new
         {
-            await webhooks.EnqueueAsync(delivery.SenderId, WebhookEvents.DeliveryCreated, new
-            {
-                deliveryId = delivery.Id,
-                shareCode = delivery.ShareCode,
-                fileName = delivery.FileName,
-                fileCount = delivery.FileCount,
-                totalBytes = delivery.TotalFileBytes,
-                expiresAt = delivery.ExpiresAt,
-            }, cancellationToken);
-        }
+            deliveryId = delivery.Id,
+            shareCode = delivery.ShareCode,
+            fileName = delivery.FileName,
+            fileCount = delivery.FileCount,
+            totalBytes = delivery.TotalFileBytes,
+            expiresAt = delivery.ExpiresAt,
+        }, cancellationToken);
 
         // Recent-recipients + address book (issue #316): remember who this user
         // sent to so the upload page can offer quick-pick. Captured only for

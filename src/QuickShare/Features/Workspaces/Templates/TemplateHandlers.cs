@@ -282,7 +282,7 @@ public sealed class ApplyTemplateHandler(
         => FolderWriter.CreateAsync(db, workspaceId, userId, node.Name, parentId,
             new WorkspaceFolder.EffectiveDefaults(
                 node.ExpiryHours, node.PasswordRequired, node.PasswordHint, node.PrivacyMode,
-                Locked: false, RequireApproval: false),
+                Locked: false),
             ct);
 }
 

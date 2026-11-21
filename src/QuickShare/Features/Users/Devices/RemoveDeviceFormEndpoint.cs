@@ -41,7 +41,9 @@ public sealed class RemoveDeviceFormEndpoint : EndpointWithoutRequest
         }
 
         var returnTo = form[ReturnToField].ToString();
-        var destination = returnTo == RoutePaths.AccountDevices ? RoutePaths.AccountDevices : RoutePaths.Account;
+        var destination = returnTo == RoutePaths.AccountDevices
+            ? RoutePaths.AccountDevices
+            : RoutePaths.AccountSecurity;
         HttpContext.Response.StatusCode = StatusCodes.Status303SeeOther;
         HttpContext.Response.Headers.Location = destination;
     }

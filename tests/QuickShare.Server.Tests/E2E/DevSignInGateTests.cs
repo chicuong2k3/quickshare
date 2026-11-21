@@ -20,8 +20,8 @@ public sealed class DevSignInGateTests
             })
             .Build();
 
-    private static IHostEnvironment Env(string name) =>
-        new StubEnvironment { EnvironmentName = name };
+    private static StubEnvironment Env(string name) =>
+        new() { EnvironmentName = name };
 
     [Fact]
     public void Development_WithInMemory_Enables()

@@ -21,7 +21,7 @@ Because the change is additive on purpose.
 `Delivery.FileName`, `ContentType`, `FileSize` and `StoragePath` keep describing **file #1**,
 exactly as before. Two new columns describe the bundle: `FileCount` and `TotalFileBytes`.
 
-The payoff is that every path written before multi-file existed — previews, virus scan, expiry,
+The payoff is that every path written before multi-file existed — previews, expiry,
 backup, SIEM shipping, the download page's single-file phase, the P2P flow — keeps working
 untouched, and keeps being *correct* for the single-file case that is still almost every
 delivery. Nothing had to be found and changed. New code reads the rows; old code never noticed.

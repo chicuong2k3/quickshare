@@ -12,8 +12,7 @@ namespace QuickShare.Features.Downloads.Subtitles;
 /// inside the video preview player (issue #268).
 ///
 /// Enforces <see cref="BundleAccess.ResolveAsync"/> (which checks <see cref="DeliveryAccessService"/>,
-/// <c>PendingApproval</c>, expiry, and password/OTP gates) and scopes the file lookup by
-/// <c>DeliveryId</c>.
+/// expiry, and password/OTP gates) and scopes the file lookup by <c>DeliveryId</c>.
 /// </summary>
 public sealed class DownloadSubtitleEndpoint : EndpointWithoutRequest
 {

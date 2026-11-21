@@ -10,10 +10,10 @@ The profile system displays and updates user identity (name, avatar). Users are 
 
 | Layer | File | Role |
 |-------|------|------|
-| Account Page (UI) | `Pages/Account.razor` | `/account` — shell: profile card (HTMX lazy-loaded) + delivery branding manager |
-| Profile Card Page | `Pages/AccountProfile.razor` | `/account/profile` — name/avatar form (`hx-post`), DB access + cookie re-sign in code-behind |
-| Account CSS | `Pages/AccountProfile.razor.css` / `Pages/Account.razor.css` | Scoped styles |
-| Account JS | `wwwroot/js/account.js` | Avatar preview + branding CRUD |
+| Account Page (UI) | `Components/Pages/Account.razor` | `/account` — account hub composing `<AccountProfile />` and account cards |
+| Profile Card Page | `Components/Pages/AccountProfile.razor` | `/account/profile` — clickable avatar picker (`<label for="avatarFileInput">`), display name auto-save form (`<noscript>` submit fallback), DB update + cookie re-sign |
+| Account CSS | `Components/Pages/AccountProfile.razor.css` / `Components/Pages/Account.razor.css` | Scoped styles |
+| Account JS | `src/QuickShare/ts/account.ts` (compiled to `wwwroot/js/account.js`) | Avatar preview + immediate upload & debounced/blur display-name auto-save via `fetch()` without a visible Save button |
 | Profile Form Handler | `Pages/AccountProfile.razor` (code-behind) | `HandleUpdateProfile()` — validates + submits, re-signs cookie |
 | Cookie Re-sign | `Pages/AccountProfile.razor` | `ctx.SignInAsync()` after profile update |
 | Nav Avatar | `Features/Users/Avatar/GetAvatarEndpoint.cs` | `GET /api/me/avatar` — avatar HTML for nav bar (HTMX) |
@@ -177,11 +177,11 @@ Profile data is loaded in-process via `AppDbContext` or `IMediator` in `Account.
 
 | File | Role |
 |------|------|
-| `src/QuickShare/Pages/Account.razor` | `/account` shell — HTMX profile card + branding manager |
-| `src/QuickShare/Pages/AccountProfile.razor` | `/account/profile` — name/avatar form (`hx-post`) + cookie re-sign |
-| `src/QuickShare/Pages/Account.razor.css` | Scoped styles |
-| `src/QuickShare/Pages/AccountProfile.razor.css` | Scoped styles |
-| `src/QuickShare/wwwroot/js/account.js` | Avatar preview + branding manager JS |
+| `src/QuickShare/Components/Pages/Account.razor` | `/account` hub — renders `<AccountProfile />` and account cards |
+| `src/QuickShare/Components/Pages/AccountProfile.razor` | `/account/profile` — clickable avatar picker + auto-saving name/avatar form (`<noscript>` submit fallback) + cookie re-sign |
+| `src/QuickShare/Components/Pages/Account.razor.css` | Scoped styles |
+| `src/QuickShare/Components/Pages/AccountProfile.razor.css` | Scoped styles for `.profile-avatar-picker` and `.profile-save-status` |
+| `src/QuickShare/ts/account.ts` | Avatar preview + immediate auto-save (`wwwroot/js/account.js` is `tsc` output) |
 | `src/QuickShare/Features/Users/Avatar/GetAvatarEndpoint.cs` | `GET /api/me/avatar` — nav avatar HTML |
 | `src/QuickShare/Features/Users/Shared/UserRegistrationService.cs` | DRY registration (all OAuth providers) |
 | `src/QuickShare/Features/Users/Shared/UserMapper.cs` | Mapperly: `User` → `ProfileResponse` |

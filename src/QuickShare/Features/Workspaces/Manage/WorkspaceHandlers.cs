@@ -29,8 +29,6 @@ public sealed record WorkspaceDto(
     bool IsOwner,
     long PooledQuotaBytes,
     long PooledUsedBytes,
-    bool RequireDeliveryApproval,
-    bool AllowSelfApproval,
     string CommentPolicy,
     IReadOnlyList<WorkspaceMemberDto> Members,
     string EncryptionPolicy = WorkspaceEncryptionPolicy.Default);
@@ -40,8 +38,6 @@ public record GetWorkspaceQuery : IRequest<Result<WorkspaceDto>>;
 public record UpdateWorkspaceCommand(
     string? Name,
     int? Seats,
-    bool? RequireDeliveryApproval = null,
-    bool? AllowSelfApproval = null,
     string? CommentPolicy = null,
     string? EncryptionPolicy = null) : IRequest<Result<WorkspaceDto>>;
 public record InviteMemberCommand(string? Email, string? Role) : IRequest<Result<WorkspaceMemberDto>>;
@@ -185,14 +181,8 @@ public sealed class UpdateWorkspaceHandler(
             workspace.Seats = seats;
         }
 
-        // Governance switches (#162 approval, #289 comments). Null means "leave alone", so a
-        // rename cannot silently reset a policy the admin set on another screen.
-        if (cmd.RequireDeliveryApproval is { } requireApproval)
-            workspace.RequireDeliveryApproval = requireApproval;
-
-        if (cmd.AllowSelfApproval is { } allowSelf)
-            workspace.AllowSelfApproval = allowSelf;
-
+        // Governance switch (#289 comments). Null means "leave alone", so a rename cannot
+        // silently reset a policy the admin set on another screen.
         if (cmd.CommentPolicy is { } commentPolicy)
         {
             var normalized = commentPolicy.Trim().ToLowerInvariant();
@@ -524,8 +514,6 @@ internal static class WorkspaceReader
             workspace.OwnerId == viewerId,
             quota,
             used,
-            workspace.RequireDeliveryApproval,
-            workspace.AllowSelfApproval,
             workspace.CommentPolicy,
             members.Select(m => new WorkspaceMemberDto(
                 m.Id,

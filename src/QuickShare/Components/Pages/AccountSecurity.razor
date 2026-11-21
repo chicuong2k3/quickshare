@@ -2,19 +2,15 @@
 @page "/account/security"
 @attribute [Authorize]
 @using QuickShare.Components.Shared
-@using QuickShare.Features.Auth.Mfa
-@using QuickShare.Features.Auth.Totp
-@using QuickShare.Features.Auth.Passkeys
 @using QuickShare.Features.Users.Sessions
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IDbContextFactory<AppDbContext> DbFactory
-@inject MfaPolicyService Policies
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["security_title"]</PageTitle>
 
-@* Enrolment state and recovery codes — never index (issue #121). *@
+@* Sign-in state and the devices holding it — never index (issue #121). *@
 <HeadContent>
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
@@ -26,219 +22,70 @@
         <p class="text-muted-foreground">@Loc["security_subtitle"]</p>
     </section>
 
-    <AccountTabs Current="@RoutePaths.AccountSecurity" />
+    <AccountShell Current="@RoutePaths.AccountSecurity">
 
     @Chunk
+
+</AccountShell>
 
 </PageWrapper>
 
 <script src="/js/security.js" defer></script>
-<script src="/js/passkeys.js" defer></script>
 
 @code {
-    private UserTotp? totp;
-    private UserPasskeyRecovery? passkeyRecovery;
-    private MfaVerdict verdict;
     private List<UserSession> sessions = [];
-    private List<UserPasskey> passkeys = [];
     private string? currentSessionId;
 
     private RenderFragment Chunk => @<section id="security-body">
-        @if (verdict.Required)
-        {
-            <Card class="account-card workspace-card">
-                <CardContent>
-                    <h2 class="text-xl font-semibold">@Loc["security_policy_title"]</h2>
-                    @if (verdict.SsoExempt)
-                    {
-                        <p class="text-muted-foreground">@Loc["security_policy_sso"]</p>
-                    }
-                    else if (verdict.Enrolled)
-                    {
-                        <p class="text-muted-foreground">@Loc["security_policy_met"]</p>
-                    }
-                    else if (verdict.GraceEndsAt is { } deadline && verdict.InGrace)
-                    {
-                        <p class="workspace-notice">@Loc["security_policy_grace", deadline.ToLocalTime().ToString("g")]</p>
-                    }
-                    else
-                    {
-                        <p class="workspace-notice">@Loc["security_policy_blocked"]</p>
-                    }
-                </CardContent>
-            </Card>
-        }
-
         <Card class="account-card workspace-card">
             <CardContent>
-                <h2 class="text-xl font-semibold">@Loc["security_totp_title"]</h2>
-                <p class="text-muted-foreground workspace-hint">@Loc["security_totp_hint"]</p>
+                <h2 class="text-xl font-semibold">@Loc["sessions_title"]</h2>
+                @*
+                    Every sign-in starts a session row and every revoke kills one (issue #105);
+                    security activity (issue #126) joins it further down the page instead of
+                    repeating on the profile tab.
+                    TOTP, passkeys and magic-link sign-in were retired
+                    with the rest of the non-core auth surface — Google and GitHub OAuth are the
+                    only ways in, and the provider already carries the second factor.
+                *@
+                <p class="text-muted-foreground workspace-hint">@Loc["sessions_hint", (int)UserSession.IdleTimeout.TotalDays]</p>
 
-                @if (totp?.IsConfirmed == true)
+                @if (sessions.Count == 0)
                 {
-                    <dl class="workspace-stats">
-                        <div class="workspace-stat">
-                            <dt>@Loc["security_totp_enrolled"]</dt>
-                            <dd>@totp.ConfirmedAt!.Value.ToLocalTime().ToString("g")</dd>
-                        </div>
-                        <div class="workspace-stat">
-                            <dt>@Loc["security_recovery_left"]</dt>
-                            <dd>@RecoveryLeft</dd>
-                        </div>
-                    </dl>
-
-                    <div class="workspace-form">
-                        <label class="workspace-label" for="security-remove-code">@Loc["security_remove_code"]</label>
-                        <Input id="security-remove-code"  type="text" inputmode="numeric" maxlength="32" />
-                        <button type="button" data-slot="button" data-variant="ghost"
-                                data-confirm="@Loc["security_remove_confirm"]"
-                                data-locked-label="@Loc["security_remove_locked"]"
-                                onclick="window.quickShareSecurity.remove(this)"
-                                data-ai-action="security.totp.remove">@Loc["security_remove"]</button>
-                    </div>
-                }
-                else
-                {
-                    @*
-                        The secret is fetched, shown once and never re-read — so this block is
-                        filled in by script rather than server-rendered. A secret in the page
-                        source is a secret in the browser cache and in every proxy log.
-                    *@
-                    <div class="workspace-form">
-                        <button type="button" data-slot="button" data-variant="default"
-                                onclick="window.quickShareSecurity.start(this)"
-                                data-ai-action="security.totp.start">@Loc["security_enrol"]</button>
-
-                        <div id="security-enrolment" hidden>
-                            <p class="text-muted-foreground workspace-hint">@Loc["security_enrol_step"]</p>
-                            <p class="security-secret"><code id="security-secret"></code></p>
-                            <p class="text-muted-foreground workspace-hint">
-                                <a id="security-uri" href="#" rel="nofollow">@Loc["security_open_app"]</a>
-                            </p>
-
-                            <label class="workspace-label" for="security-confirm-code">@Loc["security_confirm_code"]</label>
-                            <Input id="security-confirm-code"  type="text" inputmode="numeric" maxlength="6" />
-                            <button type="button" data-slot="button" data-variant="default"
-                                    data-error-label="@Loc["security_confirm_failed"]"
-                                    data-saved-label="@Loc["security_confirm_saved"]"
-                                    onclick="window.quickShareSecurity.confirm(this)"
-                                    data-ai-action="security.totp.confirm">@Loc["security_confirm"]</button>
-                        </div>
-
-                        <div id="security-recovery" hidden>
-                            <p class="workspace-notice">@Loc["security_recovery_warning"]</p>
-                            <ul id="security-recovery-list" class="security-recovery-list"></ul>
-                        </div>
-                    </div>
-                }
-            </CardContent>
-        </Card>
-        <Card class="account-card workspace-card">
-            <CardContent>
-                <h2 class="text-xl font-semibold">@Loc["passkeys_title"]</h2>
-                <p class="text-muted-foreground workspace-hint">@Loc["passkeys_hint"]</p>
-
-                @if (passkeys.Count == 0)
-                {
-                    <p class="text-muted-foreground workspace-hint">@Loc["passkeys_empty"]</p>
+                    <p class="text-muted-foreground workspace-hint">@Loc["sessions_empty"]</p>
                 }
                 else
                 {
                     <ul class="workspace-member-list">
-                        @foreach (var passkey in passkeys)
+                        @foreach (var session in sessions)
                         {
-                            <li class="workspace-member" id="passkey-@passkey.Id">
+                            <li class="workspace-member" id="session-@session.Id">
                                 <div class="workspace-member__info">
-                                    <span class="workspace-member__name">@(passkey.Name ?? Loc["passkeys_unnamed"].Value)</span>
-                                    <span class="workspace-member__meta">
-                                        @Loc["passkeys_added", passkey.CreatedAt.ToLocalTime().ToString("d")]
-                                        @if (passkey.LastUsedAt is { } used)
+                                    <span class="workspace-member__name">
+                                        @session.UserAgentLabel
+                                        @if (session.SessionId == currentSessionId)
                                         {
-                                            <text> · @Loc["passkeys_last_used", used.ToLocalTime().ToString("g")]</text>
+                                            <span class="workspace-badge">@Loc["sessions_current"]</span>
                                         }
+                                    </span>
+                                    <span class="workspace-member__meta">
+                                        @Loc["sessions_last_seen", session.LastSeenAt.ToLocalTime().ToString("g")]
+                                        · @Loc["sessions_started", session.CreatedAt.ToLocalTime().ToString("d")]
                                     </span>
                                 </div>
                                 <div class="workspace-member__actions">
-                                    <button type="button" data-slot="button" data-variant="ghost"
-                                            data-id="@passkey.Id"
-                                            data-confirm="@Loc["passkeys_remove_confirm"]"
-                                            onclick="window.quickSharePasskeys.remove(this)"
-                                            data-ai-action="security.passkey.remove">@Loc["passkeys_remove"]</button>
+                                    @if (session.SessionId != currentSessionId)
+                                    {
+                                        <button type="button" data-slot="button" data-variant="ghost"
+                                                data-id="@session.Id"
+                                                onclick="window.quickShareSecurity.revokeSession(this)"
+                                                data-ai-action="security.session.revoke">@Loc["sessions_revoke"]</button>
+                                    }
                                 </div>
                             </li>
                         }
                     </ul>
                 }
-
-                <div class="workspace-form">
-                    <label class="workspace-label" for="passkey-name">@Loc["passkeys_name"]</label>
-                    <Input id="passkey-name"  type="text" maxlength="@UserPasskey.NameMaxLength" />
-
-                    <button type="button" data-slot="button" data-variant="default"
-                            data-error-label="@Loc["passkeys_failed"]"
-                            data-unsupported-label="@Loc["passkeys_unsupported"]"
-                            onclick="window.quickSharePasskeys.register(this)"
-                            data-ai-action="security.passkey.register">@Loc["passkeys_register"]</button>
-
-                @if (passkeyRecovery?.RequirePasskeyReAdd == true)
-                {
-                    <p id="passkey-readd-banner" class="workspace-notice mt-4" role="alert">@Loc["passkeys_recovery_readd_notice"]</p>
-                }
-
-                <div class="workspace-form mt-4" id="passkey-recovery-section">
-                    <dl class="workspace-stats">
-                        <div class="workspace-stat">
-                            <dt>@Loc["passkeys_recovery_left"]</dt>
-                            <dd id="passkey-recovery-count">@PasskeyRecoveryLeft</dd>
-                        </div>
-                    </dl>
-                    <button type="button" id="passkey-recovery-generate-btn" data-slot="button" data-variant="outline" data-size="sm"
-                            onclick="window.quickSharePasskeys.generateRecoveryCodes(this)"
-                            data-ai-action="security.passkey.recovery-generate">@Loc["passkeys_recovery_generate"]</button>
-
-                    <div id="passkey-recovery-output" hidden class="mt-3">
-                        <p class="workspace-notice">@Loc["security_recovery_warning"]</p>
-                        <ul id="passkey-recovery-list" class="security-recovery-list"></ul>
-                    </div>
-                </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card class="account-card workspace-card">
-            <CardContent>
-                <h2 class="text-xl font-semibold">@Loc["sessions_title"]</h2>
-                <p class="text-muted-foreground workspace-hint">@Loc["sessions_hint", (int)UserSession.IdleTimeout.TotalDays]</p>
-
-                <ul class="workspace-member-list">
-                    @foreach (var session in sessions)
-                    {
-                        <li class="workspace-member" id="session-@session.Id">
-                            <div class="workspace-member__info">
-                                <span class="workspace-member__name">
-                                    @session.UserAgentLabel
-                                    @if (session.SessionId == currentSessionId)
-                                    {
-                                        <span class="workspace-badge">@Loc["sessions_current"]</span>
-                                    }
-                                </span>
-                                <span class="workspace-member__meta">
-                                    @Loc["sessions_last_seen", session.LastSeenAt.ToLocalTime().ToString("g")]
-                                    · @Loc["sessions_started", session.CreatedAt.ToLocalTime().ToString("d")]
-                                </span>
-                            </div>
-                            <div class="workspace-member__actions">
-                                @if (session.SessionId != currentSessionId)
-                                {
-                                    <button type="button" data-slot="button" data-variant="ghost"
-                                            data-id="@session.Id"
-                                            onclick="window.quickShareSecurity.revokeSession(this)"
-                                            data-ai-action="security.session.revoke">@Loc["sessions_revoke"]</button>
-                                }
-                            </div>
-                        </li>
-                    }
-                </ul>
 
                 @if (sessions.Count > 1)
                 {
@@ -249,11 +96,12 @@
                 }
             </CardContent>
         </Card>
+
+    <AccountSecurityActivity />
+
+    @* Known devices (issue #149) — devices holding data on this account. *@
+    <AccountDevices />
     </section>;
-
-    private int RecoveryLeft => totp is null ? 0 : TotpService.CountRecoveryCodes(totp.RecoveryCodeHashes);
-    private int PasskeyRecoveryLeft => passkeyRecovery is null ? 0 : TotpService.CountRecoveryCodes(passkeyRecovery.RecoveryCodeHashes);
-
     protected override async Task OnInitializedAsync()
     {
         await using var Db = DbFactory.CreateDbContext();
@@ -262,24 +110,8 @@
         var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);
         if (user is null) return;
 
-        totp = await Db.UserTotps
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.UserId == user.Id, CancellationToken.None);
-
-        passkeyRecovery = await Db.UserPasskeyRecoveries
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.UserId == user.Id, CancellationToken.None);
-
-        verdict = await Policies.EvaluateAsync(user.Id, CancellationToken.None);
-
         currentSessionId = ctx.User.FindFirst(SessionService.SessionClaimType)?.Value;
         var cutoff = DateTime.UtcNow - UserSession.IdleTimeout;
-
-        passkeys = await Db.UserPasskeys
-            .AsNoTracking()
-            .Where(p => p.UserId == user.Id)
-            .OrderByDescending(p => p.CreatedAt)
-            .ToListAsync(CancellationToken.None);
 
         sessions = await Db.UserSessions
             .AsNoTracking()

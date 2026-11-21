@@ -28,24 +28,10 @@ public sealed class GetDeliveryKeyEscrowEndpoint : EndpointWithoutRequest<Delive
             .ByCode(shareCode)
             .FirstOrDefaultAsync(ct);
 
-        if (delivery is null || delivery.DeletedAt is not null || delivery.Status == DeliveryStatus.PendingApproval)
+        if (delivery is null || delivery.DeletedAt is not null)
         {
             ThrowError(ErrorCodes.DeliveryNotFound, StatusCodes.Status404NotFound);
             return;
-        }
-
-        if (!string.IsNullOrEmpty(delivery.ByokKeyId) && delivery.WorkspaceId is { } byokWsId)
-        {
-            var byokStatus = await db.WorkspaceByokConfigs
-                .AsNoTracking()
-                .Where(x => x.WorkspaceId == byokWsId)
-                .Select(x => x.Status)
-                .FirstOrDefaultAsync(ct);
-            if (byokStatus == WorkspaceByokConfig.StatusRevoked)
-            {
-                ThrowError(ErrorCodes.ByokKeyRevoked, StatusCodes.Status410Gone);
-                return;
-            }
         }
 
         await Send.OkAsync(new DeliveryKeyEscrowDto(

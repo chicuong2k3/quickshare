@@ -5,7 +5,6 @@
 
 const SHELL_VERSION = 'qs-shell-v4';
 const OFFLINE_DELIVERY_CACHE = 'qs-offline-deliveries-v1';
-const OFFLINE_UPLOAD_SYNC_TAG = 'qs-offline-upload-sync';
 
 const SHELL = [
     '/css/app.css',
@@ -103,17 +102,4 @@ self.addEventListener('notificationclick', function (event) {
             if (self.clients.openWindow) return self.clients.openWindow(link);
         })
     );
-});
-
-// PWA Offline Upload Queue background sync (issue #80)
-self.addEventListener('sync', function (event) {
-    if (event.tag === OFFLINE_UPLOAD_SYNC_TAG) {
-        event.waitUntil(
-            self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
-                clients.forEach(function (client) {
-                    client.postMessage({ type: OFFLINE_UPLOAD_SYNC_TAG });
-                });
-            })
-        );
-    }
 });

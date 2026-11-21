@@ -1,6 +1,5 @@
 using System.Text;
 using QuickShare.Extensions;
-using QuickShare.Features.Deliveries.LegalHold;
 using QuickShare.Features.Workspaces.Shared;
 
 namespace QuickShare.Features.Workspaces.Audit;
@@ -183,13 +182,13 @@ public sealed class WorkspaceAuditExportEndpoint : Endpoint<WorkspaceAuditReques
         foreach (var row in page.Rows)
         {
             csv.Append(row.CreatedAt.ToString("O", CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(row.ActorName));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(row.ActorEmail));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(row.Action));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(row.MetadataJson ?? string.Empty));
             csv.AppendLine();
         }

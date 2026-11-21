@@ -13,16 +13,12 @@ public sealed class PaymentIntent
     public long PayOSOrderCode { get; set; }
 
     /// <summary>
-    /// Which rail this intent is being paid on (issue #225). Defaults to the card/bank provider
-    /// so every row written before crypto existed still says something true.
+    /// Which rail this intent was opened on. PayOS is the only one: it is the rail that actually
+    /// settles in VND, and a second one without a provider integration behind it produced checkout
+    /// URLs we never asked that provider for (issues #164, #177, now retired). The column stays so
+    /// the sale of a past intent keeps saying what it said.
     /// </summary>
     public string Provider { get; set; } = PaymentProviders.PayOS;
-
-    /// <summary>Payment method channel selected at checkout: bank_qr, momo, zalopay, visa, stripe_card, paypal_wallet, crypto_wallet (#164, #177).</summary>
-    public string PaymentMethod { get; set; } = PaymentMethods.BankQr;
-
-    /// <summary>The provider's own id for a hosted charge; null for the PayOS order-code path.</summary>
-    public string? ProviderChargeId { get; set; }
     public string Plan { get; set; } = string.Empty;
     public string Billing { get; set; } = string.Empty;
     public decimal Amount { get; set; }

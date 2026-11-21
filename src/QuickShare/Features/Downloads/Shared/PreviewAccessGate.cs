@@ -12,7 +12,7 @@ internal static class PreviewAccessGate
         HttpContext? context,
         CancellationToken ct)
     {
-        if (delivery is null || delivery.DeletedAt is not null || delivery.Status == DeliveryStatus.PendingApproval)
+        if (delivery is null || delivery.DeletedAt is not null)
         {
             return ErrorCodes.NotFound;
         }

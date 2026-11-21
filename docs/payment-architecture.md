@@ -478,3 +478,19 @@ that is missing.
 provider in fiat, and that is a support conversation rather than a button), recurring crypto
 renewals (a hosted charge is one-shot; renewal falls back to the card rail), and a pricing-page
 badge.
+
+## The second rails that never were (#164, #177)
+
+`CreateCheckoutSessionEndpoint` (`POST /api/payments/checkout-session`) once accepted
+`paymentMethod` and returned a checkout URL for Stripe and PayPal and a deeplink for MoMo and
+ZaloPay. None of those providers was ever called: the endpoint formatted a URL out of our own
+order code (`https://checkout.stripe.com/pay/{code}`, `momo://app?action=payWithApp&orderId={code}`)
+and no webhook for any of them existed. A Stripe URL we did not ask Stripe to create resolves to
+nothing; a deeplink opens a wallet that has no order waiting. The storefront therefore offered
+four payment options that could not take a payment, in front of the one that could.
+
+PayOS is the only rail. It settles in VND, it hands back a link it created, and its webhook is
+the activation. A real second rail is welcome when it arrives with two things this never had —
+an API call that creates the charge and a signed webhook that confirms it — and it joins through
+`CheckoutService` and `PaymentIntent.Provider`, not through a URL format. The payment-method
+picker is gone with it: a select with one option is a question with no answer.

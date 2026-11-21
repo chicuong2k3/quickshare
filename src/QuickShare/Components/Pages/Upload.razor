@@ -462,18 +462,6 @@
                         <span>@Loc["upload_compress_label"]</span>
                     </label>
                     <span class="otp-hint">@Loc["upload_compress_hint"]</span>
-                    @if (canSchedule)
-                    {
-                        <div class="mt-2" id="upload-video-compress-wrap">
-                            <label for="upload-video-compress-preset" class="protect-sub">@Loc["upload_video_compress_label"]</label>
-                            <NativeSelect id="upload-video-compress-preset" class="sender-email-input" aria-label="@Loc["upload_video_compress_label"]">
-                                <NativeSelectOption value="@VideoCompressionPreset.None" Selected>@Loc["upload_video_compress_none"]</NativeSelectOption>
-                                <NativeSelectOption value="@VideoCompressionPreset.P1080">1080p Full HD (~55%)</NativeSelectOption>
-                                <NativeSelectOption value="@VideoCompressionPreset.P720">720p HD (~35%)</NativeSelectOption>
-                                <NativeSelectOption value="@VideoCompressionPreset.P480">480p SD (~20%)</NativeSelectOption>
-                            </NativeSelect>
-                        </div>
-                    }
                 </div>
 
                 <div class="sender-email-wrap" id="upload-encryption-wrap">

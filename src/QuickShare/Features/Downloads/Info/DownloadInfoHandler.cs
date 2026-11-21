@@ -34,9 +34,6 @@ public record DownloadInfoResponse(
     IReadOnlyList<VersionInfo>? Versions = null,
     bool VerifiedSender = false,
     string? SenderDisplayName = null,
-    string VirusScanStatus = DeliveryVirusScanStatus.NotApplicable,
-    string? VirusSignature = null,
-    string StorageTier = DeliveryStorageTier.Hot,
     bool IsQueued = false,
     int QueuePosition = 0,
     int QueueEtaSeconds = 0,
@@ -46,9 +43,7 @@ public record DownloadInfoResponse(
     int? EncryptionKdfIterations = null,
     bool HasKeyEscrow = false,
     bool IsLiveStreaming = false,
-    int LiveProgressPercent = 100,
-    bool HlsAvailable = false,
-    string? VideoCompressionQuality = null
+    int LiveProgressPercent = 100
 );
 
 public sealed class DownloadInfoHandler(
@@ -112,32 +107,11 @@ public sealed class DownloadInfoHandler(
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
                 }
 
-                // Held for review (issue #162). Reported as not-found rather than as a distinct
-                // state: a recipient who was sent the link early should learn nothing about an
-                // internal approval process, and "this file is awaiting sign-off" is a fact
-                // about the sender's organisation, not about the recipient.
-                if (delivery.Status == DeliveryStatus.PendingApproval)
-                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryNotFound));
-
-                if (delivery.VirusScanStatus == DeliveryVirusScanStatus.Infected)
-                    return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryInfected));
-
                 if (delivery.Status == DeliveryStatus.Suspended)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliverySuspended));
 
                 if (delivery.Status == DeliveryStatus.Revoked)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryRevoked));
-
-                if (!string.IsNullOrEmpty(delivery.ByokKeyId) && delivery.WorkspaceId is { } byokWsId)
-                {
-                    var byokStatus = await db.WorkspaceByokConfigs
-                        .AsNoTracking()
-                        .Where(x => x.WorkspaceId == byokWsId)
-                        .Select(x => x.Status)
-                        .FirstOrDefaultAsync(ct2);
-                    if (byokStatus == WorkspaceByokConfig.StatusRevoked)
-                        return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.ByokKeyRevoked));
-                }
 
                 if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
                     return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryExpired));
@@ -174,8 +148,6 @@ public sealed class DownloadInfoHandler(
 
                 var effectiveBytes = delivery.TotalFileBytes > 0 ? delivery.TotalFileBytes : delivery.FileSize;
                 var queue = BoardingQueuePolicy.Evaluate(senderPlan, effectiveBytes, false, quickShareOptions.Value);
-                var storageTier = string.IsNullOrEmpty(delivery.StorageTier) ? DeliveryStorageTier.Hot : delivery.StorageTier;
-                var scanStatus = string.IsNullOrEmpty(delivery.VirusScanStatus) ? DeliveryVirusScanStatus.NotApplicable : delivery.VirusScanStatus;
 
                 // Privacy mode (issue #187): expose the flag and zero the visible counts —
                 // the recipient sees "no tracking", never a partial or misleading number.
@@ -203,9 +175,6 @@ public sealed class DownloadInfoHandler(
                     Versions: versions.Count > 0 ? versions : null,
                     VerifiedSender: isVerifiedSender,
                     SenderDisplayName: senderDisplayName,
-                    VirusScanStatus: scanStatus,
-                    VirusSignature: delivery.VirusSignature,
-                    StorageTier: storageTier,
                     IsQueued: queue.IsQueued,
                     QueuePosition: queue.Position,
                     QueueEtaSeconds: queue.EtaSeconds,
@@ -215,9 +184,7 @@ public sealed class DownloadInfoHandler(
                     EncryptionKdfIterations: delivery.EncryptionKdfIterations,
                     HasKeyEscrow: !string.IsNullOrEmpty(delivery.EncryptedKeyEscrow),
                     IsLiveStreaming: false,
-                    LiveProgressPercent: 100,
-                    HlsAvailable: delivery.HlsAvailable,
-                    VideoCompressionQuality: delivery.VideoCompressionQuality
+                    LiveProgressPercent: 100
                 ));
             },
             duration: TimeSpan.FromSeconds(30),

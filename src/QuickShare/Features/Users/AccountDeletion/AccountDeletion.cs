@@ -114,12 +114,6 @@ public sealed class DeleteAccountHandler(AppDbContext db, IHttpContextAccessor h
             .Where(d => d.SenderId == user.Id)
             .ToListAsync(cancellationToken);
 
-        // Legal hold (issue #266): account deletion is all-or-nothing, so a single held
-        // delivery refuses the whole operation. A partial delete would leave the account
-        // gone and the frozen evidence orphaned with no owner able to lift the hold.
-        if (deliveries.Any(d => d.LegalHoldAt is not null))
-            return Result.Failure(new LightResults.Error(ErrorCodes.LegalHoldActive));
-
         // Workspace ownership (issues #106/#252): deleting the owner would take the whole
         // team's workspace with it. Refuse and point at the transfer flow — the successor
         // has to accept before the account can go.
@@ -178,7 +172,7 @@ public sealed class DeleteAccountEndpoint : Endpoint<DeleteAccountRequest>
         if (result.IsSuccess())
             await Send.NoContentAsync(ct);
         else if (result.IsFailure(out var error))
-            ThrowError(error.Message, error.Message is ErrorCodes.LegalHoldActive or ErrorCodes.WorkspaceTransferRequired
+            ThrowError(error.Message, error.Message is ErrorCodes.WorkspaceTransferRequired
                 ? StatusCodes.Status409Conflict
                 : StatusCodes.Status400BadRequest);
     }

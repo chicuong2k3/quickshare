@@ -18,7 +18,7 @@ public record ReplaceDeliveryCommitCommand(Guid DeliveryId, Guid SessionId, stri
 /// delivery so the share link, password, expiry, branding and download cap all
 /// stay unchanged; only the bytes (and size/hash/download-count) change.
 /// </summary>
-public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpContextAccessor http, AppDbContext db, AnalyticsService analytics)
+public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpContextAccessor http, AppDbContext db)
     : IRequestHandler<ReplaceDeliveryStartCommand, Result<ReplaceDeliveryStartResponse>>
 {
     public async ValueTask<Result<ReplaceDeliveryStartResponse>> Handle(ReplaceDeliveryStartCommand cmd, CancellationToken cancellationToken)
@@ -35,21 +35,6 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
         if (delivery.Status is DeliveryStatus.Suspended or DeliveryStatus.Revoked or DeliveryStatus.Scheduled)
             return Result.Failure<ReplaceDeliveryStartResponse>(new LightResults.Error(ErrorCodes.DeliveryNotActive));
 
-        // File lock/checkout (issue #308): another user holds the lock — block replacement.
-        var now = DateTime.UtcNow;
-        var lockedByOther = await db.FileLocks
-            .AnyAsync(l => l.DeliveryId == delivery.Id
-                && l.ReleasedAt == null
-                && l.ExpiresAt > now
-                && l.LockedById != user.Id, cancellationToken);
-
-        if (lockedByOther)
-        {
-            await analytics.RecordAsync(AnalyticsEvents.ReplaceBlocked,
-                new AnalyticsEventData(FileName: delivery.FileName), cancellationToken);
-            return Result.Failure<ReplaceDeliveryStartResponse>(new LightResults.Error(ErrorCodes.DeliveryLocked));
-        }
-
         var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
         if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
             return Result.Failure<ReplaceDeliveryStartResponse>(new LightResults.Error(
@@ -60,10 +45,8 @@ public sealed class ReplaceDeliveryStartHandler(IStorageProvider storage, IHttpC
         R2InitResult initResult;
         try
         {
-            // Same region as the delivery being replaced: swapping a file must not silently
-            // move the bytes to another jurisdiction (issue #119).
             initResult = await storage.InitR2MultipartUploadAsync(
-                sessionId, cmd.FileName, delivery.StorageRegion, cancellationToken);
+                sessionId, cmd.FileName, cancellationToken);
         }
         catch (R2StorageException)
         {
@@ -153,22 +136,19 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
 
             var maxVersions = plan == PlanTierLimits.Studio ? int.MaxValue : DeliveryVersion.MaxVersionsPro;
 
-            // If at the limit, drop the oldest version and delete its object (unless held #266).
+            // If at the limit, drop the oldest version and delete its object.
             if (existingVersions.Count >= maxVersions)
             {
                 var oldest = existingVersions.First();
-                if (delivery.LegalHoldAt is null)
+                try
                 {
-                    try
-                    {
-                        await storage.DeleteObjectsAsync(oldest.StoragePath, cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex, "Failed to delete old version object for delivery {Id}", delivery.Id);
-                    }
-                    db.DeliveryVersions.Remove(oldest);
+                    await storage.DeleteObjectsAsync(oldest.StoragePath, cancellationToken);
                 }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to delete old version object for delivery {Id}", delivery.Id);
+                }
+                db.DeliveryVersions.Remove(oldest);
             }
 
             var nextNumber = existingVersions.Count > 0
@@ -187,9 +167,9 @@ public sealed class ReplaceDeliveryCommitHandler(IStorageProvider storage, ILogg
                 Sha256 = delivery.Sha256,
             });
         }
-        else if (!canVersion && hasOldObject && delivery.LegalHoldAt is null)
+        else if (!canVersion && hasOldObject)
         {
-            // Free plan: delete the old object as before (unless held #266).
+            // Free plan: delete the old object as before.
             try
             {
                 await QuickShare.Features.Uploads.Shared.DeduplicationService.ReleaseOrDeleteAsync(db, storage, oldStoragePath!, delivery.IsDeduplicated, cancellationToken);
@@ -251,7 +231,6 @@ public sealed class ReplaceDeliveryStartEndpoint : Endpoint<ReplaceDeliveryStart
             {
                 ErrorCodes.NotFound => 404,
                 ErrorCodes.DeliveryNotActive => 400,
-                ErrorCodes.DeliveryLocked => 423,
                 _ => 400
             });
     }

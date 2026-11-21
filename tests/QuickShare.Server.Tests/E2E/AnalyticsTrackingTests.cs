@@ -241,7 +241,7 @@ public sealed class AnalyticsTrackingTests : IClassFixture<TestWebAppFactory>
         var buffer = new byte[8 * 1024];
         var received = await ws.ReceiveAsync(buffer, cts.Token);
         var text = Encoding.UTF8.GetString(buffer, 0, received.Count);
-        var message = JsonDocument.Parse(text).RootElement;
+        var message = JsonElement.Parse(text);
         Assert.Equal(P2PProtocol.TypeRegistered, message.GetProperty(P2PProtocol.PropType).GetString());
 
         var recorded = false;

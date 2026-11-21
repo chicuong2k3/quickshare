@@ -11,17 +11,6 @@
 .account-delivery__expiry,
 .account-delivery__meta,
 .account-delivery__alias { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.75rem; color: var(--b-dim); }
-.account-delivery__lock,
-.account-delivery__hold {
-    font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.72rem;
-    border: 1px solid var(--b-hair);
-    border-radius: 0;
-    color: var(--b-ink);
-    background: var(--b-slot);
-    padding: 0.15rem 0.5rem;
-}
-.account-delivery__lock--self { border-color: var(--b-amber); color: var(--b-amber); }
 .account-delivery__gauge { border: 1px solid var(--b-hair); background: var(--b-slot); margin: 0.75rem 0; height: 6px; }
 .account-delivery__gauge-fill { background: var(--b-amber); transition: transform 200ms ease, opacity 200ms ease; }
 .account-delivery--spent .account-delivery__gauge-fill { background: var(--b-dim); }
@@ -40,6 +29,5 @@
 .account-delivery__select { margin-right: 0.25rem; }
 #bulk-count { font-size: 0.875rem; }
 .account-deliveries-search { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.875rem; padding: 0.5rem 0.75rem; min-height: 40px; border: 1px solid var(--b-hair); border-radius: 0; background: var(--b-slot); color: var(--b-ink); }
-.account-delivery__ocr { border: 1px solid var(--b-hair); padding: 0.15rem 0.5rem; }
 .account-delivery__activity { margin-top: 0.5rem; }
 .account-delivery__activity-body ul { margin: 0.5rem 0 0 1rem; }

@@ -109,43 +109,7 @@ public sealed class TierSixAuditTests : IClassFixture<TestWebAppFactory>
 
     // ── #53 suspension holds on the new surfaces ──
 
-    [Fact]
-    public async Task SuspendedDelivery_IsNotVisibleThroughAMount()
-    {
-        var (client, workspaceId) = await WorkspaceAsync();
-        var key = await ApiKeyAsync(client, ApiScopes.Read);
-        var shareCode = await SeedDeliveryAsync(workspaceId);
 
-        var listed = await PropfindAsync(key);
-        Assert.Contains("audit.pdf", listed, StringComparison.Ordinal);
-
-        await SuspendAsync(shareCode);
-
-        // Suspension is applied *to* the owner, so "it is their own file" is exactly the
-        // argument that does not hold. A moderation decision has to hold on every path.
-        var afterwards = await PropfindAsync(key);
-        Assert.DoesNotContain("audit.pdf", afterwards, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task SuspendedDelivery_IsNotIndexedForSearch()
-    {
-        var (client, workspaceId) = await WorkspaceAsync();
-        var shareCode = await SeedDeliveryAsync(workspaceId, fileName: "flyer.png", contentType: "image/png", ocr: true);
-        await SuspendAsync(shareCode);
-
-        await using (var scope = _factory.Services.CreateAsyncScope())
-        {
-            await scope.ServiceProvider.GetRequiredService<QuickShare.Features.Deliveries.Ocr.OcrJob>().RunAsync();
-        }
-
-        await using var verify = _factory.Services.CreateAsyncScope();
-        var db = verify.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        // Indexing a suspended share would put its content back in front of somebody by search.
-        Assert.False(await db.DeliveryOcrTexts.AsNoTracking()
-            .AnyAsync(o => db.Deliveries.Any(d => d.Id == o.DeliveryId && d.ShareCode == shareCode)));
-    }
 
     // ── Helpers ──
 
@@ -206,7 +170,6 @@ public sealed class TierSixAuditTests : IClassFixture<TestWebAppFactory>
             Status = DeliveryStatus.Active,
             MaxDownloads = 10,
             PublicStatsEnabled = publicStats,
-            OcrRequested = ocr,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
         });

@@ -1,8 +1,5 @@
 using System.Text;
-using Microsoft.Extensions.Options;
 using QuickShare.Extensions;
-using QuickShare.Features.Deliveries.LegalHold;
-using QuickShare.Infrastructure.FeatureFlags;
 
 namespace QuickShare.Features.Payments.Billing;
 
@@ -16,23 +13,18 @@ public sealed record InvoiceDto(
     DateTime PeriodStart,
     DateTime PeriodEnd,
     DateTime? IssuedAt,
-    DateTime? DueAt,
     DateTime? PaidAt,
     string CompanyName,
     string TaxCode,
     string Address,
-    string PoNumber,
-    int NetTermsDays,
     decimal Subtotal,
     decimal TaxAmount,
     decimal Total,
-    bool IsOverdue,
     IReadOnlyList<InvoiceLineDto> Lines);
 
 /// <summary>
 /// Shared projection so the list, the detail view and the printable page all describe an
-/// invoice the same way. Overdue is computed rather than trusted from the row: the sweep runs
-/// hourly, and a bill that passed its due date twenty minutes ago is already late.
+/// invoice the same way.
 /// </summary>
 internal static class InvoiceMapper
 {
@@ -44,17 +36,13 @@ internal static class InvoiceMapper
         invoice.PeriodStart,
         invoice.PeriodEnd,
         invoice.IssuedAt,
-        invoice.DueAt,
         invoice.PaidAt,
         invoice.CompanyName,
         invoice.TaxCode,
         invoice.Address,
-        invoice.PoNumber,
-        invoice.NetTermsDays,
         invoice.Subtotal,
         invoice.TaxAmount,
         invoice.Total,
-        invoice.PaidAt is null && invoice.DueAt is { } due && due < DateTime.UtcNow && !invoice.IsDraft,
         invoice.Lines
             .OrderBy(l => l.CreatedAt)
             .Select(l => new InvoiceLineDto(l.Kind, l.Description, l.Quantity, l.UnitAmount, l.Amount))
@@ -130,12 +118,12 @@ public sealed class GetInvoiceEndpoint : EndpointWithoutRequest<InvoiceDto>
 
 /// <summary>
 /// GET /api/billing/invoices/export — every issued invoice as CSV, for the buyer's accounting
-/// (issues #112, #192). Drafts are excluded: an unissued ledger is not a document anyone should
+/// (issue #112). Drafts are excluded: an unissued ledger is not a document anyone should
 /// be filing.
 /// </summary>
 public sealed class ExportInvoicesEndpoint : EndpointWithoutRequest
 {
-    private const string CsvHeader = "number,status,issued_utc,due_utc,paid_utc,po_number,tax_code,company,subtotal,tax,total,currency";
+    private const string CsvHeader = "number,status,issued_utc,paid_utc,tax_code,company,subtotal,tax,total,currency";
 
     public override void Configure()
     {
@@ -166,27 +154,23 @@ public sealed class ExportInvoicesEndpoint : EndpointWithoutRequest
         foreach (var invoice in invoices)
         {
             csv.Append(Csv(invoice.Number));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(invoice.Status));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(invoice.IssuedAt?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty);
-            csv.Append(DeliveryAccessCsv.Separator);
-            csv.Append(invoice.DueAt?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty);
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(invoice.PaidAt?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty);
-            csv.Append(DeliveryAccessCsv.Separator);
-            csv.Append(Csv(invoice.PoNumber));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(invoice.TaxCode));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(invoice.CompanyName));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(invoice.Subtotal.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(invoice.TaxAmount.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(invoice.Total.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(invoice.Currency));
             csv.AppendLine();
         }
@@ -196,66 +180,7 @@ public sealed class ExportInvoicesEndpoint : EndpointWithoutRequest
         await Send.StringAsync(csv.ToString(), StatusCodes.Status200OK, "text/csv; charset=utf-8", ct);
     }
 
-    /// <summary>Company names and PO references are free text — always quote, double embedded quotes.</summary>
+    /// <summary>Company names are free text — always quote, double embedded quotes.</summary>
     private static string Csv(string value) =>
         $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
-}
-
-/// <summary>
-/// POST /api/admin/billing/invoices/{Id}/paid — record a bank transfer against a net-terms
-/// invoice (issue #192).
-///
-/// Platform admins only, and manual by design: a wire lands in a bank account this application
-/// cannot see, so someone has to reconcile it. Marking an already-paid invoice again is a
-/// no-op rather than an error — remittance emails get forwarded twice.
-/// </summary>
-public sealed class MarkInvoicePaidEndpoint : EndpointWithoutRequest<InvoiceDto>
-{
-    public override void Configure()
-    {
-        Post("/api/admin/billing/invoices/{Id}/paid");
-        Description(b => b.WithTags(ApiTags.Admin));
-        Summary(s =>
-        {
-            s.Summary = "Mark a net-terms invoice as paid";
-            s.Description = "Platform admins only. Reconciles a bank transfer this application cannot observe.";
-        });
-    }
-
-    public override async Task HandleAsync(CancellationToken ct)
-    {
-        var db = Resolve<AppDbContext>();
-
-        if (!User.IsAdmin(Resolve<IOptions<AdminOptions>>()))
-        {
-            ThrowError(ErrorCodes.WorkspaceForbidden, StatusCodes.Status403Forbidden);
-            return;
-        }
-
-        var invoice = await db.Invoices
-            .Include(i => i.Lines)
-            .FirstOrDefaultAsync(i => i.Id == Route<Guid>("Id"), ct);
-
-        if (invoice is null)
-        {
-            ThrowError(ErrorCodes.InvoiceNotFound, StatusCodes.Status404NotFound);
-            return;
-        }
-
-        if (invoice.IsDraft)
-        {
-            ThrowError(ErrorCodes.InvoiceNotIssued, StatusCodes.Status409Conflict);
-            return;
-        }
-
-        if (invoice.PaidAt is null)
-        {
-            invoice.Status = InvoiceStatus.Paid;
-            invoice.PaidAt = DateTime.UtcNow;
-            invoice.UpdatedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync(ct);
-        }
-
-        await Send.OkAsync(InvoiceMapper.Map(invoice), ct);
-    }
 }

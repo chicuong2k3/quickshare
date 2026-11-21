@@ -758,25 +758,6 @@
   <data name="account_security_event_PasswordChanged" xml:space="preserve"><value>Password changed</value></data>
   <data name="account_security_event_RetentionPolicyChanged" xml:space="preserve"><value>Retention policy changed</value></data>
   <data name="account_security_event_RetentionEnforced" xml:space="preserve"><value>Retention policy enforced</value></data>
-  <data name="account_retention_title" xml:space="preserve"><value>Retention policy</value></data>
-  <data name="account_retention_subtitle" xml:space="preserve"><value>An account-wide ceiling: every share you create expires within this window, and older shares are pulled back to it.</value></data>
-  <data name="account_retention_upgrade_hint" xml:space="preserve"><value>Retention policies are a Pro and Studio feature.</value></data>
-  <data name="account_retention_upgrade_link" xml:space="preserve"><value>Upgrade to set one</value></data>
-  <data name="account_retention_window_label" xml:space="preserve"><value>Maximum share lifetime</value></data>
-  <data name="account_retention_window_none" xml:space="preserve"><value>No policy — per-share expiry only</value></data>
-  <data name="account_retention_window_days" xml:space="preserve"><value>{0} days</value></data>
-  <data name="account_retention_no_extend_label" xml:space="preserve"><value>Block extensions past the window</value></data>
-  <data name="account_retention_no_extend_desc" xml:space="preserve"><value>Extend requests are refused once a share already sits at the ceiling, instead of quietly buying no time.</value></data>
-  <data name="account_retention_preview_none" xml:space="preserve"><value>Pick a window to see what it would shorten.</value></data>
-  <data name="account_retention_preview_btn" xml:space="preserve"><value>Preview changes</value></data>
-  <data name="account_retention_preview_clear" xml:space="preserve"><value>Nothing would change — every live share already fits this window.</value></data>
-  <data name="account_retention_preview_count" xml:space="preserve"><value>{0} shares would expire sooner.</value></data>
-  <data name="account_retention_preview_range" xml:space="preserve"><value>Affected expiry dates run from {0} to {1}.</value></data>
-  <data name="account_retention_sample_no_expiry" xml:space="preserve"><value>no expiry</value></data>
-  <data name="account_retention_save_btn" xml:space="preserve"><value>Save retention policy</value></data>
-  <data name="account_retention_saved" xml:space="preserve"><value>Retention policy saved.</value></data>
-  <data name="account_retention_error_requires_paid_plan" xml:space="preserve"><value>Retention policies need a Pro or Studio plan.</value></data>
-  <data name="account_retention_error_retention_days_invalid" xml:space="preserve"><value>Pick a window between 1 and 365 days.</value></data>
   <data name="admin_reports_page_title" xml:space="preserve"><value>Abuse reports</value></data>
   <data name="admin_reports_title" xml:space="preserve"><value>Abuse reports</value></data>
   <data name="admin_reports_subtitle" xml:space="preserve"><value>Review, resolve, or suspend deliveries reported for abuse or copyright.</value></data>
@@ -1903,6 +1884,9 @@
   </data>
   <data name="ws_tab_sso" xml:space="preserve">
     <value>SSO &amp; MFA</value>
+  </data>
+  <data name="account_tab_referral" xml:space="preserve">
+    <value>Refer friends</value>
   </data>
   <data name="account_tab_security" xml:space="preserve">
     <value>Security</value>

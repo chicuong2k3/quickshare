@@ -28,15 +28,8 @@ public static class NotificationType
     public const string DeliveryExpired = "delivery_expired";
     public const string DeliveryDownloaded = "delivery_downloaded";
     public const string ExtensionRequested = "extension_requested";
-    public const string FileLockBroken = "file_lock_broken";
     /// <summary>Monthly quota usage crossed 80/100/120% (issue #141).</summary>
     public const string QuotaThreshold = "quota_threshold";
-    /// <summary>A net-terms invoice passed its due date (issue #192).</summary>
-    public const string InvoiceOverdue = "invoice_overdue";
-    /// <summary>A share is waiting for this admin to review it (issue #162).</summary>
-    public const string ApprovalPending = "approval_pending";
-    /// <summary>An approver cleared or refused the sender's share (issue #162).</summary>
-    public const string ApprovalDecided = "approval_decided";
     /// <summary>Somebody commented on a delivery this account sent (issue #289).</summary>
     public const string DeliveryCommented = "delivery_commented";
 }

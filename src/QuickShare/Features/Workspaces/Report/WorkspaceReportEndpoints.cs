@@ -1,5 +1,4 @@
 using System.Text;
-using QuickShare.Features.Deliveries.LegalHold;
 using QuickShare.Features.Workspaces.Audit;
 using QuickShare.Features.Workspaces.Shared;
 
@@ -97,17 +96,17 @@ public sealed class WorkspaceReportExportEndpoint : Endpoint<WorkspaceReportRequ
         foreach (var member in report.Members)
         {
             csv.Append(Csv(member.Name));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(member.Email));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(member.Role));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(member.Deliveries.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(member.BytesUploaded.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(member.Downloads.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(member.LastActivityAt?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty);
             csv.AppendLine();
         }

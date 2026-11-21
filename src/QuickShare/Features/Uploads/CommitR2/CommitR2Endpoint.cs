@@ -27,10 +27,10 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         var cmd = new CommitR2Command(
             req.DeliveryId, req.UploadId, req.ObjectKey,
-            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId, req.CommentsEnabled, req.WatermarkEnabled, req.OcrEnabled,
+            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId, req.CommentsEnabled, req.WatermarkEnabled,
             req.AdditionalFiles?.Select(f => new CommitFile(
                 f.ObjectKey, f.UploadId, f.FileName, f.ContentType, f.FileSize, f.Parts, f.Sha256)).ToList(),
-            req.EncryptionMode, req.EncryptionKdfSalt, req.EncryptionKdfIterations, req.EncryptedKeyEscrow, req.VideoCompressionQuality);
+            req.EncryptionMode, req.EncryptionKdfSalt, req.EncryptionKdfIterations, req.EncryptedKeyEscrow);
         var result = await Resolve<IMediator>().Send<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -78,8 +78,6 @@ public class CommitR2Request
     public bool CommentsEnabled { get; set; }
     /// <summary>Overlay the sender's name across the in-page preview (issue #155). Pro/Studio only.</summary>
     public bool WatermarkEnabled { get; set; }
-    /// <summary>Index the text inside this image so it can be searched (issue #243). Off by default.</summary>
-    public bool OcrEnabled { get; set; }
 
     /// <summary>
     /// Files beyond the first, each already uploaded via <c>POST /api/uploads/{id}/files</c>
@@ -91,7 +89,6 @@ public class CommitR2Request
     public string? EncryptionKdfSalt { get; set; }
     public int? EncryptionKdfIterations { get; set; }
     public string? EncryptedKeyEscrow { get; set; }
-    public string? VideoCompressionQuality { get; set; }
 }
 
 /// <summary>One extra file of a bundle, as posted at commit (issue #79).</summary>

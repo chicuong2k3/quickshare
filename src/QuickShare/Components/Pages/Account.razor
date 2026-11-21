@@ -1,5 +1,6 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @using Unpoly.Blazor.Shadcn
+@using QuickShare.Components.Shared
 
 @layout MainLayout
 @page "/account"
@@ -10,44 +11,32 @@
 
 <PageWrapper id="account-app" Variant="PageVariant.Account">
 
-<div class="account-hub">
+    <AccountShell Current="@RoutePaths.Account">
+        <div class="account-hub">
 
-    <AccountTabs Current="@RoutePaths.Account" />
+            @* Profile card renders in the initial response. *@
+            <AccountProfile />
 
-    @* Profile card renders in the initial response. *@
-    <AccountProfile />
+            @* Notification preferences (issue #117). *@
+            <AccountNotifications />
 
-    @* Monthly usage bar. *@
-    <AccountUsage />
+            @* Download history (issue #220). *@
+            <AccountDownloads />
 
-    @* Known devices (issue #149). *@
-    <AccountDevices />
+            @* Data & privacy (issue #59) — static, no DB calls. *@
+            <Card class="my-4 p-6">
+                <h3 class="text-lg font-semibold">@Loc["account_data_title"]</h3>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <Button Href="/api/me/export" Variant="ghost" Size="sm" data-ai-action="account.exportData">@Loc["account_data_export"]</Button>
+                    <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="text-destructive"
+                            data-prompt="@Loc["account_data_delete_prompt"]"
+                            data-error="@Loc["account_data_delete_error"]"
+                            onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
+                </div>
+            </Card>
 
-    @* Referral (issue #31). *@
-    <AccountReferral />
-
-    @* Notification preferences (issue #117). *@
-    <AccountNotifications />
-
-    @* Download history (issue #220). *@
-    <AccountDownloads />
-
-    @* Security activity (issue #126). *@
-    <AccountSecurityActivity />
-
-    @* Data & privacy (issue #59) — static, no DB calls. *@
-    <Card class="my-4 p-6">
-        <h3 class="text-lg font-semibold">@Loc["account_data_title"]</h3>
-        <div class="mt-4 flex flex-wrap gap-2">
-            <Button Href="/api/me/export" Variant="ghost" Size="sm" data-ai-action="account.exportData">@Loc["account_data_export"]</Button>
-            <button type="button" data-slot="button" data-variant="ghost" data-size="sm" class="text-destructive"
-                    data-prompt="@Loc["account_data_delete_prompt"]"
-                    data-error="@Loc["account_data_delete_error"]"
-                    onclick="deleteAccount(this)" data-ai-action="account.delete">@Loc["account_data_delete"]</button>
         </div>
-    </Card>
-
-</div>
+    </AccountShell>
 
 </PageWrapper>
 
@@ -67,5 +56,3 @@
           .finally(function () { btn.disabled = false; });
     };
 </script>
-
-

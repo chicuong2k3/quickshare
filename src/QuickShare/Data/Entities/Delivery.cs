@@ -19,26 +19,6 @@ public record Delivery : BaseAuditEntity
     /// from another workspace is refused at commit, not silently ignored.
     /// </summary>
     public Guid? FolderId { get; set; }
-    /// <summary>
-    /// Storage region the object was written to (issue #119); null = default bucket. Recorded
-    /// rather than derived so the recipient badge and any compliance question can be answered
-    /// without re-parsing the storage key.
-    /// </summary>
-    public string? StorageRegion { get; set; }
-
-    // ── Approval workflow (issue #162) ──
-
-    /// <summary>When the share entered review. Null = it never needed approval.</summary>
-    public DateTime? ApprovalRequestedAt { get; set; }
-    public Guid? ApprovedById { get; set; }
-    public DateTime? ApprovedAt { get; set; }
-    /// <summary>Why an approver refused. Shown to the sender, never to a recipient.</summary>
-    public string? DenyReason { get; set; }
-    /// <summary>
-    /// Recipients to notify once approved, comma-separated. Held rather than mailed at commit:
-    /// the whole point of a gate is that nobody outside learns the link exists until it clears.
-    /// </summary>
-    public string? PendingRecipients { get; set; }
 
     /// <summary>
     /// Recipients and the sender's team may discuss this share (issue #289). Off by default: a
@@ -53,12 +33,6 @@ public record Delivery : BaseAuditEntity
     /// is the leak an agency sharing work-in-progress actually fears.
     /// </summary>
     public bool WatermarkEnabled { get; set; }
-
-    /// <summary>
-    /// Index the text inside this image so it can be searched (issue #243). Opt-in per file:
-    /// reading somebody's screenshot is a data touch, and it is not one to make by default.
-    /// </summary>
-    public bool OcrRequested { get; set; }
     public string? SenderEmail { get; set; }
     public bool SenderEmailConfirmed { get; set; }
     public bool SenderEmailConsent { get; set; }
@@ -99,7 +73,6 @@ public record Delivery : BaseAuditEntity
     public bool IsFavorite { get; set; }
     public const int TagMaxLength = 30;
     public const int AccessRuleMaxLength = 500;
-    public const int LegalHoldReasonMaxLength = 200;
     /// <summary>Optional sender label (issue #321); color derived from the text.</summary>
     public string? Tag { get; set; }
     public DateTime? ExpiresAt { get; set; }
@@ -137,39 +110,17 @@ public record Delivery : BaseAuditEntity
     public string? AllowedCountries { get; set; }
     /// <summary>Country deny-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Evaluated after the allow-list.</summary>
     public string? BlockedCountries { get; set; }
-    /// <summary>
-    /// Legal hold (issue #266): freezes the row and its bytes against every deletion
-    /// path — retention sweep, trash purge, expiry purge, account deletion. Null = not held.
-    /// Lifting is manual only; there is no auto-expiry.
-    /// </summary>
-    public DateTime? LegalHoldAt { get; set; }
-    /// <summary>Case id / reference the hold was placed under (issue #266).</summary>
-    public string? LegalHoldReason { get; set; }
-    /// <summary>Who placed the active hold (issue #266). Transitions are audited on the security timeline.</summary>
-    public Guid? LegalHoldById { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }
     public string Status { get; set; } = DeliveryStatus.Active;
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }
-    public string VirusScanStatus { get; set; } = DeliveryVirusScanStatus.NotApplicable;
-    public string? VirusSignature { get; set; }
-    public DateTime? VirusScannedAt { get; set; }
     public bool IsDeduplicated { get; set; }
-    public string StorageTier { get; set; } = DeliveryStorageTier.Hot;
-    public DateTime? ArchivedAt { get; set; }
-    public DateTime? RestoredUntil { get; set; }
     public string EncryptionMode { get; set; } = DeliveryEncryptionMode.FragmentKey;
     public string? EncryptionKdfSalt { get; set; }
     public int? EncryptionKdfIterations { get; set; }
     public string? EncryptedKeyEscrow { get; set; }
-    public string? ByokKeyId { get; set; }
-    public int? ByokKeyVersion { get; set; }
-    public string? ByokWrappedDek { get; set; }
-    public string? VideoCompressionQuality { get; set; }
-    public long? OriginalVideoSizeBytes { get; set; }
-    public bool HlsAvailable { get; set; }
     public User? Sender { get; init; }
     /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
     public Guid? FileRequestId { get; set; }
@@ -179,20 +130,10 @@ public record Delivery : BaseAuditEntity
 public static class DeliveryStatus
 {
     public const string Active = "Active";
-    /// <summary>Held for a workspace admin to review before the link goes live (issue #162).</summary>
-    public const string PendingApproval = "PendingApproval";
     public const string Scheduled = "Scheduled";
     public const string Expired = "Expired";
     public const string Suspended = "Suspended";
     public const string Revoked = "Revoked";
-}
-
-public static class DeliveryVirusScanStatus
-{
-    public const string NotApplicable = "NotApplicable";
-    public const string Pending = "Pending";
-    public const string Clean = "Clean";
-    public const string Infected = "Infected";
 }
 
 public static class DeliveryEncryptionMode
@@ -202,29 +143,4 @@ public static class DeliveryEncryptionMode
     public const string Passphrase = "passphrase";
 
     public static readonly string[] All = [None, FragmentKey, Passphrase];
-}
-
-public static class DeliveryStorageTier
-{
-    public const string Hot = "Hot";
-    public const string Cold = "Cold";
-    public const string Restoring = "Restoring";
-}
-
-public static class VideoCompressionPreset
-{
-    public const string None = "none";
-    public const string P1080 = "1080p";
-    public const string P720 = "720p";
-    public const string P480 = "480p";
-
-    public static readonly string[] All = [None, P1080, P720, P480];
-
-    public static double TargetRatioFor(string? preset) => preset switch
-    {
-        P1080 => 0.55,
-        P720 => 0.35,
-        P480 => 0.20,
-        _ => 1.0,
-    };
 }

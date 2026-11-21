@@ -40,7 +40,6 @@ public static class DeduplicationService
         string? scopeKey,
         string? sha256,
         long fileSize,
-        string? storageRegion,
         string uploadedObjectKey,
         CancellationToken ct)
     {
@@ -52,8 +51,7 @@ public static class DeduplicationService
         var existing = await db.DeduplicatedBlobs
             .FirstOrDefaultAsync(b => b.ScopeKey == scopeKey
                 && b.Sha256 == sha256
-                && b.FileSize == fileSize
-                && b.StorageRegion == storageRegion, ct);
+                && b.FileSize == fileSize, ct);
 
         if (existing is not null && existing.RefCount > 0 && !string.Equals(existing.StoragePath, uploadedObjectKey, StringComparison.Ordinal))
         {
@@ -82,7 +80,6 @@ public static class DeduplicationService
             ScopeKey = scopeKey,
             Sha256 = sha256,
             StoragePath = uploadedObjectKey,
-            StorageRegion = storageRegion,
             FileSize = fileSize,
             RefCount = 1,
         });

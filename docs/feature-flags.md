@@ -16,7 +16,7 @@ The system has three layers:
 
 | Layer | File | Role |
 |-------|------|------|
-| Flag catalog | `Infrastructure/FeatureFlags/FeatureFlagKeys.cs` | Wire-format keys as `const string` (`previews`, `zero-knowledge`, `password-protection`, `virus-scan`) |
+| Flag catalog | `Infrastructure/FeatureFlags/FeatureFlagKeys.cs` | Wire-format keys as `const string` (`previews`, `zero-knowledge`, `password-protection`) |
 | Config model | `Infrastructure/FeatureFlags/FeatureFlagSettings.cs` | `FeatureFlags:Enabled` kill switch + `FeatureFlags:Flags` dictionary (`FeatureFlagConfig`) |
 | Admin config | `Infrastructure/FeatureFlags/AdminOptions.cs` | `Admin:Emails` string[] — who may manage flags |
 | Service | `Infrastructure/FeatureFlags/FeatureFlagService.cs` | Resolves effective state: config → override → kill switch → rollout hash bucket |
@@ -91,8 +91,7 @@ IsEnabledAsync(key, userId)
     "Flags": {
       "previews":            { "Enabled": false, "RolloutPercent": 100, "Description": "..." },
       "zero-knowledge":      { "Enabled": false, "RolloutPercent": 100, "Description": "..." },
-      "password-protection": { "Enabled": true,  "RolloutPercent": 100, "Description": "..." },
-      "virus-scan":          { "Enabled": false, "RolloutPercent": 100, "Description": "..." }
+      "password-protection": { "Enabled": true,  "RolloutPercent": 100, "Description": "..." }
     }
   },
   "Admin": {

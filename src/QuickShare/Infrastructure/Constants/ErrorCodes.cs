@@ -20,8 +20,6 @@ public static class ErrorCodes
     public const string SchedulingRequiresPaidPlan = "scheduling_requires_paid_plan";
     public const string DeliverAtMustBeFuture = "deliver_at_must_be_future";
     public const string DeliveryNotActive = "delivery_not_active";
-    public const string DeliveryLocked = "delivery_locked";
-    public const string LockDurationInvalid = "lock_duration_invalid";
     public const string DeliveryNotScheduled = "delivery_not_scheduled";
     public const string MessageTooLong = "message_too_long";
     public const string DeliveryAlreadyDownloaded = "delivery_already_downloaded";
@@ -57,12 +55,8 @@ public static class ErrorCodes
     public const string EmailOtpCooldown = "email_otp_cooldown";
     /// <summary>Caller is outside the delivery's IP allowlist or country rules (issues #142/#166).</summary>
     public const string DeliveryRestricted = "delivery_restricted";
-    /// <summary>Operation refused because a legal hold freezes the delivery (issue #266).</summary>
-    public const string LegalHoldActive = "legal_hold_active";
-    public const string LegalHoldNotActive = "legal_hold_not_active";
-    public const string LegalHoldReasonRequired = "legal_hold_reason_required";
-    public const string RetentionDaysInvalid = "retention_days_invalid";
-    public const string RetentionPolicyLocked = "retention_policy_locked";
+
+
     // Team workspaces (issue #106) and ownership transfer (issue #252).
     public const string WorkspaceNotFound = "workspace_not_found";
     public const string WorkspaceForbidden = "workspace_forbidden";
@@ -94,25 +88,12 @@ public static class ErrorCodes
     public const string TemplateNameInvalid = "template_name_invalid";
     public const string TemplateNameTaken = "template_name_taken";
     public const string TemplateStructureInvalid = "template_structure_invalid";
-    // Seats (#278), overage (#141), e-invoice (#112), PO + net terms (#192).
+    // Seats (#278), overage (#141), e-invoice (#112).
     public const string BillingProfileInvalid = "billing_profile_invalid";
     public const string TaxCodeInvalid = "tax_code_invalid";
-    public const string NetTermsInvalid = "net_terms_invalid";
     public const string InvoiceNotFound = "invoice_not_found";
     public const string InvoiceNotIssued = "invoice_not_issued";
     public const string SeatsRequireWorkspace = "seats_require_workspace";
-    // Tenant isolation (#190), SIEM streaming (#191), DPA (#184).
-    public const string SinkEndpointInvalid = "sink_endpoint_invalid";
-    public const string SinkFormatInvalid = "sink_format_invalid";
-    public const string SinkNotFound = "sink_not_found";
-    public const string DpaSignerRequired = "dpa_signer_required";
-    public const string DpaAlreadySigned = "dpa_already_signed";
-    // Scheduled workspace backup (#271).
-    public const string BackupEndpointInvalid = "backup_endpoint_invalid";
-    public const string BackupBucketRequired = "backup_bucket_required";
-    public const string BackupFrequencyInvalid = "backup_frequency_invalid";
-    public const string BackupRetentionInvalid = "backup_retention_invalid";
-    public const string BackupPolicyNotFound = "backup_policy_not_found";
     // Workspace branding (#285) and custom fonts (#286).
     public const string BrandNotFound = "brand_not_found";
     public const string BrandColorInvalid = "brand_color_invalid";
@@ -125,10 +106,6 @@ public static class ErrorCodes
     // White-label custom domain (#81).
     /// <summary>The inbound-mail webhook did not present the deployment secret (issue #104).</summary>
     public const string InboundUnauthorized = "inbound_unauthorized";
-    // S3 gateway credentials (#265).
-    public const string S3CredentialLimitReached = "s3_credential_limit_reached";
-    public const string S3CredentialLabelInvalid = "s3_credential_label_invalid";
-    public const string S3CredentialNotFound = "s3_credential_not_found";
     public const string DomainInvalid = "domain_invalid";
     public const string DomainTaken = "domain_taken";
     public const string DomainNotFound = "domain_not_found";
@@ -136,15 +113,6 @@ public static class ErrorCodes
     public const string DomainRequiresStudio = "domain_requires_studio";
     /// <summary>Preview watermark is a paid control (issue #155).</summary>
     public const string WatermarkRequiresPaidPlan = "watermark_requires_paid_plan";
-    /// <summary>Requested storage region is not configured on this deployment (issue #119).</summary>
-    public const string StorageRegionInvalid = "storage_region_invalid";
-    // Approval workflow (#162) and recurring delivery (#176).
-    public const string ApprovalNotPending = "approval_not_pending";
-    public const string ApprovalSelfNotAllowed = "approval_self_not_allowed";
-    public const string DenyReasonRequired = "deny_reason_required";
-    public const string RecurrenceInvalid = "recurrence_invalid";
-    public const string RecurrenceNotFound = "recurrence_not_found";
-    public const string RecurrenceRecipientsRequired = "recurrence_recipients_required";
     // Delivery comments (#289) and channel posting (#180).
     public const string CommentsDisabled = "comments_disabled";
     public const string CommentBodyRequired = "comment_body_required";
@@ -155,23 +123,6 @@ public static class ErrorCodes
     public const string ChannelUrlInvalid = "channel_url_invalid";
     public const string ChannelKindInvalid = "channel_kind_invalid";
     public const string ChannelNotFound = "channel_not_found";
-    // Authenticator (#128), enterprise SSO (#181), SCIM (#146), MFA policy (#219).
-    public const string TotpAlreadyEnrolled = "totp_already_enrolled";
-    public const string TotpNotEnrolled = "totp_not_enrolled";
-    public const string TotpCodeInvalid = "totp_code_invalid";
-    public const string MfaRateLimited = "mfa_rate_limited";
-    /// <summary>A workspace policy requires the authenticator that is being removed (issue #219).</summary>
-    public const string MfaPolicyLocked = "mfa_policy_locked";
-    /// <summary>The caller must answer the second-factor challenge before this operation.</summary>
-    public const string MfaRequired = "mfa_required";
-    public const string MfaGraceInvalid = "mfa_grace_invalid";
-    public const string SsoProviderInvalid = "sso_provider_invalid";
-    public const string SsoDirectoryRequired = "sso_directory_required";
-    public const string SsoNotConfigured = "sso_not_configured";
-    /// <summary>Another workspace already federates to this directory (issue #181).</summary>
-    public const string SsoDirectoryTaken = "sso_directory_taken";
-    public const string SamlSsoUrlInvalid = "saml_sso_url_invalid";
-    public const string SamlCertificateInvalid = "saml_certificate_invalid";
     // Multi-file deliveries (#79) and folder upload (#43).
     public const string UploadSessionNotFound = "upload_session_not_found";
     public const string DeliveryTooManyFiles = "delivery_too_many_files";
@@ -198,15 +149,6 @@ public static class ErrorCodes
     public const string SubscriptionNotPaused = "subscription_not_paused";
     /// <summary>Session revoked, idle out, or never existed (issues #105, #173).</summary>
     public const string SessionNotFound = "session_not_found";
-    // Passkeys (#68) and magic-link sign-in (#132).
-    public const string PasskeyNotFound = "passkey_not_found";
-    public const string PasskeyChallengeExpired = "passkey_challenge_expired";
-    /// <summary>Deliberately the only failure a passkey sign-in reports (issue #68).</summary>
-    public const string PasskeyVerificationFailed = "passkey_verification_failed";
-    /// <summary>Switching on SSO-only would lock the owner out of their own workspace (issue #181).</summary>
-    public const string SsoWouldLockOutOwner = "sso_would_lock_out_owner";
-    public const string ScimTokenNotFound = "scim_token_not_found";
-    public const string ScimUnauthorized = "scim_unauthorized";
     // Upload presets (#100).
     public const string PresetNotFound = "preset_not_found";
     public const string PresetNameInvalid = "preset_name_invalid";
@@ -214,25 +156,12 @@ public static class ErrorCodes
     // File version history (#110).
     public const string VersionNotFound = "version_not_found";
     public const string BrandReplyToInvalid = "brand_reply_to_invalid";
-    public const string DiscountApplicationInvalid = "discount_application_invalid";
-    public const string DiscountApplicationNotFound = "discount_application_not_found";
     public const string CampaignCodeInvalid = "campaign_code_invalid";
-    public const string GiftEmailInvalid = "gift_email_invalid";
-    public const string GiftSelfNotAllowed = "gift_self_not_allowed";
-    public const string GiftNotFound = "gift_not_found";
-    public const string GiftAlreadyClaimed = "gift_already_claimed";
-    public const string GiftNotClaimable = "gift_not_claimable";
-    public const string ExperimentKeyInvalid = "experiment_key_invalid";
-    public const string ExperimentNotFound = "experiment_not_found";
     public const string TransferPassNotFound = "transfer_pass_not_found";
     public const string TransferPassInvalid = "transfer_pass_invalid";
-    public const string AffiliateTermsRequired = "affiliate_terms_required";
-    public const string AffiliateCodeInvalid = "affiliate_code_invalid";
-    public const string AffiliateCodeTaken = "affiliate_code_taken";
     public const string SmsConsentRequired = "sms_consent_required";
     public const string SmsPhoneInvalid = "sms_phone_invalid";
     public const string SmsRecipientOptedOut = "sms_recipient_opted_out";
-    public const string MigrationItemsInvalid = "migration_items_invalid";
     public const string DeliveryInfected = "delivery_infected";
     public const string ColdStorageDaysInvalid = "cold_storage_days_invalid";
     public const string DeliveryNotCold = "delivery_not_cold";
@@ -241,10 +170,6 @@ public static class ErrorCodes
     public const string SendingDomainNotFound = "sending_domain_not_found";
     public const string SupportChatNotFound = "support_chat_not_found";
     public const string SupportMessageEmpty = "support_message_empty";
-    public const string AutomationNameInvalid = "automation_name_invalid";
-    public const string AutomationNotFound = "automation_not_found";
-    public const string RecoveryCodeInvalid = "recovery_code_invalid";
-    public const string RecoveryRateLimited = "recovery_rate_limited";
     public const string EncryptionRequiredByPolicy = "encryption_required_by_policy";
     public const string EncryptionDisabledByPolicy = "encryption_disabled_by_policy";
     public const string PenetrationTestInvalid = "penetration_test_invalid";
@@ -253,17 +178,8 @@ public static class ErrorCodes
     public const string ByokConfigInvalid = "byok_config_invalid";
     public const string ByokRegionMismatch = "byok_region_mismatch";
     public const string ByokKeyRevoked = "byok_key_revoked";
-    public const string CloudImportProviderInvalid = "cloud_import_provider_invalid";
-    public const string CloudImportTokenInvalid = "cloud_import_token_invalid";
     public const string OfflineCacheForbidden = "offline_cache_forbidden";
     public const string PdfOperationInvalid = "pdf_operation_invalid";
-    public const string VideoCompressionRequiresPro = "video_compression_requires_pro";
-    public const string VideoCompressionPresetInvalid = "video_compression_preset_invalid";
     public const string HlsNotAvailable = "hls_not_available";
-    public const string SftpKeyInvalid = "sftp_key_invalid";
-    public const string SftpKeyNotFound = "sftp_key_not_found";
-    public const string SftpUnauthorized = "sftp_unauthorized";
-    public const string GitHubRepoInvalid = "github_repo_invalid";
-    public const string GitHubWebhookSignatureInvalid = "github_webhook_signature_invalid";
     public const string ChatBotCommandInvalid = "chat_bot_command_invalid";
 }

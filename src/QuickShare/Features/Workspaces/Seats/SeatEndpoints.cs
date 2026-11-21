@@ -1,6 +1,5 @@
 using System.Text;
 using QuickShare.Extensions;
-using QuickShare.Features.Deliveries.LegalHold;
 using QuickShare.Features.Payments;
 using QuickShare.Features.Payments.Billing;
 using QuickShare.Features.Users.Shared;
@@ -159,17 +158,17 @@ public sealed class ExportSeatReportEndpoint : EndpointWithoutRequest
         foreach (var member in report.Members)
         {
             csv.Append(Csv(member.Email));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(member.Name));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(member.Role));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(member.Status));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(member.JoinedAt?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty);
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(report.SeatUnitAmount.ToString(CultureInfo.InvariantCulture));
-            csv.Append(DeliveryAccessCsv.Separator);
+            csv.Append(CsvFormat.Separator);
             csv.Append(Csv(PricingKeys.DefaultCurrency));
             csv.AppendLine();
         }

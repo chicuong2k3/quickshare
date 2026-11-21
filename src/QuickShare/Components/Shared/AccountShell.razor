@@ -1,0 +1,18 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
+@* Account shell: vertical tab rail on the left, page content on the right.
+   Global styles (this markup ships inside server-rendered partials). *@
+<div class="account-shell">
+    <AccountTabs Current="@Current" />
+    <div class="account-shell__content">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Current { get; set; } = RoutePaths.Account;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

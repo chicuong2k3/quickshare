@@ -14,13 +14,14 @@ public static class RoutePaths
     public const string AccountUsage = "/account/usage";
     public const string AccountDevices = "/account/devices";
     public const string AccountDeviceRemove = "/account/devices/remove";
+    public const string ServiceWorker = "/sw.js";
     public const string ScopedStyles = "/QuickShare.styles.css";
+    public const string ScopedStylesPrefix = "/QuickShare.";
+    public const string ScopedStylesSuffix = ".styles.css";
     public const string AccountSecurityActivity = "/account/security/activity";
     public const string AccountNotifications = "/account/notifications";
     public const string AccountNotificationCenter = "/account/notifications/inbox";
     public const string AccountNotificationReadAll = "/account/notifications/inbox/read-all";
-    public const string AccountOnboarding = "/account/onboarding";
-    public const string AccountOnboardingDismiss = "/account/onboarding/dismiss";
     public const string AccountDownloads = "/account/downloads";
     public const string AccountFileRequests = "/account/requests";
     public const string FileRequestPage = "/r/";
@@ -67,26 +68,11 @@ public static class RoutePaths
     public const string AccountWorkspaceFolders = "/account/workspace/folders";
     public const string AccountWorkspaceSeats = "/account/workspace/seats";
     public const string AccountInvoices = "/account/invoices";
-    public const string AccountWorkspaceStreaming = "/account/workspace/streaming";
-    public const string AccountWorkspaceBackup = "/account/workspace/backup";
     public const string AccountWorkspaceBrand = "/account/workspace/brand";
-    public const string AccountWorkspaceApprovals = "/account/workspace/approvals";
     public const string AccountWorkspaceChannel = "/account/workspace/channel";
     public const string AccountWorkspaceDomain = "/account/workspace/domain";
-    /// <summary>WebDAV mount root (issue #195). No trailing slash — segments are appended.</summary>
-    public const string WebDav = "/dav";
-    /// <summary>S3-compatible gateway root (issue #265).</summary>
-    public const string S3Gateway = "/s3";
-    public const string AccountRecurring = "/account/recurring";
     public const string AccountSecurity = "/account/security";
     public const string AccountDeveloper = "/account/developer";
-    /// <summary>Where an emailed sign-in link lands (issue #132).</summary>
-    public const string MagicLink = "/login/link";
-    public const string AccountWorkspaceSso = "/account/workspace/sso";
-    /// <summary>The second-factor challenge (issue #128).</summary>
-    public const string MfaChallenge = "/mfa";
-    public const string Dpa = "/dpa";
-    public const string Soc2 = "/soc2";
     /// <summary>Invite and transfer accept landing page — the token rides in the query string.</summary>
     public const string WorkspaceJoin = "/workspace/join";
     /// <summary>Upload presets management page (issue #100).</summary>
@@ -101,35 +87,18 @@ public static class RoutePaths
     public const string DeliverySubtitlesRoute = "/api/downloads/{ShareCode}/subtitles/{FileId}";
     public const string P2pPairRoute = "/api/shares/p2p/pair";
     public const string DeliveryWalletPassRoute = "/api/downloads/{ShareCode}/wallet-pass";
-    public const string AccountDiscountApi = "/api/account/discount-application";
-    public const string AdminDiscountsApi = "/api/admin/discount-applications";
     public const string AdminCampaignsApi = "/api/admin/campaigns";
     public const string ActiveCampaignsApi = "/api/campaigns/active";
     public const string AdminAnalyticsCsvRoute = "/api/admin/analytics/export.csv";
-    public const string GiftsApi = "/api/gifts";
-    public const string GiftClaim = "/gift/claim";
     public const string SearchApi = "/api/search";
-    public const string ExperimentsAssignApi = "/api/experiments/assign";
-    public const string AdminExperimentsApi = "/api/admin/experiments";
-    public const string TransferCreditsApi = "/api/credits/transfer-pass";
-    public const string AffiliateApi = "/api/affiliate";
-    public const string AccountAffiliate = "/account/affiliate";
-    public const string DeliverySmsApi = "/api/deliveries/{ShareCode}/sms";
     public const string SmsOptOutApi = "/api/webhooks/sms/opt-out";
-    public const string MigrationImportApi = "/api/migration/import";
-    public const string AccountMigration = "/account/migrate";
     public const string DeliveryRestoreApi = "/api/downloads/{ShareCode}/restore";
     public const string AccountColdStorageApi = "/api/account/cold-storage";
     public const string AccountSendingDomainApi = "/api/account/sending-domain";
     public const string AccountSendingDomainVerifyApi = "/api/account/sending-domain/verify";
     public const string SupportChatApi = "/api/support/chat";
     public const string AccountSupport = "/account/support";
-    public const string AutomationsApi = "/api/automations";
-    public const string AutomationsCatalogApi = "/api/automations/catalog";
-    public const string AccountAutomations = "/account/automations";
     public const string CheckoutSessionApi = "/api/payments/checkout-session";
-    public const string AccountPasskeyRecoveryCodesApi = "/api/account/passkeys/recovery-codes";
-    public const string PasskeyRecoveryLoginApi = "/api/auth/passkey/recovery";
     public const string DeliveryKeyEscrowApi = "/api/downloads/{ShareCode}/key-escrow";
     public const string SecurityPentestApi = "/api/security/pentest";
     public const string AdminSecurityPentestApi = "/api/admin/security/pentest";
@@ -140,19 +109,12 @@ public static class RoutePaths
     public const string WorkspaceByokApi = "/api/workspace/byok";
     public const string WorkspaceByokRotateApi = "/api/workspace/byok/rotate";
     public const string WorkspaceByokRevokeApi = "/api/workspace/byok/revoke";
-    public const string CloudImportApi = "/api/uploads/cloud-import";
     public const string DeliveryOfflineBundleApi = "/api/downloads/{ShareCode}/offline-bundle";
     public const string OfflineUploadQueueApi = "/api/uploads/offline-queue";
     public const string PdfToolsApi = "/api/tools/pdf";
-    public const string VideoCompressEstimateApi = "/api/uploads/video-compress/estimate";
     public const string DeliveryHlsMasterApi = "/api/downloads/{ShareCode}/hls/master.m3u8";
     public const string DeliveryHlsVariantApi = "/api/downloads/{ShareCode}/hls/{Quality}/playlist.m3u8";
     public const string LiveStreamProgressApi = "/api/uploads/live-progress";
-    public const string WorkspaceSftpKeysApi = "/api/workspace/sftp/keys";
-    public const string WorkspaceSftpKeyDeleteApi = "/api/workspace/sftp/keys/{Id:guid}";
-    public const string SftpIngestApi = "/api/sftp/ingest";
-    public const string WorkspaceGitHubReleasesApi = "/api/workspace/github-releases";
-    public const string GitHubReleaseWebhookApi = "/api/webhooks/github/release";
     public const string SdkManifestApi = "/api/sdk/manifest";
     public const string SelfHostManifestApi = "/api/self-host/manifest";
     public const string TelegramBotWebhookApi = "/api/webhooks/telegram/bot";
@@ -169,4 +131,20 @@ public static class RoutePaths
     public const string IosShareIngestApi = "/api/apps/ios/share";
     public const string OpenSourceAuditApi = "/api/security/open-source-audit";
     public const string LaunchKitApi = "/api/growth/launch-kit";
+
+    public static bool IsScopedStyles(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
+        if (string.Equals(path, ScopedStyles, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return path.StartsWith(ScopedStylesPrefix, StringComparison.OrdinalIgnoreCase)
+            && path.EndsWith(ScopedStylesSuffix, StringComparison.OrdinalIgnoreCase);
+    }
 }

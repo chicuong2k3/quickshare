@@ -70,10 +70,6 @@ public sealed class TestAuthHandler : AuthenticationHandler<TestAuthSchemeOption
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
 
-        if (Request.Headers.ContainsKey(TestAuthDefaults.MfaVerifiedHeader))
-        {
-            identity.AddClaim(new Claim(QuickShare.Features.Auth.Totp.MfaSession.VerifiedClaimType, "1"));
-        }
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
 

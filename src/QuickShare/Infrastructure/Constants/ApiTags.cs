@@ -16,8 +16,6 @@ public static class ApiTags
     public const string Reports = "Reports";
     public const string FileRequests = "File Requests";
     public const string Workspaces = "Workspaces";
-    /// <summary>SCIM 2.0 provisioning (issue #146). Not a normal API surface — IdPs drive it.</summary>
-    public const string Scim = "SCIM";
     /// <summary>API keys and outbound webhooks (issues #115, #39).</summary>
     public const string Developer = "Developer";
 }

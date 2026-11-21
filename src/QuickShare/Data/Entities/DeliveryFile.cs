@@ -11,7 +11,7 @@ namespace QuickShare.Data.Entities;
 /// <see cref="Delivery"/> keeps describing file #1 exactly as before — same
 /// <c>FileName</c>, <c>ContentType</c>, <c>FileSize</c>, <c>StoragePath</c>. That is not
 /// duplication for its own sake: it means every path written before multi-file existed —
-/// previews, virus scan, expiry, backup, SIEM, the download page's single-file phase — keeps
+/// previews, expiry, backup, SIEM, the download page's single-file phase — keeps
 /// working untouched and correctly for the single-file case, which is still almost every
 /// delivery. New code reads these rows; old code never had to be found and changed.
 /// </summary>

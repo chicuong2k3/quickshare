@@ -3,8 +3,7 @@ using QuickShare.Features.Workspaces.Shared;
 namespace QuickShare.Features.Payments.Billing;
 
 /// <summary>
-/// The one writer for the billing ledger (issues #278 seats, #141 overage, #112 e-invoice,
-/// #192 PO/net terms).
+/// The one writer for the billing ledger (issues #278 seats, #141 overage, #112 e-invoice).
 ///
 /// The model is a **draft invoice per period**. Mid-cycle charges — a seat added on the 12th,
 /// a gigabyte of overage at 3am — append or update a line on that draft as they happen. The
@@ -113,9 +112,7 @@ public sealed class InvoiceService(AppDbContext db)
     }
 
     /// <summary>
-    /// Freezes the draft into a real invoice (issues #112, #192). Card payments arrive already
-    /// settled; a buyer with approved net terms gets a due date instead, and the overdue sweep
-    /// takes it from there.
+    /// Freezes the draft into a real invoice (issue #112). Card payments arrive already settled.
     ///
     /// Returns null when there is nothing to bill — an empty draft is not an invoice, and
     /// issuing zero-total paperwork is how a buyer's accounting team learns to ignore us.
@@ -131,19 +128,15 @@ public sealed class InvoiceService(AppDbContext db)
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
 
         var now = DateTime.UtcNow;
-        var terms = profile?.EffectiveNetTermsDays ?? 0;
 
         draft.Status = alreadyPaid ? InvoiceStatus.Paid : InvoiceStatus.Issued;
         draft.Number = await NextNumberAsync(now, ct);
         draft.IssuedAt = now;
-        draft.DueAt = now.AddDays(terms);
         draft.PaidAt = alreadyPaid ? now : null;
         draft.PaymentEventId = paymentEventId;
-        draft.NetTermsDays = terms;
         draft.CompanyName = profile?.CompanyName ?? string.Empty;
         draft.TaxCode = profile?.TaxCode ?? string.Empty;
         draft.Address = profile?.Address ?? string.Empty;
-        draft.PoNumber = profile?.PoNumber ?? string.Empty;
         draft.UpdatedAt = now;
 
         Retotal(draft);

@@ -80,11 +80,8 @@ public sealed class AddFileEndpoint : Endpoint<AddFileRequest, AddFileResponse>
         var name = DeliveryFile.SanitizeName(req.FileName, existing + 1);
 
         // Same delivery id, so the object lands under the same prefix — which is what makes the
-        // orphan sweep, the region routing and the commit-time prefix check all keep working.
-        // The region is read back off the first file's key rather than stored again: one source
-        // of truth, and it guarantees every file of a bundle lands in the same bucket.
-        var region = StorageRegions.FromKey(session.StoragePath ?? string.Empty);
-        var init = await storage.InitR2MultipartUploadAsync(deliveryId, name, region, ct);
+        // orphan sweep and the commit-time prefix check both keep working.
+        var init = await storage.InitR2MultipartUploadAsync(deliveryId, name, ct);
         var parts = await storage.GenerateUploadPartUrlsAsync(init.UploadId, init.ObjectKey, req.PartNumbers, ct);
 
         await Send.OkAsync(new AddFileResponse(init.UploadId, init.ObjectKey, parts), ct);

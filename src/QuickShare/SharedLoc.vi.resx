@@ -759,25 +759,6 @@
   <data name="account_security_event_PasswordChanged" xml:space="preserve"><value>Mật khẩu đã đổi</value></data>
   <data name="account_security_event_RetentionPolicyChanged" xml:space="preserve"><value>Chính sách lưu trữ đã đổi</value></data>
   <data name="account_security_event_RetentionEnforced" xml:space="preserve"><value>Đã áp dụng chính sách lưu trữ</value></data>
-  <data name="account_retention_title" xml:space="preserve"><value>Chính sách lưu trữ</value></data>
-  <data name="account_retention_subtitle" xml:space="preserve"><value>Giới hạn cho toàn bộ tài khoản: mọi liên kết bạn tạo sẽ hết hạn trong khoảng thời gian này, và các liên kết cũ cũng bị kéo về đúng mốc đó.</value></data>
-  <data name="account_retention_upgrade_hint" xml:space="preserve"><value>Chính sách lưu trữ là tính năng của gói Pro và Studio.</value></data>
-  <data name="account_retention_upgrade_link" xml:space="preserve"><value>Nâng cấp để thiết lập</value></data>
-  <data name="account_retention_window_label" xml:space="preserve"><value>Thời gian sống tối đa của liên kết</value></data>
-  <data name="account_retention_window_none" xml:space="preserve"><value>Không áp dụng — chỉ dùng hạn của từng liên kết</value></data>
-  <data name="account_retention_window_days" xml:space="preserve"><value>{0} ngày</value></data>
-  <data name="account_retention_no_extend_label" xml:space="preserve"><value>Chặn gia hạn vượt quá giới hạn</value></data>
-  <data name="account_retention_no_extend_desc" xml:space="preserve"><value>Yêu cầu gia hạn sẽ bị từ chối khi liên kết đã nằm đúng mốc giới hạn, thay vì âm thầm không thêm được thời gian nào.</value></data>
-  <data name="account_retention_preview_none" xml:space="preserve"><value>Chọn một khoảng thời gian để xem những gì sẽ bị rút ngắn.</value></data>
-  <data name="account_retention_preview_btn" xml:space="preserve"><value>Xem trước thay đổi</value></data>
-  <data name="account_retention_preview_clear" xml:space="preserve"><value>Không có gì thay đổi — mọi liên kết đang hoạt động đều đã nằm trong khoảng này.</value></data>
-  <data name="account_retention_preview_count" xml:space="preserve"><value>{0} liên kết sẽ hết hạn sớm hơn.</value></data>
-  <data name="account_retention_preview_range" xml:space="preserve"><value>Các hạn bị ảnh hưởng trải từ {0} đến {1}.</value></data>
-  <data name="account_retention_sample_no_expiry" xml:space="preserve"><value>không có hạn</value></data>
-  <data name="account_retention_save_btn" xml:space="preserve"><value>Lưu chính sách lưu trữ</value></data>
-  <data name="account_retention_saved" xml:space="preserve"><value>Đã lưu chính sách lưu trữ.</value></data>
-  <data name="account_retention_error_requires_paid_plan" xml:space="preserve"><value>Chính sách lưu trữ cần gói Pro hoặc Studio.</value></data>
-  <data name="account_retention_error_retention_days_invalid" xml:space="preserve"><value>Hãy chọn khoảng từ 1 đến 365 ngày.</value></data>
   <data name="admin_reports_page_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
   <data name="admin_reports_title" xml:space="preserve"><value>Báo cáo lạm dụng</value></data>
   <data name="admin_reports_subtitle" xml:space="preserve"><value>Xem xét, xử lý hoặc tạm ngưng các liên kết bị báo cáo lạm dụng hoặc vi phạm bản quyền.</value></data>
@@ -1903,6 +1884,9 @@
   </data>
   <data name="ws_tab_sso" xml:space="preserve">
     <value>SSO &amp; MFA</value>
+  </data>
+  <data name="account_tab_referral" xml:space="preserve">
+    <value>Giới thiệu bạn</value>
   </data>
   <data name="account_tab_security" xml:space="preserve">
     <value>Bảo mật</value>

@@ -98,7 +98,6 @@
         privacyMode: boolean;
         commentsEnabled: boolean;
         watermarkEnabled: boolean;
-        ocrEnabled: boolean;
         emailOtpEnabled: boolean;
         requireRecipientEmail: boolean;
         publicStatsEnabled: boolean;
@@ -130,7 +129,6 @@
         privacyMode: false,
         commentsEnabled: false,
         watermarkEnabled: false,
-        ocrEnabled: false,
         emailOtpEnabled: false,
         requireRecipientEmail: false,
         publicStatsEnabled: false,
@@ -640,7 +638,6 @@
         state.privacyMode = (document.getElementById('upload-privacy') as HTMLInputElement | null)?.checked ?? false;
         state.commentsEnabled = (document.getElementById('upload-comments') as HTMLInputElement | null)?.checked ?? false;
         state.watermarkEnabled = (document.getElementById('upload-watermark') as HTMLInputElement | null)?.checked ?? false;
-        state.ocrEnabled = (document.getElementById('upload-ocr') as HTMLInputElement | null)?.checked ?? false;
         state.emailOtpEnabled = (document.getElementById('upload-email-otp') as HTMLInputElement | null)?.checked ?? false;
         state.requireRecipientEmail = (document.getElementById('upload-recipient-email') as HTMLInputElement | null)?.checked ?? false;
         state.publicStatsEnabled = (document.getElementById('upload-public-stats') as HTMLInputElement | null)?.checked ?? false;
@@ -872,7 +869,7 @@
         }
 
         const additionalFiles = await uploadExtraFiles(ctx.deliveryId, signal);
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ additionalFiles: additionalFiles, deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, watermarkEnabled: state.watermarkEnabled, ocrEnabled: state.ocrEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ additionalFiles: additionalFiles, deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, watermarkEnabled: state.watermarkEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;

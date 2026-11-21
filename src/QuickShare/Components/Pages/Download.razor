@@ -19,7 +19,6 @@
 @inject BrandReader Brands
 @inject WorkspaceDomainReader Domains
 @inject RecipientTracker Recipients
-@inject StorageRegionResolver Regions
 @inject CommentGate Gate
 
 @{
@@ -70,11 +69,6 @@
                 <p class="dl-brand__header">@header</p>
             }
         </div>
-    }
-    @if (RegionLabel is { } regionLabel)
-    {
-        @* Residency badge (issue #119) — a trust signal the recipient can see without asking. *@
-        <p class="dl-region">@Loc["dl_stored_in", regionLabel]</p>
     }
     <div class="card" data-slot="card">
         @* The delivery's own card chrome; the label is the real share code. *@
@@ -182,18 +176,6 @@
                         </div>
 
                         <div class="badges">
-                            @if (Info?.VirusScanStatus == DeliveryVirusScanStatus.Clean)
-                            {
-                                <div id="dl-badge-virus-clean" class="badge --sovereign" role="status">
-                                    <span>@Loc["dl_badge_virus_clean"]</span>
-                                </div>
-                            }
-                            else if (Info?.VirusScanStatus == DeliveryVirusScanStatus.Pending)
-                            {
-                                <div id="dl-badge-virus-pending" class="badge --sovereign" role="status">
-                                    <span>@Loc["dl_badge_virus_pending"]</span>
-                                </div>
-                            }
                             @if (Info?.VerifiedSender == true)
                             {
                                 <div id="dl-badge-verified" class="badge --sovereign" title="@Loc["dl_badge_verified_tooltip"]" role="status">
@@ -372,16 +354,6 @@
                             </div>
                         }
 
-                        @if (Info?.StorageTier == DeliveryStorageTier.Cold || Info?.StorageTier == DeliveryStorageTier.Restoring)
-                        {
-                            <div id="dl-cold-storage-panel" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm" role="status">
-                                <p class="font-medium">@Loc["dl_cold_title"]</p>
-                                <p class="mt-1 text-muted-foreground">@Loc["dl_cold_sub"]</p>
-                                <button type="button" id="dl-cold-restore-btn" data-slot="button" data-variant="default" class="btn mt-3" onclick="restoreColdDelivery()" data-ai-action="download.cold.restore">@Loc["dl_cold_restore_btn"]</button>
-                                <p id="dl-cold-restore-done" class="mt-2 hidden text-xs text-muted-foreground">@Loc["dl_cold_restored"]</p>
-                            </div>
-                        }
-
                         @if (Info?.EncryptionMode == DeliveryEncryptionMode.Passphrase)
                         {
                             <div id="dl-passphrase-vault" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm">
@@ -400,26 +372,6 @@
                             <div id="dl-live-streaming-banner" class="mt-4 rounded-md border bg-muted/40 p-4 text-sm" role="status" aria-live="polite">
                                 <p class="font-medium">@Loc["dl_live_streaming_title"]</p>
                                 <p class="mt-1 text-muted-foreground">@Loc["dl_live_streaming_sub", Info.LiveProgressPercent]</p>
-                            </div>
-                        }
-
-                        @if (Info?.HlsAvailable == true)
-                        {
-                            <div id="dl-hls-player" class="mt-4 rounded-md border bg-muted/30 p-3 text-sm" data-manifest="/api/downloads/@ShareCode/hls/master.m3u8">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="font-medium">@Loc["dl_hls_stream_title"]</span>
-                                    <div class="flex items-center gap-2 text-xs">
-                                        <label for="dl-hls-quality" class="text-muted-foreground">@Loc["dl_hls_quality_label"]</label>
-                                        <NativeSelect id="dl-hls-quality" aria-label="@Loc["dl_hls_quality_label"]">
-                                            <NativeSelectOption value="480p" Selected>480p SD</NativeSelectOption>
-                                            @if (Info.SenderPlan is PlanTierLimits.Pro or PlanTierLimits.Studio)
-                                            {
-                                                <NativeSelectOption value="720p">720p HD</NativeSelectOption>
-                                                <NativeSelectOption value="1080p">1080p Full HD</NativeSelectOption>
-                                            }
-                                        </NativeSelect>
-                                    </div>
-                                </div>
                             </div>
                         }
 
@@ -1030,7 +982,6 @@
     private string? RecipientToken { get; set; }
 
     /// <summary>Human label of the region this delivery is stored in (issue #119), or null.</summary>
-    private string? RegionLabel { get; set; }
 
     /// <summary>The files in this delivery (issue #79). Always at least one.</summary>
     private List<DeliveryFile> Files { get; set; } = [];
@@ -1170,7 +1121,6 @@
             {
                 d.Id,
                 d.WorkspaceId,
-                d.StorageRegion,
                 d.PasswordHash,
                 d.OtpHash,
                 d.WatermarkEnabled,
@@ -1207,10 +1157,6 @@
         var gated = !string.IsNullOrEmpty(stored?.PasswordHash) || !string.IsNullOrEmpty(stored?.OtpHash);
         await LoadFilesAsync(stored?.Id, gated, CancellationToken.None);
         await LoadCommentsAsync(CancellationToken.None);
-        // Null when the delivery has no region, or when the region it was written to is no
-        // longer configured — a label we cannot resolve is worse than no badge at all.
-        RegionLabel = Regions.LabelFor(stored?.StorageRegion);
-
         try
         {
             var result = await Bus.Send<LightResults.Result<DownloadInfoResponse>>(
@@ -1273,9 +1219,6 @@
                 Versions = value.Versions,
                 VerifiedSender = value.VerifiedSender,
                 SenderDisplayName = value.SenderDisplayName,
-                VirusScanStatus = value.VirusScanStatus,
-                VirusSignature = value.VirusSignature,
-                StorageTier = value.StorageTier,
                 IsQueued = value.IsQueued,
                 QueuePosition = value.QueuePosition,
                 QueueEtaSeconds = value.QueueEtaSeconds,
@@ -1286,8 +1229,6 @@
                 HasKeyEscrow = value.HasKeyEscrow,
                 IsLiveStreaming = value.IsLiveStreaming,
                 LiveProgressPercent = value.LiveProgressPercent,
-                HlsAvailable = value.HlsAvailable,
-                VideoCompressionQuality = value.VideoCompressionQuality
             };
             ExpiryLabel = Info.ExpiresAt.HasValue ? Loc["dl_expiry_countdown", ExpiryCountdown(Info.ExpiresAt.Value)] : Loc["dl_expiry_none"];
             RenderState = IsScheduled ? DownloadRenderState.Scheduled : DownloadRenderState.Ready;
@@ -1363,9 +1304,6 @@
         public IReadOnlyList<VersionInfo>? Versions { get; set; }
         public bool VerifiedSender { get; set; }
         public string? SenderDisplayName { get; set; }
-        public string? VirusScanStatus { get; set; }
-        public string? VirusSignature { get; set; }
-        public string StorageTier { get; set; } = DeliveryStorageTier.Hot;
         public bool IsQueued { get; set; }
         public int QueuePosition { get; set; }
         public int QueueEtaSeconds { get; set; }
@@ -1376,7 +1314,5 @@
         public bool HasKeyEscrow { get; set; }
         public bool IsLiveStreaming { get; set; }
         public int LiveProgressPercent { get; set; }
-        public bool HlsAvailable { get; set; }
-        public string? VideoCompressionQuality { get; set; }
     }
 }

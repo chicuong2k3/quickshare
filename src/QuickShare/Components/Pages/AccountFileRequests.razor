@@ -17,7 +17,7 @@
         <p class="text-muted-foreground">@Loc["account_requests_lead"]</p>
     </section>
 
-    <AccountTabs Current="@RoutePaths.AccountFileRequests" />
+    <AccountShell Current="@RoutePaths.AccountFileRequests">
 
     @* Creating one (issues #16, #17). The endpoints have existed since the file-request batch
        and *nothing called them* — the same API-only defect the batch-11 audit found in four
@@ -61,6 +61,8 @@
         </div>
         @NextPage
     </section>
+
+</AccountShell>
 
 </PageWrapper>
 

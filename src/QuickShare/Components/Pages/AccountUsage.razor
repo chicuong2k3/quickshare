@@ -8,8 +8,8 @@
 @inject IHttpContextAccessor HttpContextAccessor
 
 @* The account's kỳ-this board. Same numbers as before (quota from PlanTierLimits,
-   usage from UserUsages minus cold archive), read as a departure board instead of
-   a progress card: one rule, one marker, a row per fact. *@
+   usage from UserUsages), read as a departure board instead of a progress card: one
+   rule, one marker, a row per fact. *@
 <section id="usage-card" class="au" aria-labelledby="usage-title">
     <div class="au__bar">
         <b id="usage-title">@Loc["account_usage_title"]</b>
@@ -43,17 +43,10 @@
         </div>
     }
 
-    @if (coldArchivedBytes > 0 || deduplicatedSavedBytes > 0)
+    @if (deduplicatedSavedBytes > 0)
     {
         <div class="au__saved">
-            @if (coldArchivedBytes > 0)
-            {
-                <span id="usage-cold-bytes">@Loc["account_usage_cold_saved", FormatBytes(coldArchivedBytes)]</span>
-            }
-            @if (deduplicatedSavedBytes > 0)
-            {
-                <span id="usage-dedup-bytes">@Loc["account_usage_dedup_saved", FormatBytes(deduplicatedSavedBytes)]</span>
-            }
+            <span id="usage-dedup-bytes">@Loc["account_usage_dedup_saved", FormatBytes(deduplicatedSavedBytes)]</span>
         </div>
     }
 
@@ -129,7 +122,6 @@
     private string barClass = "account-usage-bar__fill--ok";
     private string usedText = string.Empty;
     private string quotaText = string.Empty;
-    private long coldArchivedBytes;
     private long deduplicatedSavedBytes;
 
     protected override async Task OnInitializedAsync()
@@ -174,10 +166,6 @@
                 .ToList();
 
             var quota = PlanTierLimits.GetMonthlyQuota(user.Plan);
-            coldArchivedBytes = await Db.Deliveries
-                .AsNoTracking()
-                .Where(d => d.SenderId == user.Id && d.DeletedAt == null && d.StorageTier == DeliveryStorageTier.Cold)
-                .SumAsync(d => (long?)d.FileSize) ?? 0L;
             deduplicatedSavedBytes = await Db.Deliveries
                 .AsNoTracking()
                 .Where(d => d.SenderId == user.Id && d.DeletedAt == null && d.IsDeduplicated)
@@ -193,7 +181,7 @@
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserId == user.Id && u.PeriodStart == periodStart);
 
-            var used = Math.Max(0L, (usage?.TotalBytesUploaded ?? 0L) - (usage?.ColdArchivedBytes ?? 0L));
+            var used = Math.Max(0L, usage?.TotalBytesUploaded ?? 0L);
             pct = quota.Value == 0 ? 100 : (int)(used * 100 / quota.Value);
             barWidth = Math.Min(100, pct);
             barClass = pct switch

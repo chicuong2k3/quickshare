@@ -38,3 +38,4 @@ src/QuickShare/wwwroot/js/**
 
 # Test artifacts — blame-hang dumps, sequence XML, coverage
 tests/**/TestResults/
+.tmp-ui/

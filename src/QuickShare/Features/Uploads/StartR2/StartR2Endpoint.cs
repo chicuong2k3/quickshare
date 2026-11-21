@@ -25,7 +25,7 @@ public sealed class StartR2Endpoint : Endpoint<StartR2Request, StartR2Response>
 
     public override async Task HandleAsync(StartR2Request req, CancellationToken ct)
     {
-        var cmd = new StartR2Command(req.FileName, req.FileSize, req.ContentType, req.PartNumbers, req.SenderEmail, req.RequestCode, req.StorageRegion, req.TransferPassToken);
+        var cmd = new StartR2Command(req.FileName, req.FileSize, req.ContentType, req.PartNumbers, req.SenderEmail, req.RequestCode);
         var result = await Resolve<IMediator>().Send<LightResults.Result<StartR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -48,9 +48,5 @@ public class StartR2Request
     public string ContentType { get; set; } = string.Empty;
     public IReadOnlyList<int> PartNumbers { get; set; } = [];
     public string? SenderEmail { get; set; }
-    /// <summary>Storage region to pin this upload to (issue #119). Studio only; ignored otherwise.</summary>
-    public string? StorageRegion { get; set; }
     public string? RequestCode { get; set; }
-    /// <summary>One-time pay-per-transfer credit pass token (issue #85).</summary>
-    public string? TransferPassToken { get; set; }
 }

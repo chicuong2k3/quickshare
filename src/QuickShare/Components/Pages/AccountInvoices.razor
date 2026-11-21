@@ -23,17 +23,17 @@
         <p class="text-muted-foreground">@Loc["invoices_subtitle"]</p>
     </section>
 
-    <AccountTabs Current="@RoutePaths.AccountBilling" />
+    <AccountShell Current="@RoutePaths.AccountBilling">
 
     @Chunk
+
+</AccountShell>
 
 </PageWrapper>
 
 <script src="/js/billing.js" defer></script>
 
 @code {
-    private const int TermsNone = 0;
-    private const int Terms30 = 30;
 
     private List<Invoice> invoices = [];
     private BillingProfile? profile;
@@ -60,24 +60,6 @@
 
                     <label class="workspace-label" for="bill-email">@Loc["billing_email"]</label>
                     <Input id="bill-email"  type="email" value="@profile?.BillingEmail" />
-
-                    <label class="workspace-label" for="bill-po">@Loc["billing_po"]</label>
-                    <Input id="bill-po"  type="text"
-                           maxlength="@BillingProfile.PoNumberMaxLength" value="@profile?.PoNumber" />
-
-                    <label class="workspace-label" for="bill-terms">@Loc["billing_terms"]</label>
-                    <NativeSelect id="bill-terms">
-                        <NativeSelectOption value="0" selected="@(RequestedTerms == TermsNone)">@Loc["billing_terms_none"]</NativeSelectOption>
-                        <NativeSelectOption value="30" selected="@(RequestedTerms == Terms30)">@Loc["billing_terms_30"]</NativeSelectOption>
-                        <NativeSelectOption value="60" selected="@(RequestedTerms > Terms30)">@Loc["billing_terms_60"]</NativeSelectOption>
-                    </NativeSelect>
-
-                    @if (RequestedTerms > TermsNone)
-                    {
-                        <p class="text-muted-foreground workspace-hint">
-                            @(profile?.NetTermsApprovedAt is null ? Loc["billing_terms_pending"] : Loc["billing_terms_approved"])
-                        </p>
-                    }
 
                     <button type="button" data-slot="button" data-variant="default"
                             data-saved-label="@Loc["billing_saved"]"
@@ -119,7 +101,6 @@
                                         <TableCell>@(invoice.IsDraft ? Loc["invoices_draft"].Value : invoice.Number)</TableCell>
                                         <TableCell>@invoice.PeriodStart.ToString("yyyy-MM")</TableCell>
                                         <TableCell>@StatusLabel(invoice)</TableCell>
-                                        <TableCell>@(invoice.DueAt is { } due ? due.ToLocalTime().ToString("d") : string.Empty)</TableCell>
                                         <TableCell>@PlanCatalog.FormatPrice((int)invoice.Total, invoice.Currency)</TableCell>
                                     </TableRow>
                                 }
@@ -140,10 +121,6 @@
                         @if (!string.IsNullOrEmpty(printable.TaxCode))
                         {
                             <text> · MST @printable.TaxCode</text>
-                        }
-                        @if (!string.IsNullOrEmpty(printable.PoNumber))
-                        {
-                            <text> · PO @printable.PoNumber</text>
                         }
                     </p>
 
@@ -181,14 +158,11 @@
         }
     </section>;
 
-    private int RequestedTerms => profile?.NetTermsDays ?? TermsNone;
-
     private Invoice? Printable => invoices.FirstOrDefault(i => !i.IsDraft);
 
     private string StatusLabel(Invoice invoice) => invoice.Status switch
     {
         InvoiceStatus.Paid => Loc["invoices_status_paid"],
-        InvoiceStatus.Overdue => Loc["invoices_status_overdue"],
         InvoiceStatus.Issued => Loc["invoices_status_issued"],
         _ => Loc["invoices_status_draft"],
     };

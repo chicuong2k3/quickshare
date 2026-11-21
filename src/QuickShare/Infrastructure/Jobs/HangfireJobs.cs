@@ -28,16 +28,8 @@ public static class HangfireJobs
     public const string NotificationCleanup = "notification-cleanup";
     public const string SecurityEventCleanup = "security-event-cleanup";
     public const string WebhookDelivery = "webhook-delivery";
-    public const string FileLockExpiry = "file-lock-expiry";
     public const string WorkspaceReport = "workspace-report";
-    public const string InvoiceOverdue = "invoice-overdue";
-    public const string SiemShipping = "siem-shipping";
-    public const string WorkspaceBackup = "workspace-backup";
-    public const string RecurringDelivery = "recurring-delivery";
-    public const string ImageOcr = "image-ocr";
     public const string ApiKeyUsageFlush = "api-key-usage-flush";
-    public const string VirusScan = "virus-scan";
-    public const string ColdStorageSweep = "cold-storage-sweep";
 
     public static void Register(IServiceProvider services, bool hasR2)
     {
@@ -56,20 +48,9 @@ public static class HangfireJobs
         // Every minute: a webhook is an integration contract, and a five-minute floor on delivery
         // latency would make every integration feel broken even when nothing is.
         recurring.AddOrUpdate<WebhookDeliveryJob>(WebhookDelivery, j => j.RunAsync(), Cron.Minutely());
-        recurring.AddOrUpdate<FileLockExpiryJob>(FileLockExpiry, j => j.ReleaseExpiredLocksAsync(), Cron.Minutely());
-        recurring.AddOrUpdate<InvoiceOverdueJob>(InvoiceOverdue, j => j.SweepAsync(), Cron.Hourly());
-        recurring.AddOrUpdate<SiemShippingJob>(SiemShipping, j => j.ShipAsync(), Cron.MinuteInterval(5));
-        // Hourly tick, but each policy only runs once its own interval has elapsed.
-        recurring.AddOrUpdate<WorkspaceBackupJob>(WorkspaceBackup, j => j.RunAsync(), Cron.Hourly());
-        recurring.AddOrUpdate<RecurringDeliveryJob>(RecurringDelivery, j => j.RunAsync(), Cron.Hourly());
-        // Every minute: a file the sender asked to index should be findable while they are still
-        // in the app, and the job does nothing at all when OCR is unavailable or nothing is queued.
-        recurring.AddOrUpdate<QuickShare.Features.Deliveries.Ocr.OcrJob>(ImageOcr, j => j.RunAsync(), Cron.Minutely());
         // Every minute, and a no-op when nothing was called (issue #273).
         recurring.AddOrUpdate<QuickShare.Features.Developer.ApiKeys.ApiKeyUsageFlushJob>(
             ApiKeyUsageFlush, j => j.FlushAsync(), Cron.Minutely());
-        recurring.AddOrUpdate<QuickShare.Features.Deliveries.VirusScan.VirusScanJob>(VirusScan, j => j.RunAsync(), Cron.Minutely());
-        recurring.AddOrUpdate<QuickShare.Features.Deliveries.ColdStorage.ColdStorageSweepJob>(ColdStorageSweep, j => j.SweepAsync(), Cron.Hourly());
 
         var quickShareOptions = services.GetRequiredService<IOptions<QuickShareOptions>>().Value;
         recurring.AddOrUpdate<DeliveryCleanupService>(DeliveryCleanup, j => j.CleanupAsync(),

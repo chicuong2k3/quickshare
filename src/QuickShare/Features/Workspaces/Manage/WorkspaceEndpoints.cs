@@ -82,10 +82,6 @@ public sealed class UpdateWorkspaceRequest
 {
     public string? Name { get; set; }
     public int? Seats { get; set; }
-    /// <summary>Every share waits for an admin (issue #162). Null leaves the current setting.</summary>
-    public bool? RequireDeliveryApproval { get; set; }
-    /// <summary>Let an admin clear their own share (issue #162). Null leaves the current setting.</summary>
-    public bool? AllowSelfApproval { get; set; }
     /// <summary>disabled / recipients / members (issue #289). Null leaves the current setting.</summary>
     public string? CommentPolicy { get; set; }
     public string? EncryptionPolicy { get; set; }
@@ -109,7 +105,7 @@ public sealed class UpdateWorkspaceEndpoint : Endpoint<UpdateWorkspaceRequest, W
     {
         var result = await Resolve<IMediator>().Send<Result<WorkspaceDto>>(
             new UpdateWorkspaceCommand(
-                req.Name, req.Seats, req.RequireDeliveryApproval, req.AllowSelfApproval, req.CommentPolicy, req.EncryptionPolicy), ct);
+                req.Name, req.Seats, req.CommentPolicy, req.EncryptionPolicy), ct);
 
         if (result.IsSuccess(out var response))
             await Send.OkAsync(response, ct);

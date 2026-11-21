@@ -1,4 +1,5 @@
 @layout MainLayout
+@using QuickShare.Components.Shared
 @page "/account/billing"
 @attribute [Authorize]
 @using QuickShare.Data
@@ -22,7 +23,7 @@
         <h1 class="text-3xl font-semibold">@Loc["billing_h1"]</h1>
     </section>
 
-    <AccountTabs Current="@RoutePaths.AccountBilling" />
+    <AccountShell Current="@RoutePaths.AccountBilling">
 
     <section class="billing-body" id="billing-body">
         @if (billing is null)
@@ -162,6 +163,8 @@
             </div>
         }
     </section>
+
+</AccountShell>
 
 </PageWrapper>
 

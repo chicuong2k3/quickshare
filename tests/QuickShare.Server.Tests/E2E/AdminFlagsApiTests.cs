@@ -54,13 +54,12 @@ public sealed class AdminFlagsApiTests : IClassFixture<TestWebAppFactory>
         var flags = await client.GetFromJsonAsync<List<FeatureFlagStatus>>("/api/admin/flags");
 
         Assert.NotNull(flags);
-        Assert.Equal(4, flags.Count);
+        Assert.Equal(3, flags.Count);
 
         var keys = flags.Select(f => f.Key).ToHashSet();
         Assert.Contains(FeatureFlagKeys.Previews, keys);
         Assert.Contains(FeatureFlagKeys.ZeroKnowledge, keys);
         Assert.Contains(FeatureFlagKeys.PasswordProtection, keys);
-        Assert.Contains(FeatureFlagKeys.VirusScan, keys);
 
         // password-protection ships ON by default and no test overrides it.
         var passwordProtection = flags.Single(f => f.Key == FeatureFlagKeys.PasswordProtection);

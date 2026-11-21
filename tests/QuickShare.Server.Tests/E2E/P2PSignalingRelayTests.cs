@@ -42,7 +42,7 @@ public sealed class P2PSignalingRelayTests : IClassFixture<TestWebAppFactory>
         var buffer = new byte[ReceiveBufferSize];
         var result = await ws.ReceiveAsync(buffer, cts.Token);
         var text = Encoding.UTF8.GetString(buffer, 0, result.Count);
-        return JsonDocument.Parse(text).RootElement.Clone();
+        return JsonElement.Parse(text).Clone();
     }
 
     /// <summary>Reads until a message of the wanted type arrives, so unrelated

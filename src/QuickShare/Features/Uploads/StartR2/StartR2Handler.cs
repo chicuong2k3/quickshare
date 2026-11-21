@@ -5,7 +5,7 @@ using QuickShare.Features.Uploads.Shared;
 
 namespace QuickShare.Features.Uploads.StartR2;
 
-public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode, string? StorageRegion = null, string? TransferPassToken = null)
+public record StartR2Command(string FileName, long FileSize, string ContentType, IReadOnlyList<int> PartNumbers, string? SenderEmail, string? RequestCode)
     : IRequest<Result<StartR2Response>>;
 
 public record StartR2Response(Guid DeliveryId, string UploadId, string ObjectKey, IReadOnlyList<R2PartUrl> Parts, bool IsQueued = false, int QueuePosition = 0, int QueueEtaSeconds = 0, string? ShareCode = null, string? ShareLink = null);
@@ -16,7 +16,6 @@ public sealed class StartR2Handler(
     AnalyticsService analytics,
     ILogger<StartR2Handler> logger,
     AppDbContext db,
-    StorageRegionResolver regions,
     IOptions<QuickShareOptions> quickShareOptions)
     : IRequestHandler<StartR2Command, Result<StartR2Response>>
 {
@@ -43,25 +42,8 @@ public sealed class StartR2Handler(
             fileRequestId = requestId;
         }
 
-        string? validatedPassToken = null;
-        if (!string.IsNullOrWhiteSpace(cmd.TransferPassToken))
-        {
-            var normToken = cmd.TransferPassToken.Trim().ToLowerInvariant();
-            var pass = await db.TransferCreditPasses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Token == normToken, cancellationToken);
-
-            if (pass is null || pass.Status != TransferCreditPass.StatusAvailable || pass.CreditsRemaining <= 0 || pass.ExpiresAt <= DateTime.UtcNow)
-                return Result.Failure<StartR2Response>(new LightResults.Error(ErrorCodes.TransferPassInvalid));
-
-            if (cmd.FileSize > pass.MaxFileSizeBytes)
-                return Result.Failure<StartR2Response>(new LightResults.Error(
-                    $"File size {cmd.FileSize} exceeds transfer pass limit of {pass.MaxFileSizeBytes} bytes"));
-
-            validatedPassToken = normToken;
-        }
         // File-request submissions are capped by the request budget, never the submitter plan.
-        else if (fileRequestId is null)
+        if (fileRequestId is null)
         {
             var maxFileSize = PlanTierLimits.GetMaxFileSize(plan);
             if (maxFileSize.HasValue && cmd.FileSize > maxFileSize.Value)
@@ -80,14 +62,10 @@ public sealed class StartR2Handler(
 
         var deliveryId = Guid.CreateVersion7();
 
-        // Data residency (issue #119). Resolved before the key exists, because the key is what
-        // carries the region for every later operation on this object.
-        var region = regions.Resolve(user, plan, cmd.StorageRegion);
-
         R2InitResult initResult;
         try
         {
-            initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, region, cancellationToken);
+            initResult = await storage.InitR2MultipartUploadAsync(deliveryId, cmd.FileName, cancellationToken);
         }
         catch (R2StorageException ex)
         {
@@ -115,7 +93,6 @@ public sealed class StartR2Handler(
             R2UploadId = initResult.UploadId,
             StoragePath = initResult.ObjectKey,
             FileRequestId = fileRequestId,
-            TransferPassToken = validatedPassToken,
             ShareCode = shareCode,
             TotalPartsCount = Math.Max(1, cmd.PartNumbers.Count),
             UploadedPartsCount = 0,
@@ -128,7 +105,7 @@ public sealed class StartR2Handler(
         await analytics.RecordAsync(AnalyticsEvents.UploadStarted,
             new AnalyticsEventData(cmd.FileName, cmd.FileSize, cmd.ContentType, plan), cancellationToken);
 
-        var queue = BoardingQueuePolicy.Evaluate(plan, cmd.FileSize, validatedPassToken is not null || fileRequestId is not null, quickShareOptions.Value);
+        var queue = BoardingQueuePolicy.Evaluate(plan, cmd.FileSize, fileRequestId is not null, quickShareOptions.Value);
         var req = httpContextAccessor.HttpContext!.Request;
         var shareLink = $"{req.Scheme}://{req.Host}{RoutePaths.DeliveryPage}{shareCode}";
 

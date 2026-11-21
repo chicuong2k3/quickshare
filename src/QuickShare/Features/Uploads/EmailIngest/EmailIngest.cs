@@ -130,7 +130,7 @@ public sealed class EmailIngestService(
 
         var deliveryId = Guid.CreateVersion7();
         var name = DeliveryFile.SanitizeName(attachment.FileName, 0);
-        var objectKey = R2ObjectKey.For(user.Id, deliveryId, name, user.PreferredStorageRegion);
+        var objectKey = R2ObjectKey.For(user.Id, deliveryId, name);
 
         try
         {
@@ -156,10 +156,9 @@ public sealed class EmailIngestService(
             ShareCode = ShareCodes.Generate(),
             MaxDownloads = PlanTierLimits.GetMaxDownloads(user.Plan),
             StoragePath = objectKey,
-            ExpiresAt = RetentionPolicy.Clamp(DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(user.Plan)), user.RetentionDays),
+            ExpiresAt = DateTime.UtcNow.Add(PlanTierLimits.GetMaxExpiry(user.Plan)),
             Status = DeliveryStatus.Active,
             Source = DeliverySources.Email,
-            StorageRegion = StorageRegions.FromKey(objectKey),
         };
 
         db.Deliveries.Add(delivery);

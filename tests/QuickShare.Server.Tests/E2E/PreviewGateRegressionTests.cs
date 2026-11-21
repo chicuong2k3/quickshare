@@ -12,22 +12,6 @@ public sealed class PreviewGateRegressionTests : IClassFixture<TestWebAppFactory
     public PreviewGateRegressionTests(TestWebAppFactory factory) => _factory = factory;
 
     [Theory]
-    [InlineData("preview")]
-    [InlineData("office-preview")]
-    [InlineData("zip-contents")]
-    public async Task PendingApproval_IsIndistinguishableFromMissing(string endpoint)
-    {
-        var code = await SeedAsync(delivery => delivery.Status = DeliveryStatus.PendingApproval);
-        using var client = _factory.CreateClient();
-
-        var pending = await client.GetAsync($"/api/downloads/{code}/{endpoint}");
-        var missing = await client.GetAsync($"/api/downloads/{Guid.NewGuid():N}/{endpoint}");
-
-        Assert.Equal(HttpStatusCode.NotFound, pending.StatusCode);
-        Assert.Equal(missing.StatusCode, pending.StatusCode);
-    }
-
-    [Theory]
     [InlineData("preview", true)]
     [InlineData("office-preview", true)]
     [InlineData("zip-contents", true)]
