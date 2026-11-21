@@ -228,6 +228,8 @@
   <data name="referral_lead" xml:space="preserve"><value>Share your files — when someone signs up and uploads, you both earn +2GB monthly quota.</value></data>
   <data name="referral_copy" xml:space="preserve"><value>Copy</value></data>
   <data name="referral_stats" xml:space="preserve"><value>{0} referred · {1} bonus earned</value></data>
+  <data name="dialog_confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="dialog_cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="lang_switch_label" xml:space="preserve"><value>Switch language</value></data>
   <data name="theme_toggle" xml:space="preserve"><value>Toggle theme</value></data>
   <data name="cookie_consent_title" xml:space="preserve"><value>Cookie Settings</value></data>

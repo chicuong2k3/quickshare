@@ -79,10 +79,10 @@
         }).then(function (r) {
             if (r.ok) { window.qsPage ? window.qsPage.reload('#requests-body') : window.location.reload(); return; }
             btn.disabled = false;
-            window.alert(btn.getAttribute('data-error'));
+            window.qsPage.notify(btn.getAttribute('data-error'));
         }).catch(function () {
             btn.disabled = false;
-            window.alert(btn.getAttribute('data-error'));
+            window.qsPage.notify(btn.getAttribute('data-error'));
         });
     };
 
@@ -114,11 +114,11 @@
         holder.innerHTML = parts.join('');
     };
 
-    window.closeRequest = function (btn) {
+    window.closeRequest = async function (btn) {
         var article = btn.closest('article');
         var id = article.id.replace('request-', '');
         var msg = btn.getAttribute('data-confirm');
-        if (msg && !window.confirm(msg)) return;
+        if (msg && !(await window.qsPage.ask(msg))) return;
         btn.disabled = true;
         fetch('/api/file-requests/' + id + '/close', { method: 'POST' }).then(function (r) {
             if (r.ok) {

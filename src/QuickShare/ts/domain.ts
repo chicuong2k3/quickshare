@@ -13,8 +13,8 @@ window.quickShareDomain = (function () {
         verify: function (btn: HTMLButtonElement): void {
             qsPage.send(URL + '/verify', 'POST', null, { btn: btn, body: BODY });
         },
-        remove: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        remove: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             qsPage.send(URL, 'DELETE', null, { btn: btn, body: BODY });
         },
     };

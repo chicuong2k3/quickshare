@@ -14,8 +14,6 @@
 
     <AccountTabs Current="@RoutePaths.Account" />
 
-    @* Onboarding checklist (issue #129), dismissible. *@
-    <AccountOnboarding />
     @* Profile card renders in the initial response. *@
     <AccountProfile />
 
@@ -64,18 +62,10 @@
             body: JSON.stringify({ confirmEmail: email.trim() })
         }).then(function (r) {
             if (r.ok) window.location.href = '/logout';
-            else window.alert(btn.getAttribute('data-error'));
-        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+            else window.qsPage.notify(btn.getAttribute('data-error'));
+        }).catch(function () { window.qsPage.notify(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
     };
-    (function () {
-        if (localStorage.getItem('qs-onboarding-dismissed')) {
-            var card = document.getElementById('onboarding-card');
-            if (card) card.remove();
-        }
-    })();
 </script>
-
-<script src="/js/account.js"></script>
 
 

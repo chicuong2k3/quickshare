@@ -18,7 +18,7 @@ window.quickShareSecurity = (function () {
                 .then(function (response) {
                     btn.disabled = false;
                     if (!response.ok) {
-                        window.alert(String(response.status));
+                        qsPage.notify(String(response.status));
                         return null;
                     }
                     return response.json();
@@ -51,7 +51,7 @@ window.quickShareSecurity = (function () {
                 .then(function (response) {
                     btn.disabled = false;
                     if (!response.ok) {
-                        window.alert(qsPage.attr(btn, 'data-error-label'));
+                        qsPage.notify(qsPage.attr(btn, 'data-error-label'));
                         return null;
                     }
                     return response.json();
@@ -71,7 +71,7 @@ window.quickShareSecurity = (function () {
                         });
                     }
                     show('security-recovery');
-                    window.alert(qsPage.attr(btn, 'data-saved-label'));
+                    qsPage.notify(qsPage.attr(btn, 'data-saved-label'), 'success');
                 })
                 .catch(function () { btn.disabled = false; });
         },
@@ -83,13 +83,13 @@ window.quickShareSecurity = (function () {
 
         // Keeps this session signed in — "sign out my other devices" is the actual ask, and
         // signing yourself out too turns a security action into a chore people skip.
-        revokeAllSessions: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        revokeAllSessions: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             qsPage.send('/api/account/sessions/revoke-all', 'POST', null, { btn: btn, body: BODY });
         },
 
-        remove: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        remove: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
 
             const code = qsPage.value('security-remove-code');
             if (!code) return;
@@ -103,11 +103,11 @@ window.quickShareSecurity = (function () {
                 btn.disabled = false;
                 if (response.status === 409) {
                     // A workspace policy requires it. Saying so beats a bare error code.
-                    window.alert(qsPage.attr(btn, 'data-locked-label'));
+                    qsPage.notify(qsPage.attr(btn, 'data-locked-label'));
                     return;
                 }
                 if (!response.ok) {
-                    window.alert(String(response.status));
+                    qsPage.notify(String(response.status));
                     return;
                 }
                 qsPage.reload(BODY);

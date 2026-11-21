@@ -18,7 +18,6 @@
     <section class="hero">
         <h1 class="text-3xl font-semibold">@Loc["deliveries_h1"]</h1>
         <p class="text-base text-muted-foreground">@Loc["deliveries_lead"] <a class="text-primary underline" href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a>
-            <text>·</text> <a class="text-primary underline" href="/api/deliveries/legal-hold/export" data-ai-action="deliveries.holdExport">@Loc["deliveries_hold_export"]</a>
             @if (DeletedOnly)
             {
                 <text>·</text> <a class="text-primary underline" href="/account/deliveries">@Loc["deliveries_back"]</a>
@@ -137,10 +136,10 @@
 </PageWrapper>
 
 <script>
-    window.cancelDelivery = function (btn) {
+    window.cancelDelivery = async function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
         var msg = btn.getAttribute('data-confirm');
-        if (msg && !window.confirm(msg)) return;
+        if (msg && !(await window.qsPage.ask(msg))) return;
         fetch('/api/deliveries/' + id, { method: 'DELETE' }).then(function (r) {
             if (r.ok) btn.closest('article').remove();
         });
@@ -157,10 +156,10 @@
         }).catch(function () { /* leave the stale label; user can retry */ })
           .finally(function () { btn.disabled = false; });
     };
-    window.revokeDelivery = function (btn) {
+    window.revokeDelivery = async function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
         var msg = btn.getAttribute('data-confirm');
-        if (msg && !window.confirm(msg)) return;
+        if (msg && !(await window.qsPage.ask(msg))) return;
         btn.disabled = true;
         fetch('/api/deliveries/' + id + '/revoke', { method: 'POST' }).then(function (r) {
             if (r.ok) {
@@ -235,7 +234,7 @@
             body: JSON.stringify({ alias: next.trim() || null })
         }).then(function (r) {
             if (r.ok) window.location.reload();
-            else window.alert(btn.getAttribute('data-error'));
+            else window.qsPage.notify(btn.getAttribute('data-error'));
         });
     };
     window.setDailyLimit = function (btn) {
@@ -243,13 +242,13 @@
         var next = window.prompt(btn.getAttribute('data-prompt'), '');
         if (next === null) return;
         var value = next.trim() === '' ? null : parseInt(next, 10);
-        if (value !== null && (isNaN(value) || value < 1)) { window.alert(btn.getAttribute('data-error')); return; }
+        if (value !== null && (isNaN(value) || value < 1)) { window.qsPage.notify(btn.getAttribute('data-error')); return; }
         fetch('/api/deliveries/' + id + '/daily-limit', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ limit: value })
         }).then(function (r) {
-            if (!r.ok) window.alert(btn.getAttribute('data-error'));
+            if (!r.ok) window.qsPage.notify(btn.getAttribute('data-error'));
         });
     };
     window.cloneDelivery = function (btn) {
@@ -304,9 +303,9 @@
                 body: JSON.stringify({ sessionId: start.sessionId, uploadId: start.uploadId, objectKey: start.objectKey, parts: parts })
             });
             if (commitRes.ok) window.location.reload();
-            else window.alert(btn.getAttribute('data-error'));
+            else window.qsPage.notify(btn.getAttribute('data-error'));
         } catch (e) {
-            window.alert(btn.getAttribute('data-error'));
+            window.qsPage.notify(btn.getAttribute('data-error'));
         } finally {
             btn.disabled = false;
         }
@@ -320,9 +319,9 @@
             btn.textContent = data.hidden ? btn.getAttribute('data-show-label') : btn.getAttribute('data-hide-label');
         }).catch(function () { /* leave the label as-is */ });
     };
-    window.deleteDelivery = function (btn) {
+    window.deleteDelivery = async function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
-        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        if (!(await window.qsPage.ask(btn.getAttribute('data-confirm')))) return;
         fetch('/api/deliveries/' + id + '/delete', { method: 'POST' }).then(function (r) {
             if (r.ok) btn.closest('article').remove();
         });
@@ -333,62 +332,13 @@
             if (r.ok) btn.closest('article').remove();
         });
     };
-    window.purgeDelivery = function (btn) {
+    window.purgeDelivery = async function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
-        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
+        if (!(await window.qsPage.ask(btn.getAttribute('data-confirm')))) return;
         btn.disabled = true;
         fetch('/api/deliveries/' + id + '/purge', { method: 'DELETE' }).then(function (r) {
             if (r.ok) btn.closest('article').remove();
             else btn.disabled = false;
-        }).catch(function () { btn.disabled = false; });
-    };
-    // File lock / checkout (issue #308): locking reserves the delivery for one user's
-    // replace; the server rejects a foreign replace while the lock is active.
-    window.lockDelivery = function (btn) {
-        var id = btn.closest('article').id.replace('delivery-', '');
-        btn.disabled = true;
-        fetch('/api/deliveries/' + id + '/lock', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-        }).then(function (r) {
-            if (r.ok) window.location.reload();
-            else window.alert(btn.getAttribute('data-error'));
-        }).catch(function () { btn.disabled = false; });
-    };
-    window.unlockDelivery = function (btn) {
-        var id = btn.closest('article').id.replace('delivery-', '');
-        btn.disabled = true;
-        fetch('/api/deliveries/' + id + '/unlock', { method: 'POST' }).then(function (r) {
-            if (r.ok) window.location.reload();
-            else btn.disabled = false;
-        }).catch(function () { btn.disabled = false; });
-    };
-    // Legal hold (issue #266): freezes the delivery against every deletion path until the
-    // owner lifts it. Placing requires a case reference; lifting is double-confirmed
-    // because releasing evidence mid-probe is the destructive direction here.
-    window.holdDelivery = function (btn) {
-        var id = btn.closest('article').id.replace('delivery-', '');
-        var reason = window.prompt(btn.getAttribute('data-prompt'));
-        if (!reason || !reason.trim()) return;
-        btn.disabled = true;
-        fetch('/api/deliveries/' + id + '/legal-hold', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason.trim() })
-        }).then(function (r) {
-            if (r.ok) window.location.reload();
-            else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
-        }).catch(function () { btn.disabled = false; });
-    };
-    window.liftHoldDelivery = function (btn) {
-        var id = btn.closest('article').id.replace('delivery-', '');
-        if (!window.confirm(btn.getAttribute('data-confirm'))) return;
-        if (!window.confirm(btn.getAttribute('data-confirm-again'))) return;
-        btn.disabled = true;
-        fetch('/api/deliveries/' + id + '/legal-hold/lift', { method: 'POST' }).then(function (r) {
-            if (r.ok) window.location.reload();
-            else { btn.disabled = false; window.alert(btn.getAttribute('data-error')); }
         }).catch(function () { btn.disabled = false; });
     };
     // Activity panel (issues #37, #154). Fetched once per row, on first open.
@@ -482,8 +432,8 @@
             body: JSON.stringify({ ids: ids, action: 'extend', days: 7 })
         }).then(function (r) {
             if (r.ok) window.location.reload();
-            else window.alert(btn.getAttribute('data-error'));
-        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+            else window.qsPage.notify(btn.getAttribute('data-error'));
+        }).catch(function () { window.qsPage.notify(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
     };
     // Move (issues #244, #284). An empty destination means "out of any folder", which is a
@@ -500,15 +450,15 @@
             body: JSON.stringify({ ids: ids, action: 'move', folderId: folderId })
         }).then(function (r) {
             if (r.ok) window.location.reload();
-            else window.alert(btn.getAttribute('data-error'));
-        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+            else window.qsPage.notify(btn.getAttribute('data-error'));
+        }).catch(function () { window.qsPage.notify(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
     };
-    window.bulkTrash = function (btn) {
+    window.bulkTrash = async function (btn) {
         var ids = window.bulkSelectedIds();
         if (ids.length === 0) return;
         var msg = btn.getAttribute('data-confirm').replace('{0}', ids.length);
-        if (!window.confirm(msg)) return;
+        if (!(await window.qsPage.ask(msg))) return;
         btn.disabled = true;
         fetch('/api/deliveries/bulk', {
             method: 'POST',
@@ -516,8 +466,8 @@
             body: JSON.stringify({ ids: ids, action: 'trash' })
         }).then(function (r) {
             if (r.ok) window.location.reload();
-            else window.alert(btn.getAttribute('data-error'));
-        }).catch(function () { window.alert(btn.getAttribute('data-error')); })
+            else window.qsPage.notify(btn.getAttribute('data-error'));
+        }).catch(function () { window.qsPage.notify(btn.getAttribute('data-error')); })
           .finally(function () { btn.disabled = false; });
     };
 </script>
@@ -629,26 +579,6 @@
                             @ExpiryLabel(item.ExpiresAt)
                         }
                     </span>
-                    @if (item.Lock is not null)
-                    {
-                        <span class="account-delivery__lock @(item.Lock.LockedBySelf ? "account-delivery__lock--self" : "")"
-                              title="@(item.Lock.LockedBySelf ? Loc["deliveries_lock_self_tooltip"] : Loc["deliveries_lock_other_tooltip"])"
-                              data-ai-action="delivery.lockBadge">@Loc["deliveries_lock_badge"]</span>
-                    }
-                    @* Says *why* this row is in the results (issue #243) — without it an OCR hit
-                       looks like a name match that is not there, and the search looks broken. *@
-                    @if (item.MatchedInImage)
-                    {
-                        <span class="account-delivery__ocr"
-                              title="@Loc["deliveries_ocr_tooltip"]"
-                              data-ai-action="delivery.ocrBadge">@Loc["deliveries_ocr_badge"]</span>
-                    }
-                    @if (item.IsUnderLegalHold)
-                    {
-                        <span class="account-delivery__hold"
-                              title="@string.Format(Loc["deliveries_hold_tooltip"], item.LegalHoldReason)"
-                              data-ai-action="delivery.holdBadge">@Loc["deliveries_hold_badge"]</span>
-                    }
                 </div>
 
                 @* Who took it, and which parts (issues #37, #154). Loaded when opened, not with
@@ -709,7 +639,7 @@
                         <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__extend"
                                 onclick="extendDelivery(this)" data-ai-action="delivery.extend">@Loc["deliveries_extend"]</button>
                     }
-@if (item.Status == DeliveryStatus.Active && (item.Lock is null || item.Lock.LockedBySelf))
+                    @if (item.Status == DeliveryStatus.Active)
                     {
                         <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__replace"
                                 data-error="@Loc["deliveries_replace_error"]"
@@ -733,38 +663,6 @@
                                 data-prompt="@Loc["deliveries_daily_limit_prompt"]"
                                 data-error="@Loc["deliveries_daily_limit_error"]"
                                 onclick="setDailyLimit(this)" data-ai-action="delivery.dailyLimit">@Loc["deliveries_daily_limit"]</button>
-                        @if (item.Lock is null)
-                        {
-                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
-                                    data-error="@Loc["deliveries_lock_error"]"
-                                    onclick="lockDelivery(this)" data-ai-action="delivery.lock">@Loc["deliveries_lock"]</button>
-                        }
-                        else if (item.Lock.LockedBySelf)
-                        {
-                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__unlock-btn"
-                                    onclick="unlockDelivery(this)" data-ai-action="delivery.unlock">@Loc["deliveries_unlock"]</button>
-                        }
-                        else
-                        {
-                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__lock-btn"
-                                    data-error="@Loc["deliveries_lock_error"]"
-                                    onclick="lockDelivery(this)" data-ai-action="delivery.takeover">@Loc["deliveries_lock_takeover"]</button>
-                        }
-                        @if (item.IsUnderLegalHold)
-                        {
-                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-lift"
-                                    data-confirm="@Loc["deliveries_hold_lift_confirm"]"
-                                    data-confirm-again="@Loc["deliveries_hold_lift_confirm_again"]"
-                                    data-error="@Loc["deliveries_hold_error"]"
-                                    onclick="liftHoldDelivery(this)" data-ai-action="delivery.holdLift">@Loc["deliveries_hold_lift"]</button>
-                        }
-                        else
-                        {
-                            <button type="button" data-slot="button" data-variant="ghost" class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-accent account-delivery__hold-btn"
-                                    data-prompt="@Loc["deliveries_hold_prompt"]"
-                                    data-error="@Loc["deliveries_hold_error"]"
-                                    onclick="holdDelivery(this)" data-ai-action="delivery.hold">@Loc["deliveries_hold"]</button>
-                        }
                     }
                     @if (item.Status == DeliveryStatus.Active && item.ExpiresAt.HasValue)
                     {

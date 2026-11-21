@@ -66,7 +66,7 @@ const quickSharePresets = {
     async delete(btn: HTMLButtonElement): Promise<void> {
         const id = btn.dataset['id'];
         const confirmMsg = btn.dataset['confirm'];
-        if (!id || !window.confirm(confirmMsg ?? '')) return;
+        if (!id || !(await qsPage.ask(confirmMsg ?? ''))) return;
         btn.disabled = true;
         try {
             const res = await fetch(`/api/upload-presets/${id}`, { method: 'DELETE' });

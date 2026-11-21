@@ -14,8 +14,8 @@ window.quickShareChannel = (function () {
                 notifyOnComment: qsPage.checked('channel-on-comment'),
             }, { btn: btn, doneLabel: qsPage.attr(btn, 'data-saved-label'), body: BODY });
         },
-        remove: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        remove: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             qsPage.send(URL, 'DELETE', null, { btn: btn, body: BODY });
         },
     };

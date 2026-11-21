@@ -270,12 +270,13 @@ interface QsPageModule {
     attr(el: Element | null, name: string): string;
     reload(body?: string): void;
     send(url: string, method: string, payload: unknown, options?: QsSendOptions): Promise<void>;
+    ask(message: string, options?: QsAskOptions): Promise<boolean>;
+    notify(message: string, type?: string): void;
 }
 
 interface Window {
     ZAPDROP_CONFIG?: ZapDropConfig;
-    P2P: P2PNamespace;
-    streamSaver?: StreamSaverModule;
+    P2P: P2PNamespace;    streamSaver?: StreamSaverModule;
     DAUB?: DAUBModule;
     qrcode?: (typeNumber: number, errorCorrectionLevel: string) => QRCodeInstance;
     QuickShareAds?: QuickShareAdsModule;
@@ -293,6 +294,10 @@ interface Window {
     p2pDownload?: P2pDownloadPage;
     qsPaste?: QsPaste;
     qsPage: QsPageModule;
+    /** The library's AlertDialog (ui.js). Resolves true for yes, false for no, Escape or backdrop. */
+    alertDialog(message: string, options?: QsAskOptions): Promise<boolean>;
+    /** Sonner-style toast from shadcn/ui for Unpoly (ui.js). */
+    toast(message: string, options?: { type?: string; duration?: number; onClick?: () => void }): void;
     quickShareApprovals: QsPageActions;
     quickShareBackup: QsPageActions;
     quickShareBilling: QsPageActions;

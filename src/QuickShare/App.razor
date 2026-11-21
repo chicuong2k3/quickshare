@@ -1,3 +1,5 @@
+@inject IStringLocalizer<QuickShare.SharedLoc> Loc
+
 <!DOCTYPE html>
 @* lang follows the request culture; a hardcoded "en" mislabels every
    Vietnamese page for screen readers and translation tools. *@
@@ -53,6 +55,16 @@
     <script src="_content/Unpoly.Blazor.Shadcn/compat/css-has-pseudo.js"></script>
     <script src="_content/Unpoly.Blazor.Shadcn/compat/has-pseudo-boot.js"></script>
     <script src="_content/Unpoly.Blazor.Shadcn/toastify/toastify.js" defer></script>
+    @* The library's AlertDialog and toast build their own buttons and their own live region in
+       ui.js, so their labels cannot come from a Razor parameter: window.shadcnUi is the only hook
+       it offers. Localized here, because an English "OK" next to a Vietnamese question is the
+       kind of thing no page-level translation pass can fix afterwards. *@
+    <script>
+        window.shadcnUi = {
+            confirmText: @((MarkupString)System.Text.Json.JsonSerializer.Serialize(Loc["dialog_confirm"].Value)),
+            cancelText: @((MarkupString)System.Text.Json.JsonSerializer.Serialize(Loc["dialog_cancel"].Value)),
+        };
+    </script>
     <script src="_content/Unpoly.Blazor.Shadcn/ui.js" defer></script>
     <UnpolyHead />
     <HeadOutlet />

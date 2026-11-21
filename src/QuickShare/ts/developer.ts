@@ -16,7 +16,8 @@ window.quickShareDeveloper = (function () {
         const holder = document.getElementById(holderId);
         if (holder) holder.hidden = false;
 
-        window.alert(qsPage.attr(btn, 'data-once-label'));
+        // A toast, not a dialog: the secret is already on screen and this line only says so.
+        qsPage.notify(qsPage.attr(btn, 'data-once-label'), 'success');
     }
 
     function postJson(url: string, payload: unknown, btn: HTMLButtonElement): Promise<any | null> {
@@ -28,7 +29,7 @@ window.quickShareDeveloper = (function () {
         }).then(function (response) {
             btn.disabled = false;
             if (!response.ok) {
-                window.alert(String(response.status));
+                qsPage.notify(String(response.status));
                 return null;
             }
             return response.status === 204 ? {} : response.json();
@@ -60,8 +61,8 @@ window.quickShareDeveloper = (function () {
             });
         },
 
-        revokeS3: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        revokeS3: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             qsPage.send('/api/workspace/s3-credentials/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,
                 { btn: btn, body: BODY });
         },
@@ -88,8 +89,8 @@ window.quickShareDeveloper = (function () {
                 .catch(function () { holder.textContent = qsPage.attr(btn, 'data-empty'); });
         },
 
-        revokeKey: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        revokeKey: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             qsPage.send('/api/developer/keys/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,
                 { btn: btn, body: BODY });
         },
@@ -111,8 +112,8 @@ window.quickShareDeveloper = (function () {
                 { enabled: !enabled }, { btn: btn, body: BODY });
         },
 
-        deleteHook: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        deleteHook: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             qsPage.send('/api/developer/webhooks/' + qsPage.attr(btn, 'data-id'), 'DELETE', null,
                 { btn: btn, body: BODY });
         },

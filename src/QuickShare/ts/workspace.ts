@@ -80,31 +80,18 @@ window.quickShareWorkspace = (function () {
                 role: qsPage.value('ws-invite-role'),
             }, btn, qsPage.attr(btn, 'data-sent-label'));
         },
-        revoke: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        revoke: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             send('/api/workspace/members/' + qsPage.attr(btn, 'data-member-id'), 'DELETE', null, btn);
         },
-        transfer: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        transfer: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             send('/api/workspace/transfer', 'POST', { memberId: qsPage.attr(btn, 'data-member-id') }, btn);
         },
         saveEncryptionPolicy: function (btn: HTMLButtonElement): void {
             send('/api/workspace', 'PATCH', {
                 encryptionPolicy: qsPage.value('ws-encryption-policy'),
             }, btn, qsPage.attr(btn, 'data-saved-label'));
-        },
-        saveByok: function (btn: HTMLButtonElement): void {
-            send('/api/workspace/byok', 'PUT', {
-                provider: qsPage.value('ws-byok-provider'),
-                keyId: qsPage.value('ws-byok-key-id'),
-                keyRegion: qsPage.value('ws-byok-region') || null,
-            }, btn, qsPage.attr(btn, 'data-saved-label'));
-        },
-        rotateByok: function (btn: HTMLButtonElement): void {
-            send('/api/workspace/byok/rotate', 'POST', null, btn);
-        },
-        revokeByok: function (btn: HTMLButtonElement): void {
-            send('/api/workspace/byok/revoke', 'POST', null, btn);
         },
         cancelTransfer: function (btn: HTMLButtonElement): void {
             send('/api/workspace/transfer/cancel', 'POST', null, btn);
@@ -121,8 +108,8 @@ window.quickShareWorkspace = (function () {
             if (!next) return;
             send(folderUrl(btn), 'PATCH', { name: next }, btn);
         },
-        deleteFolder: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        deleteFolder: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             send(folderUrl(btn), 'DELETE', null, btn);
         },
         // Mirrors the selected folder's stored defaults into the form. Reading them off the
@@ -168,8 +155,8 @@ window.quickShareWorkspace = (function () {
             if (root === null) return;
             send(templateUrl(btn, '/apply'), 'POST', { rootName: root || null }, btn);
         },
-        deleteTemplate: function (btn: HTMLButtonElement): void {
-            if (!window.confirm(qsPage.attr(btn, 'data-confirm'))) return;
+        deleteTemplate: async function (btn: HTMLButtonElement): Promise<void> {
+            if (!(await qsPage.ask(qsPage.attr(btn, 'data-confirm')))) return;
             send(templateUrl(btn), 'DELETE', null, btn);
         },
         // Not qsPage.send: accepting an invite navigates away instead of refreshing a section,

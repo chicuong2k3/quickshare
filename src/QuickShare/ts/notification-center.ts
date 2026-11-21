@@ -31,6 +31,6 @@ document.addEventListener('submit', (event: SubmitEvent) => {
         })
         .catch(() => {
             button.disabled = false;
-            window.alert(button.getAttribute('data-error') || '');
+            qsPage.notify(button.getAttribute('data-error') || '');
         });
 });

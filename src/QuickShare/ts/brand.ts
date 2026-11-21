@@ -35,7 +35,7 @@ window.quickShareBrand = (function () {
             fetch(assetUrl(btn), { method: 'POST', body: form }).then(function (response) {
                 btn.disabled = false;
                 if (!response.ok) {
-                    window.alert(String(response.status));
+                    qsPage.notify(String(response.status));
                     return;
                 }
                 qsPage.reload(BODY);
