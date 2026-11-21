@@ -10,7 +10,7 @@
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 
 @if (Show)
 {
@@ -37,6 +37,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var context = HttpContextAccessor.HttpContext;
         if (context?.User.Identity?.IsAuthenticated != true)
             return;

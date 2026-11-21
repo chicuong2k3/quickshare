@@ -8,7 +8,7 @@
 @using QuickShare.Features.Users.Sessions
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject MfaPolicyService Policies
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
@@ -256,6 +256,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
 
         var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);

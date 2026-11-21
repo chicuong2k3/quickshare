@@ -5,7 +5,7 @@
 @using QuickShare.Features.Uploads.Presets
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["presets_title"]</PageTitle>
@@ -143,6 +143,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var userId = HttpContextAccessor.HttpContext?.User.GetUserId();
         if (userId is null) return;
 

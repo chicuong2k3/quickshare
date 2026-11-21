@@ -13,7 +13,7 @@
 @using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Options
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStorageProvider Storage
 @inject IOptions<R2Options> R2Opt
@@ -94,6 +94,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);
@@ -134,6 +135,7 @@
 
     private async Task HandleUpdateProfile()
     {
+        await using var Db = DbFactory.CreateDbContext();
         formError = null;
         var newName = FormName?.Trim();
         if (string.IsNullOrWhiteSpace(newName))

@@ -5,7 +5,7 @@
 @using QuickShare.Features.Deliveries.Recurring
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["recurring_title"]</PageTitle>
@@ -178,6 +178,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
         var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
         canSchedule = user.Plan is PlanTierLimits.Pro or PlanTierLimits.Studio;

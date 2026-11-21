@@ -58,6 +58,7 @@ browser download needed.
 | Trust/retention extras (burn, SHA-256, extend, stats) | `DeliveryTrustExtrasTests` |
 | Auth | `AuthFlowTests` |
 | Account / profile / deliverables / upgrade | `AccountProfileTests`, `AccountUnpolyMigrationTests` (direct GET/card layout, invoice and recurring owner/plan isolation), `AccountDeliveriesTests`, `UpgradeFlowTests` |
+| Page composition / DbContext lifetime | `AccountPageRenderTests` (renders /account with all eight child sections, and guards that no Razor component injects the scoped `AppDbContext` — static SSR starts siblings concurrently, which is a 500 with the shared context) |
 | File requests (#16) — create/list/close/owner-isolation/digest; direct SSR, Unpoly cursor and no-JS pagination | `FileRequestsApiTests`, `FileRequestDigestJobTests`, `FileRequestsUnpolyBrowserTests` |
 | Notification center (#246) — list/read/unread-count/sources/retention, Unpoly filters/pagination and no-JS GET | `NotificationCenterTests`, `NotificationJobTests`, `NotificationUnpolyBrowserTests` (browser read-all stubs JSON API: EF InMemory lacks `ExecuteUpdateAsync`; server suite checks API and form CSRF/redirect) |
 | Upload from URL (#57) — Pro-gate/full-flow + SSRF guard | `UploadFromUrlTests`, `IpAddressSafetyTests` |

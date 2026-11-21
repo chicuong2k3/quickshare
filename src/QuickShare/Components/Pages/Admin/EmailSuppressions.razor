@@ -6,7 +6,7 @@
 @using QuickShare.Infrastructure.FeatureFlags
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IOptions<AdminOptions> AdminOpt
 
 <PageTitle>@Loc["admin_suppressions_page_title"]</PageTitle>
@@ -64,6 +64,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var httpContext = HttpContextAccessor.HttpContext;
         isAdmin = httpContext?.User.IsAdmin(AdminOpt.Value) ?? false;
         if (isAdmin)

@@ -6,7 +6,7 @@
 @using Microsoft.Extensions.Options
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 @inject IOptions<QuickShare.Infrastructure.QuickShareOptions> Options
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 
 @{
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
@@ -294,6 +294,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         if (HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated != true)
             return;
 

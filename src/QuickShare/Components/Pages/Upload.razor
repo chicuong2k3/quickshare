@@ -6,9 +6,10 @@
 @inject IConfiguration Config
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 
 @{
+    using var Db = DbFactory.CreateDbContext();
     // API and pages are same-origin now; browser JS uses relative URLs.
     var apiBase = string.Empty;
 

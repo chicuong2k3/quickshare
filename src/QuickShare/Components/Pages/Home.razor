@@ -1,10 +1,11 @@
 @layout MainLayout
 @page "/"
 @using Microsoft.Extensions.Localization
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @{
+    using var Db = DbFactory.CreateDbContext();
     var stats = QuickShare.Infrastructure.Caching.StaticCache.Instance.GetOrSet(
         "home:social-proof",
         () =>

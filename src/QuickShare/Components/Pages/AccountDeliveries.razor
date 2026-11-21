@@ -7,7 +7,7 @@
 @using QuickShare.Features.Workspaces.Shared
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IMediator Bus
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject WorkspaceService Workspaces
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
@@ -792,6 +792,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
         var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
         isChunkRequest = !string.IsNullOrEmpty(Cursor);

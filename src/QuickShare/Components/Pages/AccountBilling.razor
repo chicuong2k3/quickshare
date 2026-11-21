@@ -8,7 +8,7 @@
 @using Microsoft.AspNetCore.Http
 @using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.Extensions.Localization
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
@@ -220,6 +220,7 @@ private int? trialDaysLeft;
 
     private async Task LoadBillingAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
         var ct = CancellationToken.None;
         var user = await ctx.User.GetUserAsync(Db, ct);
@@ -230,6 +231,7 @@ private int? trialDaysLeft;
 
     private async Task HandleSubmit()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
 
         var ct = CancellationToken.None;
@@ -284,6 +286,7 @@ private int? trialDaysLeft;
     /// </summary>
     private async Task HandleHoldAsync(User user, bool pause, CancellationToken ct)
     {
+        await using var Db = DbFactory.CreateDbContext();
         var current = await Db.Subscriptions
             .Where(s => s.UserId == user.Id)
             .OrderByDescending(s => s.CurrentPeriodEnd)

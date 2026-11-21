@@ -6,7 +6,7 @@
 @using QuickShare.Features.Workspaces.Shared
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject WorkspaceService Workspaces
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
@@ -139,6 +139,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
         var seat = await WorkspaceAuditReader.ResolveAdminSeatAsync(Workspaces, Db, ctx, CancellationToken.None);
         if (seat is null) return;

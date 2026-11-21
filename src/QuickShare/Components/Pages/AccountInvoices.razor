@@ -6,7 +6,7 @@
 @using QuickShare.Features.Payments.Billing
 @using Microsoft.Extensions.Localization
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@Loc["invoices_title"]</PageTitle>
@@ -202,6 +202,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
         var user = await ctx.User.GetUserAsync(Db, CancellationToken.None);
 

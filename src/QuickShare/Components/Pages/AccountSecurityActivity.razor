@@ -5,7 +5,7 @@
 @using QuickShare.Features.Users.Retention
 @using QuickShare.Features.Users.Shared
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IMediator Bus
 @inject IAntiforgery Antiforgery
@@ -151,6 +151,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var context = HttpContextAccessor.HttpContext!;
         var request = context.Request;
         var user = await context.User.GetUserAsync(Db, CancellationToken.None);
@@ -175,6 +176,7 @@
 
     private async Task HandleSubmit()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var context = HttpContextAccessor.HttpContext!;
         try
         {
@@ -225,6 +227,7 @@
 
     private async Task LoadEventsAsync(Guid userId)
     {
+        await using var Db = DbFactory.CreateDbContext();
         var query = Db.SecurityEvents.AsNoTracking().Where(e => e.UserId == userId);
         var filter = Filters.FirstOrDefault(f => f.Key == Filter);
         if (filter.Key is not null)

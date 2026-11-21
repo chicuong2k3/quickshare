@@ -2,7 +2,7 @@
 @page "/d/{ShareCode}"
 @inject IMediator Bus
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @using System.Text.Json
 @using System.Text.Json.Serialization
 @using QuickShare.Infrastructure
@@ -1086,6 +1086,7 @@
     /// </summary>
     private async Task LoadFilesAsync(Guid? deliveryId, bool gated, CancellationToken ct)
     {
+        await using var Db = DbFactory.CreateDbContext();
         if (deliveryId is null || gated)
             return;
 
@@ -1103,6 +1104,7 @@
     /// </summary>
     private async Task LoadCommentsAsync(CancellationToken ct)
     {
+        await using var Db = DbFactory.CreateDbContext();
         var delivery = await Db.Deliveries
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.ShareCode == ShareCode && d.DeletedAt == null, ct);
@@ -1140,6 +1142,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         // Referral attribution (issue #15): visiting a link tagged ?r= records
         // the referrer in a 30-day cookie; signup later consumes it.
         var httpContext = HttpContextAccessor.HttpContext!;

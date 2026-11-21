@@ -13,7 +13,7 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IAntiforgery Antiforgery
 @inject IConfiguration Config
 
@@ -152,6 +152,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         _isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
 
         // Gated dev helper: enables testing the rewarded-ad unlock flow without

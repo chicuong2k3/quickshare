@@ -4,7 +4,7 @@
 @layout MainLayout
 @attribute [Authorize]
 @using Microsoft.EntityFrameworkCore
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 
 @* The account's kỳ-this board. Same numbers as before (quota from PlanTierLimits,
@@ -134,6 +134,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

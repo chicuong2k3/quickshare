@@ -9,7 +9,7 @@
 @using QuickShare.Features.Users.Shared
 @using QuickShare.Infrastructure.Caching
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IConfiguration Config
 @inject CheckoutService Checkout
 @inject CacheService Cache
@@ -309,6 +309,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         selectedPlan = PlanCatalog.Normalize(Plan);
         var ctx = HttpContextAccessor.HttpContext!;
         var isPost = Microsoft.AspNetCore.Http.HttpMethods.IsPost(ctx.Request.Method);
@@ -343,6 +344,7 @@ else
 
     private async Task HandleSubmit()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
         var ct = CancellationToken.None;
         try

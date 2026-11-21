@@ -5,7 +5,7 @@
 @attribute [Authorize]
 @using Microsoft.EntityFrameworkCore
 @using Unpoly.Blazor.Shadcn
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 
 <Card id="referral-card" class="my-4 w-full max-w-md p-6">
@@ -81,6 +81,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

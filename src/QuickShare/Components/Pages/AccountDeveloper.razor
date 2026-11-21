@@ -9,7 +9,7 @@
 @using Microsoft.Extensions.Localization
 @using Microsoft.Extensions.Options
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject WorkspaceService Workspaces
 @inject IOptions<EmailOptions> EmailOptions
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
@@ -369,6 +369,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var ctx = HttpContextAccessor.HttpContext!;
 
         var user = await ctx.User.GetUserOrDefaultAsync(Db, CancellationToken.None);

@@ -3,7 +3,7 @@
 @using QuickShare.Features.FileRequests.Get
 @using Microsoft.Extensions.Localization
 @inject IMediator Bus
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 <PageTitle>@(Request?.Title ?? Loc["request_title"])</PageTitle>
@@ -105,6 +105,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         var result = await Bus.Send<LightResults.Result<GetFileRequestResponse>>(
             new GetFileRequestQuery(Code), CancellationToken.None);
 

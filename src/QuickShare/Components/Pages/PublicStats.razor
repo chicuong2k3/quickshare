@@ -4,7 +4,7 @@
 @using QuickShare.Features.Workspaces.Domains
 @inject IMediator Bus
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject WorkspaceDomainReader Domains
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
@@ -110,6 +110,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         try
         {
             // White-label host scope (issue #81): a verified tenant hostname serves that

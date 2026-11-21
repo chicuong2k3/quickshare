@@ -143,6 +143,8 @@ if (useInMemoryDb)
     var inMemoryDbName = builder.Configuration["InMemoryDatabaseName"] ?? "QuickShareTests";
     builder.Services.AddDbContext<AppDbContext>(opts =>
         opts.UseInMemoryDatabase(inMemoryDbName));
+    builder.Services.AddDbContextFactory<AppDbContext>(
+        opts => opts.UseInMemoryDatabase(inMemoryDbName), ServiceLifetime.Scoped);
 }
 else
 {
@@ -150,6 +152,18 @@ else
         opts.UseNpgsql(connectionString, npgsqlOptions =>
                 npgsqlOptions.EnableRetryOnFailure(DatabaseRetryAttemptCount, databaseMaxRetryDelay, null))
             .AddInterceptors(new AuditableEntityInterceptor()));
+
+    // Razor components MUST NOT share the request-scoped context: static SSR starts every child
+    // component's OnInitializedAsync before the previous one finishes, so siblings on one page
+    // (all eight blocks on /account) issue overlapping queries on the same instance and EF throws
+    // "A second operation was started on this context instance". Components therefore resolve
+    // IDbContextFactory<AppDbContext> and own a short-lived context (see AGENTS.md). Endpoints and
+    // handlers keep the scoped instance — their work is genuinely one unit per request.
+    builder.Services.AddDbContextFactory<AppDbContext>(
+        opts => opts.UseNpgsql(connectionString, npgsqlOptions =>
+                npgsqlOptions.EnableRetryOnFailure(DatabaseRetryAttemptCount, databaseMaxRetryDelay, null))
+            .AddInterceptors(new AuditableEntityInterceptor()),
+        ServiceLifetime.Scoped);
 }
 
 builder.Services.Configure<StorageOptions>(

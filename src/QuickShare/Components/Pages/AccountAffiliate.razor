@@ -3,7 +3,7 @@
 @attribute [Authorize]
 @using Microsoft.EntityFrameworkCore
 @using Unpoly.Blazor.Shadcn
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
@@ -71,6 +71,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var Db = DbFactory.CreateDbContext();
         try
         {
             var user = await HttpContextAccessor.HttpContext!.User.GetUserAsync(Db, CancellationToken.None);

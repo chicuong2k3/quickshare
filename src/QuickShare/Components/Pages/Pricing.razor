@@ -4,12 +4,13 @@
 @using System.Security.Claims
 @using QuickShare.Infrastructure.Caching
 @using Microsoft.Extensions.Localization
-@inject AppDbContext Db
+@inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IConfiguration Config
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @{
+    using var Db = DbFactory.CreateDbContext();
     var isAuthenticated = HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true;
     var currentUserPlan = PlanTierLimits.Free;
     if (isAuthenticated)
