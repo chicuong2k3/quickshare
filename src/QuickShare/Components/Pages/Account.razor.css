@@ -11,6 +11,9 @@
 }
 
 .account-hub ::deep [data-slot="card"] {
+    width: 100%;
+    max-width: none;
+    margin-block: 0;
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
@@ -80,7 +83,7 @@
     color: var(--b-hover-ink);
 }
 
-.account-hub ::deep input,
+.account-hub ::deep input:not(.sr-only),
 .account-hub ::deep select,
 .account-hub ::deep textarea {
     border-radius: 0 !important;
@@ -95,7 +98,10 @@
 }
 
 .account-hub ::deep select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
+    background-image: none;
     padding-right: 2.25rem;
 }
 
@@ -157,11 +163,6 @@
 }
 
 .account-hub ::deep .bg-muted { background: var(--b-slot) !important; }
-
-.account-hub ::deep #onboarding-card .bg-primary {
-    background: var(--b-green) !important;
-    border-radius: 0 !important;
-}
 
 .account-hub ::deep .text-destructive { color: var(--b-red) !important; }
 

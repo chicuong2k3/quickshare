@@ -135,7 +135,10 @@
 }
 
 .upgrade-board ::deep select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
+    background-image: none;
     padding-right: 2.25rem;
 }
 

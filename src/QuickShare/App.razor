@@ -42,10 +42,10 @@
         })();
     </script>
 
-    <link rel="stylesheet" href="/css/shadcn.generated.css" />
-    <link rel="stylesheet" href="_content/Unpoly.Blazor.Shadcn/ui.safari15.css" />
-    <link rel="stylesheet" href="/css/app.css" />
-    <link rel="stylesheet" href="@RoutePaths.ScopedStyles" />
+    <link rel="stylesheet" href="@($"/{Assets["css/shadcn.generated.css"].TrimStart('/')}")" />
+    <link rel="stylesheet" href="@($"/{Assets["_content/Unpoly.Blazor.Shadcn/ui.safari15.css"].TrimStart('/')}")" />
+    <link rel="stylesheet" href="@($"/{Assets["css/app.css"].TrimStart('/')}")" />
+    <link rel="stylesheet" href="@($"/{Assets[RoutePaths.ScopedStyles.TrimStart('/')].TrimStart('/')}")" />
 
     <script src="_content/Unpoly.Blazor.Shadcn/compat/safari15-shim.js"></script>
     <script src="_content/Unpoly.Blazor.Shadcn/compat/dialog-shim.js"></script>
@@ -70,7 +70,7 @@
         // break the page.
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
-                navigator.serviceWorker.register('/sw.js').catch(function () { });
+                navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(function () { });
             });
         }
     </script>

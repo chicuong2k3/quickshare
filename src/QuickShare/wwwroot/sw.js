@@ -3,7 +3,7 @@
 // PageCacheMiddleware owns those; two cache systems fighting is the 3am bug.
 // Bump SHELL_VERSION on deploy so an old SW does not pin the site.
 
-const SHELL_VERSION = 'qs-shell-v3';
+const SHELL_VERSION = 'qs-shell-v4';
 const OFFLINE_DELIVERY_CACHE = 'qs-offline-deliveries-v1';
 const OFFLINE_UPLOAD_SYNC_TAG = 'qs-offline-upload-sync';
 

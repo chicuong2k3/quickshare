@@ -441,9 +441,8 @@
     max-width: 68ch;
 }
 
-/* ── campaign banner, calculator, education discount, CTA ── */
+/* ── campaign banner, calculator, CTA ── */
 .bp section[id="pricing-campaign-banner"],
-.bp section[id="pricing-education-discount"],
 .bp #pricing-calculator {
     margin: 1.5rem 0;
     font-family: "Archivo", system-ui, sans-serif;
@@ -456,8 +455,7 @@
     color: var(--b-ink);
 }
 
-.bp #pricing-calculator ::deep [data-slot="card"],
-.bp #pricing-education-discount ::deep [data-slot="card"] {
+.bp #pricing-calculator ::deep [data-slot="card"] {
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
@@ -576,4 +574,54 @@
     .bp .plan__r span { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--b-dim); }
     .bp .plan__r b { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.8rem; font-weight: 600; color: var(--b-ink); }
     .bp .plan__cta { padding: 0.85rem 0.9rem; }
+}
+
+/* ── comparison table on a phone ──
+   Four columns do not fit 390px: the sheet scrolled sideways and showed a column and a half,
+   so every fact was half-read. Below 600px each fact becomes its own band — the label, then
+   the three plans as equal columns under a sticky-by-position header. */
+@media (max-width: 600px) {
+    .bp ::deep .compare__scroll { overflow-x: visible; border: 0; }
+
+    .bp ::deep .compare__table,
+    .bp ::deep .compare__table thead,
+    .bp ::deep .compare__table tbody { display: block; }
+
+    .bp ::deep .compare__table thead tr,
+    .bp ::deep .compare__table tbody tr {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .bp ::deep .compare__table thead tr {
+        border: 1px solid var(--b-hair);
+        background: var(--b-flap);
+        margin-bottom: 0.5rem;
+    }
+
+    .bp ::deep .compare__table thead th:first-child { display: none; }
+
+    .bp ::deep .compare__table thead th {
+        border: 0;
+        border-inline-start: 1px solid var(--b-hair);
+        padding: 0.45rem 0.4rem;
+        font-size: 0.65rem;
+    }
+
+    .bp ::deep .compare__table thead th:nth-child(2) { border-inline-start: 0; }
+
+    .bp ::deep .compare__table tbody th {
+        grid-column: 1 / -1;
+        border: 0;
+        border-top: 1px solid var(--b-hair);
+        padding: 0.55rem 0.5rem 0.15rem;
+        font-size: 0.68rem;
+    }
+
+    .bp ::deep .compare__table tbody td {
+        border: 0;
+        padding: 0.15rem 0.5rem 0.55rem;
+        text-align: start;
+        font-size: 0.75rem;
+    }
 }

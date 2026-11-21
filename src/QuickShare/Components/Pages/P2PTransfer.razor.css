@@ -65,7 +65,10 @@
     text-transform: uppercase;
     color: var(--b-dim);
     margin: 0;
-    max-width: 44ch;
+    /* Wide enough for "PEER-TO-PEER · DIRECT DEVICE-TO-DEVICE TRANSFER" on one line at
+       desktop sizes — at 44ch it broke after "DEVICE-TO-" and left a lone word below. */
+    max-width: 56ch;
+    text-wrap: balance;
 }
 
 .p2p-dropzone {
@@ -171,7 +174,10 @@
 .p2p-section.grid ::deep [data-slot="card"] {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    /* Cards in a pair share a height so their seams line up. `space-between` did that by
+       pushing the last child to the floor, which on the shorter card opened a 50px hole
+       between its heading and its own instruction line — content packs to the top instead. */
+    justify-content: flex-start;
     height: 100%;
     padding: 1.25rem;
 }
@@ -282,7 +288,10 @@
 .p2p-container ::deep input:focus { border-color: var(--b-amber) !important; outline: none; }
 
 .p2p-container ::deep select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
+    background-image: none;
     padding-right: 2.25rem;
 }
 

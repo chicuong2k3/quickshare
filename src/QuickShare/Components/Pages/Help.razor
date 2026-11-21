@@ -13,7 +13,7 @@
     <article class="legal">
         <h1 class="text-3xl font-bold tracking-tight">@(IsVi ? "Trợ giúp" : "Help center")</h1>
 
-        <label class="block" style="max-width: 24rem; margin-top: 1rem">
+        <label class="legal-search">
             <span class="text-sm font-medium">@(IsVi ? "Tìm kiếm" : "Search")</span>
             <Input type="search" id="help-search" oninput="helpFilter(this.value)" placeholder="@(IsVi ? "Tìm câu hỏi…" : "Search questions…")" />
         </label>

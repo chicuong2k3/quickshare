@@ -1,0 +1,122 @@
+/* 404 · Departure Board ("Bảng chuyến")
+   The last page anybody wants to see, so it reads like the arrivals board rather than a
+   shadcn card: one panel, a titlebar, a hairline, one amber action. Colour is status here —
+   the panel is neutral because "not found" is not a warning. */
+
+.notfound-board {
+    width: 100%;
+    max-width: 34rem;
+    margin: 2.5rem auto 3rem;
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.notfound-board__body {
+    padding: 2rem 1.75rem 2.25rem;
+    text-align: center;
+}
+
+.notfound-board__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-dim);
+}
+
+.notfound-board__mark svg {
+    width: 20px;
+    height: 20px;
+}
+
+.notfound-board__title {
+    margin: 1.25rem 0 0;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+}
+
+.notfound-board__sub {
+    margin: 0.6rem auto 0;
+    max-width: 34ch;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.9rem;
+    color: var(--b-dim);
+}
+
+.notfound-board__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 1.75rem;
+}
+
+.notfound-board__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 1.15rem;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: transparent;
+    color: var(--b-ink);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.notfound-board__action:hover {
+    border-color: var(--b-ink);
+    background: var(--b-flap);
+}
+
+.notfound-board__action--amber {
+    background: var(--b-amber);
+    border-color: var(--b-amber);
+    color: var(--b-amber-ink);
+}
+
+.notfound-board__action--amber:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
+}
+
+@media (max-width: 480px) {
+    .notfound-board {
+        margin: 1.25rem auto 2rem;
+    }
+
+    .notfound-board__body {
+        padding: 1.5rem 1.15rem 1.75rem;
+    }
+
+    .notfound-board__title {
+        font-size: 1.5rem;
+    }
+
+    .notfound-board__actions {
+        flex-direction: column;
+    }
+
+    .notfound-board__action {
+        width: 100%;
+    }
+}

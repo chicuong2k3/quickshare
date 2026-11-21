@@ -8,7 +8,7 @@
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject IHttpContextAccessor HttpContextAccessor
 
-<Card id="downloads-card" class="my-4 w-full max-w-md p-6">
+<Card id="downloads-card" class="my-4 w-full max-w-4xl mx-auto p-6">
         <h3 class="text-lg font-semibold">@Loc["account_downloads_title"]</h3>
 
         @if (items.Count == 0)

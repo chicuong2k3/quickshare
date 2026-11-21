@@ -140,6 +140,15 @@
     min-width: 0;
 }
 
+/* The user menu arrives wrapped in a `div.relative.inline-block` (the dropdown anchor). Left as
+   a block it measures taller than its own 30px trigger, so the avatar sat 3px above every
+   neighbouring control — the one visibly crooked button in the strip. */
+.layout-root ::deep .layout-navbar__actions > * {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .layout-root ::deep .layout-command-trigger,
 .layout-root ::deep .layout-voice-trigger,
 .layout-root ::deep .layout-theme-toggle,
@@ -167,6 +176,18 @@
     width: 34px;
 }
 
+.layout-root ::deep .layout-command-trigger {
+    width: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0 0.55rem;
+}
+
+.layout-root ::deep .layout-command-trigger svg {
+    flex-shrink: 0;
+}
+
 .layout-root ::deep .layout-command-trigger:hover,
 .layout-root ::deep .layout-voice-trigger:hover,
 .layout-root ::deep .layout-theme-toggle:hover,
@@ -183,6 +204,10 @@
     letter-spacing: 0.06em;
     color: var(--b-dim);
     line-height: 1;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    white-space: nowrap;
 }
 
 .layout-root ::deep .lang-switch {
@@ -190,8 +215,16 @@
     align-items: center;
 }
 
+.layout-root ::deep .lang-switch [data-slot="native-select-wrapper"] {
+    display: inline-flex;
+    align-items: center;
+}
+
 .layout-root ::deep .layout-lang-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
+    background-image: none;
     border: 1px solid var(--b-hair);
     border-radius: 0;
     background: var(--b-slot);
@@ -201,10 +234,21 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 0 1.65rem 0 0.5rem;
+    padding: 0 1.75rem 0 0.55rem;
+    width: auto;
+    min-width: 0;
     height: 34px;
     line-height: 1;
+    box-shadow: none;
     cursor: pointer;
+}
+
+.layout-root ::deep .lang-switch [data-slot="native-select-icon"] {
+    right: 0.45rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    color: var(--b-dim);
+    opacity: 1;
 }
 
 .layout-root ::deep .layout-lang-select:hover {
@@ -381,7 +425,12 @@
 @media (max-width: 560px) {
     .layout-root .layout-navbar {
         padding: 0 0.5rem;
-        gap: 0.3rem;
+        gap: 0.25rem;
+    }
+
+    .layout-root .layout-logo {
+        width: 22px;
+        height: 22px;
     }
 
     .layout-root .layout-navbar__brand {
@@ -395,7 +444,7 @@
     }
 
     .layout-root .layout-brand-word {
-        letter-spacing: 0.06em;
+        letter-spacing: 0.04em;
         font-size: 0.85rem;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -411,37 +460,69 @@
     }
 
     .layout-root .layout-navbar__actions {
-        gap: 0.25rem;
+        gap: 0.2rem;
     }
 
     .layout-root ::deep .layout-command-trigger,
     .layout-root ::deep .layout-theme-toggle,
     .layout-root ::deep .layout-bell,
     .layout-root ::deep .layout-avatar-btn {
-        min-width: 32px;
-        width: 32px;
-        height: 32px;
+        min-width: 30px;
+        width: 30px;
+        height: 30px;
         padding: 0;
     }
 
     .layout-root ::deep .layout-lang-select {
-        height: 32px;
-        padding: 0 1.35rem 0 0.35rem;
-        font-size: 0.68rem;
-        max-width: 4.75rem;
+        height: 30px;
+        /* 30px tall, "ENGLISH" in mono uppercase needs ~50px of glyphs: at 4.35rem the last
+           letter sat under the chevron and read "ENGLIS!". */
+        padding: 0 1.15rem 0 0.3rem;
+        font-size: 0.62rem;
+        letter-spacing: 0.02em;
+        max-width: 4.9rem;
+        text-overflow: ellipsis;
+    }
+
+    .layout-root ::deep .lang-switch [data-slot="native-select-icon"] {
+        right: 0.22rem;
+        width: 0.75rem;
+        height: 0.75rem;
     }
 
     .layout-root ::deep .layout-signin {
-        height: 32px;
-        padding: 0 0.5rem;
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
+        height: 30px;
+        padding: 0 0.45rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
     }
 
     .layout-root .layout-navbar__toggle {
-        min-width: 36px;
-        width: 36px;
-        height: 36px;
+        /* The navbar toggle keeps the touch-friendly box the 768px rule gives it, but only
+           as tall as the strip allows: `min-height: 40px` inside a 30px row left the
+           hamburger hanging 4px below every other control. */
+        min-width: 30px;
+        min-height: 30px;
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* Below ~400px the wordmark cannot share the strip with five controls. The mark alone still
+   identifies the site, and the link keeps its accessible name. */
+@media (max-width: 400px) {
+    .layout-root .layout-brand-word {
+        display: none;
+    }
+
+    .layout-root .layout-navbar__brand {
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+
+    .layout-root ::deep .layout-lang-select {
+        max-width: 4.6rem;
+        font-size: 0.6rem;
     }
 }
 

@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Styles/ui.css";
 
+@theme inline {
+    --radius-xs: 0px;
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 0px;
+    --radius-2xl: 0px;
+}
+
 @source "./Components/**/*.razor";
 @source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Components/**/*.razor";
 @source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/ButtonVariants.cs";

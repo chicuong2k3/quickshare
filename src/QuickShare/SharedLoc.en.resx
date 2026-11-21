@@ -8,9 +8,9 @@
   <data name="lang_vi" xml:space="preserve"><value>Tiếng Việt</value></data>
   <data name="nav_pricing" xml:space="preserve"><value>Pricing</value></data>
   <data name="nav_home" xml:space="preserve"><value>Home</value></data>
-  <data name="home_feat_tab1" xml:space="preserve"><value>Card 2</value></data>
-  <data name="home_feat_tab2" xml:space="preserve"><value>Card 3</value></data>
-  <data name="home_feat_tab3" xml:space="preserve"><value>Card 4</value></data>
+  <data name="home_feat_tab1" xml:space="preserve"><value>01</value></data>
+  <data name="home_feat_tab2" xml:space="preserve"><value>02</value></data>
+  <data name="home_feat_tab3" xml:space="preserve"><value>03</value></data>
   <data name="nav_send" xml:space="preserve"><value>Send</value></data>
   <data name="nav_files" xml:space="preserve"><value>Files</value></data>
   <data name="nav_account" xml:space="preserve"><value>Account</value></data>
@@ -203,6 +203,9 @@
   <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Display name</value></data>
   <data name="account_profile_avatar_label" xml:space="preserve"><value>Profile image</value></data>
+  <data name="account_profile_change_avatar" xml:space="preserve"><value>Change</value></data>
+  <data name="account_profile_saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="account_profile_saved" xml:space="preserve"><value>Saved</value></data>
   <data name="account_profile_save_btn" xml:space="preserve"><value>Save changes</value></data>
   <data name="account_profile_error_name_required" xml:space="preserve"><value>Name is required</value></data>
   <data name="account_profile_error_image_size" xml:space="preserve"><value>Image must be under 5 MB</value></data>
@@ -215,14 +218,6 @@
   <data name="account_data_delete" xml:space="preserve"><value>Delete account</value></data>
   <data name="account_data_delete_prompt" xml:space="preserve"><value>Type your email to permanently delete your account and all its data:</value></data>
   <data name="account_data_delete_error" xml:space="preserve"><value>Delete failed. Make sure you typed your email correctly.</value></data>
-  <data name="onboarding_title" xml:space="preserve"><value>Getting started</value></data>
-  <data name="onboarding_progress" xml:space="preserve"><value>{0} of {1} complete</value></data>
-  <data name="onboarding_step_upload" xml:space="preserve"><value>Upload your first file</value></data>
-  <data name="onboarding_step_share" xml:space="preserve"><value>Get your first download</value></data>
-  <data name="onboarding_step_expiry" xml:space="preserve"><value>Set an expiry</value></data>
-  <data name="onboarding_step_password" xml:space="preserve"><value>Password-protect a file</value></data>
-  <data name="onboarding_dismiss" xml:space="preserve"><value>Dismiss</value></data>
-  <data name="onboarding_dismissed" xml:space="preserve"><value>The getting started checklist is hidden on this browser.</value></data>
   <data name="account_usage_rate_limit" xml:space="preserve"><value>Rate limit: {0} requests/min</value></data>
   <data name="account_notifications_title" xml:space="preserve"><value>Notifications</value></data>
   <data name="account_notifications_download_label" xml:space="preserve"><value>Email me when someone downloads my files</value></data>
@@ -3055,42 +3050,6 @@
   </data>
   <data name="campaign_auto_applied" xml:space="preserve">
     <value>Auto-applied</value>
-  </data>
-  <data name="discount_edu_title" xml:space="preserve">
-    <value>Student &amp; Nonprofit Discount (50% off Pro)</value>
-  </data>
-  <data name="discount_edu_sub" xml:space="preserve">
-    <value>Students with a university email (.edu, .edu.vn) are verified instantly. Nonprofits and manual student IDs are reviewed by our team.</value>
-  </data>
-  <data name="discount_edu_cta" xml:space="preserve">
-    <value>Verify eligibility</value>
-  </data>
-  <data name="discount_edu_approved_msg" xml:space="preserve">
-    <value>Verified! Your personal 50%-off code</value>
-  </data>
-  <data name="discount_edu_pending_msg" xml:space="preserve">
-    <value>Verification application pending review</value>
-  </data>
-  <data name="discount_edu_kind_label" xml:space="preserve">
-    <value>Category</value>
-  </data>
-  <data name="discount_edu_kind_student" xml:space="preserve">
-    <value>Student / Educator</value>
-  </data>
-  <data name="discount_edu_kind_nonprofit" xml:space="preserve">
-    <value>Registered Nonprofit</value>
-  </data>
-  <data name="discount_edu_org_label" xml:space="preserve">
-    <value>School or Organization Name</value>
-  </data>
-  <data name="discount_edu_email_label" xml:space="preserve">
-    <value>Academic or Organization Email</value>
-  </data>
-  <data name="discount_edu_proof_label" xml:space="preserve">
-    <value>Student ID / Registration Number (optional for .edu.vn)</value>
-  </data>
-  <data name="discount_edu_submit_btn" xml:space="preserve">
-    <value>Verify &amp; Get Discount Code</value>
   </data>
   <data name="dl_wallet_pass" xml:space="preserve">
     <value>Add to Wallet</value>

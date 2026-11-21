@@ -177,6 +177,19 @@ textarea:focus-visible {
     border-color: var(--b-amber);
 }
 
+/* Suppress native OS select arrow so Shadcn NativeSelect renders only its single chevron icon */
+select[data-slot="native-select"] {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: none !important;
+    border-radius: 0 !important;
+}
+
+select[data-slot="native-select"]::-ms-expand {
+    display: none;
+}
+
 /* ─── Board spec labels, rules & titlebars ─── */
 .miura-spec {
     font-family: var(--db-font-mono);
@@ -254,16 +267,31 @@ textarea:focus-visible {
     display: none !important;
 }
 
+/* Screen-reader-only, and it has to stay 1px. Board layers style every input inside their
+   surface (`.upload-board ::deep input`, `.login-board ::deep input`, ...) with
+   `width: 100%`, and those selectors outrank a bare `.sr-only` class — so a hidden file
+   input became a 1430px-wide element inside the page and pushed the whole document
+   sideways on /send. `!important` is the point: a visually-hidden element is never a
+   layout participant, whatever surface it is dropped into. */
 .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Checked state is status, and status has a colour in this world. Left to the platform it
+   renders OS blue, which is a colour this palette never uses. */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+progress {
+    accent-color: var(--b-amber);
 }
 
 .db-block {
@@ -972,7 +1000,7 @@ a.notif__message:hover {
 }
 
 .cookie-consent__actions [data-slot="button"] {
-    border-radius: 0;
+    border-radius: 0 !important;
     min-height: 38px;
     padding: 0.45rem 1rem;
     font-family: "Barlow Condensed", system-ui, sans-serif;
@@ -980,32 +1008,33 @@ a.notif__message:hover {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+    box-shadow: none !important;
     cursor: pointer;
 }
 
 .cookie-consent__actions [data-variant="outline"] {
-    background: transparent;
-    border: 1px solid var(--b-hair);
-    color: var(--b-ink);
+    background: transparent !important;
+    border: 1px solid var(--b-hair) !important;
+    color: var(--b-ink) !important;
 }
 
 .cookie-consent__actions [data-variant="outline"]:hover {
-    border-color: var(--b-ink);
-    background: var(--b-flap);
+    border-color: var(--b-ink) !important;
+    background: var(--b-flap) !important;
 }
 
 .cookie-consent__actions [data-variant="default"],
 .cookie-consent__btn {
-    background: var(--b-amber);
-    border: 1px solid var(--b-amber);
-    color: var(--b-amber-ink);
+    background: var(--b-amber) !important;
+    border: 1px solid var(--b-amber) !important;
+    color: var(--b-amber-ink) !important;
 }
 
 .cookie-consent__actions [data-variant="default"]:hover,
 .cookie-consent__btn:hover {
-    background: var(--b-hover-bg);
-    border-color: var(--b-hover-bg);
-    color: var(--b-hover-ink);
+    background: var(--b-hover-bg) !important;
+    border-color: var(--b-hover-bg) !important;
+    color: var(--b-hover-ink) !important;
 }
 
 @media (max-width: 600px) {
@@ -1155,10 +1184,11 @@ body:has(#cookie-consent, #pdpd-consent) .layout-footer {
 .layout-command-kbd {
     font-family: var(--db-font-mono);
     font-size: 0.6875rem;
-    padding: 0.1rem 0.35rem;
-    border: 1px solid var(--b-hair);
-    background: var(--b-slot);
+    padding: 0;
+    border: 0;
+    background: transparent;
     color: var(--b-dim);
+    white-space: nowrap;
 }
 
 .command-palette {
@@ -2542,6 +2572,13 @@ html, body {
 .page .legal input::placeholder,
 .page .legal textarea::placeholder {
     color: var(--b-dim);
+}
+
+/* Help centre search: it filters the whole article, so it is as wide as the article. */
+.page .legal .legal-search {
+    display: block;
+    width: 100%;
+    margin-top: 1rem;
 }
 
 .page .legal details.help-faq {

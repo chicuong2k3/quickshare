@@ -287,6 +287,19 @@
     gap: 0.5rem;
 }
 
+/* Password + "generate" share one row on a desk and stack on a phone: side by side, the
+   field was 98px wide at 390 — narrower than its own placeholder. */
+.upload-board .protect-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.upload-board .protect-row ::deep input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 .upload-board ::deep input:not([type="checkbox"]):not([type="radio"]),
 .upload-board ::deep select,
 .upload-board ::deep textarea,
@@ -317,7 +330,10 @@
 
 .upload-board ::deep select,
 .upload-board ::deep select.sender-email-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
+    background-image: none;
     padding-right: 2.25rem;
 }
 
@@ -559,6 +575,11 @@
     .upload-board ::deep textarea,
     .upload-board .sender-email-input {
         font-size: 1rem;
+    }
+
+    .upload-board .protect-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 

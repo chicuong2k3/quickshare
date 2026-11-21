@@ -291,8 +291,8 @@
                     <span class="otp-label">@Loc["upload_protect_label"]</span>
 
                     <label for="upload-password" class="protect-sub">@Loc["upload_password_label"]</label>
-                    <div style="display: flex; gap: 0.5rem; align-items: center">
-                        <Input Type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" oninput="uploadPage.passwordInput(event)" style="flex: 1" />
+                    <div class="protect-row">
+                        <Input Type="password" id="upload-password" class="sender-email-input" maxlength="@Delivery.PasswordMaxLength" autocomplete="new-password" placeholder="@Loc["upload_password_placeholder"]" oninput="uploadPage.passwordInput(event)" />
                         <button type="button" data-slot="button" data-variant="ghost" data-size="sm" onclick="uploadPage.generatePassword()" data-ai-action="upload.password.generate">@Loc["upload_password_generate"]</button>
                     </div>
                     @* Live strength meter (issue #287) — client-side only, hidden until typing starts *@
