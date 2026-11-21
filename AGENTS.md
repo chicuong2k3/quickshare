@@ -139,17 +139,25 @@ Board-surface rules that future work must follow:
 - **Mediator (martinothamar/Mediator) is the in-process request/response dispatcher** — source-generated `IRequestHandler` implementations, registered scoped (`AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)` in `Program.cs`). Endpoints dispatch via `Resolve<IMediator>().Send<T>(cmd, ct)`. No durable messaging — background/polling jobs stay on Hangfire; do not reintroduce an outbox.
 - **Gate all Hangfire wiring on `!useInMemoryDb`** so the in-memory/SQLite test factories never boot a Hangfire server or Postgres storage.
 
-### Compliance Invariants (legal hold #266, retention policy #161, scope rules #142/#166)
+### Retired subsystems — read this before trusting an older doc
 
-See `docs/compliance-architecture.md` for the full subsystem. Three rules bind all future work:
+The de-bloat deleted whole subsystems and their rule sections with them: legal hold (#266),
+delivery scope rules — IP allowlist and country rules (#142/#166), data residency (#119),
+approval gating (#162), recurring delivery (#176), protocol mounts (WebDAV #195, S3 gateway
+#265), scheduled workspace backup (#271), SIEM streaming (#191), invoice PO/net terms (#192),
+the encryption-mode choice with its key escrow, and the sender-set 6-digit code. The delivery
+`RetentionPolicy` clamp went with them. `docs/retired-features.md` is the authoritative list
+and the reason for each; the `docs/*.md` chapters for those subsystems now describe history.
 
-- **Any new code path that deletes delivery rows or R2 objects MUST filter `LegalHoldAt == null`.** A hold outranks retention, the trash grace, the expiry sweep, and right-to-erasure — deleting held bytes is evidence loss during litigation. Held rows are *skipped*, not failed: a bulk operation reports them in `skipped` and continues. Single-target endpoints refuse with `ErrorCodes.LegalHoldActive` → 409.
-- **Any new code path that computes a delivery expiry MUST pass it through `RetentionPolicy.Clamp`, after the plan cap.** The policy is a ceiling, never a floor — a sender's shorter choice always survives, and clamping is not a validation error.
-- **Delivery scope rules (`DeliveryAccessPolicy`) are fail-closed.** A rule that exists refuses anyone it does not explicitly satisfy, and a malformed rule means "does not match" — never "matches everything". Rule snapshots may be cached per share code; a per-caller verdict MUST NEVER enter a shared cache.
+**One rule survives from all of them: retiring a protection must expire what relied on it.**
+`20261121192101_DropRetiredFeatureSurface` expires every delivery whose only gate was a
+dropped control, in the same migration as the column drops and before them, so retiring a
+feature can never turn a protected link into an open one. Any future removal of a gate follows
+that shape: expiry of dependent rows first, schema drop second, both in one migration.
 
 ### Workspace Invariants (team workspaces #106, transfer #252, audit #145, report #300, folders #151/#245/#234)
 
-See `docs/workspaces-architecture.md` for the full subsystem. Three rules bind all future work:
+See `docs/workspaces-architecture.md` for the full subsystem. Four rules bind all future work:
 
 - **Any new code path that writes `User.Plan` MUST re-push it to the owner's workspace seats** (`SubscriptionService.PushPlanToWorkspaceAsync` / `WorkspaceService.SyncMemberPlansAsync`). A seat borrows the owner's plan by copying it onto `User.Plan` so ~20 existing tier gates work unchanged; a plan write that skips the push leaves members on a plan nobody is paying for.
 - **Any new upload path MUST go through `QuotaService`.** It resolves the workspace owner as the usage bucket, so pooling applies to check and record alike. Reading or writing `UserUsage` directly gives every seat a private, uncapped allowance.
@@ -157,15 +165,15 @@ See `docs/workspaces-architecture.md` for the full subsystem. Three rules bind a
 - **Any new upload path that can target a folder MUST resolve `FolderDefaults.ResolveAsync` and enforce the result when `Locked`.** Unlocked folder defaults are a prefill the sender may override; locked ones are policy (expiry replaced, privacy forced on, commit refused without a password). An upload path that ignores a locked folder is a compliance rule with a hole in it.
 - **Folder creation goes through `FolderWriter.CreateAsync`, and deleting a folder never deletes content.** That function owns the two-level depth cap, the per-workspace ceiling and sibling-name uniqueness; the delete guard refuses while any delivery (soft-deleted included) or child folder is still filed under it.
 
-### Billing Invariants (seats #278, overage #141, e-invoice #112, PO/net terms #192)
+### Billing Invariants (seats #278, overage #141, e-invoice #112)
 
-See `docs/billing-ledger.md` for the full subsystem. Three rules bind all future work:
+See `docs/billing-ledger.md` for the full subsystem. Two rules bind all future work:
 
 - **Every charge goes through `InvoiceService.AddOrUpdateLineAsync`, never a direct `InvoiceLine` insert.** That method owns the draft-per-period lookup (which checks the change tracker before the database), the overage line-rewrite rule, and the retotal. A charge written around it lands on a second draft and disappears from the issued invoice.
 - **`IsExceeded` means blocked; `IsMetered` means allowed and billable.** Studio keeps uploading past its quota and pays per GB; Free and Pro still hard-block. Treating `IsMetered` as a block silently reinstates the hard stop for the tier that pays to avoid it.
-- **Never mutate an issued invoice's totals or buyer details — issue a new one.** Issuing freezes a copy of the buyer's company, tax code and PO reference on purpose: an invoice has to keep saying what it said when it was issued.
+- **Never mutate an issued invoice's totals or buyer details — issue a new one.** Issuing freezes a copy of the buyer's company and tax code on purpose: an invoice has to keep saying what it said when it was issued.
 
-### Trust Invariants (tenant isolation #190, SIEM streaming #191, DPA #184, SOC 2 #147/#323)
+### Trust Invariants (tenant isolation #190, DPA #184, SOC 2 #147/#323)
 
 See `docs/enterprise-trust.md` for the full subsystem. Three rules bind all future work:
 
@@ -173,13 +181,11 @@ See `docs/enterprise-trust.md` for the full subsystem. Three rules bind all futu
 - **A cross-tenant miss and a nonexistent id MUST return the same response.** The reach is recorded server-side (`CrossTenantAccessBlocked`) but never revealed, or the error code becomes an existence oracle. A miss on an id that belongs to nobody is deliberately not recorded — the signal is a burst, and noise drowns it.
 - **Never edit published DPA terms or a `/soc2` control status in place to match what we wish were true.** Bump `DpaTerms.CurrentVersion` (existing signatures point at a version that must keep meaning what it meant); on the trust page, "partial" is the honest status for a control with no independent evidence behind it, and a page that drifts is worse than none because it is a claim somebody will check.
 
-### Storage & Backup Invariants (S3-compatible store #171, scheduled backup #271)
+### Storage Invariants (any S3-compatible store #171)
 
-See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind all future work:
+See `docs/object-storage-and-backup.md` for the full subsystem.
 
 - **The object store is any S3-compatible endpoint, configured under `ObjectStore`; the legacy `R2` section MUST keep binding as a fallback.** `ObjectStoreResolver.Resolve` is the single place that decides which section wins — an options rename that silently breaks existing deployments on upgrade is not a feature.
-- **A backup manifest is metadata plus storage keys, never file bytes, and pruning happens only after a successful upload.** Deleting old copies on the strength of a run that produced nothing is how a retention policy deletes the last good backup. Adding workspace data a customer would need after a disaster means adding it to `BuildManifestAsync`, and changing the shape means bumping `ManifestVersion` — customers hold copies we cannot migrate.
-- **Run-now MUST go through the same method as the scheduled run.** A "test backup" on a separate code path proves nothing about the one that runs at 3am. It returns 200 with the failure in the body when the destination rejects it: the request was fine, the destination was not, and that distinction is the answer the admin asked for.
 
 ### Branding Invariants (recipient-page brand #285, custom fonts #286)
 
@@ -189,27 +195,11 @@ See `docs/workspace-branding.md` for the full subsystem. Three rules bind all fu
 - **Everything interpolated into brand CSS MUST be validated at the write boundary** (hex colours by regex, font family names against a restricted character set). That is what makes rendering it as a `MarkupString` safe; validating at render time instead would leave every future call site to remember.
 - **Uploaded brand assets are sniffed by magic bytes, never by the declared content type, and SVG is refused.** SVG can carry script and a logo is not worth an XSS surface on a client's page. Replacing an asset MUST write a new key — the public route is immutably cached, so an in-place overwrite serves last month's logo.
 
-### Residency Invariants (data residency #119)
-
-See `docs/object-storage-and-backup.md` for the full subsystem. Three rules bind all future work:
-
-- **The storage region lives in the object key, and routing is derived from it.** `InitR2MultipartUploadAsync` is the only method that takes a region, because it is the only call that creates a key. New code that builds an upload key MUST go through `R2ObjectKey.For` and pass the region; a hand-rolled key silently lands in the default bucket.
-- **A key without a recognised region segment MUST keep resolving to the default bucket.** Every object written before residency existed has a user GUID in that slot; region codes are `^[a-z0-9]{2,12}$` precisely so a 32-char hex string can never match one. Changing the code pattern without checking that property breaks every existing object.
-- **Never move stored bytes across regions as a side effect.** Changing the account setting applies to future uploads only, and replacing a file keeps the delivery's original region. Relocation is a copy, a verification and a delete — it is a deliberate operation, not a consequence of a settings save.
-
-### Gating Invariants (approval workflow #162, recurring delivery #176)
-
-See `docs/delivery-gating.md` for the full subsystem. Three rules bind all future work:
-
-- **Any new path that publishes a delivery to recipients MUST check `PendingApproval` first.** The status column is not self-enforcing. At commit the recipient list is parked on `Delivery.PendingRecipients` and no mail goes out — not even the sender's own link mail — because a gate that mails the link and then asks permission is not a gate.
-- **`PendingApproval` MUST be indistinguishable from not-found on every recipient-facing path.** Never add a distinct status code for it: whether a sender's organisation reviews its shares is a fact about that organisation, not about the recipient, and a separate code turns the endpoint into an oracle for internal process.
-- **Any code that copies a delivery MUST carry `StorageRegion` and MUST NOT carry legal hold, approval state or `DeletedAt`.** A copy is a new share, not a clone of the original's compliance state. `CloneDeliveryHandler` was silently moving copies across jurisdictions until this batch; assume the next copy path will too unless it is written deliberately.
-
 ### Conversation Invariants (delivery comments #289, chat channels #180)
 
 See `docs/comments-and-channels.md` for the full subsystem. Three rules bind all future work:
 
-- **Comments are gated by five independent switches, all of which only close**: the sender's `Delivery.CommentsEnabled`, the `Workspace.CommentPolicy` ceiling, privacy mode (#187), the delivery's lifecycle (expired/revoked/suspended/awaiting approval), and its scope rules via `DeliveryAccessService` (#142/#166). Any new comment surface MUST resolve them through `CommentGate.EvaluateAsync`. Comments are a recipient-facing content path: a caller refused the file must be refused the conversation about it — this was missed on first delivery and is now the reason the rule is written this way.
+- **Comments are gated by four independent switches, all of which only close**: the sender's `Delivery.CommentsEnabled`, the `Workspace.CommentPolicy` ceiling, privacy mode (#187), and the delivery's lifecycle (expired/revoked/suspended). Any new comment surface MUST resolve them through `CommentGate.EvaluateAsync`. Comments are a recipient-facing content path: a caller refused the file must be refused the conversation about it — this was missed on first delivery and is now the reason the rule is written this way.
 - **A chat webhook URL is a credential.** Never return it from an endpoint, never put it in an audit payload (record the host), and post over HTTPS only. Channel posts are best-effort with a short timeout and MUST NOT be able to fail a share or a comment — a chat outage is not an upload error.
 - **Test stubs MUST produce the same shapes as production, and every feature needs at least one test that proves it is *reached*.** The storage stub returned a made-up object key, which made an entire residency feature untestable while everything looked green; separately, three services were written, documented and never called by anything. A unit test proves a function computes the right answer and says nothing about whether anything calls it. Assert the wiring through an observable side effect — see `AuditRegressionTests`.
 
@@ -226,17 +216,6 @@ See `docs/white-label.md` for the full subsystem. Three rules bind all future wo
 - **A credential the product issues MUST be accepted somewhere, and the acceptance MUST be tested.** API keys were issued, scoped and revocable for six batches while every endpoint read the auth cookie: the scopes on screen described permissions nothing consulted. When adding a credential type, add the path that consumes it in the same batch.
 - **API keys authenticate `/api/` only, a cookie always wins, and scope is decided by method** (GET/HEAD/OPTIONS → `read`, DELETE → `manage`, everything else → `write`). Do not add a per-endpoint permission table: it drifts the first time a route is added without remembering it exists.
 - **An API-key principal is second-factor-verified by construction.** A key is independent, unphishable from a session and revocable in one click, and a machine cannot answer a TOTP prompt. Never make a machine credential subject to an interactive challenge — the failure mode is every integration on the account dying silently when somebody enrols an authenticator.
-
-### Mount Invariants (WebDAV #195, S3 gateway #265)
-
-See `docs/protocol-mounts.md` for the full subsystem. Three rules bind all future work:
-
-- **A moderation decision holds on every path.** A suspended delivery (#53) MUST be invisible to mounts, gateways, background indexers and anything else added later — "it is the owner's own file" is exactly the argument that fails, because suspension is applied *to* the owner. Enforce it in the shared query, never at the call site.
-- **A mount is the workspace and nothing else.** Personal deliveries and shares awaiting approval are never listed, there is no anonymous mount, and the credential is an existing API key (#115) over Basic — no second secret and no second place to revoke. Any new protocol surface MUST go through `MountCredentials` and `WorkspaceFileSystem` rather than reimplementing either: two protocols that disagree about which files exist are two products.
-- **A mount read is owner-side; a mount write obeys the same rules as the upload form.** Reads never count a download or run the recipient gates. Writes apply the plan size cap on the bytes that landed, the monthly quota, the storage region and locked folder defaults — those rules live in `WorkspaceFileSystem`, not in the form, and a protocol that skipped one would be a weaker door into the same files. DELETE requires the `manage` scope, not `write`.
-- **The S3 gateway's credential is the only secret stored reversibly, and it stays that way.** SigV4 requires recomputing the signature from the client's own bytes, so its secret is DataProtection-sealed rather than hashed — in its own table, capped per workspace, seat-rechecked on every request. Never extend that trade to API keys or any other credential to make a protocol easier.
-- **A signature covers a hash of the body, not the body.** Any signed upload path MUST verify the payload as it streams (declared digest, or the `aws-chunked` signature chain) and delete what it wrote when the check fails. Verifying only the Authorization header leaves every body unauthenticated while every request looks signed.
-- **Never advertise a capability that is not implemented, and never `Results.Forbid()` on a protocol route.** `DAV: 1` with no LOCK costs read-write mounting from Explorer and Finder, and that is the honest price; a LOCK that returns a token while locking nothing tells a client its exclusive access is real. `Results.Forbid()` runs the cookie scheme's forbid handler and redirects a filesystem client to a sign-in page it will never render — return the status code.
 
 @RTK.md
 
@@ -351,6 +330,37 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Test Iteration Rule (MANDATORY)
+
+**Never run the full server suite while iterating.** It is ~320s because 104 E2E classes each boot a
+`WebApplicationFactory` host and parallelization is deliberately disabled
+(`tests/QuickShare.Server.Tests/AssemblyInfo.cs`). Running it per edit burns the budget the work
+needs.
+
+During implementation and debugging, run only the tests the diff can reach:
+
+```bash
+node scripts/test-impact.mjs            # dry run: which classes this diff reaches, and why (-v)
+node scripts/test-impact.mjs --run      # build + run exactly those classes
+node scripts/test-impact.mjs --run --browser
+```
+
+Rules:
+
+- **`UNMAPPED` output is not noise.** It means a changed source file reaches no test class by any
+  signal, so the script escalates to the full suite. Add a rule to `scripts/test-impact.config.json`
+  for the new folder instead of deleting the warning — the next run is then fast *and* honest.
+- **Do not hand-build a `--filter`.** Copying class names out of `docs/TESTING.md` is how a filter
+  ends up naming a deleted class, which matches zero tests and reports green. The script's config is
+  the authority and it fails (exit 2) on a dead name.
+- **Unit-level logic first.** `--filter "FullyQualifiedName~QuickShare.Server.Tests.Infrastructure"`
+  is ~4s and needs no host; use it while the code does not compile against HTTP yet.
+- **Before closing the issue / pushing, run the full suites** (`--full --run`, then the browser
+  suite). Selective runs are for the inner loop, never evidence: a feature is not done on the
+  strength of a filtered run, and CI runs both suites in full regardless.
+- A change to the map itself is a code change: keep it in the same commit as the feature folder it
+  covers.
 
 ## Issue Completion � Docs Update Rule (MANDATORY)
 

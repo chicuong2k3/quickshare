@@ -105,6 +105,22 @@ This project is indexed by GitNexus as **quickshare**. Use the GitNexus MCP tool
 - NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
 - NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
 
+## Test Iteration
+
+Never run the full server suite while iterating (~320s: 104 E2E classes, each booting a
+`WebApplicationFactory`, parallelization disabled on purpose). Run what the diff reaches:
+
+```bash
+node scripts/test-impact.mjs            # dry run + why (-v)
+node scripts/test-impact.mjs --run      # build + run those classes
+node scripts/test-impact.mjs --full --run   # before closing the issue / pushing
+```
+
+`UNMAPPED` output means a changed file reaches no test class — add a rule to
+`scripts/test-impact.config.json`, do not ignore it (the script then runs the full suite, by design).
+Do not hand-build `--filter` from `docs/TESTING.md`: that table drifted and a filter naming a
+deleted class matches zero tests and reports green.
+
 ## Tools Quick Reference
 
 | Tool | When to use | Command |
