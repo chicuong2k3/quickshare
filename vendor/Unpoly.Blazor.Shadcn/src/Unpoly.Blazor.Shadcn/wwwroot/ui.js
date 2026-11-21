@@ -442,6 +442,72 @@
     })
   }
 
+  // A question that takes an answer, not just yes or no — the replacement for window.prompt, which
+  // shares every problem window.confirm has and adds one: some browsers ignore it in embedded and
+  // cross-origin frames, so the field simply never appears and the caller reads null as "cancel".
+  //
+  // Resolves the entered string, or null for Cancel, Escape and a backdrop click. An empty answer
+  // is a real answer ("no alias", "no folder") and stays distinct from null, exactly as prompt did.
+  const INPUT_BASE =
+    'h-control w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 ' +
+    'text-control shadow-xs transition-[color,box-shadow] outline-none ' +
+    'selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground ' +
+    'dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+
+  function promptDialog(message, options = {}) {
+    const confirmText = options.confirmText ?? config().confirmText ?? 'OK'
+    const cancelText = options.cancelText ?? config().cancelText ?? 'Cancel'
+    return new Promise((resolve) => {
+      const dialog = el('dialog', '', {})
+      dialog.dataset.slot = 'dialog'
+
+      // A <form method="dialog">, so Enter in the field answers the way it does in every other
+      // form on the page. The submit handler resolves the promise; the method never navigates.
+      const panel = el('form', ALERT_DIALOG_PANEL, { method: 'dialog' })
+      panel.dataset.slot = 'dialog-content'
+
+      const header = el('div', 'flex flex-col gap-3 text-left')
+      header.dataset.slot = 'dialog-header'
+      const title = el('p', 'text-muted-foreground text-sm', { textContent: message })
+      title.id = 'shadcn-prompt-label'
+      title.dataset.slot = 'dialog-description'
+
+      const input = el('input', INPUT_BASE, { type: 'text' })
+      input.value = options.value ?? ''
+      input.dataset.slot = 'input'
+      input.dataset.autofocus = ''
+      input.setAttribute('aria-labelledby', title.id)
+      if (options.placeholder) input.placeholder = options.placeholder
+      header.append(title, input)
+
+      const footer = el('div', 'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end')
+      footer.dataset.slot = 'dialog-footer'
+      const cancel = el('button', BUTTON.outline, { type: 'button', textContent: cancelText })
+      cancel.dataset.slot = 'button'
+      cancel.dataset.variant = 'outline'
+      cancel.dataset.askNo = ''
+      const confirm = el('button', BUTTON.default, { type: 'submit', textContent: confirmText })
+      confirm.dataset.slot = 'button'
+      confirm.dataset.variant = 'default'
+      confirm.dataset.askYes = ''
+      footer.append(cancel, confirm)
+
+      panel.append(header, footer)
+      dialog.append(panel)
+      document.body.append(dialog)
+
+      const answer = (value) => { closeDialog(dialog); dialog.remove(); resolve(value) }
+      cancel.addEventListener('click', () => answer(null))
+      panel.addEventListener('submit', (event) => { event.preventDefault(); answer(input.value) })
+      dialog.addEventListener('cancel', (e) => { e.preventDefault(); answer(null) })
+      dialog.addEventListener('click', (e) => { if (e.target === dialog) answer(null) })
+
+      showDialog(dialog)
+      input.focus({ preventScroll: true })
+      input.select()
+    })
+  }
+
   shadcnCompiler('[data-ask]', (element) => {
     const onClick = async (event) => {
       // A second click — the one this handler issues itself after a yes.
@@ -4566,4 +4632,5 @@
   // `toast` is global on purpose: that is sonner's API, and the call sites read the same.
   window.toast = toast
   window.alertDialog = alertDialog
+  window.promptDialog = promptDialog
 })()

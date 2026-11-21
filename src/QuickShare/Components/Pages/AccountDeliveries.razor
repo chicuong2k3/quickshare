@@ -173,12 +173,12 @@
             }
         }).catch(function () { btn.disabled = false; });
     };
-    window.renameDelivery = function (btn) {
+    window.renameDelivery = async function (btn) {
         var article = btn.closest('article');
         var id = article.id.replace('delivery-', '');
         var nameEl = article.querySelector('.account-delivery__name');
         var current = nameEl ? nameEl.textContent : '';
-        var next = window.prompt(btn.getAttribute('data-prompt'), current);
+        var next = await window.qsPage.askText(btn.getAttribute('data-prompt'), current);
         if (!next || next.trim() === '' || next.trim() === current) return;
         fetch('/api/deliveries/' + id + '/filename', {
             method: 'PATCH',
@@ -191,12 +191,12 @@
             }
         });
     };
-    window.editTag = function (btn) {
+    window.editTag = async function (btn) {
         var article = btn.closest('article');
         var id = article.id.replace('delivery-', '');
         var tagEl = article.querySelector('.account-delivery__tag');
         var current = tagEl ? tagEl.textContent : '';
-        var next = window.prompt(btn.getAttribute('data-prompt'), current);
+        var next = await window.qsPage.askText(btn.getAttribute('data-prompt'), current);
         if (next === null) return;
         var value = next.trim();
         fetch('/api/deliveries/' + id + '/tag', {
@@ -223,10 +223,10 @@
             btn.setAttribute('aria-pressed', data.isFavorite ? 'true' : 'false');
         }).catch(function () { /* leave the star as-is */ });
     };
-    window.setDeliveryAlias = function (btn) {
+    window.setDeliveryAlias = async function (btn) {
         var article = btn.closest('article');
         var id = article.id.replace('delivery-', '');
-        var next = window.prompt(btn.getAttribute('data-prompt'), btn.getAttribute('data-current') || '');
+        var next = await window.qsPage.askText(btn.getAttribute('data-prompt'), btn.getAttribute('data-current') || '');
         if (next === null) return;
         fetch('/api/deliveries/' + id + '/alias', {
             method: 'PATCH',
@@ -237,9 +237,9 @@
             else window.qsPage.notify(btn.getAttribute('data-error'));
         });
     };
-    window.setDailyLimit = function (btn) {
+    window.setDailyLimit = async function (btn) {
         var id = btn.closest('article').id.replace('delivery-', '');
-        var next = window.prompt(btn.getAttribute('data-prompt'), '');
+        var next = await window.qsPage.askText(btn.getAttribute('data-prompt'), '');
         if (next === null) return;
         var value = next.trim() === '' ? null : parseInt(next, 10);
         if (value !== null && (isNaN(value) || value < 1)) { window.qsPage.notify(btn.getAttribute('data-error')); return; }

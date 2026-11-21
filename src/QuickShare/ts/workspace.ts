@@ -103,8 +103,8 @@ window.quickShareWorkspace = (function () {
                 parentId: parent || null,
             }, btn);
         },
-        renameFolder: function (btn: HTMLButtonElement): void {
-            const next = window.prompt(qsPage.attr(btn, 'data-prompt'), qsPage.attr(btn, 'data-current'));
+        renameFolder: async function (btn: HTMLButtonElement): Promise<void> {
+            const next = await qsPage.askText(qsPage.attr(btn, 'data-prompt'), qsPage.attr(btn, 'data-current'));
             if (!next) return;
             send(folderUrl(btn), 'PATCH', { name: next }, btn);
         },
@@ -150,8 +150,8 @@ window.quickShareWorkspace = (function () {
         saveTemplate: function (btn: HTMLButtonElement): void {
             send('/api/workspace/templates', 'POST', { name: qsPage.value('ws-template-name') }, btn);
         },
-        applyTemplate: function (btn: HTMLButtonElement): void {
-            const root = window.prompt(qsPage.attr(btn, 'data-prompt'), '');
+        applyTemplate: async function (btn: HTMLButtonElement): Promise<void> {
+            const root = await qsPage.askText(qsPage.attr(btn, 'data-prompt'), '');
             if (root === null) return;
             send(templateUrl(btn, '/apply'), 'POST', { rootName: root || null }, btn);
         },

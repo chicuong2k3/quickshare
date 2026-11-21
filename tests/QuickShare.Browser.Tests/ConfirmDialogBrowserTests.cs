@@ -19,6 +19,11 @@ public sealed class ConfirmDialogBrowserTests : IClassFixture<BrowserFixture>
     private const string DialogNo = "[data-ask-no]";
     private const string KeyRow = "ul.workspace-member-list > li";
     private const string NewKeyHolder = "#dev-key-new";
+    private const string DeleteAccountButton = "[data-ai-action=\"account.delete\"]";
+    private const string PromptDialog = "dialog[data-slot=\"dialog\"][open]";
+    private const string PromptInput = "dialog[data-slot=\"dialog\"][open] input[data-slot=\"input\"]";
+
+    private const string DeleteAccountEndpoint = "/api/me/delete";
 
     private const float VisibilityTimeoutMs = 10_000f;
 
@@ -79,6 +84,53 @@ public sealed class ConfirmDialogBrowserTests : IClassFixture<BrowserFixture>
         await page.Locator(DialogYes).ClickAsync();
         await Assertions.Expect(page.Locator(KeyRow)).ToHaveCountAsync(rowsBefore - 1);
 
+        Assert.Empty(nativeDialogs);
+    }
+
+    /// <summary>
+    /// The delete-account control asks the reader to retype the address, which window.prompt did
+    /// with an unlabelled OS box. Only the cancel and empty-answer paths are exercised: the point
+    /// is that the field is the library's, and that leaving it blank still stops the caller
+    /// before it posts a deletion.
+    /// </summary>
+    [Fact]
+    public async Task TypedConfirmation_UsesLibraryDialog_AndAnEmptyAnswerCancels()
+    {
+        await using var context = await _fx.CreateContextAsync(authenticated: true);
+        var page = await context.NewPageAsync();
+
+        var requests = new List<string>();
+        page.Request += (_, request) => requests.Add(request.Url);
+        var nativeDialogs = new List<string>();
+        page.Dialog += (_, dialog) =>
+        {
+            nativeDialogs.Add(dialog.Message);
+            _ = dialog.DismissAsync();
+        };
+
+        await page.GotoAsync(_fx.BaseUrl + RoutePaths.Account);
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+
+        var trigger = page.Locator(DeleteAccountButton).First;
+        await Assertions.Expect(trigger).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = VisibilityTimeoutMs });
+
+        // Cancel: the dialog closes and nothing is posted.
+        await trigger.ClickAsync();
+        await Assertions.Expect(page.Locator(PromptDialog)).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = VisibilityTimeoutMs });
+        await Assertions.Expect(page.Locator(PromptInput)).ToBeFocusedAsync();
+        await page.Locator(DialogNo).ClickAsync();
+        await Assertions.Expect(page.Locator(PromptDialog)).ToHaveCountAsync(0);
+
+        // Enter on an empty field resolves "", and the caller refuses to send it.
+        await trigger.ClickAsync();
+        await Assertions.Expect(page.Locator(PromptInput)).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = VisibilityTimeoutMs });
+        await page.Locator(PromptInput).PressAsync("Enter");
+        await Assertions.Expect(page.Locator(PromptDialog)).ToHaveCountAsync(0);
+
+        Assert.DoesNotContain(requests, url => url.Contains(DeleteAccountEndpoint, StringComparison.Ordinal));
         Assert.Empty(nativeDialogs);
     }
 }

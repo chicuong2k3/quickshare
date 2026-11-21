@@ -271,6 +271,7 @@ interface QsPageModule {
     reload(body?: string): void;
     send(url: string, method: string, payload: unknown, options?: QsSendOptions): Promise<void>;
     ask(message: string, options?: QsAskOptions): Promise<boolean>;
+    askText(message: string, value?: string): Promise<string | null>;
     notify(message: string, type?: string): void;
 }
 
@@ -296,6 +297,8 @@ interface Window {
     qsPage: QsPageModule;
     /** The library's AlertDialog (ui.js). Resolves true for yes, false for no, Escape or backdrop. */
     alertDialog(message: string, options?: QsAskOptions): Promise<boolean>;
+    /** The library's input dialog (ui.js). Resolves the text, or null when cancelled. */
+    promptDialog(message: string, options?: QsAskOptions & { value?: string; placeholder?: string }): Promise<string | null>;
     /** Sonner-style toast from shadcn/ui for Unpoly (ui.js). */
     toast(message: string, options?: { type?: string; duration?: number; onClick?: () => void }): void;
     quickShareApprovals: QsPageActions;

@@ -60,6 +60,16 @@ const qsPage = (function () {
         return window.alertDialog(message, options);
     }
 
+    /**
+     * Replaces window.prompt: the same library frame with a field and a submit button.
+     *
+     * Resolves the entered text, or null when the reader cancels — an empty answer stays distinct
+     * from a cancel, because "clear the alias" and "never mind" are different instructions.
+     */
+    function askText(message: string, value?: string): Promise<string | null> {
+        return window.promptDialog(message, { value: value ?? '' });
+    }
+
     /** Replaces window.alert: news, not a roadblock. Errors default to the assertive live region. */
     function notify(message: string, type?: string): void {
         if (!message) return;
@@ -102,7 +112,7 @@ const qsPage = (function () {
         });
     }
 
-    return { value: value, checked: checked, attr: attr, reload: reload, send: send, ask: ask, notify: notify };
+    return { value: value, checked: checked, attr: attr, reload: reload, send: send, ask: ask, askText: askText, notify: notify };
 })();
 
 window.qsPage = qsPage;

@@ -52,8 +52,8 @@
 </PageWrapper>
 
 <script>
-    window.deleteAccount = function (btn) {
-        var email = window.prompt(btn.getAttribute('data-prompt'));
+    window.deleteAccount = async function (btn) {
+        var email = await window.qsPage.askText(btn.getAttribute('data-prompt'));
         if (!email || email.trim() === '') return;
         btn.disabled = true;
         fetch('/api/me/delete', {
