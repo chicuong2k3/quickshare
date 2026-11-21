@@ -276,16 +276,6 @@ textarea:focus-visible {
     min-height: 100vh !important;
 }
 
-/* ─── Avatar dropdown: pin content to right edge of trigger ─── */
-.layout-avatar-dropdown {
-    right: 0;
-    left: auto !important;
-    background: var(--b-panel);
-    border: 1px solid var(--b-hair);
-    border-radius: 0;
-    color: var(--b-ink);
-}
-
 /* ─── Account cards ─── */
 .account-card {
     width: 100%;
