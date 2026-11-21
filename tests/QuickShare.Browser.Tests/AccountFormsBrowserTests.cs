@@ -58,6 +58,40 @@ public sealed class AccountFormsBrowserTests : IClassFixture<BrowserFixture>
     }
 
     [Fact]
+    public async Task ProfileCard_HasCompactSpacingAndNoLabelDividerOnAccountPage()
+    {
+        const double minInputToLogoutGapPx = 8;
+        const double maxInputToLogoutGapPx = 20;
+        const double minLabelToInputGapPx = 4;
+        const double maxLabelToInputGapPx = 12;
+        const string expectedZeroBorderWidth = "0px";
+
+        await using var context = await _fixture.CreateContextAsync(authenticated: true);
+        var page = await context.NewPageAsync();
+        await page.GotoAsync(_fixture.BaseUrl + RoutePaths.Account);
+
+        var labelSpan = page.Locator("#profile-card label[for='name'] > span");
+        var nameInput = page.Locator("#name");
+        var logoutButton = page.Locator("#profile-card a[href='/logout']");
+
+        var labelSpanBox = await labelSpan.BoundingBoxAsync();
+        var nameInputBox = await nameInput.BoundingBoxAsync();
+        var logoutBox = await logoutButton.BoundingBoxAsync();
+        var labelBorderBottomWidth = await labelSpan.EvaluateAsync<string>("el => getComputedStyle(el).borderBottomWidth");
+
+        Assert.NotNull(labelSpanBox);
+        Assert.NotNull(nameInputBox);
+        Assert.NotNull(logoutBox);
+
+        var labelToInputGap = nameInputBox.Y - (labelSpanBox.Y + labelSpanBox.Height);
+        var inputToLogoutGap = logoutBox.Y - (nameInputBox.Y + nameInputBox.Height);
+
+        Assert.InRange(labelToInputGap, minLabelToInputGapPx, maxLabelToInputGapPx);
+        Assert.InRange(inputToLogoutGap, minInputToLogoutGapPx, maxInputToLogoutGapPx);
+        Assert.Equal(expectedZeroBorderWidth, labelBorderBottomWidth);
+    }
+
+    [Fact]
     public async Task CookieConsent_SavesWithoutJavascript()
     {
         await using var context = await ContextWithoutJavascriptAsync();

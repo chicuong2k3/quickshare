@@ -105,8 +105,7 @@
     padding-right: 2.25rem;
 }
 
-.account-hub ::deep li,
-.account-hub ::deep .flex.justify-between {
+.account-hub ::deep li {
     border-bottom: 1px solid color-mix(in srgb, var(--b-hair) 60%, transparent);
     padding-block: 0.5rem;
     font-size: 0.875rem;
