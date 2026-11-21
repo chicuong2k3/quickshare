@@ -325,6 +325,34 @@
     box-shadow: none;
 }
 
+.layout-root ::deep .layout-avatar-dropdown [data-slot="dropdown-menu-separator"] {
+    background: var(--b-hair);
+    margin-block: 0.25rem;
+}
+
+.layout-root ::deep .layout-avatar-dropdown [data-slot="dropdown-menu-item"] {
+    cursor: pointer;
+    border-radius: 0;
+    padding: 0.5rem 0.75rem;
+    color: var(--b-ink);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.layout-root ::deep .layout-avatar-dropdown [data-slot="dropdown-menu-item"]:not([data-disabled]):hover,
+.layout-root ::deep .layout-avatar-dropdown [data-slot="dropdown-menu-item"]:not([data-disabled]):focus-visible,
+.layout-root ::deep .layout-avatar-dropdown [data-slot="dropdown-menu-item"]:not([data-disabled]):focus {
+    background: var(--b-slot);
+    color: var(--b-ink);
+    border-left-color: var(--b-amber);
+}
+
+.layout-root ::deep .layout-avatar-dropdown [data-slot="dropdown-menu-item"][data-disabled] {
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .layout-root .layout-user-info {
     display: flex;
     flex-direction: column;

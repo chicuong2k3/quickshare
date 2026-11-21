@@ -11,6 +11,9 @@ public sealed class UserMenuBrowserTests : IClassFixture<BrowserFixture>
 {
     private const string AvatarTriggerSelector = ".layout-avatar-btn";
     private const string UserMenuSelector = "#layout-user-menu";
+    private const string MenuItemSelector = "#layout-user-menu [data-slot='dropdown-menu-item']";
+    private const string ExpectedCursor = "pointer";
+    private const string TransparentBackground = "rgba(0, 0, 0, 0)";
     private const string WaitTwoFramesScript =
         "() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))";
 
@@ -74,5 +77,44 @@ public sealed class UserMenuBrowserTests : IClassFixture<BrowserFixture>
         Assert.InRange(Math.Abs(menuRight - expectedRight), 0f, AlignmentTolerancePx);
         Assert.True(menuBox.Y >= triggerBottom, $"Menu should open below trigger (menuY={menuBox.Y}, triggerBottom={triggerBottom}).");
         Assert.True(menuBox.Y <= triggerBottom + MaxVerticalGapPx, $"Menu detached too far below trigger (menuY={menuBox.Y}, triggerBottom={triggerBottom}).");
+    }
+
+    [Fact]
+    public async Task AvatarMenuItems_ShowPointerCursorAndHoverBackground()
+    {
+        await using var context = await _fx.CreateContextAsync(authenticated: true);
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(DesktopWidth, DesktopHeight);
+
+        await page.GotoAsync(_fx.BaseUrl + RoutePaths.Home);
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+
+        var trigger = page.Locator(AvatarTriggerSelector);
+        await Assertions.Expect(trigger).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = VisibilityTimeoutMs });
+
+        await trigger.ClickAsync();
+
+        var menu = page.Locator(UserMenuSelector);
+        await Assertions.Expect(menu).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = VisibilityTimeoutMs });
+
+        var firstItem = page.Locator(MenuItemSelector).First;
+        await Assertions.Expect(firstItem).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = VisibilityTimeoutMs });
+
+        var cursor = await firstItem.EvaluateAsync<string>("el => getComputedStyle(el).cursor");
+        Assert.Equal(ExpectedCursor, cursor);
+
+        var initialBackground = await firstItem.EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
+
+        await firstItem.HoverAsync();
+        await page.WaitForFunctionAsync(
+            "([selector, initialBg]) => { const el = document.querySelector(selector); return el && getComputedStyle(el).backgroundColor !== initialBg; }",
+            new[] { MenuItemSelector, initialBackground });
+
+        var hoveredBackground = await firstItem.EvaluateAsync<string>("el => getComputedStyle(el).backgroundColor");
+        Assert.NotEqual(initialBackground, hoveredBackground);
+        Assert.NotEqual(TransparentBackground, hoveredBackground);
     }
 }

@@ -298,6 +298,10 @@ progress {
     accent-color: var(--b-amber);
 }
 
+[data-slot="dropdown-menu-item"]:not([data-disabled]) {
+    cursor: pointer;
+}
+
 .db-block {
     display: block;
 }
