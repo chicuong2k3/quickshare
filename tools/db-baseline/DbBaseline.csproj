@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Local dev only: builds the QuickShare schema from the current EF model and stamps every
+    migration id into __EFMigrationsHistory, so startup sees zero pending migrations.
+
+    Why this exists: the two "sync model" migrations on master
+    (20261110105148_AddExperiments…, 20261116100332_SyncModelAfterDevMerge) replay operations that
+    were already applied by earlier migrations (drop of a never-added column, re-add of
+    subscriptions.DunningAttemptCount, re-create of delivery_versions). A clean database therefore
+    fails MigrateAsync with 42703 / 42701 / 42P07 before the app can serve a request. The test
+    suite never runs migrations (EnsureCreated only), which is why CI stays green.
+
+    Delete this tool once the migration chain is repaired. It is not referenced by QuickShare.slnx
+    and never ships.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Dev tool, not product code: stay out of the repo-wide analyzers/warning gate. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <NoWarn>$(NoWarn);CA1848;CA1873;CA1716;NU1902;NU1903</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\QuickShare\QuickShare.csproj" />
+  </ItemGroup>
+</Project>

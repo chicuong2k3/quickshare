@@ -59,6 +59,30 @@ dotnet run --project src/QuickShare
 Local dev does **not** read `.env` (that file is for Docker Compose on the server). Config
 order: `appsettings.json` → `appsettings.Development.json` → user-secrets → env vars.
 
+### 3a. Resetting the local database (required on master today)
+
+The migration chain cannot run against an empty database: `20261110105148_AddExperiments…` drops a
+column that was never added, and `20261116100332_SyncModelAfterDevMerge` re-adds
+`subscriptions.DunningAttemptCount` and re-creates `delivery_versions`. A fresh `quickshare`
+database therefore dies inside `MigrateAsync` with 42703 / 42701 / 42P07 before the app listens.
+Until those migrations are repaired, bootstrap the schema from the EF model and stamp the history:
+
+```powershell
+powershell -NoProfile -File scripts/dev-reset-db.ps1   # DESTRUCTIVE: drops local `quickshare`
+dotnet run --project src/QuickShare
+```
+
+The script runs `tools/db-baseline`, which calls `EnsureCreatedAsync` (schema = current model) and
+inserts every migration id into `__EFMigrationsHistory`, so startup sees zero pending migrations.
+Tests never hit this path — they use `EnsureCreated` on InMemory/SQLite, which is why the broken
+chain stays green in CI.
+
+Local dev also needs `QuickShare:OrphanSweepIntervalHours` ≤ 23 (Hangfire rejects `24`, the default):
+
+```powershell
+dotnet user-secrets set "QuickShare:OrphanSweepIntervalHours" "12" --project src/QuickShare
+```
+
 ## 4. Optional services (enable per feature)
 
 All optional except PostgreSQL. Set via env vars (Docker) or appsettings/user-secrets (local).
