@@ -153,7 +153,7 @@ function collectChangedFiles(args, config) {
   if (args.files) {
     return args.files
       .map((f) => ({ path: toPosix(f), status: 'M' }))
-      .filter((f) => !isIgnored(f.path, config));
+      .filter((f) => !isIgnored(f.path, config) && exists(f.path));
   }
 
   const set = new Map(); // path -> status letter (A/R/M/D)
@@ -304,17 +304,28 @@ function buildPlan(changed, config, index) {
 
     let reached = false;
 
-    // S1 — explicit prefix rules.
-    for (const rule of config.rules) {
-      if (!rule.paths.some((p) => globMatch(file, p))) continue;
-      for (const t of rule.tests ?? []) {
-        add('server', t, `rule: ${rule.paths[0]}`);
-        reached = true;
+    // S1 — explicit prefix rules. `fallback: true` rules only apply when no
+    // precise rule matched, so a feature-level catch-all can coexist with
+    // per-folder precision instead of drowning it.
+    const applyRules = (rules) => {
+      let applied = false;
+      for (const rule of rules) {
+        if (!rule.paths.some((p) => globMatch(file, p))) continue;
+        applied = true;
+        for (const t of rule.tests ?? []) {
+          add('server', t, `rule: ${rule.paths[0]}`);
+          reached = true;
+        }
+        for (const t of rule.browser ?? []) {
+          add('browser', t, `rule: ${rule.paths[0]}`);
+          reached = true;
+        }
       }
-      for (const t of rule.browser ?? []) {
-        add('browser', t, `rule: ${rule.paths[0]}`);
-        reached = true;
-      }
+      return applied;
+    };
+
+    if (!applyRules(config.rules.filter((r) => r.fallback !== true))) {
+      applyRules(config.rules.filter((r) => r.fallback === true));
     }
 
     // S5 — permanent cross-cutting rules, plus the added-file rules that exist
@@ -330,8 +341,11 @@ function buildPlan(changed, config, index) {
       reached = true;
     }
 
-    // S2 — route literals in the changed file.
-    const routes = extractRoutesSafe(file);
+    // S2 — route literals in the changed file. Only server-side C#: a page or a
+    // .ts module mentions the routes its own client code calls, and treating
+    // those as "this change reaches every test of that API" is noise, not signal.
+    const routeSignal = file.endsWith('.cs') && !file.endsWith('.razor.cs');
+    const routes = routeSignal ? extractRoutesSafe(file) : [];
     for (const route of routes) {
       const hits = index.routes.get(route);
       if (!hits) continue;
@@ -422,10 +436,23 @@ function extractSymbolsSafe(file, config) {
   return symbols;
 }
 
+// A C# type name starts uppercase; "workspace" as a bare word matches half the
+// suite and says nothing about this change.
+const MAX_SYMBOL_HITS = 12;
+
 function isUsefulSymbol(name, config) {
-  if (name.length < 5) return false;
+  if (name.length < 6) return false;
+  if (!/^[A-Z]/.test(name)) return false;
   if (config.ignoreSymbols.has(name)) return false;
   return true;
+}
+
+function exists(file) {
+  try {
+    return statSync(path.join(ROOT, file)).isFile();
+  } catch {
+    return false;
+  }
 }
 
 function escapeRegex(s) {

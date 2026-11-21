@@ -39,6 +39,197 @@
   ],
   "rules": [
     {
+      "note": "commit path: keys, bundle, quota, recipients",
+      "paths": [
+        "src/QuickShare/Features/Uploads/CommitR2/",
+        "src/QuickShare/Features/Uploads/AddFile/"
+      ],
+      "tests": [
+        "UploadDownloadFlowTests",
+        "MultiFileDeliveryTests",
+        "MultiRecipientTests",
+        "MonthlyQuotaTests",
+        "DeliveryPasswordTests"
+      ]
+    },
+    {
+      "note": "chunked resume path: start/parts/abort/live progress",
+      "paths": [
+        "src/QuickShare/Features/Uploads/StartR2/",
+        "src/QuickShare/Features/Uploads/PartUrls/",
+        "src/QuickShare/Features/Uploads/AbortR2/",
+        "src/QuickShare/Features/Uploads/LiveStream/"
+      ],
+      "tests": [
+        "UploadResumeTests",
+        "UploadDownloadFlowTests",
+        "UploadExtrasTests"
+      ],
+      "browser": [
+        "UploadResumeBrowserTests"
+      ]
+    },
+    {
+      "note": "upload by email ingress",
+      "paths": [
+        "src/QuickShare/Features/Uploads/EmailIngest/"
+      ],
+      "tests": [
+        "EmailIngestTests"
+      ]
+    },
+    {
+      "note": "upload presets",
+      "paths": [
+        "src/QuickShare/Features/Uploads/Presets/"
+      ],
+      "tests": [
+        "UploadPresetTests"
+      ]
+    },
+    {
+      "note": "upload from URL (SSRF-guarded)",
+      "paths": [
+        "src/QuickShare/Features/Uploads/UploadFromUrl/"
+      ],
+      "tests": [
+        "UploadFromUrlTests",
+        "IpAddressSafetyTests"
+      ]
+    },
+    {
+      "note": "share target intake",
+      "paths": [
+        "src/QuickShare/Features/Uploads/ShareTarget/"
+      ],
+      "tests": [
+        "ShareTargetTests"
+      ]
+    },
+    {
+      "note": "delivery comments thread",
+      "paths": [
+        "src/QuickShare/Features/Deliveries/Comments/"
+      ],
+      "tests": [
+        "CommentsAndChannelTests"
+      ]
+    },
+    {
+      "note": "recipient OTP gate",
+      "paths": [
+        "src/QuickShare/Features/Deliveries/Otp/",
+        "src/QuickShare/Features/Downloads/EmailOtp/"
+      ],
+      "tests": [
+        "EmailOtpTests",
+        "EmailOtpGateLockoutTests"
+      ]
+    },
+    {
+      "note": "share password gate",
+      "paths": [
+        "src/QuickShare/Features/Deliveries/Password/"
+      ],
+      "tests": [
+        "DeliveryPasswordTests",
+        "PasswordGateLockoutTests"
+      ]
+    },
+    {
+      "note": "delivery comments/versions/alias/rename/revoke",
+      "paths": [
+        "src/QuickShare/Features/Deliveries/Versions/",
+        "src/QuickShare/Features/Deliveries/Rename/",
+        "src/QuickShare/Features/Deliveries/Revoke/",
+        "src/QuickShare/Features/Deliveries/Alias/"
+      ],
+      "tests": [
+        "DeliveryManageTests",
+        "DeliveryVersionTests"
+      ]
+    },
+    {
+      "note": "extension requests",
+      "paths": [
+        "src/QuickShare/Features/Deliveries/ExtensionRequests/"
+      ],
+      "tests": [
+        "ExtensionRequestTests"
+      ]
+    },
+    {
+      "note": "download zip/bundle/offline packaging",
+      "paths": [
+        "src/QuickShare/Features/Downloads/ZipContents/",
+        "src/QuickShare/Features/Downloads/Bundle/",
+        "src/QuickShare/Features/Downloads/Offline/"
+      ],
+      "tests": [
+        "ZipContentsTests",
+        "DeliveryExtrasApiTests"
+      ]
+    },
+    {
+      "note": "preview gates (office/image)",
+      "paths": [
+        "src/QuickShare/Features/Downloads/Preview/"
+      ],
+      "tests": [
+        "DeliveryPreviewTests",
+        "PreviewGateRegressionTests",
+        "OfficePreviewTests"
+      ]
+    },
+    {
+      "note": "public stats page",
+      "paths": [
+        "src/QuickShare/Features/Downloads/PublicStats/"
+      ],
+      "tests": [
+        "PublicStatsTests"
+      ]
+    },
+    {
+      "note": "workspace folders",
+      "paths": [
+        "src/QuickShare/Features/Workspaces/Folders/",
+        "src/QuickShare/Features/Workspaces/Templates/"
+      ],
+      "tests": [
+        "WorkspaceFolderTests",
+        "WorkspaceFolderNativeFormTests",
+        "FolderMoveTests",
+        "FolderOrderTests"
+      ]
+    },
+    {
+      "note": "workspace branding and domains",
+      "paths": [
+        "src/QuickShare/Features/Workspaces/Branding/",
+        "src/QuickShare/Features/Workspaces/Domains/"
+      ],
+      "tests": [
+        "WorkspaceBrandTests",
+        "WhiteLabelTests"
+      ]
+    },
+    {
+      "note": "workspace seats/transfer/report/audit/channels",
+      "paths": [
+        "src/QuickShare/Features/Workspaces/Seats/",
+        "src/QuickShare/Features/Workspaces/Transfer/",
+        "src/QuickShare/Features/Workspaces/Report/",
+        "src/QuickShare/Features/Workspaces/Audit/",
+        "src/QuickShare/Features/Workspaces/Channels/"
+      ],
+      "tests": [
+        "WorkspaceTests",
+        "SessionManagementTests",
+        "B2BUiTests"
+      ]
+    },
+    {
       "note": "Upload pipeline: chunking, resume, R2 parts, quota",
       "paths": [
         "src/QuickShare/Features/Uploads/"
@@ -60,7 +251,8 @@
       "browser": [
         "UploadResumeBrowserTests",
         "UploadIdleSubtextBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Download gate: OTP, password, expiry, preview, zip",
@@ -85,7 +277,8 @@
       ],
       "browser": [
         "DownloadPageTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Delivery lifecycle: manage, revoke, version, extension, comments",
@@ -105,7 +298,8 @@
       "browser": [
         "DeliveryFiltersBrowserTests",
         "ConfirmDialogBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Workspaces: seats, folders, brand, domain, audit",
@@ -127,7 +321,8 @@
       ],
       "browser": [
         "WorkspaceAuditUnpolyBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Money: charges, invoices, subscription, promo, trial",
@@ -147,7 +342,8 @@
       ],
       "browser": [
         "UpgradePollingBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Accounts: auth, profile, sessions, devices, export/delete",
@@ -170,7 +366,8 @@
       "browser": [
         "UserMenuBrowserTests",
         "AccountFormsBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "File requests and drop rooms",
@@ -184,7 +381,8 @@
       ],
       "browser": [
         "FileRequestsUnpolyBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Notifications centre and push",
@@ -199,7 +397,8 @@
       ],
       "browser": [
         "NotificationUnpolyBrowserTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Admin surfaces and feature flags",
@@ -212,7 +411,8 @@
         "AdminGateTests",
         "AbuseReportTests",
         "AdminReportFormTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Feedback inbox and export",
@@ -222,7 +422,8 @@
       "tests": [
         "AdminFeedbackUnpolyTests",
         "FeedbackExportTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Product analytics (anonymous events)",
@@ -232,7 +433,8 @@
       "tests": [
         "AnalyticsTrackingTests",
         "TierFiveConversionTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Ads and P2P quota",
@@ -262,7 +464,8 @@
         "ApiKeyUsageTests",
         "DeveloperPlatformTests",
         "TierSixAuditTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "Abuse/DMCA reports",
@@ -272,7 +475,8 @@
       "tests": [
         "AbuseReportTests",
         "AdminReportFormTests"
-      ]
+      ],
+      "fallback": true
     },
     {
       "note": "SEO and trust pages",
@@ -544,6 +748,43 @@
         "AuthFlowTests",
         "PageRenderingTests",
         "ClientAssetTests"
+      ]
+    },
+    {
+      "note": "wwwroot assets: css, service worker, fingerprinting",
+      "paths": [
+        "src/QuickShare/wwwroot/"
+      ],
+      "tests": [
+        "ClientAssetTests",
+        "SecurityHeadersTests"
+      ],
+      "browser": [
+        "SmokeTests",
+        "AccessibilityTests"
+      ]
+    },
+    {
+      "note": "localized strings (every page)",
+      "paths": [
+        "src/QuickShare/SharedLoc.en.resx",
+        "src/QuickShare/SharedLoc.vi.resx"
+      ],
+      "tests": [
+        "LocalizationTests"
+      ],
+      "browser": [
+        "LanguageSwitchTests"
+      ]
+    },
+    {
+      "note": "infrastructure primitives shared by every feature",
+      "paths": [
+        "src/QuickShare/Infrastructure/"
+      ],
+      "tests": [
+        "PageCoverageTests",
+        "AuditRegressionTests"
       ]
     }
   ],

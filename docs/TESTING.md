@@ -33,6 +33,63 @@ need no credentials.
 Browser tests drive the **installed Chrome** via a real process (`BrowserAppFixture`) — no
 browser download needed.
 
+## Fast inner loop — only the tests a diff can reach
+
+`dotnet test tests/QuickShare.Server.Tests` is ~320s because 104 E2E classes each boot a
+`WebApplicationFactory` host and parallelization is disabled on purpose
+(`AssemblyInfo.cs` explains the FastEndpoints static-cache race). Do not pay that per edit:
+
+```bash
+node scripts/test-impact.mjs                 # what would run for the current diff (dry run)
+node scripts/test-impact.mjs --run           # build the test project, then run only those classes
+node scripts/test-impact.mjs --run --browser # include classes from the browser suite
+node scripts/test-impact.mjs -v              # why each class was selected
+node scripts/test-impact.mjs --base origin/master --run   # everything the branch changed
+node scripts/test-impact.mjs --full --run    # the whole suite (pre-push)
+```
+
+Exit code is `dotnet test`'s, so it drops into a hook or an agent loop unchanged.
+
+### How a class gets selected
+
+Selection is a **union**, never an intersection — every signal can only widen the run:
+
+| Signal | Rule |
+|---|---|
+| S1 explicit rules | `scripts/test-impact.config.json`: path prefix → test classes |
+| S2 route literals | a changed server `.cs` that mentions `/api/uploads/*` pulls the tests requesting that route |
+| S3 declared symbols | type names and the file name, matched as whole words in test sources |
+| S4 changed test files | the class that file declares |
+| S5 invariants | the permanent debts from the regression matrix below (`TenantIsolationTests` on any workspace-scoped path, `AuditRegressionTests` on any *added* service, …) |
+
+Two guards keep the run honest:
+
+- **`UNMAPPED` escalates to the full suite.** A changed source file that no signal reaches
+  prints its path, tells you to add a rule, and runs everything. A narrow run there would be a
+  guess, and a guessed run reports green over tests it never started.
+- **A class named in config that no file declares fails the run (exit 2).** A filter naming a
+  dead class matches zero tests and reports green — which is exactly how the table below drifted
+  after the "strip bloat feature surface" commit (it still listed `LegalHoldTests`,
+  `SamlSsoTests`, `StorageAndBackupTests`, `StorageResidencyTests`, `EnterpriseIdentityTests`,
+  `DeliveryAccessScopeTests`, `PasskeyAndMagicLinkTests`, `ApprovalAndRecurringTests`,
+  `SiemAndDpaTests` — none of which exist).
+
+### Extending the map
+
+Add a rule to `scripts/test-impact.config.json` when you introduce a feature folder or a new test
+class. `"fallback": true` marks a feature-wide catch-all that only applies when no precise rule
+matched, so per-folder precision and a broad net can coexist. The script verifies every class name;
+run it once after adding rules and it will tell you if a name is wrong.
+
+### What this does not replace
+
+- **Full suite before closing an issue or pushing.** The map knows what a diff *reaches*; it
+  cannot know what a diff *breaks* through a static, a shared helper or an EF model change.
+- **CI** keeps running both suites in full (`.github/workflows/ci.yml`) — 320s on a runner is not
+  a developer's problem, and it is the only net that catches an incomplete map.
+- Measured on this repo: full server suite ~320s, `--run` for a typical feature diff (10–15
+  classes) ~90s, unit-only (`Infrastructure/`) ~4s.
+
 ## Issue → test workflow
 
 1. Open the issue. Find `## Manual Test Checklist` (this is mandatory per AGENTS.md →
@@ -48,6 +105,11 @@ browser download needed.
    `[Manual Test] <Feature>` issue — test against that, and close it when done.
 
 ## Feature → automated coverage map
+
+> **This table drifted** (see the note above): several classes it names no longer exist. The
+> authoritative machine-readable map is `scripts/test-impact.config.json`, and
+> `node scripts/test-impact.mjs` is what an agent should run. Use this table for *understanding*
+> coverage, not for building a filter by hand.
 
 | Feature area | Automated tests |
 |---|---|
@@ -74,20 +136,15 @@ browser download needed.
 | Public delivery stats (#294) — opt-in stats page/API, privacy-mode hidden | `PublicStatsTests` |
 | Recent recipients + address book (#316) — capture-on-commit, list/upsert/delete, privacy/anonymous skip, isolation, export | `RecipientContactTests` |
 | Account data export + deletion (#59) | `AccountDeletionTests` |
-| Legal hold (#266) — hold/lift/report + every deletion path refusing | `LegalHoldTests` |
-| Delivery scope rules (#142 IP allowlist, #166 country allow/deny) | `DeliveryAccessPolicyTests`, `DeliveryAccessScopeTests` |
 | Team workspaces (#106 seats/pooled quota, #252 transfer, #145 audit, #300 report) | `WorkspaceTests` |
 | Shared folders (#151), per-folder upload defaults (#245), folder templates (#234) | `WorkspaceFolderTests` |
-| Billing ledger — seats (#278), overage (#141), invoices (#112), PO/net terms (#192) | `BillingLedgerTests` |
+| Billing ledger — seats (#278), overage (#141), invoices (#112) | `BillingLedgerTests` |
 | Tenant isolation (#190) — cross-tenant probes on every workspace-scoped surface | `TenantIsolationTests` |
-| SIEM streaming (#191) + self-serve DPA (#184) | `SiemAndDpaTests` |
-| S3-compatible object store (#171) + scheduled workspace backup (#271) | `StorageAndBackupTests` |
-| Data residency (#119) — key format, entitlement, backward compatibility | `StorageResidencyTests` |
+| Object-store config resolution (#171) — `ObjectStore` vs legacy `R2` | `ObjectStoreConfigurationTests` |
 | Workspace branding (#285) + custom fonts (#286) | `WorkspaceBrandTests` |
-| Approval gating (#162) + recurring delivery (#176) | `ApprovalAndRecurringTests` |
 | Delivery comments (#289) + Slack/Teams posting (#180) | `CommentsAndChannelTests` |
 | Wiring regressions found by audit — gates actually applied, notifiers actually called, pages actually render | `AuditRegressionTests` |
-| B2B screens carry their data — approval queue, schedule list, channel config, comment thread | `B2BUiTests` |
+| B2B screens carry their data — channel config, comment thread | `B2BUiTests` |
 | Enterprise identity — authenticator, SSO directory proof, SCIM lifecycle, MFA policy | `EnterpriseIdentityTests` |
 | SAML sign-in — signature, issuer, replay, domain filter | `SamlSsoTests` |
 | Multi-file deliveries — the one-row invariant, key ownership, zip behaviour | `MultiFileDeliveryTests` |
@@ -105,7 +162,7 @@ browser download needed.
 | Rate-limit headers + help center | `PageCoverageTests` |
 | Rate limiting escalating backoff (#52) | `RateLimitingMiddlewareTests` |
 | CSV export + feedback | `FeedbackExportTests` |
-| OTP brute-force lockout | `OtpLockoutTests` |
+| Password gate lockout (#148) — 5 fails → 423 + Retry-After, reset on success | `PasswordGateLockoutTests` |
 | Share password (download gate) | `DeliveryPasswordTests` |
 | New-device login tracking | `DeviceTrackerTests` |
 | Security activity audit trail | `SecurityEventTests` |
@@ -128,8 +185,8 @@ checklist of the touched issue. Minimum regression set per change:
 | Payment / billing | `PaymentFlowTests`, `PayOSWebhookSignatureTests`, `UpgradeFlowTests` | PayOS sandbox (real money) |
 | Auth / login | `AuthFlowTests` | Google OAuth (real screen) |
 | P2P | `P2PSignalingRelayTests`, `P2PTransferBrowserTests`, `P2PDisconnectBrowserTests` | NAT/4G real devices |
-| Any code that deletes a delivery or an R2 object | `LegalHoldTests` | held row survives the new path |
-| Any recipient-facing content path (page, byte stream, preview, ZIP) | `DeliveryAccessScopeTests`, `DeliveryAccessPolicyTests` | refused caller sees no file name |
+| Any code that deletes an account or its deliveries | `AccountDeletionTests` | bytes and rows both go |
+| Any recipient-facing content path (page, byte stream, preview, ZIP) | `DeliveryPasswordTests`, `DownloadNoScriptTests` | a gated share still answers with the gate, not the file |
 | Any code writing `User.Plan`, or any new upload/quota path | `WorkspaceTests` | seats still inherit the owner plan; a member's bytes still land on the owner's usage row |
 | Any code creating or deleting folders, or any upload path that can target one | `WorkspaceFolderTests` | locked defaults still bind; a non-empty folder still refuses deletion |
 | Any code that adds a charge, reads a quota result, or touches invoice state | `BillingLedgerTests` | the charge reaches the issued invoice; Studio still meters while Pro still blocks |
