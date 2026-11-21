@@ -65,7 +65,10 @@
             cancelText: @((MarkupString)System.Text.Json.JsonSerializer.Serialize(Loc["dialog_cancel"].Value)),
         };
     </script>
-    <script src="_content/Unpoly.Blazor.Shadcn/ui.js" defer></script>
+    @* Fingerprinted through Assets, not a bare path: a behaviour layer served under a URL that
+       never changes is a script half the readers keep from last month, and every dialog added
+       since then is simply missing for them. *@
+    <script src="@($"/{Assets["_content/Unpoly.Blazor.Shadcn/ui.js"].TrimStart('/')}")" defer></script>
     <UnpolyHead />
     <HeadOutlet />
 </head>
@@ -73,7 +76,6 @@
     <Routes />
 
     <script src="/js/page-actions.js" asp-append-version="true"></script>
-    <script src="/js/voice.js" asp-append-version="true"></script>
     <script src="/js/client-error-reporting.js" asp-append-version="true"></script>
     <script src="/js/ad-component.js" asp-append-version="true"></script>
     <script src="/lib/qrcode/qrcode.min.js"></script>

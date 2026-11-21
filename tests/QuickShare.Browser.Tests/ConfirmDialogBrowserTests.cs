@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using QuickShare.Infrastructure.Constants;
 
@@ -24,6 +25,8 @@ public sealed class ConfirmDialogBrowserTests : IClassFixture<BrowserFixture>
     private const string PromptInput = "dialog[data-slot=\"dialog\"][open] input[data-slot=\"input\"]";
 
     private const string DeleteAccountEndpoint = "/api/me/delete";
+    private const string UiScriptPattern = @"/_content/Unpoly\.Blazor\.Shadcn/ui\.[a-z0-9]+\.js";
+    private const string BareUiScript = "/_content/Unpoly.Blazor.Shadcn/ui.js";
 
     private const float VisibilityTimeoutMs = 10_000f;
 
@@ -85,6 +88,31 @@ public sealed class ConfirmDialogBrowserTests : IClassFixture<BrowserFixture>
         await Assertions.Expect(page.Locator(KeyRow)).ToHaveCountAsync(rowsBefore - 1);
 
         Assert.Empty(nativeDialogs);
+    }
+
+    /// <summary>
+    /// The behaviour layer must arrive under a URL that changes when it changes. Served from the
+    /// bare path, a reader's browser keeps last month's copy and every dialog added since then is
+    /// missing for them — which is exactly how promptDialog went from "shipped" to "not a
+    /// function" on one machine and not another.
+    /// </summary>
+    [Fact]
+    public async Task BehaviourLayer_IsRequestedUnderAFingerprintedUrl()
+    {
+        await using var context = await _fx.CreateContextAsync(authenticated: true);
+        var page = await context.NewPageAsync();
+
+        var scriptUrls = new List<string>();
+        page.Request += (_, request) =>
+        {
+            if (request.Url.EndsWith(".js", StringComparison.OrdinalIgnoreCase)) scriptUrls.Add(request.Url);
+        };
+
+        await page.GotoAsync(_fx.BaseUrl + RoutePaths.Home);
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+
+        Assert.Contains(scriptUrls, url => Regex.IsMatch(url, UiScriptPattern));
+        Assert.DoesNotContain(BareUiScript, scriptUrls);
     }
 
     /// <summary>
