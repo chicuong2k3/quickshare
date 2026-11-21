@@ -189,7 +189,7 @@
 
         @* Actions sit on one line under the board: one primary, and only for a plan you do not own. *@
         <div class="picks">
-            <div class="picks__label">@Loc["pricing_cta_title"]</div>
+            <div class="picks__label">@Loc["pricing_picks_label"]</div>
             <div>
                 @if (!isAuthenticated)
                 {
@@ -422,18 +422,6 @@
                 <div class="faq-answer text-muted-foreground">@a</div>
             </details>
         }
-    </section>
-
-    <section id="pricing-education-discount" class="my-8" aria-labelledby="pricing-edu-title">
-        <Card>
-            <CardContent class="flex flex-wrap items-center justify-between gap-4 py-6">
-                <div class="space-y-1">
-                    <h2 id="pricing-edu-title" class="text-xl font-bold">@Loc["discount_edu_title"]</h2>
-                    <p class="text-sm text-muted-foreground">@Loc["discount_edu_sub"]</p>
-                </div>
-                <Button Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)" Variant="outline" data-ai-action="pricing.edu.apply">@Loc["discount_edu_cta"]</Button>
-            </CardContent>
-        </Card>
     </section>
 
     @* CTA *@

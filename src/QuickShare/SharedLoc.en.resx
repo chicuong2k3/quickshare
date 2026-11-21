@@ -121,8 +121,8 @@
   <data name="home_cta_btn" xml:space="preserve"><value>Send your first file</value></data>
   <data name="pricing_title" xml:space="preserve"><value>Pricing — QuickShareCloud</value></data>
   <data name="pricing_tag" xml:space="preserve"><value>Simple pricing</value></data>
-  <data name="pricing_h1" xml:space="preserve"><value>Simple, transparent pricing</value></data>
-  <data name="pricing_sub" xml:space="preserve"><value>Choose the plan that fits your needs. No hidden fees. Cancel anytime.</value></data>
+  <data name="pricing_h1" xml:space="preserve"><value>What it costs</value></data>
+  <data name="pricing_sub" xml:space="preserve"><value>Three plans. The price on the board is the price you pay. Cancel any time.</value></data>
   <data name="pricing_monthly" xml:space="preserve"><value>Monthly</value></data>
   <data name="pricing_yearly" xml:space="preserve"><value>Yearly</value></data>
   <data name="pricing_save" xml:space="preserve"><value>Save 20%</value></data>
@@ -153,11 +153,11 @@
   <data name="pricing_studio_feat_api" xml:space="preserve"><value>API access</value></data>
   <data name="pricing_card_badge" xml:space="preserve"><value>Most Popular</value></data>
   <data name="pricing_faq_title" xml:space="preserve"><value>Frequently Asked Questions</value></data>
-  <data name="pricing_faq_sub" xml:space="preserve"><value>Get answers to common questions about our plans</value></data>
+  <data name="pricing_faq_sub" xml:space="preserve"><value>The questions we get before someone pays.</value></data>
   <data name="pricing_faq_q1" xml:space="preserve"><value>What's the catch with Free tier?</value></data>
-  <data name="pricing_faq_a1" xml:space="preserve"><value>Free tier is instant delivery — your file stays available for 2 hours. After that, it's permanently deleted. This lets us offer huge 5 GB transfers for free. Need longer? Upgrade to Pro.</value></data>
+  <data name="pricing_faq_a1" xml:space="preserve"><value>Free files stay online for 2 hours, then they are deleted for good. That limit is what pays for 5 GB transfers at no cost. Need longer? Pro keeps files for 30 days.</value></data>
   <data name="pricing_faq_q2" xml:space="preserve"><value>Are my files compressed?</value></data>
-  <data name="pricing_faq_a2" xml:space="preserve"><value>Never. What you upload is what the recipient downloads — byte for byte. No compression, no re-encoding. Photographers and video editors trust us for this.</value></data>
+  <data name="pricing_faq_a2" xml:space="preserve"><value>Never. The recipient downloads the exact bytes you uploaded. No compression, no re-encoding.</value></data>
   <data name="pricing_faq_q3" xml:space="preserve"><value>How fast are downloads?</value></data>
   <data name="pricing_faq_a3" xml:space="preserve"><value>Files transfer through Cloudflare's global edge network. No server bottleneck, no throttling.</value></data>
   <data name="pricing_faq_q4" xml:space="preserve"><value>Can I upgrade or downgrade?</value></data>
@@ -170,7 +170,8 @@
   <data name="pricing_faq_a7" xml:space="preserve"><value>Your files remain accessible for 7 days after cancellation.</value></data>
   <data name="pricing_faq_q8" xml:space="preserve"><value>Do you offer refunds?</value></data>
   <data name="pricing_faq_a8" xml:space="preserve"><value>Full refund within 30 days if you're not satisfied.</value></data>
-  <data name="pricing_cta_title" xml:space="preserve"><value>Ready to get started?</value></data>
+  <data name="pricing_picks_label" xml:space="preserve"><value>Pick a plan</value></data>
+  <data name="pricing_cta_title" xml:space="preserve"><value>Send your first file free</value></data>
   <data name="pricing_cta_sub" xml:space="preserve"><value>Start free, no credit card required. Pro and Studio include a 14-day trial.</value></data>
   <data name="billing_title" xml:space="preserve"><value>Billing — QuickShareCloud</value></data>
   <data name="billing_h1" xml:space="preserve"><value>Subscription</value></data>
@@ -197,7 +198,7 @@
   <data name="billing_evt_expired" xml:space="preserve"><value>Subscription expired</value></data>
   <data name="login_page_title" xml:space="preserve"><value>Sign in — QuickShareCloud</value></data>
   <data name="login_title" xml:space="preserve"><value>Sign in to QuickShareCloud</value></data>
-  <data name="login_subtitle" xml:space="preserve"><value>Choose a provider to continue</value></data>
+  <data name="login_subtitle" xml:space="preserve"><value>Use your Google or GitHub account.</value></data>
   <data name="login_btn_google" xml:space="preserve"><value>Continue with Google</value></data>
   <data name="login_btn_github" xml:space="preserve"><value>Continue with GitHub</value></data>
   <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
@@ -251,7 +252,7 @@
   <data name="ad_verifying" xml:space="preserve"><value>Verifying…</value></data>
   <data name="ad_try_again" xml:space="preserve"><value>Try again</value></data>
   <data name="ad_unavailable" xml:space="preserve"><value>Ads unavailable right now. Try again later.</value></data>
-  <data name="ad_consent_required" xml:space="preserve"><value>Ad consent required. Please accept cookies to watch ads.</value></data>
+  <data name="ad_consent_required" xml:space="preserve"><value>Accept cookies to watch the ad.</value></data>
   <data name="ad_verification_failed" xml:space="preserve"><value>Reward verification failed.</value></data>
   <data name="ad_verify_error" xml:space="preserve"><value>Could not verify reward. Please try again.</value></data>
   <data name="ad_reward_added" xml:space="preserve"><value>+{0} MB added!</value></data>
@@ -598,8 +599,8 @@
   <data name="dl_scheduled_h1" xml:space="preserve"><value>This link is scheduled</value></data>
   <data name="dl_scheduled_sub" xml:space="preserve"><value>This link becomes active at {0}.</value></data>
   <data name="dl_scheduled_countdown" xml:space="preserve"><value>Activates in {0}</value></data>
-  <data name="dl_error_h1" xml:space="preserve"><value>Something went wrong</value></data>
-  <data name="dl_error_sub" xml:space="preserve"><value>We couldn’t reach the download service. Please try again.</value></data>
+  <data name="dl_error_h1" xml:space="preserve"><value>The download didn't start</value></data>
+  <data name="dl_error_sub" xml:space="preserve"><value>Our servers didn't answer. Try again in a moment.</value></data>
   <data name="dl_error_retry" xml:space="preserve"><value>Try again</value></data>
   <data name="dl_send_a_file" xml:space="preserve"><value>Send a file</value></data>
   <data name="dl_expiry_none" xml:space="preserve"><value>no expiry</value></data>
