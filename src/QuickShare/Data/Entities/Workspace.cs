@@ -1,14 +1,5 @@
 namespace QuickShare.Data.Entities;
 
-public static class WorkspaceEncryptionPolicy
-{
-    public const string Default = "default";
-    public const string Required = "required";
-    public const string Disabled = "disabled";
-
-    public static readonly string[] All = [Default, Required, Disabled];
-}
-
 /// <summary>
 /// Seat roles inside a workspace (issue #106). Ordered least-to-most privileged so
 /// gates can compare with &lt;=: Owner outranks Admin outranks Member outranks Viewer.
@@ -45,7 +36,6 @@ public record Workspace : BaseAuditEntity
     /// conversation a sender opened; it can never open one they did not.
     /// </summary>
     public string CommentPolicy { get; set; } = Entities.CommentPolicy.Recipients;
-    public string EncryptionPolicy { get; set; } = WorkspaceEncryptionPolicy.Default;
 
     public User Owner { get; init; } = null!;
 }

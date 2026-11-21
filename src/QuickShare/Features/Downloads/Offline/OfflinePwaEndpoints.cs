@@ -13,7 +13,6 @@ public sealed record OfflineDeliveryBundleDto(
     string? Sha256,
     bool HasPassword,
     bool PrivacyMode,
-    string EncryptionMode,
     string DownloadUrl,
     long MaxCacheQuotaBytes,
     DateTime SyncedAt);
@@ -23,8 +22,7 @@ public sealed record OfflineDeliveryBundleDto(
 /// for PWA offline reading (#279), enforcing privacy mode (#187), password gate (#44), and expiry (#22).
 /// </summary>
 public sealed class GetOfflineDeliveryBundleEndpoint(
-    AppDbContext db,
-    DeliveryAccessService access) : EndpointWithoutRequest<OfflineDeliveryBundleDto>
+    AppDbContext db) : EndpointWithoutRequest<OfflineDeliveryBundleDto>
 {
     private const long DefaultAnonymousCacheQuotaBytes = 250L * 1024 * 1024;
 
@@ -38,12 +36,6 @@ public sealed class GetOfflineDeliveryBundleEndpoint(
     public override async Task HandleAsync(CancellationToken ct)
     {
         var shareCode = Route<string>("ShareCode") ?? string.Empty;
-        if (await access.CheckByCodeAsync(shareCode, ct) != DeliveryAccessDecision.Allowed)
-        {
-            ThrowError(ErrorCodes.DeliveryRestricted, StatusCodes.Status403Forbidden);
-            return;
-        }
-
         var delivery = await db.Deliveries
             .AsNoTracking()
             .ByCode(shareCode)
@@ -83,7 +75,6 @@ public sealed class GetOfflineDeliveryBundleEndpoint(
             delivery.Sha256,
             !string.IsNullOrEmpty(delivery.PasswordHash),
             delivery.PrivacyMode,
-            string.IsNullOrEmpty(delivery.EncryptionMode) ? DeliveryEncryptionMode.FragmentKey : delivery.EncryptionMode,
             $"/api/downloads/{delivery.ShareCode}",
             maxCacheBytes,
             DateTime.UtcNow), ct);

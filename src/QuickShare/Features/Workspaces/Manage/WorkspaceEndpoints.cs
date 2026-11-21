@@ -84,7 +84,6 @@ public sealed class UpdateWorkspaceRequest
     public int? Seats { get; set; }
     /// <summary>disabled / recipients / members (issue #289). Null leaves the current setting.</summary>
     public string? CommentPolicy { get; set; }
-    public string? EncryptionPolicy { get; set; }
 }
 
 /// <summary>PATCH /api/workspace — rename or resize the seat pool (issue #106).</summary>
@@ -105,7 +104,7 @@ public sealed class UpdateWorkspaceEndpoint : Endpoint<UpdateWorkspaceRequest, W
     {
         var result = await Resolve<IMediator>().Send<Result<WorkspaceDto>>(
             new UpdateWorkspaceCommand(
-                req.Name, req.Seats, req.CommentPolicy, req.EncryptionPolicy), ct);
+                req.Name, req.Seats, req.CommentPolicy), ct);
 
         if (result.IsSuccess(out var response))
             await Send.OkAsync(response, ct);

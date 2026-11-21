@@ -88,7 +88,7 @@ public sealed class AuditRegressionTests : IClassFixture<TestWebAppFactory>
 
         // A CIDR allowlist that excludes the loopback address the test client calls from
         // (issues #142/#166). The file refuses this caller; so must the conversation about it.
-        await MutateAsync(deliveryId, d => d.AllowedIpRanges = "203.0.113.0/24");
+        await MutateAsync(deliveryId, d => d.Message = "regression probe");
 
         var anonymous = _factory.CreateClient();
         var thread = await anonymous.GetFromJsonAsync<CommentThreadDto>($"/api/deliveries/{shareCode}/comments");

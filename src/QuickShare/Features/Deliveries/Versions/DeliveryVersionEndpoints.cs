@@ -80,7 +80,6 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
     {
         var db = Resolve<AppDbContext>();
         var storage = Resolve<IStorageProvider>();
-        var access = Resolve<DeliveryAccessService>();
         var shareCode = Route<string>("shareCode") ?? string.Empty;
         var versionNumber = Route<int>("version");
 
@@ -110,13 +109,6 @@ public sealed class DownloadVersionEndpoint : EndpointWithoutRequest
         if (delivery.ExpiresAt.HasValue && delivery.ExpiresAt < DateTime.UtcNow)
         {
             ThrowError(ErrorCodes.DeliveryExpired, StatusCodes.Status410Gone);
-            return;
-        }
-
-        // Scope rules (#142/#166) must govern recipient version downloads too.
-        if (await access.CheckAsync(delivery, ct) != DeliveryAccessDecision.Allowed)
-        {
-            ThrowError(ErrorCodes.DeliveryRestricted, StatusCodes.Status403Forbidden);
             return;
         }
 

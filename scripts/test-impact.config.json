@@ -1,0 +1,610 @@
+{
+  "$comment": [
+    "Mapping for scripts/test-impact.mjs — path prefixes -> test classes.",
+    "Selection is a union with route/symbol matching, so a rule only ever widens.",
+    "Every class named here MUST exist as a `public class ...Tests` in tests/;",
+    "the script fails (exit 2) if one is renamed, because a filter naming a dead",
+    "class matches zero tests and reports a green run that tested nothing.",
+    "docs/TESTING.md drifted this way after the 'strip bloat feature surface'",
+    "commit: it still lists LegalHoldTests, SamlSsoTests, StorageAndBackupTests",
+    "and others that no file declares."
+  ],
+  "ignorePaths": [
+    "docs/",
+    "_bmad/",
+    "_bmad-output/",
+    ".github/",
+    ".agents/",
+    ".claude/",
+    ".pi/",
+    "vendor/",
+    "ops/",
+    "*.md",
+    "*.sample",
+    "QuickShare.slnx",
+    "Directory.Build.props",
+    ".editorconfig"
+  ],
+  "ignoreSymbols": [
+    "Constants",
+    "String",
+    "Routes",
+    "RoutePaths",
+    "Options",
+    "Request",
+    "Response",
+    "Endpoint",
+    "Builder",
+    "Handler"
+  ],
+  "rules": [
+    {
+      "note": "Upload pipeline: chunking, resume, R2 parts, quota",
+      "paths": [
+        "src/QuickShare/Features/Uploads/"
+      ],
+      "tests": [
+        "UploadDownloadFlowTests",
+        "UploadResumeTests",
+        "UploadExtrasTests",
+        "UploadFromUrlTests",
+        "UploadPresetTests",
+        "MonthlyQuotaTests",
+        "MultiFileDeliveryTests",
+        "MultiRecipientTests",
+        "DeliveryPasswordTests",
+        "EmailIngestTests",
+        "QuickPasteTests",
+        "RecipientContactTests"
+      ],
+      "browser": [
+        "UploadResumeBrowserTests",
+        "UploadIdleSubtextBrowserTests"
+      ]
+    },
+    {
+      "note": "Download gate: OTP, password, expiry, preview, zip",
+      "paths": [
+        "src/QuickShare/Features/Downloads/"
+      ],
+      "tests": [
+        "DownloadNoScriptTests",
+        "DeliveryPasswordTests",
+        "DeliveryMessageTests",
+        "DeliveryPreviewTests",
+        "DeliveryTrustExtrasTests",
+        "PreviewGateRegressionTests",
+        "EmailOtpTests",
+        "EmailOtpGateLockoutTests",
+        "RecipientEmailGateTests",
+        "PrivacyModeTests",
+        "PublicStatsTests",
+        "OfficePreviewTests",
+        "ZipContentsTests",
+        "UxExtrasTests"
+      ],
+      "browser": [
+        "DownloadPageTests"
+      ]
+    },
+    {
+      "note": "Delivery lifecycle: manage, revoke, version, extension, comments",
+      "paths": [
+        "src/QuickShare/Features/Deliveries/"
+      ],
+      "tests": [
+        "DeliveryManageTests",
+        "DeliveryVersionTests",
+        "DeliveryExtrasApiTests",
+        "DeliveryActivationJobTests",
+        "ExtensionRequestTests",
+        "RecipientActivityTests",
+        "CommentsAndChannelTests",
+        "AbuseReportTests"
+      ],
+      "browser": [
+        "DeliveryFiltersBrowserTests",
+        "ConfirmDialogBrowserTests"
+      ]
+    },
+    {
+      "note": "Workspaces: seats, folders, brand, domain, audit",
+      "paths": [
+        "src/QuickShare/Features/Workspaces/"
+      ],
+      "tests": [
+        "WorkspaceTests",
+        "WorkspaceFolderTests",
+        "WorkspaceFolderNativeFormTests",
+        "WorkspaceJoinNativeFormTests",
+        "WorkspaceBrandTests",
+        "FolderMoveTests",
+        "FolderOrderTests",
+        "TenantIsolationTests",
+        "B2BUiTests",
+        "WhiteLabelTests",
+        "SessionManagementTests"
+      ],
+      "browser": [
+        "WorkspaceAuditUnpolyBrowserTests"
+      ]
+    },
+    {
+      "note": "Money: charges, invoices, subscription, promo, trial",
+      "paths": [
+        "src/QuickShare/Features/Payments/"
+      ],
+      "tests": [
+        "PaymentFlowTests",
+        "PayOSWebhookSignatureTests",
+        "SubscriptionLifecycleTests",
+        "BillingLedgerTests",
+        "BillingNativeFormTests",
+        "TrialTests",
+        "UpgradeFlowTests",
+        "UpgradeNativeFlowTests",
+        "TenantIsolationTests"
+      ],
+      "browser": [
+        "UpgradePollingBrowserTests"
+      ]
+    },
+    {
+      "note": "Accounts: auth, profile, sessions, devices, export/delete",
+      "paths": [
+        "src/QuickShare/Features/Users/"
+      ],
+      "tests": [
+        "AuthFlowTests",
+        "AccountProfileTests",
+        "AccountDeletionTests",
+        "AccountDeliveriesTests",
+        "DeviceTrackerTests",
+        "DeviceRemovalFormTests",
+        "SecurityEventTests",
+        "SessionManagementTests",
+        "PdpdConsentTests",
+        "RecipientContactTests",
+        "ReferralTests"
+      ],
+      "browser": [
+        "UserMenuBrowserTests",
+        "AccountFormsBrowserTests"
+      ]
+    },
+    {
+      "note": "File requests and drop rooms",
+      "paths": [
+        "src/QuickShare/Features/FileRequests/"
+      ],
+      "tests": [
+        "FileRequestsApiTests",
+        "DropRoomTests",
+        "FileRequestDigestJobTests"
+      ],
+      "browser": [
+        "FileRequestsUnpolyBrowserTests"
+      ]
+    },
+    {
+      "note": "Notifications centre and push",
+      "paths": [
+        "src/QuickShare/Features/Notifications/"
+      ],
+      "tests": [
+        "NotificationCenterTests",
+        "NotificationJobTests",
+        "NotificationPreferencesFormTests",
+        "PushSubscriptionTests"
+      ],
+      "browser": [
+        "NotificationUnpolyBrowserTests"
+      ]
+    },
+    {
+      "note": "Admin surfaces and feature flags",
+      "paths": [
+        "src/QuickShare/Features/Admin/"
+      ],
+      "tests": [
+        "AdminFlagsApiTests",
+        "AdminFlagFormTests",
+        "AdminGateTests",
+        "AbuseReportTests",
+        "AdminReportFormTests"
+      ]
+    },
+    {
+      "note": "Feedback inbox and export",
+      "paths": [
+        "src/QuickShare/Features/Feedback/"
+      ],
+      "tests": [
+        "AdminFeedbackUnpolyTests",
+        "FeedbackExportTests"
+      ]
+    },
+    {
+      "note": "Product analytics (anonymous events)",
+      "paths": [
+        "src/QuickShare/Features/Analytics/"
+      ],
+      "tests": [
+        "AnalyticsTrackingTests",
+        "TierFiveConversionTests"
+      ]
+    },
+    {
+      "note": "Ads and P2P quota",
+      "paths": [
+        "src/QuickShare/Features/Ads/",
+        "src/QuickShare/Features/Shares/"
+      ],
+      "tests": [
+        "P2PQuotaAndAdTests",
+        "P2PSignalingRelayTests",
+        "ShareTargetTests",
+        "DeliveryExtrasApiTests"
+      ],
+      "browser": [
+        "P2PTransferBrowserTests",
+        "P2PDisconnectBrowserTests",
+        "P2PNetworkPreflightTests"
+      ]
+    },
+    {
+      "note": "API keys, webhooks, developer platform",
+      "paths": [
+        "src/QuickShare/Features/Developer/"
+      ],
+      "tests": [
+        "ApiKeyAuthTests",
+        "ApiKeyUsageTests",
+        "DeveloperPlatformTests",
+        "TierSixAuditTests"
+      ]
+    },
+    {
+      "note": "Abuse/DMCA reports",
+      "paths": [
+        "src/QuickShare/Features/Reports/"
+      ],
+      "tests": [
+        "AbuseReportTests",
+        "AdminReportFormTests"
+      ]
+    },
+    {
+      "note": "SEO and trust pages",
+      "paths": [
+        "src/QuickShare/Features/Seo/",
+        "src/QuickShare/Features/Search/"
+      ],
+      "tests": [
+        "PageCoverageTests"
+      ]
+    },
+    {
+      "note": "Security headers and rate limiting",
+      "paths": [
+        "src/QuickShare/Features/Security/",
+        "src/QuickShare/Features/ClientErrors/"
+      ],
+      "tests": [
+        "SecurityHeadersTests",
+        "RateLimitingMiddlewareTests",
+        "PageCoverageTests"
+      ]
+    },
+    {
+      "note": "Storage: S3 keys, object store config, orphan sweep",
+      "paths": [
+        "src/QuickShare/Infrastructure/Storage/"
+      ],
+      "tests": [
+        "R2ObjectKeyTests",
+        "R2StorageExceptionTests",
+        "ObjectStoreConfigurationTests",
+        "OrphanSweepJobTests",
+        "LocalDiskStorageProviderStubTests",
+        "ZipContentsTests"
+      ]
+    },
+    {
+      "note": "Hangfire jobs",
+      "paths": [
+        "src/QuickShare/Infrastructure/Jobs/"
+      ],
+      "tests": [
+        "DeliveryActivationJobTests",
+        "DeliveryExpiryReminderJobTests",
+        "FileRequestDigestJobTests",
+        "NotificationJobTests",
+        "OrphanSweepJobTests"
+      ]
+    },
+    {
+      "note": "Transactional email and sender-address tokens",
+      "paths": [
+        "src/QuickShare/Infrastructure/Email/"
+      ],
+      "tests": [
+        "SenderEmailConfirmTests",
+        "SenderEmailUnsubscribeTests",
+        "SenderEmailRateLimiterTests",
+        "SenderEmailTokensTests",
+        "DeliveryExpiryReminderJobTests"
+      ]
+    },
+    {
+      "note": "Feature flags",
+      "paths": [
+        "src/QuickShare/Infrastructure/FeatureFlags/"
+      ],
+      "tests": [
+        "AdminGateTests",
+        "FeatureFlagServiceTests",
+        "AdminFlagsApiTests"
+      ]
+    },
+    {
+      "note": "Middleware chain: cache variance, headers, rate limit",
+      "paths": [
+        "src/QuickShare/Infrastructure/Middleware/"
+      ],
+      "tests": [
+        "RateLimitingMiddlewareTests",
+        "SecurityHeadersTests",
+        "ResponseCacheTests"
+      ]
+    },
+    {
+      "note": "Push transport",
+      "paths": [
+        "src/QuickShare/Infrastructure/Push/"
+      ],
+      "tests": [
+        "PushSubscriptionTests"
+      ]
+    },
+    {
+      "note": "FusionCache wiring",
+      "paths": [
+        "src/QuickShare/Infrastructure/Caching/"
+      ],
+      "tests": [
+        "FeatureFlagServiceTests",
+        "ResponseCacheTests",
+        "PageLoadTests"
+      ]
+    },
+    {
+      "note": "Dev helpers and auto-signin gate",
+      "paths": [
+        "src/QuickShare/Infrastructure/Dev/"
+      ],
+      "tests": [
+        "DevSignInGateTests"
+      ]
+    },
+    {
+      "note": "Shared constants: route paths, tiers, error codes",
+      "paths": [
+        "src/QuickShare/Infrastructure/Constants/"
+      ],
+      "tests": [
+        "PageCoverageTests",
+        "ResponseCacheTests"
+      ]
+    },
+    {
+      "note": "IP safety (SSRF guard)",
+      "paths": [
+        "src/QuickShare/Infrastructure/IpAddressSafety.cs"
+      ],
+      "tests": [
+        "IpAddressSafetyTests",
+        "UploadFromUrlTests"
+      ]
+    },
+    {
+      "note": "Account pages: workspace family",
+      "paths": [
+        "src/QuickShare/Components/Pages/AccountWorkspace"
+      ],
+      "tests": [
+        "WorkspaceTests",
+        "WorkspaceBrandTests",
+        "WorkspaceFolderTests",
+        "TenantIsolationTests",
+        "B2BUiTests"
+      ],
+      "browser": [
+        "WorkspaceAuditUnpolyBrowserTests"
+      ]
+    },
+    {
+      "note": "Account pages: money family",
+      "paths": [
+        "src/QuickShare/Components/Pages/AccountBilling.razor",
+        "src/QuickShare/Components/Pages/AccountInvoices.razor",
+        "src/QuickShare/Components/Pages/AccountUsage.razor"
+      ],
+      "tests": [
+        "BillingLedgerTests",
+        "BillingNativeFormTests",
+        "SubscriptionLifecycleTests"
+      ]
+    },
+    {
+      "note": "Account pages: deliveries and requests",
+      "paths": [
+        "src/QuickShare/Components/Pages/AccountDeliveries.razor",
+        "src/QuickShare/Components/Pages/AccountFileRequests.razor",
+        "src/QuickShare/Components/Pages/AccountDeliveryExtensionRequests.razor"
+      ],
+      "tests": [
+        "AccountDeliveriesTests",
+        "ExtensionRequestTests",
+        "FileRequestsApiTests",
+        "B2BUiTests"
+      ]
+    },
+    {
+      "note": "Account shell renders eight sections at once",
+      "paths": [
+        "src/QuickShare/Components/Pages/Account.razor"
+      ],
+      "tests": [
+        "AccountPageRenderTests",
+        "AccountUnpolyMigrationTests",
+        "PageLoadTests"
+      ]
+    },
+    {
+      "note": "Download page (no-JS phase is the default)",
+      "paths": [
+        "src/QuickShare/Components/Pages/Download.razor"
+      ],
+      "tests": [
+        "DownloadNoScriptTests",
+        "DeliveryPasswordTests"
+      ],
+      "browser": [
+        "DownloadPageTests"
+      ]
+    },
+    {
+      "note": "Any other page changes the public surface",
+      "paths": [
+        "src/QuickShare/Components/Pages/"
+      ],
+      "tests": [
+        "PageCoverageTests",
+        "PageRenderingTests",
+        "PageLoadTests"
+      ],
+      "browser": [
+        "SmokeTests"
+      ]
+    },
+    {
+      "note": "Layout, chrome, shared components",
+      "paths": [
+        "src/QuickShare/Components/Layout/",
+        "src/QuickShare/Components/Shared/"
+      ],
+      "tests": [
+        "PageRenderingTests",
+        "ResponseCacheTests",
+        "ClientAssetTests"
+      ],
+      "browser": [
+        "SmokeTests",
+        "AccessibilityTests",
+        "UserMenuBrowserTests"
+      ]
+    },
+    {
+      "note": "TypeScript page actions and dialogs (authored in src/QuickShare/ts)",
+      "paths": [
+        "src/QuickShare/ts/"
+      ],
+      "tests": [
+        "ClientAssetTests"
+      ],
+      "browser": [
+        "ConfirmDialogBrowserTests",
+        "PasteBrowserTests",
+        "AccessibilityTests"
+      ]
+    },
+    {
+      "note": "Tailwind source and scoped CSS",
+      "paths": [
+        "src/QuickShare/tailwind.css"
+      ],
+      "tests": [
+        "ClientAssetTests"
+      ],
+      "browser": [
+        "SmokeTests",
+        "AccessibilityTests"
+      ]
+    },
+    {
+      "note": "App startup: DI, middleware order, auth schemes",
+      "paths": [
+        "src/QuickShare/Program.cs",
+        "src/QuickShare/App.razor",
+        "src/QuickShare/_Imports.razor"
+      ],
+      "tests": [
+        "PageCoverageTests",
+        "AuthFlowTests",
+        "PageRenderingTests",
+        "ClientAssetTests"
+      ]
+    }
+  ],
+  "always": [
+    {
+      "note": "cross-tenant probes must pass on every workspace-scoped surface",
+      "paths": [
+        "src/QuickShare/Features/Workspaces/",
+        "src/QuickShare/Features/Payments/",
+        "src/QuickShare/Features/Uploads/"
+      ],
+      "tests": [
+        "TenantIsolationTests"
+      ]
+    },
+    {
+      "note": "entity shape changes must keep the old shape behaving identically",
+      "paths": [
+        "src/QuickShare/Data/Entities/"
+      ],
+      "tests": [
+        "MultiFileDeliveryTests",
+        "AuditRegressionTests",
+        "PageCoverageTests"
+      ]
+    },
+    {
+      "note": "DbContext / migrations / interceptors change every query",
+      "paths": [
+        "src/QuickShare/Data/"
+      ],
+      "tests": [
+        "TenantIsolationTests",
+        "AuditRegressionTests"
+      ]
+    },
+    {
+      "note": "localization keys are rendered by every page",
+      "paths": [
+        "src/QuickShare/SharedLoc.en.resx",
+        "src/QuickShare/SharedLoc.vi.resx"
+      ],
+      "tests": [
+        "LocalizationTests"
+      ],
+      "browser": [
+        "LanguageSwitchTests"
+      ]
+    }
+  ],
+  "alwaysForAddedFiles": [
+    {
+      "note": "a new service/gate must be proved reached, not just unit-tested",
+      "paths": [
+        "src/QuickShare/Features/",
+        "src/QuickShare/Infrastructure/"
+      ],
+      "tests": [
+        "AuditRegressionTests",
+        "PageCoverageTests"
+      ]
+    }
+  ]
+}

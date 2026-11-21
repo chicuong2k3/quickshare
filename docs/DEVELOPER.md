@@ -18,15 +18,14 @@ src/QuickShare/                 # monolith (FastEndpoints API + Blazor Static SS
     Uploads/  Deliveries/  Downloads/  Shares/  Payments/  Users/  Analytics/
     Notifications/  Ads/  Admin/  ClientErrors/  Reports/  FileRequests/
     Deliveries/LegalHold/       # #266: place/lift/CSV export; every deletion path filters the hold
-    Users/Retention/            # #161: PUT policy + dry-run preview
     Downloads/Shared/           # DeliveryAccessService.cs, the #142/#166 scope gate that every
                                 # recipient-facing content path routes through
   Data/                         # AppDbContext, Entities/, Migrations/, AuditableEntityInterceptor
   Infrastructure/               # Storage/, Email/, Jobs/, FeatureFlags/, Telemetry/,
                                 # Caching/, Middleware/, Constants/
-                                # RetentionPolicy.cs (#161), DeliveryAccessPolicy.cs (#142/#166):
-                                # dependency-free static classes, so they unit-test without the
-                                # web factory - that is why the rules live here, not in a handler
+                                # DeliveryAccessPolicy.cs (#142/#166): a dependency-free
+                                # static class, so it unit-tests without the web factory -
+                                # that is why the rule lives here, not in a handler
   Components/                   # Pages/, Layout/, Shared/ (Blazor)
   ts/                           # TypeScript: download.ts, upload.ts, p2p/, ad-component.ts
   wwwroot/                      # css/ (app.css), js/, lib/
@@ -98,7 +97,6 @@ rules:
 | User-facing copy in `SharedLoc.{en,vi}.resx` (never hardcoded) | AGENTS.md |
 | One statement per line | AGENTS.md |
 | New code deleting delivery rows or R2 objects MUST filter `LegalHoldAt == null` (held bytes are evidence) | compliance-architecture.md (#266) |
-| New code computing a delivery expiry MUST pass it through `RetentionPolicy.Clamp` (the policy is a ceiling) | compliance-architecture.md (#161) |
 | New recipient-facing content path MUST route through `DeliveryAccessService` (scope rules are fail-closed) | compliance-architecture.md (#142/#166) |
 | New code writing `User.Plan` MUST re-push it to workspace seats (a seat borrows the owner's plan) | workspaces-architecture.md (#106) |
 | New upload path MUST use `QuotaService` (it pools a member's bytes onto the workspace owner) | workspaces-architecture.md (#106) |

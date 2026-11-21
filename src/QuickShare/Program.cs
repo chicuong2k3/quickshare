@@ -217,11 +217,6 @@ builder.Services.AddScoped<QuickShare.Features.Payments.CheckoutService>();
 // ── OTP brute-force lockout (issue #148) ──
 builder.Services.AddScoped<QuickShare.Features.Deliveries.Otp.OtpLockoutService>();
 
-// ── Turnstile anti-bot on download/verify (issue #175) ──
-builder.Services.Configure<QuickShare.Features.Deliveries.Otp.TurnstileOptions>(
-    builder.Configuration.GetSection(QuickShare.Features.Deliveries.Otp.TurnstileOptions.Section));
-builder.Services.AddHttpClient<QuickShare.Features.Deliveries.Otp.TurnstileService>();
-
 // ── New-device login alert (issue #149) ──
 builder.Services.AddScoped<QuickShare.Features.Users.Shared.DeviceTrackerService>();
 builder.Services.AddScoped<QuickShare.Features.Users.Shared.NewDeviceAlertSender>();
@@ -254,7 +249,6 @@ builder.Services.Configure<AnalyticsOptions>(builder.Configuration.GetSection(An
 builder.Services.AddScoped<AnalyticsService>();
 
 // ── Delivery scope control (issues #142 IP allowlist, #166 country rules) ──
-builder.Services.AddScoped<QuickShare.Features.Downloads.Shared.DeliveryAccessService>();
 
 // ── Team workspaces (issue #106): seats, pooled quota, workspace audit (#145) ──
 builder.Services.AddScoped<QuickShare.Features.Workspaces.Shared.WorkspaceService>();

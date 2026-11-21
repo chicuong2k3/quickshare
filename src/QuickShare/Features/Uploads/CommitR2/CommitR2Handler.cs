@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace QuickShare.Features.Uploads.CommitR2;
 
-public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Otp, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, string? AllowedIpRanges = null, string? AllowedCountries = null, string? BlockedCountries = null, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null, string? EncryptionMode = null, string? EncryptionKdfSalt = null, int? EncryptionKdfIterations = null, string? EncryptedKeyEscrow = null)
+public record CommitR2Command(Guid DeliveryId, string UploadId, string ObjectKey, string FileName, string ContentType, long FileSize, IReadOnlyList<R2PartEtag> Parts, string? Password, string? Message, string? Source, DateTime? DeliverAt, double? ExpiryHours, string? Sha256, bool BurnAfterDownload, bool AllowExtensionRequests, IReadOnlyList<string>? RecipientEmails, bool PrivacyMode, bool EmailOtpEnabled, bool RequireRecipientEmail, bool PublicStatsEnabled, Guid? FolderId = null, bool CommentsEnabled = false, bool WatermarkEnabled = false, IReadOnlyList<CommitFile>? AdditionalFiles = null)
     : IRequest<Result<CommitR2Response>>;
 
 public record CommitR2Response(string ShareCode, string ShareLink, DateTime ExpiresAt);
@@ -67,20 +67,11 @@ public sealed class CommitR2Handler(
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.RecipientLimitExceeded));
 
         // Scope rules (issues #142 CIDR allowlist, #166 country rules) are a paid control.
-        // Normalize first: an all-garbage list collapses to null, which is "no rule" and
-        // must not trip the plan gate.
         // Preview watermark (issue #155) is a paid control, and refused rather than silently
         // dropped: a sender who thinks their preview carries their name and finds out it does
         // not has been told something untrue about who can screenshot their work.
         if (cmd.WatermarkEnabled && plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
             return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.WatermarkRequiresPaidPlan));
-
-        var allowedIpRanges = DeliveryAccessPolicy.NormalizeIpRanges(cmd.AllowedIpRanges);
-        var allowedCountries = DeliveryAccessPolicy.NormalizeCountries(cmd.AllowedCountries);
-        var blockedCountries = DeliveryAccessPolicy.NormalizeCountries(cmd.BlockedCountries);
-        var hasAccessRules = allowedIpRanges is not null || allowedCountries is not null || blockedCountries is not null;
-        if (hasAccessRules && plan is not (PlanTierLimits.Pro or PlanTierLimits.Studio))
-            return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.RequiresPaidPlan));
 
         // The commit must match the session created by start-r2, for the same owner —
         // otherwise anyone who learns a DeliveryId could hijack or finalize the upload.
@@ -245,27 +236,6 @@ public sealed class CommitR2Handler(
             folderId = requestedFolderId;
         }
 
-        var encryptionMode = string.IsNullOrWhiteSpace(cmd.EncryptionMode)
-            ? DeliveryEncryptionMode.FragmentKey
-            : cmd.EncryptionMode.Trim().ToLowerInvariant();
-        if (!DeliveryEncryptionMode.All.Contains(encryptionMode))
-            encryptionMode = DeliveryEncryptionMode.FragmentKey;
-
-        if (workspaceId is { } encWorkspaceId)
-        {
-            var wsEncryptionPolicy = await db.Workspaces
-                .AsNoTracking()
-                .Where(w => w.Id == encWorkspaceId)
-                .Select(w => w.EncryptionPolicy)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (wsEncryptionPolicy == WorkspaceEncryptionPolicy.Required && encryptionMode == DeliveryEncryptionMode.None)
-                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.EncryptionRequiredByPolicy));
-
-            if (wsEncryptionPolicy == WorkspaceEncryptionPolicy.Disabled && encryptionMode != DeliveryEncryptionMode.None)
-                return Result.Failure<CommitR2Response>(new LightResults.Error(ErrorCodes.EncryptionDisabledByPolicy));
-        }
-
         var maxExpiry = PlanTierLimits.GetMaxExpiry(plan);
 
         // Locked folder defaults are policy, not prefill (issue #245). Unlocked ones never
@@ -346,7 +316,6 @@ public sealed class CommitR2Handler(
             ExpiresAt = expiresAt,
             DeliverAt = cmd.DeliverAt,
             Status = cmd.DeliverAt.HasValue ? DeliveryStatus.Scheduled : DeliveryStatus.Active,
-            OtpHash = !string.IsNullOrWhiteSpace(cmd.Otp) ? BCrypt.Net.BCrypt.HashPassword(cmd.Otp) : null,
             PasswordHash = password is not null ? BCrypt.Net.BCrypt.HashPassword(password) : null,
             Message = message,
             Sha256 = sha256,
@@ -357,13 +326,6 @@ public sealed class CommitR2Handler(
             EmailOtpEnabled = cmd.EmailOtpEnabled,
             RequireRecipientEmail = cmd.RequireRecipientEmail,
             PublicStatsEnabled = cmd.PublicStatsEnabled,
-            AllowedIpRanges = allowedIpRanges,
-            AllowedCountries = allowedCountries,
-            BlockedCountries = blockedCountries,
-            EncryptionMode = encryptionMode,
-            EncryptionKdfSalt = string.IsNullOrWhiteSpace(cmd.EncryptionKdfSalt) ? null : cmd.EncryptionKdfSalt.Trim(),
-            EncryptionKdfIterations = cmd.EncryptionKdfIterations,
-            EncryptedKeyEscrow = string.IsNullOrWhiteSpace(cmd.EncryptedKeyEscrow) ? null : cmd.EncryptedKeyEscrow.Trim(),
         };
 
         session.Status = UploadSessionStatus.Committed;

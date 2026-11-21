@@ -95,9 +95,8 @@ you add a row here and a check there (see section 8).
 | Expiry job object delete | `Infrastructure/Jobs/DeliveryExpiryJob.ExpireDeliveriesAsync` | Link still expires (`Status = Expired`) but the R2 objects are **not** deleted. Access stops; evidence stays. |
 | Trashed-row purge sweep | `Infrastructure/Jobs/DeliveryCleanupService.CleanupTrashedDeliveriesAsync` | Held row never leaves the 24h `TrashRetention` queue. |
 | Expired-row retention sweep | `Infrastructure/Jobs/DeliveryCleanupService.CleanupExpiredDeliveriesAsync` | Held row survives the 30-day `ExpiredRowRetention`, bytes and all. |
-| Retention policy sweep (#161) | `Infrastructure/Jobs/DeliveryExpiryJob.EnforceRetentionAsync` | Held rows excluded in SQL — the hold outranks the policy. Clamping a held row's expiry would only hand a later purge an earlier date. |
 
-The two sweeps and the retention sweep filter `LegalHoldAt == null` **in SQL**, not in
+The two sweeps filter `LegalHoldAt == null` **in SQL**, not in
 memory: a held row is never loaded into a delete batch in the first place.
 
 ### 2.5 UI
@@ -110,101 +109,13 @@ Badge styles are scoped to `AccountDeliveries.razor` and use Shadcn tokens.
 
 ---
 
-## 3. Workspace Retention Policy (issue #161)
+## 3. Workspace Retention Policy (issue #161) — RETIRED
 
-### 3.1 Semantics — a ceiling, never a floor
-
-`Infrastructure/RetentionPolicy.cs` is pure, static, and has no DI:
-
-| Member | Meaning |
-|--------|---------|
-| `MinDays = 1`, `MaxDays = 365` | Accepted window |
-| `Presets = [1, 7, 14, 30, 90]` | What the settings UI offers; any in-range value is accepted |
-| `IsValid(int?)` | Null is valid — it means "clear the policy" |
-| `Clamp(DateTime, int?)` | Returns the expiry unchanged when it already sits inside the window |
-| `Clamp(DateTime?, int?)` | Nullable overload: a **null** expiry becomes the ceiling (a never-expiring share cannot outlive a policy) |
-| `Ceiling(int?)` | Latest instant a share may live to, or null when unpolicied |
-| `Exceeds(DateTime?, int?)` | True when the expiry sits beyond the window — a null expiry always exceeds |
-
-The policy clamps the sender's choice rather than replacing it, so a shorter pick always
-wins. **Clamping is not a validation error**: at upload time the bytes are already in R2,
-and a compliance window is not something the sender chose wrongly.
-
-### 3.2 Account fields
-
-`User.RetentionDays` (`int?`, null = no policy) and `User.RetentionNoExtend` (`bool`,
-regulated mode). Convention-mapped — no `OnModelCreating` config and no index, because the
-sweep joins through the already-indexed `deliveries.SenderId`. `UserMapper` ignores both via
-`[MapperIgnoreSource]`: retention is a compliance setting on the security card, not profile
-identity, and must not leak into the profile response.
-
-### 3.3 Endpoints
-
-`Features/Users/Retention/`
-
-| Route | Method | Behaviour |
-|-------|--------|-----------|
-| `/api/account/retention` | PUT | `{ retentionDays: int?, noExtend: bool }`. Non-Pro/Studio → `requires_paid_plan`, 403. Out-of-range window → `retention_days_invalid`, 400. `retentionDays: null` clears the policy **and** `noExtend`. |
-| `/api/account/retention/preview?days=N` | GET | Dry run: `{ days, affected, earliestExpiry, latestExpiry, samples[<=20] }`. One aggregate round trip plus one `Take(20)` sample. Read-only. Cached 30s per `user:retention:preview:{userId}:{days}`. |
-
-The PUT writes via `ExecuteUpdateAsync`, which bypasses the change tracker, so it explicitly
-evicts two caches: `UserCacheInvalidator.EvictAsync` (the 5-minute `User` cache that every
-clamp site reads) and every `RetentionPreviewHandler.CacheKey(userId, preset)` entry the
-settings card could have produced. A stale `User` cache would keep clamping to the previous
-window.
-
-### 3.4 Clamp sites — plan cap first, then policy
-
-The order is always **plan cap, then policy clamp**: the compliance ceiling sits above the
-plan cap, so it clamps last.
-
-| Site | File |
-|------|------|
-| Upload commit | `Features/Uploads/CommitR2/CommitR2Handler.cs` — `RetentionPolicy.Clamp(ResolveExpiry(...), user?.RetentionDays)` after `PlanTierLimits.GetMaxExpiry` |
-| Extend | `Features/Deliveries/Extend/ExtendDeliveryHandler.cs` |
-| Extension-request approval | `Features/Deliveries/ExtensionRequests/ApproveExtensionRequestHandler.cs` |
-| Retention sweep | `Infrastructure/Jobs/DeliveryExpiryJob.EnforceRetentionAsync` — converges rows created before the policy existed |
-
-### 3.5 Regulated mode — refuse, don't silently no-op
-
-With `RetentionNoExtend: true`, both extend paths check `RetentionPolicy.Exceeds(...)` first
-and return `retention_policy_locked` instead of extending. The reason is honesty: the clamp
-would pin the new expiry back to the ceiling, and a silent no-op reads as "extended" to the
-caller.
-
-Both paths load the window off the **delivery's sender, not the caller**, and read it fresh
-from the database rather than from a cached `User`. That is what makes the approval path
-correct: a recipient requests the extension, the owner approves it, and the owner's policy
-is the one that governs.
-
-### 3.6 Sweep
-
-`DeliveryExpiryJob.EnforceRetentionAsync` runs **before** the expiry pass in the same job:
-
-1. Prefilter in SQL — `SenderId != null`, `Sender.RetentionDays != null`, `DeletedAt == null`,
-   `LegalHoldAt == null`, status `Active` or `Scheduled`, and expiry beyond
-   `now + RetentionPolicy.MinDays` (nothing expiring inside the shortest possible window can
-   exceed a policy).
-2. One set-based projection carries each owner's window along with the row, so the batch
-   costs one round trip instead of a policy lookup per delivery.
-3. Clamp, then evict `download:info:{shareCode}` for every row touched — the download page
-   reads the expiry off that snapshot, and clamping without evicting leaves recipients
-   looking at a date the row no longer carries.
-4. Audit `SecurityEventType.RetentionEnforced` once per owner with the affected count; record
-   one anonymous `AnalyticsEvents.RetentionEnforced` per sweep.
-
-The clamp never lands in the past (the shortest window is a day), so the sweep pulls expiry
-dates in without expiring anything itself — the expiry pass that follows does that.
-
-### 3.7 UI
-
-The retention card lives inside `#security-activity-card` in
-`Components/Pages/AccountSecurityActivity.razor`, which renders on the security tab
-(`/account/security`) and remains directly routable at `/account/security/activity`.
-It is no longer composed into the profile page (`/account`), which would duplicate the
-tab. Direct GET renders the current policy and
-preview. A CSRF-protected native form provides separate preview and save actions; preview
-does not mutate the policy. Security event filters use URL-backed Unpoly links.
+The account-wide retention policy (per-user `RetentionDays` / `RetentionNoExtend`, the
+`RetentionPolicy` clamp, the `/account/security/activity` settings card and the
+`DeliveryExpiryJob` enforcement sweep) was retired. Per-delivery expiry — chosen by the
+sender at commit and extend time — is the only lifetime control a share answers to. The
+`RetireUserRetentionPolicy` migration drops the two `users` columns.
 
 ---
 
@@ -298,16 +209,12 @@ rule. Restricted panel on `Components/Pages/Download.razor`.
 The three controls are not peers. State this explicitly because the interaction is where a
 future change is most likely to break something:
 
-1. **Legal hold outranks the retention policy.** `EnforceRetentionAsync` excludes held rows
-   in SQL. Shortening a held row's expiry would only hand a later purge an earlier date.
-2. **Legal hold outranks right-to-erasure.** `PurgeDelivery` refuses with 409, and account
+1. **Legal hold outranks right-to-erasure.** `PurgeDelivery` refuses with 409, and account
    deletion refuses wholesale. A court or regulator relying on those bytes outranks a
    deletion request; the hold must be lifted first, deliberately, by the owner.
-3. **The retention policy outranks the plan cap** — it clamps after it, downward only.
-4. **The retention policy never outranks a shorter sender choice.** Ceiling, not floor.
-5. **Scope rules are orthogonal.** They gate *access*, not *lifetime*. A held delivery still
-   stops being downloadable at expiry; a restricted delivery still expires on schedule; a
-   scope rule neither extends nor shortens anything.
+2. **The plan cap outranks nothing downward** — a sender's shorter choice always survives it.
+3. **Scope rules are orthogonal.** They gate *access*, not *lifetime*. A restricted delivery
+   still expires on schedule.
 
 The one-line version: **hold > erasure > retention policy > plan cap > sender choice**, with
 scope rules on a separate axis entirely.

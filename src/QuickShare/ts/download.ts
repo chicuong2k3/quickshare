@@ -5,8 +5,6 @@ window.downloadApp = (function (): DownloadPage {
         downloading: boolean;
         isEncrypted: boolean;
         zkOpen: boolean;
-        otpVerifying: boolean;
-        verifiedOtp: string;
         verifiedPassword: string;
         adCountdown: number;
         adTimer: ReturnType<typeof setInterval> | null;
@@ -27,7 +25,7 @@ window.downloadApp = (function (): DownloadPage {
         diffRaw: boolean;
         diffTracked: boolean;
         previewTruncated: boolean;
-    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, otpVerifying: false, verifiedOtp: '', verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, officePreviewStarted: false, fullText: null, bytes: null, diffMode: 'unified', diffRaw: false, diffTracked: false, previewTruncated: false };
+    } = { phase: 'checking', downloading: false, isEncrypted: false, zkOpen: false, verifiedPassword: '', adCountdown: 5, adTimer: null, expiresAt: null, expiryTimer: null, expiryLevel: '', scheduledAt: null, scheduledTimer: null, downloadCount: 0, maxDownloads: 0, expiresLabel: '', previewStarted: false, mediaPreviewStarted: false, officePreviewStarted: false, fullText: null, bytes: null, diffMode: 'unified', diffRaw: false, diffTracked: false, previewTruncated: false };
 
     // Text snippets are shown inline instead of forcing a download (issue #13).
     const TEXT_MIME_PREFIX = 'text/plain';
@@ -63,9 +61,8 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
     function removeAttr(id: string, name: string) { const el = document.getElementById(id); if (el) el.removeAttribute(name); }
 
     function render() {
-        hide('download-phase-password'); hide('download-phase-otp'); hide('download-phase-ad'); hide('download-phase-file'); hide('download-phase-expired');
+        hide('download-phase-password'); hide('download-phase-ad'); hide('download-phase-file'); hide('download-phase-expired');
         if (state.phase === 'password') show('download-phase-password');
-        else if (state.phase === 'otp') show('download-phase-otp');
         else if (state.phase === 'ad') show('download-phase-ad');
         else if (state.phase === 'expired') show('download-phase-expired');
         else if (state.phase === 'file') {
@@ -127,7 +124,6 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
             return;
         }
         if (info.hasPassword) state.phase = 'password';
-        else if (info.hasOtp) state.phase = 'otp';
         else if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
         else state.phase = 'file';
         if (state.expiresAt) startExpiryTimer();
@@ -219,52 +215,6 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
     }
 
 
-    function readOtp(): string {
-        const inputs = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input');
-        let pin = '';
-        for (let i = 0; i < inputs.length; i++) pin += inputs[i].value;
-        return pin;
-    }
-
-    function otpInput(event: Event, idx: number) {
-        const target = event.target as HTMLInputElement;
-        const val = target.value.replace(/\D/g, '');
-        target.value = val;
-        if (val && idx < 5) {
-            const next = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input')[idx + 1];
-            if (next) next.focus();
-        }
-    }
-
-    function otpKeydown(event: KeyboardEvent, idx: number) {
-        const target = event.target as HTMLInputElement;
-        if (event.key === 'Backspace' && !target.value && idx > 0) {
-            const prev = document.querySelectorAll<HTMLInputElement>('#dl-otp .db-otp__input')[idx - 1];
-            if (prev) prev.focus();
-        }
-        if (event.key === 'Enter') verifyOtp();
-    }
-
-    function verifyOtp() {
-        const otp = readOtp();
-        if (otp.length < 6) { show('dl-otp-error'); text('dl-otp-error', t('otpIncomplete')); return; }
-        hide('dl-otp-error'); text('dl-otp-btn-text', t('otpVerifying')); attr('dl-otp-btn', 'disabled', 'disabled');
-        fetch(apiBase() + '/api/deliveries/' + shareCode() + '/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ otp: otp }) })
-            .then(function (r) {
-                return r.ok ? r.json().catch(function () { return {}; }) : r.json().then(function (b) { throw b; }).catch(function () { throw {}; });
-            })
-            .then(function () {
-                state.verifiedOtp = otp;
-                const info = infoFromDom();
-                if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
-                else state.phase = 'file';
-            })
-            .catch(function (e) {
-                show('dl-otp-error'); text('dl-otp-error', e.message || (e.errors && e.errors[0] && e.errors[0].message) || t('otpWrong'));
-            })
-            .finally(function () { text('dl-otp-btn-text', t('otpUnlock')); removeAttr('dl-otp-btn', 'disabled'); render(); });
-    }
-
     function readPassword(): string {
         const input = document.getElementById('dl-password') as HTMLInputElement | null;
         return input ? input.value : '';
@@ -285,8 +235,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
             .then(function () {
                 state.verifiedPassword = password;
                 const info = infoFromDom();
-                if (info.hasOtp) state.phase = 'otp';
-                else if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
+                if (info.senderPlan === 'free' && !info.suppressAdInterstitial) { state.phase = 'ad'; startAdTimer(); trackAdView(); }
                 else state.phase = 'file';
             })
             .catch(function (e) {
@@ -323,7 +272,6 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         let url = apiBase() + '/api/downloads/' + shareCode();
         const params: string[] = [];
         if (state.verifiedPassword) params.push('password=' + encodeURIComponent(state.verifiedPassword));
-        if (state.verifiedOtp) params.push('otp=' + encodeURIComponent(state.verifiedOtp));
         // Carried through so a download is attributed to the person it was sent to, rather than
         // counting against nobody the moment the page hands off to the API.
         const token = recipientToken();
@@ -339,7 +287,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         // after the download starts, never before.
         show('dl-viral-cta');
         if (state.bytes) { saveBytes(state.bytes); return false; }
-        if (!state.isEncrypted && !state.verifiedOtp && !state.verifiedPassword) return true;
+        if (!state.isEncrypted && !state.verifiedPassword) return true;
         if (event && event.preventDefault) event.preventDefault();
         state.downloading = true; render();
         if (state.isEncrypted) {
@@ -395,7 +343,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
     function maybeRenderOfficePreview() {
         if (state.officePreviewStarted) return;
         const i = infoFromDom();
-        if (!isOffice(i) || state.isEncrypted || i.hasOtp || i.hasPassword) return;
+        if (!isOffice(i) || state.isEncrypted || i.hasPassword) return;
         if (!i.fileSize || i.fileSize > OFFICE_PREVIEW_MAX_BYTES) return;
 
         state.officePreviewStarted = true;
@@ -652,7 +600,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
             : ct.indexOf('video/') === 0 ? 'video'
             : ct.indexOf('audio/') === 0 ? 'audio'
             : ct === 'application/pdf' ? 'pdf' : null;
-        if (!kind || state.isEncrypted || i.hasOtp || i.hasPassword) return;
+        if (!kind || state.isEncrypted || i.hasPassword) return;
 
         const container = document.getElementById('dl-media-preview');
         if (!container) return;
@@ -714,7 +662,7 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         const i = infoFromDom();
         const name = String(i.fileName || '').toLowerCase();
         const isZip = i.contentType === 'application/zip' || i.contentType === 'application/x-zip-compressed' || name.endsWith('.zip');
-        if (!isZip || state.isEncrypted || i.hasOtp || i.hasPassword) return;
+        if (!isZip || state.isEncrypted || i.hasPassword) return;
 
         const container = document.getElementById('dl-zip-list');
         if (!container) return;
@@ -804,26 +752,5 @@ const OFFICE_PREVIEW_MAX_BYTES = 20 * 1024 * 1024;
         afterImg.alt = tmpAlt;
     }
 
-    let sessionVaultKey: CryptoKey | null = null;
-
-    async function unlockPassphraseVault(): Promise<void> {
-        const input = document.getElementById('dl-passphrase-input') as HTMLInputElement | null;
-        if (!input || !input.value) return;
-        const info = infoFromDom();
-        const saltStr = info.encryptionKdfSalt || shareCode();
-        const iterations = info.encryptionKdfIterations || 100000;
-        const enc = new TextEncoder();
-        const baseKey = await crypto.subtle.importKey('raw', enc.encode(input.value), 'PBKDF2', false, ['deriveKey']);
-        sessionVaultKey = await crypto.subtle.deriveKey(
-            { name: 'PBKDF2', salt: enc.encode(saltStr), iterations: iterations, hash: 'SHA-256' },
-            baseKey,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['decrypt']
-        );
-        state.isEncrypted = true;
-        show('dl-passphrase-unlocked');
-    }
-
-    return { verifyOtp: verifyOtp, verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, otpInput: otpInput, otpKeydown: otpKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage, selectSubtitleTrack: selectSubtitleTrack, setCompareSplit: setCompareSplit, swapCompareImages: swapCompareImages, unlockPassphraseVault: unlockPassphraseVault };
+    return { verifyPassword: verifyPassword, passwordKeydown: passwordKeydown, skipAd: skipAd, toggleZK: toggleZK, handleDownload: handleDownload, showFullText: showFullText, toggleDiffMode: toggleDiffMode, toggleDiffRaw: toggleDiffRaw, copyText: copyText, copySha256: copySha256, sharePage: sharePage, selectSubtitleTrack: selectSubtitleTrack, setCompareSplit: setCompareSplit, swapCompareImages: swapCompareImages };
 })();

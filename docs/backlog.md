@@ -193,13 +193,17 @@ policy, `#142` delivery IP allowlist, `#166` geo-restriction — one migration
 `DeliveryAccessScopeTests` (10), `DeliveryAccessPolicyTests`, `RetentionPolicyTests`,
 `RetentionPolicyApiTests` (19). Full suite after the batch: 561 server + 31 browser.
 
-`#266` legal hold — `Delivery.LegalHoldAt` / `LegalHoldReason` (max 200) / `LegalHoldById`;
-sender-only `POST /api/deliveries/{id}/legal-hold`, `.../legal-hold/lift`, and a counsel CSV at
+`#161` workspace retention policy was later retired (settings UI, `RetentionPolicy` clamp,
+extend refusals and the `DeliveryExpiryJob` enforcement sweep all removed; migration
+`RetireUserRetentionPolicy` drops the two `users` columns). Per-delivery expiry is the only
+lifetime control.
+
+`#266` legal hold — `Delivery.LegalHoldAt` / `LegalHoldReason` (max 200) / `LegalHoldById`; sender-only `POST /api/deliveries/{id}/legal-hold`, `.../legal-hold/lift`, and a counsel CSV at
 `GET /api/deliveries/legal-hold/export`. A hold never expires on its own — a lapsed hold is
 evidence loss mid-litigation — so there is no expiry field and no sweeper that clears one; only the
 owner lifts. Every deletion path therefore checks it: trash, purge, bulk (row counted in
 `skipped`), account deletion (all-or-nothing 409), `DeliveryExpiryJob` (link expires, R2 objects
-survive), both `DeliveryCleanupService` sweeps, and the `#161` retention sweep. Errors
+survive), and both `DeliveryCleanupService` sweeps. Errors
 `legal_hold_active`, `legal_hold_not_active`, `legal_hold_reason_required`; audited as
 `SecurityEventType.LegalHoldPlaced` / `LegalHoldLifted`. Design:
 [`docs/compliance-architecture.md`](compliance-architecture.md).

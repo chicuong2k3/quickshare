@@ -36,7 +36,7 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
         return client;
     }
 
-    private static async Task<CommitR2Response> UploadFileAsync(HttpClient client, string? otp = null)
+    private static async Task<CommitR2Response> UploadFileAsync(HttpClient client)
     {
         var startResponse = await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
         {
@@ -59,7 +59,6 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
             ContentType = TestContentType,
             FileSize = TestFileSize,
             Parts = [new R2PartEtag(1, "etag-1")],
-            Otp = otp,
         });
         Assert.Equal(HttpStatusCode.Created, commitResponse.StatusCode);
         var commit = await commitResponse.Content.ReadFromJsonAsync<CommitR2Response>();
@@ -549,39 +548,6 @@ public sealed class UploadDownloadFlowTests : IClassFixture<TestWebAppFactory>
         var client = CreateNoRedirectClient();
         var response = await client.GetAsync("/api/downloads/no-such-code");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task OtpProtected_Download_RequiresCorrectOtp()
-    {
-        const string otp = "123456";
-        var client = CreateNoRedirectClient(authenticated: true);
-        var commit = await UploadFileAsync(client, otp);
-
-        var noOtp = await client.GetAsync($"/api/downloads/{commit.ShareCode}");
-        Assert.Equal(HttpStatusCode.Forbidden, noOtp.StatusCode);
-
-        var wrongOtp = await client.GetAsync($"/api/downloads/{commit.ShareCode}?otp=999999");
-        Assert.Equal(HttpStatusCode.Forbidden, wrongOtp.StatusCode);
-
-        var rightOtp = await client.GetAsync($"/api/downloads/{commit.ShareCode}?otp={otp}");
-        Assert.Equal(HttpStatusCode.Found, rightOtp.StatusCode);
-    }
-
-    [Fact]
-    public async Task VerifyOtp_Endpoint_ValidatesOtp()
-    {
-        const string otp = "654321";
-        var client = CreateNoRedirectClient(authenticated: true);
-        var commit = await UploadFileAsync(client, otp);
-
-        var wrong = await client.PostAsJsonAsync(
-            $"/api/deliveries/{commit.ShareCode}/verify-otp", new { Otp = "000000" });
-        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
-
-        var right = await client.PostAsJsonAsync(
-            $"/api/deliveries/{commit.ShareCode}/verify-otp", new { Otp = otp });
-        Assert.Equal(HttpStatusCode.OK, right.StatusCode);
     }
 
     [Fact]

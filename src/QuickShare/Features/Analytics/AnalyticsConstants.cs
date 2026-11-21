@@ -45,8 +45,6 @@ public static class AnalyticsEvents
     public const string FeedbackSubmitted = "feedback_submitted";
 
     // Delivery scope control (issues #142 IP allowlist, #166 country rules)
-    public const string DeliveryAccessBlockedIp = "delivery_access_blocked_ip";
-    public const string DeliveryAccessBlockedCountry = "delivery_access_blocked_country";
 
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)

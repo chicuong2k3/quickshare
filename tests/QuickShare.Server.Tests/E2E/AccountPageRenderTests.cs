@@ -29,11 +29,25 @@ public sealed class AccountPageRenderTests : IClassFixture<TestWebAppFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.DoesNotContain("A second operation was started", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"profile-card\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Account_security_tab_renders_sessions_activity_and_devices()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+
+        using var response = await client.GetAsync("/account/security");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("A second operation was started", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"security-activity-card\"", html, StringComparison.Ordinal);
         Assert.Contains("id=\"devices-card\"", html, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Account_devices_page_renders()
+    public async Task Account_devices_page_renders() // devices still directly routable at /account/devices
     {
         using var client = _factory.CreateAuthenticatedClient();
 

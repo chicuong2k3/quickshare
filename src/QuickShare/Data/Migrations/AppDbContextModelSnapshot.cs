@@ -358,18 +358,6 @@ namespace QuickShare.Migrations
                     b.Property<bool>("AllowExtensionRequests")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("AllowedCountries")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("AllowedIpRanges")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("BlockedCountries")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 
@@ -416,19 +404,6 @@ namespace QuickShare.Migrations
                     b.Property<DateTime?>("EmailOtpUsedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("EncryptedKeyEscrow")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("EncryptionKdfIterations")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EncryptionKdfSalt")
-                        .HasColumnType("text");
-
-                    b.Property<string>("EncryptionMode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -467,9 +442,6 @@ namespace QuickShare.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Message")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OtpHash")
                         .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
@@ -2129,10 +2101,6 @@ namespace QuickShare.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EncryptionPolicy")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()

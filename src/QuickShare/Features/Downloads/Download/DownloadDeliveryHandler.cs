@@ -5,14 +5,13 @@ using QuickShare.Features.Workspaces.Domains;
 
 namespace QuickShare.Features.Downloads.Download;
 
-public record DownloadDeliveryQuery(string ShareCode, string? Password, string? Otp, string? EmailOtp, string? Email, string? RecipientEmail, bool MarketingConsent) : IRequest;
+public record DownloadDeliveryQuery(string ShareCode, string? Password, string? EmailOtp, string? Email, string? RecipientEmail, bool MarketingConsent) : IRequest;
 
 public sealed class DownloadDeliveryHandler(
     IStorageProvider storage,
     IHttpContextAccessor httpContextAccessor,
     AppDbContext db,
     OtpLockoutService lockout,
-    DeliveryAccessService access,
     WorkspaceDomainReader domains)
     : IRequestHandler<DownloadDeliveryQuery>
 {
@@ -62,15 +61,6 @@ public sealed class DownloadDeliveryHandler(
             return Unit.Value;
         }
 
-        // Scope control (issues #142 CIDR allowlist, #166 country rules) — AND-scoped with
-        // every other gate and evaluated before the password so a caller outside the
-        // sender's perimeter never gets a password oracle.
-        if (await access.CheckAsync(delivery, cancellationToken) != DeliveryAccessDecision.Allowed)
-        {
-            response.StatusCode = StatusCodes.Status403Forbidden;
-            return Unit.Value;
-        }
-
 
         // Password gate (issue #44) runs before the OTP gate — the recipient
         // unlocks the password first, then any sender-set code.
@@ -86,25 +76,6 @@ public sealed class DownloadDeliveryHandler(
             }
 
             if (string.IsNullOrEmpty(query.Password) || !BCrypt.Net.BCrypt.Verify(query.Password, delivery.PasswordHash))
-            {
-                await lockout.RecordFailureAsync(db, delivery.Id, cancellationToken);
-                response.StatusCode = 403;
-                return Unit.Value;
-            }
-
-        }
-        if (!string.IsNullOrEmpty(delivery.OtpHash))
-        {
-            var isLocked = await lockout.IsLockedAsync(db, delivery.Id, cancellationToken);
-            if (isLocked)
-            {
-                var retryAfter = await lockout.RetryAfterSecondsAsync(db, delivery.Id, cancellationToken);
-                response.StatusCode = StatusCodes.Status423Locked;
-                response.Headers[HttpHeaders.RetryAfter] = retryAfter.ToString(CultureInfo.InvariantCulture);
-                return Unit.Value;
-            }
-
-            if (string.IsNullOrEmpty(query.Otp) || !BCrypt.Net.BCrypt.Verify(query.Otp, delivery.OtpHash))
             {
                 await lockout.RecordFailureAsync(db, delivery.Id, cancellationToken);
                 response.StatusCode = 403;
@@ -240,7 +211,7 @@ public sealed class DownloadDeliveryHandler(
             }
         }
 
-        if (!string.IsNullOrEmpty(delivery.PasswordHash) || !string.IsNullOrEmpty(delivery.OtpHash) || delivery.EmailOtpEnabled)
+        if (!string.IsNullOrEmpty(delivery.PasswordHash) || delivery.EmailOtpEnabled)
         {
             await lockout.ResetAsync(db, delivery.Id, cancellationToken);
         }

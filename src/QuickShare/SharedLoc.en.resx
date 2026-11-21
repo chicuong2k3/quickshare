@@ -274,8 +274,6 @@
   <data name="upload_dropzone_drag" xml:space="preserve"><value>Drop it here</value></data>
   <data name="upload_dropzone_sub" xml:space="preserve"><value>or Ctrl+V to paste, or click to browse</value></data>
   <data name="upload_protect_label" xml:space="preserve"><value>Protect your link (optional)</value></data>
-  <data name="upload_otp_label" xml:space="preserve"><value>6-digit code</value></data>
-  <data name="upload_otp_hint" xml:space="preserve"><value>If set, recipients must enter this code to download</value></data>
   <data name="upload_password_label" xml:space="preserve"><value>Password</value></data>
   <data name="upload_password_placeholder" xml:space="preserve"><value>Set a password recipients must enter</value></data>
   <data name="upload_password_hint" xml:space="preserve"><value>If set, recipients must enter this password before downloading.</value></data>
@@ -550,12 +548,6 @@
   <data name="deliveries_expires_days" xml:space="preserve"><value>{0} d left</value></data>
   <data name="dl_title" xml:space="preserve"><value>Receive a file — QuickShareCloud</value></data>
   <data name="dl_checking" xml:space="preserve"><value>Checking link…</value></data>
-  <data name="dl_otp_h2" xml:space="preserve"><value>Enter security code</value></data>
-  <data name="dl_otp_sub" xml:space="preserve"><value>Ask the sender for the 6-digit code to unlock this file.</value></data>
-  <data name="dl_otp_unlock" xml:space="preserve"><value>Unlock</value></data>
-  <data name="dl_otp_verifying" xml:space="preserve"><value>Verifying…</value></data>
-  <data name="dl_otp_incomplete" xml:space="preserve"><value>Please enter all 6 digits.</value></data>
-  <data name="dl_otp_wrong" xml:space="preserve"><value>Incorrect code.</value></data>
   <data name="dl_password_h2" xml:space="preserve"><value>Enter password</value></data>
   <data name="dl_password_sub" xml:space="preserve"><value>Ask the sender for the password to unlock this file.</value></data>
   <data name="dl_password_unlock" xml:space="preserve"><value>Unlock</value></data>
@@ -1178,42 +1170,6 @@
     <value>Delete</value>
   </data>
   <!-- Download restrictions (issues #142 + #166) — sender controls on /send -->
-  <data name="upload_access_label" xml:space="preserve">
-    <value>Restrict who can download</value>
-  </data>
-  <data name="upload_access_ip_label" xml:space="preserve">
-    <value>Allowed IP ranges</value>
-  </data>
-  <data name="upload_access_ip_placeholder" xml:space="preserve">
-    <value>203.0.113.0/24, 198.51.100.7</value>
-  </data>
-  <data name="upload_access_ip_hint" xml:space="preserve">
-    <value>CIDR ranges or single addresses, comma-separated — e.g. 203.0.113.0/24. Leave blank to allow every network.</value>
-  </data>
-  <data name="upload_access_allowed_countries_label" xml:space="preserve">
-    <value>Allowed countries</value>
-  </data>
-  <data name="upload_access_countries_placeholder" xml:space="preserve">
-    <value>US, VN</value>
-  </data>
-  <data name="upload_access_allowed_countries_hint" xml:space="preserve">
-    <value>Two-letter country codes, comma-separated — e.g. US, VN. Leave blank to allow every country.</value>
-  </data>
-  <data name="upload_access_blocked_countries_label" xml:space="preserve">
-    <value>Blocked countries</value>
-  </data>
-  <data name="upload_access_blocked_countries_hint" xml:space="preserve">
-    <value>Two-letter country codes, comma-separated — e.g. US, VN. Checked after the allowed list.</value>
-  </data>
-  <data name="upload_access_combine_hint" xml:space="preserve">
-    <value>These rules apply on top of the password and emailed code — a recipient has to pass all of them.</value>
-  </data>
-  <data name="upload_access_paid_hint" xml:space="preserve">
-    <value>Download restrictions are part of Pro and Studio.</value>
-  </data>
-  <data name="upload_access_upgrade" xml:space="preserve">
-    <value>Upgrade to unlock</value>
-  </data>
   <!-- Download restrictions (issues #142 + #166) — recipient refusal on /d -->
   <data name="dl_restricted_h1" xml:space="preserve">
     <value>You can't download this from here</value>
@@ -3314,68 +3270,11 @@
   <data name="login_passkey_recovery_submit" xml:space="preserve">
     <value>Sign in with Recovery Code</value>
   </data>
-  <data name="ws_encryption_policy_title" xml:space="preserve">
-    <value>Client-Side Encryption Policy</value>
-  </data>
-  <data name="ws_encryption_policy_hint" xml:space="preserve">
-    <value>Control whether workspace members may use zero-knowledge client-side encryption or must allow server-side virus scanning and preview generation.</value>
-  </data>
-  <data name="ws_encryption_policy_label" xml:space="preserve">
-    <value>Workspace Encryption Mode</value>
-  </data>
-  <data name="ws_encryption_default" xml:space="preserve">
-    <value>Default (Sender chooses encryption mode)</value>
-  </data>
-  <data name="ws_encryption_required" xml:space="preserve">
-    <value>Required (Enforce zero-knowledge client-side encryption)</value>
-  </data>
-  <data name="ws_encryption_disabled" xml:space="preserve">
-    <value>Disabled (Require server-side virus scan &amp; previews)</value>
-  </data>
-  <data name="ws_encryption_policy_save" xml:space="preserve">
-    <value>Save Encryption Policy</value>
-  </data>
-  <data name="upload_encryption_mode_label" xml:space="preserve">
-    <value>Encryption Key Management</value>
-  </data>
-  <data name="upload_encryption_mode_fragment" xml:space="preserve">
-    <value>Zero-knowledge URL Fragment Key (#k=)</value>
-  </data>
-  <data name="upload_encryption_mode_passphrase" xml:space="preserve">
-    <value>Passphrase-derived Key (PBKDF2-SHA256)</value>
-  </data>
-  <data name="upload_encryption_mode_none" xml:space="preserve">
-    <value>Standard Server-Managed (Enables AV Scan &amp; Previews)</value>
-  </data>
-  <data name="upload_encryption_passphrase_label" xml:space="preserve">
-    <value>Encryption Passphrase (shared out-of-band)</value>
-  </data>
-  <data name="upload_encryption_passphrase_placeholder" xml:space="preserve">
-    <value>Enter a strong passphrase for PBKDF2 key derivation</value>
-  </data>
-  <data name="upload_encryption_honesty_notice" xml:space="preserve">
-    <value>Honesty note: Client-side encrypted uploads cannot be virus-scanned or thumbnailed by the server because the server never sees your plaintext key.</value>
-  </data>
   <data name="dl_fact_honesty_title" xml:space="preserve">
     <value>Zero-knowledge trade-off</value>
   </data>
   <data name="dl_fact_honesty_body" xml:space="preserve">
     <value>Client-side encrypted files bypass server-side antivirus scanning and server-generated thumbnails.</value>
-  </data>
-  <data name="dl_passphrase_title" xml:space="preserve">
-    <value>Passphrase Required to Decrypt</value>
-  </data>
-  <data name="dl_passphrase_sub" xml:space="preserve">
-    <value>This delivery uses PBKDF2 passphrase-derived encryption. Enter the passphrase provided by the sender to derive the decryption key in your browser.</value>
-  </data>
-  <data name="dl_passphrase_placeholder" xml:space="preserve">
-    <value>Enter decryption passphrase</value>
-  </data>
-  <data name="dl_passphrase_unlock" xml:space="preserve">
-    <value>Derive Key &amp; Unlock</value>
-  </data>
-  <data name="dl_passphrase_unlocked" xml:space="preserve">
-    <value>Decryption key derived in browser.</value>
   </data>
   <data name="ws_byok_title" xml:space="preserve">
     <value>Bring Your Own Key (BYOK) KMS Encryption</value>

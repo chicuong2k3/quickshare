@@ -17,7 +17,7 @@ public sealed class DeliveryPreviewTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Preview_UngatedMedia_Redirects_WithoutCounting()
     {
-        var shareCode = await SeedDeliveryAsync(image: true, otpHash: null);
+        var shareCode = await SeedDeliveryAsync(image: true, passwordHash: null);
 
         var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = false });
         var response = await client.GetAsync($"/api/downloads/{shareCode}/preview");
@@ -34,7 +34,7 @@ public sealed class DeliveryPreviewTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Preview_GatedDelivery_Is403()
     {
-        var shareCode = await SeedDeliveryAsync(image: true, otpHash: BCrypt.Net.BCrypt.HashPassword("123456"));
+        var shareCode = await SeedDeliveryAsync(image: true, passwordHash: BCrypt.Net.BCrypt.HashPassword("123456"));
 
         var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = false });
         var response = await client.GetAsync($"/api/downloads/{shareCode}/preview");
@@ -45,7 +45,7 @@ public sealed class DeliveryPreviewTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Preview_Expired_Is410()
     {
-        var shareCode = await SeedDeliveryAsync(image: true, otpHash: null, expired: true);
+        var shareCode = await SeedDeliveryAsync(image: true, passwordHash: null, expired: true);
 
         var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = false });
         var response = await client.GetAsync($"/api/downloads/{shareCode}/preview");
@@ -56,7 +56,7 @@ public sealed class DeliveryPreviewTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Preview_DownloadLimitReached_Is403()
     {
-        var shareCode = await SeedDeliveryAsync(image: true, otpHash: null, downloadCount: 5);
+        var shareCode = await SeedDeliveryAsync(image: true, passwordHash: null, downloadCount: 5);
 
         var client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = false });
         var response = await client.GetAsync($"/api/downloads/{shareCode}/preview");
@@ -64,7 +64,7 @@ public sealed class DeliveryPreviewTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private async Task<string> SeedDeliveryAsync(bool image, string? otpHash, bool expired = false, int downloadCount = 0)
+    private async Task<string> SeedDeliveryAsync(bool image, string? passwordHash, bool expired = false, int downloadCount = 0)
     {
         var shareCode = $"prev{Guid.NewGuid():N}"[..12];
         using var scope = _factory.Services.CreateScope();
@@ -83,7 +83,7 @@ public sealed class DeliveryPreviewTests : IClassFixture<TestWebAppFactory>
             DownloadCount = downloadCount,
             StoragePath = $"stub/{shareCode}",
             ExpiresAt = expired ? DateTime.UtcNow.AddHours(-1) : DateTime.UtcNow.AddDays(3),
-            OtpHash = otpHash
+            PasswordHash = passwordHash
         });
         await db.SaveChangesAsync();
         return shareCode;

@@ -72,12 +72,10 @@ public record Delivery : BaseAuditEntity
     /// <summary>Sender-side star (issue #242).</summary>
     public bool IsFavorite { get; set; }
     public const int TagMaxLength = 30;
-    public const int AccessRuleMaxLength = 500;
     /// <summary>Optional sender label (issue #321); color derived from the text.</summary>
     public string? Tag { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public DateTime? DeliverAt { get; set; }
-    public string? OtpHash { get; set; }
     public string? PasswordHash { get; set; }
     public string? Message { get; set; }
     public string? Sha256 { get; set; }
@@ -101,15 +99,6 @@ public record Delivery : BaseAuditEntity
     public bool RequireRecipientEmail { get; set; }
     /// <summary>Public stats page (issue #294): a shareable aggregated download-stats page. Default off for privacy.</summary>
     public bool PublicStatsEnabled { get; set; }
-    /// <summary>
-    /// IP allowlist (issue #142): comma-separated CIDR ranges or bare addresses.
-    /// Null/empty = reachable from any address. Studio-only at upload time.
-    /// </summary>
-    public string? AllowedIpRanges { get; set; }
-    /// <summary>Country allow-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Null = every country passes.</summary>
-    public string? AllowedCountries { get; set; }
-    /// <summary>Country deny-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Evaluated after the allow-list.</summary>
-    public string? BlockedCountries { get; set; }
     public bool HideDownloadStats { get; set; }
     /// <summary>Soft-delete timestamp (issue #99); null = live. Purged after 24h.</summary>
     public DateTime? DeletedAt { get; set; }
@@ -117,10 +106,6 @@ public record Delivery : BaseAuditEntity
     public string Source { get; init; } = DeliverySources.Web;
     public string? StoragePath { get; set; }
     public bool IsDeduplicated { get; set; }
-    public string EncryptionMode { get; set; } = DeliveryEncryptionMode.FragmentKey;
-    public string? EncryptionKdfSalt { get; set; }
-    public int? EncryptionKdfIterations { get; set; }
-    public string? EncryptedKeyEscrow { get; set; }
     public User? Sender { get; init; }
     /// <summary>File request this delivery was submitted to (issue #16); null = normal upload. SenderId stays null for submissions.</summary>
     public Guid? FileRequestId { get; set; }
@@ -134,13 +119,4 @@ public static class DeliveryStatus
     public const string Expired = "Expired";
     public const string Suspended = "Suspended";
     public const string Revoked = "Revoked";
-}
-
-public static class DeliveryEncryptionMode
-{
-    public const string None = "none";
-    public const string FragmentKey = "fragment";
-    public const string Passphrase = "passphrase";
-
-    public static readonly string[] All = [None, FragmentKey, Passphrase];
 }

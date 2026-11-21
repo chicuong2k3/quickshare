@@ -10,7 +10,8 @@ The profile system displays and updates user identity (name, avatar). Users are 
 
 | Layer | File | Role |
 |-------|------|------|
-| Account Page (UI) | `Components/Pages/Account.razor` | `/account` — account hub composing `<AccountProfile />` and account cards |
+| Account Page (UI) | `Components/Pages/Account.razor` | `/account` — account hub composing `<AccountProfile />` and account cards, wrapped in `<AccountShell />` (vertical tab rail left, content right) |
+| Account Shell | `Components/Shared/AccountShell.razor` | Tab rail + content grid wrapper; `AccountTabs` renders vertically on desktop, horizontally on mobile |
 | Profile Card Page | `Components/Pages/AccountProfile.razor` | `/account/profile` — clickable avatar picker (`<label for="avatarFileInput">`), display name auto-save form (`<noscript>` submit fallback), DB update + cookie re-sign |
 | Account CSS | `Components/Pages/AccountProfile.razor.css` / `Components/Pages/Account.razor.css` | Scoped styles |
 | Account JS | `src/QuickShare/ts/account.ts` (compiled to `wwwroot/js/account.js`) | Avatar preview + immediate upload & debounced/blur display-name auto-save via `fetch()` without a visible Save button |
@@ -177,7 +178,9 @@ Profile data is loaded in-process via `AppDbContext` or `IMediator` in `Account.
 
 | File | Role |
 |------|------|
-| `src/QuickShare/Components/Pages/Account.razor` | `/account` hub — renders `<AccountProfile />` and account cards |
+| `src/QuickShare/Components/Pages/Account.razor` | `/account` hub — renders `<AccountProfile />` and account cards inside `<AccountShell />` |
+| `src/QuickShare/Components/Pages/AccountSecurity.razor` | `/account/security` — sessions + security activity + known devices (one security tab) |
+| `src/QuickShare/Components/Pages/AccountReferral.razor` | `/account/referral` — referral tab of its own |
 | `src/QuickShare/Components/Pages/AccountProfile.razor` | `/account/profile` — clickable avatar picker + auto-saving name/avatar form (`<noscript>` submit fallback) + cookie re-sign |
 | `src/QuickShare/Components/Pages/Account.razor.css` | Scoped styles |
 | `src/QuickShare/Components/Pages/AccountProfile.razor.css` | Scoped styles for `.profile-avatar-picker` and `.profile-save-status` |

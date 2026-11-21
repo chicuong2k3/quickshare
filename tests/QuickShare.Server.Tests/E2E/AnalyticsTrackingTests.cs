@@ -50,7 +50,7 @@ public sealed class AnalyticsTrackingTests : IClassFixture<TestWebAppFactory>
         return await db.AnalyticsEvents.AsNoTracking().ToListAsync();
     }
 
-    private async Task<CommitR2Response> UploadFileAsync(HttpClient client, string? otp = null)
+    private async Task<CommitR2Response> UploadFileAsync(HttpClient client)
     {
         var start = await (await client.PostAsJsonAsync("/api/uploads/start-r2", new StartR2Request
         {
@@ -68,8 +68,7 @@ public sealed class AnalyticsTrackingTests : IClassFixture<TestWebAppFactory>
             FileName = TestFileName,
             ContentType = TestContentType,
             FileSize = TestFileSize,
-            Parts = [new R2PartEtag(1, "etag-1")],
-            Otp = otp,
+            Parts = [new R2PartEtag(1, "etag-1")],
         });
         var commit = await commitResponse.Content.ReadFromJsonAsync<CommitR2Response>();
         return commit!;
@@ -171,28 +170,6 @@ public sealed class AnalyticsTrackingTests : IClassFixture<TestWebAppFactory>
         var events2 = await GetEventsAsync();
         var downloadEvent = events2.Single(e => e.EventName == AnalyticsEvents.DownloadCompleted);
         Assert.Equal(TestFileName, downloadEvent.FileName);
-    }
-
-    // ── OTP gate ──
-
-    [Fact]
-    public async Task VerifyOtp_RecordsPassAndFail()
-    {
-        await ClearEventsAsync();
-        const string otp = "123456";
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Add(TestAuthDefaults.UserIdHeader, TestWebAppFactory.TestUserProviderKey);
-        var commit = await UploadFileAsync(client, otp);
-
-        var wrong = await client.PostAsJsonAsync($"/api/deliveries/{commit.ShareCode}/verify-otp", new { Otp = "000000" });
-        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
-
-        var right = await client.PostAsJsonAsync($"/api/deliveries/{commit.ShareCode}/verify-otp", new { Otp = otp });
-        Assert.Equal(HttpStatusCode.OK, right.StatusCode);
-
-        var events = await GetEventsAsync();
-        Assert.Contains(events, e => e.EventName == AnalyticsEvents.OtpFail);
-        Assert.Contains(events, e => e.EventName == AnalyticsEvents.OtpPass);
     }
 
     // ── P2P session ──

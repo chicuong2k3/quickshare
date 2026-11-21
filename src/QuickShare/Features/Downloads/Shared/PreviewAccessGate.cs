@@ -7,7 +7,6 @@ internal static class PreviewAccessGate
     public static async Task<string?> CheckAsync(
         Delivery? delivery,
         AppDbContext db,
-        DeliveryAccessService access,
         WorkspaceDomainReader domains,
         HttpContext? context,
         CancellationToken ct)
@@ -20,11 +19,6 @@ internal static class PreviewAccessGate
         if (await domains.IsForeignHostAsync(context?.Request.Host.Host, delivery.WorkspaceId, ct))
         {
             return ErrorCodes.NotFound;
-        }
-
-        if (await access.CheckAsync(delivery, ct) != DeliveryAccessDecision.Allowed)
-        {
-            return ErrorCodes.DeliveryRestricted;
         }
 
         var now = DateTime.UtcNow;
@@ -56,8 +50,7 @@ internal static class PreviewAccessGate
             }
         }
 
-        if (!string.IsNullOrEmpty(delivery.OtpHash)
-            || !string.IsNullOrEmpty(delivery.PasswordHash)
+        if (!string.IsNullOrEmpty(delivery.PasswordHash)
             || delivery.EmailOtpEnabled
             || delivery.RequireRecipientEmail
             || string.IsNullOrEmpty(delivery.StoragePath))

@@ -27,10 +27,9 @@ public sealed class CommitR2Endpoint : Endpoint<CommitR2Request, CommitR2Respons
     {
         var cmd = new CommitR2Command(
             req.DeliveryId, req.UploadId, req.ObjectKey,
-            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Otp, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.AllowedIpRanges, req.AllowedCountries, req.BlockedCountries, req.FolderId, req.CommentsEnabled, req.WatermarkEnabled,
+            req.FileName, req.ContentType, req.FileSize, req.Parts, req.Password, req.Message, req.Source, req.DeliverAt, req.ExpiryHours, req.Sha256, req.BurnAfterDownload, req.AllowExtensionRequests, req.RecipientEmails, req.PrivacyMode, req.EmailOtpEnabled, req.RequireRecipientEmail, req.PublicStatsEnabled, req.FolderId, req.CommentsEnabled, req.WatermarkEnabled,
             req.AdditionalFiles?.Select(f => new CommitFile(
-                f.ObjectKey, f.UploadId, f.FileName, f.ContentType, f.FileSize, f.Parts, f.Sha256)).ToList(),
-            req.EncryptionMode, req.EncryptionKdfSalt, req.EncryptionKdfIterations, req.EncryptedKeyEscrow);
+                f.ObjectKey, f.UploadId, f.FileName, f.ContentType, f.FileSize, f.Parts, f.Sha256)).ToList());
         var result = await Resolve<IMediator>().Send<LightResults.Result<CommitR2Response>>(cmd, ct);
 
         if (result.IsSuccess(out var value))
@@ -52,7 +51,6 @@ public class CommitR2Request
     public string ContentType { get; set; } = string.Empty;
     public long FileSize { get; set; }
     public IReadOnlyList<R2PartEtag> Parts { get; set; } = [];
-    public string? Otp { get; set; }
     public string? Password { get; set; }
     public string? Message { get; set; }
     public string? Source { get; set; }
@@ -66,12 +64,6 @@ public class CommitR2Request
     public bool EmailOtpEnabled { get; set; }
     public bool RequireRecipientEmail { get; set; }
     public bool PublicStatsEnabled { get; set; }
-    /// <summary>IP allowlist (issue #142): comma-separated CIDR ranges. Pro/Studio only.</summary>
-    public string? AllowedIpRanges { get; set; }
-    /// <summary>Country allow-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Pro/Studio only.</summary>
-    public string? AllowedCountries { get; set; }
-    /// <summary>Country deny-list (issue #166): comma-separated ISO 3166-1 alpha-2 codes. Pro/Studio only.</summary>
-    public string? BlockedCountries { get; set; }
     /// <summary>Shared workspace folder to file this delivery under (issue #151); null = loose in the workspace.</summary>
     public Guid? FolderId { get; set; }
     /// <summary>Let recipients and the team discuss this share (issue #289). Off by default.</summary>
@@ -85,10 +77,6 @@ public class CommitR2Request
     /// always has.
     /// </summary>
     public List<CommitFileRequest>? AdditionalFiles { get; set; }
-    public string? EncryptionMode { get; set; }
-    public string? EncryptionKdfSalt { get; set; }
-    public int? EncryptionKdfIterations { get; set; }
-    public string? EncryptedKeyEscrow { get; set; }
 }
 
 /// <summary>One extra file of a bundle, as posted at commit (issue #79).</summary>

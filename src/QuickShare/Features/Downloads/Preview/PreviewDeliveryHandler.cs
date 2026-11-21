@@ -7,7 +7,7 @@ namespace QuickShare.Features.Downloads.Preview;
 
 public record PreviewDeliveryQuery(string ShareCode) : IRequest<Result<Uri>>;
 
-public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access,
+public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContext db,
     WorkspaceDomainReader domains, IHttpContextAccessor http)
     : IRequestHandler<PreviewDeliveryQuery, Result<Uri>>
 {
@@ -20,7 +20,7 @@ public sealed class PreviewDeliveryHandler(IStorageProvider storage, AppDbContex
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var error = await PreviewAccessGate.CheckAsync(delivery, db, access, domains, http.HttpContext, cancellationToken);
+        var error = await PreviewAccessGate.CheckAsync(delivery, db, domains, http.HttpContext, cancellationToken);
         if (error is not null)
         {
             return Result.Failure<Uri>(new LightResults.Error(error));

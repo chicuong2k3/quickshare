@@ -15,7 +15,7 @@ public record ZipEntryResponse(string Name, long Size, long CompressedSize, bool
 /// directory, never the decompressed bytes. Gated like the media preview (#21):
 /// password/OTP-gated and exhausted deliveries don't expose their contents.
 /// </summary>
-public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access,
+public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db,
     WorkspaceDomainReader domains, IHttpContextAccessor http)
     : IRequestHandler<ZipContentsQuery, Result<IReadOnlyList<ZipEntryResponse>>>
 {
@@ -29,7 +29,7 @@ public sealed class ZipContentsHandler(IStorageProvider storage, AppDbContext db
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var error = await PreviewAccessGate.CheckAsync(delivery, db, access, domains, http.HttpContext, cancellationToken);
+        var error = await PreviewAccessGate.CheckAsync(delivery, db, domains, http.HttpContext, cancellationToken);
         if (error is not null)
         {
             return Result.Failure<IReadOnlyList<ZipEntryResponse>>(new LightResults.Error(error));

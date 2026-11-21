@@ -30,16 +30,14 @@ public sealed record WorkspaceDto(
     long PooledQuotaBytes,
     long PooledUsedBytes,
     string CommentPolicy,
-    IReadOnlyList<WorkspaceMemberDto> Members,
-    string EncryptionPolicy = WorkspaceEncryptionPolicy.Default);
+    IReadOnlyList<WorkspaceMemberDto> Members);
 
 public record CreateWorkspaceCommand(string? Name, int Seats) : IRequest<Result<WorkspaceDto>>;
 public record GetWorkspaceQuery : IRequest<Result<WorkspaceDto>>;
 public record UpdateWorkspaceCommand(
     string? Name,
     int? Seats,
-    string? CommentPolicy = null,
-    string? EncryptionPolicy = null) : IRequest<Result<WorkspaceDto>>;
+    string? CommentPolicy = null) : IRequest<Result<WorkspaceDto>>;
 public record InviteMemberCommand(string? Email, string? Role) : IRequest<Result<WorkspaceMemberDto>>;
 public record AcceptInviteCommand(string? Token) : IRequest<Result<WorkspaceDto>>;
 public record ChangeMemberRoleCommand(Guid MemberId, string? Role) : IRequest<Result<WorkspaceMemberDto>>;
@@ -190,15 +188,6 @@ public sealed class UpdateWorkspaceHandler(
                 return Result.Failure<WorkspaceDto>(new LightResults.Error(ErrorCodes.BadRequest));
 
             workspace.CommentPolicy = normalized;
-        }
-
-        if (cmd.EncryptionPolicy is { } encryptionPolicy)
-        {
-            var normalizedEnc = encryptionPolicy.Trim().ToLowerInvariant();
-            if (!WorkspaceEncryptionPolicy.All.Contains(normalizedEnc))
-                return Result.Failure<WorkspaceDto>(new LightResults.Error(ErrorCodes.BadRequest));
-
-            workspace.EncryptionPolicy = normalizedEnc;
         }
 
         workspace.UpdatedAt = DateTime.UtcNow;
@@ -522,7 +511,6 @@ internal static class WorkspaceReader
                 m.Name,
                 m.Role.ToString().ToLowerInvariant(),
                 m.JoinedAt is null,
-                m.JoinedAt)).ToList(),
-            workspace.EncryptionPolicy);
+                m.JoinedAt)).ToList());
     }
 }

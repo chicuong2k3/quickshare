@@ -76,7 +76,6 @@
         draggingActive: boolean;
         encryptionEnabled: boolean;
         _encryptionUsed: boolean;
-        otp: string;
         _abortController: AbortController | null;
         _deliveryId: string | null;
         _uploadId: string | null;
@@ -101,9 +100,6 @@
         emailOtpEnabled: boolean;
         requireRecipientEmail: boolean;
         publicStatsEnabled: boolean;
-        allowedIpRanges: string | null;
-        allowedCountries: string | null;
-        blockedCountries: string | null;
         stripMetadata: boolean;
         compressImages: boolean;
         expiryHours: number | null;
@@ -114,7 +110,6 @@
         progress: 0, filename: '', link: '', expiresAt: '', error: '',
         copied: false, pasteTip: false, draggingActive: false,
         encryptionEnabled: true, _encryptionUsed: false,
-        otp: '',
         _abortController: null, _deliveryId: null, _uploadId: null, _cancelled: false,
         fileSize: 0, uploadedBytes: 0, speed: '', eta: '', _startTime: 0,
         source: SOURCE_WEB,
@@ -132,9 +127,6 @@
         emailOtpEnabled: false,
         requireRecipientEmail: false,
         publicStatsEnabled: false,
-        allowedIpRanges: null,
-        allowedCountries: null,
-        blockedCountries: null,
         stripMetadata: true,
         compressImages: true,
         expiryHours: null,
@@ -326,29 +318,6 @@
     }
 
     window.uploadPage = {
-        otpInput: function (event, idx) {
-            const target = event.target as HTMLInputElement;
-            const val = target.value.replace(/\D/g, '');
-            target.value = val;
-            if (val && idx < 5) {
-                const next = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input')[idx + 1];
-                if (next) next.focus();
-            }
-        },
-        otpKeydown: function (event, idx) {
-            const target = event.target as HTMLInputElement;
-            if (event.key === 'Backspace' && !target.value && idx > 0) {
-                const prev = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input')[idx - 1];
-                if (prev) prev.focus();
-            }
-        },
-        readOtp: function () {
-            const inputs = document.querySelectorAll<HTMLInputElement>('#upload-otp .db-otp__input');
-            let pin = '';
-            for (let i = 0; i < inputs.length; i++) pin += inputs[i].value;
-            state.otp = pin;
-        },
-
         // Live strength feedback while typing a share password (issue #287).
         // ponytail: heuristic scoring (length + character variety), not zxcvbn — good
         // enough for a share password; swap in zxcvbn if real entropy estimates matter.
@@ -599,7 +568,7 @@
 
     function reset(): void {
         state.phase = 'idle'; state.progress = 0; state.filename = ''; state.link = ''; state.expiresAt = '';
-        state.error = ''; state.copied = false; state.encryptionEnabled = true; state._encryptionUsed = false; state.otp = '';
+        state.error = ''; state.copied = false; state.encryptionEnabled = true; state._encryptionUsed = false;
         state._abortController = null; state._deliveryId = null; state._uploadId = null; state._resumeCtx = null;
         state.uploadedBytes = 0; state.fileSize = 0; state.speed = ''; state.eta = '';
         state.source = SOURCE_WEB;
@@ -613,14 +582,6 @@
     }
 
     function sleep(ms: number): Promise<void> { return new Promise<void>(function (res) { setTimeout(res, ms); }); }
-
-    // Access rules (issues #142/#166). The server normalizes each value and drops
-    // whatever it cannot parse, so the client only trims. Blank must stay null —
-    // an empty string would read as "an allowlist that matches nothing".
-    function accessRule(id: string): string | null {
-        const raw = (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? '';
-        return raw.length > 0 ? raw : null;
-    }
 
     function startUpload(file: File, source?: string): void {
         if (!file) return;
@@ -641,9 +602,6 @@
         state.emailOtpEnabled = (document.getElementById('upload-email-otp') as HTMLInputElement | null)?.checked ?? false;
         state.requireRecipientEmail = (document.getElementById('upload-recipient-email') as HTMLInputElement | null)?.checked ?? false;
         state.publicStatsEnabled = (document.getElementById('upload-public-stats') as HTMLInputElement | null)?.checked ?? false;
-        state.allowedIpRanges = accessRule('upload-allowed-ip-ranges');
-        state.allowedCountries = accessRule('upload-allowed-countries');
-        state.blockedCountries = accessRule('upload-blocked-countries');
         state.stripMetadata = (document.getElementById('upload-strip-metadata') as HTMLInputElement | null)?.checked ?? true;
         state.compressImages = (document.getElementById('upload-compress') as HTMLInputElement | null)?.checked ?? true;
         const expirySelect = document.getElementById('upload-expiry') as HTMLSelectElement | null;
@@ -869,7 +827,7 @@
         }
 
         const additionalFiles = await uploadExtraFiles(ctx.deliveryId, signal);
-        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ additionalFiles: additionalFiles, deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, otp: state.otp || null, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, watermarkEnabled: state.watermarkEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled, allowedIpRanges: state.allowedIpRanges, allowedCountries: state.allowedCountries, blockedCountries: state.blockedCountries }) });
+        const commitResp = await fetch(apiBase() + '/api/uploads/commit-r2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: signal, body: JSON.stringify({ additionalFiles: additionalFiles, deliveryId: ctx.deliveryId, uploadId: ctx.uploadId, objectKey: ctx.objectKey, fileName: ctx.fileName, contentType: ctx.contentType, fileSize: ctx.originalSize, parts: ctx.partEtags, password: state.password || null, message: state.message || null, source: state.source, deliverAt: state.deliverAt, expiryHours: state.expiryHours, sha256: state.sha256 || null, burnAfterDownload: state.burnAfterDownload, allowExtensionRequests: state.allowExtensionRequests, recipientEmails: state.recipientEmails, privacyMode: state.privacyMode, commentsEnabled: state.commentsEnabled, watermarkEnabled: state.watermarkEnabled, emailOtpEnabled: state.emailOtpEnabled, requireRecipientEmail: state.requireRecipientEmail, publicStatsEnabled: state.publicStatsEnabled }) });
         if (!commitResp.ok) { const cErr = await commitResp.text(); throw new Error(cErr || t('finalizeFailed')); }
         const result = await commitResp.json();
         state.link = result.shareLink;
@@ -942,18 +900,6 @@
     }
 
     render();
-    function initEncryptionModeToggle(): void {
-        const modeSelect = document.getElementById('upload-encryption-mode') as HTMLSelectElement | null;
-        const passphraseRow = document.getElementById('upload-passphrase-row');
-        if (!modeSelect || !passphraseRow) return;
-        const sync = (): void => {
-            passphraseRow.classList.toggle('hidden', modeSelect.value !== 'passphrase');
-        };
-        modeSelect.addEventListener('change', sync);
-        sync();
-    }
-
-    initEncryptionModeToggle();
     consumePasteHandoff();
     consumeShareTarget();
 })();

@@ -12,8 +12,8 @@ namespace QuickShare.Browser.Tests;
 /// </summary>
 public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
 {
-    private const string TestOtp = "123456";
-    private const string WrongOtp = "000000";
+    private const string TestPassword = "mat-khau-2024";
+    private const string WrongPassword = "khong-dung";
 
     private const string PatchBody = """
         diff --git a/readme.txt b/readme.txt
@@ -34,7 +34,7 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
         _fx = fx;
     }
 
-    private async Task<string> SeedDeliveryAsync(string? senderPlan = null, string? otp = null, bool expired = false, string? fileName = null, string? contentType = null)
+    private async Task<string> SeedDeliveryAsync(string? senderPlan = null, string? password = null, bool expired = false, string? fileName = null, string? contentType = null)
     {
         var shareCode = $"bt-{Guid.NewGuid():N}"[..12];
         using var scope = _fx.Services.CreateScope();
@@ -67,7 +67,7 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
             MaxDownloads = 10,
             StoragePath = $"stub/{shareCode}",
             ExpiresAt = expired ? DateTime.UtcNow.AddMinutes(-5) : DateTime.UtcNow.AddDays(7),
-            OtpHash = otp is null ? null : BCrypt.Net.BCrypt.HashPassword(otp),
+            PasswordHash = password is null ? null : BCrypt.Net.BCrypt.HashPassword(password),
         });
         await db.SaveChangesAsync();
         return shareCode;
@@ -93,7 +93,7 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
         await Assertions.Expect(page.Locator("#dl-download-btn")).ToBeVisibleAsync();
         // No gate phases for a paid sender.
         await Assertions.Expect(page.Locator("#download-phase-ad")).ToBeHiddenAsync();
-        await Assertions.Expect(page.Locator("#download-phase-otp")).ToBeHiddenAsync();
+        await Assertions.Expect(page.Locator("#download-phase-password")).ToBeHiddenAsync();
     }
 
     [Fact]
@@ -112,23 +112,24 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
     }
 
     [Fact]
-    public async Task OtpGate_WrongCodeErrors_CorrectCodeUnlocks()
+    public async Task PasswordGate_WrongPasswordErrors_CorrectPasswordUnlocks()
     {
-        var code = await SeedDeliveryAsync(otp: TestOtp);
+        var code = await SeedDeliveryAsync(password: TestPassword);
         var page = await OpenAsync($"/d/{code}");
 
-        await Assertions.Expect(page.Locator("#download-phase-otp")).ToBeVisibleAsync(
+        await Assertions.Expect(page.Locator("#download-phase-password")).ToBeVisibleAsync(
             new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
-
-        await FillOtpAsync(page, WrongOtp);
-        await page.ClickAsync("#dl-otp-btn");
-        await Assertions.Expect(page.Locator("#dl-otp-error")).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator("#download-phase-file")).ToBeHiddenAsync();
 
-        await FillOtpAsync(page, TestOtp);
-        await page.ClickAsync("#dl-otp-btn");
+        await page.Locator("#dl-password").FillAsync(WrongPassword);
+        await page.ClickAsync("#dl-password-btn");
+        await Assertions.Expect(page.Locator("#dl-password-error")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("#download-phase-file")).ToBeHiddenAsync();
+
+        await page.Locator("#dl-password").FillAsync(TestPassword);
+        await page.ClickAsync("#dl-password-btn");
         await Assertions.Expect(page.Locator("#download-phase-file")).ToBeVisibleAsync();
-        await Assertions.Expect(page.Locator("#download-phase-otp")).ToBeHiddenAsync();
+        await Assertions.Expect(page.Locator("#download-phase-password")).ToBeHiddenAsync();
     }
 
     [Fact]
@@ -194,10 +195,4 @@ public sealed class DownloadPageTests : IClassFixture<BrowserFixture>
         await Assertions.Expect(page.Locator("#dl-diff-mode-btn")).ToBeHiddenAsync();
     }
 
-    private static async Task FillOtpAsync(IPage page, string otp)
-    {
-        var inputs = page.Locator("#dl-otp .db-otp__input");
-        for (var i = 0; i < otp.Length; i++)
-            await inputs.Nth(i).FillAsync(otp[i].ToString());
-    }
 }

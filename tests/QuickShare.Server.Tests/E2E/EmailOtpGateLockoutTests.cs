@@ -178,9 +178,8 @@ public sealed class EmailOtpGateLockoutTests : IClassFixture<TestWebAppFactory>
         accessor.HttpContext = context;
         var handler = new DownloadDeliveryHandler(storage, accessor, db,
             requestScope.ServiceProvider.GetRequiredService<OtpLockoutService>(),
-            requestScope.ServiceProvider.GetRequiredService<DeliveryAccessService>(),
             requestScope.ServiceProvider.GetRequiredService<QuickShare.Features.Workspaces.Domains.WorkspaceDomainReader>());
-        var query = new DownloadDeliveryQuery(shareCode, null, null, Code, Email, null, false);
+        var query = new DownloadDeliveryQuery(shareCode, null, Code, Email, null, false);
         var request = handler.Handle(query, CancellationToken.None).AsTask();
 
         try

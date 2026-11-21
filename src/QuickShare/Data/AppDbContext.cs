@@ -109,9 +109,6 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.ShareCode).IsUnique();
             entity.Property(e => e.Alias).HasMaxLength(Delivery.AliasMaxLength);
             entity.HasIndex(e => e.Alias).IsUnique();
-            entity.Property(e => e.AllowedIpRanges).HasMaxLength(Delivery.AccessRuleMaxLength);
-            entity.Property(e => e.AllowedCountries).HasMaxLength(Delivery.AccessRuleMaxLength);
-            entity.Property(e => e.BlockedCountries).HasMaxLength(Delivery.AccessRuleMaxLength);
             entity.HasIndex(e => e.ExpiresAt);
             entity.HasOne(e => e.Sender)
                 .WithMany()

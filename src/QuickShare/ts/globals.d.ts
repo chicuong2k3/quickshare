@@ -163,9 +163,6 @@ interface RewardedAdInstance {
 }
 
 interface UploadPage {
-    otpInput(event: Event, idx: number): void;
-    otpKeydown(event: KeyboardEvent, idx: number): void;
-    readOtp(): void;
     passwordInput(event: Event): void;
     generatePassword(): void;
     onDragOver(e: DragEvent): void;
@@ -191,11 +188,8 @@ interface UploadPage {
 }
 
 interface DownloadPage {
-    verifyOtp(): void;
     verifyPassword(): void;
     passwordKeydown(event: KeyboardEvent): void;
-    otpInput(event: Event, idx: number): void;
-    otpKeydown(event: KeyboardEvent, idx: number): void;
     skipAd(): void;
     toggleZK(): void;
     handleDownload(event?: Event): boolean | void;
@@ -208,7 +202,6 @@ interface DownloadPage {
     selectSubtitleTrack?(value: string): void;
     setCompareSplit?(val: string | number): void;
     swapCompareImages?(): void;
-    unlockPassphraseVault?(): Promise<void>;
 }
 
 interface P2pSendPage {

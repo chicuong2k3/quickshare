@@ -10,7 +10,7 @@ public sealed record BundleFileDto(Guid Id, string FileName, string ContentType,
 /// <summary>
 /// GET /api/downloads/{ShareCode}/files — the files inside a delivery (issue #79).
 ///
-/// Goes through the same <see cref="DeliveryAccessService"/> gate as every other recipient-facing
+/// Goes through the same recipient gates as every other recipient-facing
 /// read. A file list is not metadata-free: it leaks names, sizes and folder structure, which is
 /// exactly the information a password or an IP rule was put there to withhold.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class ListBundleFilesEndpoint : EndpointWithoutRequest<IReadOnlyLi
     public override async Task HandleAsync(CancellationToken ct)
     {
         var db = Resolve<AppDbContext>();
-        var delivery = await BundleAccess.ResolveAsync(db, Resolve<DeliveryAccessService>(), Route<string>("ShareCode"), ct);
+        var delivery = await BundleAccess.ResolveAsync(db, Route<string>("ShareCode"), ct);
 
         if (delivery is null)
         {
@@ -71,7 +71,7 @@ public sealed class DownloadBundleFileEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var db = Resolve<AppDbContext>();
-        var delivery = await BundleAccess.ResolveAsync(db, Resolve<DeliveryAccessService>(), Route<string>("ShareCode"), ct);
+        var delivery = await BundleAccess.ResolveAsync(db, Route<string>("ShareCode"), ct);
 
         if (delivery is null)
         {
@@ -153,7 +153,7 @@ public sealed class DownloadBundleZipEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var db = Resolve<AppDbContext>();
-        var delivery = await BundleAccess.ResolveAsync(db, Resolve<DeliveryAccessService>(), Route<string>("ShareCode"), ct);
+        var delivery = await BundleAccess.ResolveAsync(db, Route<string>("ShareCode"), ct);
 
         if (delivery is null)
         {
@@ -256,7 +256,7 @@ internal static class BundleAccess
     /// gets found by somebody who is not us.
     /// </summary>
     public static async Task<Delivery?> ResolveAsync(
-        AppDbContext db, DeliveryAccessService access, string? shareCode, CancellationToken ct)
+        AppDbContext db, string? shareCode, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(shareCode))
             return null;
@@ -273,10 +273,10 @@ internal static class BundleAccess
 
         // A password- or OTP-gated share is not listable either: names and sizes are the
         // information the gate exists to withhold.
-        if (!string.IsNullOrEmpty(delivery.PasswordHash) || !string.IsNullOrEmpty(delivery.OtpHash))
+        if (!string.IsNullOrEmpty(delivery.PasswordHash))
             return null;
 
-        return await access.CheckAsync(delivery, ct) == DeliveryAccessDecision.Allowed ? delivery : null;
+        return delivery;
     }
 
     /// <summary>A filename for the archive, derived from the delivery rather than from a guess.</summary>

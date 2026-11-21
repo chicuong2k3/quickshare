@@ -22,7 +22,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task FilePhase_IsVisibleWithoutJavaScript()
     {
-        var shareCode = await SeedAsync(hasOtp: false);
+        var shareCode = await SeedAsync(password: null);
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
         Assert.Contains("id=\"download-phase-file\"", html);
@@ -33,19 +33,19 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task DownloadAction_IsARealLink_NotAScriptOnlyButton()
     {
-        var shareCode = await SeedAsync(hasOtp: false);
+        var shareCode = await SeedAsync(password: null);
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
         Assert.Contains($"id=\"dl-download-btn\" href=\"/api/downloads/{shareCode}\"", html);
     }
 
     [Fact]
-    public async Task OtpDelivery_ServerRendersTheGate_NotTheFile()
+    public async Task PasswordDelivery_ServerRendersTheGate_NotTheFile()
     {
-        var shareCode = await SeedAsync(hasOtp: true);
+        var shareCode = await SeedAsync(password: "mat-khau-2024");
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
-        Assert.DoesNotContain("id=\"download-phase-otp\" class=\"text-center hidden\"", html);
+        Assert.DoesNotContain("id=\"download-phase-password\" class=\"text-center hidden\"", html);
         Assert.Contains("id=\"download-phase-file\" class=\"hidden\"", html);
     }
 
@@ -54,7 +54,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
     {
         // An interstitial nobody can dismiss without JS must not stand between a
         // recipient and their file; JS raises it once the page is already usable.
-        var shareCode = await SeedAsync(hasOtp: false);
+        var shareCode = await SeedAsync(password: null);
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
         Assert.Contains("id=\"download-phase-ad\" class=\"text-center hidden\"", html);
@@ -63,7 +63,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task Page_CarriesItsScriptStringsSoTheJsHasNoEnglishLiterals()
     {
-        var shareCode = await SeedAsync(hasOtp: false);
+        var shareCode = await SeedAsync(password: null);
         var html = await GetHtmlAsync($"/d/{shareCode}");
 
         Assert.Contains("id=\"download-i18n\"", html);
@@ -73,7 +73,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
     [Fact]
     public async Task VietnameseCulture_TranslatesThePageAndTheLangAttribute()
     {
-        var shareCode = await SeedAsync(hasOtp: false);
+        var shareCode = await SeedAsync(password: null);
         var html = await GetHtmlAsync($"/d/{shareCode}", vi: true);
 
         Assert.Contains("<html lang=\"vi\"", html);
@@ -93,7 +93,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
         return WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
     }
 
-    private async Task<string> SeedAsync(bool hasOtp)
+    private async Task<string> SeedAsync(string? password)
     {
         var shareCode = $"nojs{Guid.NewGuid():N}"[..12];
         using var scope = _factory.Services.CreateScope();
@@ -111,7 +111,7 @@ public sealed class DownloadNoScriptTests : IClassFixture<TestWebAppFactory>
             MaxDownloads = 10,
             StoragePath = $"stub/{shareCode}",
             ExpiresAt = DateTime.UtcNow.AddDays(3),
-            OtpHash = hasOtp ? BCrypt.Net.BCrypt.HashPassword("123456") : null,
+            PasswordHash = password is null ? null : BCrypt.Net.BCrypt.HashPassword(password),
         });
         await db.SaveChangesAsync();
         return shareCode;

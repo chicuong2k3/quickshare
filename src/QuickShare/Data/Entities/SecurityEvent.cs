@@ -40,7 +40,6 @@ public enum SecurityEventType
     PasswordChanged,
     RetentionPolicyChanged,
     RetentionEnforced,
-    DeliveryAccessBlocked,
     WorkspaceCreated,
     WorkspaceRenamed,
     WorkspaceSeatsChanged,
@@ -69,6 +68,5 @@ public enum SecurityEventType
     WorkspaceDomainVerified,
     SubscriptionDunningStarted,
     SubscriptionDunningRecovered,
-    WorkspaceEncryptionPolicyChanged,
     ChatBotDeliveryCreated,
 }

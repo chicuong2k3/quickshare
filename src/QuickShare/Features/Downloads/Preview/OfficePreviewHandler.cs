@@ -13,7 +13,7 @@ public record OfficePreviewResponse(string Html, string Format);
 /// Server-side office document preview (issue #94): opens the object stream, extracts
 /// text from docx/xlsx/pptx, and returns escaped HTML for the download page preview tab.
 /// </summary>
-public sealed class OfficePreviewHandler(IStorageProvider storage, AppDbContext db, DeliveryAccessService access,
+public sealed class OfficePreviewHandler(IStorageProvider storage, AppDbContext db,
     WorkspaceDomainReader domains, IHttpContextAccessor http)
     : IRequestHandler<OfficePreviewQuery, Result<OfficePreviewResponse>>
 {
@@ -27,7 +27,7 @@ public sealed class OfficePreviewHandler(IStorageProvider storage, AppDbContext 
             .ByCode(query.ShareCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var error = await PreviewAccessGate.CheckAsync(delivery, db, access, domains, http.HttpContext, cancellationToken);
+        var error = await PreviewAccessGate.CheckAsync(delivery, db, domains, http.HttpContext, cancellationToken);
         if (error is not null)
         {
             return Result.Failure<OfficePreviewResponse>(new LightResults.Error(error));

@@ -99,7 +99,6 @@ public static class RoutePaths
     public const string SupportChatApi = "/api/support/chat";
     public const string AccountSupport = "/account/support";
     public const string CheckoutSessionApi = "/api/payments/checkout-session";
-    public const string DeliveryKeyEscrowApi = "/api/downloads/{ShareCode}/key-escrow";
     public const string SecurityPentestApi = "/api/security/pentest";
     public const string AdminSecurityPentestApi = "/api/admin/security/pentest";
     public const string SeoZhSendLargeFilesFree = "/zh/send-large-files-free";

@@ -27,9 +27,30 @@ public sealed class AccountUnpolyMigrationTests : IClassFixture<TestWebAppFactor
         Assert.Contains("id=\"profile-card\"", html);
         Assert.Contains(TestWebAppFactory.TestUserName, html);
         Assert.Contains("id=\"usage-card\"", html);
-        Assert.Contains("id=\"devices-card\"", html);
-        Assert.Contains("id=\"referral-card\"", html);
         Assert.Contains("id=\"downloads-card\"", html);
+    }
+
+    [Fact]
+    public async Task Security_tab_direct_get_renders_sessions_activity_and_devices()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+        var response = await client.GetAsync(RoutePaths.AccountSecurity);
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"security-activity-card\"", html);
+        Assert.Contains("id=\"devices-card\"", html);
+    }
+
+    [Fact]
+    public async Task Referral_tab_direct_get_renders_referral_card()
+    {
+        using var client = _factory.CreateAuthenticatedClient();
+        var response = await client.GetAsync(RoutePaths.AccountReferral);
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("id=\"referral-card\"", html);
     }
 
     [Fact]

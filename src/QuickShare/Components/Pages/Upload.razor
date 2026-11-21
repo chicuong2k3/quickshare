@@ -62,9 +62,6 @@
 
     var canSchedule = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
 
-    // Download restrictions (issues #142 + #166) are Pro/Studio only — the
-    // commit endpoint refuses lower plans with requires_paid_plan.
-    var canRestrictAccess = plan is PlanTierLimits.Pro or PlanTierLimits.Studio;
     maxExpiryDays = (int)Math.Max(1, Math.Round(PlanTierLimits.GetMaxExpiry(plan ?? PlanTierLimits.Free).TotalDays));
 }
 
@@ -286,7 +283,7 @@
                     </div>
                 }
 
-                @* Protect your link (issues #44 + OTP gate) — optional password and/or 6-digit code *@
+                @* Protect your link (issue #44) — optional password *@
                 <div class="sender-email-wrap">
                     <span class="otp-label">@Loc["upload_protect_label"]</span>
 
@@ -306,59 +303,6 @@
                          data-breached="@Loc["upload_password_breached"]" data-safe="@Loc["upload_password_safe"]"></div>
                     <span class="otp-hint">@Loc["upload_password_hint"]</span>
 
-                    <span class="protect-sub">@Loc["upload_otp_label"]</span>
-                    <div id="upload-otp" class="flex" style="gap: 0.5rem; margin-top: 0.5rem">
-                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 1, 6]" />
-                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 2, 6]" />
-                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 3, 6]" />
-                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 4, 6]" />
-                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 5, 6]" />
-                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 6, 6]" />
-                    </div>
-                    <span class="otp-hint">@Loc["upload_otp_hint"]</span>
-                </div>
-
-                @* Download restrictions (issues #142 + #166) — CIDR allowlist plus country
-                   allow/deny rules. These AND with the password/OTP gate above. Pro/Studio
-                   only; the commit endpoint normalizes each value and silently drops
-                   entries it cannot parse, so nothing is validated client-side. *@
-                <div class="sender-email-wrap upload-access" id="upload-access-rules">
-                    <span class="otp-label">@Loc["upload_access_label"]</span>
-
-                    <label for="upload-allowed-ip-ranges" class="protect-sub">@Loc["upload_access_ip_label"]</label>
-                    <Input Type="text" id="upload-allowed-ip-ranges" class="sender-email-input"
-                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
-                           placeholder="@Loc["upload_access_ip_placeholder"]"
-                           aria-describedby="upload-access-ip-hint"
-                           disabled="@(!canRestrictAccess)" />
-                    <span class="otp-hint" id="upload-access-ip-hint">@Loc["upload_access_ip_hint"]</span>
-
-                    <label for="upload-allowed-countries" class="protect-sub">@Loc["upload_access_allowed_countries_label"]</label>
-                    <Input Type="text" id="upload-allowed-countries" class="sender-email-input"
-                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
-                           placeholder="@Loc["upload_access_countries_placeholder"]"
-                           aria-describedby="upload-access-allowed-countries-hint"
-                           disabled="@(!canRestrictAccess)" />
-                    <span class="otp-hint" id="upload-access-allowed-countries-hint">@Loc["upload_access_allowed_countries_hint"]</span>
-
-                    <label for="upload-blocked-countries" class="protect-sub">@Loc["upload_access_blocked_countries_label"]</label>
-                    <Input Type="text" id="upload-blocked-countries" class="sender-email-input"
-                           maxlength="@Delivery.AccessRuleMaxLength" autocomplete="off"
-                           placeholder="@Loc["upload_access_countries_placeholder"]"
-                           aria-describedby="upload-access-blocked-countries-hint"
-                           disabled="@(!canRestrictAccess)" />
-                    <span class="otp-hint" id="upload-access-blocked-countries-hint">@Loc["upload_access_blocked_countries_hint"]</span>
-
-                    <span class="otp-hint upload-access__combine">@Loc["upload_access_combine_hint"]</span>
-
-                    @if (!canRestrictAccess)
-                    {
-                        <p class="otp-hint upload-access__locked" id="upload-access-locked">
-                            @Loc["upload_access_paid_hint"]
-                            <a href="@RoutePaths.Upgrade" class="upload-access__upgrade"
-                               data-ai-action="upload.accessRules.upgrade">@Loc["upload_access_upgrade"]</a>
-                        </p>
-                    }
                 </div>
 
                 @* Burn-after-download (issue #12) — single-use link *@
@@ -462,20 +406,6 @@
                         <span>@Loc["upload_compress_label"]</span>
                     </label>
                     <span class="otp-hint">@Loc["upload_compress_hint"]</span>
-                </div>
-
-                <div class="sender-email-wrap" id="upload-encryption-wrap">
-                    <label for="upload-encryption-mode" class="otp-label">@Loc["upload_encryption_mode_label"]</label>
-                    <NativeSelect id="upload-encryption-mode" class="sender-email-input" aria-label="@Loc["upload_encryption_mode_label"]">
-                        <NativeSelectOption value="@DeliveryEncryptionMode.FragmentKey" Selected>@Loc["upload_encryption_mode_fragment"]</NativeSelectOption>
-                        <NativeSelectOption value="@DeliveryEncryptionMode.Passphrase">@Loc["upload_encryption_mode_passphrase"]</NativeSelectOption>
-                        <NativeSelectOption value="@DeliveryEncryptionMode.None">@Loc["upload_encryption_mode_none"]</NativeSelectOption>
-                    </NativeSelect>
-                    <div id="upload-passphrase-row" class="mt-2 hidden">
-                        <label for="upload-encryption-passphrase" class="protect-sub">@Loc["upload_encryption_passphrase_label"]</label>
-                        <Input Type="password" id="upload-encryption-passphrase" class="sender-email-input" autocomplete="new-password" placeholder="@Loc["upload_encryption_passphrase_placeholder"]" />
-                    </div>
-                    <p id="upload-encryption-honesty" class="otp-hint mt-1">@Loc["upload_encryption_honesty_notice"]</p>
                 </div>
 
 

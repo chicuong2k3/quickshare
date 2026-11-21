@@ -11,7 +11,7 @@ namespace QuickShare.Features.Downloads.Subtitles;
 /// the fly) so HTML5 <c>&lt;track kind="subtitles"&gt;</c> elements can render captions directly
 /// inside the video preview player (issue #268).
 ///
-/// Enforces <see cref="BundleAccess.ResolveAsync"/> (which checks <see cref="DeliveryAccessService"/>,
+/// Enforces <see cref="BundleAccess.ResolveAsync"/> (which checks
 /// expiry, and password/OTP gates) and scopes the file lookup by <c>DeliveryId</c>.
 /// </summary>
 public sealed class DownloadSubtitleEndpoint : EndpointWithoutRequest
@@ -35,7 +35,7 @@ public sealed class DownloadSubtitleEndpoint : EndpointWithoutRequest
     {
         var db = Resolve<AppDbContext>();
         var delivery = await BundleAccess.ResolveAsync(
-            db, Resolve<DeliveryAccessService>(), Route<string>("ShareCode"), ct);
+            db, Route<string>("ShareCode"), ct);
 
         if (delivery is null)
         {

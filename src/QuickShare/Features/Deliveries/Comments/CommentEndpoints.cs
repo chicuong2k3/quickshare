@@ -37,7 +37,7 @@ public sealed class PostCommentRequest
 /// accumulate a public thread instead. Two are about reachability: the delivery's own lifecycle,
 /// and its scope rules.
 /// </summary>
-public sealed class CommentGate(AppDbContext db, DeliveryAccessService access)
+public sealed class CommentGate(AppDbContext db)
 {
     public sealed record Verdict(bool CanRead, bool CanPost, string Policy);
 
@@ -62,9 +62,6 @@ public sealed class CommentGate(AppDbContext db, DeliveryAccessService access)
         }
 
         if (delivery.ExpiresAt is { } expiresAt && expiresAt < DateTime.UtcNow)
-            return new Verdict(false, false, CommentPolicy.Disabled);
-
-        if (await access.CheckAsync(delivery, ct) != DeliveryAccessDecision.Allowed)
             return new Verdict(false, false, CommentPolicy.Disabled);
 
         var policy = delivery.WorkspaceId is { } workspaceId

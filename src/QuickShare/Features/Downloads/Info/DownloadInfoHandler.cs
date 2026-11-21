@@ -19,7 +19,6 @@ public record DownloadInfoResponse(
     string Status,
     int DownloadCount,
     int MaxDownloads,
-    bool HasOtp,
     bool HasPassword,
     string SenderPlan,
     string? Message,
@@ -38,10 +37,6 @@ public record DownloadInfoResponse(
     int QueuePosition = 0,
     int QueueEtaSeconds = 0,
     bool SuppressAdInterstitial = false,
-    string EncryptionMode = DeliveryEncryptionMode.FragmentKey,
-    string? EncryptionKdfSalt = null,
-    int? EncryptionKdfIterations = null,
-    bool HasKeyEscrow = false,
     bool IsLiveStreaming = false,
     int LiveProgressPercent = 100
 );
@@ -49,17 +44,11 @@ public record DownloadInfoResponse(
 public sealed class DownloadInfoHandler(
     AppDbContext db,
     CacheService cache,
-    DeliveryAccessService access,
     IOptions<QuickShareOptions> quickShareOptions)
     : IRequestHandler<DownloadInfoQuery, Result<DownloadInfoResponse>>
 {
     public async ValueTask<Result<DownloadInfoResponse>> Handle(DownloadInfoQuery query, CancellationToken cancellationToken)
     {
-        // Scope rules (issues #142/#166) are evaluated per caller, so they run OUTSIDE
-        // the share-code cache below — a verdict for one visitor must never be reused.
-        if (await access.CheckByCodeAsync(query.ShareCode, cancellationToken) != DeliveryAccessDecision.Allowed)
-            return Result.Failure<DownloadInfoResponse>(new LightResults.Error(ErrorCodes.DeliveryRestricted));
-
         return await cache.GetOrSetAsync(
             $"download:info:{query.ShareCode}",
             async ct2 =>
@@ -88,7 +77,6 @@ public sealed class DownloadInfoHandler(
                             DeliveryStatus.Active,
                             0,
                             100,
-                            HasOtp: false,
                             HasPassword: false,
                             SenderPlan: PlanTierLimits.Anonymous,
                             Message: null,
@@ -160,7 +148,6 @@ public sealed class DownloadInfoHandler(
                     delivery.Status,
                     delivery.PrivacyMode ? 0 : delivery.DownloadCount,
                     delivery.MaxDownloads,
-                    HasOtp: !string.IsNullOrEmpty(delivery.OtpHash),
                     HasPassword: !string.IsNullOrEmpty(delivery.PasswordHash),
                     SenderPlan: senderPlan,
                     Message: delivery.Message,
@@ -179,10 +166,6 @@ public sealed class DownloadInfoHandler(
                     QueuePosition: queue.Position,
                     QueueEtaSeconds: queue.EtaSeconds,
                     SuppressAdInterstitial: queue.SuppressAdInterstitial,
-                    EncryptionMode: string.IsNullOrEmpty(delivery.EncryptionMode) ? DeliveryEncryptionMode.FragmentKey : delivery.EncryptionMode,
-                    EncryptionKdfSalt: delivery.EncryptionKdfSalt,
-                    EncryptionKdfIterations: delivery.EncryptionKdfIterations,
-                    HasKeyEscrow: !string.IsNullOrEmpty(delivery.EncryptedKeyEscrow),
                     IsLiveStreaming: false,
                     LiveProgressPercent: 100
                 ));

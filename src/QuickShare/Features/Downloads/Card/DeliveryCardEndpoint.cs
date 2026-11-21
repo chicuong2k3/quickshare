@@ -17,13 +17,11 @@ public sealed class DeliveryCardRequest
 
 /// <summary>
 /// Auto-generated OpenGraph share card SVG per delivery (issue #201).
-/// Scope rules via DeliveryAccessService (403),
-/// and gated/private shares (masks filename when PasswordHash/OtpHash/PrivacyMode is active).
+/// Gated and private shares mask the filename when a password/OTP or privacy mode is active.
 /// </summary>
 public sealed class DeliveryCardEndpoint(
     AppDbContext db,
-    CacheService cache,
-    DeliveryAccessService access) : Endpoint<DeliveryCardRequest>
+    CacheService cache) : Endpoint<DeliveryCardRequest>
 {
     private const string SvgContentType = "image/svg+xml; charset=utf-8";
 
@@ -35,12 +33,6 @@ public sealed class DeliveryCardEndpoint(
 
     public override async Task HandleAsync(DeliveryCardRequest req, CancellationToken ct)
     {
-        if (await access.CheckByCodeAsync(req.ShareCode, ct) != DeliveryAccessDecision.Allowed)
-        {
-            await Send.ForbiddenAsync(ct);
-            return;
-        }
-
         var svg = await cache.GetOrSetAsync(
             $"download:card:{req.ShareCode}",
             async ct2 =>
@@ -60,7 +52,7 @@ public sealed class DeliveryCardEndpoint(
                     return string.Empty;
                 }
 
-                var gated = !string.IsNullOrEmpty(delivery.PasswordHash) || !string.IsNullOrEmpty(delivery.OtpHash);
+                var gated = !string.IsNullOrEmpty(delivery.PasswordHash);
                 var displayFileName = gated ? "Protected delivery" : Truncate(delivery.FileName, 44);
                 var sizeText = gated ? "Encrypted" : FormatBytes(delivery.FileSize);
                 var expiryText = delivery.ExpiresAt.HasValue

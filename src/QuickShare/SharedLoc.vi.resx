@@ -275,8 +275,6 @@
   <data name="upload_dropzone_drag" xml:space="preserve"><value>Thả vào đây</value></data>
   <data name="upload_dropzone_sub" xml:space="preserve"><value>hoặc Ctrl+V để dán, hoặc nhấp để duyệt</value></data>
   <data name="upload_protect_label" xml:space="preserve"><value>Bảo vệ liên kết (tùy chọn)</value></data>
-  <data name="upload_otp_label" xml:space="preserve"><value>Mã 6 số</value></data>
-  <data name="upload_otp_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mã này để tải file</value></data>
   <data name="upload_password_label" xml:space="preserve"><value>Mật khẩu</value></data>
   <data name="upload_password_placeholder" xml:space="preserve"><value>Đặt mật khẩu người nhận phải nhập</value></data>
   <data name="upload_password_hint" xml:space="preserve"><value>Nếu đặt, người nhận phải nhập mật khẩu này trước khi tải file.</value></data>
@@ -551,12 +549,6 @@
   <data name="deliveries_expires_days" xml:space="preserve"><value>Còn {0} ngày</value></data>
   <data name="dl_title" xml:space="preserve"><value>Nhận file — QuickShareCloud</value></data>
   <data name="dl_checking" xml:space="preserve"><value>Đang kiểm tra link…</value></data>
-  <data name="dl_otp_h2" xml:space="preserve"><value>Nhập mã bảo vệ</value></data>
-  <data name="dl_otp_sub" xml:space="preserve"><value>Hỏi người gửi mã 6 số để mở file này.</value></data>
-  <data name="dl_otp_unlock" xml:space="preserve"><value>Mở khoá</value></data>
-  <data name="dl_otp_verifying" xml:space="preserve"><value>Đang kiểm tra…</value></data>
-  <data name="dl_otp_incomplete" xml:space="preserve"><value>Vui lòng nhập đủ 6 số.</value></data>
-  <data name="dl_otp_wrong" xml:space="preserve"><value>Mã không đúng.</value></data>
   <data name="dl_password_h2" xml:space="preserve"><value>Nhập mật khẩu</value></data>
   <data name="dl_password_sub" xml:space="preserve"><value>Hỏi người gửi mật khẩu để mở file này.</value></data>
   <data name="dl_password_unlock" xml:space="preserve"><value>Mở khoá</value></data>
@@ -1178,42 +1170,6 @@
     <value>Xóa</value>
   </data>
   <!-- Download restrictions (issues #142 + #166) — sender controls on /send -->
-  <data name="upload_access_label" xml:space="preserve">
-    <value>Giới hạn ai được tải xuống</value>
-  </data>
-  <data name="upload_access_ip_label" xml:space="preserve">
-    <value>Dải IP được phép</value>
-  </data>
-  <data name="upload_access_ip_placeholder" xml:space="preserve">
-    <value>203.0.113.0/24, 198.51.100.7</value>
-  </data>
-  <data name="upload_access_ip_hint" xml:space="preserve">
-    <value>Dải CIDR hoặc từng địa chỉ, cách nhau bằng dấu phẩy — ví dụ 203.0.113.0/24. Để trống để cho phép mọi mạng.</value>
-  </data>
-  <data name="upload_access_allowed_countries_label" xml:space="preserve">
-    <value>Quốc gia được phép</value>
-  </data>
-  <data name="upload_access_countries_placeholder" xml:space="preserve">
-    <value>US, VN</value>
-  </data>
-  <data name="upload_access_allowed_countries_hint" xml:space="preserve">
-    <value>Mã quốc gia hai chữ cái, cách nhau bằng dấu phẩy — ví dụ US, VN. Để trống để cho phép mọi quốc gia.</value>
-  </data>
-  <data name="upload_access_blocked_countries_label" xml:space="preserve">
-    <value>Quốc gia bị chặn</value>
-  </data>
-  <data name="upload_access_blocked_countries_hint" xml:space="preserve">
-    <value>Mã quốc gia hai chữ cái, cách nhau bằng dấu phẩy — ví dụ US, VN. Được kiểm tra sau danh sách được phép.</value>
-  </data>
-  <data name="upload_access_combine_hint" xml:space="preserve">
-    <value>Các quy tắc này áp dụng cùng với mật khẩu và mã gửi qua email — người nhận phải vượt qua tất cả.</value>
-  </data>
-  <data name="upload_access_paid_hint" xml:space="preserve">
-    <value>Giới hạn tải xuống thuộc gói Pro và Studio.</value>
-  </data>
-  <data name="upload_access_upgrade" xml:space="preserve">
-    <value>Nâng cấp để mở khoá</value>
-  </data>
   <!-- Download restrictions (issues #142 + #166) — recipient refusal on /d -->
   <data name="dl_restricted_h1" xml:space="preserve">
     <value>Bạn không thể tải file này từ đây</value>
@@ -3314,68 +3270,11 @@
   <data name="login_passkey_recovery_submit" xml:space="preserve">
     <value>Đăng nhập bằng mã khôi phục</value>
   </data>
-  <data name="ws_encryption_policy_title" xml:space="preserve">
-    <value>Chính sách mã hóa phía trình duyệt</value>
-  </data>
-  <data name="ws_encryption_policy_hint" xml:space="preserve">
-    <value>Kiểm soát việc thành viên workspace sử dụng mã hóa đầu cuối zero-knowledge hay bắt buộc quét virus và tạo xem trước trên máy chủ.</value>
-  </data>
-  <data name="ws_encryption_policy_label" xml:space="preserve">
-    <value>Chế độ mã hóa Workspace</value>
-  </data>
-  <data name="ws_encryption_default" xml:space="preserve">
-    <value>Mặc định (Người gửi tự chọn chế độ mã hóa)</value>
-  </data>
-  <data name="ws_encryption_required" xml:space="preserve">
-    <value>Bắt buộc (Luôn mã hóa đầu cuối phía trình duyệt)</value>
-  </data>
-  <data name="ws_encryption_disabled" xml:space="preserve">
-    <value>Tắt mã hóa client (Để máy chủ quét virus &amp; tạo xem trước)</value>
-  </data>
-  <data name="ws_encryption_policy_save" xml:space="preserve">
-    <value>Lưu chính sách mã hóa</value>
-  </data>
-  <data name="upload_encryption_mode_label" xml:space="preserve">
-    <value>Quản lý khóa mã hóa</value>
-  </data>
-  <data name="upload_encryption_mode_fragment" xml:space="preserve">
-    <value>Khóa trên URL Fragment Zero-knowledge (#k=)</value>
-  </data>
-  <data name="upload_encryption_mode_passphrase" xml:space="preserve">
-    <value>Khóa dẫn xuất từ cụm mật khẩu (PBKDF2-SHA256)</value>
-  </data>
-  <data name="upload_encryption_mode_none" xml:space="preserve">
-    <value>Máy chủ quản lý (Hỗ trợ quét virus &amp; xem trước)</value>
-  </data>
-  <data name="upload_encryption_passphrase_label" xml:space="preserve">
-    <value>Cụm mật khẩu mã hóa (chia sẻ riêng cho người nhận)</value>
-  </data>
-  <data name="upload_encryption_passphrase_placeholder" xml:space="preserve">
-    <value>Nhập cụm mật khẩu mạnh để dẫn xuất khóa PBKDF2</value>
-  </data>
-  <data name="upload_encryption_honesty_notice" xml:space="preserve">
-    <value>Lưu ý minh bạch: Tệp mã hóa phía trình duyệt không thể quét virus hoặc tạo ảnh thu nhỏ trên máy chủ vì máy chủ không có khóa giải mã.</value>
-  </data>
   <data name="dl_fact_honesty_title" xml:space="preserve">
     <value>Đánh đổi bảo mật Zero-knowledge</value>
   </data>
   <data name="dl_fact_honesty_body" xml:space="preserve">
     <value>Tệp mã hóa đầu cuối tại trình duyệt sẽ bỏ qua bước quét virus và tạo ảnh xem trước trên máy chủ.</value>
-  </data>
-  <data name="dl_passphrase_title" xml:space="preserve">
-    <value>Yêu cầu cụm mật khẩu giải mã</value>
-  </data>
-  <data name="dl_passphrase_sub" xml:space="preserve">
-    <value>Liên kết này sử dụng mã hóa dẫn xuất PBKDF2. Nhập cụm mật khẩu do người gửi cung cấp để tạo khóa giải mã ngay trong trình duyệt.</value>
-  </data>
-  <data name="dl_passphrase_placeholder" xml:space="preserve">
-    <value>Nhập cụm mật khẩu giải mã</value>
-  </data>
-  <data name="dl_passphrase_unlock" xml:space="preserve">
-    <value>Dẫn xuất khóa &amp; Mở khóa</value>
-  </data>
-  <data name="dl_passphrase_unlocked" xml:space="preserve">
-    <value>Đã dẫn xuất khóa giải mã trong trình duyệt.</value>
   </data>
   <data name="ws_byok_title" xml:space="preserve">
     <value>Mã hóa khóa tự quản lý (BYOK KMS)</value>
