@@ -17,13 +17,11 @@
 
 <PageTitle>@Loc["billing_title"]</PageTitle>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-semibold">@Loc["billing_h1"]</h1>
-    </section>
-
-    <AccountShell Current="@RoutePaths.AccountBilling">
+    <AccountShell Current="@RoutePaths.AccountBilling"
+                  Title="@Loc["billing_h1"]"
+                  Subtitle="@Loc["billing_subtitle"]">
 
     <section class="billing-body" id="billing-body">
         @if (billing is null)

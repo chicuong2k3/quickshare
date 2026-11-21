@@ -29,10 +29,9 @@
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
-    gap: 1.25rem;
-    max-width: 60rem;
+    max-width: 72rem;
     width: 100%;
-    padding: 2rem 1rem 3.5rem;
+    padding: 2rem 1rem 4rem;
 }
 
 .page--fill {

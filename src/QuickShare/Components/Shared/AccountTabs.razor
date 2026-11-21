@@ -2,22 +2,26 @@
 
 @* Global (non-scoped) styles: this markup also ships inside server-rendered partials. *@
 <nav class="account-tabs" aria-label="Account sections">
-    <a href="@RoutePaths.Account" class="account-tabs__item @Active(RoutePaths.Account)">@Loc["account_tab_profile"]</a>
-    <a href="@RoutePaths.AccountDeliveries" class="account-tabs__item @Active(RoutePaths.AccountDeliveries)">@Loc["account_tab_deliveries"]</a>
-    <a href="@RoutePaths.AccountDeveloper" class="account-tabs__item @Active(RoutePaths.AccountDeveloper)">@Loc["account_tab_developer"]</a>
-    <a href="@RoutePaths.AccountReferral" class="account-tabs__item @Active(RoutePaths.AccountReferral)">@Loc["account_tab_referral"]</a>
-    <a href="@RoutePaths.AccountSecurity" class="account-tabs__item @Active(RoutePaths.AccountSecurity)">@Loc["account_tab_security"]</a>
-    <a href="@RoutePaths.AccountFileRequests" class="account-tabs__item @Active(RoutePaths.AccountFileRequests)">@Loc["account_tab_requests"]</a>
-    <a href="@RoutePaths.AccountWorkspace" class="account-tabs__item @Active(RoutePaths.AccountWorkspace)">@Loc["ws_tab_workspace"]</a>
-    <a href="@RoutePaths.AccountBilling" class="account-tabs__item @Active(RoutePaths.AccountBilling)">@Loc["account_tab_billing"]</a>
+    <a href="@RoutePaths.Account" class="account-tabs__item @Active(RoutePaths.Account)" aria-current="@AriaCurrent(RoutePaths.Account)">@Loc["account_tab_profile"]</a>
+    <a href="@RoutePaths.AccountDeliveries" class="account-tabs__item @Active(RoutePaths.AccountDeliveries)" aria-current="@AriaCurrent(RoutePaths.AccountDeliveries)">@Loc["account_tab_deliveries"]</a>
+    <a href="@RoutePaths.AccountDeveloper" class="account-tabs__item @Active(RoutePaths.AccountDeveloper)" aria-current="@AriaCurrent(RoutePaths.AccountDeveloper)">@Loc["account_tab_developer"]</a>
+    <a href="@RoutePaths.AccountReferral" class="account-tabs__item @Active(RoutePaths.AccountReferral)" aria-current="@AriaCurrent(RoutePaths.AccountReferral)">@Loc["account_tab_referral"]</a>
+    <a href="@RoutePaths.AccountSecurity" class="account-tabs__item @Active(RoutePaths.AccountSecurity)" aria-current="@AriaCurrent(RoutePaths.AccountSecurity)">@Loc["account_tab_security"]</a>
+    <a href="@RoutePaths.AccountFileRequests" class="account-tabs__item @Active(RoutePaths.AccountFileRequests)" aria-current="@AriaCurrent(RoutePaths.AccountFileRequests)">@Loc["account_tab_requests"]</a>
+    <a href="@RoutePaths.AccountWorkspace" class="account-tabs__item @Active(RoutePaths.AccountWorkspace)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspace)">@Loc["ws_tab_workspace"]</a>
+    <a href="@RoutePaths.AccountBilling" class="account-tabs__item @Active(RoutePaths.AccountBilling)" aria-current="@AriaCurrent(RoutePaths.AccountBilling)">@Loc["account_tab_billing"]</a>
 </nav>
 
 @code {
     private const string ActiveClass = "account-tabs__item--active";
+    private const string AriaCurrentPage = "page";
 
     [Parameter]
     public string Current { get; set; } = RoutePaths.Account;
 
     private string Active(string route) =>
         string.Equals(Current, route, StringComparison.OrdinalIgnoreCase) ? ActiveClass : string.Empty;
+
+    private string? AriaCurrent(string route) =>
+        string.Equals(Current, route, StringComparison.OrdinalIgnoreCase) ? AriaCurrentPage : null;
 }

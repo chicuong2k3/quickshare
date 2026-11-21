@@ -18,16 +18,15 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["channel_title"]</h1>
-        <p class="text-muted-foreground">@Loc["channel_subtitle"]</p>
-    </section>
+    <AccountShell Current="@RoutePaths.AccountWorkspace"
+                  Title="@Loc["channel_title"]"
+                  Subtitle="@Loc["channel_subtitle"]">
+        <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceChannel" />
 
-    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceChannel" />
-
-    @Chunk
+        @Chunk
+    </AccountShell>
 
 </PageWrapper>
 

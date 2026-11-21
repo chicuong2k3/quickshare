@@ -175,6 +175,7 @@
   <data name="pricing_cta_sub" xml:space="preserve"><value>Start free, no credit card required. Pro and Studio include a 14-day trial.</value></data>
   <data name="billing_title" xml:space="preserve"><value>Billing — QuickShareCloud</value></data>
   <data name="billing_h1" xml:space="preserve"><value>Subscription</value></data>
+  <data name="billing_subtitle" xml:space="preserve"><value>Your current plan, billing actions, and payment history.</value></data>
   <data name="billing_loading" xml:space="preserve"><value>Loading billing information...</value></data>
   <data name="billing_free_desc" xml:space="preserve"><value>Great for getting started</value></data>
   <data name="billing_pro_desc" xml:space="preserve"><value>For creators &amp; professionals</value></data>
@@ -202,6 +203,7 @@
   <data name="login_btn_google" xml:space="preserve"><value>Continue with Google</value></data>
   <data name="login_btn_github" xml:space="preserve"><value>Continue with GitHub</value></data>
   <data name="account_page_title" xml:space="preserve"><value>Account — QuickShareCloud</value></data>
+  <data name="account_profile_subtitle" xml:space="preserve"><value>Manage your display name, monthly upload usage, notification preferences, and privacy.</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Display name</value></data>
   <data name="account_profile_avatar_label" xml:space="preserve"><value>Profile image</value></data>
   <data name="account_profile_change_avatar" xml:space="preserve"><value>Change</value></data>

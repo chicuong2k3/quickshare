@@ -2,6 +2,7 @@ using System.Net;
 using System.Reflection;
 using Microsoft.AspNetCore.Components;
 using QuickShare.Data;
+using QuickShare.Infrastructure.Constants;
 
 namespace QuickShare.Server.Tests.E2E;
 
@@ -57,6 +58,42 @@ public sealed class AccountPageRenderTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.DoesNotContain("A second operation was started", html, StringComparison.Ordinal);
         Assert.Contains("id=\"devices-card\"", html, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(RoutePaths.Account)]
+    [InlineData(RoutePaths.AccountDeliveries)]
+    [InlineData(RoutePaths.AccountDeveloper)]
+    [InlineData(RoutePaths.AccountReferral)]
+    [InlineData(RoutePaths.AccountSecurity)]
+    [InlineData(RoutePaths.AccountFileRequests)]
+    [InlineData(RoutePaths.AccountWorkspace)]
+    [InlineData(RoutePaths.AccountBilling)]
+    [InlineData(RoutePaths.AccountInvoices)]
+    [InlineData(RoutePaths.AccountWorkspaceFolders)]
+    [InlineData(RoutePaths.AccountWorkspaceSeats)]
+    [InlineData(RoutePaths.AccountWorkspaceChannel)]
+    [InlineData(RoutePaths.AccountWorkspaceAudit)]
+    [InlineData(RoutePaths.AccountWorkspaceBrand)]
+    [InlineData(RoutePaths.AccountWorkspaceDomain)]
+    [InlineData(RoutePaths.AccountWorkspaceReport)]
+    public async Task Account_tab_routes_render_unified_shell_and_title(string route)
+    {
+        const string accountShellClass = "account-shell";
+        const string accountTabsClass = "account-tabs";
+        const string accountShellHeadClass = "account-shell__head";
+        const string accountShellTitleClass = "account-shell__title";
+
+        using var client = _factory.CreateAuthenticatedClient();
+
+        using var response = await client.GetAsync(route);
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(accountShellClass, html, StringComparison.Ordinal);
+        Assert.Contains(accountTabsClass, html, StringComparison.Ordinal);
+        Assert.Contains(accountShellHeadClass, html, StringComparison.Ordinal);
+        Assert.Contains(accountShellTitleClass, html, StringComparison.Ordinal);
     }
 
     /// <summary>

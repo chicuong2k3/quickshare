@@ -16,14 +16,11 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["invoices_title"]</h1>
-        <p class="text-muted-foreground">@Loc["invoices_subtitle"]</p>
-    </section>
-
-    <AccountShell Current="@RoutePaths.AccountBilling">
+    <AccountShell Current="@RoutePaths.AccountBilling"
+                  Title="@Loc["invoices_title"]"
+                  Subtitle="@Loc["invoices_subtitle"]">
 
     @Chunk
 

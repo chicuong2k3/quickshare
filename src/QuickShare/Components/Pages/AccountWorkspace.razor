@@ -15,16 +15,15 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_title"]</h1>
-        <p class="text-muted-foreground">@Loc["ws_subtitle"]</p>
-    </section>
+    <AccountShell Current="@RoutePaths.AccountWorkspace"
+                  Title="@Loc["ws_title"]"
+                  Subtitle="@Loc["ws_subtitle"]">
+        <WorkspaceTabs Current="@RoutePaths.AccountWorkspace" />
 
-    <WorkspaceTabs Current="@RoutePaths.AccountWorkspace" />
-
-    @Chunk
+        @Chunk
+    </AccountShell>
 
 </PageWrapper>
 

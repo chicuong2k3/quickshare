@@ -11,7 +11,9 @@
 
 <PageWrapper id="account-app" Variant="PageVariant.Account">
 
-    <AccountShell Current="@RoutePaths.Account">
+    <AccountShell Current="@RoutePaths.Account"
+                  Title="@Loc["account_tab_profile"]"
+                  Subtitle="@Loc["account_profile_subtitle"]">
         <div class="account-hub">
 
             @* Profile card renders in the initial response. *@

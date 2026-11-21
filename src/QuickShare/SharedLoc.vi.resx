@@ -175,6 +175,7 @@
   <data name="pricing_cta_sub" xml:space="preserve"><value>Bắt đầu miễn phí, không cần thẻ tín dụng. Pro và Studio có 14 ngày dùng thử.</value></data>
   <data name="billing_title" xml:space="preserve"><value>Thanh toán — QuickShareCloud</value></data>
   <data name="billing_h1" xml:space="preserve"><value>Gói đăng ký</value></data>
+  <data name="billing_subtitle" xml:space="preserve"><value>Gói hiện tại, tùy chọn gia hạn và lịch sử thanh toán.</value></data>
   <data name="billing_loading" xml:space="preserve"><value>Đang tải thông tin thanh toán...</value></data>
   <data name="billing_free_desc" xml:space="preserve"><value>Tuyệt vời để bắt đầu</value></data>
   <data name="billing_pro_desc" xml:space="preserve"><value>Cho nhà sáng tạo &amp; chuyên nghiệp</value></data>
@@ -203,6 +204,7 @@
   <data name="login_btn_github" xml:space="preserve"><value>Tiếp tục với GitHub</value></data>
   
   <data name="account_page_title" xml:space="preserve"><value>Tài khoản — QuickShareCloud</value></data>
+  <data name="account_profile_subtitle" xml:space="preserve"><value>Quản lý tên hiển thị, dung lượng hàng tháng, tùy chọn thông báo và quyền riêng tư.</value></data>
   <data name="account_profile_name_label" xml:space="preserve"><value>Tên hiển thị</value></data>
   <data name="account_profile_avatar_label" xml:space="preserve"><value>Ảnh hồ sơ</value></data>
   <data name="account_profile_change_avatar" xml:space="preserve"><value>Đổi ảnh</value></data>

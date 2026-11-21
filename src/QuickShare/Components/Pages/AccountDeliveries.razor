@@ -13,23 +13,21 @@
 
 <PageTitle>@Loc["deliveries_title"]</PageTitle>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-semibold">@Loc["deliveries_h1"]</h1>
-        <p class="text-base text-muted-foreground">@Loc["deliveries_lead"] <a class="text-primary underline" href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a>
+    <AccountShell Current="@RoutePaths.AccountDeliveries" Title="@Loc["deliveries_h1"]">
+        <SubtitleContent>
+            @Loc["deliveries_lead"] <a href="/api/deliveries/export" data-ai-action="deliveries.export">@Loc["deliveries_export"]</a>
             @if (DeletedOnly)
             {
-                <text>·</text> <a class="text-primary underline" href="/account/deliveries">@Loc["deliveries_back"]</a>
+                <text>·</text> <a href="/account/deliveries">@Loc["deliveries_back"]</a>
             }
             else
             {
-                <text>·</text> <a class="text-primary underline" href="/account/deliveries?trash=1">@Loc["deliveries_trash"]</a>
+                <text>·</text> <a href="/account/deliveries?trash=1">@Loc["deliveries_trash"]</a>
             }
-        </p>
-    </section>
-
-    <AccountShell Current="@RoutePaths.AccountDeliveries">
+        </SubtitleContent>
+        <ChildContent>
 
     <section id="deliveries-body">
             @* Link health at a glance (issue #202) — the DB is the source of truth, no probes needed. *@
@@ -133,7 +131,8 @@
             }
     </section>
 
-</AccountShell>
+        </ChildContent>
+    </AccountShell>
 
 </PageWrapper>
 

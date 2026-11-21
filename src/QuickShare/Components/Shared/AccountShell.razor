@@ -1,17 +1,40 @@
-@inject IStringLocalizer<QuickShare.SharedLoc> Loc
-
-@* Account shell: vertical tab rail on the left, page content on the right.
-   Global styles (this markup ships inside server-rendered partials). *@
+@* Account shell: fixed vertical tab rail on the left, titled page content on the right.
+   Global styles in wwwroot/css/app.css (this markup ships inside server-rendered partials). *@
 <div class="account-shell">
     <AccountTabs Current="@Current" />
     <div class="account-shell__content">
-        @ChildContent
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <header class="account-shell__head">
+                <h1 class="account-shell__title">@Title</h1>
+                @if (SubtitleContent is not null)
+                {
+                    <p class="account-shell__subtitle">@SubtitleContent</p>
+                }
+                else if (!string.IsNullOrWhiteSpace(Subtitle))
+                {
+                    <p class="account-shell__subtitle">@Subtitle</p>
+                }
+            </header>
+        }
+        <div class="account-shell__body">
+            @ChildContent
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter]
     public string Current { get; set; } = RoutePaths.Account;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    [Parameter]
+    public RenderFragment? SubtitleContent { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }

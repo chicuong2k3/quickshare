@@ -17,38 +17,37 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-<PageWrapper id="workspace-audit-app" Variant="PageVariant.Padded">
+<PageWrapper id="workspace-audit-app" Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_audit_title"]</h1>
-        <p class="text-muted-foreground">@Loc["ws_audit_subtitle"]</p>
-    </section>
+    <AccountShell Current="@RoutePaths.AccountWorkspace"
+                  Title="@Loc["ws_audit_title"]"
+                  Subtitle="@Loc["ws_audit_subtitle"]">
+        <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceAudit" />
 
-    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceAudit" />
+        @* Filters drive the URL, so a filtered view is linkable and the back button works. *@
+        <form class="workspace-filters" method="get" action="@RoutePaths.AccountWorkspaceAudit"
+              up-submit="true" up-target="#workspace-audit-app" up-history="true">
+            <label class="workspace-label" for="ws-audit-action">@Loc["ws_audit_filter_action"]</label>
+            <NativeSelect id="ws-audit-action" name="action">
+                <NativeSelectOption value="">@Loc["ws_audit_all_actions"]</NativeSelectOption>
+                @foreach (var action in AuditActions)
+                {
+                    <NativeSelectOption value="@action.ToString()" selected="@(string.Equals(Action, action.ToString(), StringComparison.OrdinalIgnoreCase))">@Humanize(action)</NativeSelectOption>
+                }
+            </NativeSelect>
 
-    @* Filters drive the URL, so a filtered view is linkable and the back button works. *@
-    <form class="workspace-filters" method="get" action="@RoutePaths.AccountWorkspaceAudit"
-          up-submit="true" up-target="#workspace-audit-app" up-history="true">
-        <label class="workspace-label" for="ws-audit-action">@Loc["ws_audit_filter_action"]</label>
-        <NativeSelect id="ws-audit-action" name="action">
-            <NativeSelectOption value="">@Loc["ws_audit_all_actions"]</NativeSelectOption>
-            @foreach (var action in AuditActions)
-            {
-                <NativeSelectOption value="@action.ToString()" selected="@(string.Equals(Action, action.ToString(), StringComparison.OrdinalIgnoreCase))">@Humanize(action)</NativeSelectOption>
-            }
-        </NativeSelect>
+            <label class="workspace-label" for="ws-audit-from">@Loc["ws_audit_filter_from"]</label>
+            <Input id="ws-audit-from" name="from"  type="date" value="@From" />
 
-        <label class="workspace-label" for="ws-audit-from">@Loc["ws_audit_filter_from"]</label>
-        <Input id="ws-audit-from" name="from"  type="date" value="@From" />
+            <label class="workspace-label" for="ws-audit-to">@Loc["ws_audit_filter_to"]</label>
+            <Input id="ws-audit-to" name="to"  type="date" value="@To" />
 
-        <label class="workspace-label" for="ws-audit-to">@Loc["ws_audit_filter_to"]</label>
-        <Input id="ws-audit-to" name="to"  type="date" value="@To" />
+            <button type="submit" data-slot="button" data-variant="default" data-ai-action="workspace.audit.filter">@Loc["ws_audit_apply"]</button>
+            <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
+        </form>
 
-        <button type="submit" data-slot="button" data-variant="default" data-ai-action="workspace.audit.filter">@Loc["ws_audit_apply"]</button>
-        <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.audit.export">@Loc["ws_audit_export"]</a>
-    </form>
-
-    @Chunk
+        @Chunk
+    </AccountShell>
 
 </PageWrapper>
 

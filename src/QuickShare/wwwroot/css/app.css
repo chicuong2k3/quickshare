@@ -145,6 +145,10 @@
 }
 
 /* ─── Base ground & accessibility focus ─── */
+html {
+    scrollbar-gutter: stable;
+}
+
 body {
     background-color: var(--b-board);
     background-image: none;
@@ -682,38 +686,61 @@ progress {
     grid-template-columns: 13rem minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
+    width: 100%;
 }
 
 .account-shell__content {
     min-width: 0;
+    width: 100%;
 }
 
-@media (max-width: 960px) {
-    .account-shell {
-        grid-template-columns: 1fr;
-    }
+.account-shell__head {
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--b-hair);
+}
 
-    .account-tabs {
-        flex-direction: row;
-        position: static;
-        overflow-x: auto;
-        overflow-y: hidden;
-        margin-bottom: 1.25rem;
-    }
+.account-shell__title {
+    margin: 0;
+    font-family: var(--db-font-display);
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+}
 
-    .account-tabs__item {
-        border-right: 1px solid var(--b-hair);
-        border-bottom: 2px solid transparent;
-    }
+.account-shell__subtitle {
+    margin: 0.4rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--b-dim);
+}
 
-    .account-tabs__item:last-child {
-        border-right: 0;
-    }
+.account-shell__subtitle a {
+    color: var(--b-amber-text);
+    text-decoration: underline;
+}
 
-    .account-tabs__item--active {
-        border-right: 1px solid var(--b-hair);
-        border-bottom: 2px solid var(--b-amber);
-    }
+.account-shell__subtitle a:hover {
+    color: var(--b-ink);
+}
+
+.account-shell__body {
+    min-width: 0;
+    width: 100%;
+}
+
+.account-shell__body .account-card,
+.account-shell__body [data-slot="card"] {
+    max-width: none;
+}
+
+.account-shell__body > .workspace-card:first-child,
+.account-shell__body > section > .workspace-card:first-child,
+.account-shell__body > [data-slot="card"]:first-child {
+    margin-top: 0;
 }
 
 /* ─── Account: section tabs (Departure Board flap strip) ─── */
@@ -721,12 +748,14 @@ progress {
     display: flex;
     flex-direction: column;
     gap: 0;
+    width: 100%;
+    min-width: 0;
     border: 1px solid var(--b-hair);
     background: var(--b-flap);
     overflow-x: hidden;
     overflow-y: auto;
     position: sticky;
-    top: 1rem;
+    top: calc(52px + 1rem);
 }
 
 .account-tabs__item {
@@ -759,6 +788,93 @@ progress {
     background: var(--b-panel);
     border-right: 2px solid var(--b-amber);
     border-bottom: 1px solid var(--b-hair);
+}
+
+.account-tabs__item--active:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 960px) {
+    .account-shell {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.25rem;
+    }
+
+    .account-tabs {
+        flex-direction: row;
+        position: static;
+        top: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-bottom: 0;
+    }
+
+    .account-tabs__item {
+        border-right: 1px solid var(--b-hair);
+        border-bottom: 2px solid transparent;
+        flex-shrink: 0;
+    }
+
+    .account-tabs__item:last-child {
+        border-right: 0;
+        border-bottom: 2px solid transparent;
+    }
+
+    .account-tabs__item--active {
+        border-right: 1px solid var(--b-hair);
+        border-bottom: 2px solid var(--b-amber);
+    }
+
+    .account-tabs__item--active:last-child {
+        border-right: 0;
+        border-bottom: 2px solid var(--b-amber);
+    }
+}
+
+/* ─── Workspace: horizontal sub-tabs inside .account-shell__body ─── */
+.workspace-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--b-hair);
+    background: var(--b-flap);
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.workspace-tabs__item {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 38px;
+    padding: 0.5rem 0.85rem;
+    font-family: var(--db-font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    text-decoration: none;
+    white-space: nowrap;
+    border-right: 1px solid var(--b-hair);
+    border-bottom: 2px solid transparent;
+}
+
+.workspace-tabs__item:last-child {
+    border-right: 0;
+}
+
+.workspace-tabs__item:hover {
+    color: var(--b-ink);
+    background: var(--b-panel);
+}
+
+.workspace-tabs__item--active {
+    color: var(--b-ink);
+    background: var(--b-panel);
+    border-bottom-color: var(--b-amber);
 }
 
 /* ─── Account: deliveries (download gauge) ─── */

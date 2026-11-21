@@ -15,14 +15,11 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["security_title"]</h1>
-        <p class="text-muted-foreground">@Loc["security_subtitle"]</p>
-    </section>
-
-    <AccountShell Current="@RoutePaths.AccountSecurity">
+    <AccountShell Current="@RoutePaths.AccountSecurity"
+                  Title="@Loc["security_title"]"
+                  Subtitle="@Loc["security_subtitle"]">
 
     @Chunk
 

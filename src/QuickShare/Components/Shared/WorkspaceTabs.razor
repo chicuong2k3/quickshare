@@ -1,23 +1,27 @@
 @inject IStringLocalizer<QuickShare.SharedLoc> Loc
 
 @* Global (non-scoped) styles: this markup also ships inside server-rendered partials. *@
-<nav class="account-tabs" aria-label="Workspace sections">
-    <a href="@RoutePaths.AccountWorkspace" class="account-tabs__item @Active(RoutePaths.AccountWorkspace)">@Loc["ws_tab_workspace"]</a>
-    <a href="@RoutePaths.AccountWorkspaceFolders" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceFolders)">@Loc["ws_tab_folders"]</a>
-    <a href="@RoutePaths.AccountWorkspaceSeats" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceSeats)">@Loc["ws_tab_seats"]</a>
-    <a href="@RoutePaths.AccountWorkspaceChannel" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceChannel)">@Loc["ws_tab_channel"]</a>
-    <a href="@RoutePaths.AccountWorkspaceAudit" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceAudit)">@Loc["ws_tab_audit"]</a>
-    <a href="@RoutePaths.AccountWorkspaceBrand" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceBrand)">@Loc["ws_tab_brand"]</a>
-    <a href="@RoutePaths.AccountWorkspaceDomain" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceDomain)">@Loc["ws_tab_domain"]</a>
-    <a href="@RoutePaths.AccountWorkspaceReport" class="account-tabs__item @Active(RoutePaths.AccountWorkspaceReport)">@Loc["ws_tab_report"]</a>
+<nav class="workspace-tabs" aria-label="Workspace sections">
+    <a href="@RoutePaths.AccountWorkspace" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspace)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspace)">@Loc["ws_tab_workspace"]</a>
+    <a href="@RoutePaths.AccountWorkspaceFolders" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceFolders)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceFolders)">@Loc["ws_tab_folders"]</a>
+    <a href="@RoutePaths.AccountWorkspaceSeats" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceSeats)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceSeats)">@Loc["ws_tab_seats"]</a>
+    <a href="@RoutePaths.AccountWorkspaceChannel" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceChannel)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceChannel)">@Loc["ws_tab_channel"]</a>
+    <a href="@RoutePaths.AccountWorkspaceAudit" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceAudit)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceAudit)">@Loc["ws_tab_audit"]</a>
+    <a href="@RoutePaths.AccountWorkspaceBrand" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceBrand)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceBrand)">@Loc["ws_tab_brand"]</a>
+    <a href="@RoutePaths.AccountWorkspaceDomain" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceDomain)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceDomain)">@Loc["ws_tab_domain"]</a>
+    <a href="@RoutePaths.AccountWorkspaceReport" class="workspace-tabs__item @Active(RoutePaths.AccountWorkspaceReport)" aria-current="@AriaCurrent(RoutePaths.AccountWorkspaceReport)">@Loc["ws_tab_report"]</a>
 </nav>
 
 @code {
-    private const string ActiveClass = "account-tabs__item--active";
+    private const string ActiveClass = "workspace-tabs__item--active";
+    private const string AriaCurrentPage = "page";
 
     [Parameter]
     public string Current { get; set; } = RoutePaths.AccountWorkspace;
 
     private string Active(string route) =>
         string.Equals(Current, route, StringComparison.OrdinalIgnoreCase) ? ActiveClass : string.Empty;
+
+    private string? AriaCurrent(string route) =>
+        string.Equals(Current, route, StringComparison.OrdinalIgnoreCase) ? AriaCurrentPage : null;
 }

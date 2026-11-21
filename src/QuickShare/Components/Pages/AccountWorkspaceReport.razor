@@ -18,20 +18,19 @@
     <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-<PageWrapper Variant="PageVariant.Padded">
+<PageWrapper Variant="PageVariant.Account">
 
-    <section class="hero">
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["ws_report_title"]</h1>
-        <p class="text-muted-foreground">@Loc["ws_report_subtitle"]</p>
-    </section>
+    <AccountShell Current="@RoutePaths.AccountWorkspace"
+                  Title="@Loc["ws_report_title"]"
+                  Subtitle="@Loc["ws_report_subtitle"]">
+        <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceReport" />
 
-    <WorkspaceTabs Current="@RoutePaths.AccountWorkspaceReport" />
+        <p class="workspace-filters">
+            <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.report.export">@Loc["ws_report_export"]</a>
+        </p>
 
-    <p class="workspace-filters">
-        <a data-slot="button" data-variant="ghost" href="@ExportUrl" data-ai-action="workspace.report.export">@Loc["ws_report_export"]</a>
-    </p>
-
-    @Chunk
+        @Chunk
+    </AccountShell>
 
 </PageWrapper>
 
