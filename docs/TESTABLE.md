@@ -78,7 +78,7 @@ Everything here maps to Tier 2 backlog items and was built together (issues #53 
 | Noindex/nofollow on private delivery pages | #121 | view source of `/d/{code}` → robots meta noindex | `SecurityHeadersTests` |
 | OTP brute-force lockout | #148 | wrong OTP repeatedly → lockout kicks in (timing-safe, per-delivery) | `OtpLockoutTests` |
 | New-device login alert + known devices | #149 | log in from a new UA/IP → alert email; manage devices at `/account/devices` | `DeviceTrackerTests` |
-| Download CAPTCHA (Cloudflare Turnstile) | #175 | N failed OTP attempts → Turnstile challenge on verify; **without keys configured it always passes** (safe default) | — |
+| ~~Download CAPTCHA (Cloudflare Turnstile)~~ | #175 | **Retired** with the sender-set code; the challenge guarded a code the sender typed into the same chat as the link | — |
 
 ## 5. Needs external services / config
 
@@ -91,7 +91,7 @@ Some features only show their full behavior when the backing service is configur
 | Google login | Google OAuth client | auto-signin dev middleware covers local dev |
 | PayOS payment | PayOS sandbox keys | upgrade flow can't complete end-to-end |
 | Sender email / new-device alert emails | SMTP creds | emails won't send (flows log/rate-limit instead) |
-| Turnstile CAPTCHA (#175) | Cloudflare Turnstile site+secret keys | CAPTCHA always passes — still safe default |
+| ~~Turnstile CAPTCHA (#175)~~ | — | retired, see `retired-features.md` |
 | Alerting / observability (#89) | Seq (or Loki/Sentry) | events still logged, no push alert |
 | Backup to R2 (#90) | R2 bucket for backups | runbook scripts fail at upload step |
 

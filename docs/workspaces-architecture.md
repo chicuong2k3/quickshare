@@ -135,7 +135,7 @@ history, and the folder list carries a per-folder file count and byte total (liv
 a folder size should not count what is sitting in the trash).
 
 **Not shipped: a public folder link or folder QR.** That would be a new recipient-facing
-surface with its own access-control story (scope rules, expiry, password, indexing), and it
+surface with its own access-control story (expiry, password, indexing), and it
 belongs with a design pass rather than as a footnote to folder CRUD. Per-delivery share codes
 and QR are unchanged.
 

@@ -79,15 +79,6 @@
       ]
     },
     {
-      "note": "upload presets",
-      "paths": [
-        "src/QuickShare/Features/Uploads/Presets/"
-      ],
-      "tests": [
-        "UploadPresetTests"
-      ]
-    },
-    {
       "note": "upload from URL (SSRF-guarded)",
       "paths": [
         "src/QuickShare/Features/Uploads/UploadFromUrl/"
@@ -239,7 +230,6 @@
         "UploadResumeTests",
         "UploadExtrasTests",
         "UploadFromUrlTests",
-        "UploadPresetTests",
         "MonthlyQuotaTests",
         "MultiFileDeliveryTests",
         "MultiRecipientTests",

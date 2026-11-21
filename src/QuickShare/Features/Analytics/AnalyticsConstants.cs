@@ -21,13 +21,8 @@ public static class AnalyticsEvents
     public const string P2pReceiverJoined = "p2p_receiver_joined";
 
     // Gates / monetization
-    public const string OtpPass = "otp_pass";
-    public const string OtpFail = "otp_fail";
-    public const string AdInterstitialViewed = "ad_interstitial_viewed";
 
     // Anti-bot (issue #175)
-    public const string CaptchaRequired = "captcha_required";
-    public const string CaptchaPassed = "captcha_passed";
 
     // Signup conversion
     public const string Signup = "signup";
@@ -36,7 +31,6 @@ public static class AnalyticsEvents
     public const string TrialStarted = "trial_started";
 
     // Roadmap vote (issue #58) — anonymous aggregate feedback signal.
-    public const string RoadmapVote = "roadmap_vote";
 
     // Diff preview (issue #248) — anonymous signal that a patch was rendered.
     public const string DiffViewed = "diff_view";
@@ -44,14 +38,10 @@ public static class AnalyticsEvents
     // In-product feedback (issue #35) — anonymous sentiment.
     public const string FeedbackSubmitted = "feedback_submitted";
 
-    // Delivery scope control (issues #142 IP allowlist, #166 country rules)
-
     /// <summary>Events the anonymous client beacon may fire (allowlist for POST /api/analytics/track).</summary>
     public static readonly IReadOnlySet<string> ClientFireable = new HashSet<string>(StringComparer.Ordinal)
     {
         Visitor,
-        AdInterstitialViewed,
-        RoadmapVote,
         DiffViewed
     };
 }

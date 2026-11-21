@@ -75,8 +75,6 @@ public static class RoutePaths
     public const string AccountDeveloper = "/account/developer";
     /// <summary>Invite and transfer accept landing page — the token rides in the query string.</summary>
     public const string WorkspaceJoin = "/workspace/join";
-    /// <summary>Upload presets management page (issue #100).</summary>
-    public const string AccountPresets = "/account/presets";
     public const string ChangelogRss = "/changelog.xml";
     public const string ApiDocs = "/api-docs";
     public const string WidgetPage = "/widget/";
@@ -86,50 +84,12 @@ public static class RoutePaths
     public const string AdminEmailSuppressionsApi = "/api/admin/email-suppressions";
     public const string DeliverySubtitlesRoute = "/api/downloads/{ShareCode}/subtitles/{FileId}";
     public const string P2pPairRoute = "/api/shares/p2p/pair";
-    public const string DeliveryWalletPassRoute = "/api/downloads/{ShareCode}/wallet-pass";
     public const string AdminCampaignsApi = "/api/admin/campaigns";
     public const string ActiveCampaignsApi = "/api/campaigns/active";
     public const string AdminAnalyticsCsvRoute = "/api/admin/analytics/export.csv";
     public const string SearchApi = "/api/search";
-    public const string SmsOptOutApi = "/api/webhooks/sms/opt-out";
-    public const string DeliveryRestoreApi = "/api/downloads/{ShareCode}/restore";
-    public const string AccountColdStorageApi = "/api/account/cold-storage";
-    public const string AccountSendingDomainApi = "/api/account/sending-domain";
-    public const string AccountSendingDomainVerifyApi = "/api/account/sending-domain/verify";
-    public const string SupportChatApi = "/api/support/chat";
-    public const string AccountSupport = "/account/support";
-    public const string CheckoutSessionApi = "/api/payments/checkout-session";
-    public const string SecurityPentestApi = "/api/security/pentest";
-    public const string AdminSecurityPentestApi = "/api/admin/security/pentest";
-    public const string SeoZhSendLargeFilesFree = "/zh/send-large-files-free";
-    public const string SeoJaSendLargeFilesFree = "/ja/send-large-files-free";
-    public const string SeoEsSendLargeFilesFree = "/es/enviar-archivos-grandes-gratis";
-    public const string SeoArSendLargeFilesFree = "/ar/send-large-files-free";
-    public const string WorkspaceByokApi = "/api/workspace/byok";
-    public const string WorkspaceByokRotateApi = "/api/workspace/byok/rotate";
-    public const string WorkspaceByokRevokeApi = "/api/workspace/byok/revoke";
     public const string DeliveryOfflineBundleApi = "/api/downloads/{ShareCode}/offline-bundle";
-    public const string OfflineUploadQueueApi = "/api/uploads/offline-queue";
-    public const string PdfToolsApi = "/api/tools/pdf";
-    public const string DeliveryHlsMasterApi = "/api/downloads/{ShareCode}/hls/master.m3u8";
-    public const string DeliveryHlsVariantApi = "/api/downloads/{ShareCode}/hls/{Quality}/playlist.m3u8";
     public const string LiveStreamProgressApi = "/api/uploads/live-progress";
-    public const string SdkManifestApi = "/api/sdk/manifest";
-    public const string SelfHostManifestApi = "/api/self-host/manifest";
-    public const string TelegramBotWebhookApi = "/api/webhooks/telegram/bot";
-    public const string DiscordBotWebhookApi = "/api/webhooks/discord/bot";
-    public const string DiscordCommunityApi = "/api/community/discord";
-    public const string DesktopAppManifestApi = "/api/apps/desktop/manifest";
-    public const string DesktopQrAuthStartApi = "/api/apps/desktop/qr-auth";
-    public const string DesktopQrAuthApproveApi = "/api/apps/desktop/qr-auth/approve";
-    public const string BrowserExtensionManifestApi = "/api/apps/browser-extension/manifest.json";
-    public const string BrowserExtensionShareApi = "/api/apps/browser-extension/share";
-    public const string ZaloMiniAppManifestApi = "/api/zalo/mini-app/manifest";
-    public const string ZaloMiniAppShareApi = "/api/zalo/mini-app/share";
-    public const string IosShareShortcutApi = "/api/apps/ios/shortcut-manifest";
-    public const string IosShareIngestApi = "/api/apps/ios/share";
-    public const string OpenSourceAuditApi = "/api/security/open-source-audit";
-    public const string LaunchKitApi = "/api/growth/launch-kit";
 
     public static bool IsScopedStyles(string? path)
     {

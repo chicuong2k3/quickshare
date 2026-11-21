@@ -92,7 +92,6 @@ public static class ErrorCodes
     public const string BillingProfileInvalid = "billing_profile_invalid";
     public const string TaxCodeInvalid = "tax_code_invalid";
     public const string InvoiceNotFound = "invoice_not_found";
-    public const string InvoiceNotIssued = "invoice_not_issued";
     public const string SeatsRequireWorkspace = "seats_require_workspace";
     // Workspace branding (#285) and custom fonts (#286).
     public const string BrandNotFound = "brand_not_found";
@@ -109,7 +108,6 @@ public static class ErrorCodes
     public const string DomainInvalid = "domain_invalid";
     public const string DomainTaken = "domain_taken";
     public const string DomainNotFound = "domain_not_found";
-    public const string DomainNotVerified = "domain_not_verified";
     public const string DomainRequiresStudio = "domain_requires_studio";
     /// <summary>Preview watermark is a paid control (issue #155).</summary>
     public const string WatermarkRequiresPaidPlan = "watermark_requires_paid_plan";
@@ -133,7 +131,6 @@ public static class ErrorCodes
     // Developer platform: API keys (#115) and webhooks (#39, #172, #223, #288).
     public const string ApiKeyNotFound = "api_key_not_found";
     public const string ApiKeyLimitReached = "api_key_limit_reached";
-    public const string ApiKeyInvalid = "api_key_invalid";
     public const string ApiKeyScopeRequired = "api_key_scope_required";
     public const string WebhookNotFound = "webhook_not_found";
     public const string WebhookUrlInvalid = "webhook_url_invalid";
@@ -149,35 +146,9 @@ public static class ErrorCodes
     public const string SubscriptionNotPaused = "subscription_not_paused";
     /// <summary>Session revoked, idle out, or never existed (issues #105, #173).</summary>
     public const string SessionNotFound = "session_not_found";
-    // Upload presets (#100).
-    public const string PresetNotFound = "preset_not_found";
-    public const string PresetNameInvalid = "preset_name_invalid";
-    public const string PresetLimitReached = "preset_limit_reached";
     // File version history (#110).
-    public const string VersionNotFound = "version_not_found";
     public const string BrandReplyToInvalid = "brand_reply_to_invalid";
     public const string CampaignCodeInvalid = "campaign_code_invalid";
-    public const string TransferPassNotFound = "transfer_pass_not_found";
-    public const string TransferPassInvalid = "transfer_pass_invalid";
-    public const string SmsConsentRequired = "sms_consent_required";
-    public const string SmsPhoneInvalid = "sms_phone_invalid";
-    public const string SmsRecipientOptedOut = "sms_recipient_opted_out";
     public const string DeliveryInfected = "delivery_infected";
-    public const string ColdStorageDaysInvalid = "cold_storage_days_invalid";
-    public const string DeliveryNotCold = "delivery_not_cold";
-    public const string SendingDomainInvalid = "sending_domain_invalid";
-    public const string SendingDomainTaken = "sending_domain_taken";
-    public const string SendingDomainNotFound = "sending_domain_not_found";
-    public const string SupportChatNotFound = "support_chat_not_found";
-    public const string SupportMessageEmpty = "support_message_empty";
-    public const string PenetrationTestInvalid = "penetration_test_invalid";
-    public const string PenetrationTestNotFound = "penetration_test_not_found";
-    public const string ByokRequiresStudio = "byok_requires_studio";
-    public const string ByokConfigInvalid = "byok_config_invalid";
-    public const string ByokRegionMismatch = "byok_region_mismatch";
-    public const string ByokKeyRevoked = "byok_key_revoked";
     public const string OfflineCacheForbidden = "offline_cache_forbidden";
-    public const string PdfOperationInvalid = "pdf_operation_invalid";
-    public const string HlsNotAvailable = "hls_not_available";
-    public const string ChatBotCommandInvalid = "chat_bot_command_invalid";
 }

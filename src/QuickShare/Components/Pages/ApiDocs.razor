@@ -38,7 +38,6 @@
                     <span class="text-sm font-medium">@Loc["apidocs_endpoint_label"]</span>
                     <NativeSelect id="apidocs-endpoint" onchange="window.quickShareApiDocs.updateSnippets()">
                         <NativeSelectOption value="GET|/api/v1/deliveries">@Loc["apidocs_ep_list_deliveries"] (GET /api/v1/deliveries)</NativeSelectOption>
-                        <NativeSelectOption value="GET|/api/v1/presets">@Loc["apidocs_ep_list_presets"] (GET /api/v1/presets)</NativeSelectOption>
                         <NativeSelectOption value="GET|/api/v1/developer/keys">@Loc["apidocs_ep_list_keys"] (GET /api/v1/developer/keys)</NativeSelectOption>
                         <NativeSelectOption value="GET|/api/v1/developer/webhooks">@Loc["apidocs_ep_list_webhooks"] (GET /api/v1/developer/webhooks)</NativeSelectOption>
                     </NativeSelect>
@@ -83,7 +82,6 @@
                 <li><code class="font-mono font-semibold">GET /api/deliveries</code> — @Loc["apidocs_ep_list_deliveries"]</li>
                 <li><code class="font-mono font-semibold">GET /api/downloads/{shareCode}/info</code> — @Loc["apidocs_ep_download_info"]</li>
                 <li><code class="font-mono font-semibold">GET /api/downloads/{shareCode}/versions/{version}</code> — @Loc["apidocs_ep_download_version"]</li>
-                <li><code class="font-mono font-semibold">GET /api/presets</code> — @Loc["apidocs_ep_list_presets"]</li>
                 <li><code class="font-mono font-semibold">POST /api/developer/webhooks</code> — @Loc["apidocs_ep_webhooks"]</li>
             </ul>
         </CardContent>

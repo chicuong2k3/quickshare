@@ -62,8 +62,9 @@ public sealed class DownloadDeliveryHandler(
         }
 
 
-        // Password gate (issue #44) runs before the OTP gate — the recipient
-        // unlocks the password first, then any sender-set code.
+        // Password gate (issue #44): the recipient's own secret, hashed here and
+        // never mailed. It is the only sender-set gate left; the emailed code below
+        // proves ownership of a mailbox instead.
         if (!string.IsNullOrEmpty(delivery.PasswordHash))
         {
             var isLocked = await lockout.IsLockedAsync(db, delivery.Id, cancellationToken);

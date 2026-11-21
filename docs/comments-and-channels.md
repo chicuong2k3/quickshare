@@ -16,14 +16,13 @@ product to do it, and the answer ends up in somebody's inbox with no connection 
 | `Delivery.CommentsEnabled` | sender, at upload | opens the thread; **off by default** |
 | `Workspace.CommentPolicy` | workspace admin | can close a thread the sender opened |
 | `Delivery.PrivacyMode` (`#187`) | sender | closes it outright |
-| delivery lifecycle | — | expired, revoked, suspended or awaiting approval closes it |
-| scope rules (`#142`/`#166`) | sender | a caller refused the file is refused the thread |
+| delivery lifecycle | — | expired, revoked or suspended closes it |
 
 None of them can open a conversation the sender did not.
 
-**The last two were missing when this shipped.** Comments are a recipient-facing content path,
-and the project's own rule is that every such path routes through `DeliveryAccessService` — this
-one did not. A caller blocked by an IP allowlist or a country rule could read and post to the
+**The lifecycle check was missing when this shipped.** Comments are a recipient-facing content
+path, and the project's own rule is that every such path runs the delivery gates first — this
+one did not. A caller whose share had expired or been revoked could read and post to the
 discussion about a file they could not open, and an expired or revoked share kept serving its
 thread. `CommentGate` now applies both before anything else. See the audit note below.
 

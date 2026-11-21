@@ -54,7 +54,6 @@ public class AppDbContext : DbContext
     public DbSet<PromoRedemption> PromoRedemptions => Set<PromoRedemption>();
     public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
-    public DbSet<UploadPreset> UploadPresets => Set<UploadPreset>();
     public DbSet<DeliveryVersion> DeliveryVersions => Set<DeliveryVersion>();
     public DbSet<EmailSuppression> EmailSuppressions => Set<EmailSuppression>();
     public DbSet<DeduplicatedBlob> DeduplicatedBlobs => Set<DeduplicatedBlob>();

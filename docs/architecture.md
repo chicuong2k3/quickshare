@@ -71,11 +71,9 @@ Full diagrams, resource IDs, proxy fingerprints and rollback: [docs/deployment.m
 - **List** — `GET /api/deliveries` — user's delivery history
 - **Brand** — `GET/PUT /api/deliveries/{id}/brand` — custom delivery branding (logo URL, message, accent color)
 - **Password** — `POST /api/deliveries/{code}/verify` — verify password-protected delivery
-- **OTP** — `POST /api/deliveries/{code}/verify-otp` — verify 6-digit OTP code set by sender on upload
 - `DeliveryService.cs` — Shared delivery coordination logic
-- **Compliance controls** — legal hold (#266), account retention policy (#161), delivery IP allowlist + country rules (#142/#166). See [docs/compliance-architecture.md](compliance-architecture.md)
+- **Compliance controls** — PDPD consent and account deletion. See [docs/compliance-architecture.md](compliance-architecture.md)
 - **Comments & chat channels** — threaded comments on a delivery with sender/workspace/privacy gating (#289), Slack and Teams posting for new shares and comments (#180). See [docs/comments-and-channels.md](comments-and-channels.md)
-- **Delivery gating** — workspace/folder approval before a link goes live (#162), recurring auto-send with a fresh link per cycle (#176). See [docs/delivery-gating.md](delivery-gating.md)
 - **Workspace branding** — logo, accent colours, header/footer copy and self-hosted woff2 typography on recipient-facing pages (#285/#286). See [docs/workspace-branding.md](workspace-branding.md)
 - **Object storage & backup** — any S3-compatible endpoint via `ObjectStore` config, R2/MinIO/Garage/Wasabi/AWS (#171); per-delivery storage region with key-derived bucket routing (#119); scheduled workspace manifest export to customer-controlled buckets (#271). See [docs/object-storage-and-backup.md](object-storage-and-backup.md)
 - **Enterprise trust** — tenant isolation + cross-tenant probe logging (#190), audit-log streaming to Splunk/Elastic/CEF (#191), self-serve DPA (#184), published SOC 2 control map (#147/#323). See [docs/enterprise-trust.md](enterprise-trust.md)
@@ -144,7 +142,7 @@ Full diagrams, resource IDs, proxy fingerprints and rollback: [docs/deployment.m
 | Route | Page | Interactivity | Key Features |
 |-------|------|--------------|-------------|
 | `/` | `Home.razor` | Server-rendered | Product landing page: hero, feature cards (encryption, auto-expiry, no signup), 3-step how-it-works, CTA |
-| `/send` | `Upload.razor` | Vanilla JS | Drag-drop + paste upload, AES-256-GCM always-on encryption, R2 multipart, QR code generation, expiry selector (24h/7d), optional 6-digit OTP security code |
+| `/send` | `Upload.razor` | Vanilla JS | Drag-drop + paste upload, AES-256-GCM always-on encryption, R2 multipart, QR code generation, expiry selector (24h/7d), optional password |
 | `/d/{code}` | `Download.razor` | Vanilla JS | Multi-phase download: OTP gate (if set) → password gate → ad interstitial (free plan) → AES-GCM decrypt → file save. ZK attestation, abuse reporting, sender branding |
 | `/p2p/send` | `P2PTransfer.razor` | Vanilla JS + WebRTC | P2P sender: create share code, WebRTC signaling, data channel file streaming with progress |
 | `/p2p/d/{code}` | `P2PDownload.razor` | Vanilla JS + WebRTC | P2P receiver: signaling connect, WebRTC answer, data channel file receipt, progress tracking |
