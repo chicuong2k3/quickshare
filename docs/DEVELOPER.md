@@ -17,15 +17,9 @@ src/QuickShare/                 # monolith (FastEndpoints API + Blazor Static SS
   Features/<Feature>/           # vertical slice: endpoint + handler + DTOs in one folder
     Uploads/  Deliveries/  Downloads/  Shares/  Payments/  Users/  Analytics/
     Notifications/  Ads/  Admin/  ClientErrors/  Reports/  FileRequests/
-    Deliveries/LegalHold/       # #266: place/lift/CSV export; every deletion path filters the hold
-    Downloads/Shared/           # DeliveryAccessService.cs, the #142/#166 scope gate that every
-                                # recipient-facing content path routes through
   Data/                         # AppDbContext, Entities/, Migrations/, AuditableEntityInterceptor
   Infrastructure/               # Storage/, Email/, Jobs/, FeatureFlags/, Telemetry/,
                                 # Caching/, Middleware/, Constants/
-                                # DeliveryAccessPolicy.cs (#142/#166): a dependency-free
-                                # static class, so it unit-tests without the web factory -
-                                # that is why the rule lives here, not in a handler
   Components/                   # Pages/, Layout/, Shared/ (Blazor)
   ts/                           # TypeScript: download.ts, upload.ts, p2p/, ad-component.ts
   wwwroot/                      # css/ (app.css), js/, lib/
@@ -96,8 +90,6 @@ rules:
 | `string.Empty` not `""`; no magic strings (centralize in `static class` consts) | AGENTS.md |
 | User-facing copy in `SharedLoc.{en,vi}.resx` (never hardcoded) | AGENTS.md |
 | One statement per line | AGENTS.md |
-| New code deleting delivery rows or R2 objects MUST filter `LegalHoldAt == null` (held bytes are evidence) | compliance-architecture.md (#266) |
-| New recipient-facing content path MUST route through `DeliveryAccessService` (scope rules are fail-closed) | compliance-architecture.md (#142/#166) |
 | New code writing `User.Plan` MUST re-push it to workspace seats (a seat borrows the owner's plan) | workspaces-architecture.md (#106) |
 | New upload path MUST use `QuotaService` (it pools a member's bytes onto the workspace owner) | workspaces-architecture.md (#106) |
 | New upload path that can target a folder MUST enforce locked folder defaults | workspaces-architecture.md (#245) |
@@ -107,14 +99,9 @@ rules:
 | Every workspace-scoped route taking an id needs a `TenantIsolationTests` case (explicit `Where`, never a global query filter) | enterprise-trust.md (#190) |
 | A cross-tenant miss returns the same response as a nonexistent id; never edit published DPA terms or a `/soc2` status in place | enterprise-trust.md (#190/#184/#147) |
 | Object store config lives under `ObjectStore`; the legacy `R2` section must keep binding | object-storage-and-backup.md (#171) |
-| Backup manifests carry metadata + storage keys, never bytes; prune only after a successful upload | object-storage-and-backup.md (#271) |
-| Upload keys go through `R2ObjectKey.For` with the region; a key with no region segment must resolve to the default bucket | object-storage-and-backup.md (#119) |
-| Never move stored bytes across regions as a side effect of a settings change or a file replace | object-storage-and-backup.md (#119) |
 | A brand overrides token values only — never token names, never a type size | workspace-branding.md (#285/#286) |
 | Brand CSS inputs are validated at the write boundary; uploaded assets are sniffed by magic bytes and SVG is refused | workspace-branding.md (#285/#286) |
-| Any path publishing a delivery checks `PendingApproval`; it must be indistinguishable from not-found to recipients | delivery-gating.md (#162) |
-| Any code copying a delivery carries `StorageRegion` and drops legal hold, approval state and `DeletedAt` | delivery-gating.md (#162/#176/#119) |
-| Comment surfaces resolve all five gates via `CommentGate` (incl. lifecycle + `DeliveryAccessService`); a chat webhook URL is never returned or audited | comments-and-channels.md (#289/#180) |
+| Comment surfaces resolve all four gates via `CommentGate` (incl. lifecycle); a chat webhook URL is never returned or audited | comments-and-channels.md (#289/#180) |
 | Test stubs produce production shapes, and every feature has a test proving it is *reached*, not just correct | comments-and-channels.md |
 
 ## 6. Workflow (issue → done)
@@ -122,8 +109,10 @@ rules:
 1. Issue MUST carry a `## Manual Test Checklist` (action → expected result). No checklist →
    add it first. It drives the work and is the definition of done.
 2. Before editing any symbol, run impact analysis (`gitnexus_impact`) — report blast radius.
-3. Implement → run the automated suite for the touched area (see `docs/TESTING.md` regression
-   matrix) → fill `## Manual Test Evidence` in the PR (check off each checklist step).
+3. Implement → `node scripts/test-impact.mjs --run` for the inner loop (it selects the classes the
+   diff reaches; see `docs/TESTING.md`) → before closing, run the full suites
+   (`--full --run`, then the browser suite) → fill `## Manual Test Evidence` in the PR (check off
+   each checklist step).
 4. Update docs (AGENTS.md → Issue Completion Docs Update Rule): feature/architecture doc +
    specs/plans + `DESIGN.md` if UI changed. Docs land in the same commit series.
 5. `gitnexus_detect_changes()` before commit — confirm only expected symbols changed.
@@ -142,9 +131,9 @@ rules:
 - **Security middleware** (order in `Program.cs`): `RateLimitingMiddleware` (per-IP/user, 429),
   `RobotsNoIndexMiddleware` (X-Robots-Tag on `/d/*` + `/api/downloads/*`, issue #121),
   `SecurityHeadersMiddleware` (config-driven CSP/HSTS; `SecurityHeaders:Enabled` kill switch for tests, issue #82).
-- **OTP lockout** (#148): `OtpLockoutService` counts failures per delivery — 5 fails → 423 + Retry-After
-  (15min → 1h → 24h escalating). **Turnstile** (#175): optional `Turnstile:SiteKey/SecretKey` config;
-  unconfigured = challenge skipped. **Device alerts** (#149): `DeviceTrackerService` fingerprints
+- **Gate lockout** (#148): `OtpLockoutService` counts password and emailed-code failures per delivery —
+  5 fails → 423 + Retry-After (15min → 1h → 24h escalating).
+  **Device alerts** (#149): `DeviceTrackerService` fingerprints
   UA+IP (SHA-256), alerts on first sighting; `/account/devices` manages known devices.
   **Abuse reports** (#53): anonymous POST `/api/deliveries/{code}/report` → admin `/admin/reports` (suspend/resolve).
 
