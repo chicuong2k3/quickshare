@@ -85,7 +85,7 @@ else
                         <form method="post" @formname="upgrade-trial" @onsubmit="HandleSubmit">
                             <AntiforgeryToken />
                             <input type="hidden" name="@ActionField" value="@TrialAction" />
-                            <Button Type="submit" class="w-full" data-ai-action="upgrade.trial.start">@Loc["trial_option_btn"]</Button>
+                            <Button Type="submit" Variant="outline" class="w-full" data-ai-action="upgrade.trial.start">@Loc["trial_option_btn"]</Button>
                         </form>
                     </section>
                 }

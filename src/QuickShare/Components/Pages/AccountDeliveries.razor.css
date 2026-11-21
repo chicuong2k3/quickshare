@@ -1,44 +1,45 @@
 .account-deliveries { gap: 1rem; }
 .account-delivery {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
     padding: 1.25rem;
 }
 .account-delivery__head { gap: 0.75rem; }
-.account-delivery__name { font-family: inherit; font-size: 1rem; font-weight: 600; }
+.account-delivery__name { font-family: inherit; font-size: 1rem; font-weight: 600; color: var(--b-ink); }
 .account-delivery__expiry,
 .account-delivery__meta,
-.account-delivery__alias { font-family: inherit; font-size: 0.75rem; color: var(--muted-foreground); }
+.account-delivery__alias { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.75rem; color: var(--b-dim); }
 .account-delivery__lock,
 .account-delivery__hold {
-    font-family: inherit;
-    font-size: 0.75rem;
-    border-color: var(--border);
-    color: var(--foreground);
-    background: var(--muted);
-    padding: 0 0.5rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    color: var(--b-ink);
+    background: var(--b-slot);
+    padding: 0.15rem 0.5rem;
 }
-.account-delivery__lock--self { border-color: var(--primary); color: var(--primary); }
-.account-delivery__gauge { border-color: var(--border); background: var(--muted); margin: 0.75rem 0; }
-.account-delivery__gauge-fill { background: var(--primary); transition: width 200ms ease; }
-.account-delivery--spent .account-delivery__gauge-fill { background: var(--muted-foreground); }
+.account-delivery__lock--self { border-color: var(--b-amber); color: var(--b-amber); }
+.account-delivery__gauge { border: 1px solid var(--b-hair); background: var(--b-slot); margin: 0.75rem 0; height: 6px; }
+.account-delivery__gauge-fill { background: var(--b-amber); transition: transform 200ms ease, opacity 200ms ease; }
+.account-delivery--spent .account-delivery__gauge-fill { background: var(--b-dim); }
 .account-deliveries-empty { padding: 2rem 1rem; }
-.account-deliveries-health { gap: 1rem; font-family: inherit; font-size: 0.75rem; margin-bottom: 0.75rem; }
-.account-deliveries-health__warn { color: var(--destructive); }
+.account-deliveries-health { gap: 1rem; font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.75rem; margin-bottom: 0.75rem; }
+.account-deliveries-health__warn { color: var(--b-red); }
 .account-deliveries-controls { gap: 0.75rem; margin-bottom: 1rem; }
 .account-deliveries-filters { gap: 0.5rem; }
-.account-delivery__star { color: var(--primary); padding-right: 0.25rem; }
-.account-delivery__purge { color: var(--destructive); border-color: var(--destructive); }
-.account-deliveries-filters ::deep .account-deliveries-filter--current { background: var(--accent); color: var(--accent-foreground); }
-.account-deliveries-bulkbar { gap: 0.75rem; padding: 0.5rem 0.75rem; margin-bottom: 1rem; border-color: var(--border); border-radius: var(--radius); }
+.account-delivery__star { color: var(--b-amber); padding-right: 0.25rem; }
+.account-delivery__purge { color: var(--b-red); border-color: var(--b-red); }
+.account-deliveries-filters ::deep .account-deliveries-filter--current { background: var(--b-flap); color: var(--b-ink); border-color: var(--b-amber); }
+.account-deliveries-bulkbar { gap: 0.75rem; padding: 0.65rem 0.85rem; margin-bottom: 1rem; border: 1px solid var(--b-hair); border-radius: 0; background: var(--b-panel); }
 .account-deliveries-selectall { gap: 0.5rem; font-size: 0.875rem; }
 .account-deliveries-selectall input,
-.account-delivery__select { accent-color: var(--primary); }
+.account-delivery__select { accent-color: var(--b-amber); }
 .account-delivery__select { margin-right: 0.25rem; }
 #bulk-count { font-size: 0.875rem; }
-.account-deliveries-search { font-family: inherit; font-size: 0.875rem; padding: 0.5rem 0.75rem; border-color: var(--border); background: var(--background); color: var(--foreground); }
-.account-delivery__ocr { border-color: var(--border); padding: 0 0.5rem; }
+.account-deliveries-search { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.875rem; padding: 0.5rem 0.75rem; min-height: 40px; border: 1px solid var(--b-hair); border-radius: 0; background: var(--b-slot); color: var(--b-ink); }
+.account-delivery__ocr { border: 1px solid var(--b-hair); padding: 0.15rem 0.5rem; }
 .account-delivery__activity { margin-top: 0.5rem; }
 .account-delivery__activity-body ul { margin: 0.5rem 0 0 1rem; }

@@ -1,39 +1,12 @@
-/* ─── Account · kỳ này ─────────────────────────────────────────
-   The usage block as a board readout: numbers in mono, one hairline
-   track with a single marker, a row per fact below. Colours are the
-   board's status colours, not the shell's accent. */
+/* ── Account · Usage readout ("kỳ này") ── */
 
 .au {
-    --a-bg: #15181b;
-    --a-panel: #1d2125;
-    --a-flap: #2a2f35;
-    --a-ink: #e9ecee;
-    --a-dim: #8b939b;
-    --a-hair: #31373e;
-    --a-slot: #0e1113;
-    --a-amber: #e0a03c;
-    --a-green: #4fa36a;
-    --a-red: #c85a4f;
-
     margin-block: 1rem;
-    background: var(--a-bg);
-    color: var(--a-ink);
-    border: 1px solid var(--a-hair);
-    padding: 0.9rem 1rem 0.5rem;
+    background: var(--b-bg);
+    color: var(--b-ink);
+    border: 1px solid var(--b-hair);
+    padding: 1rem 1.25rem 0.75rem;
     font-family: "Barlow Condensed", system-ui, sans-serif;
-}
-
-html[data-theme="light"] .au {
-    --a-bg: #d3d6d9;
-    --a-panel: #e2e5e7;
-    --a-flap: #cfd3d6;
-    --a-ink: #171a1d;
-    --a-dim: #5c6468;
-    --a-hair: #b3b8bc;
-    --a-slot: #f1f3f4;
-    --a-amber: #a96c10;
-    --a-green: #2f7a46;
-    --a-red: #a83b31;
 }
 
 .au__bar {
@@ -42,29 +15,31 @@ html[data-theme="light"] .au {
     gap: 0.5rem 1rem;
     justify-content: space-between;
     align-items: baseline;
-    padding-bottom: 0.55rem;
-    border-bottom: 1px solid var(--a-hair);
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--b-hair);
 }
 
 .au__bar b {
-    font-size: 0.68rem;
-    letter-spacing: 0.22em;
+    font-size: 0.9rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--b-ink);
 }
 
 .au__bar span {
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--a-dim);
+    color: var(--b-dim);
 }
 
 .au__unlimited {
     margin: 0.9rem 0;
-    color: var(--a-dim);
-    font-size: 0.9rem;
+    color: var(--b-dim);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.925rem;
 }
 
 .au__head {
@@ -72,35 +47,36 @@ html[data-theme="light"] .au {
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.8rem 0 0.5rem;
+    padding: 0.85rem 0 0.55rem;
 }
 
-.au__numbers { display: flex; align-items: baseline; gap: 0.4rem; }
+.au__numbers { display: flex; align-items: baseline; gap: 0.5rem; }
 
 .au__used {
-    font-family: "Martian Mono", monospace;
+    font-family: "Martian Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
     font-size: clamp(1.5rem, 4vw, 2.1rem);
     letter-spacing: -0.01em;
+    color: var(--b-ink);
 }
 
 .au__quota {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.78rem;
-    color: var(--a-dim);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.85rem;
+    color: var(--b-dim);
 }
 
 .au__pct {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
-    color: var(--a-dim);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--b-dim);
 }
 
 .au__track {
     height: 6px;
-    background: var(--a-slot);
-    border-top: 1px solid var(--a-flap);
+    background: var(--b-slot);
+    border-top: 1px solid var(--b-flap);
     position: relative;
 }
 
@@ -108,10 +84,9 @@ html[data-theme="light"] .au {
     position: absolute;
     inset-block: 0;
     left: 0;
-    background: var(--a-green);
+    background: var(--b-green);
 }
 
-/* the marker is the head of the fill, not a second colour scale */
 .au__fill::after {
     content: "";
     position: absolute;
@@ -119,46 +94,47 @@ html[data-theme="light"] .au {
     top: -2px;
     bottom: -2px;
     width: 1px;
-    background: var(--a-amber);
+    background: var(--b-amber);
 }
 
-.account-usage-bar__fill--warn { background: var(--a-amber); }
-.account-usage-bar__fill--over { background: var(--a-red); }
+.account-usage-bar__fill--warn { background: var(--b-amber); }
+.account-usage-bar__fill--over { background: var(--b-red); }
 
 .au__note {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem 1rem;
-    padding: 0.5rem 0 0.7rem;
-    font-size: 0.8rem;
-    color: var(--a-dim);
+    gap: 0.6rem 1rem;
+    padding: 0.65rem 0 0.75rem;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.875rem;
+    color: var(--b-dim);
 }
 
 .au__saved {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.2rem;
-    border-top: 1px solid var(--a-hair);
-    padding: 0.5rem 0;
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
+    gap: 0.5rem 1.25rem;
+    border-top: 1px solid var(--b-hair);
+    padding: 0.6rem 0;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--a-dim);
+    color: var(--b-dim);
 }
 
-.au__sub { border-top: 1px solid var(--a-hair); padding-top: 0.5rem; }
+.au__sub { border-top: 1px solid var(--b-hair); padding-top: 0.6rem; }
 
 .au__sub h4 {
-    margin: 0 0 0.25rem;
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.14em;
+    margin: 0 0 0.35rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--a-amber);
-    font-weight: 400;
+    color: var(--b-amber);
+    font-weight: 600;
 }
 
 .au__r {
@@ -166,8 +142,8 @@ html[data-theme="light"] .au {
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.42rem 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--a-hair) 55%, transparent);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--b-hair) 55%, transparent);
 }
 
 .au__r:last-child { border-bottom: 0; }
@@ -177,38 +153,61 @@ html[data-theme="light"] .au {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 0.82rem;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.875rem;
+    color: var(--b-ink);
 }
 
 .au__r-v {
-    font-family: "Martian Mono", monospace;
+    font-family: "Martian Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
-    font-size: 0.55rem;
-    color: var(--a-dim);
+    font-size: 0.74rem;
+    color: var(--b-dim);
     white-space: nowrap;
 }
 
-.au__cc { font-style: normal; font-family: "Martian Mono", monospace; font-size: 0.5rem; color: var(--a-dim); }
-
-.au :deep(.au__more) {
-    margin-top: 0.5rem;
-    border-radius: 0;
-    border: 1px solid var(--a-hair);
-    background: transparent;
-    color: var(--a-dim);
-    font-family: "Barlow Condensed", system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.6rem;
+.au__cc {
+    font-style: normal;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--b-dim);
 }
 
-.au :deep(.au__upgrade) {
+.au ::deep .au__more {
+    margin-top: 0.6rem;
     border-radius: 0;
-    background: var(--a-amber);
-    border: 1px solid var(--a-amber);
-    color: #16181a;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    font-size: 0.6rem;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.85rem;
+    min-height: 36px;
+}
+
+.au ::deep .au__more:hover {
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
+.au ::deep .au__upgrade {
+    border-radius: 0;
+    background: var(--b-amber);
+    border: 1px solid var(--b-amber);
+    color: var(--b-amber-ink);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.4rem 0.9rem;
+    min-height: 36px;
+}
+
+.au ::deep .au__upgrade:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
 }

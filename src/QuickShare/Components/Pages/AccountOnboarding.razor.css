@@ -1,27 +1,28 @@
 .account-onboarding-step {
     position: relative;
     padding-left: 1.5rem;
-    color: var(--muted-foreground);
-    font-size: 0.875rem;
+    color: var(--b-dim);
+    font-size: 0.9rem;
 }
 
 .account-onboarding-step::before {
     content: "";
     position: absolute;
-    top: 0.1rem;
+    top: 0.2rem;
     left: 0;
     width: 1rem;
     height: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 50%;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
 }
 
 .account-onboarding-step--done {
-    color: var(--foreground);
+    color: var(--b-ink);
     text-decoration: line-through;
 }
 
 .account-onboarding-step--done::before {
-    background: var(--primary);
-    border-color: var(--primary);
+    background: var(--b-green);
+    border-color: var(--b-green);
 }

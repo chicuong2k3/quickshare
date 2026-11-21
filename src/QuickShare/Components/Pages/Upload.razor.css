@@ -1,585 +1,36 @@
-/* ─── Send · the sheet before it is folded ───────────────────────
-   The sender lays a file on the sheet and it is creased, parted and
-   sealed. Progress is parts landing on the lattice; the share link
-   is the packet's address, set in mono. ──────────────────────── */
-
-.container {
-    width: 100%;
-    max-width: 44rem;
-}
-
-.section {
-    text-align: center;
-}
-
-/* ─── Heading — engineering lettering, not a magazine headline ─── */
-.h1 {
-    font-family: var(--db-font-display);
-    font-size: 2rem;
-    font-weight: 800;
-    text-transform: none;
-    letter-spacing: -0.015em;
-    line-height: 1.02;
-    color: var(--db-color-text);
-    margin: 0;
-    text-wrap: balance;
-}
-
-@media (min-width: 640px) {
-    .h1 {
-        font-size: 3.5rem;
-    }
-}
-
-/* Emphasis is a crease under the word, never a gradient across it. */
-.h1 span.gradient {
-    color: var(--db-color-text);
-    background: var(--db-foil); box-shadow: 0 0 0 4px var(--db-foil); color: #141414;
-}
-
-.sub {
-    margin-top: var(--db-space-5);
-    font-family: var(--db-font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted);
-    max-width: 34rem;
-    margin-inline: auto;
-}
-/* Hairline rules flanking the spec line — the world's signature device. */
-.sub {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--db-space-4);
-}
-
-.sub::before,
-.sub::after {
-    content: "";
-    height: 1px;
-    flex: 1;
-    max-width: 6rem;
-    background: var(--db-mountain);
-}
-
-
-/* ─── Drop zone — a cell of the sheet, creased along 60° ─── */
-.dropzone {
-    position: relative;
-    margin: var(--db-space-8) auto 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--db-space-5);
-    border: 2px dashed var(--db-mountain);
-    background: var(--db-dither) 0 0 / 4px 4px, var(--db-color-surface);
-    padding: var(--db-space-9) var(--db-space-6);
-    cursor: pointer;
-    transition: background-color var(--db-transition), border-color var(--db-transition);
-}
-
-.dropzone:hover {
-    border-color: var(--db-mountain-deep);
-}
-
-/* Dragging: the valley opens. */
-.dropzone.active {
-    border-color: var(--db-valley-ink);
-    border-style: solid;
-    background: var(--db-valley);
-}
-
-.dropzone-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 3.5rem;
-    height: 3.5rem;
-    border: 1px solid var(--db-mountain);
-    background: var(--db-color-surface);
-    color: var(--db-color-text-secondary);
-    transform: none;
-    transition: border-color var(--db-transition), color var(--db-transition);
-}
-
-.dropzone:hover .dropzone-icon,
-.dropzone.active .dropzone-icon {
-    border-color: var(--db-valley-ink);
-    color: var(--db-valley-ink);
-}
-
-.dropzone-icon svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    transform: none;
-}
-
-.dropzone-title {
-    font-family: var(--db-font-display);
-    font-size: 1rem;
-    font-weight: 800;
-    text-transform: none;
-    letter-spacing: -0.015em;
-    color: var(--db-color-text);
-}
-
-.dropzone-sub {
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted);
-}
-
-/* ─── Option cells ─── */
-.encrypt-toggle {
-    margin-top: var(--db-space-6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-}
-
-.toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--db-space-2);
-    border: 1px solid var(--db-mountain);
-    padding: 0.6rem 1.1rem;
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background-color var(--db-transition), border-color var(--db-transition), color var(--db-transition);
-}
-
-.toggle-btn--off {
-    color: var(--db-color-text-muted);
-    background: transparent;
-}
-
-.toggle-btn--off:hover {
-    border-color: var(--db-mountain-deep);
-    color: var(--db-color-text);
-}
-
-.toggle-btn--on {
-    border-color: var(--db-valley-ink);
-    background: var(--db-valley);
-    color: var(--db-valley-ink);
-}
-
-.toggle-btn svg {
-    width: 0.875rem;
-    height: 0.875rem;
-}
-
-/* ─── Status states ─── */
-.spinner {
-    margin: 0 auto;
-}
-
-.status-h1 {
-    margin-top: var(--db-space-6);
-    font-family: var(--db-font-display);
-    font-size: 1.25rem;
-    font-weight: 800;
-    text-transform: none;
-    letter-spacing: -0.015em;
-    color: var(--db-color-text);
-    overflow-wrap: anywhere;
-}
-
-.status-p {
-    margin-top: var(--db-space-3);
-    font-family: var(--db-font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    color: var(--db-color-text-muted);
-    font-variant-numeric: tabular-nums;
-}
-
-/* ─── Encryption badge ─── */
-.badge-encrypt {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    border: 1px solid var(--db-valley-ink);
-    background: var(--db-valley);
-    padding: 0.4rem 0.85rem;
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--db-valley-ink);
-    margin-top: var(--db-space-4);
-}
-
-.badge-encrypt svg {
-    width: 0.75rem;
-    height: 0.75rem;
-}
-
-/* ─── Progress — parts landing on the lattice ─── */
-.progress-wrap {
-    margin-top: var(--db-space-6);
-    max-width: 22rem;
-    margin-inline: auto;
-}
-
-.progress-track {
-    height: 0.5rem;
-    width: 100%;
-    background: var(--db-sheet-deep);
-    border: 1px solid var(--db-mountain);
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: var(--db-rainbow);
-    transition: width var(--db-transition-slow);
-}
-
-/* ─── Terminal states ─── */
-.icon-success,
-.icon-error {
-    display: flex;
-    width: 3.5rem;
-    height: 3.5rem;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    border: 1px solid;
-    transform: none;
-}
-
-.icon-success {
-    background: var(--db-color-success-subtle);
-    border-color: var(--db-color-success);
-    color: var(--db-color-success);
-}
-
-.icon-error {
-    background: var(--db-color-error-subtle);
-    border-color: var(--db-color-error);
-    color: var(--db-color-error);
-}
-
-.icon-success svg,
-.icon-error svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    transform: none;
-}
-
-/* ─── The new delivery's card: striped chrome over its address ─── */
-.share-box {
-    margin-top: var(--db-space-7);
-    max-width: 30rem;
-    margin-inline: auto;
-    border: 2px solid var(--db-mountain);
-    background: var(--db-color-surface);
-    box-shadow: var(--db-shadow-2);
-    text-align: left;
-}
-
-.share-box ::deep .qs-titlebar__label,
-.share-box .qs-titlebar label {
-    cursor: pointer;
-}
-
-.share-label {
-    display: block;
-    text-align: left;
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted);
-    margin-bottom: var(--db-space-2);
-}
-
-.share-row {
-    display: flex;
-    flex-direction: column;
-    gap: var(--db-space-3);
-    padding: var(--db-space-4);
-}
-
-@media (min-width: 640px) {
-    .share-row {
-        flex-direction: row;
-    }
-}
-
-.share-input {
-    width: 100%;
-    flex: 1;
-    border: 1px solid var(--db-mountain);
-    background: var(--db-color-surface);
-    padding: 0.85rem 1rem;
-    font-family: var(--db-font-mono);
-    font-size: 0.8125rem;
-    letter-spacing: 0.02em;
-    color: var(--db-color-text);
-}
-
-.share-input:focus-visible {
-    outline: 2px solid var(--db-valley-ink);
-    outline-offset: 2px;
-    border-color: var(--db-valley-ink);
-}
-
-/* ─── OTP ─── */
-.otp-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--db-space-2);
-}
-
-.otp-label {
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.14em;
-    color: var(--db-color-text-muted);
-    text-transform: uppercase;
-}
-
-.protect-sub {
-    display: block;
-    margin-top: 1rem;
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    color: var(--db-color-text-muted);
-    text-transform: uppercase;
-}
-
-.otp-hint {
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    color: var(--db-color-text-muted);
-}
-
-/* ─── Reduced motion ─── */
-@media (prefers-reduced-motion: reduce) {
-    /* The skew is geometry, not motion — only transitions are dropped. */
-    .dropzone,
-    .dropzone-icon,
-    .progress-fill,
-    .toggle-btn {
-        transition: none;
-    }
-}
-
-.sender-email-wrap {
-    margin-top: 1.25rem;
-    max-width: 24rem;
-    margin-inline: auto;
-    text-align: left;
-}
-
-.sender-email-input {
-    width: 100%;
-    margin-top: 0.375rem;
-    padding: 0.625rem 0.875rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--db-color-border, #d1d5db);
-    background: var(--db-color-surface, #ffffff);
-    color: var(--db-color-text, #111827);
-    font-size: 0.875rem;
-}
-
-/* Text snippet sharing (issue #178). */
-.upload-text-toggle {
-    margin-top: 1.25rem;
-}
-
-.upload-text-mode {
-    margin-top: 1.25rem;
-    max-width: 24rem;
-    margin-inline: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.upload-text-input {
-    resize: vertical;
-    font-family: var(--db-font-mono, monospace);
-}
-
-/* Upload from URL (issue #57) — Pro/Studio remote fetch. */
-.upload-url-row {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.upload-url-row .sender-email-input {
-    flex: 1;
-}
-
-.upload-url-status {
-    font-size: 0.8125rem;
-    color: var(--db-color-text-muted, #6b7280);
-}
-
-.upload-url-success {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.upload-url-success .share-input {
-    flex: 1;
-}
-
-/* Password strength meter (issue #287) — valley = ok, mountain = weak. */
-.pw-meter {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.375rem;
-}
-
-.pw-meter.hidden {
-    display: none;
-}
-
-.pw-meter__bar {
-    flex: 1;
-    height: 4px;
-    border: 1px solid var(--db-mountain, #d1d5db);
-    background: var(--db-sheet-deep, #f3f4f6);
-    overflow: hidden;
-}
-
-.pw-meter__fill {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: var(--db-mountain-deep, #9ca3af);
-    transition: width 0.15s ease;
-}
-
-/* Password breach check (issue #280) — filled by upload.ts. */
-.pw-breach {
-    margin-top: 0.375rem;
-    font-size: 0.8125rem;
-}
-
-.pw-breach[data-level="breached"] {
-    color: var(--db-color-error);
-}
-
-.pw-breach[data-level="safe"] {
-    color: var(--db-color-success);
-}
-
-.pw-meter[data-level="fair"] .pw-meter__fill {
-    background: var(--db-foil, #d4a017);
-}
-
-.pw-meter[data-level="strong"] .pw-meter__fill {
-    background: var(--db-valley-ink, #16a34a);
-}
-
-.pw-meter__label {
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted, #6b7280);
-    white-space: nowrap;
-}
-
-/* Recent recipients + address book (issue #316) — quick-pick chips. */
-.recent-recipient-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    margin-top: 0.375rem;
-}
-
-.recent-recipient-chip {
-    font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    color: var(--db-color-text-muted, #6b7280);
-    background: var(--db-sheet-deep, #f3f4f6);
-    border: 1px solid var(--db-mountain, #d1d5db);
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
-}
-
-.recent-recipient-chip:hover,
-.recent-recipient-chip:focus-visible {
-    border-color: var(--db-valley, #2563eb);
-    color: var(--db-color-text, #111827);
-}
-
-/* ═══ Board layer (DESIGN.md — "Bảng chuyến") ═══════════════════════
-   Material overrides for the /send surface. Layout stays where the
-   legacy rules put it; everything a visitor sees as colour, weight,
-   radius, font or depth comes from the board world. Selectors are
-   prefixed with .upload-board so they out-rank the legacy classes. */
+/* ── Send (/upload) · Departure Board ("Bảng chuyến") ── */
 
 .upload-board {
-    --b-board: #15181b;
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-flap-2: #31373e;
-    --b-slot: #0e1113;
-    --b-ink: #e9ecee;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-amber: #e0a03c;
-    --b-green: #4fa36a;
-    --b-red: #c85a4f;
-
-    background: var(--b-board);
+    background: var(--b-bg);
     color: var(--b-ink);
     padding: clamp(1.5rem, 4vw, 3rem) 1rem 4rem;
     font-family: "Archivo", system-ui, sans-serif;
 }
 
-html[data-theme="light"] .upload-board {
-    --b-board: #d3d6d9;
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-flap-2: #c3c7cb;
-    --b-slot: #f1f3f4;
-    --b-ink: #171a1d;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-amber: #a96c10;
-    --b-green: #2f7a46;
-    --b-red: #a83b31;
+.upload-board .container {
+    width: 100%;
+    max-width: 56rem;
+    margin-inline: auto;
 }
 
-/* ── type ── */
-.upload-board .section { max-width: 880px; margin-inline: auto; }
+.upload-board .section {
+    max-width: 52rem;
+    margin-inline: auto;
+    text-align: center;
+}
 
 .upload-board .h1 {
     font-family: "Barlow Condensed", "Archivo", system-ui, sans-serif;
     font-weight: 700;
-    font-size: clamp(2rem, 5vw, 3.2rem);
-    line-height: 0.95;
+    font-size: clamp(2rem, 5vw, 3.35rem);
+    line-height: 0.96;
     letter-spacing: 0.005em;
     text-transform: uppercase;
     color: var(--b-ink);
-    margin: 0 0 0.6rem;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
 }
 
-/* the legacy world painted a yellow slab behind one word; the board sets it in amber instead */
-/* the legacy world painted a yellow slab behind one word; the board sets it in amber instead */
 .upload-board .h1 .gradient,
 .upload-board .gradient,
 .upload-board .h1 > span > .gradient {
@@ -596,146 +47,397 @@ html[data-theme="light"] .upload-board {
 .upload-board .sub,
 .upload-board .status-p {
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.14em;
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--b-dim);
+    max-width: 44ch;
+    margin: 0.5rem auto 0;
+}
+
+.upload-board .sub {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.upload-board .sub::before,
+.upload-board .sub::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    max-width: 5rem;
+    background: var(--b-hair);
 }
 
 .upload-board .status-h1 {
+    margin-top: 1.25rem;
     font-family: "Barlow Condensed", system-ui, sans-serif;
     font-weight: 700;
+    font-size: 1.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     color: var(--b-ink);
+    overflow-wrap: anywhere;
 }
 
-.upload-board label,
-.upload-board .otp-label,
-.upload-board .share-label,
-.upload-board .pw-meter__label {
-    font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--b-dim);
+.upload-board a {
+    color: var(--b-ink);
+    text-decoration-color: var(--b-hair);
 }
 
-.upload-board a { color: var(--b-ink); text-decoration-color: var(--b-hair); }
-.upload-board a:hover { color: var(--b-amber); }
+.upload-board a:hover {
+    color: var(--b-amber);
+}
 
-/* ── drop target: a slot in the panel, not a dashed page ── */
+/* ── Dropzone ── */
 .upload-board .dropzone {
+    position: relative;
     width: 100%;
     max-width: 40rem;
-    margin-inline: auto;
+    margin: 1.75rem auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
     background: var(--b-slot);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     box-shadow: none;
-    padding: clamp(2rem, 6vw, 3.5rem) 1.5rem;
-    transition: border-color 160ms ease, background 160ms ease;
+    padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+    cursor: pointer;
+    transition: border-color 140ms ease, background-color 140ms ease;
 }
+
 .upload-board .dropzone:hover,
 .upload-board .dropzone:focus-visible,
-.upload-board .dropzone.is-dragover {
+.upload-board .dropzone.is-dragover,
+.upload-board .dropzone.active {
     border-color: var(--b-amber);
     background: color-mix(in srgb, var(--b-amber) 6%, var(--b-slot));
 }
+
 .upload-board .dropzone-icon {
+    display: flex;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
     border: 1px solid var(--b-hair);
     border-radius: 0;
     background: var(--b-panel);
     color: var(--b-ink);
 }
+
+.upload-board .dropzone-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 .upload-board .dropzone-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--b-ink);
-}
-.upload-board .dropzone-sub {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--b-dim);
+    margin: 0;
 }
 
-/* ── controls ── */
+.upload-board .dropzone-sub {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    margin: 0.35rem 0 0;
+}
+
+/* ── Controls & Buttons ── */
+.upload-board .encrypt-toggle {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+}
+
 .upload-board ::deep button,
 .upload-board .toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    padding: 0.55rem 0.95rem;
     border-radius: 0;
     border: 1px solid var(--b-hair);
-    background: transparent;
-    color: var(--b-dim);
+    background: var(--b-slot);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
     box-shadow: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
-.upload-board button:hover { color: var(--b-ink); border-color: var(--b-dim); }
 
-/* one amber control: the thing that commits the send */
+.upload-board ::deep button:hover,
+.upload-board .toggle-btn:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
+.upload-board .toggle-btn svg {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+.upload-board .toggle-btn--on {
+    color: var(--b-ink);
+    background: var(--b-flap);
+    border-color: var(--b-amber);
+    box-shadow: inset 0 -2px 0 var(--b-amber);
+}
+
+.upload-board .toggle-btn--off {
+    color: var(--b-dim);
+    background: transparent;
+}
+
+/* Primary action */
 .upload-board #upload-share-btn,
 .upload-board button[type="submit"],
 .upload-board .share-row button {
     background: var(--b-amber);
     border-color: var(--b-amber);
-    color: #16181a;
+    color: var(--b-amber-ink);
     font-weight: 700;
 }
+
 .upload-board #upload-share-btn:hover,
 .upload-board button[type="submit"]:hover,
-.upload-board .share-row button:hover { background: var(--b-ink); border-color: var(--b-ink); color: #16181a; }
-
-.upload-board .toggle-btn--on {
-    color: var(--b-ink);
-    border-color: var(--b-hair);
-    box-shadow: inset 0 -2px 0 var(--b-amber);
+.upload-board .share-row button:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
 }
-.upload-board .toggle-btn--off { color: var(--b-dim); }
 
-.upload-board ::deep input,
+/* ── Option panels & form controls ── */
+.upload-board .sender-email-wrap,
+.upload-board .upload-text-mode {
+    margin: 1.25rem auto 0;
+    max-width: 40rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.upload-board .upload-text-toggle {
+    margin-top: 1.25rem;
+}
+
+.upload-board label,
+.upload-board .otp-label,
+.upload-board .share-label,
+.upload-board .protect-sub,
+.upload-board .pw-meter__label {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+}
+
+.upload-board .protect-sub {
+    display: block;
+    margin-top: 0.75rem;
+}
+
+.upload-board .burn-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    cursor: pointer;
+    color: var(--b-ink);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.upload-board .otp-hint {
+    display: block;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--b-dim);
+    margin-top: 0.15rem;
+}
+
+.upload-board .otp-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-board ::deep input:not([type="checkbox"]):not([type="radio"]),
 .upload-board ::deep select,
-.upload-board ::deep textarea {
+.upload-board ::deep textarea,
+.upload-board .sender-email-input {
+    width: 100%;
+    min-height: 40px;
+    padding: 0.55rem 0.75rem;
     border-radius: 0 !important;
     border: 1px solid var(--b-hair) !important;
     background: var(--b-slot) !important;
     color: var(--b-ink) !important;
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.68rem;
+    font-size: 0.875rem;
     box-shadow: none;
 }
+
 .upload-board ::deep input::placeholder,
-.upload-board ::deep textarea::placeholder { color: var(--b-dim); }
+.upload-board ::deep textarea::placeholder {
+    color: var(--b-dim);
+}
+
 .upload-board ::deep input:focus,
 .upload-board ::deep select:focus,
-.upload-board ::deep textarea:focus { border-color: var(--b-amber) !important; outline: none; }
+.upload-board ::deep textarea:focus {
+    border-color: var(--b-amber) !important;
+    outline: none;
+}
+
+.upload-board ::deep select,
+.upload-board ::deep select.sender-email-input {
+    appearance: none;
+    padding-right: 2.25rem;
+}
+
+.upload-board .upload-text-input {
+    resize: vertical;
+    min-height: 6rem;
+}
+
+.upload-board .upload-url-row,
+.upload-board .upload-url-success {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.upload-board .upload-url-row .sender-email-input,
+.upload-board .upload-url-success .share-input {
+    flex: 1;
+}
+
+.upload-board .upload-url-status {
+    font-size: 0.85rem;
+    color: var(--b-dim);
+}
+
+/* Recent recipient chips */
+.upload-board .recent-recipient-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
 
 .upload-board .recent-recipient-chip {
     border-radius: 0;
     border: 1px solid var(--b-hair);
     background: var(--b-panel);
-    color: var(--b-dim);
-    font-family: "Martian Mono", monospace;
-    font-size: 0.55rem;
+    color: var(--b-ink);
+    padding: 0.35rem 0.65rem;
+    min-height: 32px;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.06em;
+    cursor: pointer;
 }
 
-/* ── progress: track, green fill, amber head ── */
+.upload-board .recent-recipient-chip:hover,
+.upload-board .recent-recipient-chip:focus-visible {
+    border-color: var(--b-amber);
+    color: var(--b-ink);
+}
+
+/* Password meter */
+.upload-board .pw-meter {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+}
+
+.upload-board .pw-meter.hidden {
+    display: none;
+}
+
+.upload-board .pw-meter__bar {
+    flex: 1;
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    height: 6px;
+    overflow: hidden;
+}
+
+.upload-board .pw-meter__fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 0;
+    background: var(--b-dim);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.upload-board .pw-meter[data-level="fair"] .pw-meter__fill { background: var(--b-amber); }
+.upload-board .pw-meter[data-level="strong"] .pw-meter__fill { background: var(--b-green); }
+
+.upload-board .pw-breach {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--b-red);
+}
+
+.upload-board .pw-breach[data-level="safe"] {
+    color: var(--b-green);
+}
+
+/* Progress */
+.upload-board .progress-wrap {
+    margin-top: 1.5rem;
+    max-width: 28rem;
+    margin-inline: auto;
+    color: var(--b-dim);
+}
+
 .upload-board .progress-track {
     background: var(--b-slot);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     height: 6px;
+    overflow: hidden;
 }
+
 .upload-board .progress-fill {
+    height: 100%;
     background: var(--b-green);
     border-radius: 0;
     position: relative;
+    transition: transform 200ms ease, opacity 200ms ease;
 }
+
 .upload-board .progress-fill::after {
     content: "";
     position: absolute;
@@ -745,66 +447,126 @@ html[data-theme="light"] .upload-board {
     width: 1px;
     background: var(--b-amber);
 }
-.upload-board .progress-wrap { color: var(--b-dim); }
 
-/* ── panels: share, access rules, password strength, badges ── */
+/* Terminal icons & cards */
+.upload-board .icon-success,
+.upload-board .icon-error {
+    display: flex;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+}
+
+.upload-board .icon-success { border-color: var(--b-green); color: var(--b-green); }
+.upload-board .icon-error { border-color: var(--b-red); color: var(--b-red); }
+.upload-board .icon-success svg,
+.upload-board .icon-error svg { width: 1.5rem; height: 1.5rem; }
+
 .upload-board .share-box,
 .upload-board .upload-access,
 .upload-board .upload-access__combine,
 .upload-board .upload-access__locked {
+    max-width: 40rem;
+    margin-inline: auto;
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     box-shadow: none;
-    padding: 1rem;
+    padding: 1.15rem;
+    text-align: left;
 }
+
+.upload-board .share-box {
+    margin-top: 1.5rem;
+    padding: 0;
+}
+
+.upload-board .share-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.15rem;
+}
+
+@media (min-width: 640px) {
+    .upload-board .share-row { flex-direction: row; }
+}
+
 .upload-board .share-input {
+    width: 100%;
+    flex: 1;
     background: var(--b-slot);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     color: var(--b-ink);
-    font-family: "Martian Mono", monospace;
-    font-size: 0.68rem;
+    padding: 0.65rem 0.85rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.85rem;
 }
+
 .upload-board .badge-encrypt {
-    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1rem;
+    padding: 0.4rem 0.75rem;
+    background: var(--b-slot);
     border: 1px solid var(--b-hair);
     border-radius: 0;
-    color: var(--b-dim);
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
+    color: var(--b-ink);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
+
+.upload-board .badge-encrypt svg { width: 0.85rem; height: 0.85rem; }
+
 .upload-board .upload-access__locked { border-color: var(--b-amber); }
 .upload-board .upload-access__upgrade { color: var(--b-amber); }
 
-.upload-board .pw-meter__bar { background: var(--b-slot); border: 1px solid var(--b-hair); border-radius: 0; height: 4px; }
-.upload-board .pw-meter__fill { border-radius: 0; }
-.upload-board .pw-breach { color: var(--b-red); }
-
-.upload-board .icon-success { color: var(--b-green); }
-.upload-board .icon-error { color: var(--b-red); }
-.upload-board .otp-hint { color: var(--b-dim); }
-
-/* ── the card's own chrome: a flap header, not a striped titlebar ── */
+/* Titlebar */
 .upload-board .qs-titlebar {
     background: var(--b-flap);
     border-bottom: 1px solid var(--b-hair);
     border-radius: 0;
-    background-image: none;
-    padding: 0.45rem 0.6rem;
+    padding: 0.55rem 0.85rem;
 }
+
 .upload-board .qs-titlebar__label {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.14em;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--b-ink);
     background: transparent;
 }
+
 .upload-board .qs-titlebar__box {
-    background: var(--b-board);
+    background: var(--b-bg);
     border: 1px solid var(--b-hair);
     border-radius: 0;
+}
+
+@media (max-width: 640px) {
+    .upload-board { padding: 1.25rem 0.75rem 3rem; }
+    .upload-board ::deep input:not([type="checkbox"]):not([type="radio"]),
+    .upload-board ::deep select,
+    .upload-board ::deep textarea,
+    .upload-board .sender-email-input {
+        font-size: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .upload-board .dropzone,
+    .upload-board .progress-fill,
+    .upload-board .pw-meter__fill,
+    .upload-board .toggle-btn {
+        transition: none;
+    }
 }

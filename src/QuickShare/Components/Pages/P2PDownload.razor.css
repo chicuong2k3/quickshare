@@ -1,95 +1,77 @@
-/* QuickShareCloud — P2P Download page (grunge-dark tokens) */
+/* ── P2P Download · Departure Board ("Bảng chuyến") ── */
 
 .card {
     width: 100%;
-    max-width: 28rem;
+    max-width: 30rem;
 }
 
 .card ::deep .db-card__body {
-    padding: var(--db-space-6);
+    padding: 1.5rem;
 }
 
 .section {
     text-align: center;
-    padding: var(--db-space-6) 0;
+    padding: 1.5rem 0;
 }
 
 .section--compact {
-    padding: var(--db-space-5) 0;
+    padding: 1.25rem 0;
 }
 
-/* ─── Status icon (unified with Upload page) ─── */
-.icon-success {
-    display: flex;
-    width: 3rem;
-    height: 3rem;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto var(--db-space-5);
-    border: 1px solid var(--db-color-success);
-    background: var(--db-color-success-subtle);
-    color: var(--db-color-success);
-    transform: none;
-}
-
-.icon-error {
-    display: flex;
-    width: 3rem;
-    height: 3rem;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto var(--db-space-5);
-    border: 1px solid var(--db-color-error);
-    background: var(--db-color-error-subtle);
-    color: var(--db-color-error);
-    transform: none;
-}
-
+.icon-success,
+.icon-error,
 .icon-accent {
     display: flex;
     width: 3rem;
     height: 3rem;
     align-items: center;
     justify-content: center;
-    margin: 0 auto var(--db-space-5);
-    border: 1px solid var(--db-mountain);
-    background: var(--db-color-surface);
-    color: var(--db-color-text-secondary);
-    transform: none;
+    margin: 0 auto 1.25rem;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    color: var(--b-dim);
+}
+
+.icon-success {
+    border-color: var(--b-green);
+    color: var(--b-green);
+}
+
+.icon-error {
+    border-color: var(--b-red);
+    color: var(--b-red);
 }
 
 .icon-success svg,
 .icon-error svg,
 .icon-accent svg {
-    transform: none;
     width: 1.5rem;
     height: 1.5rem;
 }
 
-/* ─── PIN input ─── */
 .input {
     width: 100%;
     max-width: 20rem;
-    border-radius: var(--db-radius-4);
-    border: 1px solid color-mix(in srgb, var(--db-color-border) 60%, transparent);
-    background: var(--db-color-bg);
-    padding: 0.875rem 1.25rem;
-    font-size: var(--db-text-sm);
-    color: var(--db-color-text);
+    border-radius: 0;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    padding: 0.75rem 1rem;
+    min-height: 44px;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.9rem;
+    color: var(--b-ink);
     text-align: center;
-    font-family: inherit;
 }
 
 .input:focus {
     outline: none;
-    border-color: var(--db-color-accent-text);
+    border-color: var(--b-amber);
 }
 
-/* ─── File row ─── */
 .file-row {
     display: flex;
     align-items: flex-start;
-    gap: 1.25rem;
+    gap: 1rem;
     text-align: left;
 }
 
@@ -100,78 +82,48 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--db-mountain);
-    background: var(--db-sheet);
-    color: var(--db-color-text-secondary);
-    transform: none;
+    border: 1px solid var(--b-hair);
+    background: var(--b-panel);
+    color: var(--b-ink);
 }
 
 .file-icon svg {
     width: 1.375rem;
     height: 1.375rem;
-    transform: none;
 }
 
-/* ─── Progress bar ─── */
 .progress {
-    margin-top: var(--db-space-5);
-    height: 0.5rem;
+    margin-top: 1.25rem;
+    height: 6px;
     width: 100%;
-    border: 1px solid var(--db-mountain);
-    background: var(--db-sheet-deep);
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
     overflow: hidden;
 }
 
 .progress-bar {
     height: 100%;
-    background: var(--db-foil);
-    transition: width var(--db-transition-slow);
+    background: var(--b-green);
+    transition: transform 200ms ease, opacity 200ms ease;
     width: 0;
 }
 
-/* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
     .progress-bar {
         transition: none;
     }
 }
 
-/* ═══ Board layer (DESIGN.md — "Bảng chuyến") ═══════════════════════
-   The receiving side of a direct transfer: one panel, one amber action,
-   the same seams. Markup and download JS untouched. */
-
 .p2p-dl {
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-slot: #0e1113;
-    --b-ink: #e9ecee;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-amber: #e0a03c;
-    --b-green: #4fa36a;
-    --b-red: #c85a4f;
-
     width: 100%;
-    max-width: 30rem;
+    max-width: 32rem;
     margin-inline: auto;
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     color: var(--b-ink);
-    padding: 1.25rem;
+    padding: 1.5rem;
     font-family: "Archivo", system-ui, sans-serif;
-}
-
-html[data-theme="light"] .p2p-dl {
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-slot: #f1f3f4;
-    --b-ink: #171a1d;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-amber: #a96c10;
-    --b-green: #2f7a46;
-    --b-red: #a83b31;
 }
 
 .p2p-dl .card,
@@ -189,77 +141,57 @@ html[data-theme="light"] .p2p-dl {
     font-family: "Barlow Condensed", system-ui, sans-serif;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     color: var(--b-ink);
 }
 
 .p2p-dl ::deep p,
-.p2p-dl .section p { color: var(--b-dim); }
+.p2p-dl .section p {
+    color: var(--b-dim);
+    font-size: 0.9rem;
+}
 
 .p2p-dl .file-row {
     border: 1px solid var(--b-hair);
     border-radius: 0;
     background: var(--b-slot);
-    padding: 0.75rem;
-    gap: 0.75rem;
-}
-
-.p2p-dl .file-icon {
-    border: 1px solid var(--b-hair);
-    border-radius: 0;
-    background: var(--b-panel);
-    color: var(--b-ink);
+    padding: 0.9rem;
+    gap: 0.9rem;
 }
 
 .p2p-dl ::deep [data-slot="button"] {
     border-radius: 0;
     border: 1px solid var(--b-hair);
-    background: transparent;
-    color: var(--b-dim);
+    background: var(--b-slot);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-height: 42px;
+    padding: 0.55rem 1.1rem;
     box-shadow: none;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
+
+.p2p-dl ::deep [data-slot="button"]:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
 .p2p-dl ::deep [data-slot="button"][data-variant="default"] {
     background: var(--b-amber);
     border-color: var(--b-amber);
-    color: #16181a;
+    color: var(--b-amber-ink);
     font-weight: 700;
 }
+
 .p2p-dl ::deep [data-slot="button"][data-variant="default"]:hover {
-    background: var(--b-ink);
-    border-color: var(--b-ink);
-    color: #16181a;
-}
-
-.p2p-dl .progress {
-    background: var(--b-slot);
-    border: 1px solid var(--b-hair);
-    border-radius: 0;
-    height: 6px;
-    overflow: hidden;
-}
-.p2p-dl .progress-bar {
-    background: var(--b-green);
-    border-radius: 0;
-}
-
-.p2p-dl .icon-success { color: var(--b-green); }
-.p2p-dl .icon-error { color: var(--b-red); }
-.p2p-dl ::deep .animate-spin { border-radius: 0; }
-
-/* state blocks sit centred in the panel; the spinner is a rotating corner,
-   which is what a board uses instead of a filled circle */
-.p2p-dl .section,
-.p2p-dl .section--compact {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 0.75rem;
-    padding: 1.25rem 0.25rem;
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
 }
 
 .p2p-dl ::deep .animate-spin {
@@ -272,4 +204,12 @@ html[data-theme="light"] .p2p-dl {
     border-radius: 0 !important;
 }
 
-.p2p-dl ::deep p { color: var(--b-dim); font-size: 0.85rem; }
+.p2p-dl .section,
+.p2p-dl .section--compact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.9rem;
+    padding: 1.35rem 0.25rem;
+}

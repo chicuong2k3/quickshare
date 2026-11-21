@@ -5,3 +5,118 @@
 @source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/Components/**/*.razor";
 @source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/ButtonVariants.cs";
 @source "../../vendor/Unpoly.Blazor.Shadcn/src/Unpoly.Blazor.Shadcn/wwwroot/ui.js";
+
+/* Departure Board ("Bảng chuyến") — global design tokens + Shadcn semantic bindings */
+:root,
+html[data-theme="light"],
+html[data-theme="grunge-light"] {
+    --b-board: #D8DBDE;
+    --b-bg: var(--b-board);
+    --b-panel: #EAEDEF;
+    --b-flap: #CFD4D8;
+    --b-flap-deep: #BFC5CA;
+    --b-flap-2: var(--b-flap-deep);
+    --b-slot: #F7F8F9;
+    --b-ink: #15181B;
+    --b-body: #262C31;
+    --b-dim: #495158;
+    --b-hair: #A9B0B6;
+    --b-amber: #D99226;
+    --b-amber-ink: #15181B;
+    --b-amber-text: #8C5306;
+    --b-green: #1C6939;
+    --b-red: #A82E25;
+    --b-hover-bg: #15181B;
+    --b-hover-ink: #F7F8F9;
+    --b-seam-inset: inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+
+    --radius: 0px;
+    --radius-control: 0px;
+    --elevation-1: none;
+    --elevation-2: none;
+    --elevation-3: none;
+    --elevation-4: none;
+
+    --background: var(--b-board);
+    --foreground: var(--b-ink);
+    --card: var(--b-panel);
+    --card-foreground: var(--b-ink);
+    --popover: var(--b-panel);
+    --popover-foreground: var(--b-ink);
+    --primary: var(--b-amber);
+    --primary-foreground: var(--b-amber-ink);
+    --secondary: var(--b-flap);
+    --secondary-foreground: var(--b-ink);
+    --muted: var(--b-slot);
+    --muted-foreground: var(--b-dim);
+    --accent: var(--b-flap);
+    --accent-foreground: var(--b-ink);
+    --destructive: var(--b-red);
+    --destructive-foreground: #FFFFFF;
+    --border: var(--b-hair);
+    --input: var(--b-hair);
+    --ring: var(--b-amber);
+    --surface-border: var(--b-hair);
+    --font-numeric: "Martian Mono", ui-monospace, monospace;
+}
+
+.dark,
+html[data-theme="dark"],
+html[data-theme="grunge-dark"] {
+    --b-board: #15181B;
+    --b-bg: var(--b-board);
+    --b-panel: #1D2125;
+    --b-flap: #2A2F35;
+    --b-flap-deep: #31373E;
+    --b-flap-2: var(--b-flap-deep);
+    --b-slot: #0E1113;
+    --b-ink: #E9ECEE;
+    --b-body: #CFD5DA;
+    --b-dim: #9BA3AB;
+    --b-hair: #343B43;
+    --b-amber: #E0A03C;
+    --b-amber-ink: #15181B;
+    --b-amber-text: #E0A03C;
+    --b-green: #58B574;
+    --b-red: #E06C61;
+    --b-hover-bg: #E9ECEE;
+    --b-hover-ink: #15181B;
+    --b-seam-inset: inset 0 -1px 0 rgba(0, 0, 0, 0.45);
+
+    --background: var(--b-board);
+    --foreground: var(--b-ink);
+    --card: var(--b-panel);
+    --card-foreground: var(--b-ink);
+    --popover: var(--b-panel);
+    --popover-foreground: var(--b-ink);
+    --primary: var(--b-amber);
+    --primary-foreground: var(--b-amber-ink);
+    --secondary: var(--b-flap);
+    --secondary-foreground: var(--b-ink);
+    --muted: var(--b-slot);
+    --muted-foreground: var(--b-dim);
+    --accent: var(--b-flap);
+    --accent-foreground: var(--b-ink);
+    --destructive: var(--b-red);
+    --destructive-foreground: #FFFFFF;
+    --border: var(--b-hair);
+    --input: var(--b-hair);
+    --ring: var(--b-amber);
+    --surface-border: var(--b-hair);
+}
+
+@layer base {
+    body {
+        background-color: var(--b-board);
+        color: var(--b-ink);
+        font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    select:not([data-slot="native-select"]) {
+        background-color: var(--b-slot);
+        color: var(--b-ink);
+        border: 1px solid var(--b-hair);
+        border-radius: 0px;
+        padding: 0.45rem 0.75rem;
+    }
+}

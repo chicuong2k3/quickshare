@@ -3,7 +3,7 @@
 // PageCacheMiddleware owns those; two cache systems fighting is the 3am bug.
 // Bump SHELL_VERSION on deploy so an old SW does not pin the site.
 
-const SHELL_VERSION = 'qs-shell-v2';
+const SHELL_VERSION = 'qs-shell-v3';
 const OFFLINE_DELIVERY_CACHE = 'qs-offline-deliveries-v1';
 const OFFLINE_UPLOAD_SYNC_TAG = 'qs-offline-upload-sync';
 
@@ -56,11 +56,18 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Static shell: cache-first; a miss falls through to the network.
+    // Static shell: network-first so UI/JS updates apply immediately; cache offline fallback only.
     if (SHELL.indexOf(url.pathname) !== -1) {
         event.respondWith(
-            caches.match(event.request)
-                .then(function (hit) { return hit || fetch(event.request); })
+            fetch(event.request)
+                .then(function (response) {
+                    if (response && response.ok) {
+                        var copy = response.clone();
+                        caches.open(SHELL_VERSION).then(function (cache) { cache.put(event.request, copy); });
+                    }
+                    return response;
+                })
+                .catch(function () { return caches.match(event.request); })
         );
     }
 });

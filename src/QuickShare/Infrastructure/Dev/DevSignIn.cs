@@ -58,6 +58,18 @@ public static class DevSignIn
                 await db.SaveChangesAsync(ct);
             }
 
+            var hasLogin = await db.UserLogins.AnyAsync(l => l.UserId == user.Id && l.Provider == Provider, ct);
+            if (!hasLogin)
+            {
+                db.UserLogins.Add(new UserLogin
+                {
+                    UserId = user.Id,
+                    Provider = Provider,
+                    ProviderKey = user.Id.ToString(),
+                });
+                await db.SaveChangesAsync(ct);
+            }
+
             await AuthSignIn.CompleteAsync(context, db, user, Provider, ct);
 
             var destination = returnUrl is { Length: > 0 } ? returnUrl : RoutePaths.Account;

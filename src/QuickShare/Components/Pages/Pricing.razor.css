@@ -1,39 +1,11 @@
-/* ─── Pricing · the departure board ─────────────────────────────
-   Plans are columns on a timetable, one row per fact, status by
-   colour only. The panel is an instrument sitting inside the app
-   shell: square, no radius, hairline seams, no shadow. Values come
-   from PlanTierLimits at render time; nothing here is hardcoded. */
+/* ── Pricing · Departure Board ("Bảng chuyến") ── */
 
 .bp {
-    --b-bg: #15181b;
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-flap-2: #31373e;
-    --b-ink: #e9ecee;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-slot: #0e1113;
-    --b-amber: #e0a03c;
-    --b-green: #4fa36a;
-
     background: var(--b-bg);
     color: var(--b-ink);
     border: 1px solid var(--b-hair);
     padding: clamp(1rem, 2.5vw, 2rem);
     font-family: "Barlow Condensed", system-ui, sans-serif;
-}
-
-html[data-theme="light"] .bp {
-    --b-bg: #d3d6d9;
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-flap-2: #c3c7cb;
-    --b-ink: #171a1d;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-slot: #f1f3f4;
-    --b-amber: #a96c10;
-    --b-green: #2f7a46;
 }
 
 .bp .mono,
@@ -44,132 +16,247 @@ html[data-theme="light"] .bp {
     font-variant-numeric: tabular-nums;
 }
 
-/* ─── hero ─── */
-.bp .hero { padding: 0 0 1.25rem; border-bottom: 2px solid var(--b-ink); }
-.bp .hero h1 {
-    margin: 0;
-    font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    font-size: clamp(1.75rem, 4vw, 3rem);
-    line-height: 0.95;
-    text-transform: uppercase;
-    letter-spacing: -0.005em;
-    font-weight: 700;
-    max-width: 18ch;
-}
-.bp .hero p {
-    margin: 0.75rem 0 0;
-    color: var(--b-dim);
-    font-size: 0.95rem;
-    max-width: 52ch;
+/* ── hero ── */
+.bp .hero {
+    padding: 0 0 1.25rem;
+    border-bottom: 1px solid var(--b-hair);
 }
 
-/* ─── billing toggle: a segmented board control, not a pill ─── */
-.bp .toggle-wrap { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; padding: 0.9rem 0 0; }
-.bp .toggle-group { display: inline-flex; border: 1px solid var(--b-hair); }
+.bp .hero h1 {
+    margin: 0;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    line-height: 0.98;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    max-width: 20ch;
+    color: var(--b-ink);
+}
+
+.bp .hero p {
+    margin: 0.75rem 0 0;
+    font-family: "Archivo", system-ui, sans-serif;
+    color: var(--b-dim);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    max-width: 56ch;
+}
+
+/* ── billing toggle + currency selector ── */
+.bp .toggle-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0 0;
+}
+
+.bp .toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+}
+
 .bp .toggle-group button,
-.bp .toggle-group a { text-decoration: none; display: inline-flex; align-items: center;
+.bp .toggle-group a {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
     background: transparent;
     border: 0;
     border-right: 1px solid var(--b-hair);
     color: var(--b-dim);
-    padding: 0.55rem 1rem;
+    padding: 0.6rem 1.1rem;
+    min-height: 40px;
     cursor: pointer;
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
-    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: color 120ms ease, background-color 120ms ease;
 }
+
+.bp .toggle-group button:hover,
+.bp .toggle-group a:hover {
+    color: var(--b-ink);
+    background: var(--b-panel);
+}
+
 .bp .toggle-group button:last-child,
-.bp .toggle-group a:last-child { border-right: 0; }
+.bp .toggle-group a:last-child {
+    border-right: 0;
+}
+
 .bp .toggle-group button[data-variant="default"],
 .bp .toggle-group a[data-variant="default"] {
     background: var(--b-flap);
     color: var(--b-ink);
     box-shadow: inset 0 -2px 0 var(--b-amber);
 }
+
 .bp .tag {
     display: inline-block;
-    margin-left: 0.4rem;
+    margin-left: 0.45rem;
     border: 1px solid var(--b-green);
     color: var(--b-green);
-    padding: 0.05rem 0.3rem;
-    font-family: "Martian Mono", monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.1em;
+    padding: 0.1rem 0.4rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
-.bp #pricing-currency-selector { margin: 0; color: var(--b-dim); font-size: 0.7rem; }
-.bp #pricing-currency-selector a { color: var(--b-dim); border: 1px solid var(--b-hair); padding: 0.15rem 0.4rem; }
-.bp #pricing-currency-selector a[class*="border-primary"] { color: var(--b-ink); border-color: var(--b-amber); }
 
-/* ─── the board ─── */
+.bp #pricing-currency-selector {
+    margin: 0;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--b-dim);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.bp #pricing-currency-selector a,
+.bp .bp-curr {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-dim);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+
+.bp #pricing-currency-selector a:hover,
+.bp .bp-curr:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+}
+
+.bp #pricing-currency-selector a.bp-curr--active,
+.bp #pricing-currency-selector a[class*="border-primary"] {
+    background: var(--b-flap);
+    border-color: var(--b-amber);
+    color: var(--b-ink);
+    box-shadow: inset 0 -2px 0 var(--b-amber);
+}
+
+/* ── the board ── */
 .bp .board {
-    margin-top: 1rem;
+    margin-top: 1.25rem;
     border: 1px solid var(--b-hair);
     background: var(--b-panel);
 }
+
 .bp .board__head {
     display: grid;
     grid-template-columns: 1.25fr repeat(3, 1fr);
     border-bottom: 1px solid var(--b-hair);
 }
+
 .bp .board__head > div {
-    padding: 0.7rem 0.75rem;
+    padding: 0.85rem 0.9rem;
     border-right: 1px solid var(--b-hair);
 }
+
 .bp .board__head > div:last-child { border-right: 0; }
+
 .bp .board__head .lbl {
     display: block;
-    font-size: 0.5rem;
-    letter-spacing: 0.14em;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--b-dim);
     margin-bottom: 0.3rem;
 }
+
 .bp .board__head b {
-    display: block;
-    font-size: 1.15rem;
+    display: inline-block;
+    font-size: 1.25rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--b-ink);
 }
-.bp .board__head .col--pro { background: var(--b-flap); }
+
+.bp .board__head .col--pro {
+    background: var(--b-flap);
+}
 
 .bp .brow {
     display: grid;
     grid-template-columns: 1.25fr repeat(3, 1fr);
     border-bottom: 1px solid var(--b-hair);
 }
+
 .bp .brow:last-child { border-bottom: 0; }
+
 .bp .brow > * {
-    padding: 0.6rem 0.75rem;
+    padding: 0.7rem 0.9rem;
     border-right: 1px solid var(--b-hair);
     min-width: 0;
 }
+
 .bp .brow > *:last-child { border-right: 0; }
+
 .bp .brow .k {
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--b-dim);
+    display: flex;
+    align-items: center;
 }
+
 .bp .brow .v {
     text-align: center;
-    font-family: "Martian Mono", monospace;
-    font-size: 0.72rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.8rem;
+    color: var(--b-ink);
 }
-.bp .brow .v--off { color: var(--b-dim); }
-.bp .brow--price .v { padding-block: 0.7rem; }
+
+.bp .brow .v--yes,
+.bp ::deep .v--yes {
+    color: var(--b-green);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+
+.bp .brow .v--off,
+.bp ::deep .v--no {
+    color: var(--b-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.bp .brow--price .v { padding-block: 0.85rem; }
+
 .bp .brow--price .amount {
     display: inline;
     font-family: "Barlow Condensed", system-ui, sans-serif;
-    font-size: 1.15rem;
+    font-size: 1.4rem;
+    font-weight: 700;
     color: var(--b-amber);
     letter-spacing: 0.03em;
 }
-/* the billing period is server state: the page renders one period's numbers */
-/* must out-rank the block/unit rules below */
+
 .bp .is-monthly .unit.p-y,
 .bp .is-monthly .amount.p-y,
 .bp .is-yearly .unit.p-m,
@@ -177,14 +264,14 @@ html[data-theme="light"] .bp {
 
 .bp .brow--price .unit {
     display: block;
-    margin-top: 0.1rem;
-    font-size: 0.5rem;
+    margin-top: 0.2rem;
+    font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--b-dim);
 }
 
-/* ─── picks ─── */
+/* ── picks ── */
 .bp .picks {
     display: grid;
     grid-template-columns: 1.25fr repeat(3, 1fr);
@@ -192,123 +279,279 @@ html[data-theme="light"] .bp {
     border-top: 0;
     background: var(--b-panel);
 }
+
 .bp .picks > div {
-    padding: 0.75rem;
+    padding: 0.85rem 0.9rem;
     border-right: 1px solid var(--b-hair);
     display: flex;
     align-items: center;
 }
+
 .bp .picks > div:last-child { border-right: 0; }
+
 .bp .picks__label {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.14em;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--b-dim);
 }
+
 .bp ::deep .picks__btn {
     width: 100%;
     justify-content: center;
     border-radius: 0 !important;
+    min-height: 40px;
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-size: 0.72rem;
-    background: transparent;
+    letter-spacing: 0.14em;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: var(--b-slot);
     border: 1px solid var(--b-hair);
-    color: var(--b-dim);
+    color: var(--b-ink);
+    box-shadow: none;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-.bp ::deep .picks__btn:hover { color: var(--b-ink); border-color: var(--b-dim); }
+
+.bp ::deep .picks__btn:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
 .bp ::deep .picks__btn--primary {
     background: var(--b-amber);
     border-color: var(--b-amber);
-    color: #16181a;
+    color: var(--b-amber-ink);
     font-weight: 700;
 }
-.bp ::deep .picks__btn--primary:hover { background: var(--b-ink); border-color: var(--b-ink); color: #16181a; }
+
+.bp ::deep .picks__btn--primary:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
+}
+
 .bp .picks__own {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--b-green);
-}
-
-/* ─── phones: one block per plan ─── */
-.bp .stack { display: none; }
-
-/* ─── comparison table further down reads as the same instrument ─── */
-.bp .compare { margin-top: 2rem; }
-.bp ::deep .compare__title {
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin: 0 0 0.6rem;
     font-weight: 600;
 }
-.bp ::deep .compare__scroll { overflow-x: auto; }
+
+/* ── phones: one block per plan ── */
+.bp .stack { display: none; }
+
+/* ── comparison table ── */
+.bp .compare { margin-top: 2.25rem; }
+
+.bp ::deep .compare__title {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 1.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.75rem;
+    font-weight: 700;
+    color: var(--b-ink);
+}
+
+.bp ::deep .compare__scroll { overflow-x: auto; border: 1px solid var(--b-hair); }
 .bp ::deep .compare__table { width: 100%; border-collapse: collapse; background: var(--b-panel); }
+
 .bp ::deep .compare__table th,
 .bp ::deep .compare__table td {
     border: 1px solid var(--b-hair);
-    padding: 0.55rem 0.7rem;
+    padding: 0.65rem 0.8rem;
     text-align: left;
-    font-size: 0.72rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
 }
+
 .bp ::deep .compare__table thead th {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--b-dim);
+    color: var(--b-ink);
+    background: var(--b-flap);
+    font-weight: 600;
+    text-align: center;
 }
+
+.bp ::deep .compare__table thead th:first-child { text-align: left; }
+
 .bp ::deep .compare__table tbody th {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--b-dim);
-    font-weight: 400;
+    font-weight: 500;
 }
+
 .bp ::deep .compare__table td { text-align: center; color: var(--b-ink); }
 
-/* ─── FAQ: rule + row, hairline only ─── */
-.bp .faq { margin-top: 2rem; }
+/* ── FAQ: rule + row ── */
+.bp .faq { margin-top: 2.25rem; }
+
 .bp .faq__head h2 {
-    font-size: 1.1rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 1.35rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     margin: 0;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--b-ink);
 }
-.bp .faq__head p { color: var(--b-dim); font-size: 0.85rem; margin: 0.35rem 0 0.75rem; }
+
+.bp .faq__head p {
+    font-family: "Archivo", system-ui, sans-serif;
+    color: var(--b-dim);
+    font-size: 0.9rem;
+    margin: 0.35rem 0 0.85rem;
+}
+
 .bp .faq details { border-top: 1px solid var(--b-hair); }
 .bp .faq details:last-of-type { border-bottom: 1px solid var(--b-hair); }
+
 .bp .faq summary {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
     align-items: center;
-    padding: 0.7rem 0;
+    padding: 0.85rem 0;
     cursor: pointer;
     list-style: none;
-    font-size: 0.95rem;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--b-ink);
 }
+
 .bp .faq summary::-webkit-details-marker { display: none; }
 .bp .faq-chevron { width: 1rem; height: 1rem; flex: 0 0 auto; color: var(--b-dim); }
-.bp .faq details[open] .faq-chevron { transform: rotate(180deg); }
-.bp .faq-answer { padding: 0 0 0.9rem; color: var(--b-dim); font-size: 0.85rem; max-width: 68ch; }
+.bp .faq details[open] .faq-chevron { transform: rotate(180deg); color: var(--b-amber); }
+.bp .faq-answer {
+    font-family: "Archivo", system-ui, sans-serif;
+    padding: 0 0 1rem;
+    color: var(--b-dim);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 68ch;
+}
 
-/* ─── campaign banner + education strip: board rows ─── */
+/* ── campaign banner, calculator, education discount, CTA ── */
 .bp section[id="pricing-campaign-banner"],
-.bp section[id="pricing-education-discount"] { margin: 1rem 0; }
-.bp #pricing-calculator { margin: 2rem 0; }
+.bp section[id="pricing-education-discount"],
+.bp #pricing-calculator {
+    margin: 1.5rem 0;
+    font-family: "Archivo", system-ui, sans-serif;
+}
+
+.bp #pricing-campaign-banner {
+    background: var(--b-panel);
+    border: 1px solid var(--b-amber);
+    border-radius: 0;
+    color: var(--b-ink);
+}
+
+.bp #pricing-calculator ::deep [data-slot="card"],
+.bp #pricing-education-discount ::deep [data-slot="card"] {
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--b-ink);
+}
+
+.bp #pricing-calculator label {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    margin-bottom: 0.35rem;
+}
+
+.bp #pricing-calculator ::deep input {
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    color: var(--b-ink);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    min-height: 40px;
+}
+
+.bp #calc-cta-btn,
+.bp ::deep #calc-cta-btn {
+    border-radius: 0;
+    border: 1px solid var(--b-amber);
+    background: transparent;
+    color: var(--b-amber);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+}
+
+.bp ::deep #calc-cta-btn:hover {
+    background: var(--b-amber);
+    color: var(--b-amber-ink);
+}
+
+.bp .cta {
+    margin-top: 2rem;
+    padding: 1.35rem;
+    border: 1px solid var(--b-hair);
+    border-top: 1px solid var(--b-amber);
+    background: var(--b-panel);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+
+.bp .cta__title {
+    margin: 0;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--b-ink);
+}
+
+.bp .cta p {
+    margin: 0;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 0.925rem;
+    color: var(--b-dim);
+}
+
+.bp .cta ::deep a {
+    border-radius: 0;
+    border: 1px solid var(--b-amber);
+    background: transparent;
+    color: var(--b-amber);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    padding: 0.6rem 1.25rem;
+    min-height: 40px;
+}
+
+.bp .cta ::deep a:hover {
+    background: var(--b-amber);
+    color: var(--b-amber-ink);
+}
 
 @media (max-width: 900px) {
     .bp { padding: 1rem; }
     .bp .board,
     .bp .picks { display: none; }
-    .bp .stack { display: grid; gap: 0.75rem; margin-top: 1rem; }
+    .bp .stack { display: grid; gap: 0.85rem; margin-top: 1rem; }
     .bp .plan { background: var(--b-panel); border: 1px solid var(--b-hair); }
     .bp .plan--pro { border-color: var(--b-amber); }
     .bp .plan__top {
@@ -316,21 +559,21 @@ html[data-theme="light"] .bp {
         align-items: baseline;
         justify-content: space-between;
         gap: 0.6rem;
-        padding: 0.7rem 0.75rem;
+        padding: 0.75rem 0.9rem;
         border-bottom: 1px solid var(--b-hair);
     }
-    .bp .plan__top b { font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.06em; }
-    .bp .plan__top .amount { display: block; text-align: right; color: var(--b-amber); font-size: 1rem; }
-    .bp .plan__top .unit { display: block; text-align: right; color: var(--b-dim); font-size: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .bp .plan__top b { font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--b-ink); }
+    .bp .plan__top .amount { display: block; text-align: right; color: var(--b-amber); font-size: 1.15rem; font-weight: 700; }
+    .bp .plan__top .unit { display: block; text-align: right; color: var(--b-dim); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
     .bp .plan__r {
         display: flex;
         justify-content: space-between;
         gap: 0.75rem;
-        padding: 0.5rem 0.75rem;
+        padding: 0.6rem 0.9rem;
         border-bottom: 1px solid var(--b-hair);
-        font-size: 0.85rem;
+        font-size: 0.875rem;
     }
-    .bp .plan__r span { font-family: "Martian Mono", monospace; font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--b-dim); }
-    .bp .plan__r b { font-family: "Martian Mono", monospace; font-size: 0.65rem; font-weight: 400; }
-    .bp .plan__cta { padding: 0.7rem; }
+    .bp .plan__r span { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--b-dim); }
+    .bp .plan__r b { font-family: "Martian Mono", ui-monospace, monospace; font-size: 0.8rem; font-weight: 600; color: var(--b-ink); }
+    .bp .plan__cta { padding: 0.85rem 0.9rem; }
 }

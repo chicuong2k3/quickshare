@@ -945,6 +945,18 @@
     }
 
     render();
+    function initEncryptionModeToggle(): void {
+        const modeSelect = document.getElementById('upload-encryption-mode') as HTMLSelectElement | null;
+        const passphraseRow = document.getElementById('upload-passphrase-row');
+        if (!modeSelect || !passphraseRow) return;
+        const sync = (): void => {
+            passphraseRow.classList.toggle('hidden', modeSelect.value !== 'passphrase');
+        };
+        modeSelect.addEventListener('change', sync);
+        sync();
+    }
+
+    initEncryptionModeToggle();
     consumePasteHandoff();
     consumeShareTarget();
 })();

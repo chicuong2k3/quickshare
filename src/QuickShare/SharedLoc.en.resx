@@ -70,7 +70,7 @@
   <data name="btn_upgrade" xml:space="preserve"><value>Upgrade</value></data>
   <data name="home_title" xml:space="preserve"><value>QuickShareCloud — send files, not friction</value></data>
   <data name="home_tag" xml:space="preserve"><value>Secure · Fast · Temporary</value></data>
-  <data name="home_hero_tab" xml:space="preserve"><value>Card 1 · Welcome</value></data>
+  <data name="home_hero_tab" xml:space="preserve"><value>Dispatch board · Ready</value></data>
   <data name="home_h1_send" xml:space="preserve"><value>Send</value></data>
   <data name="home_h1_anything" xml:space="preserve"><value>anything</value></data>
   <data name="home_h1_zero" xml:space="preserve"><value>zero friction</value></data>

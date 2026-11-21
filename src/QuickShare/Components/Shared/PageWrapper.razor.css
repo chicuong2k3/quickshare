@@ -15,29 +15,30 @@
 .page--centered {
     align-items: center;
     justify-content: center;
-    max-width: 32rem;
-    padding: var(--db-space-6) var(--db-space-4) var(--db-space-7);
+    max-width: 34rem;
+    padding: 2.5rem 1rem 3.5rem;
 }
 
 .page--padded {
     /* DESIGN.md: Padded = full width with 24px block padding. */
-    padding-block: var(--db-space-6) var(--db-space-8);
-    padding-inline: var(--db-space-4);
+    padding-block: 2rem 4rem;
+    padding-inline: 1rem;
 }
 
 .page--account {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: center;
-    gap: var(--db-space-5);
-    max-width: 32rem;
-    padding: var(--db-space-6) var(--db-space-4) var(--db-space-7);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 1.25rem;
+    max-width: 60rem;
+    width: 100%;
+    padding: 2rem 1rem 3.5rem;
 }
 
 .page--fill {
-    align-items: center;
-    justify-content: center;
-    max-width: 42rem;
-    padding: var(--db-space-6) var(--db-space-4) var(--db-space-7);
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 64rem;
+    width: 100%;
+    padding: 2rem 1rem 3.5rem;
 }

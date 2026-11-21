@@ -689,6 +689,32 @@ if (app.Environment.IsDevelopment())
 }
 
 // Serve wwwroot/ (and optimized static assets if a manifest is present).
+app.UseStatusCodePagesWithReExecute(RoutePaths.NotFound, createScopeForStatusCodePages: true);
+app.Use(async (ctx, next) =>
+{
+    var p = ctx.Request.Path.Value ?? string.Empty;
+    var skipStatusPages =
+        p.StartsWith("/api", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/dav", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/s3", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/saml", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/scim", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/__dev", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/metrics", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/login/", StringComparison.OrdinalIgnoreCase)
+        || p.StartsWith("/hangfire", StringComparison.OrdinalIgnoreCase)
+        || Path.HasExtension(p);
+    if (skipStatusPages)
+    {
+        var feature = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodePagesFeature>();
+        if (feature is not null)
+        {
+            feature.Enabled = false;
+        }
+    }
+    await next();
+});
 app.UseStaticFiles();
 
 // ── Localization (cookie-based culture, falls back to Accept-Language header; issues #84, #152) ──

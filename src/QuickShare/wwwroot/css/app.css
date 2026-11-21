@@ -1,573 +1,193 @@
 /* ============================================================
-   QuickShareCloud — shared design system
-   Built on daub (grunge-dark) tokens. Page-specific styling
-   lives in each component's scoped .razor.css; this file holds
-   only cross-page primitives and utilities.
+   QuickShareCloud — shared design system ("Bảng chuyến" / Departure Board)
+   Global tokens (--b-*) live in tailwind.css -> shadcn.generated.css.
+   This file provides cross-page primitives, legacy --db-* aliases,
+   server-rendered partial styles, .legal reading pages, and .admin-board.
    ============================================================ */
 
-/* ─── HYPERCARD · the stack, the card, the visible button ────────
-   Every delivery is a card in your stack. Colorized classic-Mac
-   grammar: putty dither ground, white cards with 2px ink borders and
-   hard offset shadows, striped title bars, a double-ring default
-   button. Six Apple colors are rationed by role — blue is the active
-   state, the rainbow is progress, washes are state grounds.
-   Token NAMES are DAUB's — only the values are ours, so every
-   db-* component and every scoped .razor.css re-skins from here.
-   Legacy Miura token names (sheet/mountain/valley/foil) are kept as
-   aliases into this world so nothing dangles. ─────────────────── */
+/* ─── Legacy --db-* aliases mapped to Departure Board tokens ─── */
+:root,
 [data-theme="grunge-light"],
 [data-theme="light"] {
-    /* === Card stock === */
-    --db-sheet: #EDE9DC;          /* putty desktop ground */
-    --db-sheet-raised: #FFFFFF;   /* the card */
-    --db-sheet-deep: #E2DDCE;     /* recessed regions */
-    --db-mountain: #141414;       /* every border is drawn ink */
-    --db-mountain-deep: #000000;
-    --db-valley: #DDF1FB;         /* blue wash — active/selected ground */
-    --db-valley-ink: #005F8C;     /* blue ink — active text/focus */
-    --db-foil: #FDB827;           /* apple yellow — accent fill only */
-    --db-foil-deep: #F5821F;      /* apple orange */
-    --db-foil-ink: #7A4A00;       /* accent as type (7:1 on putty) */
-    --db-ink: #141414;
-    --db-ink-soft: #55534E;
-    /* The default button: ink ground, paper label, outer double ring. */
-    --db-stamp: #141414;
-    --db-stamp-label: #FFFFFF;
-    --db-stamp-rule: 0 0 0 3px #FFFFFF, 0 0 0 5px #141414;
-    /* The desktop pattern (was the crease lattice) — kept as the name
-       every child texture reads; now the dither's ink component. */
-    --db-lattice: rgba(20,20,20,0.08);
-    /* The six-band rainbow — progress and nothing else. */
-    --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
-    /* State washes — solid per theme so they survive the dark ground. */
-    --db-wash-green: #E2F2DC;
-    --db-wash-blue: var(--db-valley);
-    --db-wash-yellow: #FBEED0;
-    --db-wash-orange: #F9E4CF;
-    /* The disk: the drawn floppy's pale plastic, same in both themes. */
-    --db-disk: #DDF1FB;
-    /* The select's drawn chevron, in this theme's ink. */
-    --db-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23141414' stroke-width='1.5'/%3E%3C/svg%3E");
+    --db-sheet: var(--b-board);
+    --db-sheet-raised: var(--b-panel);
+    --db-sheet-deep: var(--b-slot);
+    --db-mountain: var(--b-hair);
+    --db-mountain-deep: var(--b-ink);
+    --db-valley: var(--b-flap);
+    --db-valley-ink: var(--b-amber-text);
+    --db-foil: var(--b-amber);
+    --db-foil-deep: var(--b-amber);
+    --db-foil-ink: var(--b-amber-text);
+    --db-ink: var(--b-ink);
+    --db-ink-soft: var(--b-dim);
+    --db-stamp: var(--b-amber);
+    --db-stamp-label: var(--b-amber-ink);
+    --db-stamp-rule: none;
+    --db-lattice: transparent;
+    --db-rainbow: var(--b-green);
+    --db-wash-green: var(--b-panel);
+    --db-wash-blue: var(--b-flap);
+    --db-wash-yellow: var(--b-panel);
+    --db-wash-orange: var(--b-panel);
+    --db-disk: var(--b-slot);
+    --db-chevron: none;
 
-    /* === Legacy palette names, remapped so nothing dangles === */
-    --db-cream: var(--db-sheet);
-    --db-cream-dark: var(--db-sheet-deep);
-    --db-sand: #B9B4A5;
-    --db-terracotta: var(--db-foil);
-    --db-clay: var(--db-foil-deep);
-    --db-warm-gray: #55534E;
-    --db-charcoal: #2B2A26;
-    --db-white: var(--db-sheet-raised);
-    --db-error: #C42B2F;
-    --db-success: #2E8540;
-    --db-warning: var(--db-foil-deep);
+    --db-cream: var(--b-board);
+    --db-cream-dark: var(--b-flap);
+    --db-sand: var(--b-hair);
+    --db-terracotta: var(--b-amber);
+    --db-clay: var(--b-amber);
+    --db-warm-gray: var(--b-dim);
+    --db-charcoal: var(--b-ink);
+    --db-white: var(--b-panel);
+    --db-error: var(--b-red);
+    --db-success: var(--b-green);
+    --db-warning: var(--b-amber-text);
 
-    /* === RGB channels === */
-    --db-shadow-rgb: 20,20,20;
-    --db-glow-rgb: 255,255,255;
-    --db-accent-rgb: 253,184,39;
-    --db-clay-rgb: 245,130,31;
-    --db-success-rgb: 46,133,64;
-    --db-warning-rgb: 245,130,31;
-    --db-error-rgb: 196,43,47;
-    --db-sand-rgb: 185,180,165;
-    --db-white-rgb: 255,255,255;
+    --db-accent-dark: var(--b-amber);
+    --db-accent-light: var(--b-amber);
+    --db-accent-hover: var(--b-hover-bg);
+    --db-accent-pressed: var(--b-hover-bg);
+    --db-success-dark: var(--b-green);
+    --db-overlay-bg: rgba(0, 0, 0, 0.55);
+    --db-terracotta-text: var(--b-amber-text);
+    --db-success-text: var(--b-green);
 
-    /* === Derived accents === */
-    --db-accent-dark: var(--db-foil-deep);
-    --db-accent-light: #FFCF66;
-    --db-accent-hover: #FFCF66;
-    --db-accent-pressed: #E09C00;
-    --db-success-dark: #226732;
-    --db-overlay-bg: rgba(20,20,20,0.45);
+    --db-dither: none;
+    --db-font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --db-font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --db-font-heading: "Barlow Condensed", "Archivo", system-ui, sans-serif;
+    --db-font-display: "Barlow Condensed", "Archivo", system-ui, sans-serif;
+    --db-font-mono: "Martian Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* Yellow is a FILL, never a text colour on paper.
-       Anything typographic uses the deep brown instead. */
-    --db-terracotta-text: var(--db-foil-ink);
-    --db-success-text: #226732;
-
-    /* === Material — the desktop dither, drawn not photographed === */
-    --db-texture-opacity: 0;
-    --db-noise: 0;
-    --db-grain-sheet: none;
-    --db-grain-foil: none;
-    --db-border-roughness: 0px;
-    --db-dither: repeating-conic-gradient(var(--db-lattice) 0% 25%, transparent 0% 50%);
-
-    /* === Typography === */
-    --db-font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-body: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-heading: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
-    --db-font-display: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
-    --db-font-mono: "Courier Prime", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-    /* === Geometry — cards are square, buttons are Mac rounded-rects === */
+    --db-radius: 0px;
     --db-radius-0: 0px;
     --db-radius-1: 0px;
     --db-radius-2: 0px;
     --db-radius-3: 0px;
     --db-radius-4: 0px;
     --db-radius-5: 0px;
-    --db-radius-full: 0px;
-    --db-crease-angle: 0deg;
-    --db-crease-skew: 0deg;
-
-    /* === Shadows — hard offset, the classic window drop === */
-    --db-shadow-1: 2px 2px 0 rgba(20,20,20,1);
-    --db-shadow-2: 3px 3px 0 rgba(20,20,20,1);
-    --db-shadow-3: 5px 5px 0 rgba(20,20,20,1);
-    --db-shadow-inset: none;
-    --db-shadow-ring: none;
-
-    /* === Focus — the valley crease, visible === */
-    --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
-    --db-focus-ring-color: var(--db-valley-ink);
-    --db-focus-ring-width: 2px;
-
-    /* === Interactive === */
-    --db-hover-brightness: 1;
-    --db-hover-scale: 1;
-    --db-active-scale: 1;
-    --db-disabled-opacity: 0.38;
-
-    /* === Transitions — rigid linkage: one motion, everything moves === */
-    --db-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-    --db-transition-fast: 140ms cubic-bezier(0.16, 1, 0.3, 1);
-    --db-transition-slow: 460ms cubic-bezier(0.16, 1, 0.3, 1);
-    --db-transition-ease: cubic-bezier(0.16, 1, 0.3, 1);
-
-    --db-text-emboss: none;
-    --db-text-emboss-subtle: none;
-    --db-on-accent: var(--db-ink);
-
-    /* === Semantic === */
-    --db-color-bg: var(--db-sheet);
-    --db-color-bg-alt: var(--db-sheet-deep);
-    --db-color-surface: var(--db-sheet-raised);
-    --db-color-surface-2: var(--db-sheet-deep);
-    --db-color-text: var(--db-ink);
-    --db-color-text-secondary: var(--db-charcoal);
-    --db-color-text-muted: var(--db-ink-soft);
-    --db-color-border: var(--db-mountain);
-    --db-color-accent: var(--db-foil);
-    --db-color-accent-hover: var(--db-accent-hover);
-    --db-color-accent-text: var(--db-foil-ink);
-    --db-color-success: var(--db-success);
-    --db-color-warning: var(--db-warning);
-    --db-color-error: var(--db-error);
-    --db-color-overlay: var(--db-overlay-bg);
-
-    --db-color-bg-rgb: 239,238,234;
-    --db-color-text-rgb: 10,10,10;
-    --db-color-surface-rgb: 249,249,247;
-    --db-color-accent-rgb: 212,175,55;
-    --db-color-border-rgb: 185,182,174;
-
-    --db-color-surface-raised: #FFFFFF;
-    --db-color-text-inverse: var(--db-sheet-raised);
-    --db-color-accent-active: var(--db-accent-pressed);
-    --db-color-accent-subtle: rgba(212,175,55,0.14);
-    --db-color-border-strong: var(--db-mountain-deep);
-    --db-color-border-subtle: rgba(10,10,10,0.10);
-    --db-color-error-subtle: rgba(164,50,42,0.08);
-    --db-color-success-subtle: rgba(79,122,91,0.08);
-    --db-color-warning-subtle: rgba(184,149,42,0.10);
-    --db-surface-rgb: 249,249,247;
-
-    /* === Button — Mac rounded-rect, 2px ink === */
-    --db-btn-py: 9px;
-    --db-btn-px: 20px;
-    --db-btn-radius: 14px;
-    --db-btn-font-size: var(--db-text-sm);
-    --db-btn-font-weight: 700;
-    --db-btn-bg: var(--db-sheet-raised);
-    --db-btn-color: var(--db-ink);
-    --db-btn-border: 2px solid var(--db-ink);
-
-    /* === Field — square, drawn === */
-    --db-field-py: 9px;
-    --db-field-px: 12px;
-    --db-field-radius: 0px;
-    --db-field-font-size: 0.9375rem;
-    --db-field-bg: var(--db-sheet-raised);
-    --db-field-color: var(--db-ink);
-    --db-field-border: 2px solid var(--db-ink);
-    --db-field-border-focus: 2px solid var(--db-valley-ink);
-
-    /* === Card — a card of the stack: 2px ink, hard drop === */
-    --db-card-padding: var(--db-space-6);
-    --db-card-radius: 0px;
-    --db-card-bg: var(--db-sheet-raised);
-    --db-card-border: 2px solid var(--db-ink);
-    --db-card-shadow: var(--db-shadow-2);
-    --db-card-shadow-hover: var(--db-shadow-2);
-
-    /* === Navbar — the menu bar === */
-    --db-navbar-height: 3.75rem;
-    --db-navbar-bg: var(--db-sheet-raised);
-    --db-navbar-border: 2px solid var(--db-ink);
-    --db-navbar-shadow: none;
-
-    /* === Badge === */
-    --db-badge-py: 3px;
-    --db-badge-px: 10px;
-    --db-badge-radius: 0px;
-    --db-badge-font-size: 0.6875rem;
-    --db-badge-font-weight: 700;
-
-    /* === Modal === */
-    --db-modal-radius: 0px;
-    --db-modal-padding: var(--db-space-6);
-    --db-modal-bg: var(--db-sheet-raised);
-    --db-modal-shadow: var(--db-shadow-3);
-    --db-modal-backdrop: rgba(20,20,20,0.45);
-
-    /* === Toast === */
-    --db-toast-radius: 0px;
-    --db-toast-padding: var(--db-space-3);
-    --db-toast-shadow: var(--db-shadow-2);
-
-    /* === Tabs === */
-    --db-tabs-border: 2px solid transparent;
-    --db-tabs-border-active: 2px solid var(--db-valley-ink);
-    --db-tabs-font-size: var(--db-text-sm);
-    --db-tabs-font-weight: 700;
-
-    /* === Table === */
-    --db-table-border: 1px solid var(--db-color-border-subtle);
-
-    /* === Dropdown === */
-    --db-dropdown-radius: 0px;
-    --db-dropdown-bg: var(--db-sheet-raised);
-    --db-dropdown-shadow: var(--db-shadow-2);
-
-    /* === Switch === */
-    --db-switch-bg: var(--db-sand);
-    --db-switch-bg-on: var(--db-valley-ink);
-
-    /* === Progress — the rainbow, and nothing else may wear it === */
-    --db-progress-bg: var(--db-sheet-deep);
-    --db-progress-fill: var(--db-rainbow);
-
-    /* === Alert === */
-    --db-alert-radius: 0px;
-    --db-alert-padding: var(--db-space-4);
-
-    /* === Separator === */
-    --db-separator-color: var(--db-ink);
-}
-
-/* ─── Dark: the desktop at night. Same drawn cards, inverted ink. ──
-   Use scene: a recipient opening a link at night in a chat app, and
-   senders who keep the tab open in a dim room. ─────────────────── */
-[data-theme="grunge-dark"],
-[data-theme="dark"] {
-    --db-sheet: #1B1B1F;          /* the desktop at night */
-    --db-sheet-raised: #242429;   /* the card */
-    --db-sheet-deep: #141417;
-    --db-mountain: #E8E6DF;       /* borders stay drawn — now in light ink */
-    --db-mountain-deep: #FFFFFF;
-    --db-valley: #14384D;
-    --db-valley-ink: #6FC3EE;
-    --db-foil: #FDB827;
-    --db-foil-deep: #F5821F;
-    --db-foil-ink: #FFCF66;       /* accent as type on near-black */
-    --db-ink: #F2F1ED;
-    --db-ink-soft: #A8A69F;
-    /* The default button inverts at night: paper ground, ink label. */
-    --db-stamp: #F2F1ED;
-    --db-stamp-label: #141414;
-    --db-stamp-rule: 0 0 0 3px #242429, 0 0 0 5px #F2F1ED;
-    --db-lattice: rgba(242,241,237,0.06);
-    --db-rainbow: linear-gradient(180deg,#61BB46 0 16.6%,#FDB827 0 33.3%,#F5821F 0 50%,#E03A3E 0 66.6%,#963D97 0 83.3%,#009DDC 0 100%);
-    --db-dither: repeating-conic-gradient(var(--db-lattice) 0% 25%, transparent 0% 50%);
-    /* State washes deepen at night but stay unmistakably colored. */
-    --db-wash-green: #2F4A2B;
-    --db-wash-blue: #24455C;
-    --db-wash-yellow: #4A3D1E;
-    --db-wash-orange: #4A3320;
-    /* The disk keeps its pale plastic so the floppy reads at night. */
-    --db-disk: #9FD3EE;
-    --db-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23F2F1ED' stroke-width='1.5'/%3E%3C/svg%3E");
-
-    --db-charcoal: #D8D7D2;
-    --db-warm-gray: #A8A69F;
-    --db-white: var(--db-sheet-raised);
-    --db-error: #FF6B5E;
-    --db-success: #6FCF87;
-
-    --db-shadow-rgb: 0,0,0;
-    --db-glow-rgb: 242,241,237;
-    --db-color-text-rgb: 242,241,237;
-    --db-color-bg-rgb: 27,27,31;
-    --db-color-surface-rgb: 36,36,41;
-    --db-color-border-rgb: 232,230,223;
-
-    --db-color-surface-raised: #2B2B31;
-    --db-color-text-inverse: #141414;
-    --db-color-accent-text: var(--db-foil-ink);
-    --db-color-border-subtle: rgba(242,241,237,0.16);
-    --db-color-accent-subtle: rgba(253,184,39,0.16);
-    --db-on-accent: #141414;
-    --db-overlay-bg: rgba(0,0,0,0.62);
-    --db-modal-backdrop: rgba(0,0,0,0.62);
-    --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
-    --db-focus-ring-color: var(--db-valley-ink);
-
-    /* === Typography === */
-    --db-font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-body: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --db-font-heading: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
-    --db-font-display: "Bricolage Grotesque", "Archivo", system-ui, sans-serif;
-    --db-font-mono: "Courier Prime", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-    /* === Geometry === */
-    --db-radius-0: 0px;
-    --db-radius-1: 0px;
-    --db-radius-2: 0px;
-    --db-radius-3: 0px;
-    --db-radius-4: 0px;
-    --db-radius-5: 0px;
-    --db-radius-full: 0px;
-    --db-crease-angle: 0deg;
-    --db-crease-skew: 0deg;
-
-    /* === Shadows — the hard drop goes to true black at night === */
-    --db-shadow-1: 2px 2px 0 rgba(0,0,0,1);
-    --db-shadow-2: 3px 3px 0 rgba(0,0,0,1);
-    --db-shadow-3: 5px 5px 0 rgba(0,0,0,1);
-    --db-shadow-inset: none;
-    --db-shadow-ring: none;
-
-    /* === Focus — the valley crease, visible === */
-    --db-focus-ring: 0 0 0 2px var(--db-valley-ink);
-    --db-focus-ring-color: var(--db-valley-ink);
-    --db-focus-ring-width: 2px;
-
-    /* === Interactive === */
-    --db-hover-brightness: 1;
-    --db-hover-scale: 1;
-    --db-active-scale: 1;
-    --db-disabled-opacity: 0.38;
-
-    /* === Transitions — rigid linkage: one motion, everything moves === */
-    --db-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-    --db-transition-fast: 140ms cubic-bezier(0.16, 1, 0.3, 1);
-    --db-transition-slow: 460ms cubic-bezier(0.16, 1, 0.3, 1);
-    --db-transition-ease: cubic-bezier(0.16, 1, 0.3, 1);
-
-    --db-text-emboss: none;
-    --db-text-emboss-subtle: none;
-    --db-on-accent: var(--db-ink);
-
-    /* === Semantic === */
-    --db-color-bg: var(--db-sheet);
-    --db-color-bg-alt: var(--db-sheet-deep);
-    --db-color-surface: var(--db-sheet-raised);
-    --db-color-surface-2: var(--db-sheet-deep);
-    --db-color-text: var(--db-ink);
-    --db-color-text-secondary: var(--db-charcoal);
-    --db-color-text-muted: var(--db-ink-soft);
-    --db-color-border: var(--db-mountain);
-    --db-color-accent: var(--db-foil);
-    --db-color-accent-hover: var(--db-accent-hover);
-    --db-color-accent-text: var(--db-foil-ink);
-    --db-color-success: var(--db-success);
-    --db-color-warning: var(--db-warning);
-    --db-color-error: var(--db-error);
-    --db-color-overlay: var(--db-overlay-bg);
-
-    --db-color-accent-rgb: 253,184,39;
-
-    --db-color-accent-active: var(--db-accent-pressed);
-    --db-color-border-strong: var(--db-mountain-deep);
-    --db-color-error-subtle: rgba(255,107,94,0.12);
-    --db-color-success-subtle: rgba(111,207,135,0.12);
-    --db-color-warning-subtle: rgba(245,130,31,0.14);
-    --db-surface-rgb: 36,36,41;
-
-    /* === Button === */
-    --db-btn-py: 9px;
-    --db-btn-px: 20px;
-    --db-btn-radius: 14px;
-    --db-btn-font-size: var(--db-text-sm);
-    --db-btn-font-weight: 700;
-    --db-btn-bg: var(--db-sheet-raised);
-    --db-btn-color: var(--db-ink);
-    --db-btn-border: 2px solid var(--db-mountain);
-
-    /* === Field === */
-    --db-field-py: 9px;
-    --db-field-px: 12px;
-    --db-field-radius: 0px;
-    --db-field-font-size: 0.9375rem;
-    --db-field-bg: var(--db-sheet-raised);
-    --db-field-color: var(--db-ink);
-    --db-field-border: 2px solid var(--db-mountain);
-    --db-field-border-focus: 2px solid var(--db-valley-ink);
-
-    /* === Card === */
-    --db-card-padding: var(--db-space-6);
-    --db-card-radius: 0px;
-    --db-card-bg: var(--db-sheet-raised);
-    --db-card-border: 2px solid var(--db-mountain);
-    --db-card-shadow: var(--db-shadow-2);
-    --db-card-shadow-hover: var(--db-shadow-2);
-
-    /* === Navbar === */
-    --db-navbar-height: 3.75rem;
-    --db-navbar-bg: var(--db-sheet-raised);
-    --db-navbar-border: 2px solid var(--db-mountain);
-    --db-navbar-shadow: none;
-
-    /* === Badge === */
-    --db-badge-py: 3px;
-    --db-badge-px: 10px;
-    --db-badge-radius: 0px;
-    --db-badge-font-size: 0.6875rem;
-    --db-badge-font-weight: 700;
-
-    /* === Modal === */
-    --db-modal-radius: 0px;
-    --db-modal-padding: var(--db-space-6);
-    --db-modal-bg: var(--db-sheet-raised);
-    --db-modal-shadow: var(--db-shadow-3);
-    --db-modal-backdrop: rgba(0,0,0,0.62);
-
-    /* === Toast === */
-    --db-toast-radius: 0px;
-    --db-toast-padding: var(--db-space-3);
-    --db-toast-shadow: var(--db-shadow-2);
-
-    /* === Tabs === */
-    --db-tabs-border: 2px solid transparent;
-    --db-tabs-border-active: 2px solid var(--db-valley-ink);
-    --db-tabs-font-size: var(--db-text-sm);
-    --db-tabs-font-weight: 700;
-
-    /* === Table === */
-    --db-table-border: 1px solid var(--db-color-border-subtle);
-
-    /* === Dropdown === */
-    --db-dropdown-radius: 0px;
-    --db-dropdown-bg: var(--db-sheet-raised);
-    --db-dropdown-shadow: var(--db-shadow-2);
-
-    /* === Switch === */
-    --db-switch-bg: #4A4A52;
-    --db-switch-bg-on: var(--db-valley-ink);
-
-    /* === Progress — the rainbow === */
-    --db-progress-bg: var(--db-sheet-deep);
-    --db-progress-fill: var(--db-rainbow);
-
-    /* === Alert === */
-    --db-alert-radius: 0px;
-    --db-alert-padding: var(--db-space-4);
-
-    /* === Separator === */
-    --db-separator-color: var(--db-mountain);
-}
-
-
-/* ─── Compact density — shared across every DAUB theme ─── */
-[data-theme] {
-    /* Vendor radius aliases the theme blocks never zeroed — .p2p-quota-banner
-       and .ad-reward-card/btn read these. Cards are square. */
     --db-radius-sm: 0px;
     --db-radius-md: 0px;
     --db-radius-lg: 0px;
+    --db-radius-full: 0px;
+
+    --db-shadow-1: none;
+    --db-shadow-2: none;
+    --db-shadow-3: none;
+    --db-shadow-inset: none;
+    --db-shadow-ring: none;
+
+    --db-focus-ring: 0 0 0 2px var(--b-amber);
+    --db-focus-ring-color: var(--b-amber);
+    --db-focus-ring-width: 2px;
+
+    --db-transition: 160ms ease;
+    --db-transition-fast: 120ms ease;
+    --db-transition-slow: 260ms ease;
+
+    --db-color-bg: var(--b-board);
+    --db-color-bg-alt: var(--b-flap);
+    --db-color-surface: var(--b-panel);
+    --db-color-surface-2: var(--b-slot);
+    --db-color-surface-raised: var(--b-panel);
+    --db-color-text: var(--b-ink);
+    --db-color-text-secondary: var(--b-body);
+    --db-color-text-muted: var(--b-dim);
+    --db-color-text-inverse: var(--b-slot);
+    --db-color-border: var(--b-hair);
+    --db-color-border-strong: var(--b-ink);
+    --db-color-border-subtle: var(--b-hair);
+    --db-color-accent: var(--b-amber);
+    --db-color-accent-hover: var(--b-hover-bg);
+    --db-color-accent-active: var(--b-hover-bg);
+    --db-color-accent-text: var(--b-amber-text);
+    --db-color-accent-subtle: color-mix(in srgb, var(--b-amber) 14%, transparent);
+    --db-color-success: var(--b-green);
+    --db-color-success-subtle: color-mix(in srgb, var(--b-green) 14%, transparent);
+    --db-color-warning: var(--b-amber-text);
+    --db-color-warning-subtle: color-mix(in srgb, var(--b-amber) 14%, transparent);
+    --db-color-error: var(--b-red);
+    --db-color-danger: var(--b-red);
+    --db-color-error-subtle: color-mix(in srgb, var(--b-red) 14%, transparent);
+    --db-color-overlay: var(--db-overlay-bg);
+    --db-on-accent: var(--b-amber-ink);
+
+    --db-space-1: 4px;
+    --db-space-2: 8px;
     --db-space-3: 10px;
     --db-space-4: 14px;
     --db-space-5: 20px;
     --db-space-6: 24px;
     --db-space-7: 32px;
     --db-space-8: 40px;
-    --db-space-9: 64px;
-    --db-btn-py: 7px;
-    --db-btn-px: 14px;
-    --db-field-py: 8px;
-    --db-field-px: 12px;
-    --db-card-padding: 20px;
-    --db-modal-padding: 20px;
-    --db-toast-padding: 10px;
+    --db-space-9: 56px;
+
+    --db-text-xs: 0.75rem;
+    --db-text-sm: 0.875rem;
+    --db-text-base: 0.9375rem;
+    --db-text-xl: 1.25rem;
+    --db-text-2xl: 1.5rem;
+    --db-text-3xl: 1.875rem;
+    --db-weight-normal: 400;
+    --db-weight-semibold: 600;
+    --db-weight-bold: 700;
+    --db-font-medium: 500;
+    --db-leading-tight: 1.25;
+    --db-leading-normal: 1.55;
 }
 
-.db-btn--lg {
-    min-height: 44px;
-    padding: 8px 18px;
+.dark,
+[data-theme="grunge-dark"],
+[data-theme="dark"] {
+    --db-overlay-bg: rgba(0, 0, 0, 0.72);
 }
 
-/* Keep controls compact without sacrificing touch access. */
-.db-btn {
-    min-height: 40px;
-}
-
-.db-btn--icon {
-    min-width: 40px;
-    padding: var(--db-space-2);
-}
-
-@media (max-width: 767px) {
-    .db-btn {
-        min-height: 44px;
-    }
-
-    .db-btn--icon {
-        min-width: 44px;
-    }
-}
-
-/* ─── The desktop itself: the 4px dither pattern under everything ─── */
+/* ─── Base ground & accessibility focus ─── */
 body {
-    background-color: var(--db-color-bg);
-    background-image: var(--db-dither);
-    background-size: 4px 4px;
+    background-color: var(--b-board);
+    background-image: none;
+    color: var(--b-ink);
 }
 
 ::selection {
-    background: var(--db-valley-ink);
-    color: var(--db-sheet-raised);
+    background: var(--b-amber);
+    color: var(--b-amber-ink);
 }
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--db-mountain-deep) transparent;
+    scrollbar-color: var(--b-hair) transparent;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background-color: var(--db-mountain-deep); border-radius: 0; }
-::-webkit-scrollbar-thumb:hover { background-color: var(--db-ink-soft); }
+::-webkit-scrollbar-thumb { background-color: var(--b-hair); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--b-dim); }
 
-/* ─── Focus: the valley crease, always visible ───────────────────
-   The previous theme suppressed every ring with outline:none, which
-   left keyboard users with a colour change and nothing else. ──── */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-    outline: 2px solid var(--db-valley-ink);
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--b-amber);
     outline-offset: 2px;
 }
 
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-    border-color: var(--db-valley-ink);
+    border-color: var(--b-amber);
 }
 
-/* ─── Spec label: mono, tracked, small. Carries REAL measurements —
-   byte counts, part counts, share codes, hashes, expiry. Never
-   decorative serials. ──────────────────────────────────────────── */
+/* ─── Board spec labels, rules & titlebars ─── */
 .miura-spec {
     font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.72rem;
     font-weight: 400;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--db-ink-soft);
+    color: var(--b-dim);
     font-variant-numeric: tabular-nums;
 }
 
-/* A dotted rule that ends in its own spec label. */
 .miura-rule {
     display: flex;
     align-items: center;
@@ -578,241 +198,58 @@ textarea:focus-visible {
 .miura-rule::before {
     content: "";
     flex: 1;
-    height: 2px;
-    background: repeating-linear-gradient(90deg, var(--db-mountain) 0 2px, transparent 2px 6px);
+    height: 1px;
+    background: var(--b-hair);
 }
 
-/* Display voice: heavy, tight — Bricolage carries the card's title. */
 .miura-display {
     font-family: var(--db-font-display);
-    font-weight: 800;
-    text-transform: none;
-    letter-spacing: -0.015em;
-    line-height: 1.02;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1;
     text-wrap: balance;
 }
 
-/* A card of the stack: 2px ink border, hard drop shadow. */
 .miura-cell {
     position: relative;
-    background: var(--db-color-surface);
-    border: 2px solid var(--db-mountain);
-    box-shadow: var(--db-shadow-2);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    box-shadow: none;
 }
 
-/* ─── The striped title bar — the card's signature chrome ────────
-   Global because it also ships inside server-rendered partials. Anatomy: a box,
-   the label on its paper patch, a box; the stripes run behind. ── */
 .qs-titlebar {
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 2px solid var(--db-mountain);
-    padding: 6px 10px;
-    background:
-        repeating-linear-gradient(180deg, transparent 0 3px, var(--db-mountain) 3px 4px) content-box,
-        var(--db-color-surface);
-    background-clip: content-box, border-box;
+    border-bottom: 1px solid var(--b-hair);
+    padding: 0.55rem 0.85rem;
+    background: var(--b-flap);
 }
 
 .qs-titlebar__label {
-    background: var(--db-color-surface);
-    padding: 0 10px;
     font-family: var(--db-font-mono);
-    font-weight: 700;
-    font-size: 0.8125rem;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     white-space: nowrap;
-    color: var(--db-color-text);
+    color: var(--b-ink);
 }
 
 .qs-titlebar__box {
-    width: 13px;
-    height: 13px;
-    border: 2px solid var(--db-mountain);
-    background: var(--db-color-surface);
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
     flex: none;
 }
-
-/* ─── Buttons: drawn Mac rounded-rects, pressed = inverted ──────── */
-.db-btn, .db-btn:hover, .db-btn:focus, .db-btn:active,
-.db-btn--secondary, .db-btn--secondary:hover, .db-btn--secondary:focus, .db-btn--secondary:active,
-.db-btn--ghost, .db-btn--ghost:hover, .db-btn--ghost:focus, .db-btn--ghost:active {
-    box-shadow: none !important;
-    transform: none !important;
-    background-image: none !important;
-    border-radius: var(--db-btn-radius) !important;
-}
-
-.db-btn--primary, .db-btn--primary:hover, .db-btn--primary:focus, .db-btn--primary:active {
-    transform: none !important;
-    border-radius: 16px !important;
-}
-
-.db-btn {
-    font-family: var(--db-font-ui);
-    font-weight: 700;
-    letter-spacing: 0;
-    text-transform: none;
-    font-size: 0.875rem;
-    transition: background-color var(--db-transition-fast), color var(--db-transition-fast), border-color var(--db-transition-fast);
-}
-
-/* ─── Primary: the default button ────────────────────────────────
-   Ink ground, paper label, and the outer double ring every Mac dialog
-   drew around the button Return would press. At night it inverts:
-   paper ground, ink label, paper ring. The ring is a box-shadow, so it
-   costs no layout — keep at least 6px of clearance around it. ───── */
-.db-btn--primary {
-    background-color: var(--db-stamp) !important;
-    background-image: none !important;
-    color: var(--db-stamp-label) !important;
-    border: none !important;
-    box-shadow: var(--db-stamp-rule) !important;
-    padding-left: calc(var(--db-btn-px) + 6px);
-    padding-right: calc(var(--db-btn-px) + 6px);
-    transition: background-color var(--db-transition-fast), color var(--db-transition-fast);
-}
-
-/* Hover deepens the ground; press inverts to the active blue. */
-.db-btn--primary:hover {
-    background-color: var(--db-mountain-deep) !important;
-    box-shadow: var(--db-stamp-rule) !important;
-}
-
-.db-btn--primary:active {
-    background-color: var(--db-valley-ink) !important;
-    color: var(--db-sheet-raised) !important;
-}
-
-.db-btn--primary:focus-visible {
-    outline: 2px solid var(--db-valley-ink);
-    outline-offset: 6px;
-}
-
-/* Secondary: paper fill, 2px ink line. Hover opens the blue wash. */
-.db-btn--secondary,
-.db-btn--ghost {
-    background: var(--db-sheet-raised) !important;
-    color: var(--db-color-text) !important;
-    border: 2px solid var(--db-mountain) !important;
-}
-
-.db-btn--secondary:hover,
-.db-btn--ghost:hover {
-    background: var(--db-valley) !important;
-    background-color: var(--db-valley) !important;
-    border-color: var(--db-mountain) !important;
-}
-
-.db-btn--secondary:active,
-.db-btn--ghost:active {
-    background: var(--db-mountain) !important;
-    background-color: var(--db-mountain) !important;
-    color: var(--db-sheet-raised) !important;
-}
-
-[data-theme^="grunge"] .db-btn { border-width: 2px !important; }
-
-/* ─── Cards: white cards with 2px ink borders and a hard drop ─── */
-.db-card, .db-card:hover {
-    outline: none !important;
-    box-shadow: var(--db-card-shadow) !important;
-    border-radius: 0 !important;
-    border: 2px solid var(--db-mountain) !important;
-}
-
-/* ─── Inputs read as measured cells ─── */
-.db-input, .db-field, input[type="text"], input[type="email"], input[type="password"], textarea, select {
-    border-radius: 0 !important;
-}
-
-/* ─── Kill DAUB per-element texture pseudo-elements ─── */
-.db-card::after,
-.db-btn--primary::after,
-.db-btn--secondary::after,
-.db-input-group::after,
-.db-input-icon::after,
-.db-search::after,
-body::before,
-body::after,
-[data-theme^="grunge"] body::after {
-    display: none !important;
-}
-
-/* ─── Kira-style animations — subtle, elegant ─── */
-@keyframes kira-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes kira-fade-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in { animation: kira-fade-in 0.5s ease forwards; }
-.animate-fade-up { animation: kira-fade-up 0.5s ease forwards; }
-
-/* Stagger children */
-.animate-stagger > * {
-    opacity: 0;
-    animation: kira-fade-up 0.4s ease forwards;
-}
-.animate-stagger > *:nth-child(1) { animation-delay: 0.05s; }
-.animate-stagger > *:nth-child(2) { animation-delay: 0.12s; }
-.animate-stagger > *:nth-child(3) { animation-delay: 0.19s; }
-.animate-stagger > *:nth-child(4) { animation-delay: 0.26s; }
-.animate-stagger > *:nth-child(5) { animation-delay: 0.33s; }
-.animate-stagger > *:nth-child(6) { animation-delay: 0.40s; }
-
-/* Card & surface subtle hover */
-.db-card { transition: border-color 200ms ease; }
-
-/* Reduced motion: kill all */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* ─── Layout fixes: navbar, footer, page structure ─── */
-.db-navbar {
-    height: 3.25rem !important;
-    background: var(--db-sheet-raised) !important;
-    border-bottom: 2px solid var(--db-mountain) !important;
-    box-shadow: none !important;
-}
-
-.layout-root {
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 100vh !important;
-}
-
-/* Footer spacing lives in MainLayout.razor.css — no global override. */
-
-/* Page shell sizing/spacing lives in PageWrapper.razor.css — single source. */
-
-/* ─── Kira heading & paragraph margins — generous breathing room ─── */
-.db-h1, h1 { margin: 0 0 var(--db-space-4) 0; }
-.db-h2, h2 { margin: 0 0 var(--db-space-3) 0; }
-.db-h3, h3 { margin: 0 0 var(--db-space-2) 0; }
-.db-h4, h4 { margin: 0 0 var(--db-space-2) 0; }
-.db-p, p { margin: 0 0 var(--db-space-3) 0; }
-.db-p.db-text-muted { margin-bottom: var(--db-space-5); }
-
 
 /* ─── Utilities ─── */
 .hidden {
     display: none !important;
 }
 
-/* Alpine x-cloak: keep pre-init content hidden until Alpine strips the
-   attribute — without it both billing periods render at once. */
 [x-cloak] {
     display: none !important;
 }
@@ -829,29 +266,30 @@ body::after,
     border: 0;
 }
 
-/* ─── Display helpers ─── */
 .db-block {
     display: block;
 }
 
-/* ─── Type: display headline with a single accent word ─── */
-
-
-/* .qs-readout / .qs-zone / .qs-glyph / .qs-eyebrow — pre-HyperCard
-   survivors with zero usages — deleted. The world's devices are
-   .qs-titlebar, .miura-cell and .miura-rule. */
+.layout-root {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+}
 
 /* ─── Avatar dropdown: pin content to right edge of trigger ─── */
-.db-dropdown__trigger.layout-avatar-btn + .db-dropdown__content,
 .layout-avatar-dropdown {
     right: 0;
     left: auto !important;
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    color: var(--b-ink);
 }
 
-/* ─── Account: profile card (shared for shared rendering) ─── */
+/* ─── Account cards ─── */
 .account-card {
     width: 100%;
-    max-width: 28rem;
+    max-width: 56rem;
 }
 
 /* Skeleton */
@@ -1032,11 +470,11 @@ body::after,
 /* --- P2P send quota banner --- */
 .p2p-quota-banner {
     margin-bottom: var(--db-space-4);
-    padding: var(--db-space-3) var(--db-space-4);
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-md);
-    background: var(--db-color-surface);
-    color: var(--db-color-text);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-panel);
+    color: var(--b-ink);
     font-size: 0.8125rem;
     display: flex;
     align-items: center;
@@ -1053,110 +491,108 @@ body::after,
 .p2p-receiver-list {
     display: none;
     width: 100%;
-    max-width: 34rem;
+    max-width: 40rem;
     margin-top: var(--db-space-5);
 }
 
 .p2p-receiver-heading {
-    font-family: var(--db-font-ui);
-    font-size: var(--db-text-sm);
-    font-weight: var(--db-weight-semibold);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     margin: 0 0 var(--db-space-3) 0;
-    color: var(--db-color-text-secondary);
+    color: var(--b-ink);
 }
 
 .p2p-receiver-entry {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--db-space-3);
     padding: var(--db-space-3);
-    border: 1px solid var(--db-color-border);
+    border: 1px solid var(--b-hair);
     margin-bottom: var(--db-space-2);
-    background: var(--db-color-surface);
+    background: var(--b-panel);
 }
 
 .p2p-receiver-index {
     font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    color: var(--db-color-text-muted);
+    font-size: 0.75rem;
+    color: var(--b-dim);
     min-width: 1.75rem;
 }
 
 .p2p-receiver-id {
     font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    color: var(--db-color-text-muted);
+    font-size: 0.75rem;
+    color: var(--b-dim);
     min-width: 4rem;
 }
 
 .p2p-receiver-status {
     font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
+    font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 0.125rem 0.5rem;
+    padding: 0.2rem 0.55rem;
     min-width: 8.5rem;
     text-align: center;
-    border: 1px solid var(--db-color-border);
+    border: 1px solid var(--b-hair);
 }
 
 .p2p-receiver-status--receiving {
-    border-color: var(--db-color-success);
-    color: var(--db-color-success);
+    border-color: var(--b-green);
+    color: var(--b-green);
 }
 
 .p2p-receiver-status--done {
-    background: var(--db-color-success-subtle);
-    border-color: var(--db-color-success);
-    color: var(--db-color-success);
+    background: color-mix(in srgb, var(--b-green) 14%, transparent);
+    border-color: var(--b-green);
+    color: var(--b-green);
 }
 
 .p2p-receiver-status--disconnected,
 .p2p-receiver-status--different-network {
-    background: var(--db-color-error-subtle);
-    border-color: var(--db-color-error);
-    color: var(--db-color-error);
+    background: color-mix(in srgb, var(--b-red) 14%, transparent);
+    border-color: var(--b-red);
+    color: var(--b-red);
 }
 
 .p2p-receiver-progress {
     flex: 1;
     min-width: 5rem;
-    height: 4px;
-    background: var(--db-color-border);
+    height: 6px;
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
     overflow: hidden;
 }
 
 .p2p-receiver-progress-fill {
     height: 100%;
-    background: var(--db-color-accent);
-    transition: width 0.3s ease;
+    background: var(--b-green);
 }
 
 .p2p-receiver-pct,
 .p2p-receiver-size {
     font-family: var(--db-font-mono);
-    font-size: var(--db-text-xs);
-    color: var(--db-color-text-muted);
+    font-size: 0.75rem;
+    color: var(--b-dim);
     min-width: 3rem;
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .p2p-receiver-size {
     margin-left: auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .p2p-receiver-progress-fill {
-        transition: none;
-    }
-}
-
 /* --- Ad reward card (ad- namespace - global for server-rendered responses) --- */
 .ad-reward-card {
-    border: 1px solid var(--db-color-border);
-    border-radius: var(--db-radius-lg);
-    padding: var(--db-space-4);
-    background: var(--db-color-surface);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    padding: 1.25rem;
+    background: var(--b-panel);
     margin-top: var(--db-space-4);
 }
 
@@ -1176,14 +612,17 @@ body::after,
 }
 
 .ad-reward-card__title {
-    font-weight: 600;
-    color: var(--db-color-text);
-    font-size: 0.9375rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--b-ink);
+    font-size: 1.05rem;
 }
 
 .ad-reward-card__description {
-    color: var(--db-color-text-muted);
-    font-size: 0.8125rem;
+    color: var(--b-dim);
+    font-size: 0.875rem;
     margin: 0;
 }
 
@@ -1191,168 +630,176 @@ body::after,
     display: inline-flex;
     align-items: center;
     gap: var(--db-space-2);
-    padding: var(--db-space-2) var(--db-space-4);
-    border-radius: var(--db-radius-md);
-    background: var(--db-color-accent);
-    color: var(--db-on-accent);
-    border: none;
+    padding: 0.55rem 1rem;
+    min-height: 40px;
+    border-radius: 0;
+    background: var(--b-amber);
+    color: var(--b-amber-ink);
+    border: 1px solid var(--b-amber);
     cursor: pointer;
-    font-weight: 500;
-    font-size: 0.875rem;
-    transition: opacity 0.2s ease;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    font-size: 0.85rem;
 }
 
-.ad-reward-btn:hover { opacity: 0.9; }
+.ad-reward-btn:hover { background: var(--b-hover-bg); border-color: var(--b-hover-bg); color: var(--b-hover-ink); }
 .ad-reward-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .ad-upgrade-link {
-    color: var(--db-color-accent);
+    color: var(--b-amber-text);
     font-size: 0.8125rem;
     text-decoration: underline;
     cursor: pointer;
 }
 
 .ad-upgrade-link:hover {
-    color: var(--db-color-accent-hover);
+    color: var(--b-ink);
 }
 
-/* ─── Account: section tabs (shared, ships inside server-rendered partials) ─── */
+/* ─── Account: section tabs (Departure Board flap strip) ─── */
 .account-tabs {
     display: flex;
+    flex-wrap: nowrap;
     gap: 0;
-    border-bottom: 1px solid var(--db-mountain);
-    margin-bottom: var(--db-space-6);
+    border: 1px solid var(--b-hair);
+    background: var(--b-flap);
+    margin-bottom: 1.25rem;
     overflow-x: auto;
-    /* Required, not cosmetic: a non-visible overflow-x forces overflow-y to
-       compute to auto, and the items' -1px margin (which laps the tab's
-       underline over the container's border) then trips a vertical scrollbar. */
     overflow-y: hidden;
 }
 
 .account-tabs__item {
-    padding: var(--db-space-3) var(--db-space-5);
-    font-family: var(--db-font-ui);
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0.55rem 0.9rem;
+    font-family: var(--db-font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--db-color-text-muted);
+    color: var(--b-dim);
     text-decoration: none;
     white-space: nowrap;
-    border-bottom: 1px solid transparent;
-    margin-bottom: -1px;
+    border-right: 1px solid var(--b-hair);
+    border-bottom: 2px solid transparent;
+}
+
+.account-tabs__item:last-child {
+    border-right: 0;
 }
 
 .account-tabs__item:hover {
-    color: var(--db-color-text);
-    border-bottom-color: var(--db-mountain-deep);
+    color: var(--b-ink);
+    background: var(--b-panel);
 }
 
-/* The open cell, same valley the nav uses. */
 .account-tabs__item--active {
-    color: var(--db-color-text);
-    background: var(--db-valley);
-    border-bottom-color: var(--db-valley-ink);
+    color: var(--b-ink);
+    background: var(--b-panel);
+    border-bottom-color: var(--b-amber);
 }
 
 /* ─── Account: deliveries (download gauge) ─── */
 .account-deliveries {
     display: flex;
     flex-direction: column;
-    gap: var(--db-space-4);
+    gap: 0.85rem;
 }
 
-/* Each delivery is a card of the stack. */
 .account-delivery {
-    background: var(--db-color-surface);
-    border: 2px solid var(--db-mountain);
-    box-shadow: var(--db-shadow-1);
-    padding: var(--db-space-5);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    box-shadow: none;
+    padding: 1.25rem;
 }
 
 .account-delivery--spent {
-    opacity: 0.65;
+    opacity: 0.7;
 }
 
 .account-delivery__head {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    align-items: baseline;
-    gap: var(--db-space-3);
+    align-items: center;
+    gap: 0.65rem;
 }
 
 .account-delivery__name {
-    font-family: var(--db-font-display);
-    font-weight: 300;
-    font-size: 0.9375rem;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--b-ink);
 }
 
 .account-delivery__expiry {
     font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--db-color-text-muted);
+    color: var(--b-dim);
     white-space: nowrap;
 }
 
-/* File lock / checkout badge (issue #308): marks a delivery reserved for one user's replace. */
 .account-delivery__lock {
     font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    border: 1px solid var(--db-color-accent-text);
-    color: var(--db-color-accent-text);
-    padding: 0 var(--db-space-2);
+    border: 1px solid var(--b-amber);
+    color: var(--b-amber-text);
+    padding: 0.1rem 0.45rem;
     white-space: nowrap;
 }
 
 .account-delivery__lock--self {
-    border-color: var(--db-valley-ink);
-    color: var(--db-valley-ink);
+    border-color: var(--b-green);
+    color: var(--b-green);
 }
 
-/* Legal hold badge (issue #266): the delivery is frozen against every deletion path.
-   Rendered inside the server-rendered deliveries partial, so it must live here and not in the
-   component's scoped stylesheet. Text carries the state — the border is not the signal. */
 .account-delivery__hold {
     font-family: var(--db-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    border: 1px solid var(--db-valley-ink);
-    background: var(--db-valley);
-    color: var(--db-valley-ink);
-    padding: 0 var(--db-space-2);
+    border: 1px solid var(--b-red);
+    background: color-mix(in srgb, var(--b-red) 12%, transparent);
+    color: var(--b-red);
+    padding: 0.1rem 0.45rem;
     white-space: nowrap;
 }
 
 .account-delivery__gauge {
     height: 6px;
-    border: 1px solid var(--db-mountain);
-    background: var(--db-sheet-deep);
-    margin: var(--db-space-3) 0;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    margin: 0.75rem 0;
     overflow: hidden;
 }
 
 .account-delivery__gauge-fill {
     display: block;
     height: 100%;
-    background: var(--db-rainbow);
-    transition: width var(--db-transition-slow);
+    background: var(--b-green);
 }
 
 .account-delivery--spent .account-delivery__gauge-fill {
-    background: var(--db-color-text-muted);
+    background: var(--b-dim);
 }
 
 .account-delivery__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
     font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.06em;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
     font-variant-numeric: tabular-nums;
     margin: 0;
 }
@@ -1363,11 +810,9 @@ body::after,
 
 .account-deliveries-empty {
     text-align: center;
-    padding: var(--db-space-7) var(--db-space-4);
-}
-
-.account-deliveries-empty .db-btn {
-    margin-top: var(--db-space-5);
+    padding: 2.5rem 1.25rem;
+    border: 1px solid var(--b-hair);
+    background: var(--b-panel);
 }
 
 /* In-app notification center (issue #246) + navbar bell badge. */
@@ -1377,19 +822,19 @@ body::after,
 
 .layout-bell__badge {
     position: absolute;
-    top: -0.35rem;
-    right: -0.35rem;
-    min-width: 1.05rem;
-    height: 1.05rem;
-    padding: 0 0.3rem;
+    top: -0.3rem;
+    right: -0.3rem;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 0.25rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
-    background: var(--db-color-accent-text);
-    color: var(--db-foil-ink);
+    border-radius: 0;
+    background: var(--b-amber);
+    color: var(--b-amber-ink);
     font-family: var(--db-font-mono);
-    font-size: 0.5625rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     line-height: 1;
 }
@@ -1404,18 +849,19 @@ body::after,
 
 .notif-filters__item {
     font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: var(--db-space-2) var(--db-space-3);
-    border: 1px solid var(--db-mountain);
-    color: var(--db-color-text-muted);
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--b-hair);
+    color: var(--b-dim);
     text-decoration: none;
 }
 
 .notif-filters__item--active {
-    color: var(--db-color-text);
-    border-color: var(--db-color-text);
+    color: var(--b-ink);
+    background: var(--b-flap);
+    border-color: var(--b-amber);
 }
 
 .notif-filters__markall {
@@ -1433,17 +879,18 @@ body::after,
     align-items: center;
     justify-content: space-between;
     gap: var(--db-space-3);
-    background: var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
     padding: var(--db-space-4);
 }
 
 .notif--read {
-    opacity: 0.65;
+    opacity: 0.7;
 }
 
 .notif--unread {
-    border-left: 3px solid var(--db-color-accent-text);
+    border-color: var(--b-amber);
+    background: var(--b-flap);
 }
 
 .notif__body {
@@ -1455,7 +902,7 @@ body::after,
 
 .notif__message {
     font-size: 0.875rem;
-    color: var(--db-color-text);
+    color: var(--b-ink);
     text-decoration: none;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1464,15 +911,137 @@ body::after,
 
 a.notif__message:hover {
     text-decoration: underline;
+    color: var(--b-amber-text);
 }
 
 .notif__time {
     font-family: var(--db-font-mono);
-    font-size: 0.625rem;
+    font-size: 0.72rem;
+    color: var(--b-dim);
 }
 
 .notif__read {
     flex-shrink: 0;
+}
+
+/* Cookie & PDPD consent banners — global so both CookieConsent and PdpdConsent match the board */
+.cookie-consent {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 950;
+    padding: 0.9rem 1rem;
+    background: var(--b-panel);
+    border-top: 1px solid var(--b-hair);
+    color: var(--b-ink);
+}
+
+.cookie-consent__inner {
+    max-width: 72rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.cookie-consent__text {
+    flex: 1;
+    min-width: 16rem;
+}
+
+.cookie-consent__title {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 1rem;
+    color: var(--b-ink);
+}
+
+.cookie-consent__desc {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--b-dim);
+    line-height: 1.5;
+}
+
+.cookie-consent__link {
+    color: var(--b-amber-text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.cookie-consent__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.cookie-consent__actions [data-slot="button"] {
+    border-radius: 0;
+    min-height: 38px;
+    padding: 0.45rem 1rem;
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+}
+
+.cookie-consent__actions [data-variant="outline"] {
+    background: transparent;
+    border: 1px solid var(--b-hair);
+    color: var(--b-ink);
+}
+
+.cookie-consent__actions [data-variant="outline"]:hover {
+    border-color: var(--b-ink);
+    background: var(--b-flap);
+}
+
+.cookie-consent__actions [data-variant="default"],
+.cookie-consent__btn {
+    background: var(--b-amber);
+    border: 1px solid var(--b-amber);
+    color: var(--b-amber-ink);
+}
+
+.cookie-consent__actions [data-variant="default"]:hover,
+.cookie-consent__btn:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
+}
+
+@media (max-width: 600px) {
+    .cookie-consent__inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cookie-consent__actions {
+        justify-content: flex-end;
+    }
+
+    .cookie-consent__actions [data-slot="button"] {
+        min-height: 44px;
+    }
+}
+
+/* Keep footer links reachable above fixed consent banners */
+body:has(#cookie-consent, #pdpd-consent) .layout-footer {
+    padding-bottom: 6.5rem;
+}
+
+@media (max-width: 600px) {
+    body:has(#cookie-consent, #pdpd-consent) .layout-footer {
+        padding-bottom: 10.5rem;
+    }
 }
 
 /* Office document preview (issue #94) — server-extracted text, injected client-side
@@ -1596,10 +1165,10 @@ a.notif__message:hover {
 .layout-command-kbd {
     font-family: var(--db-font-mono);
     font-size: 0.6875rem;
-    padding: 0.125rem 0.375rem;
-    border: 1px solid var(--db-mountain);
-    border-radius: var(--db-radius);
-    margin-left: var(--db-space-1);
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    color: var(--b-dim);
 }
 
 .command-palette {
@@ -1611,28 +1180,28 @@ a.notif__message:hover {
 .command-palette__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--db-overlay-bg);
 }
 
 .command-palette__panel {
     position: relative;
     width: min(36rem, calc(100vw - 2rem));
     margin: 15vh auto 0;
-    background: var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
-    border-radius: var(--db-radius);
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.25);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    box-shadow: none;
     overflow: hidden;
 }
 
 .command-palette__input {
     width: 100%;
     border: none;
-    border-bottom: 1px solid var(--db-mountain);
-    padding: var(--db-space-3);
-    font-size: var(--db-text-base);
-    background: transparent;
-    color: var(--db-color-text);
+    border-bottom: 1px solid var(--b-hair);
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    background: var(--b-slot);
+    color: var(--b-ink);
 }
 
 .command-palette__list {
@@ -1645,19 +1214,20 @@ a.notif__message:hover {
 
 .command-palette__list li a {
     display: block;
-    padding: var(--db-space-2) var(--db-space-3);
-    border-radius: var(--db-radius);
-    color: var(--db-color-text);
+    padding: 0.55rem 0.75rem;
+    border-radius: 0;
+    color: var(--b-ink);
     text-decoration: none;
 }
 
 .command-palette__list li.command-palette__item--active a {
-    background: var(--db-valley);
+    background: var(--b-flap);
+    color: var(--b-amber-text);
 }
 
 .command-palette__empty {
     padding: var(--db-space-3);
-    color: var(--db-color-text-muted, #6b7280);
+    color: var(--b-dim);
     text-align: center;
 }
 
@@ -1667,13 +1237,13 @@ a.notif__message:hover {
     flex-wrap: wrap;
     gap: var(--db-space-4);
     font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     letter-spacing: 0.06em;
     margin: 0 0 var(--db-space-3);
 }
 
 .account-deliveries-health__warn {
-    color: var(--db-foil-ink, #b45309);
+    color: var(--b-amber-text);
 }
 
 /* Filter + search bar above the delivery list (issue #214). */
@@ -1699,23 +1269,24 @@ a.notif__message:hover {
     font-size: 1rem;
     line-height: 1;
     padding: 0 var(--db-space-1) 0 0;
-    color: var(--db-foil-deep);
+    color: var(--b-amber-text);
 }
 
 .account-delivery__alias {
     font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.72rem;
     white-space: nowrap;
 }
 
 .account-delivery__purge {
-    color: var(--db-color-danger, #dc2626);
-    border-color: var(--db-color-danger, #dc2626);
+    color: var(--b-red);
+    border-color: var(--b-red);
 }
 
 .account-deliveries-filter--current {
-    background: var(--db-valley);
-    color: var(--db-color-text);
+    background: var(--b-flap);
+    color: var(--b-ink);
+    border-color: var(--b-amber);
 }
 
 /* Bulk manage bar (issue #144). */
@@ -1724,10 +1295,11 @@ a.notif__message:hover {
     align-items: center;
     flex-wrap: wrap;
     gap: var(--db-space-3);
-    padding: var(--db-space-2) var(--db-space-3);
+    padding: 0.6rem 0.75rem;
     margin-bottom: var(--db-space-4);
-    border: 1px solid var(--db-mountain);
-    border-radius: var(--db-radius);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
 }
 
 .account-deliveries-selectall {
@@ -1739,7 +1311,7 @@ a.notif__message:hover {
 
 .account-deliveries-selectall input,
 .account-delivery__select {
-    accent-color: var(--db-color-accent);
+    accent-color: var(--b-amber);
 }
 
 .account-delivery__select {
@@ -1750,14 +1322,11 @@ a.notif__message:hover {
     font-size: var(--db-text-sm);
 }
 
-/* ─── Print (issue #226) ───
-   Paper gets the content, not the chrome: nav, footer, buttons, ads, and the
-   deliveries filter bar disappear; ink stays black on white. */
+/* ─── Print (issue #226) ─── */
 @media print {
-    .db-navbar,
+    .layout-navbar,
     .layout-footer,
     .btn,
-    .db-btn,
     .ad-reward-card,
     #download-phase-ad,
     .account-deliveries-controls,
@@ -1778,93 +1347,34 @@ a.notif__message:hover {
 
 .account-deliveries-search {
     font-family: var(--db-font-mono);
-    font-size: 0.75rem;
-    padding: var(--db-space-2) var(--db-space-3);
-    border: 1px solid var(--db-mountain);
-    background: var(--db-color-surface);
-    color: var(--db-color-text);
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
+    color: var(--b-ink);
     min-width: 12rem;
+    min-height: 40px;
 }
 
-/* ─── Heading voice: Bricolage, heavy and tight ─────────────────
-   DAUB's own h1/h2/h3 still carried the old magazine register. ── */
-.db-h1, .db-h2, .db-h3, .db-h4 {
-    font-family: var(--db-font-display);
-    font-weight: 800;
-    text-transform: none;
-    letter-spacing: -0.015em;
-    line-height: 1.05;
-    text-wrap: balance;
-}
-
-.db-h3, .db-h4 {
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}
-
-/* The vendor's grunge family uppercases headings and roughens card
-   corners at [data-theme^="grunge"] specificity — match it and undo. */
-[data-theme^="grunge"] .db-h1,
-[data-theme^="grunge"] .db-h2,
-[data-theme^="grunge"] .db-h3,
-[data-theme^="grunge"] .db-h4,
-[data-theme^="grunge"] .db-card__title,
-[data-theme^="grunge"] .db-modal__title,
-[data-theme^="grunge"] .db-empty__title {
-    text-transform: none;
-    letter-spacing: -0.015em;
-}
-
-[data-theme^="grunge"] .db-surface--raised,
-[data-theme^="grunge"] .db-card,
-[data-theme^="grunge"] .db-modal,
-[data-theme^="grunge"] .db-toast {
-    border-radius: 0;
-    border-width: 2px;
-}
-
-/* ─── OTP cells: one glyph per drawn cell ─── */
+/* ─── OTP cells: one glyph per board slot ─── */
 .db-otp__input {
     width: 2.75rem;
     height: 3.25rem;
-    border: 2px solid var(--db-mountain) !important;
+    border: 1px solid var(--b-hair) !important;
     border-radius: 0 !important;
-    background: var(--db-color-surface) !important;
+    background: var(--b-slot) !important;
     font-family: var(--db-font-mono) !important;
     font-weight: 700;
     font-size: 1.125rem;
     text-align: center;
-    color: var(--db-color-text) !important;
+    color: var(--b-ink) !important;
 }
 
 .db-otp__input:focus-visible {
-    outline: 2px solid var(--db-valley-ink);
+    outline: 2px solid var(--b-amber);
     outline-offset: 2px;
-    border-color: var(--db-valley-ink) !important;
-    background: var(--db-valley) !important;
-}
-
-/* ─── The language select is a control, so it wears the world ─── */
-.db-navbar select,
-.db-navbar .db-select,
-select {
-    appearance: none;
-    /* A drawn chevron in this theme's ink. Longhands only: an earlier
-       version set `background`/`padding` shorthands after these and
-       silently wiped both the chevron and its clearance. */
-    background-color: transparent;
-    background-image: var(--db-chevron);
-    background-position: right 10px center;
-    background-size: 10px 7px;
-    background-repeat: no-repeat;
-    border: 2px solid var(--db-mountain);
-    border-radius: 0;
-    color: var(--db-color-text);
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 6px 28px 6px 8px;
+    border-color: var(--b-amber) !important;
+    background: var(--b-panel) !important;
 }
 
 /* ─── Nothing may set the document wider than the viewport ─── */
@@ -1984,8 +1494,9 @@ html, body {
 .text-preview__body.dl-text-body--code pre {
     margin: 0.5em 0;
     padding: 0.75rem 1rem;
-    background: var(--db-sheet-deep);
-    border-radius: 0.375rem;
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
     overflow: auto;
     font-family: var(--db-font-mono);
     font-size: 0.8125rem;
@@ -1995,9 +1506,9 @@ html, body {
 .text-preview__body.dl-text-body--markdown code {
     font-family: var(--db-font-mono);
     font-size: 0.8125rem;
-    background: var(--db-sheet-deep);
+    background: var(--b-slot);
     padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
+    border-radius: 0;
 }
 
 .text-preview__body.dl-text-body--markdown pre code {
@@ -2030,22 +1541,22 @@ html, body {
     margin: 0.625rem 0 0.25rem;
 }
 
-.dl-diff-toolbar .db-btn {
+.dl-diff-toolbar button {
     font-size: 0.75rem;
-    padding: 0.25rem 0.625rem;
+    padding: 0.35rem 0.75rem;
 }
 
 .dl-diff__row {
     display: flex;
     align-items: baseline;
     padding: 0 0.625rem;
-    border-radius: 0.25rem;
+    border-radius: 0;
 }
 
 .dl-diff__row .dl-diff__ln {
     min-width: 2.5rem;
     text-align: right;
-    color: var(--db-color-text-muted);
+    color: var(--b-dim);
     font-variant-numeric: tabular-nums;
     flex: none;
     user-select: none;
@@ -2055,7 +1566,7 @@ html, body {
     width: 1.25rem;
     text-align: center;
     flex: none;
-    color: var(--db-color-text-muted);
+    color: var(--b-dim);
 }
 
 .dl-diff__row .dl-diff__text {
@@ -2065,17 +1576,17 @@ html, body {
     padding-left: 0.25rem;
 }
 
-.dl-diff__row--add { background: var(--db-color-success-subtle); }
-.dl-diff__row--add .dl-diff__marker { color: var(--db-color-success); }
-.dl-diff__row--del { background: var(--db-color-error-subtle); }
-.dl-diff__row--del .dl-diff__marker { color: var(--db-color-error); }
-.dl-diff__row--hunk { background: var(--db-sheet-deep); color: var(--db-color-accent-text); font-weight: 600; }
-.dl-diff__row--meta { color: var(--db-color-text-muted); }
+.dl-diff__row--add { background: color-mix(in srgb, var(--b-green) 14%, transparent); }
+.dl-diff__row--add .dl-diff__marker { color: var(--b-green); }
+.dl-diff__row--del { background: color-mix(in srgb, var(--b-red) 14%, transparent); }
+.dl-diff__row--del .dl-diff__marker { color: var(--b-red); }
+.dl-diff__row--hunk { background: var(--b-flap); color: var(--b-amber-text); font-weight: 600; }
+.dl-diff__row--meta { color: var(--b-dim); }
 
 .dl-diff__pair {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    border-radius: 0.25rem;
+    border-radius: 0;
     overflow: hidden;
 }
 
@@ -2088,7 +1599,7 @@ html, body {
 .dl-diff__side .dl-diff__ln {
     min-width: 2.5rem;
     text-align: right;
-    color: var(--db-color-text-muted);
+    color: var(--b-dim);
     font-variant-numeric: tabular-nums;
     flex: none;
     user-select: none;
@@ -2098,7 +1609,7 @@ html, body {
     width: 1.25rem;
     text-align: center;
     flex: none;
-    color: var(--db-color-text-muted);
+    color: var(--b-dim);
 }
 
 .dl-diff__side .dl-diff__text {
@@ -2108,25 +1619,23 @@ html, body {
     padding-left: 0.25rem;
 }
 
-.dl-diff__side--add { background: var(--db-color-success-subtle); }
-.dl-diff__side--add .dl-diff__marker { color: var(--db-color-success); }
-.dl-diff__side--del { background: var(--db-color-error-subtle); }
-.dl-diff__side--del .dl-diff__marker { color: var(--db-color-error); }
+.dl-diff__side--add { background: color-mix(in srgb, var(--b-green) 14%, transparent); }
+.dl-diff__side--add .dl-diff__marker { color: var(--b-green); }
+.dl-diff__side--del { background: color-mix(in srgb, var(--b-red) 14%, transparent); }
+.dl-diff__side--del .dl-diff__marker { color: var(--b-red); }
 .dl-diff__side--ctx { background: transparent; }
 .dl-diff__side--empty { background: transparent; }
 
-/* ─── ZIP archive contents (issue #215) ────────────────────────────
-   Children are injected via download.js (unscoped), so these live in
-   the global sheet, not scoped CSS. Entry names come from the archive
-   central directory and are rendered as plain text by the script. ── */
+/* ─── ZIP archive contents (issue #215) ─── */
 .dl-zip__list {
     max-height: 40vh;
     overflow-y: auto;
     font-family: var(--db-font-mono);
     font-size: 0.8125rem;
     line-height: 1.6;
-    background: var(--db-sheet-deep);
-    border-radius: 0.375rem;
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
     padding: 0.75rem 1rem;
 }
 
@@ -2708,7 +2217,7 @@ html, body {
 .dl-comment--reply {
     margin-left: var(--db-space-5);
     border-bottom: 0;
-    border-left: 2px solid var(--db-color-border);
+    border-left: 1px solid var(--b-hair);
     padding-left: var(--db-space-3);
 }
 
@@ -2847,9 +2356,9 @@ html, body {
     margin: 0;
     padding: var(--db-space-2) var(--db-space-4);
     max-width: min(32rem, calc(100vw - 2rem));
-    background: var(--db-color-surface);
-    border: 1px solid var(--db-mountain);
-    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
+    box-shadow: none;
     font-size: 0.875rem;
     text-align: center;
 }
@@ -2945,43 +2454,20 @@ html, body {
 /* ═══ Doc pages · board material (DESIGN.md — "Bảng chuyến") ══════════
    One layer for every reading surface that uses `.legal`: help, terms,
    privacy, abuse, status, compare, dpa, security, soc2, changelog,
-   roadmap, why-private. Scoped `.legal` rules stay where they are; this
-   block wins the ties and sets the material, while prose keeps a
-   reading type size instead of the board's label size. */
+   roadmap, why-private. */
 
 .page .legal {
-    --d-panel: #1d2125;
-    --d-flap: #2a2f35;
-    --d-slot: #0e1113;
-    --d-ink: #e9ecee;
-    --d-body: #ccd5d3;
-    --d-dim: #8b939b;
-    --d-hair: #31373e;
-    --d-amber: #e0a03c;
-    --d-green: #4fa36a;
-    --d-red: #c85a4f;
-
-    background: var(--d-panel);
-    border: 1px solid var(--d-hair);
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
     border-radius: 0;
-    color: var(--d-body);
-    padding: clamp(1.1rem, 3vw, 2.25rem);
+    color: var(--b-body);
+    padding: clamp(1.25rem, 3vw, 2.25rem);
     font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 0.92rem;
+    font-size: 0.9375rem;
     line-height: 1.72;
-}
-
-html[data-theme="light"] .page .legal {
-    --d-panel: #e2e5e7;
-    --d-flap: #cfd3d6;
-    --d-slot: #f1f3f4;
-    --d-ink: #171a1d;
-    --d-body: #2b3735;
-    --d-dim: #5c6468;
-    --d-hair: #b3b8bc;
-    --d-amber: #a96c10;
-    --d-green: #2f7a46;
-    --d-red: #a83b31;
 }
 
 .page .legal h1,
@@ -2990,157 +2476,163 @@ html[data-theme="light"] .page .legal {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.01em;
-    line-height: 1;
-    color: var(--d-ink);
-    margin: 1.6rem 0 0.6rem;
+    line-height: 1.05;
+    color: var(--b-ink);
+    margin: 1.75rem 0 0.65rem;
 }
 
-.page .legal h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); margin-top: 0; }
-.page .legal h2 { font-size: clamp(1.15rem, 2.2vw, 1.45rem); padding-bottom: 0.35rem; border-bottom: 1px solid var(--d-hair); }
+.page .legal h1 { font-size: clamp(1.75rem, 3.4vw, 2.4rem); margin-top: 0; }
+.page .legal h2 { font-size: clamp(1.2rem, 2.2vw, 1.5rem); padding-bottom: 0.4rem; border-bottom: 1px solid var(--b-hair); }
 .page .legal h3,
 .page .legal h4 {
     font-family: "Archivo", system-ui, sans-serif;
     font-weight: 600;
-    font-size: 0.95rem;
-    color: var(--d-ink);
-    margin: 1.2rem 0 0.35rem;
+    font-size: 1rem;
+    color: var(--b-ink);
+    margin: 1.25rem 0 0.4rem;
 }
 
 .page .legal p,
 .page .legal li,
 .page .legal dd,
 .page .legal td {
-    color: var(--d-body);
+    color: var(--b-body);
 }
 
 .page .legal p { margin: 0 0 0.85rem; }
 
 .page .legal a {
-    color: var(--d-ink);
+    color: var(--b-ink);
     text-decoration: underline;
-    text-decoration-color: var(--d-hair);
+    text-decoration-color: var(--b-hair);
     text-underline-offset: 2px;
 }
-.page .legal a:hover { color: var(--d-amber); text-decoration-color: var(--d-amber); }
+.page .legal a:hover { color: var(--b-amber-text); text-decoration-color: var(--b-amber); }
 
 .page .legal ul,
-.page .legal ol { padding-left: 1.15rem; }
+.page .legal ol { padding-left: 1.25rem; }
 
-.page .legal li::marker { color: var(--d-dim); }
+.page .legal li::marker { color: var(--b-dim); }
 
 .page .legal strong,
-.page .legal b { color: var(--d-ink); font-weight: 600; }
+.page .legal b { color: var(--b-ink); font-weight: 600; }
 
 .page .legal hr {
     border: 0;
-    border-top: 1px solid var(--d-hair);
-    margin: 1.4rem 0;
+    border-top: 1px solid var(--b-hair);
+    margin: 1.5rem 0;
 }
 
 .page .legal code,
 .page .legal pre,
 .page .legal kbd {
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.72rem;
-    background: var(--d-slot);
-    border: 1px solid var(--d-hair);
+    font-size: 0.8125rem;
+    background: var(--b-slot);
+    border: 1px solid var(--b-hair);
     border-radius: 0;
-    color: var(--d-ink);
-    padding: 0.1rem 0.35rem;
+    color: var(--b-ink);
+    padding: 0.15rem 0.4rem;
 }
-.page .legal pre { padding: 0.8rem; overflow-x: auto; }
+.page .legal pre { padding: 0.85rem; overflow-x: auto; }
+
+.page .legal input,
+.page .legal select,
+.page .legal textarea {
+    border-radius: 0 !important;
+    border: 1px solid var(--b-hair) !important;
+    background: var(--b-slot) !important;
+    color: var(--b-ink) !important;
+    padding: 0.55rem 0.75rem !important;
+    min-height: 42px;
+    font-size: 0.875rem;
+    box-shadow: none;
+}
+
+.page .legal input::placeholder,
+.page .legal textarea::placeholder {
+    color: var(--b-dim);
+}
+
+.page .legal details.help-faq {
+    border-bottom: 1px solid var(--b-hair);
+    padding: 0.65rem 0;
+}
+
+.page .legal details.help-faq summary {
+    color: var(--b-ink);
+    padding: 0.25rem 0;
+}
+
+.page .legal details.help-faq p {
+    margin: 0.5rem 0 0.15rem;
+    color: var(--b-dim);
+}
 
 .page .legal table {
     width: 100%;
     border-collapse: collapse;
-    margin: 0.9rem 0;
-    font-size: 0.8rem;
+    margin: 1rem 0;
+    font-size: 0.85rem;
 }
 .page .legal th,
 .page .legal td {
-    border: 1px solid var(--d-hair);
-    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--b-hair);
+    padding: 0.55rem 0.7rem;
     text-align: left;
 }
 .page .legal th {
-    background: var(--d-flap);
+    background: var(--b-flap);
     font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--d-dim);
-    font-weight: 400;
+    color: var(--b-dim);
+    font-weight: 500;
 }
 
 .page .legal blockquote {
     margin: 1rem 0;
-    padding: 0.25rem 0 0.25rem 0.9rem;
-    border-left: 2px solid var(--d-amber);
-    color: var(--d-dim);
+    padding: 0.35rem 0 0.35rem 0.9rem;
+    border-left: 1px solid var(--b-amber);
+    color: var(--b-dim);
 }
 
-/* version stamps and small print keep the mono voice */
 .page .legal .legal__version,
 .page .legal small,
 .page .legal time {
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.52rem;
-    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--d-dim);
+    color: var(--b-dim);
 }
 
 .page .legal .legal__list { padding-left: 1.1rem; }
 
-/* a status cell is the one place a doc page may carry colour */
-.page .legal td:has(.status-dot) { color: var(--d-green); }
+.page .legal td:has(.status-dot) { color: var(--b-green); }
 .page .legal .status-dot {
     display: inline-block;
     width: 6px;
     height: 6px;
     margin-right: 0.4rem;
-    background: var(--d-green);
+    background: var(--b-green);
     border-radius: 0;
     vertical-align: middle;
 }
-.page .legal td:has(.status-dot--down) { color: var(--d-red); }
-.page .legal .status-dot--down { background: var(--d-red); }
+.page .legal td:has(.status-dot--down) { color: var(--b-red); }
+.page .legal .status-dot--down { background: var(--b-red); }
 
-/* ═══ Admin · board material (DESIGN.md — "Bảng chuyến") ═════════════
-   The five admin pages share one shell class. Internal tool: the same
-   panel, seam and mono figures, with tables kept dense because they are
-   read as data, not as marketing. */
-
+/* ═══ Admin · board material (DESIGN.md — "Bảng chuyến") ═════════════ */
 .admin-board {
-    --a-panel: #1d2125;
-    --a-flap: #2a2f35;
-    --a-slot: #0e1113;
-    --a-ink: #e9ecee;
-    --a-body: #ccd5d3;
-    --a-dim: #8b939b;
-    --a-hair: #31373e;
-    --a-amber: #e0a03c;
-    --a-green: #4fa36a;
-    --a-red: #c85a4f;
-
-    background: #15181b;
-    color: var(--a-ink);
+    width: 100%;
+    max-width: 64rem;
+    margin-inline: auto;
+    background: var(--b-board);
+    color: var(--b-ink);
     padding: clamp(1rem, 2.5vw, 2rem);
+    border: 1px solid var(--b-hair);
     font-family: "Archivo", system-ui, sans-serif;
-}
-
-html[data-theme="light"] .admin-board {
-    background: #d3d6d9;
-    --a-panel: #e2e5e7;
-    --a-flap: #cfd3d6;
-    --a-slot: #f1f3f4;
-    --a-ink: #171a1d;
-    --a-body: #2b3735;
-    --a-dim: #5c6468;
-    --a-hair: #b3b8bc;
-    --a-amber: #a96c10;
-    --a-green: #2f7a46;
-    --a-red: #a83b31;
 }
 
 .admin-board h1,
@@ -3149,55 +2641,56 @@ html[data-theme="light"] .admin-board {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.01em;
-    line-height: 1;
-    color: var(--a-ink);
+    line-height: 1.05;
+    color: var(--b-ink);
 }
 .admin-board h1 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); }
-.admin-board h2 { font-size: 1.2rem; }
+.admin-board h2 { font-size: 1.25rem; }
 .admin-board h3 {
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--a-ink);
+    color: var(--b-ink);
 }
 
 .admin-board p,
 .admin-board li,
-.admin-board td { color: var(--a-body); }
-.admin-board .text-muted-foreground { color: var(--a-dim); }
-.admin-board .text-destructive { color: var(--a-red) !important; }
+.admin-board td { color: var(--b-body); }
+.admin-board .text-muted-foreground { color: var(--b-dim); }
+.admin-board .text-destructive { color: var(--b-red) !important; }
 
 .admin-board [data-slot="card"] {
-    background: var(--a-panel);
-    border: 1px solid var(--a-hair);
+    background: var(--b-panel);
+    border: 1px solid var(--b-hair);
     border-radius: 0;
     box-shadow: none;
-    color: var(--a-ink);
+    color: var(--b-ink);
+    padding: 1.25rem;
+    overflow-x: auto;
 }
 
-/* dense data tables */
 .admin-board table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
 }
 .admin-board th,
 .admin-board td {
-    border: 1px solid var(--a-hair);
-    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--b-hair);
+    padding: 0.5rem 0.65rem;
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
 }
 .admin-board thead th {
-    background: var(--a-flap);
+    background: var(--b-flap);
     font-family: "Martian Mono", monospace;
-    font-size: 0.48rem;
-    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--a-dim);
-    font-weight: 400;
+    color: var(--b-dim);
+    font-weight: 500;
 }
-.admin-board tbody tr:nth-child(even) { background: color-mix(in srgb, var(--a-flap) 35%, transparent); }
+.admin-board tbody tr:nth-child(even) { background: color-mix(in srgb, var(--b-flap) 35%, transparent); }
 .admin-board .font-mono,
 .admin-board .tabular-nums {
     font-family: "Martian Mono", ui-monospace, monospace;
@@ -3206,51 +2699,60 @@ html[data-theme="light"] .admin-board {
 
 .admin-board [data-slot="button"] {
     border-radius: 0;
-    border: 1px solid var(--a-hair);
+    border: 1px solid var(--b-hair);
     background: transparent;
-    color: var(--a-dim);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    font-size: 0.82rem;
+    min-height: 36px;
+    padding: 0.45rem 0.85rem;
     box-shadow: none;
 }
-.admin-board [data-slot="button"]:hover { color: var(--a-ink); border-color: var(--a-dim); }
+.admin-board [data-slot="button"]:hover { color: var(--b-ink); border-color: var(--b-ink); background: var(--b-flap); }
 .admin-board [data-slot="button"][data-variant="default"] {
-    background: var(--a-amber);
-    border-color: var(--a-amber);
-    color: #16181a;
+    background: var(--b-amber);
+    border-color: var(--b-amber);
+    color: var(--b-amber-ink);
     font-weight: 700;
+}
+.admin-board [data-slot="button"][data-variant="default"]:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
 }
 
 .admin-board input,
 .admin-board select,
 .admin-board textarea {
     border-radius: 0 !important;
-    border: 1px solid var(--a-hair) !important;
-    background: var(--a-slot) !important;
-    color: var(--a-ink) !important;
+    border: 1px solid var(--b-hair) !important;
+    background: var(--b-slot) !important;
+    color: var(--b-ink) !important;
     font-family: "Martian Mono", monospace;
-    font-size: 0.68rem;
+    font-size: 0.8125rem;
+    padding: 0.45rem 0.65rem !important;
+    min-height: 38px;
     box-shadow: none;
 }
 .admin-board input:focus,
-.admin-board select:focus { border-color: var(--a-amber) !important; outline: none; }
+.admin-board select:focus { border-color: var(--b-amber) !important; outline: none; }
 
 .admin-board [role="checkbox"],
 .admin-board [data-slot="checkbox"] {
     border-radius: 0;
-    border: 1px solid var(--a-hair);
-    background: var(--a-slot);
+    border: 1px solid var(--b-hair);
+    background: var(--b-slot);
 }
 .admin-board [data-slot="badge"],
 .admin-board .badge {
     border-radius: 0;
-    border: 1px solid var(--a-hair);
+    border: 1px solid var(--b-hair);
     background: transparent;
-    color: var(--a-dim);
+    color: var(--b-dim);
     font-family: "Martian Mono", monospace;
-    font-size: 0.46rem;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }

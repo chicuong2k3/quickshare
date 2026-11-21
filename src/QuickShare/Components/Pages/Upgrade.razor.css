@@ -1,41 +1,22 @@
-/* ─── /upgrade · board material (DESIGN.md — "Bảng chuyến") ────────
-   The checkout reads as one panel: plan summary at the top, the
-   payment block below it, one amber action. Forms, fields and the
-   payment iframe keep their hooks. */
+/* ── /upgrade · Departure Board ("Bảng chuyến") ── */
 
 .upgrade-board {
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-slot: #0e1113;
-    --b-ink: #e9ecee;
-    --b-body: #ccd5d3;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-amber: #e0a03c;
-    --b-green: #4fa36a;
-    --b-red: #c85a4f;
-
-    background: #15181b;
+    background: var(--b-bg);
     color: var(--b-ink);
     padding: clamp(1.25rem, 3vw, 2.5rem) 1rem 3rem;
     font-family: "Archivo", system-ui, sans-serif;
 }
 
-html[data-theme="light"] .upgrade-board {
-    background: #d3d6d9;
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-slot: #f1f3f4;
-    --b-ink: #171a1d;
-    --b-body: #2b3735;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-amber: #a96c10;
-    --b-green: #2f7a46;
-    --b-red: #a83b31;
+.upgrade-board > section,
+.upgrade-board > div {
+    max-width: 44rem;
+    margin-inline: auto;
 }
 
-.upgrade-board header { text-align: left; }
+.upgrade-board header {
+    text-align: left;
+    margin-bottom: 1.25rem;
+}
 
 .upgrade-board h1,
 .upgrade-board h2 {
@@ -43,17 +24,18 @@ html[data-theme="light"] .upgrade-board {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.01em;
-    line-height: 1;
+    line-height: 1.02;
     color: var(--b-ink);
 }
-.upgrade-board h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0 0 0.5rem; }
-.upgrade-board h2 { font-size: 1.3rem; margin: 0 0 0.35rem; }
+
+.upgrade-board h1 { font-size: clamp(1.9rem, 4vw, 2.75rem); margin: 0 0 0.5rem; }
+.upgrade-board h2 { font-size: 1.35rem; margin: 0 0 0.35rem; }
 .upgrade-board h3 {
     font-family: "Barlow Condensed", system-ui, sans-serif;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: var(--b-ink);
 }
 
@@ -61,14 +43,13 @@ html[data-theme="light"] .upgrade-board {
 .upgrade-board li { color: var(--b-body); }
 .upgrade-board .text-muted-foreground { color: var(--b-dim); }
 
-/* the plan summary and the checkout block are two panels, not floating cards */
 .upgrade-board ::deep [data-slot="card"] {
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     box-shadow: none;
     color: var(--b-ink);
-    padding: 1rem;
+    padding: 1.35rem;
 }
 
 .upgrade-board section.border,
@@ -76,53 +57,61 @@ html[data-theme="light"] .upgrade-board {
     background: var(--b-slot);
     border: 1px solid var(--b-hair) !important;
     border-radius: 0 !important;
+    padding: 1rem;
 }
 
-/* the price is the page's biggest number */
 .upgrade-board ::deep .text-3xl {
     font-family: "Martian Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
     color: var(--b-amber) !important;
-    font-size: 1.6rem !important;
+    font-size: 1.75rem !important;
 }
 .upgrade-board ::deep .text-3xl span { color: var(--b-dim) !important; }
 
-/* features are rows on the panel */
 .upgrade-board ::deep ul { list-style: none; padding: 0; margin: 0; }
 .upgrade-board ::deep ul > li {
-    padding: 0.4rem 0;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--b-hair);
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     color: var(--b-body);
 }
 .upgrade-board ::deep ul > li:last-child { border-bottom: 0; }
 
-/* one amber action: paying. Everything else is a hairline control. */
+/* One Primary Rule: only [data-variant="default"] is amber filled */
 .upgrade-board ::deep [data-slot="button"] {
     border-radius: 0;
     border: 1px solid var(--b-hair);
-    background: transparent;
-    color: var(--b-dim);
+    background: var(--b-slot);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-height: 42px;
+    padding: 0.55rem 1.1rem;
     box-shadow: none;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-.upgrade-board ::deep [data-slot="button"]:hover { color: var(--b-ink); border-color: var(--b-dim); }
-.upgrade-board ::deep [data-slot="button"][data-variant="default"],
-.upgrade-board ::deep button[type="submit"] {
+
+.upgrade-board ::deep [data-slot="button"]:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
+.upgrade-board ::deep [data-slot="button"][data-variant="default"] {
     background: var(--b-amber);
     border-color: var(--b-amber);
-    color: #16181a;
+    color: var(--b-amber-ink);
     font-weight: 700;
 }
-.upgrade-board ::deep [data-slot="button"][data-variant="default"]:hover,
-.upgrade-board ::deep button[type="submit"]:hover {
-    background: var(--b-ink);
-    border-color: var(--b-ink);
-    color: #16181a;
+
+.upgrade-board ::deep [data-slot="button"][data-variant="default"]:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
 }
 
 .upgrade-board ::deep input,
@@ -132,13 +121,31 @@ html[data-theme="light"] .upgrade-board {
     border: 1px solid var(--b-hair) !important;
     background: var(--b-slot) !important;
     color: var(--b-ink) !important;
-    font-family: "Martian Mono", monospace;
-    font-size: 0.72rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 42px;
     box-shadow: none;
 }
+
 .upgrade-board ::deep input:focus,
-.upgrade-board ::deep select:focus { border-color: var(--b-amber) !important; outline: none; }
-.upgrade-board ::deep label span { color: var(--b-dim); }
+.upgrade-board ::deep select:focus {
+    border-color: var(--b-amber) !important;
+    outline: none;
+}
+
+.upgrade-board ::deep select {
+    appearance: none;
+    padding-right: 2.25rem;
+}
+
+.upgrade-board ::deep label span {
+    color: var(--b-dim);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
 
 .upgrade-board ::deep .text-destructive { color: var(--b-red) !important; }
 
@@ -148,20 +155,21 @@ html[data-theme="light"] .upgrade-board {
     background: #fff;
 }
 
-/* the campaign strip carries the accent, not a wash */
 .upgrade-board #upgrade-campaign-banner {
     background: var(--b-panel);
     border: 1px solid var(--b-amber) !important;
     border-radius: 0;
     color: var(--b-body);
-    font-family: "Martian Mono", monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    padding: 0.7rem 0.85rem;
+    padding: 0.8rem 1rem;
 }
+
 .upgrade-board #upgrade-campaign-banner span.bg-primary {
     background: var(--b-amber) !important;
-    color: #16181a;
+    color: var(--b-amber-ink);
     border-radius: 0;
+    padding: 0.15rem 0.45rem;
 }

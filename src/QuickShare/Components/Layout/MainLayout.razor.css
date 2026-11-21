@@ -1,495 +1,521 @@
-/* ─── MainLayout — daub token layout ─── */
+/* ── MainLayout — Departure Board ("Bảng chuyến") chrome ── */
 
 .layout-root {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     min-width: 0;
-    color: var(--db-color-text);
-    /* The desktop: the 4px dither pattern under every page. Painted on
-       the root rather than body, which DAUB's base sheet already claims. */
-    background-color: var(--db-color-bg);
-    background-image: var(--db-dither);
-    background-size: 4px 4px;
+    background-color: var(--b-bg);
+    color: var(--b-ink);
 }
 
-/* ─── Navbar: the menu bar ─── */
+.layout-root main {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+}
 
-/* Base layout rules (formerly from daub.css .db-navbar) */
-.layout-navbar {
+/* ── Top menu bar ── */
+.layout-root .layout-navbar {
     display: flex;
     align-items: center;
     position: sticky;
     top: 0;
     z-index: 1000;
-    height: 56px;
-    padding: 0 var(--db-space-5);
-    font-family: var(--db-font-ui);
-    /* HyperCard chrome */
-    border-bottom: 2px solid var(--db-mountain);
-    background: var(--db-sheet-raised);
-    flex-wrap: nowrap;
-    gap: var(--db-space-3);
-}
-
-.layout-navbar__brand {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-2);
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--db-charcoal);
-    text-decoration: none;
-    flex-shrink: 0;
-    min-width: 0;
-}
-
-.layout-navbar__nav {
-    display: flex;
-    align-items: center;
-}
-
-.layout-navbar__spacer { flex: 1; }
-
-.layout-navbar__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-2);
-    flex-shrink: 0;
-    min-width: 0;
-}
-
-.layout-navbar__toggle {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--db-charcoal);
-    border-radius: 2px;
-    cursor: pointer;
-}
-.layout-navbar__toggle:hover { background: var(--db-cream-dark); }
-
-/* Nav items read as engineering labels; the active one takes the valley cell. */
-.layout-nav-menu {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-1);
-}
-
-.layout-nav-menu__item {
-    font-family: var(--db-font-ui);
-    font-size: 0.75rem;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    padding: 6px 10px;
-    border-radius: 0;
-    border-bottom: 1px solid transparent;
-    color: var(--db-warm-gray);
-    text-decoration: none;
-    transition: all 150ms ease;
-}
-
-.layout-nav-menu__item:hover {
-    border-bottom-color: var(--db-mountain-deep);
-    color: var(--db-ink);
-}
-
-.layout-nav-menu__item--active {
-    background: var(--db-valley);
-    border-bottom-color: var(--db-valley-ink);
-    color: var(--db-color-text);
-}
-
-@media (max-width: 640px) {
-    .layout-navbar__toggle { display: flex; }
-    .layout-navbar__brand ~ .layout-navbar__toggle { margin-left: auto; }
-    .layout-navbar__nav {
-        display: none;
-        position: absolute;
-        top: 56px;
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        background: var(--db-sheet-raised);
-        border-bottom: 2px solid var(--db-mountain);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        padding: var(--db-space-2);
-        z-index: 999;
-    }
-    .layout-navbar__nav .layout-nav-menu { flex-direction: column; width: 100%; }
-    .layout-navbar__nav .layout-nav-menu__item { width: 100%; }
-    .layout-navbar--open .layout-navbar__nav { display: flex; }
-    .layout-navbar__spacer { display: none; }
-}
-
-/* ─── Brand ─── */
-.layout-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    color: var(--db-ink);
-    flex-shrink: 0;
-}
-
-.layout-logo svg {
-    width: 1.5rem;
-    height: 1.5rem;
-}
-
-.layout-brand-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    line-height: 1;
-}
-
-.layout-brand-word {
-    font-family: var(--db-font-display);
-    font-weight: 300;
-    font-size: 0.9375rem;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-}
-
-.layout-brand-cloud {
-    color: var(--db-color-text-muted);
-    font-weight: 200;
-}
-
-/* Wayfinding, not ornament: the route the visitor is actually on. */
-.layout-brand-path {
-    font-size: 0.5625rem;
-    letter-spacing: 0.2em;
-    color: var(--db-mountain-deep);
-}
-
-/* ─── Footer ─ a hairline rule that ends in its own label ─── */
-.layout-footer {
-    margin-top: auto;
-    padding: var(--db-space-7) var(--db-space-5) var(--db-space-6);
-    border-top: 1px solid var(--db-mountain);
-}
-
-.layout-footer__inner {
-    display: flex;
-    flex-direction: column;
-    gap: var(--db-space-4);
-    max-width: 72rem;
-    margin: 0 auto;
-}
-
-.layout-footer__head {
-    display: flex;
-    align-items: center;
-    gap: var(--db-space-4);
-}
-
-.layout-footer__mark {
-    font-family: var(--db-font-display);
-    font-weight: 200;
-    font-size: 0.8125rem;
-    text-transform: uppercase;
-    letter-spacing: 0.22em;
-    color: var(--db-color-text);
-    white-space: nowrap;
-}
-
-.layout-footer__rule {
-    flex: 1;
-    min-width: 0;
-}
-
-.layout-footer__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--db-space-5);
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.layout-footer__links a {
-    color: var(--db-color-text-muted);
-    text-decoration: none;
-    padding-bottom: 2px;
-    border-bottom: 1px solid transparent;
-}
-
-.layout-footer__links a:hover {
-    color: var(--db-color-text);
-    border-bottom-color: var(--db-foil);
-}
-
-.layout-avatar-btn {
-    cursor: pointer;
-    line-height: 1;
-}
-
-.layout-avatar-img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-}
-
-.layout-user-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--db-space-1);
-    padding: var(--db-space-2) var(--db-space-3);
-}
-
-.layout-user-info__name {
-    font-size: var(--db-text-sm);
-    font-weight: var(--db-weight-semibold);
-    color: var(--db-color-text);
-    line-height: var(--db-leading-tight);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.layout-user-info__email {
-    font-size: var(--db-text-xs);
-    color: var(--db-color-text-muted);
-    line-height: var(--db-leading-tight);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ─── Nav must never set the document's scroll width ─── */
-
-@media (max-width: 560px) {
-    .layout-brand-word {
-        letter-spacing: 0.08em;
-        font-size: 0.8125rem;
-    }
-
-    .layout-brand-cloud {
-        display: none;
-    }
-
-    .layout-brand-path {
-        letter-spacing: 0.14em;
-    }
-
-    .layout-footer__head {
-        flex-wrap: wrap;
-    }
-
-    .layout-footer__links {
-        gap: var(--db-space-3);
-    }
-}
-
-/* ═══ Board chrome (DESIGN.md — "Bảng chuyến") ══════════════════════
-   One instrument for the whole site: the menu bar is a flap strip and the
-   footer is its seam. Page grounds stay where they are — an unmigrated
-   surface keeps its own paper, a migrated one paints its own board — so
-   this layer never changes a body's contrast. */
-
-.layout-navbar,
-.layout-footer {
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-slot: #0e1113;
-    --b-ink: #e9ecee;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-amber: #e0a03c;
-}
-
-html[data-theme="light"] .layout-navbar,
-html[data-theme="light"] .layout-footer {
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-slot: #f1f3f4;
-    --b-ink: #171a1d;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-amber: #a96c10;
-}
-
-/* ── menu bar ── */
-.layout-root .layout-navbar {
     height: 52px;
+    padding: 0 1rem;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
     background: var(--b-flap);
-    background-image: none;
     border-bottom: 1px solid var(--b-hair);
     color: var(--b-ink);
-    padding: 0 1rem;
+}
+
+.layout-root .layout-navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--b-ink);
+    flex-shrink: 0;
+    min-width: 0;
 }
 
 .layout-root .layout-logo {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border: 1px solid var(--b-hair);
     border-radius: 0;
     background: var(--b-slot);
     color: var(--b-ink);
     display: grid;
     place-items: center;
-    margin-right: 0.5rem;
+    flex-shrink: 0;
 }
-.layout-root .layout-logo svg { width: 13px; height: 13px; }
+
+.layout-root .layout-logo svg {
+    width: 14px;
+    height: 14px;
+}
+
+.layout-root .layout-brand-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1;
+    min-width: 0;
+}
 
 .layout-root .layout-brand-word {
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--b-ink);
+    white-space: nowrap;
+}
+
+.layout-root .layout-brand-cloud {
+    color: var(--b-amber);
+}
+
+.layout-root .layout-brand-path {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    white-space: nowrap;
+}
+
+.layout-root .layout-navbar__nav {
+    display: flex;
+    align-items: center;
+}
+
+.layout-root .layout-nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.layout-root .layout-nav-menu__item {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--b-dim);
+    padding: 0.45rem 0.65rem;
+    border-radius: 0;
+    border-bottom: 1px solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.layout-root .layout-nav-menu__item:hover {
+    color: var(--b-ink);
+    border-bottom-color: var(--b-dim);
+}
+
+.layout-root .layout-nav-menu__item--active {
+    color: var(--b-ink);
+    background: var(--b-slot);
+    border-bottom-color: var(--b-amber);
+}
+
+.layout-root .layout-navbar__spacer {
+    flex: 1;
+    min-width: 0;
+}
+
+.layout-root .layout-navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.layout-root ::deep .layout-command-trigger,
+.layout-root ::deep .layout-voice-trigger,
+.layout-root ::deep .layout-theme-toggle,
+.layout-root ::deep .layout-bell,
+.layout-root ::deep .layout-avatar-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-ink);
+    box-shadow: none;
+    height: 34px;
+    min-width: 34px;
+    padding: 0 0.5rem;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.layout-root ::deep .layout-avatar-btn {
+    padding: 0;
+    width: 34px;
+}
+
+.layout-root ::deep .layout-command-trigger:hover,
+.layout-root ::deep .layout-voice-trigger:hover,
+.layout-root ::deep .layout-theme-toggle:hover,
+.layout-root ::deep .layout-bell:hover,
+.layout-root ::deep .layout-avatar-btn:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-panel);
+}
+
+.layout-root .layout-command-kbd {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--b-dim);
+    line-height: 1;
+}
+
+.layout-root ::deep .lang-switch {
+    display: inline-flex;
+    align-items: center;
+}
+
+.layout-root ::deep .layout-lang-select {
+    appearance: none;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-ink);
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 1.65rem 0 0.5rem;
+    height: 34px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.layout-root ::deep .layout-lang-select:hover {
+    border-color: var(--b-dim);
+}
+
+/* Navbar primary action */
+.layout-root ::deep .layout-signin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 0.85rem;
+    background: var(--b-amber);
+    border: 1px solid var(--b-amber);
+    border-radius: 0;
+    color: var(--b-amber-ink);
+    font-family: "Barlow Condensed", system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: none;
+    white-space: nowrap;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.layout-root ::deep .layout-signin:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
+}
+
+.layout-root ::deep .layout-bell__badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--b-amber);
+    color: var(--b-amber-ink);
+    border: 1px solid var(--b-slot);
+    border-radius: 0;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.layout-root ::deep .layout-avatar-img-wrap {
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.layout-root ::deep .layout-avatar-img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+}
+
+.layout-root ::deep .layout-avatar-dropdown {
+    min-width: 14rem;
+    background: var(--b-flap);
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    color: var(--b-ink);
+    padding: 0.25rem 0;
+    box-shadow: none;
+}
+
+.layout-root .layout-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.layout-root .layout-user-info__name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--b-ink);
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layout-root .layout-user-info__email {
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--b-dim);
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layout-root .layout-navbar__toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--b-hair);
+    border-radius: 0;
+    background: var(--b-slot);
+    color: var(--b-ink);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.layout-root .layout-navbar__toggle:hover {
+    border-color: var(--b-dim);
+    background: var(--b-panel);
+}
+
+@media (max-width: 768px) {
+    .layout-root .layout-navbar__toggle {
+        display: inline-flex;
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .layout-root .layout-navbar__nav {
+        display: none;
+        position: absolute;
+        top: 52px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--b-flap);
+        border-bottom: 1px solid var(--b-hair);
+        padding: 0.5rem 1rem;
+        z-index: 999;
+    }
+
+    .layout-root .layout-navbar__nav.is-open {
+        display: flex;
+    }
+
+    .layout-root .layout-navbar__nav .layout-nav-menu {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 0.25rem;
+    }
+
+    .layout-root .layout-navbar__nav .layout-nav-menu__item {
+        width: 100%;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        padding: 0 0.75rem;
+        font-size: 0.8125rem;
+        border-bottom: 1px solid var(--b-hair);
+    }
+
+    .layout-root .layout-navbar__nav .layout-nav-menu__item:last-child {
+        border-bottom-color: transparent;
+    }
+
+    .layout-root .layout-command-kbd {
+        display: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .layout-root .layout-navbar {
+        padding: 0 0.5rem;
+        gap: 0.3rem;
+    }
+
+    .layout-root .layout-navbar__brand {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .layout-root .layout-navbar__spacer {
+        display: none;
+    }
+
+    .layout-root .layout-brand-word {
+        letter-spacing: 0.06em;
+        font-size: 0.85rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .layout-root .layout-brand-cloud,
+    .layout-root .layout-brand-path {
+        display: none;
+    }
+
+    .layout-root ::deep .layout-voice-trigger {
+        display: none;
+    }
+
+    .layout-root .layout-navbar__actions {
+        gap: 0.25rem;
+    }
+
+    .layout-root ::deep .layout-command-trigger,
+    .layout-root ::deep .layout-theme-toggle,
+    .layout-root ::deep .layout-bell,
+    .layout-root ::deep .layout-avatar-btn {
+        min-width: 32px;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+    }
+
+    .layout-root ::deep .layout-lang-select {
+        height: 32px;
+        padding: 0 1.35rem 0 0.35rem;
+        font-size: 0.68rem;
+        max-width: 4.75rem;
+    }
+
+    .layout-root ::deep .layout-signin {
+        height: 32px;
+        padding: 0 0.5rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+    }
+
+    .layout-root .layout-navbar__toggle {
+        min-width: 36px;
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ── Footer: the seam at the bottom of the board ── */
+.layout-root .layout-footer {
+    background: var(--b-panel);
+    border-top: 1px solid var(--b-hair);
+    color: var(--b-dim);
+    margin-top: auto;
+    padding: 1.75rem 1rem 1.5rem;
+}
+
+.layout-root .layout-footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 72rem;
+    margin: 0 auto;
+}
+
+.layout-root .layout-footer__head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.layout-root .layout-footer__mark {
     font-family: "Barlow Condensed", system-ui, sans-serif;
     font-weight: 700;
     font-size: 0.95rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--b-ink);
-}
-.layout-root .layout-brand-cloud { color: var(--b-amber); }
-.layout-root .layout-brand-path {
-    font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.45rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--b-dim);
+    white-space: nowrap;
 }
 
-.layout-root .layout-nav-menu__item {
+.layout-root .layout-footer__rule {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border-top: 1px solid var(--b-hair);
+    padding-top: 0.35rem;
+}
+
+.layout-root .layout-footer .miura-spec {
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.52rem;
+    font-size: 0.72rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--b-dim);
-    padding: 0.35rem 0.5rem;
-    border-bottom: 1px solid transparent;
-    text-decoration: none;
-}
-.layout-root .layout-nav-menu__item:hover { color: var(--b-ink); }
-.layout-root .layout-nav-menu__item--active {
-    color: var(--b-ink);
-    background: transparent;
-    box-shadow: none;
-    border-bottom-color: var(--b-amber);
 }
 
-/* actions: hairline squares, no pills */
-.layout-root .layout-navbar__actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.layout-root ::deep .layout-command-trigger,
-.layout-root ::deep .layout-voice-trigger,
-.layout-root ::deep .layout-theme-toggle,
-.layout-root ::deep .layout-bell,
-.layout-root ::deep .layout-avatar-btn {
-    border: 1px solid var(--b-hair);
-    border-radius: 0;
-    background: transparent;
-    color: var(--b-dim);
-    box-shadow: none;
-    height: 30px;
-    min-width: 30px;
-}
-.layout-root ::deep .layout-command-trigger:hover,
-.layout-root ::deep .layout-voice-trigger:hover,
-.layout-root ::deep .layout-theme-toggle:hover,
-.layout-root ::deep .layout-bell:hover { color: var(--b-ink); border-color: var(--b-dim); }
-
-.layout-root .layout-command-kbd {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.45rem;
-    letter-spacing: 0.08em;
-    color: var(--b-dim);
-}
-
-.layout-root ::deep .layout-lang-select {
-    border: 1px solid var(--b-hair);
-    border-radius: 0;
-    background: var(--b-slot);
-    color: var(--b-ink);
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0.35rem 0.4rem;
-    height: 30px;
-}
-
-/* sign-in is the bar's one action */
-.layout-root ::deep .layout-navbar .btn-primary,
-.layout-root ::deep .layout-signin {
-    background: var(--b-amber);
-    border: 1px solid var(--b-amber);
-    border-radius: 0;
-    color: #16181a;
-    font-family: "Barlow Condensed", system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-size: 0.62rem;
-    font-weight: 700;
-    box-shadow: none;
-}
-
-/* ── footer: the seam at the bottom of the board ── */
-.layout-root .layout-footer {
-    background: var(--b-panel);
-    border-top: 1px solid var(--b-hair);
-    color: var(--b-dim);
-    margin-top: auto;
-    padding: 1.5rem 1rem 1.25rem;
-}
-.layout-root .layout-footer__head {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-.layout-root .layout-footer__mark {
-    font-family: "Barlow Condensed", system-ui, sans-serif;
-    font-weight: 700;
-    font-size: 0.8rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--b-ink);
-}
-.layout-root .layout-footer__rule,
-.layout-root .miura-rule {
-    border-top: 1px solid var(--b-hair);
-    background: none;
-    background-image: none;
-}
-/* the leader was a dotted gradient; the board draws one seam */
-.layout-root .miura-rule::before,
-.layout-root .layout-footer__rule::before {
-    background: none;
-    background-image: none;
-}
-.layout-root .layout-footer__rule .miura-spec,
-.layout-root .layout-footer .miura-spec {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.45rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--b-dim);
-}
 .layout-root .layout-footer__links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem 1rem;
+    gap: 0.5rem 1.25rem;
 }
+
 .layout-root .layout-footer__links a {
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--b-dim);
     text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease;
 }
-.layout-root .layout-footer__links a:hover { color: var(--b-ink); }
+
+.layout-root .layout-footer__links a:hover {
+    color: var(--b-ink);
+    border-bottom-color: var(--b-amber);
+}

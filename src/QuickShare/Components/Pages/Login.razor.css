@@ -1,271 +1,228 @@
-.login-shell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100%;
-    padding: var(--db-space-8) var(--db-space-4) var(--db-space-10);
-}
-
-.login-card {
-    width: 100%;
-    max-width: 28rem;
-    overflow: hidden;
-    border: 2px solid var(--db-mountain);
-    background: var(--db-color-surface);
-}
-
-/* The shell holds the cell in the upper third, not adrift in dead ground. */
-.login-shell {
-    align-items: flex-start;
-    padding-top: var(--db-space-9);
-}
-
-.login-header {
-    padding: var(--db-space-8) var(--db-space-7) var(--db-space-5);
-    text-align: center;
-}
-
-.login-mark {
-    display: grid;
-    place-items: center;
-    width: 3rem;
-    height: 3rem;
-    margin: 0 auto var(--db-space-5);
-    border: 1px solid var(--db-mountain);
-    background: var(--db-color-surface);
-    color: var(--db-color-text-secondary);
-    transform: none;
-}
-
-.login-mark svg {
-    width: 1.375rem;
-    height: 1.375rem;
-    transform: none;
-}
-
-.login-header .db-card__title {
-    margin: 0;
-}
-
-.login-subtitle {
-    max-width: 22rem;
-    margin: var(--db-space-4) auto 0;
-    font-family: var(--db-font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--db-color-text-muted);
-}
-
-.login-body {
-    padding: 0 var(--db-space-7) var(--db-space-7);
-}
-
-.login-provider-list {
-    display: grid;
-    gap: var(--db-space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.login-provider {
-    font-family: var(--db-font-ui);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: var(--db-space-2);
-    width: 100%;
-    min-height: 2.75rem;
-    padding: 0.5rem 1rem !important;
-    text-align: left;
-    text-decoration: none;
-}
-
-.login-provider__icon {
-    display: grid;
-    flex: 0 0 1.5rem;
-    place-items: center;
-}
-
-.login-provider__icon svg {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-.login-provider--github {
-    border-color: color-mix(in srgb, #24292f 45%, var(--db-color-border)) !important;
-}
-
-.login-provider--github:hover,
-.login-provider--github:active {
-    border-color: #24292f !important;
-}
-
-
-.login-provider:focus-visible {
-    outline: 2px solid var(--db-valley-ink) !important;
-    outline-offset: 2px;
-}
-
-@media (max-width: 480px) {
-    .login-shell {
-        padding-inline: 0;
-    }
-
-    .login-card {
-        border-inline: 0;
-    }
-
-    .login-header {
-        padding-inline: var(--db-space-5);
-    }
-
-    .login-body {
-        padding-inline: var(--db-space-5);
-    }
-}
-
-/* ═══ Board layer (DESIGN.md — "Bảng chuyến") ═══════════════════════
-   Material only: the sign-in providers, their order and their hooks
-   stay exactly where they were. */
+/* ── Login · Departure Board ("Bảng chuyến") ── */
 
 .login-board {
-    --b-board: #15181b;
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-slot: #0e1113;
-    --b-ink: #e9ecee;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-amber: #e0a03c;
-
-    background: var(--b-board);
+    background: var(--b-bg);
     color: var(--b-ink);
-    padding: clamp(1.5rem, 5vw, 3.5rem) 1rem;
+    padding: clamp(2rem, 6vw, 4rem) 1rem;
     font-family: "Archivo", system-ui, sans-serif;
 }
 
-html[data-theme="light"] .login-board {
-    --b-board: #d3d6d9;
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-slot: #f1f3f4;
-    --b-ink: #171a1d;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-amber: #a96c10;
+.login-board .login-shell {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    max-width: 28rem;
+    margin-inline: auto;
 }
 
-.login-board .login-shell { max-width: 26rem; margin-inline: auto; }
-.login-board ::deep .login-body { background: transparent; }
-
 .login-board ::deep .login-card {
+    width: 100%;
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     box-shadow: none;
     color: var(--b-ink);
+    padding: 1.75rem 1.5rem;
 }
 
-.login-board ::deep .login-header { align-items: flex-start; }
+.login-board ::deep .login-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 0 1.25rem;
+    border-bottom: 1px solid var(--b-hair);
+    margin-bottom: 1.25rem;
+}
 
 .login-board ::deep .login-mark {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 0.9rem;
     border: 1px solid var(--b-hair);
     border-radius: 0;
     background: var(--b-slot);
-    color: var(--b-ink);
-    width: 2.75rem;
-    height: 2.75rem;
+    color: var(--b-amber);
+}
+
+.login-board .login-mark svg {
+    width: 1.4rem;
+    height: 1.4rem;
 }
 
 .login-board #login-title,
 .login-board h1 {
+    margin: 0;
     font-family: "Barlow Condensed", system-ui, sans-serif;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.01em;
-    font-size: 1.6rem;
+    letter-spacing: 0.02em;
+    font-size: 1.75rem;
     line-height: 1;
     color: var(--b-ink);
 }
 
 .login-board .login-subtitle {
+    margin: 0.55rem auto 0;
+    max-width: 30ch;
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--b-dim);
 }
 
-.login-board ::deep .login-provider-list { display: grid; gap: 0.5rem; }
+.login-board ::deep .login-body {
+    background: transparent;
+    padding: 0;
+}
 
-/* one amber control: the front door. The rest are hairline seams. */
+.login-board ::deep .login-provider-list {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
 .login-board ::deep .login-provider {
     width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
     justify-content: flex-start;
-    gap: 0.6rem;
+    gap: 0.75rem;
     border-radius: 0;
     border: 1px solid var(--b-hair);
-    background: transparent;
+    background: var(--b-slot);
     color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    font-size: 0.78rem;
-    padding: 0.65rem 0.8rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 0.65rem 1rem !important;
+    text-decoration: none;
     box-shadow: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
-.login-board ::deep .login-provider:hover { border-color: var(--b-dim); background: var(--b-flap); }
-.login-board ::deep .login-provider--google,
-.login-board ::deep .login-provider--google:hover {
+
+.login-board ::deep .login-provider:hover {
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+    color: var(--b-ink);
+}
+
+/* Primary front door: Google OAuth */
+.login-board ::deep .login-provider--google {
     background: var(--b-amber);
     border-color: var(--b-amber);
-    color: #16181a;
+    color: var(--b-amber-ink);
     font-weight: 700;
 }
 
-.login-board .login-provider__icon { display: inline-flex; width: 1.1rem; height: 1.1rem; }
+.login-board ::deep .login-provider--google:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
+}
 
-.login-board ::deep .login-alt { margin-top: 1rem; display: grid; gap: 0.5rem; }
+.login-board .login-provider__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.login-board ::deep .login-alt {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--b-hair);
+    display: grid;
+    gap: 0.65rem;
+}
 
 .login-board .workspace-label,
 .login-board label {
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.14em;
+    display: block;
+    margin-top: 0.25rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--b-dim);
 }
 
 .login-board ::deep input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0.55rem 0.75rem;
     border-radius: 0 !important;
     border: 1px solid var(--b-hair) !important;
     background: var(--b-slot) !important;
     color: var(--b-ink) !important;
-    font-family: "Martian Mono", monospace;
-    font-size: 0.7rem;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.875rem;
 }
-.login-board ::deep input:focus { border-color: var(--b-amber) !important; outline: none; }
+
+.login-board ::deep input::placeholder {
+    color: var(--b-dim);
+}
+
+.login-board ::deep input:focus {
+    border-color: var(--b-amber) !important;
+    outline: none;
+}
 
 .login-board ::deep button[data-variant="ghost"],
 .login-board ::deep button[data-variant="outline"],
 .login-board ::deep button[data-variant="secondary"],
 .login-board ::deep button[data-slot="button"] {
+    min-height: 42px;
+    padding: 0.55rem 1rem;
     border-radius: 0;
     border: 1px solid var(--b-hair);
-    background: transparent;
-    color: var(--b-dim);
+    background: var(--b-slot);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    font-size: 0.7rem;
+    font-size: 0.88rem;
+    font-weight: 600;
     box-shadow: none;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
-.login-board ::deep button[data-slot="button"]:hover { color: var(--b-ink); border-color: var(--b-dim); }
 
-.login-board details summary { color: var(--b-dim); }
+.login-board ::deep button[data-slot="button"]:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
+.login-board details summary {
+    color: var(--b-dim);
+    font-size: 0.8rem;
+    padding-block: 0.25rem;
+}
+
+.login-board details summary:hover {
+    color: var(--b-ink);
+}
+
+@media (max-width: 480px) {
+    .login-board {
+        padding: 1.25rem 0.75rem 2.5rem;
+    }
+    .login-board ::deep .login-card {
+        padding: 1.35rem 1.1rem;
+    }
+    .login-board ::deep input {
+        font-size: 1rem;
+    }
+}

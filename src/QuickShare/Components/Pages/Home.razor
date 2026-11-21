@@ -47,20 +47,20 @@
             </div>
             <div class="home-trip">
                 <span class="home-trip__code">01</span>
-                <span class="home-trip__name">anh-goc.zip</span>
-                <span class="home-trip__size">2,4 GB</span>
+                <span class="home-trip__name">@(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" ? "anh-goc.zip" : "raw-photos.zip")</span>
+                <span class="home-trip__size">@(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" ? "2,4 GB" : "2.4 GB")</span>
                 <span class="home-trip__st home-trip__st--flight">@Loc["home_table_cloud"]</span>
             </div>
             <div class="home-trip">
                 <span class="home-trip__code">02</span>
-                <span class="home-trip__name">ban-ve.pdf</span>
-                <span class="home-trip__size">48,2 MB</span>
+                <span class="home-trip__name">@(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" ? "ban-ve.pdf" : "blueprint.pdf")</span>
+                <span class="home-trip__size">@(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" ? "48,2 MB" : "48.2 MB")</span>
                 <span class="home-trip__st">P2P</span>
             </div>
             <div class="home-trip">
                 <span class="home-trip__code">03</span>
-                <span class="home-trip__name">hop-dong.docx</span>
-                <span class="home-trip__size">1,8 MB</span>
+                <span class="home-trip__name">@(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" ? "hop-dong.docx" : "contract.docx")</span>
+                <span class="home-trip__size">@(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "vi" ? "1,8 MB" : "1.8 MB")</span>
                 <span class="home-trip__st home-trip__st--done">SHA-256</span>
             </div>
             <div class="home-board__foot">
@@ -132,7 +132,7 @@
         </div>
 
         <div class="home-why__actions">
-            <Button Href="/send" class="home-btn home-btn--primary">@Loc["home_btn_send_now"]</Button>
+            <Button Href="/send" Variant="outline" class="home-btn home-btn--accent">@Loc["home_btn_send_now"]</Button>
             <Button Href="/pricing" Variant="ghost" class="home-btn">@Loc["home_btn_pro_limits"]</Button>
         </div>
     </section>
@@ -178,7 +178,7 @@
             <h2>@Loc["home_cta_title"]</h2>
             <p>@Loc["home_cta_sub"]</p>
         </div>
-        <Button Href="/send" Size="lg" class="home-btn home-btn--primary">@Loc["home_cta_btn"]</Button>
+        <Button Href="/send" Size="lg" Variant="outline" class="home-btn home-btn--accent">@Loc["home_cta_btn"]</Button>
     </section>
 
 </div>

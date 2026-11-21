@@ -63,7 +63,7 @@
                 <span class="layout-brand-path miura-spec">@CurrentSpec(path)</span>
             </span>
         </a>
-        <div class="layout-navbar__nav">
+        <div id="layout-primary-nav" class="layout-navbar__nav">
             <div class="layout-nav-menu">
                 <a class="layout-nav-menu__item @NavActive(path == RoutePaths.Home || string.IsNullOrEmpty(path))" href="/">@Loc["nav_home"]</a>
                 <a class="layout-nav-menu__item @NavActive(path == RoutePaths.Send)" href="/send">@Loc["nav_send"]</a>
@@ -122,10 +122,10 @@
             }
             else
             {
-                <Button Href="/login" Size="sm">@Loc["nav_login"]</Button>
+                <Button Href="/login" Size="sm" class="layout-signin">@Loc["nav_login"]</Button>
             }
         </div>
-        <button class="layout-navbar__toggle" aria-label="@Loc["a11y_menu"]">
+        <button type="button" class="layout-navbar__toggle" aria-label="@Loc["a11y_menu"]" aria-expanded="false" aria-controls="layout-primary-nav" onclick="toggleMobileNav(this)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
@@ -196,10 +196,43 @@
 
 <script>
     window.toggleTheme = function () {
-        var scheme = localStorage.getItem('db-scheme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var scheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         localStorage.setItem('db-scheme', scheme === 'dark' ? 'light' : 'dark');
-        window.location.reload();
+        var next = localStorage.getItem('db-scheme') || 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        document.documentElement.classList.toggle('dark', next === 'dark');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', next === 'dark' ? '#15181B' : '#D8DBDE');
     };
+
+    window.toggleMobileNav = function (btn) {
+        var nav = document.getElementById('layout-primary-nav');
+        if (!nav) return;
+        var isOpen = nav.classList.toggle('is-open');
+        if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    };
+    (function () {
+        document.addEventListener('click', function (e) {
+            var nav = document.getElementById('layout-primary-nav');
+            if (!nav || !nav.classList.contains('is-open')) return;
+            var toggle = document.querySelector('.layout-navbar__toggle');
+            var target = e.target;
+            if (toggle && toggle.contains(target)) return;
+            if (!nav.contains(target) || (target.closest && target.closest('a'))) {
+                nav.classList.remove('is-open');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            var nav = document.getElementById('layout-primary-nav');
+            var toggle = document.querySelector('.layout-navbar__toggle');
+            if (nav && nav.classList.contains('is-open')) {
+                nav.classList.remove('is-open');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    })();
 
     // Command palette (#153): Ctrl+K / Cmd+K opens, Esc closes, arrows + Enter pick.
     window.openCommandPalette = function () {

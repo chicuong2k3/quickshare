@@ -61,7 +61,7 @@
     @* HERO *@
     <section class="hero">
         @* No eyebrow above the heading. *@
-        <h1 class="text-3xl font-bold tracking-tight">@Loc["pricing_h1"]</h1>
+        <h1 class="hero__title">@Loc["pricing_h1"]</h1>
         <p class="text-muted-foreground">@Loc["pricing_sub"]</p>
     </section>
 
@@ -77,7 +77,7 @@
                     </div>
                     <div class="flex items-center gap-3 text-xs">
                         <span>@Loc["campaign_code_label"]: <code id="pricing-campaign-code" class="rounded border bg-background px-2 py-0.5 font-mono font-bold">@activeCampaign.Code</code> (-@activeCampaign.Value%)</span>
-                        <Button Href="@claimHref" Size="sm" data-ai-action="pricing.campaign.claim">@Loc["campaign_claim_btn"]</Button>
+                        <Button Href="@claimHref" Size="sm" Variant="outline" data-ai-action="pricing.campaign.claim">@Loc["campaign_claim_btn"]</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -101,9 +101,9 @@
                 @foreach (var curr in QuickShare.Features.Payments.PlanCatalog.SupportedCurrencies)
                 {
                     var isActive = string.Equals(curr, activeCurrency, StringComparison.OrdinalIgnoreCase);
-                    <a href="@($"{RoutePaths.Pricing}?currency={curr}")"
+                    <a href="@CurrencyHref(curr)"
                        data-currency="@curr"
-                       class="@(isActive ? "rounded border border-primary bg-primary px-2 py-0.5 font-semibold text-primary-foreground" : "rounded border px-2 py-0.5 text-muted-foreground hover:text-foreground")">
+                       class="@(isActive ? "bp-curr bp-curr--active" : "bp-curr")">
                         @curr
                     </a>
                 }
@@ -115,9 +115,9 @@
         <div class="board" role="table" aria-label="@Loc["pricing_compare_title"]">
             <div class="board__head" role="row">
                 <div role="columnheader"><span class="lbl">@Loc["pricing_compare_feature"]</span></div>
-                <div role="columnheader"><span class="lbl">@Loc["pricing_free_name"]</span><b>@Loc["pricing_free_name"]</b></div>
-                <div role="columnheader" class="col--pro"><span class="lbl">@Loc["pricing_pro_name"]</span><b>@Loc["pricing_pro_name"]</b><span class="tag">@Loc["pricing_card_badge"]</span></div>
-                <div role="columnheader"><span class="lbl">@Loc["pricing_studio_name"]</span><b>@Loc["pricing_studio_name"]</b></div>
+                <div role="columnheader"><span class="lbl">01</span><b>@Loc["pricing_free_name"]</b></div>
+                <div role="columnheader" class="col--pro"><span class="lbl">02</span><b>@Loc["pricing_pro_name"]</b><span class="tag">@Loc["pricing_card_badge"]</span></div>
+                <div role="columnheader"><span class="lbl">03</span><b>@Loc["pricing_studio_name"]</b></div>
             </div>
 
             <div class="brow brow--price" role="row">
@@ -167,23 +167,23 @@
 
             <div class="brow" role="row">
                 <span class="k" role="rowheader">@Loc["pricing_compare_password"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
             </div>
 
             <div class="brow" role="row">
                 <span class="k" role="rowheader">@Loc["pricing_compare_scheduled"]</span>
                 <span class="v v--off" role="cell">@Loc["pricing_compare_no"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
             </div>
 
             <div class="brow" role="row">
                 <span class="k" role="rowheader">@Loc["pricing_compare_noads"]</span>
                 <span class="v v--off" role="cell">@Loc["pricing_compare_no"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
-                <span class="v" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
+                <span class="v v--yes" role="cell">@Loc["pricing_compare_yes"]</span>
             </div>
         </div>
 
@@ -263,7 +263,7 @@
                         }
                         else if (currentPlanRank < planRank)
                         {
-                            <Button Href="@(isAuthenticated ? (planRank == ProPlanRank ? RoutePaths.UpgradePro : RoutePaths.UpgradeStudio) : RoutePaths.Login)" class="@ctaClass">@Loc["btn_start_free_trial"]</Button>
+                            <Button Href="@(isAuthenticated ? (planRank == ProPlanRank ? RoutePaths.UpgradePro : RoutePaths.UpgradeStudio) + (IsYearly ? "&billing=yearly" : string.Empty) : RoutePaths.Login)" class="@ctaClass">@Loc["btn_start_free_trial"]</Button>
                         }
                         else
                         {
@@ -305,7 +305,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-sm text-muted-foreground">@Loc["pricing_calc_recommend_label"]:</span>
                         <strong id="calc-plan-out" data-free="@Loc["pricing_free_name"]" data-pro="@Loc["pricing_pro_name"]" data-studio="@Loc["pricing_studio_name"]">@Loc["pricing_free_name"]</strong>
-                        <Button id="calc-cta-btn" Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)" Size="sm">@Loc["btn_start_free_trial"]</Button>
+                        <Button id="calc-cta-btn" Variant="outline" Href="@(isAuthenticated ? RoutePaths.UpgradePro : RoutePaths.Login)" Size="sm">@Loc["btn_start_free_trial"]</Button>
                     </div>
                 </div>
             </CardContent>
@@ -345,7 +345,7 @@
         <h2 class="text-2xl font-bold compare__title">@Loc["pricing_compare_title"]</h2>
         <div class="compare__scroll">
             <Table class="compare__table">
-                <caption class="visually-hidden">@Loc["pricing_compare_title"]</caption>
+                <caption class="sr-only">@Loc["pricing_compare_title"]</caption>
                 <TableHeader>
                     <TableRow>
                         <TableHead scope="col">@Loc["pricing_compare_feature"]</TableHead>
@@ -375,29 +375,29 @@
                     </TableRow>
                     <TableRow>
                         <TableHead scope="row">@Loc["pricing_compare_downloads"]</TableHead>
-                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free)</TableCell>
-                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro)</TableCell>
-                        <TableCell>@PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio)</TableCell>
+                        <TableCell>@DownloadsLabel(PlanTierLimits.GetMaxDownloads(PlanTierLimits.Free))</TableCell>
+                        <TableCell>@DownloadsLabel(PlanTierLimits.GetMaxDownloads(PlanTierLimits.Pro))</TableCell>
+                        <TableCell>@DownloadsLabel(PlanTierLimits.GetMaxDownloads(PlanTierLimits.Studio))</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableHead scope="row">@Loc["pricing_compare_password"]</TableHead>
-                        <TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                        <TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableHead scope="row">@Loc["pricing_compare_scheduled"]</TableHead>
-                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                        <TableCell class="v--no">@Loc["pricing_compare_no"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableHead scope="row">@Loc["pricing_compare_alias"]</TableHead>
-                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                        <TableCell class="v--no">@Loc["pricing_compare_no"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableHead scope="row">@Loc["pricing_compare_daily_cap"]</TableHead>
-                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                        <TableCell class="v--no">@Loc["pricing_compare_no"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell>
                     </TableRow>
                     <TableRow>
                         <TableHead scope="row">@Loc["pricing_compare_noads"]</TableHead>
-                        <TableCell>@Loc["pricing_compare_no"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell><TableCell>@Loc["pricing_compare_yes"]</TableCell>
+                        <TableCell class="v--no">@Loc["pricing_compare_no"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell><TableCell class="v--yes">@Loc["pricing_compare_yes"]</TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
@@ -437,11 +437,10 @@
     </section>
 
     @* CTA *@
-    <section class="cta" x-data="{ billing: new URLSearchParams(window.location.search).get('billing') || 'monthly' }">
+    <section class="cta">
         <h3 class="cta__title">@Loc["pricing_cta_title"]</h3>
         <p class="text-muted-foreground">@Loc["pricing_cta_sub"]</p>
-        <Button Href="@(isAuthenticated ? RoutePaths.Upgrade : RoutePaths.Login)"
-           x-bind:href="(billing === 'yearly' ? '/upgrade?billing=yearly' : '/upgrade')">@Loc["btn_get_started"]</Button>
+        <Button Variant="outline" Href="@(isAuthenticated ? RoutePaths.Upgrade + (IsYearly ? "?billing=yearly" : string.Empty) : RoutePaths.Login)">@Loc["btn_get_started"]</Button>
     </section>
 
 </div>
@@ -453,6 +452,9 @@
 
     [SupplyParameterFromQuery]
     public string? Billing { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Currency { get; set; }
 
     /// <summary>Comparison-table cell for a byte limit; null = unlimited (issue #299).</summary>
     private string SizeLabel(long? bytes)
@@ -472,8 +474,26 @@
 
     private string BillingHref(string period)
     {
-        var query = period == BillingPeriods.Yearly ? $"?billing={BillingPeriods.Yearly}" : string.Empty;
-        return RoutePaths.Pricing + query;
+        var query = new List<string>();
+        if (period == BillingPeriods.Yearly)
+        {
+            query.Add($"billing={BillingPeriods.Yearly}");
+        }
+        if (!string.IsNullOrWhiteSpace(Currency))
+        {
+            query.Add($"currency={System.Net.WebUtility.UrlEncode(Currency)}");
+        }
+        return query.Count > 0 ? $"{RoutePaths.Pricing}?{string.Join('&', query)}" : RoutePaths.Pricing;
+    }
+
+    private string CurrencyHref(string currency)
+    {
+        var query = new List<string> { $"currency={System.Net.WebUtility.UrlEncode(currency)}" };
+        if (IsYearly)
+        {
+            query.Add($"billing={BillingPeriods.Yearly}");
+        }
+        return $"{RoutePaths.Pricing}?{string.Join('&', query)}";
     }
     private const int FreePlanRank = 0;
     private const int ProPlanRank = 1;

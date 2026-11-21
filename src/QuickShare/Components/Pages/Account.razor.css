@@ -1,48 +1,22 @@
-/* ─── Account hub · board material ────────────────────────────────
-   The hub is a stack of feature cards (profile, usage, devices,
-   referral, notifications, downloads, security). This layer gives the
-   shell one material so the hub stops reading as HyperCard panels
-   around the one board block; individual cards were not redesigned. */
+/* ── Account hub · Departure Board ("Bảng chuyến") ── */
 
 .account-hub {
-    --b-panel: #1d2125;
-    --b-flap: #2a2f35;
-    --b-slot: #0e1113;
-    --b-ink: #e9ecee;
-    --b-dim: #8b939b;
-    --b-hair: #31373e;
-    --b-amber: #e0a03c;
-    --b-green: #4fa36a;
-    --b-red: #c85a4f;
-
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem;
     width: 100%;
-    max-width: 44rem;
+    max-width: 56rem;
+    margin-inline: auto;
     color: var(--b-ink);
 }
 
-html[data-theme="light"] .account-hub {
-    --b-panel: #e2e5e7;
-    --b-flap: #cfd3d6;
-    --b-slot: #f1f3f4;
-    --b-ink: #171a1d;
-    --b-dim: #5c6468;
-    --b-hair: #b3b8bc;
-    --b-amber: #a96c10;
-    --b-green: #2f7a46;
-    --b-red: #a83b31;
-}
-
-/* every card in the hub: one panel, one seam, no radius */
 .account-hub ::deep [data-slot="card"] {
     background: var(--b-panel);
     border: 1px solid var(--b-hair);
     border-radius: 0;
     box-shadow: none;
     color: var(--b-ink);
-    padding: 1rem;
+    padding: 1.25rem;
 }
 
 .account-hub ::deep h2,
@@ -51,7 +25,7 @@ html[data-theme="light"] .account-hub {
     font-family: "Barlow Condensed", system-ui, sans-serif;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     color: var(--b-ink);
 }
 
@@ -61,29 +35,50 @@ html[data-theme="light"] .account-hub {
     color: var(--b-dim);
 }
 
-.account-hub ::deep a { color: var(--b-ink); text-decoration-color: var(--b-hair); }
-.account-hub ::deep a:hover { color: var(--b-amber); }
+.account-hub ::deep a {
+    color: var(--b-ink);
+    text-decoration-color: var(--b-hair);
+}
+
+.account-hub ::deep a:hover {
+    color: var(--b-amber);
+}
 
 /* controls */
 .account-hub ::deep [data-slot="button"] {
     border-radius: 0;
     border: 1px solid var(--b-hair);
-    background: transparent;
-    color: var(--b-dim);
+    background: var(--b-slot);
+    color: var(--b-ink);
     font-family: "Barlow Condensed", system-ui, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    font-size: 0.68rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-height: 38px;
+    padding: 0.45rem 0.9rem;
     box-shadow: none;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-.account-hub ::deep [data-slot="button"]:hover { color: var(--b-ink); border-color: var(--b-dim); }
+
+.account-hub ::deep [data-slot="button"]:hover {
+    color: var(--b-ink);
+    border-color: var(--b-dim);
+    background: var(--b-flap);
+}
+
 .account-hub ::deep [data-slot="button"][data-variant="default"] {
     background: var(--b-amber);
     border-color: var(--b-amber);
-    color: #16181a;
+    color: var(--b-amber-ink);
     font-weight: 700;
 }
-.account-hub ::deep [data-slot="button"][data-variant="default"]:hover { background: var(--b-ink); border-color: var(--b-ink); }
+
+.account-hub ::deep [data-slot="button"][data-variant="default"]:hover {
+    background: var(--b-hover-bg);
+    border-color: var(--b-hover-bg);
+    color: var(--b-hover-ink);
+}
 
 .account-hub ::deep input,
 .account-hub ::deep select,
@@ -93,20 +88,27 @@ html[data-theme="light"] .account-hub {
     background: var(--b-slot) !important;
     color: var(--b-ink) !important;
     font-family: "Martian Mono", ui-monospace, monospace;
-    font-size: 0.68rem;
+    font-size: 0.82rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 40px;
     box-shadow: none;
 }
 
-/* rows inside a card read as floor lines */
+.account-hub ::deep select {
+    appearance: none;
+    padding-right: 2.25rem;
+}
+
 .account-hub ::deep li,
 .account-hub ::deep .flex.justify-between {
     border-bottom: 1px solid color-mix(in srgb, var(--b-hair) 60%, transparent);
-    padding-block: 0.35rem;
-    font-size: 0.8rem;
+    padding-block: 0.5rem;
+    font-size: 0.875rem;
 }
+
 .account-hub ::deep li:last-child { border-bottom: 0; }
 
-/* tabs: a flap strip with an amber underline on the open one */
+/* tabs */
 .account-hub ::deep .account-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -114,36 +116,33 @@ html[data-theme="light"] .account-hub {
     border: 1px solid var(--b-hair);
     background: var(--b-flap);
 }
+
 .account-hub ::deep .account-tabs a {
-    padding: 0.45rem 0.7rem;
+    padding: 0.6rem 0.9rem;
     border-right: 1px solid var(--b-hair);
-    font-family: "Martian Mono", monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.12em;
+    font-family: "Martian Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--b-dim);
     text-decoration: none;
 }
+
 .account-hub ::deep .account-tabs a:last-child { border-right: 0; }
+
 .account-hub ::deep .account-tabs a[aria-current="page"],
 .account-hub ::deep .account-tabs a.active {
     color: var(--b-ink);
+    background: var(--b-panel);
     box-shadow: inset 0 -2px 0 var(--b-amber);
 }
 
-/* keep the usage block's own seam visible inside the hub */
 .account-hub ::deep .au { margin-block: 0; }
 
-/* ─── the hub's blocks ────────────────────────────────────────────
-   Profile, onboarding, devices, referral, notifications, downloads
-   and security activity are utility-class markup, so this layer maps
-   the handful of utilities they lean on instead of restyling seven
-   components one by one. */
-
-/* the board has no circles: avatars and progress tracks become panels */
 .account-hub ::deep .rounded-full {
     border-radius: 0 !important;
 }
+
 .account-hub ::deep #avatarPreview,
 .account-hub ::deep #avatarInitial {
     border-radius: 0;
@@ -151,53 +150,51 @@ html[data-theme="light"] .account-hub {
     background: var(--b-slot);
 }
 
-/* utility borders and muted grounds follow the seams */
 .account-hub ::deep .border-b,
 .account-hub ::deep .border-t,
 .account-hub ::deep .border {
     border-color: var(--b-hair) !important;
 }
+
 .account-hub ::deep .bg-muted { background: var(--b-slot) !important; }
 
-/* progress in the onboarding checklist is measured, so it is green.
-   Scoped to that card so a primary fill elsewhere keeps its own meaning. */
 .account-hub ::deep #onboarding-card .bg-primary {
     background: var(--b-green) !important;
     border-radius: 0 !important;
 }
 
 .account-hub ::deep .text-destructive { color: var(--b-red) !important; }
+
 .account-hub ::deep .font-mono,
 .account-hub ::deep .tabular-nums {
     font-family: "Martian Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
 }
 
-/* switches read as flap levers, not pills */
 .account-hub ::deep [role="switch"] {
     border-radius: 0;
     border: 1px solid var(--b-hair);
     background: var(--b-slot);
     box-shadow: none;
 }
+
 .account-hub ::deep [role="switch"][data-state="checked"],
 .account-hub ::deep [role="switch"][aria-checked="true"] {
     background: var(--b-amber);
     border-color: var(--b-amber);
 }
 
-/* destructive actions stay outline, never a filled block of red */
 .account-hub ::deep [data-slot="button"][data-variant="destructive"] {
     background: transparent;
     border: 1px solid var(--b-red);
     color: var(--b-red);
 }
+
 .account-hub ::deep [data-slot="button"][data-variant="destructive"]:hover {
     background: var(--b-red);
-    color: #16181a;
+    color: #FFFFFF;
 }
 
-/* the profile's plan/provider chip */
-.account-hub ::deep .account-device-item { padding-block: 0.5rem; }
+.account-hub ::deep .account-device-item { padding-block: 0.6rem; }
 .account-hub ::deep .account-device-item span,
 .account-hub ::deep .account-device-item .text-sm { color: var(--b-dim); }

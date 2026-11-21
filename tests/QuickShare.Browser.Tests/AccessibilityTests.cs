@@ -114,7 +114,7 @@ public sealed class AccessibilityTests : IClassFixture<BrowserFixture>
 
         // The labels that were hardcoded English in a bilingual product: a Vietnamese
         // screen-reader user was being read "Menu"/"Legal"/"User menu" regardless.
-        var menuLabel = await page.GetAttributeAsync(".db-navbar__toggle", "aria-label");
+        var menuLabel = await page.GetAttributeAsync(".layout-navbar__toggle", "aria-label");
         Assert.NotNull(menuLabel);
 
         await page.SelectOptionAsync(".lang-switch select", "en");

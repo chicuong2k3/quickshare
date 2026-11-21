@@ -111,7 +111,7 @@
                             @* Pixel arrow rising into the disk slot *@
                             <svg viewBox="0 0 16 16" aria-hidden="true">
                                 <rect x="2" y="2" width="12" height="3" fill="currentColor"/>
-                                <rect x="6" y="3" width="4" height="1" fill="var(--db-sheet-raised)"/>
+                                <rect x="6" y="3" width="4" height="1" fill="var(--b-panel)"/>
                                 <rect x="7" y="7" width="2" height="7" fill="currentColor"/>
                                 <rect x="5" y="9" width="2" height="2" fill="currentColor"/>
                                 <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
@@ -308,12 +308,12 @@
 
                     <span class="protect-sub">@Loc["upload_otp_label"]</span>
                     <div id="upload-otp" class="flex" style="gap: 0.5rem; margin-top: 0.5rem">
-                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" />
-                        <input type="text" class="h-12 w-10 rounded-md border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" />
+                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,0)" onkeydown="uploadPage.otpKeydown(event,0)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 1, 6]" />
+                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,1)" onkeydown="uploadPage.otpKeydown(event,1)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 2, 6]" />
+                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,2)" onkeydown="uploadPage.otpKeydown(event,2)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 3, 6]" />
+                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,3)" onkeydown="uploadPage.otpKeydown(event,3)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 4, 6]" />
+                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,4)" onkeydown="uploadPage.otpKeydown(event,4)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 5, 6]" />
+                        <input type="text" class="db-otp__input h-12 w-10 border text-center text-lg" inputmode="numeric" maxlength="1" oninput="uploadPage.otpInput(event,5)" onkeydown="uploadPage.otpKeydown(event,5)" onchange="uploadPage.readOtp()" autocomplete="off" aria-label="@Loc["a11y_code_digit", 6, 6]" />
                     </div>
                     <span class="otp-hint">@Loc["upload_otp_hint"]</span>
                 </div>
@@ -474,6 +474,7 @@
                             </NativeSelect>
                         </div>
                     }
+                </div>
 
                 <div class="sender-email-wrap" id="upload-encryption-wrap">
                     <label for="upload-encryption-mode" class="otp-label">@Loc["upload_encryption_mode_label"]</label>
@@ -482,12 +483,11 @@
                         <NativeSelectOption value="@DeliveryEncryptionMode.Passphrase">@Loc["upload_encryption_mode_passphrase"]</NativeSelectOption>
                         <NativeSelectOption value="@DeliveryEncryptionMode.None">@Loc["upload_encryption_mode_none"]</NativeSelectOption>
                     </NativeSelect>
-                    <div id="upload-passphrase-row" class="mt-2">
+                    <div id="upload-passphrase-row" class="mt-2 hidden">
                         <label for="upload-encryption-passphrase" class="protect-sub">@Loc["upload_encryption_passphrase_label"]</label>
                         <Input Type="password" id="upload-encryption-passphrase" class="sender-email-input" autocomplete="new-password" placeholder="@Loc["upload_encryption_passphrase_placeholder"]" />
                     </div>
                     <p id="upload-encryption-honesty" class="otp-hint mt-1">@Loc["upload_encryption_honesty_notice"]</p>
-                </div>
                 </div>
 
 
